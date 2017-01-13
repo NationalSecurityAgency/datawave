@@ -1,0 +1,7 @@
+<datawaveAuthentication>
+  <id>ffffffff:fffffffffff:-7ffd</id>
+  <name>datawave-auth-filter</name>
+  <className>nsa.datawave.webservice.geowave.auth.filter.DatawaveAuthenticationFilter</className>
+  <roleSource class="org.geoserver.security.config.J2eeAuthenticationBaseFilterConfig$J2EERoleSource">J2EE</roleSource>
+  <roleServiceName>j2ee-role-service</roleServiceName>
+</datawaveAuthentication>

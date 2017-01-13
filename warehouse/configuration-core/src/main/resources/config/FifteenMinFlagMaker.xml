@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- test configuration -->
+<flagMakerConfig>
+    <flagCfg>
+        <dataName>fifteen</dataName>
+        <folder>${FIFTEEN_MIN_INGEST_DATA_TYPES}</folder>
+        <ingestPool>fifteenmin</ingestPool>
+        <distributionArgs>none</distributionArgs>
+        <extraIngestArgs></extraIngestArgs>
+        <lifo>false</lifo>
+    </flagCfg>
+    <defaultCfg>
+        <!-- currently only require a few of the params for the default config -->
+        <maxFlags>${INGEST_MAX_FIFTEEN_MIN_BLOCKS_PER_JOB}</maxFlags>
+        <reducers>1</reducers>
+        <script>bin/ingest/fifteen-min-ingest.sh</script>
+        <fileListMarker>***FILE_LIST***</fileListMarker>
+    </defaultCfg>
+    <sleepMilliSecs>3000</sleepMilliSecs>
+    <timeoutMilliSecs>${FIFTEEN_MIN_FLAG_TIMEOUT_MS}</timeoutMilliSecs>
+    <baseHDFSDir>${HDFS_BASE_DIR}</baseHDFSDir>
+    <distributorType>simple</distributorType>
+    <!-- No dot "." files -->
+    <filePattern>2*/*/*/[0-9a-zA-Z]*.seq</filePattern>
+    <hdfs>${INGEST_HDFS_NAME_NODE}</hdfs>
+    <socketPort>24223</socketPort>
+    <datawaveHome>${DATAWAVE_INGEST_HOME}</datawaveHome>
+    <flagFileDirectory>${FLAG_DIR}</flagFileDirectory>
+    <setFlagFileTimestamp>true</setFlagFileTimestamp>
+    <useFolderTimestamp>false</useFolderTimestamp>
+</flagMakerConfig>

@@ -1,0 +1,30 @@
+package nsa.datawave.configuration.spring;
+
+import javax.enterprise.util.Nonbinding;
+import javax.inject.Qualifier;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+@Qualifier
+@Documented
+@Target({TYPE, FIELD, METHOD, PARAMETER})
+@Retention(RUNTIME)
+public @interface SpringBean {
+    /**
+     * The name of the Spring bean to inject. If left to its default value, then injection will be performed by type rather than bean name.
+     */
+    String name() default "";
+    
+    @Nonbinding
+    boolean required() default true;
+    
+    @Nonbinding
+    boolean refreshable() default false;
+}

@@ -1,0 +1,77 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+                http://www.springframework.org/schema/context 
+                http://www.springframework.org/schema/context/spring-context-4.1.xsd">
+
+	<context:property-placeholder system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="100"/>
+
+	<bean id="MapReduceConfiguration" class="nsa.datawave.webservice.mr.configuration.MapReduceConfiguration">
+	
+		<property name="callbackServletURL" value="${mapReduce.http.port}/DataWave/MapReduceStatus/updateState"/>
+		<property name="mapReduceBaseDirectory" value="${mapReduce.hdfs.base.dir}"/>
+		<property name="restrictInputFormats" value="${mapReduce.inputFormat.restrict}" />
+		<property name="validInputFormats">
+			<list value-type="java.lang.Class">
+				<value>org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat</value>
+				<value>nsa.datawave.mr.bulk.BulkInputFormat</value>
+			</list>
+		</property>
+		
+		<property name="jobConfiguration">
+			<map key-type="java.lang.String" value-type="nsa.datawave.webservice.mr.configuration.MapReduceJobConfiguration">
+				<entry key="BulkResultsJob">
+					<bean class="nsa.datawave.webservice.mr.configuration.BulkResultsJobConfiguration">
+						<property name="description" value="MapReduce job that runs a query and either puts the results into a table or files in HDFS" />
+						<property name="hdfsUri" value="${mapReduce.hdfs.uri}"/>
+						<property name="jobTracker" value="${mapReduce.job.tracker}"/>
+						<property name="requiredRoles">
+							<list value-type="java.lang.String">
+							</list>
+						</property>
+						<property name="classpathJarFiles">
+							<list value-type="java.lang.String">
+                                <!-- Add EJB jars that we need in order to run queries. -->
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!Common\.jar/</value>
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!Query\.jar/</value>
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!MapReduce\.jar/</value>
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!Security\.jar/</value>
+								<!-- Add every jar in the EAR's lib folder. -->
+								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!lib/.*\.jar/</value>
+								<!-- Now package up the config module's conf files and include them. -->
+								<value>archive:${jboss.modules.dir}/nsa/datawave/webservice/configuration/main/conf/!.*</value>
+								<!-- Note that all jar files in ${jboss.home.dir}/client/lib and ${jboss.home.dir}/tools/mapreduce/lib are added to the classpath too. -->
+							</list>
+						</property>
+						<property name="requiredRuntimeParameters">
+							<map key-type="java.lang.String" value-type="java.lang.Class">
+								<entry key="queryId" value="java.lang.String" />
+								<entry key="format" value="nsa.datawave.webservice.mr.bulkresults.map.SerializationFormat" />
+							</map>
+						</property>
+						<property name="optionalRuntimeParameters">
+							<map key-type="java.lang.String" value-type="java.lang.Class">
+								<entry key="outputTableName" value="java.lang.String" />
+								<entry key="outputFormat" value="java.lang.String" />
+							</map>
+						</property>
+						<property name="jobConfigurationProperties">
+							<map key-type="java.lang.String" value-type="java.lang.String">
+								<entry key="mapreduce.map.speculative" value="false" />
+								<entry key="mapreduce.map.java.opts" value="-Dorg.apache.deltaspike.ProjectStage=DatawaveEmbedded" />
+								<entry key="mapreduce.map.output.compress" value="false" />
+								<entry key="mapreduce.output.fileoutputformat.compress" value="false" />
+								<!-- Use the user classes first so we pick up our newer version of Guava before the old Hadoop-supplied one. -->
+								<entry key="mapreduce.job.user.classpath.first" value="true" />
+							</map>
+						</property>
+						<property name="jobJarName" value="MapReduce.jar"/>
+					</bean>
+				</entry>
+			</map>
+		</property>
+	</bean>
+
+</beans>

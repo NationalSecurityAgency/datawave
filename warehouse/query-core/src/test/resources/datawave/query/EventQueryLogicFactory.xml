@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
+                            http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+   
+    <!--
+        Factory method config for creating whatever model we want for the default. 
+        Provides a fall-back model in the event that the named query model 'modelName'
+        isn't defined in Accumulo for whatever reason...
+    -->
+
+    <!-- A list of lucene to jexl query functions -->
+    <util:list id="allowedQueryFunctions" value-type="nsa.datawave.query.language.functions.jexl.JexlQueryFunction">
+        <bean class="nsa.datawave.query.language.functions.jexl.IsNull"/>
+        <bean class="nsa.datawave.query.language.functions.jexl.IsNotNull"/>
+        <bean class="nsa.datawave.query.language.functions.jexl.Include"/>
+        <bean class="nsa.datawave.query.language.functions.jexl.Exclude"/>
+        <bean class="nsa.datawave.query.language.functions.jexl.Loaded"/>
+        <bean class="nsa.datawave.query.language.functions.jexl.DateFunction"/>
+        <bean class="nsa.datawave.query.language.functions.jexl.OccurrenceFunction"/>
+        <bean class="nsa.datawave.query.language.functions.jexl.MatchesInGroupFunction"/>
+        <bean class="nsa.datawave.query.language.functions.jexl.MatchesInGroupLeft"/>
+        <bean class="nsa.datawave.query.language.functions.jexl.GetAllMatches"/>
+        <bean class="nsa.datawave.query.language.functions.jexl.MatchesAtLeastCountOf"/>
+        <bean class="nsa.datawave.query.language.functions.jexl.TimeFunction"/>
+    </util:list>
+
+
+    <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
+        <property name="logicDescription" value="Event query" />
+    </bean>
+    
+    <bean id="baseQueryLogic" class="nsa.datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
+        <property name="roleManager" ref="easyRoleManager" />
+        <property name="markingFunctions" ref="markingFunctions" />
+    </bean>
+    
+    <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic" abstract="true">
+        <property name="tableName" value="shard" />
+        <property name="dateIndexTableName" value="dateIndex" />
+        <property name="metadataTableName" value="DatawaveMetadata" />
+        <property name="metadataHelperFactory" ref="metadataHelperFactory" />
+        <property name="dateIndexHelperFactory" ref="dateIndexHelperFactory" />
+        <property name="indexTableName" value="shardIndex" />
+        <property name="reverseIndexTableName" value="shardIndex" />
+        <property name="queryThreads" value="5" />
+        <property name="fullTableScanEnabled" value="false" />
+        <property name="includeDataTypeAsField" value="false" />
+        <property name="includeHierarchyFields" value="false" />	<!-- was ${include.hierarchy.fields} -->
+        <property name="baseIteratorPriority" value="100" />	<!-- was ${beq.baseIteratorPriority} -->
+        <!-- property name="accumuloPassword" value="${accumulo.user.password}" />	 -->
+        <property name="collapseUids" value="false" />	<!-- was ${query.collapse.uids} -->
+        <property name="useEnrichers" value="true" />
+        <property name="contentFieldNames">
+            <list value-type="java.lang.String">
+                <value>CONTENT</value>
+            </list>
+        </property>
+        <property name="realmSuffixExclusionPatterns" >
+            <list value-type="java.lang.String">
+                <value>&lt;.*&gt;$</value>
+            </list>
+        </property>
+        <property name="minimumSelectivity" value=".2" />
+        <property name="enricherClassNames">
+            <list value-type="java.lang.String">
+                <value>nsa.datawave.query.enrich.DatawaveTermFrequencyEnricher</value>
+            </list>
+        </property>
+        <property name="useFilters" value="false" />
+        <property name="filterClassNames" value=""/>
+
+        <property name="auditType" value="ACTIVE" />
+        <property name="logicDescription" value="Event query with rewritten logic" />
+        <!-- Determines how many events in the global index lookup will be
+        aggregated into a day range -->
+        <property name="eventPerDayThreshold" value="40000" />
+        <!-- Determines how many shards in the global index lookup will be
+        aggregated into a day range -->
+        <property name="shardsPerDayThreshold" value="4" />	<!-- ${beq.shardsPerDayThreshold} -->
+        <!-- The max number of terms AFTER all expansions -->
+        <property name="maxTermThreshold" value="10" />	<!-- was ${beq.maxTermThreshold} -->
+        <!-- The max query depth -->
+        <property name="maxDepthThreshold" value="5" />	<!-- was ${beq.maxDepthThreshold} -->
+        <!-- The max unfielded (_ANYFIELD_) expansion per term -->
+        <property name="maxUnfieldedExpansionThreshold" value="20" />	<!-- was ${beq.unfieldedExpansionThreshold} -->
+        <!-- The max value (regex or range) expansion -->
+        <property name="maxValueExpansionThreshold" value="20" />	<!-- was ${beq.valueExpansionThreshold} -->
+        <!-- The max value or list expansion for a single field before using an ivarator -->
+        <property name="maxOrExpansionThreshold" value="20" />	<!-- was ${beq.orExpansionThreshold} -->
+        <!-- The max value or list expansion for a single field using an FST ivarator -->
+        <property name="maxOrExpansionFstThreshold" value="20" />	<!-- was ${beq.orExpansionFstThreshold} -->
+        <property name="hdfsSiteConfigURLs" value="" />	<!--  was ${hdfs.site.config.urls} -->
+        <property name="hdfsCacheBaseURI" value="file:///tmp/IvaratorCache" />	<!-- was ${hdfs.cache.base.uri} -->
+        <property name="hdfsCacheReused" value="true" />
+        <property name="hdfsCacheBufferSize" value="10000" />
+        <property name="hdfsCacheScanPersistThreshold" value="100000" />
+        <!-- property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />	 -->
+        <property name="modelTableName" value="DatawaveMetadata" />
+        <property name="modelName" value="DATAWAVE" />
+        <property name="querySyntaxParsers">
+            <map key-type="java.lang.String" value-type="nsa.datawave.query.language.parser.QueryParser">
+                <entry key="JEXL">
+                    <null/>
+                </entry>
+                <entry key="LUCENE" value-ref="LuceneToJexlQueryParser" />
+                <entry key="LUCENE-UUID" value-ref="LuceneToJexlUUIDQueryParser" />
+                <!--<entry key="TOKENIZED-LUCENE" value-ref="TokenizedLuceneToJexlQueryParser" />-->
+                <!-- JEXL is the default Jexl query syntax -->
+            </map>
+        </property>
+        <property name="queryPlanner" ref="DefaultQueryPlanner" />
+        <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
+        <property name="markingFunctions" ref="markingFunctions" />
+    </bean>
+
+     <bean id="LuceneToJexlQueryParser" scope="prototype" class="nsa.datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
+    </bean>
+    
+    <bean id="LuceneToJexlUUIDQueryParser" scope="prototype" class="nsa.datawave.query.language.parser.jexl.LuceneToJexlUUIDQueryParser">
+        <property name="uuidTypes" ref="UUIDTypeList" />
+        <property name="allowedFunctions" ref="allowedQueryFunctions"/>
+    </bean>
+    <util:list id="UUIDTypeList" value-type="nsa.datawave.query.data.UUIDType">
+
+    </util:list>
+
+    <!--<bean id="TokenizedLuceneToJexlQueryParser" scope="prototype" class="nsa.datawave.query.language.parser.jexl.LuceneToJexlQueryParser">-->
+        <!--<property name="tokenizeUnfieldedQueries" value="true" />-->
+        <!--<property name="skipTokenizeUnfieldedFields" ref="skipTokenizeFields"/>-->
+        <!--<property name="tokenizedFields" ref="tokenizeFields"/>-->
+        <!--<property name="allowedFunctions" ref="allowedQueryFunctions"/>-->
+    <!--</bean>-->
+    
+    <bean id="DefaultQueryPlanner" scope="prototype" class="nsa.datawave.query.rewrite.planner.DefaultQueryPlanner" >
+
+    </bean>
+    
+    <bean id="datawaveRoleManager" class="nsa.datawave.webservice.query.logic.DatawaveRoleManager" />
+    
+    <bean id="easyRoleManager" class="nsa.datawave.webservice.query.logic.EasyRoleManager" />
+
+    <!--<bean id="responseObjectFactory" class="nsa.datawave.query.DefaultResponseObjectFactory" />-->
+
+
+</beans>

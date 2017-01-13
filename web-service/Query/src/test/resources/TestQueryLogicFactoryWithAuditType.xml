@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:util="http://www.springframework.org/schema/util"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
+                            http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+	<!-- Database properties are retrieved from the database.properties file but can be overridden by system properties -->
+	<bean id="propertyPlaceholderConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location">
+			<value>classpath:database.properties</value>
+		</property>
+		<property name="systemPropertiesModeName">
+			<value>SYSTEM_PROPERTIES_MODE_OVERRIDE</value>
+		</property>
+	</bean>
+
+    
+
+	<bean id="QueryLogicFactoryConfiguration" class="nsa.datawave.webservice.query.logic.QueryLogicFactoryConfiguration" />
+	
+    <bean id="TestQuery" class="nsa.datawave.webservice.query.logic.TestQueryLogic">
+		<property name="tableName" value="${metadata.table.name}" />
+		<property name="maxResults" value="12345" />
+		<property name="maxRowsToScan" value="98765" />
+		<property name="auditType" value="LOCALONLY" />
+    </bean>
+
+	
+
+
+</beans>

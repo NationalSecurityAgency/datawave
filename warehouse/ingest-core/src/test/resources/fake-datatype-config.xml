@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+    <property>
+        <name>file.input.format</name>
+        <value>nsa.datawave.ingest.input.reader.raw.RawInputFormat</value>
+    </property>
+
+    <property>
+        <name>data.name</name>
+        <value>fake</value>
+        <description>This is the type of data being ingested.</description>
+    </property>
+
+    <property>
+        <name>fake.ingest.helper.class</name>
+        <value>nsa.datawave.ingest.data.config.ingest.FakeIngestHelper</value>
+    </property>
+
+    <property>
+        <name>fake.reader.class</name>
+        <value>nsa.datawave.ingest.input.reader.raw.FakeReader</value>
+    </property>
+
+    <property>
+        <name>fake.handler.classes</name>
+        <value>nsa.datawave.ingest.mapreduce.handler.FakeDataTypeHandler</value>
+    </property>
+
+    <property>
+        <name>fake.data.default.type.class</name>
+        <value>nsa.datawave.data.type.LcNoDiacriticsType</value>
+    </property>
+
+    <property>
+        <name>fake.data.separator</name>
+        <value>:</value>
+        <description>
+            This is the separator to use for delimited text, and between configuration file parameters with multiple values.
+        </description>
+    </property>
+
+    <property>
+        <name>fake.data.category.index</name>
+        <value>FIELD1,FIELD2,FIELD3,FIELD4,FIELD5</value>
+    </property>
+
+</configuration>

@@ -1,0 +1,230 @@
+#
+# Batch script to configure wildfly to run with datawave
+#
+
+# Start processing batch commands (MUST BE FIRST)
+batch
+
+# Run an embedded server to perform the configuration
+embed-server --server-config=standalone-full.xml
+
+# Change default ports to listen on all interfaces (can still override on command line)
+/interface=public/:write-attribute(name=inet-address,value="${jboss.bind.address:0.0.0.0}")
+/interface=management/:write-attribute(name=inet-address,value="${jboss.bind.address.management:0.0.0.0}")
+
+# Allow system properties to be replaced in EJB annotations and descriptor files (e.g., web.xml)
+/subsystem=ee/:write-attribute(name=annotation-property-replacement,value=true)
+/subsystem=ee/:write-attribute(name=spec-descriptor-property-replacement,value=true)
+
+# Require beans.xml descriptors for CDI - fixes some stuff Hadoop does
+/subsystem=weld:write-attribute(name=require-bean-descriptor,value=true)
+
+# Get rid of warnings about using default node identifier in the transaction system.
+/subsystem=transactions:write-attribute(name=node-identifier,value="Da+awav3")
+
+#
+# System properties
+#
+/system-property=user.timezone:add(value=GMT)
+/system-property=file.encoding:add(value=UTF8)
+/system-property=cluster.name:add(value=${cluster.name})
+/system-property=dw.warehouse.instanceName:add(value=${accumulo.instance.name})
+/system-property=dw.warehouse.zookeepers:add(value="${zookeeper.hosts}")
+/system-property=dw.warehouse.accumulo.userName:add(value=${accumulo.user.name})
+/system-property=dw.warehouse.accumulo.password:add(value=${accumulo.user.password})
+/system-property=dw.metrics.instanceName:add(value=${accumulo.instance.name})
+/system-property=dw.metrics.zookeepers:add(value="${zookeeper.hosts}")
+/system-property=dw.metrics.accumulo.userName:add(value=${accumulo.user.name})
+/system-property=dw.metrics.accumulo.password:add(value=${accumulo.user.password})
+/system-property=dw.hornetq.system.userName:add(value=${hornetq.system.username})
+/system-property=dw.hornetq.system.password:add(value=${hornetq.system.password})
+/system-property=dw.audit.topics:add(value="${audit.topics}")
+/system-property=dw.audit.log.mdb.pool.size:add(value=${audit.log.mdb.pool.size})
+/system-property=dw.audit.accumulo.mdb.pool.size:add(value=${audit.cb.mdb.pool.size})
+/system-property=dw.cache.coordinator.namespace:add(value=${accumulo.cache.table.name})
+/system-property=dw.principalLookup.projectName:add(value=${security.group.name})
+/system-property=dw.principalLookup.requiredRoles:add(value="${security.required.roles}")
+/system-property=dw.security.cache.tableName:add(value=${accumulo.cache.table.name})
+/system-property=dw.trusted.header.authentication:add(value=${trusted.header.login})
+/system-property=dw.transport.guarantee:add(value=${webapp.transport.guarantee})
+/system-property=dw.connectionPool.default:add(value=WAREHOUSE)
+/system-property=dw.connectionPool.pools:add(value="WAREHOUSE,METRICS,UUID,FICOUNT")
+/system-property=dw.warehouse.pool.low.size:add(value=${accumulo.low.defaultpool.size})
+/system-property=dw.warehouse.pool.normal.size:add(value=${accumulo.normal.defaultpool.size})
+/system-property=dw.warehouse.pool.high.size:add(value=${accumulo.high.defaultpool.size})
+/system-property=dw.warehouse.pool.admin.size:add(value=${accumulo.admin.defaultpool.size})
+/system-property=dw.metrics.pool.low.size:add(value=${accumulo.low.defaultpool.size})
+/system-property=dw.metrics.pool.normal.size:add(value=${accumulo.normal.defaultpool.size})
+/system-property=dw.metrics.pool.high.size:add(value=${accumulo.high.defaultpool.size})
+/system-property=dw.metrics.pool.admin.size:add(value=${accumulo.admin.defaultpool.size})
+/system-property=dw.ficount.pool.low.size:add(value=${accumulo.low.fipool.size})
+/system-property=dw.ficount.pool.normal.size:add(value=${accumulo.normal.fipool.size})
+/system-property=dw.ficount.pool.high.size:add(value=${accumulo.high.fipool.size})
+/system-property=dw.ficount.pool.admin.size:add(value=${accumulo.admin.fipool.size})
+/system-property=dw.ficount.instanceName:add(value=${WAREHOUSE_INSTANCE_NAME})
+/system-property=dw.ficount.zookeepers:add(value="${WAREHOUSE_ZOOKEEPERS}")
+/system-property=dw.ficount.accumulo.userName:add(value=${accumulo.user.name})
+/system-property=dw.ficount.accumulo.password:add(value=${accumulo.user.password})
+/system-property=dw.uuid.pool.low.size:add(value=${accumulo.low.uuidpool.size})
+/system-property=dw.uuid.pool.normal.size:add(value=${accumulo.normal.uuidpool.size})
+/system-property=dw.uuid.pool.high.size:add(value=${accumulo.high.uuidpool.size})
+/system-property=dw.uuid.pool.admin.size:add(value=${accumulo.admin.uuidpool.size})
+/system-property=dw.uuid.instanceName:add(value=${WAREHOUSE_INSTANCE_NAME})
+/system-property=dw.uuid.zookeepers:add(value="${WAREHOUSE_ZOOKEEPERS}")
+/system-property=dw.uuid.accumulo.userName:add(value=${accumulo.user.name})
+/system-property=dw.uuid.accumulo.password:add(value=${accumulo.user.password})
+/system-property=dw.query.metrics.marking:add(value=${query.metrics.marking})
+/system-property=dw.query.metrics.visibility:add(value=${query.metrics.visibility})
+/system-property=dw.metrics.warehouse.namenode:add(value=${metrics.warehouse.namenode})
+/system-property=dw.metrics.warehouse.hadoop.path:add(value=${metrics.warehouse.hadoop.path})
+/system-property=dw.atom.tableName:add(value=${table.name.atom.categories})
+/system-property=dw.atom.externalHostName:add(value=${atom.wildfly.hostname})
+/system-property=dw.atom.externalPort:add(value=${atom.wildfly.port.number})
+/system-property=dw.atom.connectionPoolName:add(value=${atom.connection.pool.name}) 
+/system-property=dw.metrics.reporter.host:add(value=${metrics.reporter.host})
+/system-property=dw.metrics.reporter.port:add(value=${metrics.reporter.port})
+/system-property=dw.metrics.reporter.class:add(value=${metrics.reporter.class})
+
+# Disable SASL client authentication in zookeeper
+/system-property=zookeeper.sasl.client:add(value=false)
+
+/system-property=jexl.function.namespace.registry:add(value="nsa.datawave.query.rewrite.jexl.functions.JexlFunctionNamespaceRegistry.class")
+
+#
+# Add security realm and domain
+#
+/core-service=management/security-realm=SSLRealm/:add
+/core-service=management/security-realm=SSLRealm/server-identity=ssl/:add(enabled-protocols=["TLSv1.1","TLSv1.2"],keystore-path=certificates/testServer.p12,keystore-relative-to=jboss.server.config.dir,keystore-provider=PKCS12,keystore-password="secret")
+/core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=certificates/ca.jks,keystore-relative-to=jboss.server.config.dir,keystore-provider=JKS,keystore-password="secret")
+/core-service=management/security-realm=SSLRealm/authentication=jaas/:add(name=datawave)
+
+/subsystem=security/security-domain=datawave:add(cache-type=none)
+/subsystem=security/security-domain=datawave/authentication=classic:add
+/subsystem=security/security-domain=datawave/authentication=classic/login-module=Remoting:add(code=Remoting,flag=optional,module-options={password-stacking=useFirstPass})
+/subsystem=security/security-domain=datawave/authentication=classic/login-module=RunAs:add(code=RunAs,flag=required,module-options={roleName=InternalUser})
+/subsystem=security/security-domain=datawave/authentication=classic/login-module=Datawave:add(code=nsa.datawave.security.login.DatawavePrincipalLoginModule,flag=required,module-options={principalClass=nsa.datawave.security.authorization.DatawavePrincipal,verifier=nsa.datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"})
+/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="PKCS12",password="secret",url="file://${jboss.server.config.dir}/certificates/testServer.p12"},truststore={type="JKS",password="secret",url="file://${jboss.server.config.dir}/certificates/ca.jks"})
+/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
+/subsystem=security/security-domain=JmsXARealm/authentication=classic:add
+/subsystem=security/security-domain=JmsXARealm/authentication=classic/login-module=ConfiguredIdentity:add(code=ConfiguredIdentity,flag=required,module-options={principal=${dw.hornetq.system.userName},userName=${dw.hornetq.system.userName},password=${dw.hornetq.system.password},managedConnectionFactoryName="jboss.jca:service=TxCM,name=JmsXA"})
+
+/subsystem=security/security-domain=datawave-client:add(cache-type=none)
+/subsystem=security/security-domain=datawave-client/authentication=classic:add
+/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=ClientCert:add(code=nsa.datawave.security.login.ClientCertLoginModule,flag=required,module-options={password-stacking=useFirstPass})
+/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=Client:add(code=Client,flag=required,module-options={password-stacking=useFirstPass,restore-login-identity=true})
+
+# Add an HTTPS listener for undertow
+/subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=record-request-start-time,value=true)
+/subsystem=undertow/server=default-server/https-listener=https-default/:add(socket-binding=https,security-realm=SSLRealm,verify-client=REQUESTED,record-request-start-time=true)
+
+#
+# Set up HornetQ, JMS topics/queues, and DLQs
+#
+jms-topic add --topic-address=AuditTopic --entries=topic/audit
+jms-topic add --topic-address=LogAuditTopic --entries=topic/Audit.Log
+jms-topic add --topic-address=AccumuloAuditTopic --entries=topic/Audit.Accumulo
+jms-topic add --topic-address=AccumuloTableCache --entries=topic/AccumuloTableCache
+jms-queue add --queue-address=AuditTopicDLQ --entries=queue/Audit.DLQ
+jms-queue add --queue-address=LogAuditTopicDLQ --entries=queue/Audit.Log.DLQ
+jms-queue add --queue-address=AccumuloAuditTopicDLQ --entries=queue/Audit.Accumulo.DLQ
+jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTableCache.DLQ
+jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
+#/subsystem=messaging/hornetq-server=default/:write-attribute(name=security-domain,value=datawave)
+/subsystem=messaging/hornetq-server=default/pooled-connection-factory=hornetq-ra/:write-attribute(name=max-pool-size,value=${hornetq.datasource.max.pool.size})
+/subsystem=messaging/hornetq-server=default/:write-attribute(name=cluster-user,value="${hornetq.cluster.username}")
+/subsystem=messaging/hornetq-server=default/:write-attribute(name=cluster-password,value="${hornetq.cluster.password}")
+/subsystem=messaging/hornetq-server=default/security-setting=#/role=admin/:add(manage=true,consume=true,send=true,create-durable-queue=true,delete-durable-queue=true,create-non-durable-queue=true,delete-non-durable-queue=true)
+/subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=max-size-bytes,value=104857600)
+/subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=page-size-bytes,value=10485760)
+/subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=redistribution-delay,value=10000)
+/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.AuditTopic/:add(dead-letter-address=jms.queue.AuditTopicDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
+/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.LogAuditTopic/:add(dead-letter-address=jms.queue.LogAuditTopicDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
+/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.AccumuloAuditTopic/:add(dead-letter-address=jms.queue.AccumuloAuditTopicDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
+/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.AccumuloTableCache/:add(dead-letter-address=jms.queue.AccumuloTableCacheDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
+
+#
+# EJB subsystem configuration
+#
+/subsystem=ejb3/:write-attribute(name=in-vm-remote-interface-invocation-pass-by-value,value=false)
+/subsystem=ejb3/thread-pool=default/:write-attribute(name=max-threads,value=${jboss.ejb3.async.threads})
+/subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:write-attribute(name=max-pool-size,value=${jboss.mdb.pool.max.size})
+/subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:write-attribute(name=timeout,value=${jboss.mdb.pool.timeout})
+/subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:write-attribute(name=timeout-unit,value=MILLISECONDS)
+/subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=max-pool-size,value=${jboss.slsb.pool.max.size})
+/subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=timeout,value=${jboss.slsb.pool.timeout})
+/subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=timeout-unit,value=MILLISECONDS)
+/subsystem=ejb3:write-attribute(name=default-slsb-instance-pool,value=slsb-strict-max-pool)
+/subsystem=transactions/:write-attribute(name=default-timeout,value=${jboss.transaction.time.out})
+
+# Configure the JDBC DataSource used by MySQL
+deploy mysql/mysql-connector-java-${version.mysql-connector}.jar
+/subsystem=datasources/data-source=CachedResultsDS:add(jndi-name=java:jboss/datasources/CachedResultsDS,connection-url="jdbc:mysql://${mysql.host}:3306/${mysql.dbname}?zeroDateTimeBehavior=convertToNull",min-pool-size=${mysql.pool.min.size},max-pool-size=${mysql.pool.max.size},blocking-timeout-wait-millis=5000,idle-timeout-minutes=15,exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter,valid-connection-checker-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker,user-name=${mysql.user.name},password=${mysql.user.password},driver-name=mysql-connector-java-${version.mysql-connector}.jar_com.mysql.jdbc.Driver_5_1,driver-class=com.mysql.jdbc.Driver)
+
+# Configure the H2 DataSource used by the DatabaseAuthorizationService
+/subsystem=datasources/data-source=DatabaseAuthorizationServiceDS:add(jndi-name=java:jboss/datasources/DatabaseAuthorizationServiceDS,connection-url="jdbc:h2:${jboss.server.config.dir}/h2/databaseAuthUsers",user-name=sa,password=sa,driver-name=h2)
+
+#
+# Configure custom loggers and categories
+#
+/subsystem=undertow/server=default-server/host=default-host/setting=access-log:add(prefix="access",pattern="%h %{i,x-originating-host} %{c,query-session-id} \"%u\" %t \"%r\" %s %b %D %I")
+/subsystem=logging/pattern-formatter=PATTERN:write-attribute(name=pattern,value="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %x %s%e%n")
+/subsystem=logging/pattern-formatter=COLOR-PATTERN:write-attribute(name=pattern,value="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %x %s%e%n")
+
+/subsystem=logging/periodic-rotating-file-handler=QUERY_LOG/:add(level=DEBUG,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"Query.log"})
+/subsystem=logging/periodic-rotating-file-handler=CACHED_LOG/:add(level=INFO,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"CachedResults.log"})
+/subsystem=logging/periodic-rotating-file-handler=SECURITY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"Security.log"})
+/subsystem=logging/periodic-rotating-file-handler=AUDIT_LOG/:add(level=INFO,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"all_query_audit.log"})
+/subsystem=logging/periodic-rotating-file-handler=MAPREDUCE_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"MapReduce.log"})
+/subsystem=logging/periodic-rotating-file-handler=MODIFICATION_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"ModificationService.log"})
+/subsystem=logging/periodic-rotating-file-handler=DISTRIBUTED_QUERY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"DistributedQueryService.log"})
+/subsystem=logging/periodic-rotating-file-handler=RESTEASY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"RestEasy.log"})
+/subsystem=logging/periodic-rotating-file-handler=SERVER_AUDIT_LOG/:add(level=INFO,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"server_to_server_query_audit.log"})
+
+/subsystem=logging/logger=nsa.datawave.query:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=nsa.datawave.webservice.query.factory:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=nsa.datawave.webservice.query.iterator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=nsa.datawave.webservice.query.logic:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=nsa.datawave.webservice.query.metric:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=nsa.datawave.webservice.query.runner:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=nsa.datawave.webservice.query.util:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=nsa.datawave.webservice.query.cache.QueryExpirationBean:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=nsa.datawave.query.tables:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
+/subsystem=logging/logger=nsa.datawave.query.parser:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
+/subsystem=logging/logger=nsa.datawave.query.metrics.AccumuloRecordWriter:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
+/subsystem=logging/logger=nsa.datawave.webservice.query.interceptor:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
+/subsystem=logging/logger=nsa.datawave.webservice.query.database.CachedResultsCleanupBean:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
+/subsystem=logging/logger=nsa.datawave.webservice.query.cache.CachedResultsExpirationBean:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
+/subsystem=logging/logger=nsa.datawave.webservice.results.cached:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
+/subsystem=logging/logger=nsa.datawave.webservice.query.cachedresults:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
+/subsystem=logging/logger=nsa.datawave.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=org.jboss.security.auth:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=org.jboss.security.authorization.modules.ejb.EJBPolicyModuleDelegate:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=nsa.datawave.webservice.audit.log:add(use-parent-handlers=false,handlers=["AUDIT_LOG"],level=INFO)
+/subsystem=logging/logger=nsa.datawave.webservice.common.audit:add(use-parent-handlers=false,handlers=["AUDIT_LOG"],level=INFO)
+/subsystem=logging/logger=nsa.datawave.webservice.mr:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
+/subsystem=logging/logger=org.apache.hadoop.mapred:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
+/subsystem=logging/logger=org.apache.hadoop.mapreduce:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
+/subsystem=logging/logger=org.apache.hadoop.yarn.client:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
+/subsystem=logging/logger=org.apache.accumulo.core.client.mapreduce:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
+/subsystem=logging/logger=nsa.datawave.webservice.modification:add(use-parent-handlers=false,handlers=["MODIFICATION_LOG"])
+/subsystem=logging/logger=nsa.datawave.webservice.query.distributed:add(use-parent-handlers=false,handlers=["DISTRIBUTED_QUERY_LOG"])
+/subsystem=logging/logger=org.jboss.resteasy.core:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
+/subsystem=logging/logger=org.jboss.resteasy.plugins.providers:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
+/subsystem=logging/logger=org.jboss.resteasy.plugins.server:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
+/subsystem=logging/logger=org.jboss.resteasy.specimpl:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
+/subsystem=logging/logger=nsa.datawave.resteasy.interceptor:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
+/subsystem=logging/logger=nsa.datawave.webservice.audit.server.log:add(use-parent-handlers=false,handlers=["SERVER_AUDIT_LOG"],level=INFO)
+
+# Custom log levels
+/subsystem=logging/logger=httpclient.wire:add(level=TRACE)
+/subsystem=logging/logger=nsa.datawave.security.util.DnUtils:add(level=DEBUG)
+
+# Turn off messages telling us we returned unknown connections (since we acquire a connection in one method and return it from another in cached results code)
+/subsystem=logging/logger=org.jboss.jca.core.connectionmanager.listener.TxConnectionListener:add(level=WARN)
+
+# Configure the maximum number of concurrent HTTP requests, as well as the backlog of requests allowed.
+/subsystem=undertow/configuration=filter/connection-limit=limit-connections:add(max-concurrent-requests=${jboss.web.max.threads},queue-size=${jboss.web.accept.count})
+/subsystem=undertow/server=default-server/host=default-host/filter-ref=limit-connections:add
+
+# Run the batch commands (MUST BE LAST)
+run-batch

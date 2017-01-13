@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+    <property>
+        <name>ingest.metrics.enabled</name>
+        <description>This flag must be explicitly set to enable ingest metrics collection.</description>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>ingest.metrics.table.name</name>
+        <description>The table where ingest metrics will be saved.</description>
+        <value>ingestMetrics</value>
+    </property>
+
+    <property>
+        <name>ingest.metrics.num.shards</name>
+        <description>The number of shards that will be used in the configured table.</description>
+        <value>1</value>
+    </property>
+
+    <property>
+        <name>ingest.metrics.enabled.labels</name>
+        <description>
+            The key, value pairs that will be required in order to save a metric. The current
+            implementation requires table, handler, and dataType to be configured. A metric will
+            only be recorded if all its labels appear in this configuration.
+        </description>
+        <value>
+            table=shard,
+            table=shardIndex,
+            dataType=flow1,
+            handler=nsa.datawave.ingest.mapreduce.job.metrics.DummyDataTypeHandler
+        </value>
+    </property>
+
+    <property>
+        <name>ingest.metrics.fields</name>
+        <description>The fields that will be recorded with each metric.</description>
+        <value>table,fileExtension</value>
+    </property>
+
+    <property>
+        <name>ingest.metrics.receivers</name>
+        <description>A comma seperated list of MetricsReceiver implementations to use for processing metrics.
+        </description>
+        <value>
+            nsa.datawave.ingest.mapreduce.job.metrics.TestKeyValueCountMetricsReceiver
+        </value>
+    </property>
+
+
+</configuration>

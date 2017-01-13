@@ -1,0 +1,30 @@
+.largeLabel {
+    font-size: x-large;
+    font-weight: bolder;
+    color: lightsalmon
+}
+
+.scaleLabel {
+    font-size: medium;
+    color: darkgray
+}
+
+.classBanner {
+    width: 100%;
+    height: 16px;
+    text-align: center;
+    font-family: "Trebuchet MS",Verdana,Geneva,Arial,Helvetica,sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #FF0;
+    letter-spacing: 0.1em;
+}
+
+.dynamic {
+    background-color: #000;
+}
+
+.conf {
+    background-color: #0000FF;
+}
+

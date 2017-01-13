@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<fieldConfig>
+    <!-- fields not listed here are indexed. By default fields listed here are not indexed but are tokenized in order
+         to validate this case for testing. This is overridden for specific fields by setting their attributes. As
+          this is tesing blacklist behavior, anything not listed here is indexed and tokenized. -->
+    <default indexed="false" reverseIndexed="false" tokenized="true" reverseTokenized="true" indexType="nsa.datawave.data.type.LcNoDiacriticsType"/>
+    <nomatch indexed="true" reverseIndexed="true" tokenized="true"  reverseTokenized="true" indexType="nsa.datawave.data.type.HexStringType"/>
+    <fieldPattern pattern="*J" indexed="true" indexType="nsa.datawave.data.type.MacAddressType"/>
+    <fieldPattern pattern="*K" indexed="false"/>
+    <field name="A" indexed="true"/>
+    <field name="B" reverseIndexed="true"/>
+    <field name="C" tokenized="false"/>
+    <field name="D" reverseTokenized="false"/>
+    <field name="E" indexed="true" reverseIndexed="false"/>
+    <field name="F" tokenized="false" reverseTokenized="false"/>
+    <field name="H" indexType="nsa.datawave.data.type.DateType"/>
+</fieldConfig>

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    WARNING WARNING WARNING
+    
+    If you change anything in this file, you need to make the corresponding change in deploy-datawave/pom.xml
+    in the RPM profile.  Unfortunately, there is no way for the RPM to inherit the assembly dist.xml config
+    file, so therefore this information must be duplicated.
+
+-->
+<assembly>
+    <id>dist</id>
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+    <baseDirectory>datawave-${build.env}-${project.version}
+    </baseDirectory>
+    <fileSets>
+         <fileSet>
+            <directory>doc</directory>
+            <fileMode>0444</fileMode>
+        </fileSet>
+         <fileSet>
+            <directory>${project.build.directory}/archive/config</directory>
+            <outputDirectory>config</outputDirectory>
+            <fileMode>0444</fileMode>
+        </fileSet>
+         <fileSet>
+            <directory>${project.build.directory}/archive/bin</directory>
+            <outputDirectory>bin</outputDirectory>
+            <fileMode>0755</fileMode>
+        </fileSet>
+         <fileSet>
+            <directory>${project.build.directory}/archive/lib</directory>
+            <outputDirectory>lib</outputDirectory>
+            <fileMode>0444</fileMode>
+        </fileSet>
+         <fileSet>
+            <directory>${project.build.directory}/archive/certificates</directory>
+            <outputDirectory>certificates</outputDirectory>
+            <fileMode>0444</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/archive/accumulo-warehouse</directory>
+            <outputDirectory>accumulo-warehouse</outputDirectory>
+            <fileMode>0444</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/archive/accumulo-metrics</directory>
+            <outputDirectory>accumulo-metrics</outputDirectory>
+            <fileMode>0444</fileMode>
+        </fileSet>
+    </fileSets>
+    <!--
+        The following dependency sets are where you should place any dependencies
+        that are needed for Accumulo (jars to go in either the lib or lib/ext
+        folder) and the web service lib folder.  Anything listed here must be a
+        dependency of this project, or any transitive dependency of the included
+        DATAWAVE_DW modules. 
+     -->
+    <dependencySets>
+        <!-- Stuff that goes in /opt/accumulo-warehouse/current/lib -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>accumulo-warehouse/lib</outputDirectory>
+            <useStrictFiltering>true</useStrictFiltering>
+            <fileMode>0444</fileMode>
+            <includes>
+                  <include>org.apache.commons:commons-lang3</include>
+                  <include>commons-pool:commons-pool</include>
+                  <include>com.google.protobuf:protobuf-java</include>
+                  <include>com.esotericsoftware.kryo:kryo</include>
+                  <include>org.objenesis:objenesis</include>
+                  <include>com.esotericsoftware:minlog</include>
+                  <include>com.esotericsoftware.reflectasm:reflectasm</include>
+                  <include>org.objectweb.asm:asm</include>
+                  <include>joda-time:joda-time</include>
+                  <include>io.protostuff:protostuff-api</include>
+                  <include>io.protostuff:protostuff-core</include>
+            </includes>
+        </dependencySet>
+        <!-- Stuff that goes in /opt/accumulo-warehouse/current/lib/ext -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>accumulo-warehouse/lib/ext</outputDirectory>
+            <useStrictFiltering>true</useStrictFiltering>
+            <fileMode>0444</fileMode>
+            <includes>
+                <include>org.apache.commons:commons-jexl</include>
+                <include>${groupId}:datawave-balancers</include>
+                <include>${groupId}:datawave-common</include>
+                <include>${groupId}:datawave-core</include>
+                <include>${groupId}:datawave-edge-dictionary-core</include>
+                <include>${groupId}:datawave-ingest-csv</include>
+                <include>${groupId}:datawave-ingest-core</include>
+                <include>${groupId}:datawave-ingest-core-configuration</include>
+                <include>${groupId}:datawave-metrics-core</include>
+                <include>${groupId}:datawave-query-core</include>
+                <include>${groupId}:datawave-edge-dictionary-core</include>
+                <include>${groupId}:datawave-ingest-wikipedia</include>
+                <include>nsa.datawave.webservice:Common</include>
+                <include>nsa.datawave.webservice:Common-Util</include>
+                <include>nsa.datawave.webservice:Client</include>
+                <include>nsa.datawave.webservice:Query</include>
+                <include>org.javatuples:javatuples</include>
+                <include>com.google.code.gson:gson</include>
+                <include>org.apache.lucene:lucene-core</include>
+                <include>com.clearspring.analytics:stream</include>
+                <!-- for dependency injection -->
+                <include>org.springframework:spring-aop</include>
+                <include>org.springframework:spring-core</include>
+                <include>org.springframework:spring-beans</include>
+                <include>org.springframework:spring-context</include>
+                <include>org.springframework:spring-context-support</include>
+                <include>org.springframework:spring-expression</include>
+                <include>aopalliance:aopalliance</include>
+            </includes>
+        </dependencySet>
+        <!-- Stuff that goes in /opt/accumulo-metrics/current/lib/ext -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>accumulo-metrics/lib/ext</outputDirectory>
+            <useStrictFiltering>true</useStrictFiltering>
+            <fileMode>0444</fileMode>
+            <includes>
+                  <include>org.apache.commons:commons-lang3</include>                  
+                  <include>${groupId}:datawave-ingest-core</include>
+                  <include>${groupId}:datawave-core</include>
+                  
+                  <include>${groupId}:datawave-ingest-csv</include>
+                  <include>${groupId}:datawave-ingest-core</include>
+                  <include>${groupId}:datawave-ingest-core-configuration</include>
+                  
+                  <include>${groupId}:datawave-query-core</include>
+                  <include>nsa.datawave.webservice:Common</include>
+                  <include>nsa.datawave.webservice:Common-Util</include>
+                  <include>com.google.code.gson:gson</include>
+                  <!-- for dependency injection -->
+                  <include>org.springframework:spring-aop</include>
+                  <include>org.springframework:spring-core</include>
+                  <include>org.springframework:spring-beans</include>
+                  <include>org.springframework:spring-context</include>
+                  <include>org.springframework:spring-context-support</include>
+                  <include>org.springframework:spring-expression</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
+</assembly>

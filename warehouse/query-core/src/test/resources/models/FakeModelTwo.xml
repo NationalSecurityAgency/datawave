@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Model xmlns="http://webservice.datawave/v1" name="FAKE_TWO">
+    <Mappings>
+        <!-- Forward -->
+        <Mapping fieldName="FIELD_1" modelFieldName="UUID" direction="FORWARD"  indexOnly="false" />
+        <Mapping fieldName="FIELD_2" modelFieldName="UUID" direction="FORWARD"  indexOnly="false" />
+        <Mapping fieldName="FIELD_3" modelFieldName="UUID" direction="FORWARD"  indexOnly="false" />
+
+        <Mapping fieldName="BOTH_HAVE" modelFieldName="BOTH_HAVE_A" direction="FORWARD"  indexOnly="false" />
+        <Mapping fieldName="BOTH_HAVE" modelFieldName="BOTH_HAVE_B" direction="FORWARD"  indexOnly="false" />
+
+        <Mapping fieldName="FAKE_TWO_ONLY" modelFieldName="FAKE_TWO_ONLY" direction="FORWARD"  indexOnly="false" />
+
+        <Mapping fieldName="FIELD_NAME" modelFieldName="FAKE_TWO_FIELD_DIFF" direction="FORWARD"  indexOnly="false" />
+
+        <!-- Reverse -->
+        <Mapping fieldName="FIELD_1" modelFieldName="UUID_ONE" direction="REVERSE"  indexOnly="false" />
+        <Mapping fieldName="FIELD_2" modelFieldName="UUID_TWO" direction="REVERSE"  indexOnly="false" />
+        <Mapping fieldName="FIELD_3" modelFieldName="UUID_THREE" direction="REVERSE"  indexOnly="false" />
+
+        <Mapping fieldName="BOTH_HAVE" modelFieldName="BOTH_HAVE" direction="REVERSE"  indexOnly="false" />
+        <Mapping fieldName="FAKE_TWO_ONLY" modelFieldName="FAKE_TWO_ONLY" direction="REVERSE"  indexOnly="false" />
+
+        <Mapping fieldName="FIELD_NAME" modelFieldName="FIELD_NAME" direction="REVERSE"  indexOnly="false" />
+
+    </Mappings>
+</Model>

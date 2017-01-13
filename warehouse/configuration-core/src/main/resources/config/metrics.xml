@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+
+<property>
+  <name>server.http.port</name>
+  <value>10078</value>
+</property> 
+
+<property>
+  <name>metrics.zookeepers</name>
+  <value>${WAREHOUSE_ZOOKEEPERS}</value>
+</property> 
+
+<property>
+  <name>metrics.user</name>
+  <value>${USERNAME}</value>
+</property>
+
+<property>
+  <name>metrics.password</name>
+  <value>${PASSWORD}</value>
+</property>
+
+<property>
+  <name>metrics.warehouse.instance</name>
+  <value>${WAREHOUSE_INSTANCE_NAME}</value>
+</property>
+
+
+<property>
+  <name>metrics.warehouse.namenode</name>
+  <value>${WAREHOUSE_HDFS_NAME_NODE}</value>
+</property>
+
+<property>
+  <name>metrics.warehouse.zookeepers</name>
+  <value>${WAREHOUSE_ZOOKEEPERS}</value>
+</property> 
+
+<property>
+  <name>metrics.warehouse.username</name>
+  <value>${USERNAME}</value>
+</property>
+
+<property>
+  <name>metrics.warehouse.password</name>
+  <value>${PASSWORD}</value>
+</property>
+
+<property>
+  <name>metrics.instance</name>
+  <value></value>
+</property>
+
+<property>
+  <name>metrics.tables.loader</name>
+  <value>LoaderMetrics</value>
+</property>
+
+<property>
+  <name>metrics.tables.poller</name>
+  <value>PollerMetrics</value>
+</property>
+
+<property>
+  <name>metrics.tables.ingest</name>
+  <value>IngestMetrics</value>
+</property>
+
+<property>
+  <name>metrics.tables.metrics</name>
+  <value>DatawaveMetrics</value>
+</property>
+
+<property>
+  <name>metrics.tables.metrics-summary</name>
+  <value>DatawaveDailyMetrics</value>
+</property>
+
+<property>
+  <name>metrics.web.warfile</name>
+  <value></value>
+</property>
+
+<property>
+  <name>metrics.input</name>
+  <value></value>
+</property>
+
+</configuration>

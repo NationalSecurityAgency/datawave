@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd">
+
+    <bean id="principalFactory" class="nsa.datawave.security.authorization.BasePrincipalFactoryConfiguration">
+        <!-- Configure the auth translator to insert a UserDN role if the DN is a user DN
+             and a ServerDN role if the DN is a server DN.
+        -->
+        <property name="insertDNTypeRoles" value="true" />
+        <!-- Configure sticky user and server roles.  If these are set, then the auth translator
+             will "stick" the user role when merging two auth lists if one contains the user role
+             and the other contains the server role.  This allows for proxying.  If a server is
+             proxying for a user, then the AuthorizedUser role will be retained so that anything
+             only allowed for a user (such as queries) is still allowed.
+        -->
+        <property name="stickyUserRole" value="AuthorizedUser" />
+        <property name="stickyServerRole" value="AuthorizedServer" />
+    </bean>
+</beans>

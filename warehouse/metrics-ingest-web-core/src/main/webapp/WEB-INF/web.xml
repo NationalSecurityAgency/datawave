@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="
+            http://xmlns.jcp.org/xml/ns/javaee
+            http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
+
+    <!-- Declare the security roles we use in security constraints. -->
+    <security-role>
+        <role-name>InternalUser</role-name>
+    </security-role>
+
+    <security-role>
+        <role-name>AuthorizedUser</role-name>
+    </security-role>
+
+    <security-role>
+        <role-name>AuthorizedQueryServer</role-name>
+    </security-role>
+</web-app>

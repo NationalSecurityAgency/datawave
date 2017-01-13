@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>DataWave Web Service Examples</title>
+	<link href="/DataWave/Examples/css/reset.css" type="text/css" rel="stylesheet" media="screen"/>
+	<link href="/DataWave/Examples/css/main.css" type="text/css" rel="stylesheet" media="screen"/>
+	<link href="/DataWave/Examples/jquery-ui/1.11.4/jquery-ui.min.css" type="text/css" rel="stylesheet" media="screen"/>
+	<script type="text/javascript" src="/DataWave/js_api"></script>
+	<script type="text/javascript" src="/DataWave/Examples/jquery/2.2.1/jquery.min.js"></script>
+	<script type="text/javascript" src="/DataWave/Examples/jquery-ui/1.11.4/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="/DataWave/Examples/js/json2.js"></script>
+	<script type="text/javascript" src="/DataWave/Examples/js/application.js"></script>
+</head>
+<body>
+<hr/>
+
+<h2 id="query">Query</h2>
+
+<div id="accordion">
+    <h3>
+        <a href="#">Create query</a>
+    </h3>
+    <div class="clearfix">
+        <form id="create-form" method="GET" action="/DataWave/Query/create.json">
+            <fieldset>
+                <legend>Required fields in bold</legend>
+                <div class="clearfix required">
+                    <label>Query Name</label>
+                    <input name="queryName" type="text"/>
+                </div>
+                <div class="clearfix required">
+                    <label>Query String</label>
+                    <input name="query" type="text"/>
+                </div>
+                <div class="clearfix required">
+                    <label>Logic Name</label>
+                    <select name="logicName">
+                        <option value="">Select one ..</option>
+                        <option value="EventQuery">EventQuery</option>
+                        <option value="MetadataQuery">MetadataQuery</option>
+                        <option value="DiscoveryQuery">DiscoveryQuery</option>
+                        <option value="CountQuery">CountQuery</option>
+                        <option value="DebugQuery">DebugQuery</option>
+                        <option value="ContentQuery">ContentQuery</option>
+                    </select>
+                </div>
+                <div class="clearfix required">
+                    <label>Page Size</label>
+                    <input name="pagesize" type="text"/>
+                </div>
+                <div class="clearfix required">
+                    <label>Authorizations</label>
+                    <input name="auths" type="text"/>
+                </div>
+                <div class="clearfix required">
+                    <label>ColumnVisibility</label>
+                    <input name="columnVisibility" type="text"/>
+                </div>
+                <div class="clearfix">
+                    <label>End Date</label>
+                    <input name="end" type="text"/>
+                </div>
+                <div class="clearfix">
+                    <label>Start Date</label>
+                    <input name="begin" type="text"/>
+                </div>
+                <div class="clearfix">
+                    <label>Expiration Date</label>
+                    <input name="expiration" type="text"/>
+                </div>
+                <div class="clearfix">
+                    <label>Persistence</label>
+                    <select name="persistence">
+                        <option value="PERSISTENT" selected="selected">PERSISTENT</option>
+                        <option value="TRANSIENT">TRANSIENT</option>
+                    </select>
+                </div>
+            </fieldset>
+            <div class="clearfix">
+                <input type="submit" value="submit"/>
+                <input type="button" id="populate-example" value="example"/>
+            </div>
+        </form>
+        <div id="create-result" class="result"></div>
+    </div>
+    <h3>
+      <a href="#">List Query by Id</a>
+	</h3>
+    <div>
+      <form id="list-by-id" action="/DataWave/Query/{id}.json">
+        <fieldset>
+            <div class="clearfix required">
+                <label>Query id</label>
+                <input name="queryId" type="text"/>
+            </div>
+        </fieldset>
+        <input type="submit" value="submit"/>
+      </form>
+      <div id="list-id-result" class="result"></div>
+    </div>
+    <h3>
+      <a href="#">List Query by Name</a>
+    </h3>
+    <div>
+      <form id="list-by-name" action="/DataWave/Query/list.json">
+        <fieldset>
+            <div class="clearfix required">
+                <label>Query name</label>
+                <input name="name" type="text"/>
+            </div>
+        </fieldset>
+        <input type="submit" value="submit"/>
+      </form>
+      <div id="list-result" class="result"></div>
+    </div>
+    <h3>
+      <a href="#">Results </a>
+    </h3>
+    <div>
+        <form id="execute-query" action="/DataWave/Query/{id}/next.json">
+          <fieldset>
+              <div class="clearfix required">
+                  <label>Query id</label>
+                  <input name="queryId" type="text"/>
+              </div>
+              <legend>You can keep submitting until no more results are returned</legend>
+          </fieldset>
+          <input type="submit" value="submit"/>
+
+        </form>
+        <div id="execute-result" class="result"></div>
+    </div>
+    <h3>
+      <a href="#">Close </a>
+    </h3>
+    <div>
+        <form id="close-query" action="/DataWave/Query/{id}/close.json">
+            <fieldset>
+                <div class="clearfix required">
+                    <label>Query id</label>
+                    <input name="queryId" type="text"/>
+                </div>
+            </fieldset>
+            <input type="submit" value="submit"/>
+
+          </form>
+          <div id="close-result" class="result"></div>
+    </div>
+    <h3>
+      <a href="#">Cancel </a>
+    </h3>
+    <div>
+        <form id="cancel-query" action="/DataWave/Query/{id}/cancel.json">
+            <fieldset>
+                <div class="clearfix required">
+                    <label>Query id</label>
+                    <input name="queryId" type="text"/>
+                </div>
+            </fieldset>
+            <input type="submit" value="submit"/>
+
+          </form>
+          <div id="cancel-result" class="result"></div>
+
+    </div>
+    <h3>
+      <a href="#">Remove </a>
+    </h3>
+    <div>
+        <form id="remove-query" action="/DataWave/Query/{id}/remove.json">
+            <fieldset>
+                <div class="clearfix required">
+                    <label>Query id</label>
+                    <input name="queryId" type="text"/>
+                </div>
+            </fieldset>
+            <input type="submit" value="submit"/>
+
+          </form>
+          <div id="remove-result" class="result"></div>
+
+    </div>
+</div>
+
+</body>
+</html>

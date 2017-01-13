@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+    <property>
+        <name>data.name</name>
+        <value>type2</value>
+        <description>This is the type of data being ingested.</description>
+    </property>
+
+    <property>
+        <name>type2.ingest.helper.class</name>
+        <value>nsa.datawave.configuration.test.Type2IngestHelper</value>
+    </property>
+
+    <property>
+        <name>file.input.format</name>
+        <value>nsa.datawave.configuration.test.TestInputFormat</value>
+    </property>
+
+    <property>
+        <name>type2.handler.classes</name>
+        <value>nsa.datawave.configuration.test.DataHandler</value>
+    </property>
+
+    <property>
+        <name>type2.only.type2.value</name>
+        <value>1</value>
+    </property>
+
+</configuration>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- test configuration -->
+<flagMakerConfig>
+    <flagCfg>
+        <dataName>bulk</dataName>
+        <folder>${ONE_HR_INGEST_DATA_TYPES}</folder>
+        <ingestPool>onehr</ingestPool>
+        <distributionArgs>none</distributionArgs>
+        <extraIngestArgs></extraIngestArgs>
+        <lifo>false</lifo>
+    </flagCfg>
+    <defaultCfg>
+        <!-- currently only require a few of the params for the default config -->
+        <maxFlags>${INGEST_MAX_ONE_HR_BLOCKS_PER_JOB}</maxFlags>
+        <reducers>${ONE_HR_INGEST_REDUCERS}</reducers>
+        <script>bin/ingest/one-hr-ingest.sh</script>
+        <fileListMarker>***FILE_LIST***</fileListMarker>
+    </defaultCfg>
+    <sleepMilliSecs>5000</sleepMilliSecs>
+    <timeoutMilliSecs>${ONE_HR_FLAG_TIMEOUT_MS}</timeoutMilliSecs>
+    <baseHDFSDir>${HDFS_BASE_DIR}</baseHDFSDir>
+    <distributorType>simple</distributorType>
+    <!-- No dot "." files, and no files ending with punctuation (such as _COPYING_).  Removed .seq in pattern as some files may not be sequence files. -->
+    <filePattern>2*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>
+    <hdfs>${INGEST_HDFS_NAME_NODE}</hdfs>
+    <socketPort>24222</socketPort>
+    <datawaveHome>${DATAWAVE_INGEST_HOME}</datawaveHome>
+    <flagFileDirectory>${FLAG_DIR}</flagFileDirectory>
+    <setFlagFileTimestamp>true</setFlagFileTimestamp>
+    <useFolderTimestamp>false</useFolderTimestamp>
+</flagMakerConfig>
+

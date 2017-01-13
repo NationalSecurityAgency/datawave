@@ -1,0 +1,9 @@
+package nsa.datawave.webservice.query.exception;
+
+option optimize_for = LITE_RUNTIME;
+option java_package = "nsa.datawave.webservice.query.exception";
+
+message QueryExceptionType {
+	optional string message = 1;
+	optional string cause = 2;
+}

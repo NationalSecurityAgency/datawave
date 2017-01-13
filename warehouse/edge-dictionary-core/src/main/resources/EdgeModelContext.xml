@@ -1,0 +1,25 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
+                            http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+                            
+    <!-- 
+        Here, we can easily alter our internal field name representation as needed for the targeted 
+        deployment environment's default query syntax.
+        
+        Note that query model usage will fail if the 'fieldName' (aka 'nameOnDisk') values defined in the query model do 
+        not agree with the values from baseFieldMap below. 
+    -->
+
+    <!-- 
+         Map for fields that are common to all application tiers.
+    -->    
+    ${edge.model.base.map}
+    
+    <!-- Additional internal fields used for Accumulo key processing (formerly defined by enum in EdgeKeyUtil.java)  -->
+    ${edge.model.keyutil.map}
+    
+    <!-- Additional internal fields used for transformation of query results (e.g., EdgeQueryTransformer.java)  -->
+    ${edge.model.transform.map}
+</beans>

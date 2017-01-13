@@ -1,0 +1,78 @@
+body {
+  font-family: verdana,arial;
+}
+
+h1 {
+  font-size: 160%;
+  margin: 18px 0px;
+}
+
+h2 {
+  font-size: 140%;
+  margin: 14px 0px;
+}
+
+h3 {
+
+}
+
+form {
+  margin-bottom: 18px;
+}
+
+fieldset {
+}
+
+legend {
+   padding: 8px 0 0 13px;
+   font-size: 60%;
+   font-weight: bold;
+   font-family: arial;
+}
+
+form {
+  width: 300px;
+  float: left;
+}
+
+div.result {
+  margin-left: 320px;
+}
+
+div.clearfix {
+  clear: both;
+}
+
+form div.required label {
+  font-weight: bold;
+}
+
+form label {
+  display: block;
+  float: left;
+  padding-top: 6px;
+  width: 130px;
+  text-align: right;
+  color: #404040;
+}
+
+form input {
+  display: block;
+  float: left;
+  margin-left: 20px;
+  width: 140px;
+}
+
+form select {
+  float: left;
+  margin-left: 20px;
+  width: 140px;
+}
+
+#accordion > div {
+  display: none;
+}
+
+.ui-accordion-header a {
+  margin-left: 20px;
+}

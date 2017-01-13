@@ -1,0 +1,8 @@
+package nsa.datawave.user;
+
+option optimize_for = LITE_RUNTIME;
+option java_package = "nsa.datawave.user";
+
+message UserAuthorizations {
+	repeated string auths = 1;
+}

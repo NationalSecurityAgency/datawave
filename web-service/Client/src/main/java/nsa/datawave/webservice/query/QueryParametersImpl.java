@@ -1,0 +1,408 @@
+package nsa.datawave.webservice.query;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import com.google.common.base.Preconditions;
+
+public class QueryParametersImpl implements QueryParameters {
+    
+    private static final List<String> KNOWN_PARAMS = Arrays.asList(QUERY_STRING, QUERY_NAME, QUERY_PERSISTENCE, QUERY_PAGESIZE, QUERY_AUTHORIZATIONS,
+                    QUERY_EXPIRATION, QUERY_TRACE, QUERY_BEGIN, QUERY_END, QUERY_VISIBILITY, QUERY_LOGIC_NAME);
+    
+    protected String query;
+    protected String queryName;
+    protected QueryPersistence persistenceMode;
+    protected int pagesize;
+    protected String auths;
+    protected Date expirationDate;
+    protected boolean trace;
+    protected Date beginDate;
+    protected Date endDate;
+    protected String visibility;
+    protected String logicName;
+    
+    public QueryParametersImpl() {
+        clear();
+    }
+    
+    public void validate(MultivaluedMap<String,String> parameters) throws IllegalArgumentException {
+        for (String param : KNOWN_PARAMS) {
+            List<String> values = parameters.get(param);
+            if (null == values) {
+                continue;
+            }
+            if (values.isEmpty() || values.size() > 1) {
+                throw new IllegalArgumentException("Known parameter " + param + " only accepts one value");
+            }
+            if (QUERY_STRING.equals(param)) {
+                this.query = values.get(0);
+            } else if (QUERY_NAME.equals(param)) {
+                this.queryName = values.get(0);
+            } else if (QUERY_PERSISTENCE.equals(param)) {
+                this.persistenceMode = QueryPersistence.valueOf(values.get(0));
+            } else if (QUERY_PAGESIZE.equals(param)) {
+                this.pagesize = Integer.parseInt(values.get(0));
+            } else if (QUERY_AUTHORIZATIONS.equals(param)) {
+                this.auths = values.get(0);
+            } else if (QUERY_EXPIRATION.equals(param)) {
+                try {
+                    this.expirationDate = parseEndDate(values.get(0));
+                } catch (ParseException e) {
+                    throw new IllegalArgumentException("Error parsing expiration date", e);
+                }
+            } else if (QUERY_TRACE.equals(param)) {
+                this.trace = Boolean.parseBoolean(values.get(0));
+            } else if (QUERY_BEGIN.equals(param)) {
+                try {
+                    this.beginDate = parseStartDate(values.get(0));
+                } catch (ParseException e) {
+                    throw new IllegalArgumentException("Error parsing begin date", e);
+                }
+            } else if (QUERY_END.equals(param)) {
+                try {
+                    this.endDate = parseEndDate(values.get(0));
+                } catch (ParseException e) {
+                    throw new IllegalArgumentException("Error parsing end date", e);
+                }
+            } else if (QUERY_VISIBILITY.equals(param)) {
+                this.visibility = values.get(0);
+            } else if (QUERY_LOGIC_NAME.equals(param)) {
+                this.logicName = values.get(0);
+            } else {
+                throw new IllegalArgumentException("Unknown condition.");
+            }
+        }
+        Preconditions.checkNotNull(this.query, "Query string cannot be null");
+        Preconditions.checkNotNull(this.queryName, "Query name cannot be null");
+        Preconditions.checkNotNull(this.persistenceMode, "Persistence mode cannot be null");
+        Preconditions.checkNotNull(this.auths, "Query auths cannot be null");
+        Preconditions.checkNotNull(this.expirationDate, "Expiration date cannot be null");
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        
+        QueryParametersImpl that = (QueryParametersImpl) o;
+        
+        if (pagesize != that.pagesize)
+            return false;
+        if (trace != that.trace)
+            return false;
+        if (!auths.equals(that.auths))
+            return false;
+        if (beginDate != null ? !beginDate.equals(that.beginDate) : that.beginDate != null)
+            return false;
+        if (visibility != null ? !visibility.equals(that.visibility) : that.visibility != null)
+            return false;
+        if (endDate != null ? !endDate.equals(that.endDate) : that.endDate != null)
+            return false;
+        if (!expirationDate.equals(that.expirationDate))
+            return false;
+        if (logicName != null ? !logicName.equals(that.logicName) : that.logicName != null)
+            return false;
+        if (persistenceMode != that.persistenceMode)
+            return false;
+        if (!query.equals(that.query))
+            return false;
+        if (!queryName.equals(that.queryName))
+            return false;
+        return true;
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = query.hashCode();
+        result = 31 * result + queryName.hashCode();
+        result = 31 * result + persistenceMode.hashCode();
+        result = 31 * result + pagesize;
+        result = 31 * result + auths.hashCode();
+        result = 31 * result + expirationDate.hashCode();
+        result = 31 * result + (trace ? 1 : 0);
+        result = 31 * result + (beginDate != null ? beginDate.hashCode() : 0);
+        result = 31 * result + (endDate != null ? endDate.hashCode() : 0);
+        result = 31 * result + (visibility != null ? visibility.hashCode() : 0);
+        result = 31 * result + (logicName != null ? logicName.hashCode() : 0);
+        return result;
+    }
+    
+    public static synchronized String formatDate(Date d) throws ParseException {
+        String formatPattern = "yyyyMMdd HHmmss.SSS";
+        SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
+        formatter.setLenient(false);
+        return formatter.format(d);
+    }
+    
+    protected static final String defaultStartTime = "000000";
+    protected static final String defaultStartMillisec = "000";
+    protected static final String defaultEndTime = "235959";
+    protected static final String defaultEndMillisec = "999";
+    protected static final String formatPattern = "yyyyMMdd HHmmss.SSS";
+    protected static final SimpleDateFormat dateFormat;
+    
+    static {
+        dateFormat = new SimpleDateFormat(formatPattern);
+        dateFormat.setLenient(false);
+    }
+    
+    public static Date parseStartDate(String s) throws ParseException {
+        return parseDate(s, defaultStartTime, defaultStartMillisec);
+    }
+    
+    public static Date parseEndDate(String s) throws ParseException {
+        return parseDate(s, defaultEndTime, defaultEndMillisec);
+    }
+    
+    public static synchronized Date parseDate(String s, String defaultTime, String defaultMillisec) throws ParseException {
+        Date d;
+        ParseException e = null;
+        synchronized (QueryParametersImpl.dateFormat) {
+            String str = s;
+            if (str.equals("+24Hours")) {
+                d = DateUtils.addDays(new Date(), 1);
+            } else {
+                if (StringUtils.isNotBlank(defaultTime) && !str.contains(" ")) {
+                    str = str + " " + defaultTime;
+                }
+                
+                if (StringUtils.isNotBlank(defaultMillisec) && !str.contains(".")) {
+                    str = str + "." + defaultMillisec;
+                }
+                
+                try {
+                    d = QueryParametersImpl.dateFormat.parse(str);
+                    // if any time value in HHmmss was set either by default or by the user
+                    // then we want to include ALL of that second by setting the milliseconds to 999
+                    if (DateUtils.getFragmentInMilliseconds(d, Calendar.HOUR_OF_DAY) > 0) {
+                        DateUtils.setMilliseconds(d, 999);
+                    }
+                } catch (ParseException pe) {
+                    throw new RuntimeException("Unable to parse date " + str + " with format " + formatPattern, e);
+                }
+            }
+        }
+        return d;
+    }
+    
+    /**
+     * Convenience method to generate a MultivaluedMap from the specified arguments. If an argument is null, it's associated parameter name (key) will not be
+     * added to the map, which is why Integer and Boolean wrappers are used for greater flexibility.
+     * 
+     * The 'parameters' argument will not be parsed, so its internal elements will not be placed into the map. If non-null, the 'parameters' value will be
+     * mapped directly to the QUERY_PARAMS key.
+     * 
+     * No attempt is made to determine whether or not the given arguments constitute a valid query. If validation is desired, see the {@link validate} method
+     * 
+     * @param queryLogicName
+     * @param query
+     * @param queryName
+     * @param queryVisibility
+     * @param beginDate
+     * @param endDate
+     * @param queryAuthorizations
+     * @param expirationDate
+     * @param pagesize
+     * @param persistenceMode
+     * @param parameters
+     * @param trace
+     * @return
+     * @throws ParseException
+     *             on date parse/format error
+     */
+    public static MultivaluedMap<String,String> paramsToMap(String queryLogicName, String query, String queryName, String queryVisibility, Date beginDate,
+                    Date endDate, String queryAuthorizations, Date expirationDate, Integer pagesize, QueryPersistence persistenceMode, String parameters,
+                    Boolean trace) throws ParseException {
+        
+        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+        if (queryLogicName != null) {
+            p.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        }
+        if (query != null) {
+            p.putSingle(QueryParameters.QUERY_STRING, query);
+        }
+        if (queryName != null) {
+            p.putSingle(QueryParameters.QUERY_NAME, queryName);
+        }
+        if (queryVisibility != null) {
+            p.putSingle(QueryParameters.QUERY_VISIBILITY, queryVisibility);
+        }
+        if (beginDate != null) {
+            p.putSingle(QueryParameters.QUERY_BEGIN, formatDate(beginDate));
+        }
+        if (endDate != null) {
+            p.putSingle(QueryParameters.QUERY_END, formatDate(endDate));
+        }
+        if (queryAuthorizations != null) {
+            p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        }
+        if (expirationDate != null) {
+            p.putSingle(QueryParameters.QUERY_EXPIRATION, formatDate(expirationDate));
+        }
+        if (pagesize != null) {
+            p.putSingle(QueryParameters.QUERY_PAGESIZE, pagesize.toString());
+        }
+        if (persistenceMode != null) {
+            p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        }
+        if (trace != null) {
+            p.putSingle(QueryParameters.QUERY_TRACE, trace.toString());
+        }
+        if (parameters != null) {
+            p.putSingle(QueryParameters.QUERY_PARAMS, parameters);
+        }
+        
+        return p;
+    }
+    
+    @Override
+    public String getQuery() {
+        return query;
+    }
+    
+    @Override
+    public void setQuery(String query) {
+        this.query = query;
+    }
+    
+    @Override
+    public String getQueryName() {
+        return queryName;
+    }
+    
+    @Override
+    public void setQueryName(String queryName) {
+        this.queryName = queryName;
+    }
+    
+    @Override
+    public QueryPersistence getPersistenceMode() {
+        return persistenceMode;
+    }
+    
+    @Override
+    public void setPersistenceMode(QueryPersistence persistenceMode) {
+        this.persistenceMode = persistenceMode;
+    }
+    
+    @Override
+    public int getPagesize() {
+        return pagesize;
+    }
+    
+    @Override
+    public void setPagesize(int pagesize) {
+        this.pagesize = pagesize;
+    }
+    
+    @Override
+    public String getAuths() {
+        return auths;
+    }
+    
+    @Override
+    public void setAuths(String auths) {
+        this.auths = auths;
+    }
+    
+    @Override
+    public Date getExpirationDate() {
+        return expirationDate;
+    }
+    
+    @Override
+    public void setExpirationDate(Date expirationDate) {
+        this.expirationDate = expirationDate;
+    }
+    
+    @Override
+    public boolean isTrace() {
+        return trace;
+    }
+    
+    @Override
+    public void setTrace(boolean trace) {
+        this.trace = trace;
+    }
+    
+    @Override
+    public Date getBeginDate() {
+        return beginDate;
+    }
+    
+    @Override
+    public Date getEndDate() {
+        return endDate;
+    }
+    
+    @Override
+    public void setBeginDate(Date beginDate) {
+        this.beginDate = beginDate;
+    }
+    
+    @Override
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+    
+    @Override
+    public String getVisibility() {
+        return visibility;
+    }
+    
+    @Override
+    public void setVisibility(String visibility) {
+        this.visibility = visibility;
+    }
+    
+    @Override
+    public String getLogicName() {
+        return logicName;
+    }
+    
+    @Override
+    public void setLogicName(String logicName) {
+        this.logicName = logicName;
+    }
+    
+    @Override
+    public MultivaluedMap<String,String> getUnknownParameters(MultivaluedMap<String,String> allQueryParameters) {
+        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+        for (String key : allQueryParameters.keySet()) {
+            if (!KNOWN_PARAMS.contains(key)) {
+                for (String value : allQueryParameters.get(key)) {
+                    p.add(key, value);
+                }
+            }
+        }
+        return p;
+    }
+    
+    @Override
+    public void clear() {
+        this.query = null;
+        this.queryName = null;
+        this.persistenceMode = QueryPersistence.TRANSIENT;
+        this.pagesize = 10;
+        this.auths = null;
+        this.expirationDate = DateUtils.addDays(new Date(), 1);
+        this.trace = false;
+        this.beginDate = null;
+        this.endDate = null;
+        this.visibility = null;
+        this.logicName = null;
+    }
+}

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- test configuration -->
+<flagMakerConfig>
+    <flagCfg>
+        <dataName>foo</dataName>
+        <!-- only needed for testing date type distributors -->
+        <distributionArgs>day</distributionArgs>
+        <!-- only relative paths for testing -->
+        <folder>foo,bar</folder>
+        <inputFormat>nsa.datawave.ingest.input.reader.event.EventSequenceFileInputFormat</inputFormat>
+        <ingestPool>onehr</ingestPool>
+        <lifo>false</lifo>
+    </flagCfg>
+    <defaultCfg>
+        <!-- currently only require a few of the params for the default config -->
+        <maxFlags>10</maxFlags>
+        <reducers>10</reducers>
+        <script>bin/ingest/one-hr-ingest.sh</script>
+    </defaultCfg>
+    <baseHDFSDir>target/test/BulkIngest</baseHDFSDir>
+    <distributorType>simple</distributorType>
+    <!-- No dot "." files -->
+    <filePattern>2*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>
+    <hdfs>file://target</hdfs>
+    <socketPort>22222</socketPort>
+    <maxHdfsThreads>1</maxHdfsThreads>
+	<directoryCacheSize>2</directoryCacheSize>
+	<directoryCacheTimeout>5000</directoryCacheTimeout>
+    <datawaveHome>target/test</datawaveHome>
+    <flagFileDirectory>target/test/flags</flagFileDirectory>
+    <flagMetricsDirectory>target/flagMetrics</flagMetricsDirectory>
+    <setFlagFileTimestamp>true</setFlagFileTimestamp>
+    <useFolderTimestamp>false</useFolderTimestamp>
+</flagMakerConfig>

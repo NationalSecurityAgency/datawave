@@ -1,0 +1,2 @@
+nsa.datawave.configuration.spring.SpringCDIExtension
+nsa.datawave.configuration.RefreshableScopeExtension

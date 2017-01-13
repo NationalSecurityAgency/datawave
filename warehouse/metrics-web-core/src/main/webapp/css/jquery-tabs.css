@@ -1,0 +1,59 @@
+.ui-tabs-left {
+  position: relative;
+  padding-left: 6.5em;
+}
+
+.ui-tabs-left .ui-tabs-nav {
+  position: absolute;
+  left: 0.25em;
+  top: 0.25em;
+  bottom: 0.25em;
+  width: 6em;
+  padding: 0.2em 0 0.2em 0.2em;
+}
+
+.ui-tabs-left .ui-tabs-nav li {
+  right: 1px;
+  width: 100%;
+  border-right: none;
+  border-bottom-width: 1px !important;
+  -moz-border-radius: 4px 0px 0px 4px;
+  -webkit-border-radius: 4px 0px 0px 4px;
+  border-radius: 4px 0px 0px 4px;
+  overflow: hidden;
+  margin: 0 1px 0.2em 0 ;
+  border-bottom: 1px solid !important;
+}
+
+.ui-tabs-left .ui-state-hover, .ui-widget-content .ui-state-hover,
+.ui-tabs-left .ui-widget-header .ui-state-hover,
+.ui-tabs-left .ui-state-focus,
+.ui-tabs-left .ui-widget-content .ui-state-focus,
+.ui-tabs-left .ui-widget-header .ui-state-focus {
+    background: url("libs/jquery-ui/themes/ui-lightness/images/ui-bg_glass_75_dadada_1x400.png") repeat-x scroll 50% 50% #DADADA;
+    border: 1px solid #999999;
+    color: #212121;
+    font-weight: normal;
+}
+
+.ui-tabs-left .ui-tabs-nav li.ui-tabs-selected,
+.ui-tabs-left .ui-tabs-nav li.ui-state-active {
+  border-right: 1px solid transparent;
+}
+
+.ui-tabs-left .ui-tabs-nav li a {
+  float: right;
+  width: 100%;
+  text-align: right;
+}
+
+.ui-tabs-left > div {
+  height: 35em;
+}
+
+.ui-tabs-left .ui-widget-header {
+    background: url("libs/jquery-ui/themes/ui-lightness/images/ui-bg_highlight-soft_75_cccccc_1x100.png") repeat-x scroll 0 0 #CCCCCC;
+    border: 1px solid #AAAAAA;
+    color: #222222;
+    font-weight: bold;
+}

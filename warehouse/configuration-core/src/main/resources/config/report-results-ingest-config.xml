@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+	<property>
+		<name>report.results.table.name</name>
+		<value>reportResults</value>
+	</property>
+
+	<property>
+		<name>report.results.table.loader.priority</name>
+		<value>20</value>
+	</property>
+
+	<property>
+		<name>report.results.index.table.name</name>
+		<value>reportResultsIndex</value>
+	</property>
+
+	<property>
+		<name>report.results.index.table.loader.priority</name>
+		<value>20</value>
+	</property>
+
+	<property>
+		<name>report.results.rindex.table.name</name>
+		<value>reportResultsReverseIndex</value>
+	</property>
+
+	<property>
+		<name>report.results.rindex.table.loader.priority</name>
+		<value>20</value>
+	</property>
+
+	<property>
+		<name>report.results.metadata.table.name</name>
+		<value>reportResultsMetadata</value>
+	</property>
+
+	<property>
+		<name>report.results.metadata.table.loader.priority</name>
+		<value>20</value>
+	</property>
+
+</configuration>

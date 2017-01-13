@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="
+            http://xmlns.jcp.org/xml/ns/javaee
+            http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
+
+    <servlet-mapping>
+        <servlet-name>javax.ws.rs.core.Application</servlet-name>
+        <!--<servlet-name>nsa.datawave.webservice.application.DatawaveApplication</servlet-name>-->
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+
+    <!--
+        Don't automatically scan for and register Providers and JAX-RS classes. Hadoop jars, among others, have annotations
+        that will be picked up by scans, but the classes are tied to Jersey. Wildfly uses Jackson by default and the two
+        don't play well together.
+    -->
+    <context-param>
+        <param-name>resteasy.scan</param-name>
+        <param-value>false</param-value>
+    </context-param>
+    <context-param>
+        <param-name>resteasy.scan.resources</param-name>
+        <param-value>false</param-value>
+    </context-param>
+    <context-param>
+        <param-name>resteasy.scan.providers</param-name>
+        <param-value>false</param-value>
+    </context-param>
+    <!--
+        Tell RestEasy to get form parameters using getParameterMap rather than trying to decode the request body. We need this
+        because our logging interceptor reads the request body in order to log the form parameters, and therefore when RestEasy
+        gets to attempting to read form parameters the body has already been read from the input stream.
+    -->
+    <context-param>
+        <param-name>resteasy.use.container.form.params</param-name>
+        <param-value>true</param-value>
+    </context-param>
+
+    <context-param>
+        <param-name>resteasy.resources</param-name>
+        <param-value>
+            <!-- From Common -->
+            nsa.datawave.configuration.ConfigurationBean,
+            nsa.datawave.webservice.common.cache.AccumuloTableCache,
+            nsa.datawave.webservice.common.connection.AccumuloConnectionFactoryBean,
+            nsa.datawave.webservice.common.audit.AuditBean,
+            nsa.datawave.webservice.query.dashboard.DashboardBean,
+            <!-- From Security -->
+            nsa.datawave.security.cache.CredentialsCacheBean,
+            nsa.datawave.security.user.UserOperationsBean,
+            <!-- From Accumulo -->
+            nsa.datawave.webservice.operations.admin.TableAdminBean,
+            nsa.datawave.webservice.operations.admin.UpdateBean,
+            nsa.datawave.webservice.operations.admin.PermissionsBean,
+            nsa.datawave.webservice.operations.user.StatsBean,
+            nsa.datawave.webservice.operations.user.ListUsersBean,
+            nsa.datawave.webservice.operations.user.LookupBean,
+            nsa.datawave.webservice.operations.user.ListUserPermissionsBean,
+            nsa.datawave.webservice.operations.user.ListTablesBean,
+            nsa.datawave.webservice.operations.user.ListUserAuthorizationsBean,
+            <!-- From Query -->
+            nsa.datawave.webservice.query.runner.QueryExecutorBean,
+            nsa.datawave.webservice.query.hud.HudBean,
+            nsa.datawave.webservice.query.metric.QueryMetricsBean,
+            nsa.datawave.webservice.query.cache.QueryCacheBean,
+            nsa.datawave.webservice.query.runner.IdTranslatorBean,
+            <!-- From CachedResults -->
+            nsa.datawave.webservice.results.cached.CachedResultsBean,
+            <!-- From Atom -->
+            nsa.datawave.webservice.atom.AtomServiceBean,
+            <!-- From Modification -->
+            nsa.datawave.webservice.modification.ModificationBean,
+            nsa.datawave.webservice.modification.cache.ModificationCacheBean,
+	    <!-- From Model -->
+            nsa.datawave.webservice.query.model.ModelBean,
+            <!-- From DataDictionary -->
+            nsa.datawave.webservice.datadictionary.DataDictionaryBean,
+            <!-- From EdgeDictionary -->
+            nsa.datawave.webservice.edgedictionary.EdgeDictionaryBean,
+            <!-- From MapReduce -->
+            nsa.datawave.webservice.mr.MapReduceBean,
+            <!-- From MapReduceStatus -->
+            nsa.datawave.webservice.mr.status.MapReduceStatusUpdateBean
+        </param-value>
+    </context-param>
+
+    <context-param>
+        <param-name>resteasy.providers</param-name>
+        <param-value>
+            nsa.datawave.webservice.common.json.JacksonContextResolver,
+            nsa.datawave.interceptor.ResponseInterceptor,
+            nsa.datawave.resteasy.interceptor.ClearQuerySessionIDFilter,
+            nsa.datawave.resteasy.interceptor.CreateQuerySessionIDFilter,
+            nsa.datawave.resteasy.interceptor.DatawaveCorsFilter,
+            nsa.datawave.resteasy.interceptor.LoggingInterceptor,
+            nsa.datawave.webservice.common.exception.RESTExceptionMapper,
+            nsa.datawave.webservice.util.ProtostuffMessageBodyWriter,
+            nsa.datawave.webservice.query.interceptor.QueryMetricsEnrichmentInterceptor,
+            nsa.datawave.webservice.util.HtmlProviderMessageBodyWriter,
+            nsa.datawave.webservice.atom.jaxrs.AtomMessageBodyWriter,
+            nsa.datawave.webservice.datadictionary.DataDictionaryHtmlProvider,
+            nsa.datawave.resteasy.util.DateParamConverterProvider,
+            nsa.datawave.security.user.TextMessageBodyWriter
+        </param-value>
+    </context-param>
+
+    <!-- In order to help clients that can't use Accept headers, set up this mapping.  So, the
+         URL /Query/<id>/next will produce the default content type, and /Query/<id>/next.json
+         will produce json (and so on for other types). -->
+    <context-param>
+        <param-name>resteasy.media.type.mappings</param-name>
+        <param-value>xml : application/xml, json : application/json, yaml : text/x-yaml, txt : text/plain, proto : application/x-protobuf</param-value>
+    </context-param>
+
+    <servlet>
+        <servlet-name>Resteasy JSAPI</servlet-name>
+        <servlet-class>org.jboss.resteasy.jsapi.JSAPIServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>Resteasy JSAPI</servlet-name>
+        <url-pattern>/js_api</url-pattern>
+    </servlet-mapping>
+
+    <!--
+        Use the custom DATAWAVE authentication mechanism. This mechanism handles the X-ProxiedEntitiesChain/X-ProxiedIssuersChain headers
+        and is also set up to handle "trusted header" authentication where a load balancer terminates the SSL session and passes the
+        client certificate information along in controlled headers.
+    -->
+    <login-config>
+        <auth-method>DATAWAVE-AUTH</auth-method>
+        <realm-name>DATAWAVE Web Services</realm-name>
+    </login-config>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>AdminCredentials</web-resource-name>
+            <url-pattern>/Security/Admin/Credentials/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>JBossAdministrator</role-name>
+            <role-name>Administrator</role-name>
+            <role-name>SecurityUser</role-name>
+        </auth-constraint>
+        <!--
+         Define the transport guarantee for this webapp. Note that this value is not substituted at compile
+         time, but instead will be substituted at runtime by the container.
+        -->
+        <user-data-constraint>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>AdminCredentials</web-resource-name>
+            <url-pattern>/Security/User/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>AuthorizedUser</role-name>
+            <role-name>AuthorizedServer</role-name>
+            <!-- A server, NOT proxying for a user, but the server is listed in a group authorizing it to run queries -->
+            <role-name>AuthorizedQueryServer</role-name>
+        </auth-constraint>
+        <!--
+         Define the transport guarantee for this webapp. Note that this value is not substituted at compile
+         time, but instead will be substituted at runtime by the container.
+        -->
+        <user-data-constraint>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>UnauthenticatedOps</web-resource-name>
+            <description>Allow unauthenticated users to access static resources and update MapReduceState.</description>
+            <url-pattern>/MapReduceStatus/updateState</url-pattern>
+            <url-pattern>/screen.css</url-pattern>
+            <url-pattern>/jquery*</url-pattern>
+            <url-pattern>/ext/*</url-pattern>
+        </web-resource-collection>
+        <!-- For static resources, there is no transport guarantee. -->
+        <user-data-constraint>
+            <transport-guarantee>NONE</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>OpenUserOps</web-resource-name>
+            <description>Allow authenticated, but unauthorized users to flush their own credentials.</description>
+            <url-pattern>/Security/User/flushCachedCredentials</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>*</role-name>
+        </auth-constraint>
+        <!--
+         Define the transport guarantee for this webapp. Note that this value is not substituted at compile
+         time, but instead will be substituted at runtime by the container.
+        -->
+        <user-data-constraint>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>HtmlAdaptor</web-resource-name>
+            <description>A security config that only allows users with the
+                role AuthorizedUser to access the this web application
+            </description>
+            <url-pattern>/Atom/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>Administrator</role-name>
+        </auth-constraint>
+        <!--
+         Define the transport guarantee for this webapp. Note that this value is not substituted at compile
+         time, but instead will be substituted at runtime by the container.
+        -->
+        <user-data-constraint>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>CatchAll</web-resource-name>
+            <description>Most services use this constraint. Authorized users, or servers not proxying for a user.</description>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>AuthorizedUser</role-name>
+            <role-name>AuthorizedQueryServer</role-name> <!-- A server, NOT proxying for a user, but the server is listed in a group authorizing it to run queries -->
+        </auth-constraint>
+        <!--
+         Define the transport guarantee for this webapp. Note that this value is not substituted at compile
+         time, but instead will be substituted at runtime by the container.
+        -->
+        <user-data-constraint>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <!-- Declare the security roles we use in security constraints. -->
+    <security-role>
+        <role-name>SecurityUser</role-name>
+    </security-role>
+
+    <security-role>
+        <role-name>Administrator</role-name>
+    </security-role>
+
+    <security-role>
+        <role-name>JBossAdministrator</role-name>
+    </security-role>
+
+    <security-role>
+        <role-name>AuthorizedUser</role-name>
+    </security-role>
+
+    <security-role>
+        <role-name>AuthorizedServer</role-name>
+    </security-role>
+
+    <security-role>
+        <role-name>AuthorizedQueryServer</role-name>
+    </security-role>
+</web-app>

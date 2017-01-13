@@ -1,0 +1,167 @@
+package nsa.datawave.query.rewrite.jexl.visitors;
+
+import nsa.datawave.helpers.PrintUtility;
+import nsa.datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
+import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
+import nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic;
+import nsa.datawave.query.rewrite.util.DateIndexTestIngest;
+import nsa.datawave.query.util.DateIndexHelper;
+import nsa.datawave.query.util.DateIndexHelperFactory;
+import nsa.datawave.query.util.MetadataHelper;
+import nsa.datawave.util.time.DateHelper;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.mock.MockInstance;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.TimeZone;
+
+/**
+ * Test the function index query expansion
+ *
+ *
+ */
+public class DateIndexQueryExpansionVisitorTest {
+    
+    private static final Logger log = Logger.getLogger(DateIndexQueryExpansionVisitorTest.class);
+    
+    Authorizations auths = new Authorizations("HUSH");
+    
+    private static Connector connector = null;
+    
+    public static final String DATE_INDEX_TABLE_NAME = "dateIndex";
+    
+    protected RefactoredShardQueryLogic logic = null;
+    
+    private MetadataHelper helper = MetadataHelper.getInstance();
+    
+    @BeforeClass
+    public static void before() throws Exception {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        MockInstance i = new MockInstance(DateIndexQueryExpansionVisitorTest.class.getName());
+        connector = i.getConnector("root", new PasswordToken(""));
+    }
+    
+    @Before
+    public void setupTests() throws Exception {
+        
+        this.createTables();
+        
+        DateIndexTestIngest.writeItAll(connector);
+        PrintUtility.printTable(connector, auths, DATE_INDEX_TABLE_NAME);
+    }
+    
+    @Test
+    public void testDateIndexExpansion() throws Exception {
+        String originalQuery = "filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000')";
+        String expectedQuery = "(filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000') && (SHARDS_AND_DAYS = '20100703_0,20100704_0,20100704_2,20100705_1'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        
+        Date startDate = DateHelper.parse("20100701");
+        Date endDate = DateHelper.parse("20100710");
+        
+        RefactoredShardQueryConfiguration config = new RefactoredShardQueryConfiguration();
+        config.setBeginDate(startDate);
+        config.setEndDate(endDate);
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
+                        Collections.singleton(auths), 2, 0.9f);
+        ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
+        
+        String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
+        
+        Assert.assertEquals(expectedQuery, newQuery);
+    }
+    
+    @Test
+    public void testDateIndexExpansionWithTimeTravel() throws Exception {
+        String originalQuery = "filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000')";
+        String expectedQuery = "(filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000') && (SHARDS_AND_DAYS = '20100702_0,20100703_0,20100704_0,20100704_2,20100705_1'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        
+        Date startDate = DateHelper.parse("20100701");
+        Date endDate = DateHelper.parse("20100710");
+        
+        RefactoredShardQueryConfiguration config = new RefactoredShardQueryConfiguration();
+        config.setBeginDate(startDate);
+        config.setEndDate(endDate);
+        
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
+                        Collections.singleton(auths), 2, 0.9f);
+        helper2.setTimeTravel(true);
+        
+        ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
+        
+        String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
+        
+        Assert.assertEquals(expectedQuery, newQuery);
+    }
+    
+    @Test
+    public void testDateIndexExpansion1() throws Exception {
+        String originalQuery = "filter:betweenDates(UPTIME, '20100101', '20100101')";
+        String expectedQuery = "(filter:betweenDates(UPTIME, '20100101', '20100101') && (SHARDS_AND_DAYS = '20100101_1,20100102_2,20100102_4,20100102_5'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        
+        Date startDate = DateHelper.parse("20100101");
+        Date endDate = DateHelper.parse("20100102");
+        
+        RefactoredShardQueryConfiguration config = new RefactoredShardQueryConfiguration();
+        config.setBeginDate(startDate);
+        config.setEndDate(endDate);
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
+                        Collections.singleton(auths), 2, 0.9f);
+        
+        ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
+        
+        String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
+        
+        Assert.assertEquals(expectedQuery, newQuery);
+    }
+    
+    @Test
+    public void testDateIndexExpansion2() throws Exception {
+        String originalQuery = "filter:betweenDates(UPTIME, '20100101_200000', '20100101_210000')";
+        String expectedQuery = "(filter:betweenDates(UPTIME, '20100101_200000', '20100101_210000') && (SHARDS_AND_DAYS = '20100101_1,20100102_2,20100102_4,20100102_5'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        Date startDate = DateHelper.parse("20100101_200000");
+        Date endDate = DateHelper.parse("20100102_210000");
+        
+        RefactoredShardQueryConfiguration config = new RefactoredShardQueryConfiguration();
+        config.setBeginDate(startDate);
+        config.setEndDate(endDate);
+        DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
+                        Collections.singleton(auths), 2, 0.9f);
+        
+        ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
+        
+        String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
+        
+        Assert.assertEquals(expectedQuery, newQuery);
+    }
+    
+    private void createTables() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
+        TableOperations tops = connector.tableOperations();
+        deleteAndCreateTable(tops, DATE_INDEX_TABLE_NAME);
+    }
+    
+    private void deleteAndCreateTable(TableOperations tops, String tableName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
+                    TableExistsException {
+        if (tops.exists(tableName)) {
+            tops.delete(tableName);
+        }
+        tops.create(tableName);
+    }
+}

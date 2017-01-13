@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+<property>
+  <name>default.filename.regex</name>
+  <value>.*</value>
+  <description>The default filename regex is to match everthing which works for many data sources.</description>
+</property>
+
+<property>
+  <name>default.filename.regex.exclude</name>
+  <value>\..*</value>
+  <description>The default filename regex for files to exclude are those that start with a dot.</description>
+</property>
+
+<property>
+  <name>mycsv.filename.regex</name>
+  <value>.*</value>
+  <description>The filename regex for the 'mycsv' data feed. The file should start with a dot (.) while being transferred.</description>
+</property>
+
+<property>
+  <name>nsa.datawave.ingest.poller.manager.HornetQEventProcessor.datatypes.whitelist</name>
+  <value>csv</value>
+  <description>Comma seperated list of allowed datatype output name prefixes, case-sensitive.
+    If a processed event's datatype output name does not start with any of the prefixes configured here, 
+	then it will be ignored. If no prefixes are configured here, then the specified processor will 
+	ignore all events
+  </description>
+  </property>
+
+</configuration>

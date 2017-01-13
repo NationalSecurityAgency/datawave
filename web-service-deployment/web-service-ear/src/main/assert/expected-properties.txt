@@ -1,0 +1,3 @@
+# Web service addon RPM
+rpm.file.owner, unix user to own the files installed by the RPM
+rpm.file.group, unix group for files installed by the RPM

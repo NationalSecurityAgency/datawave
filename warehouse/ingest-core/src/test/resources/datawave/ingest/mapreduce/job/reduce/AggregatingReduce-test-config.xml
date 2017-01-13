@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+<property>
+  <name>file.input.format</name>
+  <value>nsa.datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestRecordReader</value>
+</property>
+
+<property>
+  <name>data.name</name>
+  <value>test</value>
+  <description>This is the type of data being ingested.
+  </description>
+</property>
+
+<property>
+	<name>test.ingest.helper.class</name>
+	<value>nsa.datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestIngestHelper</value>
+</property>
+
+<property>
+	<name>test.reader.class</name>
+	<value>nsa.datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestReader</value>
+</property>
+
+<property>
+	<name>test.handler.classes</name>
+	<value>nsa.datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestAbstractColumnBasedHandler</value>
+</property>
+
+</configuration>

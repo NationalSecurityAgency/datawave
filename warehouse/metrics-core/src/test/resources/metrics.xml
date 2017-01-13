@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+
+<property>
+  <name>server.http.port</name>
+  <value>10078</value>
+</property> 
+
+<property>
+  <name>metrics.zookeepers</name>
+  <value>localhost</value>
+</property> 
+
+<property>
+  <name>metrics.user</name>
+  <value>root</value>
+</property>
+
+<property>
+  <name>metrics.password</name>
+  <value>beards</value>
+</property>
+
+<property>
+  <name>metrics.instance</name>
+  <value>ActionHank</value>
+</property>
+
+<property>
+  <name>metrics.tables.loader</name>
+  <value>LoaderMetrics</value>
+</property>
+
+<property>
+  <name>metrics.tables.poller</name>
+  <value>PollerMetrics</value>
+</property>
+
+<property>
+  <name>metrics.tables.ingest</name>
+  <value>IngestMetrics</value>
+</property>
+
+<property>
+  <name>metrics.tables.metrics</name>
+  <value>DatawaveMetrics</value>
+</property>
+
+<property>
+  <name>metrics.tables.metrics-summary</name>
+  <value>DatawaveDailyMetrics</value>
+</property>
+
+<property>
+  <name>metrics.web.warfile</name>
+  <value>/opt/datawave/current/lib/metrics-web.war</value>
+</property>
+
+</configuration>

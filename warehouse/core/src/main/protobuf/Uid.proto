@@ -1,0 +1,15 @@
+// compile with protoc --java_out ../java
+//      classpath for compile command should include ../../../target/classes and protobuf-java-2.2.0.jar
+
+package nsa.datawave.ingest.protobuf;
+
+option java_package = "nsa.datawave.ingest.protobuf";
+option optimize_for = SPEED;
+
+message List {
+  required bool IGNORE = 1;
+  required uint64 COUNT = 2;
+  repeated string UID = 3;
+  repeated string REMOVEDUID = 4;
+  repeated string QUARANTINEUID =5;
+}

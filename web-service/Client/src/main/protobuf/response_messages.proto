@@ -1,0 +1,39 @@
+package nsa.datawave.webservice.result;
+
+option optimize_for = LITE_RUNTIME;
+option java_package = "nsa.datawave.webservice.result";
+
+import "exception_messages.proto";
+import "query_messages.proto";
+import "cachedresult_messages.proto";
+
+message VoidResponse {
+	required uint64 operation_time_ms = 1 [default=0];
+	repeated string messages = 2;
+	repeated nsa.datawave.webservice.query.exception.QueryExceptionType exceptions = 3;
+}
+
+message QueryImplListResponse {
+	required uint64 operation_time_ms = 1 [default=0];
+	repeated string messages = 2;
+	repeated nsa.datawave.webservice.query.exception.QueryExceptionType exceptions = 3;
+
+	repeated nsa.datawave.webservice.query.QueryImpl query = 4;
+	optional uint32 numResults = 5 [default=0];
+}
+
+message GenericResponse {
+	required uint64 operation_time_ms = 1 [default=0];
+	repeated string messages = 2;
+	repeated nsa.datawave.webservice.query.exception.QueryExceptionType exceptions = 3;
+
+	required string result_class_name = 4;
+	optional string result_as_string = 5;
+	optional bool result_as_boolean = 6;
+	optional sint32 result_as_int = 7;
+	optional sint64 result_as_long = 8;
+	optional float result_as_float = 9;
+	optional double result_as_double = 10;
+	optional bytes result_as_bytes = 11;
+	optional nsa.datawave.webservice.results.cached.result.Description result_as_description = 12;
+}

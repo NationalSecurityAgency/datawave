@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd" default-autowire="no">
+
+    <bean class="org.springframework.context.support.ClassPathXmlApplicationContext" autowire="no">
+        <constructor-arg>
+            <list>
+                <value>classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml</value>
+                <value>classpath*:NoOpMarkingFunctionsContext.xml</value>
+                <value>classpath*:MetadataHelperContext.xml</value>
+                <value>classpath*:datawave/security/PrincipalFactory.xml</value>
+                <value>classpath*:datawave/query/QueryExpiration.xml</value>
+                <value>classpath*:datawave/query/*QueryLogicFactory.xml</value>
+                <value>classpath*:datawave/query/CachedResults*.xml</value>
+                <value>classpath*:datawave/mapreduce/MapReduceJobs.xml</value>
+                <value>classpath*:org/apache/accumulo/operations/LookupBean.xml</value>
+            </list>
+        </constructor-arg>
+    </bean>
+</beans>

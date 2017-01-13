@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+<property>
+  <name>file.input.format</name>
+  <value>nsa.datawave.ingest.mapreduce.job.BulkIngestMapFileLoaderTest$TestRecordReader </value>
+</property>
+
+<property>
+  <name>data.name</name>
+  <value>ingest-test</value>
+  <description>This is the type of data being ingested.</description>
+</property>
+
+<property>
+  <name>ingest.data.types</name>
+  <value>ingest-test</value>
+  <description>This is the type of data being ingested.</description>
+</property>
+
+<property>
+	<name>ingest-test.ingest.helper.class</name>
+	<value>nsa.datawave.ingest.mapreduce.job.BulkIngestMapFileLoaderTest$TestIngestHelper</value>
+</property>
+
+<property>
+	<name>ingest-test.reader.class</name>
+	<value>nsa.datawave.ingest.mapreduce.job.BulkIngestMapFileLoaderTest$TestReader</value>
+</property>
+
+<property>
+  <name>ingest-test.data.default.type.class</name>
+  <value>nsa.datawave.data.type.LcNoDiacriticsType</value>
+</property>
+
+</configuration>
