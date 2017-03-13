@@ -1,22 +1,7 @@
 package nsa.datawave.core.iterators;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Set;
-import java.util.UUID;
-
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import nsa.datawave.query.QueryParameters;
 import nsa.datawave.query.config.GenericShardQueryConfiguration;
 import nsa.datawave.query.exceptions.BooleanLogicFatalQueryException;
@@ -26,7 +11,6 @@ import nsa.datawave.query.parser.DatawaveTreeNode;
 import nsa.datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import nsa.datawave.query.util.StringTuple;
 import nsa.datawave.util.StringUtils;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -43,8 +27,22 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  *
@@ -339,12 +337,13 @@ public class BooleanLogicIteratorJexl implements JumpingIterator<Key,Value>, Opt
             // TODO make the scanThreshold configurable
             // TODO make the scanTimeout configurable
             iter = new DatawaveFieldIndexRegexIteratorJexl(node.getFieldName(), node.getFieldValue(), null, null, node.isNegated(), 100000L, 1000L * 60 * 60,
-                            10000, 11, fs, getTemporaryCacheDir(node), false);
+                            10000, 11, 100, fs, getTemporaryCacheDir(node), null, false);
         } else if (node.isRangeNode()) {
             // TODO make the scanThreshold configurable
             // TODO make the scanTimeout configurable
             iter = new DatawaveFieldIndexRangeIteratorJexl(node.getFieldName(), node.getLowerBound(), node.isLowerInclusive(), node.getUpperBound(),
-                            node.isUpperInclusive(), null, null, node.isNegated(), 100000L, 1000L * 60 * 60, 10000, 11, fs, getTemporaryCacheDir(node), false);
+                            node.isUpperInclusive(), null, null, node.isNegated(), 100000L, 1000L * 60 * 60, 10000, 11, 100, fs, getTemporaryCacheDir(node),
+                            null, false);
         }
         
         Map<String,String> options = new HashMap<>();

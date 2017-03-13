@@ -36,6 +36,7 @@ import com.google.common.collect.Multimap;
 import nsa.datawave.marking.ColumnVisibilitySecurityMarking;
 import nsa.datawave.marking.SecurityMarking;
 import nsa.datawave.security.authorization.DatawavePrincipal;
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import nsa.datawave.webservice.common.audit.AuditBean;
 import nsa.datawave.webservice.common.audit.AuditParameters;
 import nsa.datawave.webservice.common.audit.Auditor.AuditType;
@@ -98,6 +99,7 @@ public class QueryExecutorBeanTest {
     
     // QueryExecutorBean dependencies
     private QueryCache cache;
+    private AccumuloConnectionRequestBean connectionRequestBean;
     private AccumuloConnectionFactory connectionFactory;
     private QueryMetricsBean metrics;
     private QueryLogicFactoryImpl queryLogicFactory;
@@ -112,6 +114,8 @@ public class QueryExecutorBeanTest {
     
     @Before
     public void setup() throws Exception {
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
         QueryTraceCache traceCache = new QueryTraceCache();
         Whitebox.invokeMethod(traceCache, "init");
         
@@ -131,6 +135,8 @@ public class QueryExecutorBeanTest {
         queryExpirationConf.setPageSizeShortCircuitCheckTime(45);
         queryExpirationConf.setPageShortCircuitTimeout(58);
         queryExpirationConf.setCallTime(60);
+        connectionRequestBean = createStrictMock(AccumuloConnectionRequestBean.class);
+        setInternalState(connectionRequestBean, EJBContext.class, ctx);
         setInternalState(bean, QueryCache.class, cache);
         setInternalState(bean, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(bean, AuditBean.class, auditor);
@@ -147,6 +153,7 @@ public class QueryExecutorBeanTest {
         setInternalState(bean, AuditParameters.class, new AuditParameters());
         setInternalState(bean, QueryParameters.class, new QueryParametersImpl());
         setInternalState(bean, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(bean, AccumuloConnectionRequestBean.class, connectionRequestBean);
         
         // RESTEasy mock stuff
         dispatcher = MockDispatcherFactory.createDispatcher();
@@ -407,8 +414,14 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(persister.create(userDN, dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
                         Whitebox.getInternalState(bean, QueryParameters.class), optionalParameters)).andReturn(q);
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(Maps.<String,String> newHashMap()).anyTimes();
+        
+        connectionRequestBean.requestBegin(q.getId().toString());
+        EasyMock.expectLastCall();
         EasyMock.expect(connectionFactory.getConnection(eq("connPool1"), (AccumuloConnectionFactory.Priority) EasyMock.anyObject(),
                         (Map<String,String>) EasyMock.anyObject())).andReturn(c).anyTimes();
+        connectionRequestBean.requestEnd(q.getId().toString());
+        EasyMock.expectLastCall();
+        
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.getConnectionPriority()).andReturn(AccumuloConnectionFactory.Priority.NORMAL).atLeastOnce();
@@ -416,6 +429,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getAuditType(q)).andReturn(AuditType.NONE);
         EasyMock.expect(logic.getConnPoolName()).andReturn("connPool1");
         
+        EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString())).andReturn(false);
         connectionFactory.returnConnection(EasyMock.isA(Connector.class));
         
         final AtomicBoolean initializeLooping = new AtomicBoolean(false);

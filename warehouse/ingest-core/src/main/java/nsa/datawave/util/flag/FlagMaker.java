@@ -72,7 +72,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private static final Logger log = Logger.getLogger(FlagMaker.class);
     // our yyyy/mm/dd pattern for most things.
     public static final Pattern pattern = Pattern.compile(".*/([0-9]{4}(/[0-9]{2}){2})(?:/.*|$)");
-    private static final SimpleDateFormat format = new SimpleDateFormat("yyyy" + File.separator + "MM" + File.separator + "dd");
+    private static final String DATE_FORMAT_STRING = "yyyy" + File.separator + "MM" + File.separator + "dd";
     /**
      * Directory cache will serve as a place holder the directories in HDFS that were created. This will cut down on the number of RPC calls tot he NameNode
      */
@@ -534,6 +534,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             String grp = m.group(1);
             dst += grp;
         } else {
+            SimpleDateFormat format = new SimpleDateFormat(DATE_FORMAT_STRING);
             dst += format.format(new Date());
         }
         return new Path(dst + File.separator + inFile.getFileName());
@@ -552,6 +553,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             String grp = m.group(1);
             len += grp.length();
         } else {
+            SimpleDateFormat format = new SimpleDateFormat(DATE_FORMAT_STRING);
             len += format.format(new Date()).length();
         }
         return len + 1 + inFile.getFileName().length();

@@ -67,7 +67,7 @@ public interface CompositeIngest {
         /**
          * Parameter for specifying the name of a composite field. A composite field is a field that does not exist in the raw data, but is derived from the
          * values of other fields in the raw data. The value of this parameter is a comma separated list of composite field names. This parameter supports
-         * multiple datatypes, so a valid value would be something like pcs.data.composite.name
+         * multiple datatypes, so a valid value would be something like mydatatype.data.composite.name
          * 
          */
         public static final String COMPOSITE_FIELD_NAMES = ".data.composite.name";
@@ -77,7 +77,7 @@ public interface CompositeIngest {
          * composite field. Multiple composite fields can be specified by separating them with a comma. For example: "FIELD1.FIELD2,FIELD1.FIELD3" One can
          * specify constant strings to include in the mix by using quotes which will override including the default separator. "FIELD1.' and '.FIELD2" Constant
          * strings will always be included in the resulting value, however the default separator will only be included if not overridden by a constant AND there
-         * are field values to separate. This parameter supports multiple datatypes, so a valid value would be something like pcs.data.composite.fields
+         * are field values to separate. This parameter supports multiple datatypes, so a valid value would be something like mydatatype.data.composite.fields
          */
         public static final String COMPOSITE_FIELD_MEMBERS = ".data.composite.fields";
         
@@ -94,14 +94,14 @@ public interface CompositeIngest {
         
         /**
          * Parameter for specifying a separator in the composite field to be used between the values of the field members. This parameter supports multiple
-         * datatypes, so a valid value would be something like pcs.data.composite.separator
+         * datatypes, so a valid value would be something like mydatatype.data.composite.separator
          */
         public static final String COMPOSITE_FIELD_VALUE_SEPARATOR = ".data.composite.separator";
         
         /**
          * Boolean parameter for specifying a whether missing parts of a composite field are permitted. If only one value is specified, the it applies to all of
          * the fields. Otherwise a value can be specified per composite field (comma separated). This parameter supports multiple datatypes, so a valid value
-         * would be something like pcs.data.composite.allow.missing.
+         * would be something like mydatatype.data.composite.allow.missing.
          */
         public static final String COMPOSITE_FIELD_ALLOW_MISSING = ".data.composite.allow.missing";
         
@@ -112,7 +112,7 @@ public interface CompositeIngest {
          * with non-grouped fields. Two grouped fields in different groups will never be merged. IGNORE_GROUPS: Ignore grouping altogether. An group or
          * non-grouped can be merged. If only one value is specified, the it applies to all of the fields. Otherwise a value can be specified per composite
          * field (comma separated). The default is GROUPED_WITH_NON_GROUPED This parameter supports multiple datatypes, so a valid value would be something like
-         * pcs.data.composite.grouped.with.nongrouped.
+         * mydatatype.data.composite.grouped.with.nongrouped.
          */
         public static final String COMPOSITE_FIELD_GROUPING_POLICY = ".data.composite.grouping.policy";
         public static final GroupingPolicy DEFAULT_GROUPING_POLICY = GroupingPolicy.GROUPED_WITH_NON_GROUPED;
@@ -210,7 +210,7 @@ public interface CompositeIngest {
         }
         
         /**
-         * A convience routine to get a configuration value
+         * A convenience routine to get a configuration value
          *
          * @param type
          * @param instance
@@ -229,7 +229,7 @@ public interface CompositeIngest {
         }
         
         /**
-         * A convience routine to get a configuration value
+         * A convenience routine to get a configuration value
          *
          * @param type
          * @param instance
@@ -310,7 +310,7 @@ public interface CompositeIngest {
         }
         
         /**
-         * A helper routine to merge markings maps when mergings fields of a NormalizedContentInterface
+         * A helper routine to merge markings maps when merging fields of a NormalizedContentInterface
          *
          * @param markings1
          * @param markings2

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 
 import nsa.datawave.core.iterators.DatawaveFieldIndexRegexIteratorJexl;
 import nsa.datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
@@ -12,12 +11,9 @@ import nsa.datawave.query.rewrite.iterator.DocumentIterator;
 import nsa.datawave.query.rewrite.iterator.NestedIterator;
 import nsa.datawave.query.rewrite.iterator.logic.DocumentAggregatingIterator;
 import nsa.datawave.query.rewrite.iterator.logic.IndexIteratorBridge;
-import nsa.datawave.util.StringUtils;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -43,29 +39,30 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
-        if (notNull(field, value, negated, source, datatypeFilter, timeFilter, keyTform, hdfsCacheDirURI, hdfsFileSystem)) {
+        if (notNull(field, value, negated, source, datatypeFilter, timeFilter, keyTform, ivaratorCacheDirURI, hdfsFileSystem)) {
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + field + (negated ? "!~" : "=~") + value);
             }
             // get the hadoop file system and a temporary directory
             final URI hdfsCacheURI;
             try {
-                hdfsCacheURI = new URI(hdfsCacheDirURI);
+                hdfsCacheURI = new URI(ivaratorCacheDirURI);
                 hdfsFileSystem.mkdirs(new Path(hdfsCacheURI));
             } catch (MalformedURLException e) {
                 throw new IllegalStateException("Unable to load hadoop configuration", e);
             } catch (IOException e) {
                 throw new IllegalStateException("Unable to create hadoop file system", e);
             } catch (URISyntaxException e) {
-                throw new IllegalStateException("Invalid hdfs cache dir URI: " + hdfsCacheDirURI, e);
+                throw new IllegalStateException("Invalid hdfs cache dir URI: " + ivaratorCacheDirURI, e);
             }
             
             DocumentIterator docIterator = null;
             try {
                 // create a field index caching ivarator
                 DatawaveFieldIndexRegexIteratorJexl regexIterator = new DatawaveFieldIndexRegexIteratorJexl(new Text(field), new Text(value), this.timeFilter,
-                                this.datatypeFilter, negated, hdfsCacheScanPersistThreshold, hdfsCacheScanTimeout, hdfsCacheBufferSize, maxRangeSplit,
-                                hdfsFileSystem, new Path(hdfsCacheURI), hdfsCacheReused, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
+                                this.datatypeFilter, negated, ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, ivaratorCacheBufferSize,
+                                maxRangeSplit, ivaratorMaxOpenFiles, hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true,
+                                PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
                 if (collectTimingDetails) {
                     regexIterator.setCollectTimingDetails(true);
                     regexIterator.setQuerySpanCollector(this.querySpanCollector);
@@ -99,7 +96,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
             keyTform = null;
             timeFilter = null;
             hdfsFileSystem = null;
-            hdfsCacheDirURI = null;
+            ivaratorCacheDirURI = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

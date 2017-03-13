@@ -16,6 +16,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
+import nsa.datawave.core.iterators.querylock.QueryLock;
 import nsa.datawave.query.iterators.JumpingIterator;
 import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.rewrite.iterator.profile.QuerySpan;
@@ -95,12 +96,16 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     private final FileSystem fs;
     // the directory for the hdfs cache
     private final Path uniqueDir;
+    // A query lock to verify if the query is still running
+    private final QueryLock queryLock;
     // are we allowing reuse of the hdfs directories
     private final boolean allowDirReuse;
     // the max number of scanned keys before we force persistance of the hdfs cache
     private final long scanThreshold;
     // the number of entries to cache in memory before flushing to hdfs
     private final int hdfsBackedSetBufferSize;
+    // the max number of files to open simultaneously during a merge source
+    private final int maxOpenFiles;
     
     // the current top key
     private Key topKey = null;
@@ -167,10 +172,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.datatypeFilter = null;
         
         this.fs = null;
+        this.queryLock = null;
         this.uniqueDir = null;
         this.allowDirReuse = false;
         this.scanThreshold = 10000;
         this.hdfsBackedSetBufferSize = 10000;
+        this.maxOpenFiles = 100;
         this.maxRangeSplit = 11;
         
         this.sortedUIDs = true;
@@ -178,21 +185,24 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     
     @SuppressWarnings("hiding")
     public DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, long scanThreshold,
-                    long scanTimeout, int bufferSize, int maxRangeSplit, FileSystem fs, Path uniqueDir, boolean allowDirReuse) {
-        this(fieldName, fieldValue, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, fs, uniqueDir, allowDirReuse);
+                    long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock,
+                    boolean allowDirReuse) {
+        this(fieldName, fieldValue, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir,
+                        queryLock, allowDirReuse);
     }
     
     @SuppressWarnings("hiding")
     public DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, FileSystem fs, Path uniqueDir, boolean allowDirReuse) {
-        this(fieldName, fieldValue, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, fs, uniqueDir, allowDirReuse,
-                        DEFAULT_RETURN_KEY_TYPE, true);
+                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
+                    QueryLock queryLock, boolean allowDirReuse) {
+        this(fieldName, fieldValue, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir,
+                        queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
     }
     
     @SuppressWarnings("hiding")
     public DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, FileSystem fs, Path uniqueDir, boolean allowDirReuse,
-                    PartialKey returnKeyType, boolean sortedUIDs) {
+                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
+                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs) {
         if (fieldName.toString().startsWith("fi" + NULL_BYTE)) {
             this.fieldName = new Text(fieldName.toString().substring(3));
             this.fiName = fieldName;
@@ -208,11 +218,13 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.datatypeFilter = datatypeFilter;
         
         this.fs = fs;
+        this.queryLock = queryLock;
         this.uniqueDir = uniqueDir;
         this.allowDirReuse = allowDirReuse;
         this.scanThreshold = scanThreshold;
         this.scanTimeout = scanTimeout;
         this.hdfsBackedSetBufferSize = bufferSize;
+        this.maxOpenFiles = maxOpenFiles;
         this.maxRangeSplit = maxRangeSplit;
         
         this.sortedUIDs = sortedUIDs;
@@ -230,11 +242,13 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.negated = other.negated;
         
         this.fs = other.fs;
+        this.queryLock = other.queryLock;
         this.uniqueDir = other.uniqueDir;
         this.allowDirReuse = other.allowDirReuse;
         this.scanThreshold = other.scanThreshold;
         this.scanTimeout = other.scanTimeout;
         this.hdfsBackedSetBufferSize = other.hdfsBackedSetBufferSize;
+        this.maxOpenFiles = other.maxOpenFiles;
         
         this.set = other.set;
         this.keyValues = other.keyValues;
@@ -846,7 +860,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 this.createdRowDir = false;
             }
             
-            this.set = new HdfsBackedSortedSet<KeyValueSerializable>(null, hdfsBackedSetBufferSize, fs, rowDir);
+            this.set = new HdfsBackedSortedSet<KeyValueSerializable>(null, hdfsBackedSetBufferSize, fs, rowDir, maxOpenFiles);
             this.threadSafeSet = Collections.synchronizedSortedSet(this.set);
             this.currentRow = row;
             this.setControl.takeOwnership(row, this);
@@ -983,7 +997,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     public class HdfsBackedControl {
         public static final String OWNERSHIP_FILE = "ownership";
         public static final String COMPLETE_FILE = "complete";
-        public static final String CLOSED_FILE = "closed";
         
         // cancelled check interval is 1 minute
         public static final int CANCELLED_CHECK_INTERVAL = 1000 * 60;
@@ -1000,10 +1013,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         protected Path getCompleteFile(String row) {
             return new Path(getRowDir(row), COMPLETE_FILE);
-        }
-        
-        protected Path getClosedFile() {
-            return new Path(DatawaveFieldIndexCachingIteratorJexl.this.uniqueDir, CLOSED_FILE);
         }
         
         protected String getOwnerId(Object owner) {
@@ -1047,18 +1056,16 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             return false;
         }
         
-        public boolean isCancelledQuery() throws IOException {
+        public boolean isCancelledQuery() {
             // if we have not determined we are cancelled yet, then check
-            if (!cancelled) {
+            if (!cancelled && queryLock != null) {
                 // but only if the last check was so long ago
                 long now = System.currentTimeMillis();
                 if ((now - lastCancelledCheck) > CANCELLED_CHECK_INTERVAL) {
                     synchronized (this) {
                         // now recheck the cancelled flag and timeout to ensure we really need to make the hdfs calls
                         if (!cancelled && ((now - lastCancelledCheck) > CANCELLED_CHECK_INTERVAL)) {
-                            Path file = getClosedFile();
-                            // cancelled if the closed file exists, or the directory no longer exists
-                            cancelled = fs.exists(file) || !fs.exists(uniqueDir);
+                            cancelled = !queryLock.isQueryRunning();
                             lastCancelledCheck = now;
                         }
                     }

@@ -1,6 +1,7 @@
 package nsa.datawave.query.rewrite.iterator.facets;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -50,6 +51,7 @@ import nsa.datawave.query.rewrite.predicate.FilteredDocumentData;
 import nsa.datawave.query.rewrite.tables.facets.FacetedConfiguration;
 import nsa.datawave.query.rewrite.tables.facets.FacetedSearchType;
 import nsa.datawave.query.util.TypeMetadata;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**
  *
@@ -145,7 +147,8 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
     }
     
     @Override
-    protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs) {
+    protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
+                    throws MalformedURLException, ConfigException {
         
         IteratorBuildingVisitor parent = super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs);
         return parent.setIteratorBuilder(CardinalityIteratorBuilder.class).setFieldsToAggregate(configuration.getFacetedFields());
@@ -153,7 +156,8 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
     
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
-    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException,
+                    ConfigException {
         // Otherwise, we have to use the field index
         // Seek() the boolean logic stuff
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
@@ -231,7 +235,12 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         this.range = range;
         
-        Iterator<Entry<Key,Document>> fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
+        Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
+        try {
+            fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
+        } catch (ConfigException e) {
+            throw new IOException("Unable to create document iterator", e);
+        }
         
         // at this point we should have the cardinality for all fields
         // so we should convert each Attribute into a Cardinality

@@ -1,41 +1,56 @@
 package nsa.datawave.query.rewrite.tld;
 
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.Map.Entry;
 
+import nsa.datawave.core.iterators.filesystem.FileSystemCache;
+import nsa.datawave.core.iterators.querylock.QueryLock;
 import nsa.datawave.query.rewrite.iterator.builder.NegationBuilder;
+
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
+import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.rewrite.iterator.SourceFactory;
 import nsa.datawave.query.rewrite.iterator.builder.AbstractIteratorBuilder;
+import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
+import nsa.datawave.query.rewrite.jexl.JexlASTHelper.IdentifierOpLiteral;
 import nsa.datawave.query.rewrite.jexl.functions.FieldIndexAggregator;
 import nsa.datawave.query.rewrite.jexl.visitors.IteratorBuildingVisitor;
 import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
 import nsa.datawave.query.rewrite.predicate.TimeFilter;
+import nsa.datawave.query.util.IteratorToSortedKeyValueIterator;
 import nsa.datawave.query.util.TypeMetadata;
 
 public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(TLDIndexBuildingVisitor.class);
     
     public TLDIndexBuildingVisitor(SourceFactory<Key,Value> sourceFactory, IteratorEnvironment env, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    Set<String> indexOnlyFields, Predicate<Key> datatypeFilter, FieldIndexAggregator fiAggregator, FileSystem hdfsFileSystem,
-                    String hdfsCacheDir, List<String> hdfsCacheDirURIAlternatives, String hdfsCacheSubDirPrefix, String hdfsFileCompressionCodec,
-                    boolean hdfsCacheDirReused, int hdfsCacheBufferSize, long hdfsCacheScanPersistThreshold, long hdfsCacheScanTimeout, int maxRangeSplit,
-                    int maxIvaratorSources, Collection<String> includes, Collection<String> excludes, Set<String> termFrequencyFields,
-                    boolean isQueryFullySatisfied, boolean sortedUIDs) {
-        super(sourceFactory, env, timeFilter, typeMetadata, indexOnlyFields, datatypeFilter, fiAggregator, hdfsFileSystem, hdfsCacheDir,
-                        hdfsCacheDirURIAlternatives, hdfsCacheSubDirPrefix, hdfsFileCompressionCodec, hdfsCacheDirReused, hdfsCacheBufferSize,
-                        hdfsCacheScanPersistThreshold, hdfsCacheScanTimeout, maxRangeSplit, maxIvaratorSources, includes, excludes, termFrequencyFields,
-                        isQueryFullySatisfied, sortedUIDs);
+                    Set<String> indexOnlyFields, Predicate<Key> datatypeFilter, FieldIndexAggregator fiAggregator, FileSystemCache fsCache,
+                    QueryLock queryLock, List<String> hdfsCacheDirURIAlternatives, String queryId, String hdfsCacheSubDirPrefix,
+                    String hdfsFileCompressionCodec, int hdfsCacheBufferSize, long hdfsCacheScanPersistThreshold, long hdfsCacheScanTimeout, int maxRangeSplit,
+                    int ivaratorMaxOpenFiles, int maxIvaratorSources, Collection<String> includes, Collection<String> excludes,
+                    Set<String> termFrequencyFields, boolean isQueryFullySatisfied, boolean sortedUIDs) {
+        super(sourceFactory, env, timeFilter, typeMetadata, indexOnlyFields, datatypeFilter, fiAggregator, fsCache, queryLock, hdfsCacheDirURIAlternatives,
+                        queryId, hdfsCacheSubDirPrefix, hdfsFileCompressionCodec, hdfsCacheBufferSize, hdfsCacheScanPersistThreshold, hdfsCacheScanTimeout,
+                        maxRangeSplit, ivaratorMaxOpenFiles, maxIvaratorSources, includes, excludes, termFrequencyFields, isQueryFullySatisfied, sortedUIDs);
         setIteratorBuilder(TLDIndexIteratorBuilder.class);
     }
     
@@ -76,6 +91,62 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
         
         return null;
+    }
+    
+    /**
+     * @param kvIter
+     * @param node
+     * @throws IOException
+     */
+    @Override
+    protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
+        if (null != rangeLimiter && limitLookup) {
+            
+            Key newStartKey = getKey(node);
+            
+            kvIter.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.<ByteSequence> emptyList(),
+                            false);
+            
+        }
+    }
+    
+    @Override
+    protected SortedKeyValueIterator<Key,Value> createIndexOnlyKey(ASTEQNode node) throws IOException {
+        Key newStartKey = getKey(node);
+        
+        IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
+        if (null == op || null == op.getLiteralValue()) {
+            // deep copy since this is likely a null literal
+            return source.deepCopy(env);
+        }
+        
+        String fn = op.deconstructIdentifier();
+        String literal = String.valueOf(op.getLiteralValue());
+        
+        if (log.isTraceEnabled()) {
+            log.trace("createIndexOnlyKey for " + fn + " " + literal + " " + newStartKey);
+        }
+        List<Entry<Key,Value>> kv = Lists.newArrayList();
+        if (null != limitedMap.get(Maps.immutableEntry(fn, literal))) {
+            kv.add(limitedMap.get(Maps.immutableEntry(fn, literal)));
+        } else {
+            
+            SortedKeyValueIterator<Key,Value> mySource = limitedSource;
+            // if source size > 0, we are free to use up to that number for this query
+            if (source.getSourceSize() > 0)
+                mySource = source.deepCopy(env);
+            
+            mySource.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.<ByteSequence> emptyList(),
+                            false);
+            
+            if (mySource.hasTop()) {
+                kv.add(Maps.immutableEntry(mySource.getTopKey(), Constants.NULL_VALUE));
+                
+            }
+        }
+        
+        SortedKeyValueIterator<Key,Value> kvIter = new IteratorToSortedKeyValueIterator(kv.iterator());
+        return kvIter;
     }
     
     @Override

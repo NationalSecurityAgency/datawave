@@ -20,8 +20,10 @@ import nsa.datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
  */
 public class BufferedFileBackedSortedSet<E extends Serializable> implements SortedSet<E> {
     protected static final int DEFAULT_BUFFER_PERSIST_THRESHOLD = 1000;
+    protected static final int DEFAULT_MAX_OPEN_FILES = 100;
     
     protected MultiSetBackedSortedSet<E> set = new MultiSetBackedSortedSet<>();
+    protected int maxOpenFiles = 10000;
     protected FileSortedSet<E> buffer = null;
     protected Comparator<? super E> comparator = null;
     protected boolean sizeModified = false;
@@ -36,12 +38,12 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
      * 
      * 
      */
-    public static interface SortedSetFileHandlerFactory {
-        public SortedSetFileHandler createHandler() throws IOException;
+    public interface SortedSetFileHandlerFactory {
+        SortedSetFileHandler createHandler() throws IOException;
     }
     
     public BufferedFileBackedSortedSet(BufferedFileBackedSortedSet<E> other) {
-        this(other.comparator, other.bufferPersistThreshold, other.handlerFactory);
+        this(other.comparator, other.bufferPersistThreshold, other.maxOpenFiles, other.handlerFactory);
         for (SortedSet<E> subSet : other.set.getSets()) {
             FileSortedSet<E> clone = new FileSortedSet<>((FileSortedSet<E>) subSet);
             this.set.addSet(clone);
@@ -54,17 +56,19 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     }
     
     public BufferedFileBackedSortedSet(SortedSetFileHandlerFactory handlerFactory) {
-        this(null, DEFAULT_BUFFER_PERSIST_THRESHOLD, handlerFactory);
+        this(null, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, handlerFactory);
     }
     
     public BufferedFileBackedSortedSet(Comparator<? super E> comparator, SortedSetFileHandlerFactory handlerFactory) {
-        this(comparator, DEFAULT_BUFFER_PERSIST_THRESHOLD, handlerFactory);
+        this(comparator, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, handlerFactory);
     }
     
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, SortedSetFileHandlerFactory handlerFactory) {
+    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles,
+                    SortedSetFileHandlerFactory handlerFactory) {
         this.comparator = comparator;
         this.handlerFactory = handlerFactory;
         this.bufferPersistThreshold = bufferPersistThreshold;
+        this.maxOpenFiles = maxOpenFiles;
     }
     
     public void persist() throws IOException {
@@ -144,7 +148,51 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     
     @Override
     public Iterator<E> iterator() {
+        // first lets compact down the sets if needed
+        try {
+            compact(maxOpenFiles);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unable to compact file backed sorted set", ioe);
+        }
         return set.iterator();
+    }
+    
+    public void compact(int maxFiles) throws IOException {
+        // if we have more sets than we are allowed, then we need to compact this down
+        if (maxFiles > 0) {
+            while (set.getSets().size() > maxFiles) {
+                List<SortedSet<E>> sets = set.getSets();
+                int numSets = sets.size();
+                // we want to do layers of compactions up to ivaratorMaxOpenFiles at a time until the total
+                // number of files is under maxFiles
+                int setsPerCompaction = Math.max(2, Math.min(maxOpenFiles, Math.round((float) numSets / maxFiles)));
+                int iterationsWithExtra = numSets / setsPerCompaction;
+                
+                MultiSetBackedSortedSet<E> newSet = new MultiSetBackedSortedSet<>();
+                MultiSetBackedSortedSet<E> setToCompact = new MultiSetBackedSortedSet<>();
+                
+                int iteration = 0;
+                byte subtraction = (byte) (iteration < iterationsWithExtra ? 0 : 1);
+                for (int i = 0; i < numSets; i++) {
+                    setToCompact.addSet(sets.get(i));
+                    if (setToCompact.getSets().size() == (setsPerCompaction - subtraction)) {
+                        newSet.addSet(compact(setToCompact));
+                        setToCompact.clear();
+                        iteration++;
+                        subtraction = (byte) (iteration < iterationsWithExtra ? 0 : 1);
+                    }
+                }
+                if (!setToCompact.isEmpty()) {
+                    newSet.addSet(compact(setToCompact));
+                    setToCompact.clear();
+                }
+                this.set = newSet;
+            }
+        }
+    }
+    
+    private FileSortedSet<E> compact(MultiSetBackedSortedSet<E> setToCompact) throws IOException {
+        return new FileSortedSet<>(setToCompact, handlerFactory.createHandler(), true);
     }
     
     @Override

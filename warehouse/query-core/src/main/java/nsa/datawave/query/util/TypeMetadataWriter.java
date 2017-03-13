@@ -37,18 +37,19 @@ public class TypeMetadataWriter {
         try {
             oos = new ObjectOutputStream(this.bridge.getOutputStream(name));
             oos.writeObject(map);
-            log.debug("wrote the typeMetadataMap to hdfs at " + this.bridge.getUri() + " " + this.bridge.getDir() + "/" + this.bridge.getTempFileName());
+            log.debug("wrote the typeMetadataMap to hdfs at " + this.bridge.getUri() + " " + this.bridge.getDir() + "/" + name + "/"
+                            + this.bridge.getTempFileName());
+        } catch (Exception ex) {
+            log.warn("Unable to write typeMetadataMap", ex);
         } finally {
             if (oos != null) {
                 oos.close();
             }
         }
         try {
-            
             this.bridge.rename(name);
-            log.debug("renamed typeMetadataFile");
         } catch (Exception ex) {
-            log.warn("got " + ex + " renaming typeMetadataFile");
+            log.warn("Unable to rename typeMetadataFile", ex);
         }
     }
     

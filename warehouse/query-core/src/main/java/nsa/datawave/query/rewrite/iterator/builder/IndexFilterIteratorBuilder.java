@@ -7,11 +7,8 @@ import nsa.datawave.query.rewrite.iterator.logic.DocumentAggregatingIterator;
 import nsa.datawave.query.rewrite.iterator.logic.IndexIteratorBridge;
 import nsa.datawave.query.rewrite.jexl.LiteralRange;
 import nsa.datawave.query.rewrite.predicate.Filter;
-import nsa.datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -20,7 +17,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 
 /**
  * A convenience class that aggregates a field, filter, range, source iterator, normalizer mappings, index only fields, data type filter and key transformer
@@ -54,21 +50,21 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
-        if (notNull(range, filter, source, datatypeFilter, keyTform, timeFilter, hdfsCacheDirURI, hdfsFileSystem)) {
+        if (notNull(range, filter, source, datatypeFilter, keyTform, timeFilter, ivaratorCacheDirURI, hdfsFileSystem)) {
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + filter + " over " + range);
             }
             // get the hadoop file system and a temporary directory
             URI hdfsCacheURI = null;
             try {
-                hdfsCacheURI = new URI(hdfsCacheDirURI);
+                hdfsCacheURI = new URI(ivaratorCacheDirURI);
                 hdfsFileSystem.mkdirs(new Path(hdfsCacheURI));
             } catch (MalformedURLException e) {
                 throw new IllegalStateException("Unable to load hadoop configuration", e);
             } catch (IOException e) {
                 throw new IllegalStateException("Unable to create hadoop file system", e);
             } catch (URISyntaxException e) {
-                throw new IllegalStateException("Invalid hdfs cache dir URI: " + hdfsCacheDirURI, e);
+                throw new IllegalStateException("Invalid hdfs cache dir URI: " + ivaratorCacheDirURI, e);
             }
             
             DocumentIterator docIterator = null;
@@ -76,8 +72,9 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                 // create a field index caching ivarator
                 DatawaveFieldIndexFilterIteratorJexl rangeIterator = new DatawaveFieldIndexFilterIteratorJexl(new Text(range.getFieldName()), filter, new Text(
                                 range.getLower().toString()), range.isLowerInclusive(), new Text(range.getUpper().toString()), range.isUpperInclusive(),
-                                this.timeFilter, this.datatypeFilter, false, hdfsCacheScanPersistThreshold, hdfsCacheScanTimeout, hdfsCacheBufferSize,
-                                maxRangeSplit, hdfsFileSystem, new Path(hdfsCacheURI), hdfsCacheReused, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
+                                this.timeFilter, this.datatypeFilter, false, ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout,
+                                ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles, hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true,
+                                PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
                 if (collectTimingDetails) {
                     rangeIterator.setCollectTimingDetails(true);
                     rangeIterator.setQuerySpanCollector(this.querySpanCollector);
@@ -106,7 +103,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
             keyTform = null;
             timeFilter = null;
             hdfsFileSystem = null;
-            hdfsCacheDirURI = null;
+            ivaratorCacheDirURI = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

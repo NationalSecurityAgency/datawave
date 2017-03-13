@@ -23,7 +23,6 @@ import nsa.datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import nsa.datawave.ingest.mapreduce.job.BulkIngestKey;
 import nsa.datawave.ingest.metadata.RawRecordMetadata;
 import nsa.datawave.ingest.table.aggregator.DateIndexDateAggregator;
-import nsa.datawave.marking.FlattenedVisibilityCache;
 import nsa.datawave.marking.MarkingFunctions;
 import nsa.datawave.util.StringUtils;
 import nsa.datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -293,8 +292,10 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         String rowDate = DateIndexUtil.format(date);
         String shardDate = ShardIdFactory.getDateString(shardId);
         
+        ColumnVisibility biased = new ColumnVisibility(flatten(visibility));
+        
         // The row is the date plus the shard partition
-        String row = rowDate + '_' + getDateIndexShardPartition(rowDate, type, shardDate, dataType, dateField, new String(visibility.getExpression()));
+        String row = rowDate + '_' + getDateIndexShardPartition(rowDate, type, shardDate, dataType, dateField, new String(biased.getExpression()));
         
         // the colf is the type (e.g. LOAD or ACTIVITY)
         String colf = type;
@@ -306,7 +307,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         Value shardList = createDateIndexValue(ShardIdFactory.getShard(shardId));
         
         // create the key
-        Key key = new Key(row, colf, colq, new ColumnVisibility(flatten(visibility)), date.getTime());
+        Key key = new Key(row, colf, colq, biased, date.getTime());
         
         if (log.isTraceEnabled()) {
             log.trace("Dateate index key: " + key + " for shardId " + shardId);

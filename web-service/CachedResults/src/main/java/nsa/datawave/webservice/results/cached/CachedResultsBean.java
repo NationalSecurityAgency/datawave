@@ -114,6 +114,7 @@ import nsa.datawave.webservice.query.metric.BaseQueryMetric;
 import nsa.datawave.webservice.query.metric.QueryMetric;
 import nsa.datawave.webservice.query.metric.QueryMetricsBean;
 import nsa.datawave.webservice.query.result.event.ResponseObjectFactory;
+import nsa.datawave.webservice.query.runner.AccumuloConnectionRequestBean;
 import nsa.datawave.webservice.query.runner.QueryPredictor;
 import nsa.datawave.webservice.query.runner.RunningQuery;
 import nsa.datawave.webservice.query.util.QueryUncaughtExceptionHandler;
@@ -232,6 +233,7 @@ public class CachedResultsBean {
     
     @Inject
     private QueryMetricFactory metricFactory;
+    AccumuloConnectionRequestBean accumuloConnectionRequestBean;
     
     static {
         BASE_COLUMNS = StringUtils.join(CacheableQueryRow.getFixedColumnSet(), ",");
@@ -432,7 +434,12 @@ public class CachedResultsBean {
             priority = logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             addQueryToTrackingMap(trackingMap, q);
-            connector = connectionFactory.getConnection(priority, trackingMap);
+            accumuloConnectionRequestBean.requestBegin(queryId);
+            try {
+                connector = connectionFactory.getConnection(priority, trackingMap);
+            } finally {
+                accumuloConnectionRequestBean.requestEnd(queryId);
+            }
             
             CacheableLogic cacheableLogic;
             Transformer t = logic.getTransformer(q);
@@ -478,7 +485,6 @@ public class CachedResultsBean {
                     query.setConnection(connector);
                     // Copy trace info from a clone of the original query
                     query.setTraceInfo(traceInfo);
-                    
                 } finally {
                     qlCache.poll(q.getId().toString());
                 }
@@ -642,9 +648,10 @@ public class CachedResultsBean {
             }
             response.addException(e.getBottomQueryException());
             throw new NoResultsException(e, response.getResult());
-        } catch (QueryCanceledQueryException e) {
+        } catch (QueryCanceledQueryException | InterruptedException e) {
+            log.info("Query " + queryId + " canceled on request");
             if (crq != null) {
-                crq.getMetric().setLifecycle(QueryMetric.Lifecycle.CLOSED);
+                crq.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
             }
             try {
                 persistByQueryId(viewName, alias, owner, CachedRunningQuery.Status.CANCELED, "query canceled", false);
@@ -870,6 +877,7 @@ public class CachedResultsBean {
             }
         } catch (BatchUpdateException be) {
             log.warn("Caught BatchUpdateException, one or more batch update have failed: " + be.getMessage(), be);
+            throw be;
         } catch (SQLException sqle) {
             log.error("Error committing last batch", sqle);
             throw sqle;
@@ -939,6 +947,7 @@ public class CachedResultsBean {
      *
      * @HTTP 200 success
      * @HTTP 500 internal server error
+     *
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
@@ -946,14 +955,16 @@ public class CachedResultsBean {
     @Interceptors(RequiredInterceptor.class)
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/CachedResults/")
     @Timed(name = "dw.cachedr.loadAndCreate", absolute = true)
-    public CachedResultsResponse loadAndCreate(MultivaluedMap<String,String> queryParameters) {
+    public CachedResultsResponse loadAndCreate(@Required("queryId") @PathParam("queryId") String queryId, MultivaluedMap<String,String> queryParameters) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
-        if (!queryParameters.containsKey("newQueryId")) {
-            throw new IllegalArgumentException("newQueryId parameter must be specified");
-        }
+        
         String newQueryId = queryParameters.getFirst("newQueryId");
-        cp.clear();
-        cp.validate(queryParameters);
+        Preconditions.checkNotNull(newQueryId, "newQueryId cannot be null");
+        
+        Preconditions.checkNotNull(queryId, "queryId cannot be null");
+        queryParameters.putSingle(CachedResultsParameters.QUERY_ID, queryId);
+        
+        String alias = queryParameters.getFirst(CachedResultsParameters.ALIAS);
         
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -961,13 +972,13 @@ public class CachedResultsBean {
         
         GenericResponse<String> r = null;
         try {
-            r = load(cp.getQueryId(), cp.getAlias());
+            r = load(queryId, alias);
         } catch (DatawaveWebApplicationException e) {
             if (e instanceof NoResultsException == false) {
                 
                 if (e.getCause() instanceof QueryCanceledException) {
                     try {
-                        persistByQueryId(newQueryId, cp.getAlias(), owner, CachedRunningQuery.Status.CANCELED, "query canceled", true);
+                        persistByQueryId(newQueryId, alias, owner, CachedRunningQuery.Status.CANCELED, "query canceled", true);
                     } catch (IOException e1) {
                         log.error("Error persisting state to CachedResults store", e1);
                     }
@@ -978,7 +989,7 @@ public class CachedResultsBean {
                         statusMessage = e.getClass().getName();
                     }
                     try {
-                        persistByQueryId(newQueryId, cp.getAlias(), owner, CachedRunningQuery.Status.ERROR, statusMessage, true);
+                        persistByQueryId(newQueryId, alias, owner, CachedRunningQuery.Status.ERROR, statusMessage, true);
                     } catch (IOException e1) {
                         log.error("Error persisting state to CachedResults store", e1);
                     }
@@ -1010,7 +1021,7 @@ public class CachedResultsBean {
         queryParameters.putSingle(CachedResultsParameters.VIEW, view);
         CachedResultsResponse response = create(newQueryId, queryParameters);
         try {
-            persistByQueryId(newQueryId, cp.getAlias(), owner, CachedRunningQuery.Status.AVAILABLE, "", true);
+            persistByQueryId(newQueryId, alias, owner, CachedRunningQuery.Status.AVAILABLE, "", true);
         } catch (IOException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.CACHE_PERSISTANCE_ERROR, e);
             response.addException(qe);
@@ -1043,18 +1054,16 @@ public class CachedResultsBean {
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public Future<CachedResultsResponse> loadAndCreateAsync(MultivaluedMap<String,String> queryParameters) {
         
-        String nameBase = UUID.randomUUID().toString().replaceAll("-", "");
-        queryParameters.putSingle(CachedResultsParameters.VIEW, nameBase);
-        cp.clear();
-        cp.validate(queryParameters);
-        
         String newQueryId = queryParameters.getFirst("newQueryId");
         Preconditions.checkNotNull(newQueryId, "newQueryId cannot be null");
-        String alias = cp.getAlias();
+        
+        String queryId = queryParameters.getFirst(CachedResultsParameters.QUERY_ID);
+        Preconditions.checkNotNull(queryId, "queryId cannot be null");
+        
+        String alias = queryParameters.getFirst("alias");
         if (alias == null) {
             alias = newQueryId;
         }
-        String queryId = cp.getQueryId();
         
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
@@ -1079,6 +1088,7 @@ public class CachedResultsBean {
         try {
             rq = getQueryById(queryId);
             if (rq != null) {
+                String nameBase = UUID.randomUUID().toString().replaceAll("-", "");
                 Query q = rq.getSettings();
                 crq.setOriginalQueryId(q.getId().toString());
                 crq.setView(nameBase);
@@ -1102,7 +1112,7 @@ public class CachedResultsBean {
         }
         
         // pagesize validated in loadAndCreate
-        return new AsyncResult<>(loadAndCreate(queryParameters));
+        return new AsyncResult<>(loadAndCreate(queryId, queryParameters));
     }
     
     /**
@@ -1531,7 +1541,14 @@ public class CachedResultsBean {
                 
                 synchronized (crq) {
                     if (crq.isActivated() == false) {
-                        throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
+                        if (crq.getShouldAutoActivate()) {
+                            Connection connection = ds.getConnection();
+                            String logicName = crq.getQueryLogicName();
+                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                            crq.activate(connection, queryLogic);
+                        } else {
+                            throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
+                        }
                     }
                     
                     try {
@@ -1736,7 +1753,14 @@ public class CachedResultsBean {
                 
                 synchronized (crq) {
                     if (crq.isActivated() == false) {
-                        throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
+                        if (crq.getShouldAutoActivate()) {
+                            Connection connection = ds.getConnection();
+                            String logicName = crq.getQueryLogicName();
+                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                            crq.activate(connection, queryLogic);
+                        } else {
+                            throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
+                        }
                     }
                     
                     try {
@@ -1967,19 +1991,36 @@ public class CachedResultsBean {
         
         VoidResponse response = new VoidResponse();
         
-        RunningQuery query = CachedResultsBean.loadingQueryMap.get(originalQueryId);
-        
-        if (query != null) {
-            if (query.getSettings().getOwner().equals(owner)) {
-                query.cancel();
+        try {
+            boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(originalQueryId);
+            RunningQuery query = CachedResultsBean.loadingQueryMap.get(originalQueryId);
+            
+            if (query == null) {
+                if (connectionRequestCanceled) {
+                    response.addMessage("CachedResults load canceled.");
+                } else {
+                    throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
+                }
             } else {
-                UnauthorizedQueryException e = new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", query
-                                .getSettings().getOwner(), owner));
-                throw new UnauthorizedException(e, response);
+                if (query.getSettings().getOwner().equals(owner)) {
+                    query.cancel();
+                    response.addMessage("CachedResults load canceled.");
+                } else {
+                    UnauthorizedQueryException e = new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}",
+                                    query.getSettings().getOwner(), owner));
+                    throw new UnauthorizedException(e, response);
+                }
             }
+            return response;
+        } catch (DatawaveWebApplicationException e) {
+            throw e;
+        } catch (Exception e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, MessageFormat.format("query_id: {0}", originalQueryId));
+            log.error(qe);
+            response.addException(qe.getBottomQueryException());
+            int statusCode = qe.getBottomQueryException().getStatusCode();
+            throw new DatawaveWebApplicationException(qe, response, statusCode);
         }
-        
-        return response;
     }
     
     /**
@@ -2007,13 +2048,29 @@ public class CachedResultsBean {
         
         VoidResponse response = new VoidResponse();
         
-        RunningQuery query = CachedResultsBean.loadingQueryMap.get(originalQueryId);
-        
-        if (query != null) {
-            query.cancel();
+        try {
+            boolean connectionRequestCanceled = accumuloConnectionRequestBean.adminCancelConnectionRequest(originalQueryId);
+            RunningQuery query = CachedResultsBean.loadingQueryMap.get(originalQueryId);
+            
+            if (query == null) {
+                if (connectionRequestCanceled) {
+                    response.addMessage("CachedResults load canceled.");
+                } else {
+                    throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
+                }
+            } else {
+                query.cancel();
+            }
+            return response;
+        } catch (DatawaveWebApplicationException e) {
+            throw e;
+        } catch (Exception e) {
+            QueryException qe = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, MessageFormat.format("query_id: {0}", originalQueryId));
+            log.error(qe);
+            response.addException(qe.getBottomQueryException());
+            int statusCode = qe.getBottomQueryException().getStatusCode();
+            throw new DatawaveWebApplicationException(qe, response, statusCode);
         }
-        
-        return response;
     }
     
     /**
@@ -2215,7 +2272,7 @@ public class CachedResultsBean {
             this.cachedRunningQueryCache.put(owner + "-" + crq.getAlias(), crq);
             this.cachedRunningQueryCache.put(owner + "-" + crq.getView(), crq);
             log.debug("persisting cachedRunningQuery " + crq.getQueryId() + " to database with status " + crq.getStatus().toString());
-            crq.saveToDatabase(ctx.getCallerPrincipal());
+            crq.saveToDatabase(ctx.getCallerPrincipal(), metricFactory);
         }
         
     }
@@ -2241,7 +2298,7 @@ public class CachedResultsBean {
                 
                 try {
                     log.debug("retrieving cachedRunningQuery " + id + " from database");
-                    crq = CachedRunningQuery.retrieveFromDatabase(id, ctx.getCallerPrincipal());
+                    crq = CachedRunningQuery.retrieveFromDatabase(id, ctx.getCallerPrincipal(), metricFactory);
                     if (crq != null) {
                         log.debug("retrieved cachedRunningQuery " + id + " from database with status " + crq.getStatus().toString());
                         this.cachedRunningQueryCache.put(owner + "-" + id, crq);
@@ -2333,7 +2390,7 @@ public class CachedResultsBean {
                                     outReader.close();
                                     errReader.close();
                                 }
-                                crq = CachedRunningQuery.retrieveFromDatabase(id, ctx.getCallerPrincipal());
+                                crq = CachedRunningQuery.retrieveFromDatabase(id, ctx.getCallerPrincipal(), metricFactory);
                                 if (crq != null) {
                                     break;
                                 }

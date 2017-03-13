@@ -20,6 +20,7 @@ import nsa.datawave.ingest.input.reader.event.EventErrorSummary;
 import nsa.datawave.ingest.mapreduce.handler.DataTypeHandler;
 import nsa.datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import nsa.datawave.ingest.mapreduce.job.BulkIngestKey;
+import nsa.datawave.ingest.mapreduce.job.ConstraintChecker;
 import nsa.datawave.ingest.mapreduce.job.metrics.KeyValueCountingContextWriter;
 import nsa.datawave.ingest.mapreduce.job.metrics.Metric;
 import nsa.datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
@@ -475,6 +476,11 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         } catch (Exception e) {
             // Rollback anything written for this event
             contextWriter.rollback();
+            
+            // Fail job on constraint violations
+            if (e instanceof ConstraintChecker.ConstraintViolationException) {
+                throw ((RuntimeException) e);
+            }
             
             // ensure they know we are still working on it
             context.progress();

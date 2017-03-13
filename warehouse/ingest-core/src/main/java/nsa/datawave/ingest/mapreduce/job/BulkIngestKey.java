@@ -191,7 +191,9 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
             boolean deleted1 = readBoolean(b1, o1);
             boolean deleted2 = readBoolean(b2, o2);
             if (deleted1 != deleted2) {
-                return (deleted1 ? 1 : -1);
+                // if deleted=true return -1 indicating a deleted key is 'less than' a non-deleted key, and that
+                // the deleted key must be sorted before the non-deleted key
+                return (deleted1 ? -1 : 1);
             }
             
             return 0;

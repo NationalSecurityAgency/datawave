@@ -83,7 +83,7 @@ public class BulkIngestKeyTest {
         key2bytes = bos.toByteArray();
         
         result = comparator.compare(key1bytes, 0, key1bytes.length, key2bytes, 0, key2bytes.length);
-        assertTrue(0 < result);
+        assertTrue(0 > result);
         
         key = new Key(new Text("row\0key"), new Text("e"), new Text("col\0qual\0data"), new Text("sample\0col\0vis"));
         key.setDeleted(false);
@@ -102,7 +102,7 @@ public class BulkIngestKeyTest {
         key2bytes = bos.toByteArray();
         
         result = comparator.compare(key1bytes, 0, key1bytes.length, key2bytes, 0, key2bytes.length);
-        assertTrue(0 > result);
+        assertTrue(0 < result);
         
     }
     

@@ -10,6 +10,7 @@ import nsa.datawave.query.rewrite.DocumentSerialization;
 import nsa.datawave.query.rewrite.DocumentSerialization.ReturnType;
 import nsa.datawave.query.rewrite.UnindexType;
 import nsa.datawave.query.rewrite.iterator.PowerSet;
+import nsa.datawave.query.rewrite.iterator.QueryIterator;
 import nsa.datawave.query.rewrite.tld.TLDQueryIterator;
 import nsa.datawave.query.rewrite.util.QueryStopwatch;
 import nsa.datawave.query.util.CompositeNameAndIndex;
@@ -195,19 +196,19 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     private int maxOrExpansionThreshold = 500;
     private int maxOrExpansionFstThreshold = 750;
     
-    private String hdfsCacheBaseURI = null;
-    // if this is set, then the hdfsCacheBaseURI will be randomly selected from
-    // this list
-    private List<String> hdfsCacheBaseURISelection = null;
-    
-    private boolean hdfsPushCacheBaseURISelectionDown = false;
-    private boolean hdfsCacheReused = false;
     private String hdfsSiteConfigURLs = null;
-    private int hdfsCacheBufferSize = 10000;
-    private long hdfsCacheScanPersistThreshold = 100000L;
-    private long hdfsCacheScanTimeout = 1000L * 60 * 60;
     private String hdfsFileCompressionCodec = null;
+    
+    private String zookeeperConfig = null;
+    
+    private List<String> ivaratorCacheBaseURIs = null;
+    private String ivaratorFstHdfsBaseURIs = null;
+    private int ivaratorCacheBufferSize = 10000;
+    private long ivaratorCacheScanPersistThreshold = 100000L;
+    private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
+    
     private int maxFieldIndexRangeSplit = 11;
+    private int ivaratorMaxOpenFiles = 100;
     private int maxIvaratorSources = 33;
     private int maxEvaluationPipelines = 25;
     private int maxPipelineCachedResults = 25;
@@ -315,8 +316,7 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
      * @return
      */
     public boolean canHandleExceededValueThreshold() {
-        return this.hdfsSiteConfigURLs != null
-                        && (this.hdfsCacheBaseURI != null || (null != this.hdfsCacheBaseURISelection && this.hdfsCacheBaseURISelection.size() > 0));
+        return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheBaseURIs && this.ivaratorCacheBaseURIs.size() > 0);
     }
     
     /**
@@ -703,87 +703,12 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.maxOrExpansionFstThreshold = maxOrExpansionFstThreshold;
     }
     
-    public String getHdfsCacheBaseURI() {
-        return hdfsCacheBaseURI;
-    }
-    
-    public void setHdfsCacheBaseURI(String hdfsCacheBaseURI) {
-        this.hdfsCacheBaseURI = hdfsCacheBaseURI;
-    }
-    
-    public List<String> getHdfsCacheBaseURISelectionAsList() {
-        return hdfsCacheBaseURISelection;
-    }
-    
-    public String getHdfsCacheBaseURISelection() {
-        if (hdfsCacheBaseURISelection == null) {
-            return null;
-        } else {
-            StringBuilder builder = new StringBuilder();
-            for (String hdfsCacheBaseURI : hdfsCacheBaseURISelection) {
-                if (builder.length() > 0) {
-                    builder.append(',');
-                }
-                builder.append(hdfsCacheBaseURI);
-            }
-            return builder.toString();
-        }
-    }
-    
-    public void setHdfsCacheBaseURISelection(String hdfsCacheBaseURISelection) {
-        if (hdfsCacheBaseURISelection == null || hdfsCacheBaseURISelection.isEmpty()) {
-            this.hdfsCacheBaseURISelection = null;
-        } else {
-            this.hdfsCacheBaseURISelection = Arrays.asList(StringUtils.split(hdfsCacheBaseURISelection, ','));
-        }
-    }
-    
-    public boolean isHdfsPushCacheBaseURISelectionDown() {
-        return hdfsPushCacheBaseURISelectionDown;
-    }
-    
-    public void setHdfsPushCacheBaseURISelectionDown(boolean hdfsPushCacheBaseURISelectionDown) {
-        this.hdfsPushCacheBaseURISelectionDown = hdfsPushCacheBaseURISelectionDown;
-    }
-    
-    public boolean isHdfsCacheReused() {
-        return hdfsCacheReused;
-    }
-    
-    public void setHdfsCacheReused(boolean hdfsCacheReused) {
-        this.hdfsCacheReused = hdfsCacheReused;
-    }
-    
     public String getHdfsSiteConfigURLs() {
         return hdfsSiteConfigURLs;
     }
     
     public void setHdfsSiteConfigURLs(String hadoopConfigURLs) {
         this.hdfsSiteConfigURLs = hadoopConfigURLs;
-    }
-    
-    public int getHdfsCacheBufferSize() {
-        return hdfsCacheBufferSize;
-    }
-    
-    public void setHdfsCacheBufferSize(int hdfsCacheBufferSize) {
-        this.hdfsCacheBufferSize = hdfsCacheBufferSize;
-    }
-    
-    public long getHdfsCacheScanPersistThreshold() {
-        return hdfsCacheScanPersistThreshold;
-    }
-    
-    public void setHdfsCacheScanPersistThreshold(long hdfsCacheScanPersistThreshold) {
-        this.hdfsCacheScanPersistThreshold = hdfsCacheScanPersistThreshold;
-    }
-    
-    public long getHdfsCacheScanTimeout() {
-        return hdfsCacheScanTimeout;
-    }
-    
-    public void setHdfsCacheScanTimeout(long hdfsCacheScanTimeout) {
-        this.hdfsCacheScanTimeout = hdfsCacheScanTimeout;
     }
     
     public String getHdfsFileCompressionCodec() {
@@ -794,12 +719,87 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
     }
     
+    public String getZookeeperConfig() {
+        return zookeeperConfig;
+    }
+    
+    public void setZookeeperConfig(String zookeeperConfig) {
+        this.zookeeperConfig = zookeeperConfig;
+    }
+    
+    public List<String> getIvaratorCacheBaseURIsAsList() {
+        return ivaratorCacheBaseURIs;
+    }
+    
+    public String getIvaratorCacheBaseURIs() {
+        if (ivaratorCacheBaseURIs == null) {
+            return null;
+        } else {
+            StringBuilder builder = new StringBuilder();
+            for (String hdfsCacheBaseURI : ivaratorCacheBaseURIs) {
+                if (builder.length() > 0) {
+                    builder.append(',');
+                }
+                builder.append(hdfsCacheBaseURI);
+            }
+            return builder.toString();
+        }
+    }
+    
+    public void setIvaratorCacheBaseURIs(String ivaratorCacheBaseURIs) {
+        if (ivaratorCacheBaseURIs == null || ivaratorCacheBaseURIs.isEmpty()) {
+            this.ivaratorCacheBaseURIs = null;
+        } else {
+            this.ivaratorCacheBaseURIs = Arrays.asList(StringUtils.split(ivaratorCacheBaseURIs, ','));
+        }
+    }
+    
+    public String getIvaratorFstHdfsBaseURIs() {
+        return ivaratorFstHdfsBaseURIs;
+    }
+    
+    public void setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
+        this.ivaratorFstHdfsBaseURIs = ivaratorFstHdfsBaseURIs;
+    }
+    
+    public int getIvaratorCacheBufferSize() {
+        return ivaratorCacheBufferSize;
+    }
+    
+    public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
+        this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
+    }
+    
+    public long getIvaratorCacheScanPersistThreshold() {
+        return ivaratorCacheScanPersistThreshold;
+    }
+    
+    public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
+        this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
+    }
+    
+    public long getIvaratorCacheScanTimeout() {
+        return ivaratorCacheScanTimeout;
+    }
+    
+    public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
+        this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
+    }
+    
     public int getMaxFieldIndexRangeSplit() {
         return maxFieldIndexRangeSplit;
     }
     
     public void setMaxFieldIndexRangeSplit(int maxFieldIndexRangeSplit) {
         this.maxFieldIndexRangeSplit = maxFieldIndexRangeSplit;
+    }
+    
+    public int getIvaratorMaxOpenFiles() {
+        return ivaratorMaxOpenFiles;
+    }
+    
+    public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
+        this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
     }
     
     public int getMaxIvaratorSources() {
@@ -1374,15 +1374,17 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.setExpandAllTerms(copy.isExpandAllTerms());
         
         this.setHdfsSiteConfigURLs(copy.getHdfsSiteConfigURLs());
-        this.setHdfsCacheBaseURI(copy.getHdfsCacheBaseURI());
-        this.setHdfsCacheBaseURISelection(copy.getHdfsCacheBaseURISelection());
-        this.setHdfsPushCacheBaseURISelectionDown(copy.isHdfsPushCacheBaseURISelectionDown());
-        this.setHdfsCacheReused(copy.isHdfsCacheReused());
-        this.setHdfsCacheBufferSize(copy.getHdfsCacheBufferSize());
-        this.setHdfsCacheScanPersistThreshold(copy.getHdfsCacheScanPersistThreshold());
-        this.setHdfsCacheScanTimeout(copy.getHdfsCacheScanTimeout());
         this.setHdfsFileCompressionCodec(copy.getHdfsFileCompressionCodec());
+        this.setZookeeperConfig(copy.getZookeeperConfig());
+        
+        this.setIvaratorCacheBaseURIs(copy.getIvaratorCacheBaseURIs());
+        this.setIvaratorFstHdfsBaseURIs(copy.getIvaratorFstHdfsBaseURIs());
+        this.setIvaratorCacheBufferSize(copy.getIvaratorCacheBufferSize());
+        this.setIvaratorCacheScanPersistThreshold(copy.getIvaratorCacheScanPersistThreshold());
+        this.setIvaratorCacheScanTimeout(copy.getIvaratorCacheScanTimeout());
+        
         this.setMaxFieldIndexRangeSplit(copy.getMaxFieldIndexRangeSplit());
+        this.setIvaratorMaxOpenFiles(copy.getIvaratorMaxOpenFiles());
         this.setMaxIvaratorSources(copy.getMaxIvaratorSources());
         this.setMaxEvaluationPipelines(copy.getMaxEvaluationPipelines());
         this.setMaxPipelineCachedResults(copy.getMaxPipelineCachedResults());

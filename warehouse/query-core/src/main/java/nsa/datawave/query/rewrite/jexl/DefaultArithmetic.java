@@ -1,5 +1,6 @@
 package nsa.datawave.query.rewrite.jexl;
 
+import nsa.datawave.data.type.Type;
 import nsa.datawave.query.rewrite.attributes.ValueTuple;
 import org.apache.log4j.Logger;
 
@@ -320,6 +321,13 @@ public class DefaultArithmetic extends DatawaveArithmetic {
     
     @Override
     public long toLong(Object val) {
+        // if the incoming val is a ValueTuple, swap in the delegate value
+        if (val instanceof ValueTuple) {
+            val = ((ValueTuple) val).second();
+            if (val instanceof Type<?>) {
+                val = ((Type) val).getDelegate();
+            }
+        }
         if (val == null) {
             controlNullOperand();
             return 0L;

@@ -514,7 +514,13 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             long start = System.currentTimeMillis();
             edgePreconditionContext.setFilteredContextForNormalizedContentInterface(fields);
             edgePreconditionEvaluation.setJexlContext(edgePreconditionContext);
-            log.info("Time to set terms on the filtered context & EdgePreconditionJexlEvaluations: " + (System.currentTimeMillis() - start) + "ms.");
+            if (log.isTraceEnabled()) {
+                long time = System.currentTimeMillis() - start;
+                // only worth logging those that took some time....
+                if (time > 1) {
+                    log.trace("Time to set terms on the filtered context & EdgePreconditionJexlEvaluations: " + time + "ms.");
+                }
+            }
         }
         
         // Get the load date of the event from the fields map

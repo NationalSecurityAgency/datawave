@@ -1,6 +1,7 @@
 package nsa.datawave.webservice.query.interceptor;
 
 import com.google.common.io.CountingOutputStream;
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import nsa.datawave.webservice.query.annotation.EnrichQueryMetrics;
 import nsa.datawave.webservice.query.cache.QueryCache;
 import nsa.datawave.webservice.query.interceptor.QueryMetricsEnrichmentInterceptor.QueryCall;
@@ -19,6 +20,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyUriInfo;
 import org.jboss.resteasy.util.FindAnnotation;
 import org.jboss.resteasy.util.HttpResponseCodes;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
@@ -113,6 +115,12 @@ public class QueryMetricsEnrichmentInterceptorTest {
     
     @Mock
     private WriterInterceptorContext writerContext;
+    
+    @Before
+    public void setup() {
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+    }
     
     @Test
     public void testPreProcess_HappyPath() throws Exception {

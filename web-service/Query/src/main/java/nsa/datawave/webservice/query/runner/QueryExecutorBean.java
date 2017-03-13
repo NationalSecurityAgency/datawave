@@ -133,6 +133,7 @@ import nsa.datawave.webservice.query.logic.QueryLogic;
 import nsa.datawave.webservice.query.logic.QueryLogicFactory;
 import nsa.datawave.webservice.query.logic.QueryLogicTransformer;
 import nsa.datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
+import nsa.datawave.webservice.query.metric.QueryMetric;
 import nsa.datawave.webservice.query.metric.QueryMetricsBean;
 import nsa.datawave.webservice.query.result.event.ResponseObjectFactory;
 import nsa.datawave.webservice.query.result.logic.QueryLogicDescription;
@@ -230,6 +231,7 @@ public class QueryExecutorBean implements QueryExecutor {
     
     @Inject
     private QueryMetricFactory metricFactory;
+    AccumuloConnectionRequestBean accumuloConnectionRequestBean;
     
     private Multimap<String,PatternWrapper> traceInfos;
     private CacheListener traceCacheListener;
@@ -665,8 +667,12 @@ public class QueryExecutorBean implements QueryExecutor {
             priority = logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             addQueryToTrackingMap(trackingMap, q);
-            connection = connectionFactory.getConnection(logic.getConnPoolName(), priority, trackingMap);
-            
+            accumuloConnectionRequestBean.requestBegin(q.getId().toString());
+            try {
+                connection = connectionFactory.getConnection(logic.getConnPoolName(), priority, trackingMap);
+            } finally {
+                accumuloConnectionRequestBean.requestEnd(q.getId().toString());
+            }
             // If we're supposed to trace this query, then turn tracing on and set information about the query
             // onto the span so that it is saved in the trace table.
             TInfo traceInfo = null;
@@ -724,16 +730,27 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (Exception e) {
                 response.addException(new QueryException(DatawaveErrorCode.DEPERSIST_ERROR, e).getBottomQueryException());
             }
-            log.error(t.getMessage(), t);
             
             /*
              * Allow web services to throw their own WebApplicationExceptions
              */
             if (t instanceof Error && !(t instanceof TokenMgrError)) {
+                log.error(t.getMessage(), t);
                 throw (Error) t;
             } else if (t instanceof WebApplicationException) {
+                log.error(t.getMessage(), t);
                 throw ((WebApplicationException) t);
+            } else if (t instanceof InterruptedException) {
+                if (rq != null) {
+                    rq.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
+                }
+                log.info("Query " + q.getId().toString() + " canceled on request");
+                QueryException qe = new QueryException(DatawaveErrorCode.QUERY_CANCELED, t);
+                response.addException(qe.getBottomQueryException());
+                int statusCode = qe.getBottomQueryException().getStatusCode();
+                throw new DatawaveWebApplicationException(qe, response, statusCode);
             } else {
+                log.error(t.getMessage(), t);
                 QueryException qe = new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, t);
                 response.addException(qe.getBottomQueryException());
                 int statusCode = qe.getBottomQueryException().getStatusCode();
@@ -976,11 +993,25 @@ public class QueryExecutorBean implements QueryExecutor {
             priority = query.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             addQueryToTrackingMap(trackingMap, query.getSettings());
-            connection = connectionFactory.getConnection(query.getLogic().getConnPoolName(), priority, trackingMap);
+            accumuloConnectionRequestBean.requestBegin(id);
+            try {
+                connection = connectionFactory.getConnection(query.getLogic().getConnPoolName(), priority, trackingMap);
+            } finally {
+                accumuloConnectionRequestBean.requestEnd(id);
+            }
             query.setConnection(connection);
             response.addMessage(id + " reset.");
             CreateQuerySessionIDFilter.QUERY_ID.set(id);
             return response;
+        } catch (InterruptedException e) {
+            if (query != null) {
+                query.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
+            }
+            log.info("Query " + id + " canceled on request");
+            QueryException qe = new QueryException(DatawaveErrorCode.QUERY_CANCELED, e);
+            response.addException(qe.getBottomQueryException());
+            int statusCode = qe.getBottomQueryException().getStatusCode();
+            throw new DatawaveWebApplicationException(qe, response, statusCode);
         } catch (Exception e) {
             log.error("Exception caught on resetting query", e);
             try {
@@ -1514,6 +1545,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             throw e;
         } catch (Exception e) {
+            log.error("Query Failed", e);
             if (query != null) {
                 query.setActiveCall(false);
                 if (query.getLogic().getCollectQueryMetrics() == true) {
@@ -1602,10 +1634,18 @@ public class QueryExecutorBean implements QueryExecutor {
     public VoidResponse close(@Required("id") @PathParam("id") String id) {
         VoidResponse response = new VoidResponse();
         try {
+            boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id);
             Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ((DatawavePrincipal) ctx.getCallerPrincipal()).getShortName());
             if (tuple == null) {
-                RunningQuery query = getQueryById(id);
-                close(query);
+                try {
+                    RunningQuery query = getQueryById(id);
+                    close(query);
+                } catch (NotFoundQueryException e) {
+                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                    if (!connectionRequestCanceled) {
+                        throw e;
+                    }
+                }
                 response.addMessage(id + " closed.");
             } else {
                 QueryLogic<?> logic = tuple.getFirst();
@@ -1647,10 +1687,18 @@ public class QueryExecutorBean implements QueryExecutor {
     public VoidResponse adminClose(@Required("id") @PathParam("id") String id) {
         VoidResponse response = new VoidResponse();
         try {
+            boolean connectionRequestCanceled = accumuloConnectionRequestBean.adminCancelConnectionRequest(id);
             Pair<QueryLogic<?>,Connector> tuple = qlCache.poll(id);
             if (tuple == null) {
-                RunningQuery query = adminGetQueryById(id);
-                close(query);
+                try {
+                    RunningQuery query = adminGetQueryById(id);
+                    close(query);
+                } catch (NotFoundQueryException e) {
+                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                    if (!connectionRequestCanceled) {
+                        throw e;
+                    }
+                }
                 response.addMessage(id + " closed.");
             } else {
                 QueryLogic<?> logic = tuple.getFirst();
@@ -1726,12 +1774,21 @@ public class QueryExecutorBean implements QueryExecutor {
     public VoidResponse cancel(@Required("id") @PathParam("id") String id) {
         VoidResponse response = new VoidResponse();
         try {
+            boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id);
             Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ctx.getCallerPrincipal().getName());
+            
             if (tuple == null) {
-                RunningQuery query = getQueryById(id);
-                query.cancel();
-                close(query);
-                response.addMessage(id + " cancelled.");
+                try {
+                    RunningQuery query = getQueryById(id);
+                    query.cancel();
+                    close(query);
+                } catch (NotFoundQueryException e) {
+                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                    if (!connectionRequestCanceled) {
+                        throw e;
+                    }
+                }
+                response.addMessage(id + " canceled.");
             } else {
                 QueryLogic<?> logic = tuple.getFirst();
                 try {
@@ -1773,11 +1830,19 @@ public class QueryExecutorBean implements QueryExecutor {
     public VoidResponse adminCancel(@Required("id") @PathParam("id") String id) {
         VoidResponse response = new VoidResponse();
         try {
+            boolean connectionRequestCanceled = accumuloConnectionRequestBean.adminCancelConnectionRequest(id);
             Pair<QueryLogic<?>,Connector> tuple = qlCache.poll(id);
             if (tuple == null) {
-                RunningQuery query = adminGetQueryById(id);
-                query.cancel();
-                close(query);
+                try {
+                    RunningQuery query = adminGetQueryById(id);
+                    query.cancel();
+                    close(query);
+                } catch (NotFoundQueryException e) {
+                    // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                    if (!connectionRequestCanceled) {
+                        throw e;
+                    }
+                }
                 response.addMessage(id + " closed.");
             } else {
                 QueryLogic<?> logic = tuple.getFirst();
@@ -1963,9 +2028,17 @@ public class QueryExecutorBean implements QueryExecutor {
     public VoidResponse remove(@Required("id") @PathParam("id") String id) {
         VoidResponse response = new VoidResponse();
         try {
-            RunningQuery query = getQueryById(id);
-            close(query);
-            persister.remove(query.getSettings());
+            boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id);
+            try {
+                RunningQuery query = getQueryById(id);
+                close(query);
+                persister.remove(query.getSettings());
+            } catch (NotFoundQueryException e) {
+                // if connection request was canceled, then the call was successful even if a RunningQuery was not found
+                if (!connectionRequestCanceled) {
+                    throw e;
+                }
+            }
             response.addMessage(id + " removed.");
             return response;
         } catch (DatawaveWebApplicationException e) {
@@ -2894,6 +2967,7 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (DatawaveWebApplicationException e) {
                 throw e;
             } catch (Exception e) {
+                log.error("ExecuteStreamingOutputResponse write Failed", e);
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, MessageFormat.format("query_id: {0}", rq.getSettings().getId()));
                 log.error(qe);
                 errorResponse.addException(qe.getBottomQueryException());
@@ -2997,6 +3071,7 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (DatawaveWebApplicationException e) {
                 throw e;
             } catch (Exception e) {
+                log.error("ErrorResponse write Failed", e);
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "foo");
                 log.error(qe);
                 errorResponse.addException(qe.getBottomQueryException());

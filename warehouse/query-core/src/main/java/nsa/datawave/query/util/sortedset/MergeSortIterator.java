@@ -1,8 +1,5 @@
 package nsa.datawave.query.util.sortedset;
 
-import nsa.datawave.webservice.query.exception.DatawaveErrorCode;
-import nsa.datawave.webservice.query.exception.QueryException;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -11,6 +8,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import nsa.datawave.webservice.query.exception.DatawaveErrorCode;
+import nsa.datawave.webservice.query.exception.QueryException;
 
 /**
  * This is an iterator that will return a sorted set of items (no dups) from an underlying set of sorted sets. This will support null contained in the

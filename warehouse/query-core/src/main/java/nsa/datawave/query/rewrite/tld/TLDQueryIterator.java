@@ -1,6 +1,7 @@
 package nsa.datawave.query.rewrite.tld;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,6 +32,7 @@ import nsa.datawave.query.rewrite.predicate.ConfiguredPredicate;
 import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
 import nsa.datawave.query.rewrite.predicate.TLDEventDataFilter;
 import nsa.datawave.util.StringUtils;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**
  * This is a TLD (Top Level Document) QueryIterator implementation.
@@ -173,7 +175,8 @@ public class TLDQueryIterator extends QueryIterator {
     }
     
     @Override
-    protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs) {
+    protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
+                    throws MalformedURLException, ConfigException {
         if (log.isTraceEnabled()) {
             log.trace(documentRange);
         }
@@ -187,11 +190,12 @@ public class TLDQueryIterator extends QueryIterator {
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
         return new TLDIndexBuildingVisitor(this, this.myEnvironment, this.getTimeFilter(), this.getTypeMetadata(), indexOnlyFields,
-                        this.getFieldIndexKeyDataTypeFilter(), this.fiAggregator, this.getHdfsFileSystem(), this.getHdfsCacheBaseURI(),
-                        this.getHdfsCacheBaseURIAlternativesAsList(), this.getHdfsCacheSubDirPrefix(), this.getHdfsFileCompressionCodec(),
-                        this.isHdfsCacheReused(), this.getHdfsCacheBufferSize(), this.getHdfsCacheScanPersistThreshold(), this.getHdfsCacheScanTimeout(),
-                        this.getMaxIndexRangeSplit(), this.getMaxIvaratorSources(), indexedFields, Collections.<String> emptySet(),
-                        this.getTermFrequencyFields(), isQueryFullySatisfied, sortedUIDs).limit(documentRange).limit(sourceLimit);
+                        this.getFieldIndexKeyDataTypeFilter(), this.fiAggregator, this.getFileSystemCache(), this.getQueryLock(),
+                        this.getIvaratorCacheBaseURIsAsList(), this.getQueryId(), this.getHdfsCacheSubDirPrefix(), this.getHdfsFileCompressionCodec(),
+                        this.getIvaratorCacheBufferSize(), this.getIvaratorCacheScanPersistThreshold(), this.getIvaratorCacheScanTimeout(),
+                        this.getMaxIndexRangeSplit(), this.getIvaratorMaxOpenFiles(), this.getMaxIvaratorSources(), indexedFields,
+                        Collections.<String> emptySet(), this.getTermFrequencyFields(), isQueryFullySatisfied, sortedUIDs).limit(documentRange).limit(
+                        sourceLimit);
     }
     
 }

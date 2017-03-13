@@ -86,6 +86,9 @@ public class AccumuloTableCache {
     @Inject
     @ConfigProperty(name = "dw.cacheCoordinator.numLocks", defaultValue = "300")
     private int numLocks;
+    @Inject
+    @ConfigProperty(name = "dw.cacheCoordinator.maxRetries", defaultValue = "10")
+    private int maxRetries;
     
     public static final String MOCK_USERNAME = "";
     public static final PasswordToken MOCK_PASSWORD = new PasswordToken(new byte[0]);
@@ -114,19 +117,21 @@ public class AccumuloTableCache {
             TableCache detail = entry.getValue();
             detail.setInstance(instance);
             
-            final SharedCacheCoordinator cacheCoordinator = new SharedCacheCoordinator(tableName, zookeepers, evictionReaperIntervalInSeconds, numLocks);
+            final SharedCacheCoordinator cacheCoordinator = new SharedCacheCoordinator(tableName, zookeepers, evictionReaperIntervalInSeconds, numLocks,
+                            maxRetries);
             cacheCoordinators.add(cacheCoordinator);
             try {
                 cacheCoordinator.start();
             } catch (Exception e) {
                 throw new EJBException("Error starting AccumuloTableCache", e);
             }
+
             try {
-                cacheCoordinator.registerBoolean(tableName + ":needsUpdate", new SharedBooleanListener() {
+                cacheCoordinator.registerTriState(tableName + ":needsUpdate", new SharedTriStateListener() {
                     @Override
-                    public void booleanHasChanged(SharedBooleanReader reader, boolean value) throws Exception {
+                    public void stateHasChanged(SharedTriStateReader reader, SharedTriState.STATE value) throws Exception {
                         if (log.isDebugEnabled())
-                            log.debug("booleanHasChanged(" + reader + ", " + value + ")");
+                            log.debug("stateHasChanged(" + reader + ", " + value + ")");
                     }
                     
                     @Override
@@ -138,6 +143,7 @@ public class AccumuloTableCache {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            
             try {
                 cacheCoordinator.registerCounter(tableName, new SharedCountListener() {
                     @Override
@@ -149,8 +155,6 @@ public class AccumuloTableCache {
                     public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception {
                         if (!cacheCoordinator.checkCounter(tableName, newCount)) {
                             handleReload(tableName);
-                            handleReloadTypeMetadata(tableName);
-                            log.debug("in setup listener for counter, called handleReloadTypeMetadata(" + tableName + ")");
                         }
                     }
                 });
@@ -269,9 +273,9 @@ public class AccumuloTableCache {
     
     private void handleReloadTypeMetadata(String tableName) {
         try {
-            details.get(tableName).getWatcher().setBoolean(tableName + ":needsUpdate", true);
+            details.get(tableName).getWatcher().setTriState(tableName + ":needsUpdate", SharedTriState.STATE.NEEDS_UPDATE);
         } catch (Exception e) {
-            log.warn("could not update the boolean '" + tableName + ":needsUpdate' on watcher for table " + tableName);
+            log.warn("could not update the triState '" + tableName + ":needsUpdate' on watcher for table " + tableName, e);
         }
         
     }

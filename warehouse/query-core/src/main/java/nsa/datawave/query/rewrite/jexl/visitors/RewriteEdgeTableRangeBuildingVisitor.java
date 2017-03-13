@@ -514,21 +514,46 @@ public class RewriteEdgeTableRangeBuildingVisitor extends BaseVisitor implements
     
     /**
      * This method creates a new VisitationContext object to be returned and loads the final list of queryContexts which are then used to build the ranges and
-     * normalized query
+     * normalized query One of the main purposes of this method is to create the normalized query that is used to filter column families from ranges. This is a
+     * problem when there are multiple query contexts because the whitelist will exclude certain column family values, which will affect what gets returned by
+     * the query. This is addressed by the columnFamilyAreDifferent boolean which is passed down to populateQuery()
      */
     private VisitationContext computeVisitaionContext(List<QueryContext> queryContexts) {
         // if both edge types and edge relationships are complete (not regex) for each query context then we can use the
         // batch scanners built in fetch column method to do the filtering for us so we can drop the edge types, and relations
         // from the normalized query that goes to the edge filter iterator.
         boolean includColumnFamilyTerms = false;
+        boolean columnFamilyAreDifferent = false;
         
         // If the sink field appears in a query contexts, 'otherContext' list then it will have to be included in the normalized
         // query string sent to the edge filter iterator
         boolean includeSink = false;
+        boolean includeSource = false;
         for (QueryContext queryContext : queryContexts) {
             if (queryContext.hasCompleteColumnFamily() == false) {
                 includColumnFamilyTerms = true;
                 break;
+            }
+        }
+        
+        // If there are multiple query contexts, and their column families are not the same, we will pass down a boolean
+        // so that the whitelist will not get updated to improve column family filtering against ranges
+        
+        if (queryContexts.size() > 1) {
+            int i;
+            QueryContext.ColumnContext firstColumn = (queryContexts.get(0).getColumnContext());
+            for (i = 1; i < queryContexts.size(); i++) {
+                QueryContext.ColumnContext currentContext = queryContexts.get(i).getColumnContext();
+                if ((firstColumn != null && currentContext == null) || (firstColumn == null && currentContext != null)) {
+                    columnFamilyAreDifferent = true;
+                    break;
+                }
+                if (firstColumn != null) {
+                    if (!(firstColumn.equals(queryContexts.get(i).getColumnContext()))) {
+                        columnFamilyAreDifferent = true;
+                        break;
+                    }
+                }
             }
         }
         VisitationContext vContext = new VisitationContext(includeStats);
@@ -537,7 +562,20 @@ public class RewriteEdgeTableRangeBuildingVisitor extends BaseVisitor implements
         
         for (QueryContext qContext : queryContexts) {
             includeSink = vContext.updateQueryRanges(qContext);
-            vContext.updateQueryStrings(qContext, sawEquivalenceRegexSource, (includeSink || sawEquivalenceRegexSink), includColumnFamilyTerms);
+            includeSink = includeSink || sawEquivalenceRegexSink || columnFamilyAreDifferent;
+            // If there is only one query context you don't need to include the source, you do if there are multiple QCs
+            if (queryContexts.size() > 1) {
+                // If there are multiple query contexts, that means that there are multiple sources. If there are multiple
+                // sources, then they need to be included with sinks.
+                includeSource = includeSink || sawEquivalenceRegexSource || columnFamilyAreDifferent;
+            } else if (queryContexts.size() == 1) {
+                // If there is only one source, you don't need to include it with the sink. It is implied.
+                includeSource = sawEquivalenceRegexSource || columnFamilyAreDifferent;
+            }
+            // boolean for source and sink inclusion for normalized query
+            // boolean to include column family terms to the normalized query
+            // boolean to create white list for column family terms
+            vContext.updateQueryStrings(qContext, includeSource, includeSink, includColumnFamilyTerms, !columnFamilyAreDifferent);
             if (!includColumnFamilyTerms) {
                 vContext.buildColumnFamilyList(qContext, includeStats);
             }

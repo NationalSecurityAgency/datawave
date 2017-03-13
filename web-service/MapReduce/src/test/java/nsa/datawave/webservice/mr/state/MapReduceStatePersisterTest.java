@@ -16,6 +16,7 @@ import java.util.UUID;
 import javax.ejb.EJBContext;
 
 import nsa.datawave.security.authorization.DatawavePrincipal;
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import nsa.datawave.webservice.mr.state.MapReduceStatePersisterBean.MapReduceState;
 import nsa.datawave.webservice.results.mr.MapReduceInfoResponse;
@@ -64,6 +65,8 @@ public class MapReduceStatePersisterTest {
     
     @Before
     public void setup() throws Exception {
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
         connection = instance.getConnector("root", new PasswordToken(""));
         if (connection.tableOperations().exists(TABLE_NAME))
             connection.tableOperations().delete(TABLE_NAME);

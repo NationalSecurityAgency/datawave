@@ -21,6 +21,7 @@ import java.util.UUID;
 import java.util.ArrayList;
 
 import nsa.datawave.security.authorization.DatawavePrincipal;
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import nsa.datawave.webservice.query.Query;
 import nsa.datawave.webservice.query.QueryImpl;
@@ -59,11 +60,16 @@ public class RunningQueryTest {
     final private AccumuloConnectionFactory.Priority connectionPriority = AccumuloConnectionFactory.Priority.NORMAL;
     private String methodAuths = "";
     private final Set<Set<String>> userAuths = new HashSet<>();
-    private final DatawavePrincipal principal = new DatawavePrincipal("userDn<isserDn>");
+    private DatawavePrincipal principal;
     private final QueryLogic<?> logic = createMock(BaseQueryLogic.class);
     
     @Before
     public void setup() throws MalformedURLException, IllegalArgumentException, IllegalAccessException {
+        
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        
+        principal = new DatawavePrincipal("userDn<isserDn>");
         
         settings.setQueryLogicName("testQueryLogic");
         settings.setQuery("FOO == BAR");

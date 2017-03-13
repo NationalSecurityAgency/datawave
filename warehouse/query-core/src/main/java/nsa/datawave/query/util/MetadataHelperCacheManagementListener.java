@@ -51,8 +51,8 @@ public class MetadataHelperCacheManagementListener {
     }
     
     private SharedCacheCoordinator registerCacheListener(final String metadataTableName) {
-        log.debug("created listener for table:" + metadataTableName);
-        final SharedCacheCoordinator watcher = new SharedCacheCoordinator(metadataTableName, this.zookeepers, 30, 300);
+        log.debug("created CacheManagement listener for table:" + metadataTableName);
+        final SharedCacheCoordinator watcher = new SharedCacheCoordinator(metadataTableName, this.zookeepers, 30, 300, 10);
         try {
             watcher.start();
         } catch (Exception e) {

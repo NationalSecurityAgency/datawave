@@ -243,4 +243,32 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
         }
         return super.toBoolean(val);
     }
+    
+    private Object possibleValueTupleToDelegate(Object val) {
+        // if the incoming val is a ValueTuple, swap in the delegate value
+        if (val instanceof ValueTuple) {
+            val = ((ValueTuple) val).second();
+            if (val instanceof Type<?>) {
+                val = ((Type) val).getDelegate();
+            }
+        }
+        return val;
+    }
+    
+    public int toInteger(Object val) {
+        return super.toInteger(possibleValueTupleToDelegate(val));
+    }
+    
+    public BigInteger toBigInteger(Object val) {
+        return super.toBigInteger(possibleValueTupleToDelegate(val));
+    }
+    
+    public BigDecimal toBigDecimal(Object val) {
+        return super.toBigDecimal(possibleValueTupleToDelegate(val));
+    }
+    
+    public double toDouble(Object val) {
+        return super.toDouble(possibleValueTupleToDelegate(val));
+    }
+    
 }

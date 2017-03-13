@@ -1,12 +1,14 @@
 package nsa.datawave.webservice.query.result.event;
 
-import java.util.List;
-import java.util.Map;
+import org.apache.accumulo.core.security.ColumnVisibility;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-
-import org.apache.accumulo.core.security.ColumnVisibility;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlTransient;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -16,13 +18,28 @@ public abstract class FacetsBase implements HasMarkings {
     
     protected Map<String,String> markings;
     
-    public abstract void setFields(List<? extends FieldCardinalityBase> fields);
+    @XmlElementWrapper(name = "Fields")
+    @XmlElement(name = "Field")
+    protected List<FieldCardinality> fields = null;
     
-    public abstract List<? extends FieldCardinalityBase> getFields();
+    @XmlTransient
+    protected ColumnVisibility columnVisibility;
     
-    public abstract ColumnVisibility getColumnVisibility();
+    public void setFields(List<? extends FieldCardinalityBase> fields) {
+        this.fields = (List<FieldCardinality>) fields;
+    }
     
-    public abstract void setColumnVisibility(ColumnVisibility columnVisibility);
+    public List<FieldCardinality> getFields() {
+        return fields;
+    }
+    
+    public ColumnVisibility getColumnVisibility() {
+        return columnVisibility;
+    }
+    
+    public void setColumnVisibility(ColumnVisibility columnVisibility) {
+        this.columnVisibility = columnVisibility;
+    }
     
     public abstract void setSizeInBytes(long sizeInBytes);
     

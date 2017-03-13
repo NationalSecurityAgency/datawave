@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import nsa.datawave.ingest.data.config.ingest.BaseIngestHelper;
 import nsa.datawave.ingest.mapreduce.job.BulkIngestCounters;
 import nsa.datawave.ingest.mapreduce.job.BulkIngestKey;
+import nsa.datawave.ingest.mapreduce.job.ConstraintChecker;
 import nsa.datawave.ingest.mapreduce.job.IngestJob;
 import nsa.datawave.ingest.mapreduce.job.statsd.StatsDHelper;
 import org.apache.accumulo.core.data.Value;
@@ -43,6 +44,8 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
     // the maximum size of the cache. When the cache reaches this size, it will automatically be flushed
     private int maxSize = 2500;
     
+    private ConstraintChecker constraintChecker;
+    
     /**
      * Initialize this context writer.
      *
@@ -65,6 +68,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
             simpleClassName = getClass().getSimpleName();
         }
         maxSize = conf.getInt(CONTEXT_WRITER_MAX_CACHE_SIZE, maxSize);
+        constraintChecker = ConstraintChecker.create(conf);
     }
     
     /**
@@ -72,6 +76,10 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
      */
     @Override
     public void write(BulkIngestKey key, Value value, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException {
+        if (constraintChecker != null && constraintChecker.isConfigured()) {
+            constraintChecker.check(key.getTableName(), key.getKey().getColumnVisibilityData().getBackingArray());
+        }
+        
         cache.put(key, value);
         this.count++;
         if (counters != null) {
@@ -87,6 +95,12 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
      */
     @Override
     public void write(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException {
+        if (constraintChecker != null && constraintChecker.isConfigured()) {
+            for (BulkIngestKey key : entries.keySet()) {
+                constraintChecker.check(key.getTableName(), key.getKey().getColumnVisibilityData().getBackingArray());
+            }
+        }
+        
         cache.putAll(entries);
         this.count += entries.size();
         if (counters != null) {

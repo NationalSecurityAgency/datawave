@@ -288,11 +288,11 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
      * get away with excluding source and sink if the
      */
     public void buildStrings(StringBuilder normalizedQuery, StringBuilder normalizedStatsQuery, boolean includeStats, boolean includeSource,
-                    boolean includeSink, HashMultimap<String,String> preFilterValues, boolean includeColumnFamilyTerms) {
+                    boolean includeSink, HashMultimap<String,String> preFilterValues, boolean includeColumnFamilyTerms, boolean updateWhitelist) {
         StringBuilder trimmedQuery = new StringBuilder();
         StringBuilder trimmedStatsQuery = new StringBuilder();
         
-        NormalizedQuery query = this.toString(includeStats, includeSource, includeSink, preFilterValues, includeColumnFamilyTerms);
+        NormalizedQuery query = this.toString(includeStats, includeSource, includeSink, preFilterValues, includeColumnFamilyTerms, updateWhitelist);
         
         trimmedQuery.append(query.getNormalizedQuery());
         if (includeStats) {
@@ -320,7 +320,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                         tempQueryStatsString.append("(");
                     }
                 }
-                query = oContext.toString(includeStats, includeSource, includeSink, preFilterValues, includeColumnFamilyTerms);
+                query = oContext.toString(includeStats, includeSource, includeSink, preFilterValues, includeColumnFamilyTerms, updateWhitelist);
                 tempQueryString.append(query.getNormalizedQuery());
                 if (includeStats) {
                     tempQueryStatsString.append(query.getNormalizedStatsQuery());
@@ -355,7 +355,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
     }
     
     private NormalizedQuery toString(boolean includeStats, boolean includeSource, boolean includeSink, HashMultimap<String,String> preFilterValues,
-                    boolean includeColumnFamilyTerms) {
+                    boolean includeColumnFamilyTerms, boolean updateWhitelist) {
         
         NormalizedQuery rowString = null, colString = null;
         
@@ -363,7 +363,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             rowString = this.getRowContext().toString(includeStats, includeSource, includeSink);
         }
         if (this.getColumnContext() != null) {
-            colString = this.getColumnContext().toString(includeStats, preFilterValues, includeColumnFamilyTerms);
+            colString = this.getColumnContext().toString(includeStats, preFilterValues, includeColumnFamilyTerms, updateWhitelist);
         }
         
         NormalizedQuery ret = new NormalizedQuery();
@@ -425,13 +425,14 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
     }
     
     private void updateWhiteList(IdentityContext expression, HashMultimap<String,String> preFilterValues) {
+        /*
+         * A whitelist is a list of things that you allow, therefore, there is no reason to check for things that you do not allow. This means there is no
+         * reason to check for NOT_EQUALS or NOT_EQUALS_REGEX, because they won't be allowed by default.
+         */
         
         if (expression.getOperation().equals(EQUALS)) {
             preFilterValues.put(expression.getIdentity(), expression.getLiteral());
         } else if (expression.getOperation().equals(EQUALS_REGEX)) {
-            preFilterValues.put(expression.getIdentity(), RewriteEdgeQueryLogic.PRE_FILTER_DISABLE_KEYWORD);
-        } else if (expression.getOperation().equals(NOT_EQUALS_REGEX)) {
-            // This is probably not needed but it was in a previous version of the code
             preFilterValues.put(expression.getIdentity(), RewriteEdgeQueryLogic.PRE_FILTER_DISABLE_KEYWORD);
         }
         
@@ -476,7 +477,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 if (createStats) {
                     if (expandStats) {
                         tempStatsStringBuilder.append(splitCompoundValue(iContext.getIdentity(), iContext.getOperation(), iContext.getEscapedLiteral(),
-                                        preFilterValues));
+                                        preFilterValues, addToPrefilter));
                     } else {
                         tempStatsStringBuilder.append(iContext.getIdentity() + " " + iContext.getOperation() + " " + "'" + iContext.getEscapedLiteral() + "'");
                     }
@@ -510,7 +511,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
     /*
      * Used for creating the stats query. Splits up EDGE_RELATIONSHIP=A-B into (EDGE_RELATIONSHIP=A)
      */
-    private static StringBuilder splitCompoundValue(String name, String operator, String value, HashMultimap<String,String> preFilterValues) {
+    private static StringBuilder splitCompoundValue(String name, String operator, String value, HashMultimap<String,String> preFilterValues,
+                    boolean updateWhitelist) {
         StringBuilder sb = new StringBuilder();
         
         String[] parts = value.split("-");
@@ -523,7 +525,9 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             // don't need the second value since that would be the sink's relationship and we don't return stats edges for the sink
             
             // If we do split then we need to add the two new values to the pre-filter white list
-            preFilterValues.put(name, parts[0]);
+            if (updateWhitelist) {
+                preFilterValues.put(name, parts[0]);
+            }
         }
         
         return sb;
@@ -540,7 +544,47 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         private List<IdentityContext> exclusions;
         private List<IdentityContext> functions;
         
-        private boolean completeColumnFamilies = true;
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (!(o instanceof ColumnContext))
+                return false;
+            
+            ColumnContext that = (ColumnContext) o;
+            
+            if (completeColumnFamilies != that.completeColumnFamilies)
+                return false;
+            if (edgeTypes != null ? !edgeTypes.equals(that.edgeTypes) : that.edgeTypes != null)
+                return false;
+            if (edgeRelationships != null ? !edgeRelationships.equals(that.edgeRelationships) : that.edgeRelationships != null)
+                return false;
+            if (edgeAttribute1Values != null ? !edgeAttribute1Values.equals(that.edgeAttribute1Values) : that.edgeAttribute1Values != null)
+                return false;
+            if (edgeAttribute2Values != null ? !edgeAttribute2Values.equals(that.edgeAttribute2Values) : that.edgeAttribute2Values != null)
+                return false;
+            if (edgeAttribute3Values != null ? !edgeAttribute3Values.equals(that.edgeAttribute3Values) : that.edgeAttribute3Values != null)
+                return false;
+            if (exclusions != null ? !exclusions.equals(that.exclusions) : that.exclusions != null)
+                return false;
+            return !(functions != null ? !functions.equals(that.functions) : that.functions != null);
+            
+        }
+        
+        @Override
+        public int hashCode() {
+            int result = edgeTypes != null ? edgeTypes.hashCode() : 0;
+            result = 31 * result + (edgeRelationships != null ? edgeRelationships.hashCode() : 0);
+            result = 31 * result + (edgeAttribute1Values != null ? edgeAttribute1Values.hashCode() : 0);
+            result = 31 * result + (edgeAttribute2Values != null ? edgeAttribute2Values.hashCode() : 0);
+            result = 31 * result + (edgeAttribute3Values != null ? edgeAttribute3Values.hashCode() : 0);
+            result = 31 * result + (exclusions != null ? exclusions.hashCode() : 0);
+            result = 31 * result + (functions != null ? functions.hashCode() : 0);
+            result = 31 * result + (completeColumnFamilies ? 1 : 0);
+            return result;
+        }
+        
+        private boolean completeColumnFamilies = false;
         
         public void packageIdentities(List<IdentityContext> identityContexts) {
             packageIdentities(identityContexts, true);
@@ -634,7 +678,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             return columnFamilies;
         }
         
-        public NormalizedQuery toString(boolean includeStats, HashMultimap<String,String> preFilterValues, boolean includeColumnFamilyTerms) {
+        public NormalizedQuery toString(boolean includeStats, HashMultimap<String,String> preFilterValues, boolean includeColumnFamilyTerms,
+                        boolean updateWhitelist) {
             StringBuilder trimmedQuery = new StringBuilder();
             StringBuilder trimmedStatsQuery = new StringBuilder();
             int numTermsAdded = 0;
@@ -644,7 +689,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     trimmedQuery.append(AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeTypes(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, true);
+                numTermsAdded += populateQuery(getEdgeTypes(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateWhitelist));
             }
             
             if (includeColumnFamilyTerms && getEdgeRelationships() != null) {
@@ -652,7 +697,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     trimmedQuery.append(AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeRelationships(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, true);
+                numTermsAdded += populateQuery(getEdgeRelationships(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateWhitelist));
             }
             
             if (getEdgeAttribute1Values() != null) {
@@ -660,7 +705,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     trimmedQuery.append(AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute1Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, true);
+                numTermsAdded += populateQuery(getEdgeAttribute1Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateWhitelist));
             }
             
             if (getEdgeAttribute2Values() != null) {
@@ -668,7 +713,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     trimmedQuery.append(AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute2Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, true);
+                numTermsAdded += populateQuery(getEdgeAttribute2Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateWhitelist));
             }
             
             if (getEdgeAttribute3Values() != null) {
@@ -676,7 +721,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     trimmedQuery.append(AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute3Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, true);
+                numTermsAdded += populateQuery(getEdgeAttribute3Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateWhitelist));
             }
             
             if (getExclusions() != null) {

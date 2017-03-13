@@ -1,5 +1,8 @@
 package nsa.datawave.ingest.data.config;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import nsa.datawave.TestBaseIngestHelper;
 import nsa.datawave.data.type.DateType;
 import nsa.datawave.data.type.HexStringType;
@@ -15,11 +18,17 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Scanner;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class FieldConfigHelperTest {
@@ -39,6 +48,57 @@ public class FieldConfigHelperTest {
         TypeRegistry.getInstance(conf).put("test", type);
         
         ingestHelper.setup(conf);
+    }
+    
+    @Test
+    public void shouldReadConfigOverHttp() throws Exception {
+        int port = 28080;
+        String requestUrl = "http://localhost:" + port + "/";
+        HttpServer server = createFileServer("config/sample-field-config.xml", port);
+        server.start();
+        
+        try {
+            FieldConfigHelper helper = FieldConfigHelper.load(requestUrl, ingestHelper);
+            
+            assertThat(helper.isIndexedField("A"), is(true));
+            assertThat(helper.isIndexedField("B"), is(false));
+            
+        } finally {
+            server.stop(0);
+        }
+    }
+    
+    private HttpServer createFileServer(String path, int port) throws Exception {
+        final String resp = readFile(path);
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        
+        server.setExecutor(null);
+        server.createContext("/", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange e) throws IOException {
+                e.sendResponseHeaders(200, 0);
+                e.getResponseHeaders().set("Content-Type", "text/xml");
+                
+                OutputStream responseBody = e.getResponseBody();
+                responseBody.write(resp.getBytes());
+                responseBody.close();
+            }
+        });
+        
+        return server;
+    }
+    
+    private String readFile(String path) {
+        StringBuffer sb = new StringBuffer();
+        
+        InputStream istream = getClass().getClassLoader().getResourceAsStream(path);
+        try (Scanner scanner = new Scanner(istream)) {
+            while (scanner.hasNext()) {
+                sb.append(scanner.nextLine() + "\n");
+            }
+        }
+        
+        return sb.toString();
     }
     
     @Test(expected = IllegalArgumentException.class)

@@ -366,11 +366,21 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
                 
                 scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, listenerService);
                 
-                ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
-                                ((SpeculativeScan) scan).getQueue(), listenerService));
+                scan.setVisitors(visitorFunctions);
                 
-                ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference,
-                                delegatedResourceInitializer, ((SpeculativeScan) scan).getQueue(), listenerService));
+                Scan childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
+                                ((SpeculativeScan) scan).getQueue(), listenerService);
+                
+                childScan.setVisitors(visitorFunctions);
+                
+                ((SpeculativeScan) scan).addScan(childScan);
+                
+                childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, delegatedResourceInitializer,
+                                ((SpeculativeScan) scan).getQueue(), listenerService);
+                
+                childScan.setVisitors(visitorFunctions);
+                
+                ((SpeculativeScan) scan).addScan(childScan);
                 
             } else {
                 scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, listenerService);

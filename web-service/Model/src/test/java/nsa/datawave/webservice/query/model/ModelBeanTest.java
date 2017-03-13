@@ -16,6 +16,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
 import nsa.datawave.security.authorization.DatawavePrincipal;
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import nsa.datawave.security.util.ScannerHelper;
 import nsa.datawave.webservice.common.cache.AccumuloTableCache;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -69,6 +70,8 @@ public class ModelBeanTest {
     
     @Before
     public void setup() throws Exception {
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
         bean = new ModelBean();
         connectionFactory = createStrictMock(AccumuloConnectionFactory.class);
         ctx = createMock(EJBContext.class);

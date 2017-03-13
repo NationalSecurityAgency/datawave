@@ -254,9 +254,13 @@ public class EventFields implements SetMultimap<String,FieldValue>, KryoSerializ
             
             // Write the fields in the value
             byte[] vis = entry.getValue().getVisibility().getExpression();
-            byte[] cvFlatten = (vis == null || vis.length == 0) ? new byte[0] : entry.getValue().getVisibility().flatten();
-            output.writeInt(cvFlatten.length, true);
-            output.write(cvFlatten);
+            
+            if (vis == null) {
+                vis = new byte[0];
+            }
+            
+            output.writeInt(vis.length, true);
+            output.write(vis);
             
             output.writeInt(entry.getValue().getValue().length, true);
             output.write(entry.getValue().getValue());

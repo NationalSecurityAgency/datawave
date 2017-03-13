@@ -101,6 +101,8 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     private String statusMessage = "";
     private Principal principal = null;
     
+    private boolean shouldAutoActivate = false;
+    
     static private List<String> reserved = new ArrayList<>();
     static private Set<String> allowedFunctions = new HashSet<>();
     private static final String BACKTICK = "`";
@@ -246,8 +248,8 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         }
     }
     
-    private CachedRunningQuery() {
-        super(new QueryMetricFactoryImpl());
+    private CachedRunningQuery(QueryMetricFactory metricFactory) {
+        super(metricFactory);
     }
     
     private void setMetricsInfo() {
@@ -290,7 +292,10 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             this.fixedFieldsInEvent = fixedFieldsInEvent;
         }
         this.pagesize = pagesize;
-        
+        // if the CRQ is created through this constructor and is retrieved from the cache (and not from MySql)
+        // then the first call to next() or previous() will cause the CachedResultsBean to get a MySql connection
+        // and activate the CRQ. After the first call to nex() or previous() shouldAutoActivate willbe false.
+        this.shouldAutoActivate = true;
         setMetricsInfo();
     }
     
@@ -322,6 +327,10 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             this.fixedFieldsInEvent = fixedFieldsInEvent;
         }
         this.sqlQuery = generateSql(this.view, this.fields, this.conditions, this.grouping, this.order, this.user, this.connection);
+        // if the CRQ is created through this constructor and is retrieved from the cache (and not from MySql)
+        // then the first call to next() or previous() will cause the CachedResultsBean to get a MySql connection
+        // and activate the CRQ. After the first call to nex() or previous() shouldAutoActivate willbe false.
+        this.shouldAutoActivate = true;
         activate(connection, queryLogic);
     }
     
@@ -607,9 +616,6 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             else
                 throw new SQLException("Count query did not return a result");
         }
-        // need to set max rows or we get an ArrayOutOfBoundsException deep in the bowels...
-        // maxRows must be > pageSize for paging to work correctly
-        this.crs.setMaxRows(this.totalRows + 1);
         
         if (this.pagesize < this.totalRows) {
             this.crs.setPageSize(this.pagesize);
@@ -676,23 +682,21 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     private boolean nextPageOfResults() {
         
         boolean hasRows = false;
-        boolean done = false;
-        try {
-            while (!done) {
-                if (crs.nextPage()) {
-                    crs.last();
-                    if (crs.getRow() > 0) {
-                        done = true;
-                        hasRows = true;
+        if (this.totalRows > 0) {
+            if (currentRow == position.BEFORE_FIRST) {
+                // if we are at position.BEFORE_FIRST and rows exist, the the crs will already contain the first page
+                hasRows = true;
+            } else {
+                try {
+                    if (crs.nextPage()) {
+                        crs.last();
+                        hasRows = crs.getRow() > 0;
+                        crs.beforeFirst();
                     }
-                    crs.beforeFirst();
-                } else {
-                    done = true;
-                    hasRows = false;
+                } catch (SQLException e) {
+                    log.error(e.getMessage(), e);
                 }
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
         }
         return hasRows;
     }
@@ -700,38 +704,18 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     private boolean previousPageOfResults() {
         
         boolean hasRows = false;
-        boolean done = false;
-        try {
-            while (!done) {
-                
+        if (this.totalRows > 0) {
+            try {
                 if (crs.previousPage()) {
                     crs.last();
-                    if (crs.getRow() > 0) {
-                        done = true;
-                        hasRows = true;
-                    }
+                    hasRows = crs.getRow() > 0;
                     crs.beforeFirst();
-                } else {
-                    done = true;
-                    hasRows = false;
                 }
+            } catch (SQLException e) {
+                log.error(e.getMessage(), e);
             }
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
         }
         return hasRows;
-    }
-    
-    private boolean resultsInCurrentPage() {
-        int lastRow = 0;
-        try {
-            this.crs.last();
-            lastRow = this.crs.getRow();
-            this.crs.beforeFirst();
-        } catch (SQLException e) {
-            log.error(e.getMessage(), e);
-        }
-        return (lastRow > 0);
     }
     
     /**
@@ -743,22 +727,16 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     public ResultsPage next(long pageByteTrigger) throws SQLException {
         // update timestamp in case this operation takes a long time.
         updateTimestamp();
+        // only auto-activate before the first call to next/previous
+        this.shouldAutoActivate = false;
         long pageStartTime = System.currentTimeMillis();
         
-        ResultsPage resultList = new ResultsPage();
-        
-        boolean hasResults = true;
         if (currentRow == position.BEFORE_FIRST) {
-            
-            if (resultsInCurrentPage() == false) {
-                hasResults = nextPageOfResults();
-            }
             this.lastPageNumber = 0;
-        } else {
-            hasResults = nextPageOfResults();
         }
         
-        if (hasResults) {
+        ResultsPage resultList = new ResultsPage();
+        if (nextPageOfResults()) {
             resultList = convert(this.crs, pageByteTrigger);
         }
         
@@ -767,7 +745,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             this.lastPageNumber++;
         } else {
             currentRow = position.AFTER_LAST;
-            this.lastPageNumber = (this.totalRows / this.pagesize) + 1;
+            this.lastPageNumber = ((int) Math.ceil((float) this.totalRows / (float) this.pagesize)) + 1;
         }
         
         // Update the metric
@@ -787,21 +765,16 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     public ResultsPage previous(long pageByteTrigger) throws SQLException {
         // update timestamp in case this operation takes a long time.
         updateTimestamp();
+        // only auto-activate before the first call to next/previous
+        this.shouldAutoActivate = false;
         long pageStartTime = System.currentTimeMillis();
         
-        ResultsPage resultList = new ResultsPage();
-        
-        boolean hasResults = true;
         if (currentRow == position.AFTER_LAST) {
-            if (resultsInCurrentPage() == false) {
-                hasResults = previousPageOfResults();
-            }
-            this.lastPageNumber = (this.totalRows / this.pagesize) + 1;
-        } else {
-            hasResults = previousPageOfResults();
+            this.lastPageNumber = ((int) Math.ceil((float) this.totalRows / (float) this.pagesize)) + 1;
         }
         
-        if (hasResults) {
+        ResultsPage resultList = new ResultsPage();
+        if (previousPageOfResults()) {
             resultList = convert(this.crs, pageByteTrigger);
         }
         
@@ -1012,9 +985,9 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         }
     }
     
-    public void saveToDatabase(Principal principal) {
+    public void saveToDatabase(Principal principal, QueryMetricFactory metricFactory) {
         
-        CachedRunningQuery crq = CachedRunningQuery.retrieveFromDatabase(this.queryId, principal);
+        CachedRunningQuery crq = CachedRunningQuery.retrieveFromDatabase(this.queryId, principal, metricFactory);
         if (crq == null) {
             saveToDatabase(false);
         } else {
@@ -1123,7 +1096,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         }
     }
     
-    static public CachedRunningQuery retrieveFromDatabase(String id, Principal principal) {
+    static public CachedRunningQuery retrieveFromDatabase(String id, Principal principal, QueryMetricFactory metricFactory) {
         
         verifyCrqTableExists();
         
@@ -1141,7 +1114,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                 if (numRows > 0) {
                     
                     resultSet.first();
-                    crq = new CachedRunningQuery();
+                    crq = new CachedRunningQuery(metricFactory);
                     int x = 1;
                     crq.queryId = resultSet.getString(x++);
                     crq.alias = resultSet.getString(x++);
@@ -1361,5 +1334,9 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     
     public static void setResponseObjectFactory(ResponseObjectFactory responseObjectFactory) {
         CachedRunningQuery.responseObjectFactory = responseObjectFactory;
+    }
+    
+    public boolean getShouldAutoActivate() {
+        return this.shouldAutoActivate;
     }
 }

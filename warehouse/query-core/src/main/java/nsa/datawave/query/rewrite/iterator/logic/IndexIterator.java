@@ -284,7 +284,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         this.scanRange = buildIndexRange(range);
         
         if (log.isTraceEnabled()) {
-            log.trace(this.toString() + " seek'ing to: " + this.scanRange);
+            log.trace(this.toString() + " seek'ing to: " + this.scanRange + " from " + range);
         }
         
         source.seek(this.scanRange, this.seekColumnFamilies, this.includeColumnFamilies);

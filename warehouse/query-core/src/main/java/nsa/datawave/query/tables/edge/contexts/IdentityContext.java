@@ -31,6 +31,34 @@ public class IdentityContext implements EdgeModelAware, EdgeContext {
         return escapedString;
     }
     
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof IdentityContext))
+            return false;
+        
+        IdentityContext that = (IdentityContext) o;
+        
+        if (equivalence != that.equivalence)
+            return false;
+        if (identity != null ? !identity.equals(that.identity) : that.identity != null)
+            return false;
+        if (literal != null ? !literal.equals(that.literal) : that.literal != null)
+            return false;
+        return !(operation != null ? !operation.equals(that.operation) : that.operation != null);
+        
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = identity != null ? identity.hashCode() : 0;
+        result = 31 * result + (literal != null ? literal.hashCode() : 0);
+        result = 31 * result + (operation != null ? operation.hashCode() : 0);
+        result = 31 * result + (equivalence ? 1 : 0);
+        return result;
+    }
+    
     public String getIdentity() {
         return identity;
     }

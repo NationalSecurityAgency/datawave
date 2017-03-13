@@ -18,21 +18,29 @@ public class RawDateNormalizer extends AbstractNormalizer<String> {
     private static final long serialVersionUID = -3268331784114135470L;
     private static final Logger log = Logger.getLogger(RawDateNormalizer.class);
     public static final String ISO_8601_FORMAT_STRING = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-    private static final DateFormat sortableDateFormat = new SimpleDateFormat(ISO_8601_FORMAT_STRING);
+    private static final ThreadLocal<DateFormat> sortableDateFormat = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return new SimpleDateFormat(ISO_8601_FORMAT_STRING);
+        }
+    };
     
     public static final String[] FORMAT_STRINGS = {
             "EEE MMM dd HH:mm:ss zzz yyyy", // at the top as it is our user format for dates
             ISO_8601_FORMAT_STRING, "yyyyMMddHHmmss", "yyyy-MM-dd HH:mm:ssz", "yyyy-MM-dd HH:mm:ss'Z'", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd",
             "yyyy-MM-dd'T'HH'|'mm", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ssXXX"};
     
-    public static final List<DateFormat> formatList = Lists.newArrayList();
-    static {
-        for (String fs : FORMAT_STRINGS) {
-            DateFormat format = new SimpleDateFormat(fs);
-            format.setTimeZone(TimeZone.getTimeZone("GMT"));
-            formatList.add(format);
+    private static final ThreadLocal<List<DateFormat>> formatList = new ThreadLocal<List<DateFormat>>() {
+        protected List<DateFormat> initialValue() {
+            List<DateFormat> formatList = Lists.newArrayList();
+            for (final String fs : FORMAT_STRINGS) {
+                DateFormat simpleDateFormat = new SimpleDateFormat(fs);
+                simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+                formatList.add(simpleDateFormat);
+            }
+            return formatList;
         }
-    }
+    };
     
     public String normalize(String fieldValue) {
         Date fieldDate = parseToDate(fieldValue);
@@ -85,7 +93,7 @@ public class RawDateNormalizer extends AbstractNormalizer<String> {
     
     private synchronized Collection<String> formatAll(Date date) {
         List<String> list = Lists.newArrayList();
-        for (DateFormat fs : formatList) {
+        for (DateFormat fs : formatList.get()) {
             String formatted = fs.format(date);
             if (formatted != null && formatted.length() > 0) {
                 list.add(formatted);
@@ -94,8 +102,8 @@ public class RawDateNormalizer extends AbstractNormalizer<String> {
         return list;
     }
     
-    public synchronized String parseToString(Date date) {
-        return sortableDateFormat.format(date);
+    public String parseToString(Date date) {
+        return sortableDateFormat.get().format(date);
     }
     
     /**

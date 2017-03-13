@@ -16,6 +16,23 @@
     </login-config>
 
     <security-constraint>
+        <!--  some browsers, like Firefox, will not send SSL certs on the preflight request.  This breaks CORS
+               in those browsers, so we need to open up the OPTIONS calls.  This is only exposing
+               the documented endpoints  -->
+        <web-resource-collection>
+            <web-resource-name>UnauthenticatedOps</web-resource-name>
+            <description>Allow unauthenticated users to access OPTIONS calls for CORS preflight</description>
+            <url-pattern>/*</url-pattern>
+            <http-method>OPTIONS</http-method>
+        </web-resource-collection>
+        <!-- transport-guarantee of NONE ensures we don't attempt any authentication on this request and don't
+             look for a client certificate that won't be there -->
+        <user-data-constraint>
+            <transport-guarantee>NONE</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <security-constraint>
         <web-resource-collection>
             <web-resource-name>CatchAll</web-resource-name>
             <description>Most services use this constraint. Authorized users, or servers not proxying for a user.</description>

@@ -81,7 +81,7 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      * includingSources and includingSinks are used to remember if a previous qContext had a regex for SOURCE and SINK, if so then we have to include SOURCEs
      * and SINKs for ever Query context regardless of weather or not they all have regex's.
      */
-    public void updateQueryStrings(QueryContext qContext, boolean includeSources, boolean includeSinks, boolean includColumnFamilyTerms) {
+    public void updateQueryStrings(QueryContext qContext, boolean includeSources, boolean includeSinks, boolean includColumnFamilyTerms, boolean updateWhitelist) {
         StringBuilder trimmedQuery = new StringBuilder();
         StringBuilder trimmedStatsQuery = new StringBuilder();
         int numTermsAdded = 0;
@@ -90,7 +90,8 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
             trimmedStatsQuery.append("(");
         }
         
-        qContext.buildStrings(trimmedQuery, trimmedStatsQuery, includeStats, includeSources, includeSinks, preFilterValues, includColumnFamilyTerms);
+        qContext.buildStrings(trimmedQuery, trimmedStatsQuery, includeStats, includeSources, includeSinks, preFilterValues, includColumnFamilyTerms,
+                        updateWhitelist);
         trimmedQuery.append(")");
         if (includeStats) {
             trimmedStatsQuery.append(")");

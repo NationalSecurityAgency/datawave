@@ -18,6 +18,8 @@ public class MetricsConfiguration {
     
     public static final String METRICS_ENABLED_CONFIG = "ingest.metrics.enabled";
     public static final String METRICS_TABLE_CONFIG = "ingest.metrics.table.name";
+    public static final int METRICS_TABLE_DEFAULT_PRIORITY = 100;
+    public static final String METRICS_TABLE_PRIORITY = "ingest.metrics.loader.priority";
     public static final String NUM_SHARDS_CONFIG = "ingest.metrics.num.shards";
     public static final String ENABLED_LABELS_CONFIG = "ingest.metrics.enabled.labels";
     public static final String FIELDS_CONFIG = "ingest.metrics.fields";
@@ -137,6 +139,21 @@ public class MetricsConfiguration {
      */
     public static String getTable(Configuration conf) {
         return conf.get(METRICS_TABLE_CONFIG);
+    }
+    
+    /**
+     * Gets the configured ingest metrics table priority.
+     *
+     * @param conf
+     * @return table priority (defaults to 100)
+     */
+    public static int getTablePriority(Configuration conf) {
+        try {
+            return conf.getInt(METRICS_TABLE_PRIORITY, METRICS_TABLE_DEFAULT_PRIORITY);
+        } catch (NumberFormatException e) {
+            logger.error("Could not parse " + METRICS_TABLE_PRIORITY + " property as an Integer, using " + METRICS_TABLE_DEFAULT_PRIORITY);
+            return METRICS_TABLE_DEFAULT_PRIORITY;
+        }
     }
     
     /**

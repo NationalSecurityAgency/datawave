@@ -16,6 +16,7 @@ import javax.ejb.EJBContext;
 
 import nsa.datawave.security.authorization.DatawavePrincipal;
 
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
@@ -52,6 +53,8 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
     
     @Before
     public void setup() throws IllegalArgumentException, IllegalAccessException {
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
         Logger.getLogger(ClassPathXmlApplicationContext.class).setLevel(Level.OFF);
         Logger.getLogger(XmlBeanDefinitionReader.class).setLevel(Level.OFF);
         Logger.getLogger(DefaultListableBeanFactory.class).setLevel(Level.OFF);

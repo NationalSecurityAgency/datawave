@@ -248,14 +248,17 @@ public abstract class FunctionalSetTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        
+        logic.setFullTableScanEnabled(false);
         if (log.isDebugEnabled()) {
             log.debug("testFunctionsAsArguments");
         }
         String[] queryStrings = {
-        
-        "AG <= 18",
-                "18 >= AG",
+                
+                "10 <= AG && AG <= 18", //
+                "AG <= 18 && AG >= 10", //
+                "18 >= AG && 10 <= AG", //
+                // "AG <= 18",
+                // "18 >= AG",
                 "AG == 18",
                 "18 == AG",
                 "GEN == 'FEMALE'", // this succeeds because the literal 'FEMALE' is normalized to 'female' based on the type (LcNoDiacritics) of the GENDER
@@ -266,23 +269,31 @@ public abstract class FunctionalSetTest {
                 
                 // the next one matches Meadow Soprano, age 18, because the 'MAGIC' value is 18 (we don't know/care what the actual value
                 // of MAGIC is, only that whatever it is, it matches AGE in the same group as the other matches)
-                "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) == MAGIC",
+                "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) == MAGIC",
                 
                 // the next one matches Meadow Soprano, GENDER female, age 18 but not Constanza Corleone, Gender female, age 18
                 // the < part of this is what is special. Other comparison operators should work the same way
-                "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) < 19",
+                "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) < 19",
                 
                 // the next 2 queries are equivalent. the reason for the functional query stuff is for when we
                 // want to query with an operator other than '=='
-                "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE')) == 30",
-                "grouping:matchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE', AG, 30)",
+                "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE')) == 30",
+                "AG > 10 && AG < 100 && grouping:matchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE', AG, 30)",
                 
-                "filter:occurrence(AG, '==', filter:getAllMatches(AG, '16').size() + filter:getAllMatches(AG, '18').size())", // will match only the sopranos
-                "filter:occurrence(AG, '==', filter:getAllMatches(AG, '19').size() + filter:getAllMatches(AG, '18').size())" // will match none
+                "AG > 10 && AG < 100 && filter:occurrence(AG, '==', filter:getAllMatches(AG, '16').size() + filter:getAllMatches(AG, '18').size())", // will
+                                                                                                                                                     // match
+                                                                                                                                                     // only the
+                                                                                                                                                     // sopranos
+                "AG > 10 && AG < 100 && filter:occurrence(AG, '==', filter:getAllMatches(AG, '19').size() + filter:getAllMatches(AG, '18').size())" // will
+                                                                                                                                                    // match
+                                                                                                                                                    // none
         };
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("SOPRANO", "CORLEONE"), // "AGE <= 18"
-                Arrays.asList("SOPRANO", "CORLEONE"), // "18 >= AGE"
+        List<String>[] expectedLists = new List[] { //
+        
+        Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18"
+                Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18",
+                Arrays.asList("SOPRANO", "CORLEONE"), // "18 >= AG && 10 <= AG",
                 Arrays.asList("SOPRANO", "CORLEONE"), // "AGE == 18"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "18 == AGE"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "GENDER == 'FEMALE'"
@@ -301,6 +312,30 @@ public abstract class FunctionalSetTest {
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
+    }
+    
+    @Test
+    public void testConcatMethods() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        
+        if (log.isDebugEnabled()) {
+            log.debug("testConcatMethods");
+        }
+        String[] queryStrings = {//
+        
+        "UUID == 'SOPRANO' && NAM.min().hashCode() != 0", //
+        
+        };
+        List<String>[] expectedLists = new List[] { //
+        
+        Arrays.asList("SOPRANO"), //
+        
+        };
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+        
     }
     
 }

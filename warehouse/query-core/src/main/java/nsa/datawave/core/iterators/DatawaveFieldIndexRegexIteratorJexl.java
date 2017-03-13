@@ -4,6 +4,7 @@ import com.google.common.base.Predicate;
 import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
+import nsa.datawave.core.iterators.querylock.QueryLock;
 import nsa.datawave.query.parser.JavaRegexAnalyzer;
 import nsa.datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import nsa.datawave.query.rewrite.Constants;
@@ -45,22 +46,24 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
     }
     
     public DatawaveFieldIndexRegexIteratorJexl(Text fieldName, Text fieldRegex, TimeFilter timeFilter, Predicate<Key> datatypeFilter, long scanThreshold,
-                    long scanTimeout, int bufferSize, int maxRangeSplits, FileSystem fs, Path uniqueDir, boolean allowDirReuse) throws JavaRegexParseException {
-        this(fieldName, fieldRegex, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, fs, uniqueDir, allowDirReuse);
+                    long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock,
+                    boolean allowDirReuse) throws JavaRegexParseException {
+        this(fieldName, fieldRegex, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir,
+                        queryLock, allowDirReuse);
     }
     
     public DatawaveFieldIndexRegexIteratorJexl(Text fieldName, Text fieldRegex, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, FileSystem fs, Path uniqueDir, boolean allowDirReuse)
-                    throws JavaRegexParseException {
-        this(fieldName, fieldRegex, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, fs, uniqueDir, allowDirReuse,
-                        DEFAULT_RETURN_KEY_TYPE, true);
+                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir,
+                    QueryLock queryLock, boolean allowDirReuse) throws JavaRegexParseException {
+        this(fieldName, fieldRegex, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir,
+                        queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
     }
     
     public DatawaveFieldIndexRegexIteratorJexl(Text fieldName, Text fieldRegex, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, FileSystem fs, Path uniqueDir, boolean allowDirReuse,
-                    PartialKey returnKeyType, boolean sortedUIDs) throws JavaRegexParseException {
-        super(fieldName, fieldRegex, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, fs, uniqueDir, allowDirReuse,
-                        returnKeyType, sortedUIDs);
+                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir,
+                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs) throws JavaRegexParseException {
+        super(fieldName, fieldRegex, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir,
+                        queryLock, allowDirReuse, returnKeyType, sortedUIDs);
         this.regex = fieldRegex.toString();
         // now fix the fValue to be the part we use for ranges
         JavaRegexAnalyzer analyzer = new JavaRegexAnalyzer(this.regex);

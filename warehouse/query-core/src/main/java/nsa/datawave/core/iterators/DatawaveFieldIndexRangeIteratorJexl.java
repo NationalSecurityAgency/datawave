@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import nsa.datawave.core.iterators.querylock.QueryLock;
 import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.rewrite.predicate.TimeFilter;
 import nsa.datawave.util.StringUtils;
@@ -45,25 +46,25 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
     @SuppressWarnings("hiding")
     public DatawaveFieldIndexRangeIteratorJexl(Text fieldName, Text lowerBound, boolean lowerInclusive, Text upperBound, boolean upperInclusive,
                     TimeFilter timeFilter, Predicate<Key> datatypeFilter, long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit,
-                    FileSystem fs, Path uniqueDir, boolean allowDirReuse) {
+                    int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock, boolean allowDirReuse) {
         this(fieldName, lowerBound, lowerInclusive, upperBound, upperInclusive, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout, bufferSize,
-                        maxRangeSplit, fs, uniqueDir, allowDirReuse);
+                        maxRangeSplit, maxOpenFiles, fs, uniqueDir, queryLock, allowDirReuse);
     }
     
     @SuppressWarnings("hiding")
     public DatawaveFieldIndexRangeIteratorJexl(Text fieldName, Text lowerBound, boolean lowerInclusive, Text upperBound, boolean upperInclusive,
                     TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg, long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit,
-                    FileSystem fs, Path uniqueDir, boolean allowDirReuse) {
+                    int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock, boolean allowDirReuse) {
         this(fieldName, lowerBound, lowerInclusive, upperBound, upperInclusive, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize,
-                        maxRangeSplit, fs, uniqueDir, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
+                        maxRangeSplit, maxOpenFiles, fs, uniqueDir, queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
     }
     
     @SuppressWarnings("hiding")
     public DatawaveFieldIndexRangeIteratorJexl(Text fieldName, Text lowerBound, boolean lowerInclusive, Text upperBound, boolean upperInclusive,
                     TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg, long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit,
-                    FileSystem fs, Path uniqueDir, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs) {
-        super(fieldName, lowerBound, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, fs, uniqueDir, allowDirReuse,
-                        returnKeyType, sortedUIDs);
+                    int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs) {
+        super(fieldName, lowerBound, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir,
+                        queryLock, allowDirReuse, returnKeyType, sortedUIDs);
         this.lowerInclusive = lowerInclusive;
         this.upperBound = upperBound;
         this.upperInclusive = upperInclusive;

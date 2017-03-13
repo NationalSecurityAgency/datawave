@@ -19,6 +19,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import nsa.datawave.core.iterators.SourcePool;
 import nsa.datawave.core.iterators.ThreadLocalPooledSource;
+import nsa.datawave.core.iterators.filesystem.FileSystemCache;
+import nsa.datawave.core.iterators.querylock.QueryLock;
 import nsa.datawave.query.jexl.DatawaveJexlContext;
 import nsa.datawave.query.parser.JavaRegexAnalyzer;
 import nsa.datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
@@ -86,10 +88,10 @@ import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -117,16 +119,17 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected Predicate<Key> datatypeFilter;
     protected TimeFilter timeFilter;
     
-    protected FileSystem hdfsFileSystem;
-    protected String hdfsCacheDirURI;
-    protected List<String> hdfsCacheDirURIAlternatives;
-    protected String hdfsCacheSubDirPrefix;
-    protected long hdfsCacheScanPersistThreshold = 100000L;
-    protected long hdfsCacheScanTimeout = 1000L * 60 * 60;
-    protected int hdfsCacheBufferSize = 10000;
-    protected boolean hdfsCacheDirReused = false;
+    protected FileSystemCache hdfsFileSystem;
     protected String hdfsFileCompressionCodec;
+    protected QueryLock queryLock;
+    protected List<String> ivaratorCacheDirURIs;
+    protected String queryId;
+    protected String ivaratorCacheSubDirPrefix;
+    protected long ivaratorCacheScanPersistThreshold = 100000L;
+    protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
+    protected int ivaratorCacheBufferSize = 10000;
     protected int maxRangeSplit = 11;
+    protected int ivaratorMaxOpenFiles = 100;
     protected SourcePool ivaratorSources = null;
     protected SortedKeyValueIterator<Key,Value> ivaratorSource = null;
     protected int ivaratorCount = 0;
@@ -173,6 +176,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      */
     protected IteratorEnvironment env;
     
+    protected Set<JexlNode> delayedEqNodes = Sets.newHashSet();
+    
     public boolean isQueryFullySatisfied() {
         if (limitLookup) {
             return false;
@@ -190,8 +195,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     public IteratorBuildingVisitor(SourceFactory sourceFactory, IteratorEnvironment env, TimeFilter timeFilter, TypeMetadata typeMetadata,
                     Set<String> indexOnlyFields, boolean isQueryFullySatisfied) {
         this(sourceFactory, env, timeFilter, typeMetadata, indexOnlyFields, Predicates.<Key> alwaysTrue(), new IdentityAggregator(null), null, null, null,
-                        null, null, false, 10000, 100000L, 1000L * 60 * 60, 11, 33, PowerSet.<String> instance(), Collections.<String> emptyList(), Collections
-                                        .<String> emptySet(), isQueryFullySatisfied, true);
+                        null, null, null, 10000, 100000L, 1000L * 60 * 60, 11, 100, 33, PowerSet.<String> instance(), Collections.<String> emptyList(),
+                        Collections.<String> emptySet(), isQueryFullySatisfied, true);
         
     }
     
@@ -204,22 +209,22 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param datatypeFilter
      */
     public IteratorBuildingVisitor(SourceFactory sourceFactory, IteratorEnvironment env, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    Set<String> indexOnlyFields, Predicate<Key> datatypeFilter, FieldIndexAggregator keyTform, FileSystem hdfsFileSystem,
-                    String hdfsCacheDirURI, List<String> hdfsCacheDirURIAlternatives, String hdfsCacheSubDirPrefix, String hdfsFileCompressionCodec,
-                    boolean hdfsCacheDirReused, int hdfsCacheBufferSize, long hdfsCacheScanPersistThreshold, long hdfsCacheScanTimeout, int maxRangeSplit,
-                    int maxIvaratorSources, boolean isQueryFullySatisfied) {
-        this(sourceFactory, env, timeFilter, typeMetadata, indexOnlyFields, datatypeFilter, keyTform, hdfsFileSystem, hdfsCacheDirURI,
-                        hdfsCacheDirURIAlternatives, hdfsCacheSubDirPrefix, hdfsFileCompressionCodec, hdfsCacheDirReused, hdfsCacheBufferSize,
-                        hdfsCacheScanPersistThreshold, hdfsCacheScanTimeout, maxRangeSplit, maxIvaratorSources, PowerSet.<String> instance(), Collections
-                                        .<String> emptyList(), Collections.<String> emptySet(), isQueryFullySatisfied, true);
+                    Set<String> indexOnlyFields, Predicate<Key> datatypeFilter, FieldIndexAggregator keyTform, FileSystemCache hdfsFileSystem,
+                    QueryLock queryLock, List<String> ivaratorCacheDirURIAlternatives, String queryId, String ivaratorCacheSubDirPrefix,
+                    String hdfsFileCompressionCodec, int ivaratorCacheBufferSize, long ivaratorCacheScanPersistThreshold, long ivaratorCacheScanTimeout,
+                    int maxRangeSplit, int ivaratorMaxOpenFiles, int maxIvaratorSources, boolean isQueryFullySatisfied) {
+        this(sourceFactory, env, timeFilter, typeMetadata, indexOnlyFields, datatypeFilter, keyTform, hdfsFileSystem, queryLock,
+                        ivaratorCacheDirURIAlternatives, queryId, ivaratorCacheSubDirPrefix, hdfsFileCompressionCodec, ivaratorCacheBufferSize,
+                        ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, maxRangeSplit, ivaratorMaxOpenFiles, maxIvaratorSources, PowerSet
+                                        .<String> instance(), Collections.<String> emptyList(), Collections.<String> emptySet(), isQueryFullySatisfied, true);
     }
     
     public IteratorBuildingVisitor(SourceFactory sourceFactory, IteratorEnvironment env, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    Set<String> indexOnlyFields, Predicate<Key> datatypeFilter, FieldIndexAggregator fiAggregator, FileSystem hdfsFileSystem,
-                    String hdfsCacheDirURI, List<String> hdfsCacheDirURIAlternatives, String hdfsCacheSubDirPrefix, String hdfsFileCompressionCodec,
-                    boolean hdfsCacheDirReused, int hdfsCacheBufferSize, long hdfsCacheScanPersistThreshold, long hdfsCacheScanTimeout, int maxRangeSplit,
-                    int maxIvaratorSources, Collection<String> includes, Collection<String> excludes, Set<String> termFrequencyFields,
-                    boolean isQueryFullySatisfied, boolean sortedUIDs) {
+                    Set<String> indexOnlyFields, Predicate<Key> datatypeFilter, FieldIndexAggregator fiAggregator, FileSystemCache hdfsFileSystem,
+                    QueryLock queryLock, List<String> ivaratorCacheDirURIAlternatives, String queryId, String ivaratorCacheSubDirPrefix,
+                    String hdfsFileCompressionCodec, int ivaratorCacheBufferSize, long ivaratorCacheScanPersistThreshold, long ivaratorCacheScanTimeout,
+                    int maxRangeSplit, int ivaratorMaxOpenFiles, int maxIvaratorSources, Collection<String> includes, Collection<String> excludes,
+                    Set<String> termFrequencyFields, boolean isQueryFullySatisfied, boolean sortedUIDs) {
         SortedKeyValueIterator<Key,Value> skvi = sourceFactory.getSourceDeepCopy();
         this.source = new SourceManager(skvi);
         this.env = env;
@@ -238,15 +243,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         this.fiAggregator = fiAggregator;
         this.datatypeFilter = datatypeFilter;
         this.hdfsFileSystem = hdfsFileSystem;
-        this.hdfsCacheDirURI = hdfsCacheDirURI;
-        this.hdfsCacheDirURIAlternatives = hdfsCacheDirURIAlternatives;
-        this.hdfsCacheSubDirPrefix = (hdfsCacheSubDirPrefix == null ? "" : hdfsCacheSubDirPrefix);
         this.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
-        this.hdfsCacheDirReused = hdfsCacheDirReused;
-        this.hdfsCacheBufferSize = hdfsCacheBufferSize;
-        this.hdfsCacheScanPersistThreshold = hdfsCacheScanPersistThreshold;
-        this.hdfsCacheScanTimeout = hdfsCacheScanTimeout;
+        this.queryLock = queryLock;
+        this.ivaratorCacheDirURIs = ivaratorCacheDirURIAlternatives;
+        this.queryId = queryId;
+        this.ivaratorCacheSubDirPrefix = (ivaratorCacheSubDirPrefix == null ? "" : ivaratorCacheSubDirPrefix);
+        this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
+        this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
+        this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
         this.maxRangeSplit = maxRangeSplit;
+        this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
         this.includeReferences = includes;
         this.excludeReferences = excludes;
         this.termFrequencyFields = termFrequencyFields;
@@ -268,7 +274,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             limitedSource = source.deepCopy(env);
             limitedMap = Maps.newHashMap();
         }
-        return super.visit(node, data);
+        Object obj = super.visit(node, data);
+        if (obj == null && delayedEqNodes.size() == 1) {
+            JexlNode eqNode = delayedEqNodes.iterator().next();
+            obj = visit((ASTEQNode) eqNode, data);
+        }
+        return obj;
     }
     
     @Override
@@ -631,6 +642,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     @Override
+    public Object visit(ASTSizeMethod node, Object data) {
+        // if i find a size method node then i can't build an index for the identifier it is called on
+        return null;
+    }
+    
+    @Override
     public Object visit(ASTEQNode node, Object data) {
         IndexIteratorBuilder builder = null;
         try {
@@ -745,7 +762,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return kvIter;
     }
     
-    private SortedKeyValueIterator<Key,Value> createIndexOnlyKey(ASTEQNode node) throws IOException {
+    protected SortedKeyValueIterator<Key,Value> createIndexOnlyKey(ASTEQNode node) throws IOException {
         Key newStartKey = getKey(node);
         
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
@@ -788,7 +805,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @param node
      * @throws IOException
      */
-    private void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
+    protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
         if (null != rangeLimiter && limitLookup) {
             
             Key newStartKey = getKey(node);
@@ -874,6 +891,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         node.jjtGetChild(0).jjtAccept(this, o);
                     }
                 } else {
+                    delayedEqNodes.add(subNode);
                     if (isQueryFullySatisfied == true) {
                         log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
                     }
@@ -1037,7 +1055,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     private boolean isUsable(Path path) throws IOException {
         try {
-            if (!hdfsFileSystem.mkdirs(path)) {
+            if (!hdfsFileSystem.getFileSystem(path.toUri()).mkdirs(path)) {
                 throw new IOException("Unable to mkdirs: fs.mkdirs(" + path + ")->false");
             }
         } catch (MalformedURLException e) {
@@ -1057,23 +1075,19 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      */
     private URI getTemporaryCacheDir() throws IOException {
         // first lets increment the count for a unique subdirectory
-        String subdirectory = hdfsCacheSubDirPrefix + "term" + Integer.toString(++ivaratorCount);
+        String subdirectory = ivaratorCacheSubDirPrefix + "term" + Integer.toString(++ivaratorCount);
         
-        if (hdfsCacheDirURIAlternatives != null && !hdfsCacheDirURIAlternatives.isEmpty()) {
-            for (int i = 0; i < hdfsCacheDirURIAlternatives.size(); i++) {
-                String hdfsCacheDirURI = hdfsCacheDirURIAlternatives.get(i);
-                Path path = new Path(hdfsCacheDirURI, subdirectory);
+        if (ivaratorCacheDirURIs != null && !ivaratorCacheDirURIs.isEmpty()) {
+            for (int i = 0; i < ivaratorCacheDirURIs.size(); i++) {
+                String hdfsCacheDirURI = ivaratorCacheDirURIs.get(i);
+                Path path = new Path(hdfsCacheDirURI, queryId);
+                path = new Path(path, subdirectory);
                 if (isUsable(path)) {
                     return path.toUri();
                 }
             }
-            throw new IOException("Unable to find a usable hdfs cache dir out of " + hdfsCacheDirURIAlternatives);
         }
-        Path path = new Path(hdfsCacheDirURI, subdirectory);
-        if (!isUsable(path)) {
-            throw new IOException("Unable to access hdfs cache " + path.toUri());
-        }
-        return path.toUri();
+        throw new IOException("Unable to find a usable hdfs cache dir out of " + ivaratorCacheDirURIs);
     }
     
     /**
@@ -1286,14 +1300,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
-        builder.setHdfsFileSystem(hdfsFileSystem);
-        builder.setHdfsCacheDirURI(getTemporaryCacheDir().toString());
-        builder.setHdfsCacheBufferSize(hdfsCacheBufferSize);
-        builder.setHdfsCacheScanPersistThreshold(hdfsCacheScanPersistThreshold);
-        builder.setHdfsCacheScanTimeout(hdfsCacheScanTimeout);
-        builder.setHdfsCacheReused(hdfsCacheDirReused);
+        URI path = getTemporaryCacheDir();
+        builder.setHdfsFileSystem(hdfsFileSystem.getFileSystem(path));
         builder.setHdfsFileCompressionCodec(hdfsFileCompressionCodec);
+        builder.setQueryLock(queryLock);
+        builder.setIvaratorCacheDirURI(path.toString());
+        builder.setIvaratorCacheBufferSize(ivaratorCacheBufferSize);
+        builder.setIvaratorCacheScanPersistThreshold(ivaratorCacheScanPersistThreshold);
+        builder.setIvaratorCacheScanTimeout(ivaratorCacheScanTimeout);
         builder.setMaxRangeSplit(maxRangeSplit);
+        builder.setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
         builder.setCollectTimingDetails(collectTimingDetails);
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);

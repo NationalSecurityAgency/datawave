@@ -7,25 +7,7 @@ import nsa.datawave.query.rewrite.jexl.functions.ContentFunctionsDescriptor.Cont
 import nsa.datawave.query.rewrite.jexl.functions.QueryFunctions;
 import nsa.datawave.query.rewrite.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import nsa.datawave.query.rewrite.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.*;
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
@@ -160,6 +142,14 @@ public class SatisfactionVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTMethodNode node, Object data) {
+        // if a method on a field, then not fully satisfied
+        isQueryFullySatisfied = false;
+        
+        return null;
+    }
+    
+    @Override
+    public Object visit(ASTSizeMethod node, Object data) {
         // if a method on a field, then not fully satisfied
         isQueryFullySatisfied = false;
         

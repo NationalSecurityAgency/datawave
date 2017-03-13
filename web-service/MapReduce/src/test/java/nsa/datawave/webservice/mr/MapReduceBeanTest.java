@@ -13,6 +13,7 @@ import javax.ejb.EJBContext;
 import javax.ws.rs.core.MultivaluedHashMap;
 
 import nsa.datawave.security.authorization.DatawavePrincipal;
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import nsa.datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 import nsa.datawave.webservice.common.exception.BadRequestException;
@@ -70,6 +71,8 @@ public class MapReduceBeanTest extends EasyMockSupport {
     
     @Before
     public void setup() throws Exception {
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
         principal = new DatawavePrincipal(userDN + "<CN=ca, OU=acme>");
         principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
         principal.setUserRoles(principal.getName(), Arrays.asList("AuthorizedUser"));

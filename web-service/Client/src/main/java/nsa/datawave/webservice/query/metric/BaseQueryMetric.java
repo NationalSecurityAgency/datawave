@@ -4,31 +4,23 @@ import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import nsa.datawave.marking.MarkingFunctions;
+import nsa.datawave.webservice.query.QueryImpl.Parameter;
+import nsa.datawave.webservice.query.exception.QueryException;
+import nsa.datawave.webservice.query.result.event.HasMarkings;
+import org.apache.commons.lang.builder.CompareToBuilder;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.*;
 
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
-import nsa.datawave.marking.MarkingFunctions;
-import nsa.datawave.webservice.query.QueryImpl.Parameter;
-import nsa.datawave.webservice.query.exception.QueryException;
-import nsa.datawave.webservice.query.result.event.HasMarkings;
-
-public class BaseQueryMetric implements HasMarkings {
+public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     @XmlAccessorType(XmlAccessType.NONE)
     public static class PageMetric implements Serializable, Message<PageMetric> {
@@ -601,7 +593,11 @@ public class BaseQueryMetric implements HasMarkings {
     }
     
     public Date getCreateDate() {
-        return (Date) createDate.clone();
+        if (this.createDate != null) {
+            return (Date) createDate.clone();
+        } else {
+            return null;
+        }
     }
     
     public void setCreateDate(Date date) {

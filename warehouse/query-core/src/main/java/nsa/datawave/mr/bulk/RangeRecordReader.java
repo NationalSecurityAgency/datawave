@@ -1,9 +1,10 @@
 package nsa.datawave.mr.bulk;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import nsa.datawave.ingest.mapreduce.job.RFileRecordReader;
+import nsa.datawave.mr.bulk.split.FileRangeSplit;
+import nsa.datawave.mr.bulk.split.TabletSplitSplit;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -15,12 +16,9 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-
-import nsa.datawave.ingest.mapreduce.job.RFileRecordReader;
-import nsa.datawave.mr.bulk.split.FileRangeSplit;
-import nsa.datawave.mr.bulk.split.TabletSplitSplit;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
 public class RangeRecordReader extends RFileRecordReader {
     

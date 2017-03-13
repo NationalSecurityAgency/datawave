@@ -1,8 +1,12 @@
 package nsa.datawave.ingest.metadata;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.io.Text;
 import org.junit.*;
 
+import java.util.Collection;
 import java.util.Iterator;
 
 public class MetadataWithMostRecentDateTest {
@@ -38,14 +42,18 @@ public class MetadataWithMostRecentDateTest {
         
         Assert.assertEquals(2, metadata.entries().size());
         
-        Iterator<MetadataWithMostRecentDate.MostRecentEventDateAndKeyComponents> iterator = metadata.entries().iterator();
-        MetadataWithMostRecentDate.MostRecentEventDateAndKeyComponents first = iterator.next();
-        Assert.assertEquals(dataTypeName, first.getDataType());
-        Assert.assertEquals(345, first.getMostRecentDate());
+        // Need to use a junk class here because we can't make instances of MostRecentEventDateAndKeyComponents as it is
+        // not an enclosing class
+        Collection<Tuple> expected = Lists.newArrayList();
+        expected.add(new Tuple("sham", "wow", "sham.wow.pick.up.Messes", 345L));
+        expected.add(new Tuple("sham", "wow2", "sham.wow.pick.up.Messes", 124L));
         
-        MetadataWithMostRecentDate.MostRecentEventDateAndKeyComponents second = iterator.next();
-        Assert.assertEquals(dataTypeName + "2", second.getDataType());
-        Assert.assertEquals(124, second.getMostRecentDate());
+        Collection<Tuple> actual = Lists.newArrayList();
+        for (MetadataWithMostRecentDate.MostRecentEventDateAndKeyComponents m : metadata.entries()) {
+            actual.add(new Tuple(m.getFieldName(), m.getDataType(), m.getNormalizerClassName(), m.getMostRecentDate()));
+        }
+        
+        Assert.assertTrue(CollectionUtils.isEqualCollection(expected, actual));
     }
     
     private void assertOneEntryWithExpectedDate(MetadataWithMostRecentDate counters, long expectedDate) {
@@ -66,5 +74,39 @@ public class MetadataWithMostRecentDateTest {
         Assert.assertEquals(dataTypeName, entry.getDataType());
         Assert.assertEquals(normalizerClassName, entry.getNormalizerClassName());
         Assert.assertEquals(date, entry.getMostRecentDate());
+    }
+    
+    /**
+     * To be used for expected output comparison of MetadataWithMostRecentDate.MostRecentEventDateAndKeyComponents since that class is not declared public
+     * static and not an enclosing class.
+     */
+    public static class Tuple {
+        protected final String fieldName;
+        protected final String dataTypeOutputName;
+        protected final String normalizerClassName;
+        protected final long mostRecentDate;
+        
+        public Tuple(String fieldName, String dataTypeOutputName, String normalizerClassName, long mostRecentDate) {
+            this.fieldName = fieldName;
+            this.dataTypeOutputName = dataTypeOutputName;
+            this.normalizerClassName = normalizerClassName;
+            this.mostRecentDate = mostRecentDate;
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            Tuple tuple = (Tuple) o;
+            return mostRecentDate == tuple.mostRecentDate && Objects.equal(fieldName, tuple.fieldName)
+                            && Objects.equal(dataTypeOutputName, tuple.dataTypeOutputName) && Objects.equal(normalizerClassName, tuple.normalizerClassName);
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(fieldName, dataTypeOutputName, normalizerClassName, mostRecentDate);
+        }
     }
 }

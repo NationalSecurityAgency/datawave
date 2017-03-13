@@ -34,7 +34,7 @@ public class AttributeFactory {
     private final TypeMetadata typeMetadata;
     
     private String defaultType = NoOpType.class.getName();
-    private String mostGeneralType = LcNoDiacriticsType.class.getName();
+    private Class<?> mostGeneralType = LcNoDiacriticsType.class;
     
     public AttributeFactory(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
@@ -70,10 +70,6 @@ public class AttributeFactory {
         if (dataTypes.isEmpty()) {
             return new NoOpContent(data, key, toKeep);
         }
-        // if there is more than one dataType, remove the mostGeneral one, leaving the more specific type
-        if (dataTypes.size() > 1) {
-            dataTypes.remove(this.mostGeneralType);
-        }
         
         try {
             if (null == dataTypes || dataTypes.isEmpty()) {
@@ -88,7 +84,12 @@ public class AttributeFactory {
                 
                 for (String dataType : dataTypes) {
                     Class<?> dataTypeClass = clazzCache.get(dataType);
-                    attrSet.add(getAttribute(dataTypeClass, fieldName, data, key, toKeep));
+                    Attribute<?> attribute = getAttribute(dataTypeClass, fieldName, data, key, toKeep);
+                    // if there is more than one dataType, mark the mostGeneral one as toKeep=false, leaving the more specific type(s)
+                    if (dataTypeClass.isAssignableFrom(this.mostGeneralType)) {
+                        attribute.setToKeep(false);
+                    }
+                    attrSet.add(attribute);
                 }
                 
                 return new Attributes(attrSet, toKeep);

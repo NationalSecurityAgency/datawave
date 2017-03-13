@@ -38,7 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
-import nsa.datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl;
+import nsa.datawave.core.iterators.querylock.QueryLock;
 import nsa.datawave.data.type.Type;
 import nsa.datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import nsa.datawave.query.QueryParameters;
@@ -81,7 +81,6 @@ import nsa.datawave.query.rewrite.jexl.visitors.ParallelIndexExpansion;
 import nsa.datawave.query.rewrite.jexl.visitors.PrintingVisitor;
 import nsa.datawave.query.rewrite.jexl.visitors.PullupUnexecutableNodesVisitor;
 import nsa.datawave.query.rewrite.jexl.visitors.PushFunctionsIntoExceededValueRanges;
-import nsa.datawave.query.rewrite.jexl.visitors.PushdownLargeFieldedListsVisitor;
 import nsa.datawave.query.rewrite.jexl.visitors.PushdownLowSelectivityNodesVisitor;
 import nsa.datawave.query.rewrite.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import nsa.datawave.query.rewrite.jexl.visitors.PushdownUnexecutableNodesVisitor;
@@ -341,6 +340,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         RefactoredShardQueryConfiguration config = (RefactoredShardQueryConfiguration) genericConfig;
         
+        // lets mark the query as started (used by ivarators at a minimum)
+        try {
+            markQueryStarted(config, settings);
+        } catch (Exception e) {
+            throw new DatawaveQueryException("Failed to mark query as started" + settings.getId(), e);
+        }
+        
         return process(scannerFactory, getMetadataHelper(config), getDateIndexHelper(config), config, query, settings);
     }
     
@@ -435,8 +441,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         addOption(cfg, QueryOptions.TYPE_METADATA_IN_HDFS, Boolean.toString(config.isTypeMetadataInHdfs()), true);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
-        if (null != config.getQuery() && null != config.getQuery().getId())
-            addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
+        addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, compressMappings);
@@ -451,8 +456,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
     @Override
     public void close(GenericQueryConfiguration genericConfig, Query settings) {
         if (!(genericConfig instanceof RefactoredShardQueryConfiguration)) {
-            log.warn("Config object must be an instance of RefactoredShardQueryConfiguration to properly close the DefaultQueryPlanner. You gave me a "
-                            + genericConfig);
+            if (genericConfig != null) {
+                log.warn("Config object must be an instance of RefactoredShardQueryConfiguration to properly close the DefaultQueryPlanner. You gave me a "
+                                + genericConfig);
+            }
             if (null != builderThread) {
                 builderThread.shutdown();
             }
@@ -461,51 +468,43 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         RefactoredShardQueryConfiguration config = (RefactoredShardQueryConfiguration) genericConfig;
         
-        // lets clean up any HDFS cache directory used for ivarators
-        if (config.getHdfsCacheBaseURI() != null && config.getHdfsSiteConfigURLs() != null) {
-            
-            // get the hadoop file system and a temporary directory
-            String hdfsCacheDirURI = getHdfsQueryCacheUri(config, settings);
-            final URI hdfsCacheURI;
-            final FileSystem fs;
-            try {
-                Configuration conf = new Configuration();
-                for (String url : StringUtils.split(config.getHdfsSiteConfigURLs(), ',')) {
-                    conf.addResource(new URL(url));
-                }
-                hdfsCacheURI = new URI(hdfsCacheDirURI);
-                fs = FileSystem.get(hdfsCacheURI, conf);
-                if (fs.exists(new Path(hdfsCacheURI))) {
-                    
-                    Exception exception = null;
-                    
-                    // create the cancelled file
-                    for (int i = 0; i < 10; i++) {
-                        exception = null;
-                        try {
-                            if (fs.createNewFile(new Path(new Path(hdfsCacheURI), DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl.CLOSED_FILE))) {
-                                break;
-                            }
-                        } catch (Exception e) {
-                            exception = e;
-                            // try again
-                        }
-                    }
-                    if (exception != null) {
-                        throw new IOException("Failed to create ivarator closed file", exception);
-                    }
-                }
-            } catch (MalformedURLException e) {
-                throw new IllegalStateException("Unable to load hadoop configuration", e);
-            } catch (IOException e) {
-                throw new IllegalStateException("Unable to create hadoop file system", e);
-            } catch (URISyntaxException e) {
-                throw new IllegalStateException("Invalid hdfs cache dir URI: " + hdfsCacheDirURI, e);
-            }
-            
+        // lets mark the query as closed (used by ivarators at a minimum)
+        try {
+            markQueryStopped(config, settings);
+        } catch (Exception e) {
+            log.error("Failed to close query " + settings.getId(), e);
         }
+        
         if (null != builderThread)
             builderThread.shutdown();
+    }
+    
+    private QueryLock getQueryLock(RefactoredShardQueryConfiguration config, Query settings) throws Exception {
+        return new QueryLock.Builder().forQueryId(settings.getId() == null ? null : settings.getId().toString()).forZookeeper(config.getZookeeperConfig(), 0)
+                        .forHdfs(config.getHdfsSiteConfigURLs()).forIvaratorDirs(config.getIvaratorCacheBaseURIs())
+                        .forFstDirs(config.getIvaratorFstHdfsBaseURIs()).build();
+    }
+    
+    private void markQueryStopped(RefactoredShardQueryConfiguration config, Query settings) throws Exception {
+        QueryLock lock = getQueryLock(config, settings);
+        if (lock != null) {
+            try {
+                lock.stopQuery();
+            } finally {
+                lock.cleanup();
+            }
+        }
+    }
+    
+    private void markQueryStarted(RefactoredShardQueryConfiguration config, Query settings) throws Exception {
+        QueryLock lock = getQueryLock(config, settings);
+        if (lock != null) {
+            try {
+                lock.startQuery();
+            } finally {
+                lock.cleanup();
+            }
+        }
     }
     
     public static void validateQuerySize(String lastOperation, JexlNode queryTree, RefactoredShardQueryConfiguration config) {
@@ -556,6 +555,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
             logQuery(queryTree, "Query after initial parse:");
         }
         
+        stopwatch.stop();
+        // groom the query so that any nodes with the literal on the left and the identifier on
+        // the right will be re-ordered to simplify subsequent processing
+        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix not null intent");
+        queryTree = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(queryTree);
+        if (log.isDebugEnabled()) {
+            logQuery(queryTree, "Query after inverting swapped nodes:");
+        }
         stopwatch.stop();
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix not null intent");
@@ -1100,41 +1107,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
     }
     
-    // push down large fielded lists. Assumes that the hdfs query cache uri and
-    // site config urls are configured
-    protected ASTJexlScript pushdownLargeFieldedLists(RefactoredShardQueryConfiguration config, ASTJexlScript queryTree) throws DatawaveQueryException {
-        Query settings = config.getQuery();
-        String hdfsQueryCacheUri = getHdfsQueryCacheUri(config, settings);
-        Configuration conf = new Configuration();
-        for (String url : StringUtils.split(config.getHdfsSiteConfigURLs(), ',')) {
-            try {
-                conf.addResource(new URL(url));
-            } catch (MalformedURLException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_HDFS_SITE_CONFIG_URL, e, MessageFormat.format("URL: {0}", url));
-                throw new DatawaveFatalQueryException(qe);
-            }
-        }
-        URI hdfsCacheURI;
-        try {
-            hdfsCacheURI = new URI(hdfsQueryCacheUri);
-        } catch (URISyntaxException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_HDFS_QUERY_CACHE_URI, e, MessageFormat.format("URI: {0}", hdfsQueryCacheUri));
-            throw new DatawaveFatalQueryException(qe);
-        }
-        FileSystem fs;
-        try {
-            fs = FileSystem.get(hdfsCacheURI, conf);
-        } catch (IOException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.FILESYSTEM_CREATE_ERROR, e, MessageFormat.format("URI: {0}, URLs: {1}", hdfsCacheURI,
-                            config.getHdfsSiteConfigURLs()));
-            throw new DatawaveFatalQueryException(qe);
-        }
-        
-        // Find large lists of values against the same field and push down into
-        // an Ivarator
-        return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri);
-    }
-    
     // Overwrite projection and blacklist properties if the query model is
     // being used
     protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, RefactoredShardQueryConfiguration config, TraceStopwatch stopwatch,
@@ -1410,36 +1382,18 @@ public class DefaultQueryPlanner extends QueryPlanner {
         return pushDownPlanner.applyRules(queryTree);
     }
     
-    protected String getHdfsQueryCacheUri(String hdfsCacheBaseURI, Query settings) {
-        StringBuilder baseUri = new StringBuilder();
-        baseUri.append(hdfsCacheBaseURI);
-        if (baseUri.charAt(baseUri.length() - 1) != Path.SEPARATOR_CHAR) {
-            baseUri.append(Path.SEPARATOR_CHAR);
-        }
-        baseUri.append(settings.getId().toString());
-        return baseUri.toString();
-    }
-    
-    protected String getHdfsQueryCacheUri(RefactoredShardQueryConfiguration config, Query settings) {
-        return getHdfsQueryCacheUri(config.getHdfsCacheBaseURI(), settings);
-    }
-    
     /**
      * Get the list of alternatives, randomizing the order so that the tserver spread out the disk usage.
-     * 
-     * @param config
-     * @param settings
-     * @return
      */
-    protected String getHdfsQueryCacheUriAlternatives(RefactoredShardQueryConfiguration config, Query settings) {
+    protected String getIvaratorQueryCacheBaseUriAlternatives(RefactoredShardQueryConfiguration config) {
         StringBuilder baseUriAlternatives = new StringBuilder();
-        List<String> alternatives = new LinkedList<>(config.getHdfsCacheBaseURISelectionAsList());
+        List<String> alternatives = new LinkedList<>(config.getIvaratorCacheBaseURIsAsList());
         Random random = new Random();
         while (!alternatives.isEmpty()) {
             if (baseUriAlternatives.length() > 0) {
                 baseUriAlternatives.append(',');
             }
-            baseUriAlternatives.append(getHdfsQueryCacheUri(alternatives.remove(random.nextInt(alternatives.size())), settings));
+            baseUriAlternatives.append(alternatives.remove(random.nextInt(alternatives.size())));
             
         }
         return baseUriAlternatives.toString();
@@ -1466,21 +1420,21 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 if (config.getHdfsSiteConfigURLs() != null) {
                     addOption(cfg, QueryOptions.HDFS_SITE_CONFIG_URLS, config.getHdfsSiteConfigURLs(), false);
                 }
-                if (config.getHdfsCacheBaseURI() != null) {
-                    addOption(cfg, QueryOptions.HDFS_CACHE_BASE_URI, getHdfsQueryCacheUri(config, settings), false);
-                }
-                if (config.getHdfsCacheBaseURISelection() != null && config.isHdfsPushCacheBaseURISelectionDown()) {
-                    addOption(cfg, QueryOptions.HDFS_CACHE_BASE_URI_ALTERNATIVES, getHdfsQueryCacheUriAlternatives(config, settings), false);
-                }
-                addOption(cfg, QueryOptions.HDFS_CACHE_REUSED, Boolean.toString(config.isHdfsCacheReused()), false);
                 if (config.getHdfsFileCompressionCodec() != null) {
                     addOption(cfg, QueryOptions.HDFS_FILE_COMPRESSION_CODEC, config.getHdfsFileCompressionCodec(), false);
                 }
-                addOption(cfg, QueryOptions.HDFS_CACHE_BUFFER_SIZE, Integer.toString(config.getHdfsCacheBufferSize()), false);
-                addOption(cfg, QueryOptions.HDFS_SCAN_PERSIST_THRESHOLD, Long.toString(config.getHdfsCacheScanPersistThreshold()), false);
-                addOption(cfg, QueryOptions.HDFS_SCAN_TIMEOUT, Long.toString(config.getHdfsCacheScanTimeout()), false);
+                if (config.getZookeeperConfig() != null) {
+                    addOption(cfg, QueryOptions.ZOOKEEPER_CONFIG, config.getZookeeperConfig(), false);
+                }
+                if (config.getIvaratorCacheBaseURIs() != null) {
+                    addOption(cfg, QueryOptions.IVARATOR_CACHE_BASE_URI_ALTERNATIVES, getIvaratorQueryCacheBaseUriAlternatives(config), false);
+                }
+                addOption(cfg, QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, Integer.toString(config.getIvaratorCacheBufferSize()), false);
+                addOption(cfg, QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, Long.toString(config.getIvaratorCacheScanPersistThreshold()), false);
+                addOption(cfg, QueryOptions.IVARATOR_SCAN_TIMEOUT, Long.toString(config.getIvaratorCacheScanTimeout()), false);
                 addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(config.getCollectTimingDetails()), false);
                 addOption(cfg, QueryOptions.MAX_INDEX_RANGE_SPLIT, Integer.toString(config.getMaxFieldIndexRangeSplit()), false);
+                addOption(cfg, QueryOptions.MAX_IVARATOR_OPEN_FILES, Integer.toString(config.getIvaratorMaxOpenFiles()), false);
                 addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
                 addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
                 addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);

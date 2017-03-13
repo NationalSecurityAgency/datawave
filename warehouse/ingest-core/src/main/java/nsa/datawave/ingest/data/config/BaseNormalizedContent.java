@@ -143,6 +143,9 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         HashCodeBuilder b = new HashCodeBuilder();
         b.append(_fieldName).append(_indexedFieldValue).append(_eventFieldValue);
         b.append(_markings);
+        if (error != null) {
+            b.append(error); // we want error in the hashCode only when it is non-null
+        }
         return b.toHashCode();
     }
     
@@ -154,6 +157,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
             b.append(_indexedFieldValue, n._indexedFieldValue);
             b.append(_eventFieldValue, n._eventFieldValue);
             b.append(_markings, n._markings);
+            b.append(error, n.error);
             return b.isEquals();
         }
         return false;
@@ -175,6 +179,9 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         sb.append(", indexedFieldValue=").append(this._indexedFieldValue);
         sb.append(", eventFieldValue=").append(this._eventFieldValue);
         sb.append(", markings=").append(this._markings);
+        if (null != this.error) {
+            sb.append(", error=").append(this.error.getClass().getCanonicalName());
+        }
         return sb.toString();
     }
     

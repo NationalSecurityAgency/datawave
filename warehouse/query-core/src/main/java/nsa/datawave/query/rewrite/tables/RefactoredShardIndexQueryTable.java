@@ -92,6 +92,7 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
     private String reverseIndexTableName;
     private boolean fullTableScanEnabled = true;
     private boolean allowLeadingWildcard = true;
+    private List<String> realmSuffixExclusionPatterns = null;
     protected String modelName = "DATAWAVE";
     protected String modelTableName = "DatawaveMetadata";
     protected MetadataHelper metadataHelper;
@@ -110,6 +111,7 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
         this.modelName = other.getModelName();
         this.modelTableName = other.getModelTableName();
         this.metadataHelper = other.getMetadataHelper();
+        this.setRealmSuffixExclusionPatterns(other.getRealmSuffixExclusionPatterns());
     }
     
     @Override
@@ -713,6 +715,14 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
     @Override
     public Set<String> getExampleQueries() {
         return Collections.emptySet();
+    }
+    
+    public List<String> getRealmSuffixExclusionPatterns() {
+        return realmSuffixExclusionPatterns;
+    }
+    
+    public void setRealmSuffixExclusionPatterns(List<String> realmSuffixExclusionPatterns) {
+        this.realmSuffixExclusionPatterns = realmSuffixExclusionPatterns;
     }
     
 }

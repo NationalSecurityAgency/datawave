@@ -196,16 +196,28 @@
         <property name="maxOrExpansionFstThreshold" value="${beq.orExpansionFstThreshold}" />
         <!-- The max number of splits to divide a range into for the ivarators.  They are run in a pool of threads controlled by the tserver.datawave.ivarator.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->
         <property name="maxFieldIndexRangeSplit" value="${beq.fieldIndexRangeSplit}" />
+        <!-- The max number of sources that can be created across ivarators for one scan -->
+        <property name="maxIvaratorSources" value="${beq.maxIvaratorSources}" />
         <!-- The max number of evaluation pipelines.  They are run in a pool of threads controlled by the tserver.datawave.evaluation.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->
         <property name="maxEvaluationPipelines" value="${beq.evaluationPipelines}" />
         <!-- The max number of non-null evaluated results to cache on each tserver beyond the evaluation pipelines in queue -->
         <property name="maxPipelineCachedResults" value="${beq.pipelineCachedResults}" />
+        <!-- the list of comma delimited hdfs configuration files something like file:///opt/datawave/hadoop-warehouse/conf/core-site.xml,file:///opt/datawave/hadoop-warehouse/conf/hdfs-site.xml-->
         <property name="hdfsSiteConfigURLs" value="${hdfs.site.config.urls}" />
-        <property name="hdfsCacheBaseURISelection" value="${hdfs.cache.base.uri}" />
-        <property name="hdfsCacheReused" value="true" />
-        <property name="hdfsCacheBufferSize" value="10000" />
-        <property name="hdfsCacheScanPersistThreshold" value="100000" />
-        <property name="hdfsCacheScanTimeoutMinutes" value="${query.max.call.time.minutes}" />
+        <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
+        <property name="zookeeperConfig" value="${zookeeper.hosts}" />
+        <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
+        <property name="ivaratorCacheBaseURIs" value="${ivarator.cache.base.uris}" />
+        <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
+        <property name="ivaratorFstHdfsBaseURIs" value ="${ivarator.fst.hdfs.base.uris}" />
+        <!-- the size after which a buffer is flushed to a file. -->
+        <property name="ivaratorCacheBufferSize" value="10000" />
+        <!-- the max number of open files in an ivarator -->
+        <property name="ivaratorMaxOpenFiles" value="${beq.maxIvaratorOpenFiles}" />
+        <!-- the number of keys scanned after which the buffer is flushed to a file. -->
+        <property name="ivaratorCacheScanPersistThreshold" value="100000" />
+        <!-- the scan time after which the buffer is flushed to a file. -->
+        <property name="ivaratorCacheScanTimeoutMinutes" value="${query.max.call.time.minutes}" />
         <property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />
         <property name="modelTableName" value="DatawaveMetadata" />
         <property name="modelName" value="DATAWAVE" />
@@ -553,12 +565,22 @@
         <property name="maxEvaluationPipelines" value="${beq.evaluationPipelines}" />
         <!-- The max number of non-null evaluated results to cache on each tserver beyond the evaluation pipelines in queue -->
         <property name="maxPipelineCachedResults" value="${beq.pipelineCachedResults}" />
+        <!-- the list of comma delimited hdfs configuration files something like file:///opt/datawave/hadoop-warehouse/conf/core-site.xml,file:///opt/datawave/hadoop-warehouse/conf/hdfs-site.xml-->
         <property name="hdfsSiteConfigURLs" value="${hdfs.site.config.urls}" />
-        <property name="hdfsCacheBaseURISelection" value="${hdfs.cache.base.uri}" />
-        <property name="hdfsCacheReused" value="true" />
-        <property name="hdfsCacheBufferSize" value="10000" />
-        <property name="hdfsCacheScanPersistThreshold" value="100000" />
-        <property name="hdfsCacheScanTimeoutMinutes" value="${query.max.call.time.minutes}" />
+        <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
+        <property name="zookeeperConfig" value="${zookeeper.hosts}" />
+        <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
+        <property name="ivaratorCacheBaseURIs" value="${ivarator.cache.base.uris}" />
+        <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
+        <property name="ivaratorFstHdfsBaseURIs" value ="${ivarator.fst.hdfs.base.uris}" />
+        <!-- the size after which a buffer is flushed to a file. -->
+        <property name="ivaratorCacheBufferSize" value="10000" />
+        <!-- the max number of open files in an ivarator -->
+        <property name="ivaratorMaxOpenFiles" value="${beq.maxIvaratorOpenFiles}" />
+        <!-- the number of keys scanned after which the buffer is flushed to a file. -->
+        <property name="ivaratorCacheScanPersistThreshold" value="100000" />
+        <!-- the scan time after which the buffer is flushed to a file. -->
+        <property name="ivaratorCacheScanTimeoutMinutes" value="${query.max.call.time.minutes}" />
         <property name="querySyntaxParsers">
             <map key-type="java.lang.String" value-type="nsa.datawave.query.language.parser.QueryParser">
                 <entry key="JEXL">

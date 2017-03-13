@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import nsa.datawave.security.authorization.DatawavePrincipal;
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import nsa.datawave.webservice.query.Query;
@@ -32,6 +33,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections.Transformer;
 import org.apache.commons.collections.functors.NOPTransformer;
 import org.apache.commons.collections.iterators.TransformIterator;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
@@ -65,6 +67,12 @@ public class ExtendedRunningQueryTest {
     TransformIterator transformIterator;
     
     private Transformer transformer = NOPTransformer.getInstance();
+    
+    @Before
+    public void setup() {
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+    }
     
     @Test
     public void testConstructor_NoArg() throws Exception {

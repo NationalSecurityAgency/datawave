@@ -191,7 +191,7 @@ public enum DatawaveErrorCode {
     UNPARSEABLE_JEXL_QUERY(400, 17, "Could not parse JEXL query."),
     INVALID_REGEX(400, 18, "Query contained an invalid regular expression."),
     INDEX_ONLY_FIELDS_MIXED_INVALID_EXPRESSIONS(400, 19,
-                    "Query failed because because index-only fields are mixed with expressions that cannot be run against the index."),
+                    "Query failed because index-only fields are mixed with expressions that cannot be run against the index."),
     TOO_MANY_TERMS(400, 20, "Too many terms in your query."),
     UNKNOWN_COMPRESSION_SCHEME(400, 21, "Unknown compression scheme specified."),
     INVALID_SYNTAX_PARSE_ERROR(400, 22, "Cannot parse due to invalid syntax."),

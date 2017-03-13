@@ -102,6 +102,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 public class MetadataHelper implements ApplicationContextAware {
     private static final Logger log = Logger.getLogger(MetadataHelper.class);
     
+    public static final String DEFAULT_AUTHS_PROPERTY = "metadatahelper.default.auths";
+    
     public static final String NULL_BYTE = "\0";
     
     protected static final Text PV = new Text("pv");
@@ -1598,8 +1600,6 @@ public class MetadataHelper implements ApplicationContextAware {
         static final String PROPS_RESOURCE = "metadata.properties";
         static final Properties defaultProps = new Properties();;
         
-        static final String DEFAULT_AUTHS_PROPERTY = "metadatahelper.default.auths";
-        
         private MetadataDefaultsFactory() {}
         
         static {
@@ -1622,7 +1622,7 @@ public class MetadataHelper implements ApplicationContextAware {
         }
         
         static Authorizations getDefaultAuthorizations() {
-            String defaultAuths = defaultProps.getProperty(DEFAULT_AUTHS_PROPERTY);
+            String defaultAuths = System.getProperty(DEFAULT_AUTHS_PROPERTY, defaultProps.getProperty(DEFAULT_AUTHS_PROPERTY));
             if (null == defaultAuths || defaultAuths.isEmpty()) {
                 log.info("No default authorizations are defined. Hopefully the empty set will suffice");
                 return new Authorizations();

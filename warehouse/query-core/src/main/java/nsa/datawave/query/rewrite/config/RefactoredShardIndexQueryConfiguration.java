@@ -34,6 +34,7 @@ public class RefactoredShardIndexQueryConfiguration extends RefactoredShardQuery
         this.setFullTableScanEnabled(logic.isFullTableScanEnabled());
         this.setQuery(query);
         this.setMetadataTableName(logic.getModelTableName());
+        this.setRealmSuffixExclusionPatterns(logic.getRealmSuffixExclusionPatterns());
         this.setModelName(logic.getModelName());
     }
     

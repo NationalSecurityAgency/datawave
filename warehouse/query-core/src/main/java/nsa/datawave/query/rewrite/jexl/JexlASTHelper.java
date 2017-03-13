@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import nsa.datawave.data.normalizer.NormalizationException;
 import nsa.datawave.data.type.Type;
@@ -19,6 +20,9 @@ import nsa.datawave.query.rewrite.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import nsa.datawave.query.rewrite.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import nsa.datawave.query.rewrite.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import nsa.datawave.query.rewrite.jexl.nodes.IndexHoleMarkerJexlNode;
+import nsa.datawave.query.rewrite.jexl.visitors.BaseVisitor;
+import nsa.datawave.query.rewrite.jexl.visitors.JexlStringBuildingVisitor;
+import nsa.datawave.query.rewrite.jexl.visitors.RebuildingVisitor;
 import nsa.datawave.query.rewrite.postprocessing.tf.Function;
 import nsa.datawave.query.rewrite.postprocessing.tf.FunctionReferenceVisitor;
 import nsa.datawave.query.util.MetadataHelper;
@@ -27,36 +31,8 @@ import nsa.datawave.webservice.query.exception.NotFoundQueryException;
 import nsa.datawave.webservice.query.exception.QueryException;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.*;
 import org.apache.commons.jexl2.parser.JexlNode.Literal;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.Parser;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Ascii;
@@ -335,7 +311,11 @@ public class JexlASTHelper {
                 return new IdentifierOpLiteral((ASTIdentifier) child1, node, child2);
             }
             if (child2 instanceof ASTIdentifier && isLiteral(child1)) {
-                return new IdentifierOpLiteral((ASTIdentifier) child2, node, child1, true);
+                // this should no longer happen after the fix to groom the query by reordering binary expressions that
+                // have the literal on the left side
+                // if this is a range op, i must reverse the logic:
+                node = (JexlNode) node.jjtAccept(new InvertNodeVisitor(), null);
+                return new IdentifierOpLiteral((ASTIdentifier) child2, node, child1);
             }
         }
         return null;
@@ -345,19 +325,11 @@ public class JexlASTHelper {
         ASTIdentifier identifier;
         JexlNode op;
         JexlNode literal;
-        boolean reversed = false;
         
         public IdentifierOpLiteral(ASTIdentifier identifier, JexlNode op, JexlNode literal) {
             this.identifier = identifier;
             this.op = op;
             this.literal = literal;
-        }
-        
-        public IdentifierOpLiteral(ASTIdentifier identifier, JexlNode op, JexlNode literal, boolean reversed) {
-            this.identifier = identifier;
-            this.op = op;
-            this.literal = literal;
-            this.reversed = reversed;
         }
         
         public ASTIdentifier getIdentifier() {
@@ -380,9 +352,6 @@ public class JexlASTHelper {
             return JexlASTHelper.getLiteralValue(literal);
         }
         
-        public boolean isReversed() {
-            return reversed;
-        }
     }
     
     public static String deconstructIdentifier(ASTIdentifier identifier) {
@@ -1038,9 +1007,11 @@ public class JexlASTHelper {
      */
     protected static void getRangeOperatorNodes(JexlNode root, Class<?> clz, List<JexlNode> nodes, List<JexlNode> otherNodes, Set<String> datatypeFilterSet,
                     MetadataHelper helper, List<JexlNode> nonIndexedRangeNodes, boolean includeDelayed) {
+        if (!includeDelayed && isDelayedPredicate(root)) {
+            return;
+        }
         for (int i = 0; i < root.jjtGetNumChildren(); i++) {
             JexlNode child = root.jjtGetChild(i);
-            
             // When checking for a bounded range in a subtree, need to consider nodes of the same class
             // as the root, reference expression nodes, and reference nodes
             if (child.getClass().equals(clz) || child.getClass().equals(ASTReferenceExpression.class) || child.getClass().equals(ASTReference.class)) {
@@ -1051,9 +1022,15 @@ public class JexlASTHelper {
                     otherNodes.add(child);
                 }
             } else if (RANGE_NODE_CLASSES.contains(child.getClass())) {
+                
+                boolean hasMethod = ((AtomicBoolean) child.jjtAccept(new JexlASTHelper.HasMethodVisitor(), new AtomicBoolean(false))).get();
+                
                 String fieldName = JexlASTHelper.getIdentifier(child);
                 
-                if (nonIndexedRangeNodes != null) {
+                if (hasMethod && otherNodes != null) {
+                    otherNodes.add(child);
+                    
+                } else if (nonIndexedRangeNodes != null) {
                     try {
                         // We can do a better job here by actually using the type
                         if (fieldName != null && helper.isIndexed(fieldName, datatypeFilterSet)) {
@@ -1385,4 +1362,131 @@ public class JexlASTHelper {
         return orNode;
     }
     
+    public static class HasMethodVisitor extends BaseVisitor {
+        
+        @Override
+        public Object visit(ASTMethodNode node, Object data) {
+            AtomicBoolean state = (AtomicBoolean) data;
+            state.set(true);
+            return data;
+        }
+        
+        @Override
+        public Object visit(ASTSizeMethod node, Object data) {
+            AtomicBoolean state = (AtomicBoolean) data;
+            state.set(true);
+            return data;
+        }
+        
+    }
+    
+    public static class InvertNodeVisitor extends RebuildingVisitor {
+        
+        public static <T extends JexlNode> T invertSwappedNodes(T script) {
+            InvertNodeVisitor visitor = new InvertNodeVisitor();
+            
+            return (T) script.jjtAccept(visitor, null);
+        }
+        
+        private JexlNode reparent(JexlNode in, JexlNode out) {
+            int j = 0;
+            for (int i = in.jjtGetNumChildren() - 1; i >= 0; i--) {
+                JexlNode kid = in.jjtGetChild(i);
+                kid = (JexlNode) kid.jjtAccept(this, null);
+                out.jjtAddChild(kid, j++);
+                kid.jjtSetParent(out);
+            }
+            return out;
+        }
+        
+        @Override
+        public Object visit(ASTGENode node, Object data) {
+            
+            if (node.jjtGetNumChildren() == 2) {
+                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
+                if (isLiteral(child1)) {
+                    return reparent(node, new ASTLENode(ParserTreeConstants.JJTLENODE));
+                }
+            }
+            return super.visit(node, data);
+        }
+        
+        @Override
+        public Object visit(ASTLENode node, Object data) {
+            if (node.jjtGetNumChildren() == 2) {
+                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
+                if (isLiteral(child1)) {
+                    return reparent(node, new ASTGENode(ParserTreeConstants.JJTGENODE));
+                }
+            }
+            return super.visit(node, data);
+        }
+        
+        @Override
+        public Object visit(ASTGTNode node, Object data) {
+            if (node.jjtGetNumChildren() == 2) {
+                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
+                if (isLiteral(child1)) {
+                    return reparent(node, new ASTLTNode(ParserTreeConstants.JJTLTNODE));
+                }
+            }
+            return super.visit(node, data);
+        }
+        
+        @Override
+        public Object visit(ASTLTNode node, Object data) {
+            if (node.jjtGetNumChildren() == 2) {
+                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
+                if (isLiteral(child1)) {
+                    return reparent(node, new ASTGTNode(ParserTreeConstants.JJTGTNODE));
+                }
+            }
+            return super.visit(node, data);
+        }
+        
+        @Override
+        public Object visit(ASTEQNode node, Object data) {
+            if (node.jjtGetNumChildren() == 2) {
+                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
+                if (isLiteral(child1)) {
+                    return reparent(node, new ASTEQNode(ParserTreeConstants.JJTEQNODE));
+                }
+            }
+            return super.visit(node, data);
+        }
+        
+        @Override
+        public Object visit(ASTERNode node, Object data) {
+            if (node.jjtGetNumChildren() == 2) {
+                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
+                if (isLiteral(child1)) {
+                    return reparent(node, new ASTERNode(ParserTreeConstants.JJTERNODE));
+                }
+            }
+            return super.visit(node, data);
+        }
+        
+        @Override
+        public Object visit(ASTNENode node, Object data) {
+            if (node.jjtGetNumChildren() == 2) {
+                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
+                if (isLiteral(child1)) {
+                    return reparent(node, new ASTNENode(ParserTreeConstants.JJTNENODE));
+                }
+            }
+            return super.visit(node, data);
+        }
+        
+        @Override
+        public Object visit(ASTNRNode node, Object data) {
+            if (node.jjtGetNumChildren() == 2) {
+                JexlNode child1 = JexlASTHelper.dereference(node.jjtGetChild(0));
+                if (isLiteral(child1)) {
+                    return reparent(node, new ASTNRNode(ParserTreeConstants.JJTNRNODE));
+                }
+            }
+            return super.visit(node, data);
+        }
+        
+    }
 }

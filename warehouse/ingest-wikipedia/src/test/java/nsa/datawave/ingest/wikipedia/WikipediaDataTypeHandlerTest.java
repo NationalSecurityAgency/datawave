@@ -94,9 +94,10 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
         int numberOfLoadDateEntries = 6;
-        Assert.assertEquals(16, tableToKey.get("DatawaveMetadata").size());
+        int numberOfDatawaveMetadataEntries = 18;
+        Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get("DatawaveMetadata").size());
         
-        Assert.assertEquals(151 + numberOfLoadDateEntries, results.size());
+        Assert.assertEquals(135 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
         
         contextWriter = new MyCachingContextWriter();
         
@@ -126,14 +127,14 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
             tableToKey.put(biKey.getTableName().toString(), biKey);
         }
         
-        Assert.assertEquals(9799, tableToKey.get("shard").size());
-        Assert.assertEquals(4896, tableToKey.get("shardIndex").size());
-        Assert.assertEquals(4887, tableToKey.get("shardReverseIndex").size());
+        Assert.assertEquals(9797, tableToKey.get("shard").size());
+        Assert.assertEquals(4895, tableToKey.get("shardIndex").size());
+        Assert.assertEquals(4886, tableToKey.get("shardReverseIndex").size());
         
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
-        Assert.assertEquals(16, tableToKey.get("DatawaveMetadata").size());
+        Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get("DatawaveMetadata").size());
         
-        Assert.assertEquals(22812 + numberOfLoadDateEntries, results.size());
+        Assert.assertEquals(22799 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
     }
     
 }

@@ -134,7 +134,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-sleepTime must be followed by the number of ms to sleep between checks for map files.", e);
                         System.exit(-2);
                     }
-                    log.info("Set sleep time to " + SLEEP_TIME + "ms");
                 } else if ("-majcThreshold".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-majcThreshold must be followed by the maximum number of major compactions allowed before waiting");
@@ -146,7 +145,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-majcThreshold must be followed by the maximum number of major compactions allowed before waiting", e);
                         System.exit(-2);
                     }
-                    log.info("Will wait to bring map files online if there are more than " + MAJC_THRESHOLD + " running or queued major compactions.");
                 } else if ("-majcDelay".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online");
@@ -158,7 +156,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online", e);
                         System.exit(-2);
                     }
-                    log.info("Will not bring map files online unless at least " + MAJC_WAIT_TIMEOUT + "ms have passed since last time.");
                 } else if ("-majcCheckInterval".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-majcCheckInterval must be followed by the number of bulk loads to process before rechecking the majcThreshold and majcDelay");
@@ -171,7 +168,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                         e);
                         System.exit(-2);
                     }
-                    log.info("Will check the majcThreshold and majcDelay every " + MAJC_CHECK_INTERVAL + " bulk loads.");
                 } else if ("-maxDirectories".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-maxDirectories must be followed a number of directories");
@@ -183,7 +179,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-maxDirectories must be followed a number of directories", e);
                         System.exit(-2);
                     }
-                    log.info("Processing a max of " + MAX_DIRECTORIES + " directories");
                 } else if ("-numThreads".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-numThreads must be followed by the number of bulk import threads");
@@ -195,7 +190,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-numThreads must be followed by the number of bulk import threads", e);
                         System.exit(-2);
                     }
-                    log.info("Using " + numBulkThreads + " bulk load threads");
                 } else if ("-numHdfsThreads".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-numHdfsThreads must be followed by the number of threads to use for concurrent HDFS operations");
@@ -207,7 +201,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-numHdfsThreads must be followed by the number of threads to use for concurrent HDFS operations", e);
                         System.exit(-2);
                     }
-                    log.info("Using " + numHdfsThreads + " HDFS operation threads");
                 } else if ("-numAssignThreads".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-numAssignThreads must be followed by the number of bulk import assignment threads");
@@ -219,7 +212,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-numAssignThreads must be followed by the number of bulk import assignment threads", e);
                         System.exit(-2);
                     }
-                    log.info("Using " + numBulkAssignThreads + " bulk assign threads");
                 } else if ("-seqFileHdfs".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-seqFileHdfs must be followed a file system URI (e.g. hdfs://hostname:54310).");
@@ -231,7 +223,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-seqFileHdfs must be followed a file system URI (e.g. hdfs://hostname:54310).", e);
                         System.exit(-2);
                     }
-                    log.info("Using " + seqFileHdfs + " as the file system containing the original sequence files");
                 } else if ("-srcHdfs".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-srcHdfs must be followed a file system URI (e.g. hdfs://hostname:54310).");
@@ -243,7 +234,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-srcHdfs must be followed a file system URI (e.g. hdfs://hostname:54310).", e);
                         System.exit(-2);
                     }
-                    log.info("Using " + srcHdfs + " as the source file system");
                 } else if ("-destHdfs".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-destHdfs must be followed a file system URI (e.g. hdfs://hostname:54310).");
@@ -255,7 +245,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-destHdfs must be followed a file system URI (e.g. hdfs://hostname:54310).", e);
                         System.exit(-2);
                     }
-                    log.info("Using " + destHdfs + " as the destination file system");
                 } else if ("-jobCleanupScript".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-jobCleanupScript must be followed by an absolute file path.");
@@ -269,7 +258,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         System.exit(-2);
                     }
                     jobtracker = args[++i];
-                    log.info("Using " + jobtracker + " as the jobtracker");
                 } else if ("-shutdownPort".equalsIgnoreCase(args[i])) {
                     if (i + 2 > args.length) {
                         log.error("-shutdownPort must be followed a port number");
@@ -281,7 +269,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         log.error("-shutdownPort must be followed a port number", e);
                         System.exit(-2);
                     }
-                    log.info("Using " + SHUTDOWN_PORT + " as the shutdown port");
                 } else if ("-lifo".equalsIgnoreCase(args[i])) {
                     FIFO = false;
                     log.info("Changing processing order to LIFO");
@@ -303,6 +290,21 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 }
             }
         }
+        
+        log.info("Set sleep time to " + SLEEP_TIME + "ms");
+        log.info("Will wait to bring map files online if there are more than " + MAJC_THRESHOLD + " running or queued major compactions.");
+        log.info("Will not bring map files online unless at least " + MAJC_WAIT_TIMEOUT + "ms have passed since last time.");
+        log.info("Will check the majcThreshold and majcDelay every " + MAJC_CHECK_INTERVAL + " bulk loads.");
+        log.info("Processing a max of " + MAX_DIRECTORIES + " directories");
+        log.info("Using " + numBulkThreads + " bulk load threads");
+        log.info("Using " + numHdfsThreads + " HDFS operation threads");
+        log.info("Using " + numBulkAssignThreads + " bulk assign threads");
+        log.info("Using " + seqFileHdfs + " as the file system containing the original sequence files");
+        log.info("Using " + srcHdfs + " as the source file system");
+        log.info("Using " + destHdfs + " as the destination file system");
+        log.info("Using " + jobtracker + " as the jobtracker");
+        log.info("Using " + SHUTDOWN_PORT + " as the shutdown port");
+        log.info("Using " + (FIFO ? "FIFO" : "LIFO") + " processing order");
         
         for (String[] s : properties) {
             conf.set(s[0], s[1]);

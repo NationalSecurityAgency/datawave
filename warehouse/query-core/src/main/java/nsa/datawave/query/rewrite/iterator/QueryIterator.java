@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.*;
+import java.net.MalformedURLException;
 import nsa.datawave.data.type.Type;
 import nsa.datawave.data.type.util.NumericalEncoder;
 import nsa.datawave.query.jexl.DatawaveJexlContext;
@@ -17,7 +18,6 @@ import nsa.datawave.query.rewrite.function.serializer.KryoDocumentSerializer;
 import nsa.datawave.query.rewrite.function.serializer.ToStringDocumentSerializer;
 import nsa.datawave.query.rewrite.function.serializer.WritableDocumentSerializer;
 import nsa.datawave.query.rewrite.iterator.aggregation.DocumentData;
-import nsa.datawave.query.rewrite.iterator.pipeline.BatchedDocumentIterator;
 import nsa.datawave.query.rewrite.iterator.pipeline.PipelineFactory;
 import nsa.datawave.query.rewrite.iterator.pipeline.PipelineIterator;
 import nsa.datawave.query.rewrite.iterator.profile.*;
@@ -55,6 +55,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -316,11 +317,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             
             pipelineIter.startPipeline();
             
-            if (batchedQueries >= 1) {
-                // we can apply a serialization iterator
-                this.serializedDocuments = new BatchedDocumentIterator(pipelineIter);
-            } else
-                this.serializedDocuments = pipelineIter;
+            this.serializedDocuments = pipelineIter;
             
             // now add the result count to the keys (required when not sorting UIDs)
             // Cannot do this on document specific ranges as the count would place the keys outside the initial range
@@ -366,7 +363,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         }
         if (!(reason instanceof IterationInterruptedException)) {
             log.error("Failure for query " + queryId, e);
-            throw new RuntimeException("Failure for query " + queryId, e);
+            throw new RuntimeException("Failure for query " + queryId + " " + query, e);
         }
     }
     
@@ -381,7 +378,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
      * @throws IOException
      */
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException {
+                    throws IOException, ConfigException {
         NestedIterator<Key> docIter = null;
         if (log.isTraceEnabled())
             log.trace("Batched queries is " + batchedQueries);
@@ -1043,7 +1040,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         return sb.toString();
     }
     
-    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript) throws IOException {
+    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript) throws IOException, ConfigException {
         NestedIterator<Key> sourceIter = null;
         // If we're doing field index or a non-fulltable (aka a normal
         // query)
@@ -1119,7 +1116,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         return new EventDataScanNestedIterator(source, getEventEntryKeyDataTypeFilter());
     }
     
-    protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs) {
+    protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
+                    throws MalformedURLException, ConfigException {
         if (log.isTraceEnabled()) {
             log.trace(documentRange);
         }
@@ -1134,12 +1132,12 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
         IteratorBuildingVisitor iteratorBuildingVisitor = new IteratorBuildingVisitor(this, this.myEnvironment, this.getTimeFilter(), this.getTypeMetadata(),
-                        indexOnlyFields, this.getFieldIndexKeyDataTypeFilter(), this.fiAggregator, this.getHdfsFileSystem(), this.getHdfsCacheBaseURI(),
-                        this.getHdfsCacheBaseURIAlternativesAsList(), this.getHdfsCacheSubDirPrefix(), this.getHdfsFileCompressionCodec(),
-                        this.isHdfsCacheReused(), this.getHdfsCacheBufferSize(), this.getHdfsCacheScanPersistThreshold(), this.getHdfsCacheScanTimeout(),
-                        this.getMaxIndexRangeSplit(), this.getMaxIvaratorSources(), indexedFields, Collections.<String> emptySet(),
-                        this.getTermFrequencyFields(), isQueryFullySatisfied, sortedUIDs).limit(documentRange).disableIndexOnly(disableFiEval)
-                        .limit(this.sourceLimit);
+                        indexOnlyFields, this.getFieldIndexKeyDataTypeFilter(), this.fiAggregator, this.getFileSystemCache(), this.getQueryLock(),
+                        this.getIvaratorCacheBaseURIsAsList(), this.getQueryId(), this.getHdfsCacheSubDirPrefix(), this.getHdfsFileCompressionCodec(),
+                        this.getIvaratorCacheBufferSize(), this.getIvaratorCacheScanPersistThreshold(), this.getIvaratorCacheScanTimeout(),
+                        this.getMaxIndexRangeSplit(), this.getIvaratorMaxOpenFiles(), this.getMaxIvaratorSources(), indexedFields,
+                        Collections.<String> emptySet(), this.getTermFrequencyFields(), isQueryFullySatisfied, sortedUIDs).limit(documentRange)
+                        .disableIndexOnly(disableFiEval).limit(this.sourceLimit);
         
         iteratorBuildingVisitor.setCollectTimingDetails(this.collectTimingDetails);
         iteratorBuildingVisitor.setQuerySpanCollector(this.querySpanCollector);

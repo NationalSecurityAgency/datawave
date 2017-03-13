@@ -37,7 +37,7 @@ public class GeoLatNormalizer extends AbstractNormalizer<String> {
     
     @Override
     public String normalizeDelegateType(String delegateIn) {
-        return delegateIn;
+        return normalize(delegateIn);
     }
     
     @Override

@@ -1,16 +1,20 @@
 package nsa.datawave.security.cache;
 
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.*;
 
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import nsa.datawave.security.authorization.DatawavePrincipal;
 import nsa.datawave.webservice.common.cache.SharedCacheCoordinator;
+import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.mock.MockInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -22,6 +26,8 @@ import org.apache.curator.test.TestingServer;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.ZKUtil;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockSupport;
 import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -37,7 +43,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
-public class CredentialsCacheBeanTest {
+public class CredentialsCacheBeanTest extends EasyMockSupport {
     
     private static final String TABLE_NAME = "ResponsesCache";
     protected static Logger log = Logger.getLogger(CredentialsCacheBeanTest.class);
@@ -64,6 +70,7 @@ public class CredentialsCacheBeanTest {
         MockInstance mockInstance = new MockInstance();
         
         connector = mockInstance.getConnector("root", new PasswordToken(""));
+        connector.securityOperations().changeUserAuthorizations("root", new Authorizations("Role1c", "Role2c", "Role3c"));
         connector.tableOperations().create(TABLE_NAME);
         
         cacheManager = new DefaultCacheManager(new GlobalConfigurationBuilder().globalJmxStatistics().allowDuplicateDomains(true).build());
@@ -75,18 +82,30 @@ public class CredentialsCacheBeanTest {
         
         principalsCache = cacheManager.getCache("principals");
         
+        AccumuloConnectionFactory accumuloConFactory = createStrictMock(AccumuloConnectionFactory.class);
+        
         cache = new CredentialsCacheBean();
         Whitebox.setInternalState(cache, "principalsCache", principalsCache);
+        Whitebox.setInternalState(cache, AccumuloConnectionFactory.class, accumuloConFactory);
         
-        cacheCoordinator = new SharedCacheCoordinator("CredentialsCacheBeanTest", testZookeeper.getConnectString(), 30, 300);
+        cacheCoordinator = new SharedCacheCoordinator("CredentialsCacheBeanTest", testZookeeper.getConnectString(), 30, 300, 10);
         cacheCoordinator.start();
         Whitebox.setInternalState(cache, SharedCacheCoordinator.class, cacheCoordinator);
-        
-        cache.postConstruct();
         
         curatorClient = Whitebox.getInternalState(cacheCoordinator, CuratorFramework.class);
         principalsCounter = new SharedCount(curatorClient, "/counters/flushPrincipals", 1);
         principalsCounter.start();
+        
+        HashMap<String,String> trackingMap = new HashMap<>();
+        expect(accumuloConFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        expect(accumuloConFactory.getConnection(eq(AccumuloConnectionFactory.Priority.ADMIN), eq(trackingMap))).andReturn(connector);
+        accumuloConFactory.returnConnection(connector);
+        replayAll();
+        
+        cache.postConstruct();
+        
+        verifyAll();
+        resetAll();
     }
     
     @After

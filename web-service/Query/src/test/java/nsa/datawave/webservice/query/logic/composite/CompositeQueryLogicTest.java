@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import nsa.datawave.marking.MarkingFunctions;
 import nsa.datawave.security.authorization.DatawavePrincipal;
 import nsa.datawave.security.util.DnUtils;
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import nsa.datawave.webservice.query.Query;
 import nsa.datawave.webservice.query.QueryImpl;
@@ -37,6 +38,7 @@ import org.apache.commons.collections.iterators.TransformIterator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 public class CompositeQueryLogicTest {
@@ -337,6 +339,12 @@ public class CompositeQueryLogicTest {
             return Collections.emptySet();
         }
         
+    }
+    
+    @Before
+    public void setup() {
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
     }
     
     @Test(expected = RuntimeException.class)

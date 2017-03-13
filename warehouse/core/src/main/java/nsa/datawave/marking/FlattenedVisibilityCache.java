@@ -19,6 +19,7 @@ public class FlattenedVisibilityCache {
      * Create a flattened visibility, using the cache if possible
      *
      * @param vis
+     *            the visibility to flatten
      * @return the flattened visibility
      */
     public static byte[] flatten(ColumnVisibility vis) {

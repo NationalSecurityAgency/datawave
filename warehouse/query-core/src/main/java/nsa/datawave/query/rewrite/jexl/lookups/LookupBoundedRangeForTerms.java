@@ -123,8 +123,10 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
             bs.addScanIterator(cfg);
             
             cfg = new IteratorSetting(config.getBaseIteratorPriority() + 49, "DateFilter", ColumnQualifierRangeIterator.class);
-            cfg.addOption(ColumnQualifierRangeIterator.RANGE_NAME,
-                            ColumnQualifierRangeIterator.encodeRange(new Range(startDay + Constants.NULL, endDay + Constants.MAX_UNICODE_STRING)));
+            // search from 20YYddMM to 20ZZddMM\uffff to ensure we encompass all of the current day
+            String end = endDay + Constants.MAX_UNICODE_STRING;
+            cfg.addOption(ColumnQualifierRangeIterator.RANGE_NAME, ColumnQualifierRangeIterator.encodeRange(new Range(startDay, end)));
+            
             bs.addScanIterator(cfg);
             
             if (null != fairnessIterator) {

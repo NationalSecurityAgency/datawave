@@ -4,7 +4,7 @@
     <parent>
         <groupId>nsa.datawave.webservice</groupId>
         <artifactId>Examples</artifactId>
- <version>4.3.0-SNAPSHOT</version>
+        <version>4.3.1-SNAPSHOT</version>
     </parent>
     <artifactId>client-login</artifactId>
     <packaging>ejb</packaging>
@@ -64,7 +64,6 @@
                             <outputDirectory>${project.build.directory}/lib</outputDirectory>
                             <excludeScope>provided</excludeScope>
                             <excludeTransitive>true</excludeTransitive>
-                            <stripVersion>true</stripVersion>
                         </configuration>
                     </execution>
                 </executions>

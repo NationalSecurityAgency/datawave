@@ -1,5 +1,6 @@
 package nsa.datawave.query.rewrite.jexl.lookups;
 
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Collection;
@@ -9,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import nsa.datawave.core.iterators.ColumnQualifierRangeIterator;
 import nsa.datawave.core.iterators.GlobalIndexTermMatchingIterator;
 import nsa.datawave.core.iterators.filter.GlobalIndexDataTypeFilter;
 import nsa.datawave.core.iterators.filter.GlobalIndexDateRangeFilter;
@@ -48,6 +50,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -60,6 +63,8 @@ import com.google.common.collect.Sets;
 public class RefactoredShardIndexQueryTableStaticMethods {
     
     private static final Logger log = Logger.getLogger(RefactoredShardIndexQueryTableStaticMethods.class);
+    
+    private static FastDateFormat formatter = FastDateFormat.getInstance("yyyyMMdd");
     
     /**
      * Create an IndexLookup task to find field names give a JexlNode and a set of Types for that node
@@ -311,7 +316,10 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         
         SessionOptions options = new SessionOptions();
         
-        IteratorSetting setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
+        IteratorSetting setting = configureDateRangeIterator(config);
+        options.addScanIterator(setting);
+        
+        setting = configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, limitToUniqueTerms);
         if (setting != null) {
             options.addScanIterator(setting);
         }
@@ -342,7 +350,8 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         
         LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
         SessionOptions options = new SessionOptions();
-        options.addScanIterator(configureGlobalIndexDateRangeFilter(config, dateRange));
+        // options.addScanIterator(configureGlobalIndexDateRangeFilter(config, dateRange));
+        options.addScanIterator(configureDateRangeIterator(config));
         IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
         if (setting != null) {
             options.addScanIterator(setting);
@@ -375,6 +384,18 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 21, "dateFilter", GlobalIndexDateRangeFilter.class);
         cfg.addOption(Constants.START_DATE, Long.toString(dateRange.getMinimumLong()));
         cfg.addOption(Constants.END_DATE, Long.toString(dateRange.getMaximumLong()));
+        return cfg;
+    }
+    
+    public static final IteratorSetting configureDateRangeIterator(RefactoredShardQueryConfiguration config) throws IOException {
+        // Setup the GlobalIndexDateRangeFilter
+        if (log.isTraceEnabled()) {
+            log.trace("Configuring configureDateRangeIterator ");
+        }
+        IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 21, "dateFilter", ColumnQualifierRangeIterator.class);
+        String begin = formatter.format(config.getBeginDate());
+        String end = formatter.format(config.getEndDate()) + Constants.MAX_UNICODE_STRING;
+        cfg.addOption(ColumnQualifierRangeIterator.RANGE_NAME, ColumnQualifierRangeIterator.encodeRange(new Range(begin, end)));
         return cfg;
     }
     
@@ -658,10 +679,10 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         
         if (null != exclusions) {
             for (String exclusion : exclusions) {
-                java.util.regex.Pattern exclPattern = java.util.regex.Pattern.compile(exclusion);
+                java.util.regex.Pattern exclPattern = java.util.regex.Pattern.compile("(.*)" + exclusion);
                 java.util.regex.Matcher m = exclPattern.matcher(literal);
                 if (m.matches()) {
-                    retVal = m.replaceAll("");
+                    retVal = m.group(1);
                     break; // do we want to continue? should only ever be one realm...
                 }
             }

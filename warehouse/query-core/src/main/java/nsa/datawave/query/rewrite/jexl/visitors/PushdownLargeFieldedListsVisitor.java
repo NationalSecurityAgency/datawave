@@ -48,12 +48,12 @@ import com.google.common.collect.Multimap;
 public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(PushdownLargeFieldedListsVisitor.class);
     private RefactoredShardQueryConfiguration config;
-    private String hdfsCacheDirUri;
+    private String fstHdfsUri;
     private FileSystem fs;
     
-    public PushdownLargeFieldedListsVisitor(RefactoredShardQueryConfiguration config, FileSystem fs, String hdfsCacheDirUri) {
+    public PushdownLargeFieldedListsVisitor(RefactoredShardQueryConfiguration config, FileSystem fs, String fstHdfsUri) {
         this.config = config;
-        this.hdfsCacheDirUri = hdfsCacheDirUri;
+        this.fstHdfsUri = fstHdfsUri;
         this.fs = fs;
     }
     
@@ -64,11 +64,11 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
      * @return The tree with additional index query portions
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T pushdown(RefactoredShardQueryConfiguration config, T script, FileSystem fs, String hdfsCacheDirUri) {
+    public static <T extends JexlNode> T pushdown(RefactoredShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri) {
         // flatten the tree
         script = TreeFlatteningRebuildingVisitor.flatten(script);
         
-        PushdownLargeFieldedListsVisitor visitor = new PushdownLargeFieldedListsVisitor(config, fs, hdfsCacheDirUri);
+        PushdownLargeFieldedListsVisitor visitor = new PushdownLargeFieldedListsVisitor(config, fs, fstHdfsUri);
         
         return (T) script.jjtAccept(visitor, null);
     }
@@ -116,7 +116,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                 ExceededOrThresholdMarkerJexlNode marker = null;
                 
                 // if we have an hdfs cache directory and if past the fst threshold, then create the fst and replace the list with an assignment
-                if (config.getHdfsCacheBaseURI() != null && (subsetChildrenCopies.size() >= config.getMaxOrExpansionFstThreshold())) {
+                if (fstHdfsUri != null && (subsetChildrenCopies.size() >= config.getMaxOrExpansionFstThreshold())) {
                     URI fstPath;
                     try {
                         fstPath = createFst(values);
@@ -186,7 +186,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             extension = codec.getDefaultExtension();
         }
         int fstCount = config.getFstCount().incrementAndGet();
-        Path fstFile = new Path(hdfsCacheDirUri, "PushdownLargeFileFst." + fstCount + ".fst" + extension);
+        Path fstFile = new Path(fstHdfsUri, "PushdownLargeFileFst." + fstCount + ".fst" + extension);
         
         OutputStream fstFileOut = new BufferedOutputStream(fs.create(fstFile, false));
         if (codec != null) {

@@ -37,20 +37,20 @@ public class CBMutationOutputFormatter extends AccumuloOutputFormat {
         private RecordWriter<Text,Mutation> delegate;
         private String eventTable = null;
         
-        public CBRecordWriter(RecordWriter<Text,Mutation> writer, TaskAttemptContext attempt) throws IOException {
+        public CBRecordWriter(RecordWriter<Text,Mutation> writer, TaskAttemptContext context) throws IOException {
             this.delegate = writer;
-            eventTable = attempt.getConfiguration().get(ShardedDataTypeHandler.SHARD_TNAME, "");
+            eventTable = context.getConfiguration().get(ShardedDataTypeHandler.SHARD_TNAME, "");
             log.info("Event Table Name property for " + ShardedDataTypeHandler.SHARD_TNAME + " is " + eventTable);
         }
         
         @Override
-        public void close(TaskAttemptContext arg0) throws IOException, InterruptedException {
-            delegate.close(arg0);
+        public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+            delegate.close(context);
         }
         
         @Override
-        public void write(Text arg0, Mutation arg1) throws IOException, InterruptedException {
-            delegate.write(arg0, arg1);
+        public void write(Text key, Mutation value) throws IOException, InterruptedException {
+            delegate.write(key, value);
         }
     }
 }

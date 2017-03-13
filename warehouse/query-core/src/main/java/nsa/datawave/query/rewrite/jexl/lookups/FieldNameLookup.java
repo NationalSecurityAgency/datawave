@@ -90,12 +90,15 @@ public class FieldNameLookup extends IndexLookup {
                 Set<Range> ranges = Sets.newHashSet();
                 
                 ranges.add(RefactoredShardIndexQueryTableStaticMethods.getLiteralRange(term));
-                if (limitToTerms)
+                if (limitToTerms) {
+                    log.trace("Creating configureTermMatchOnly");
                     bs = RefactoredShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
                                     Collections.singleton(term), Collections.<String> emptySet(), false, true);
-                else
+                } else {
+                    log.trace("Creating configureLimitedDiscovery");
                     bs = RefactoredShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
                                     Collections.singleton(term), Collections.<String> emptySet(), false, true);
+                }
                 /**
                  * Fetch the limited field names for the given rows
                  */

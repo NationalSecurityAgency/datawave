@@ -4,7 +4,7 @@
     <parent>
         <groupId>nsa.datawave.webservice</groupId>
         <artifactId>WebService</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.3.1-SNAPSHOT</version>
     </parent>
     <artifactId>MapReduce</artifactId>
     <packaging>ejb</packaging>
@@ -189,9 +189,8 @@ another classloader.
  -->
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.18.1</version>
                 <configuration>
-                    <argLine>-XX:-UseSplitVerifier -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
+                    <argLine>-XX:-UseSplitVerifier  -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                     <!--                     <forkMode>pertest</forkMode> -->
                     <reuseForks>false</reuseForks>
                 </configuration>

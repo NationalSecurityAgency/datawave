@@ -17,11 +17,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 import com.codahale.metrics.Counter;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import nsa.datawave.security.cache.CredentialsCacheBean;
 import nsa.datawave.security.util.DnUtils;
 import nsa.datawave.webservice.common.cache.SharedCacheCoordinator;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -29,6 +34,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.mock.MockInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.curator.test.TestingServer;
 import org.apache.log4j.ConsoleAppender;
@@ -42,6 +48,7 @@ import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.infinispan.manager.DefaultCacheManager;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,6 +62,7 @@ public class DatawavePrincipalLookupBeanTest extends EasyMockSupport {
     private AuthorizationService authorizationService;
     
     private DatawavePrincipalLookupBean datawavePrincipalLookupBean;
+    private CredentialsCacheBean credentialsCacheBean;
     private SharedCacheCoordinator cacheCoordinator;
     private TestingServer testZookeeper;
     
@@ -68,9 +76,6 @@ public class DatawavePrincipalLookupBeanTest extends EasyMockSupport {
         cacheHits = new Counter();
         cacheMisses = new Counter();
         testZookeeper = new TestingServer();
-        MockInstance mockInstance = new MockInstance();
-        Connector c = mockInstance.getConnector("root", new PasswordToken(""));
-        c.securityOperations().changeUserAuthorizations("root", new Authorizations("Role1c", "Role2c", "Role3c"));
         accumuloUserAuths.addAll(Arrays.asList("Role1c", "Role2c", "Role3c"));
         
         DatawavePrincipalLookupConfiguration datawavePrincipalLookupConfig = new DatawavePrincipalLookupConfiguration();
@@ -79,34 +84,26 @@ public class DatawavePrincipalLookupBeanTest extends EasyMockSupport {
         cacheManager = new DefaultCacheManager();
         principalsCache = cacheManager.getCache();
         
-        cacheCoordinator = new SharedCacheCoordinator("CredentialsCacheBeanTest", testZookeeper.getConnectString(), 30, 300);
+        cacheCoordinator = new SharedCacheCoordinator("CredentialsCacheBeanTest", testZookeeper.getConnectString(), 30, 300, 10);
         cacheCoordinator.start();
         
         authorizationService = createStrictMock(AuthorizationService.class);
-        AccumuloConnectionFactory accumuloConFactory = createStrictMock(AccumuloConnectionFactory.class);
+        credentialsCacheBean = createStrictMock(CredentialsCacheBean.class);
         
         // /authorization/principalFactory
         
         datawavePrincipalLookupBean = new DatawavePrincipalLookupBean();
         
         Whitebox.setInternalState(datawavePrincipalLookupBean, Cache.class, principalsCache);
-        Whitebox.setInternalState(datawavePrincipalLookupBean, AccumuloConnectionFactory.class, accumuloConFactory);
         Whitebox.setInternalState(datawavePrincipalLookupBean, AuthorizationService.class, authorizationService);
         Whitebox.setInternalState(datawavePrincipalLookupBean, DatawavePrincipalLookupConfiguration.class, datawavePrincipalLookupConfig);
         Whitebox.setInternalState(datawavePrincipalLookupBean, BasePrincipalFactory.class, new IdentityAuthTranslator());
         Whitebox.setInternalState(datawavePrincipalLookupBean, SharedCacheCoordinator.class, cacheCoordinator);
+        Whitebox.setInternalState(datawavePrincipalLookupBean, CredentialsCacheBean.class, credentialsCacheBean);
         Whitebox.setInternalState(datawavePrincipalLookupBean, "cacheHits", cacheHits);
         Whitebox.setInternalState(datawavePrincipalLookupBean, "cacheMisses", cacheMisses);
         
-        HashMap<String,String> trackingMap = new HashMap<>();
-        expect(accumuloConFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
-        expect(accumuloConFactory.getConnection(eq(AccumuloConnectionFactory.Priority.ADMIN), eq(trackingMap))).andReturn(c);
-        accumuloConFactory.returnConnection(c);
-        replayAll();
-        
         datawavePrincipalLookupBean.postConstruct();
-        verifyAll();
-        resetAll();
     }
     
     @After
@@ -123,6 +120,7 @@ public class DatawavePrincipalLookupBeanTest extends EasyMockSupport {
         String combinedDN = dn + "<" + issuerDN + ">";
         
         expect(authorizationService.getRoles("TESTPROJ", dn, issuerDN)).andReturn(new String[] {"Role1", "Role2", "Role3"});
+        expect(credentialsCacheBean.getAccumuloUserAuths()).andReturn(accumuloUserAuths);
         replayAll();
         
         DatawavePrincipal principal = datawavePrincipalLookupBean.lookupPrincipal(combinedDN);
@@ -152,6 +150,7 @@ public class DatawavePrincipalLookupBeanTest extends EasyMockSupport {
         
         // Role10 shouldn't make it into final Accumulo auths
         expect(authorizationService.getRoles("TESTPROJ", dn, issuerDN)).andReturn(new String[] {"Role1", "Role10"});
+        expect(credentialsCacheBean.getAccumuloUserAuths()).andReturn(accumuloUserAuths);
         replayAll();
         
         DatawavePrincipal principal = datawavePrincipalLookupBean.lookupPrincipal(combinedDN);
@@ -190,6 +189,7 @@ public class DatawavePrincipalLookupBeanTest extends EasyMockSupport {
         expect(authorizationService.getRoles("TESTPROJ", dn, issuerDN)).andReturn(new String[] {"Role1", "Role2", "Role3", "Role10"});
         expect(authorizationService.getRoles("TESTPROJ", serverDN2, issuerDN)).andReturn(new String[] {"Role2", "Role10"});
         expect(authorizationService.getRoles("TESTPROJ", serverDN1, issuerDN)).andReturn(new String[] {"Role1", "Role2", "Role10"});
+        expect(credentialsCacheBean.getAccumuloUserAuths()).andReturn(accumuloUserAuths).times(3);
         replayAll();
         
         DatawavePrincipal principal = datawavePrincipalLookupBean.lookupPrincipal(proxiedDNs);
@@ -263,11 +263,32 @@ public class DatawavePrincipalLookupBeanTest extends EasyMockSupport {
                         new LinkedHashSet<>(actualPrincipal.getAuthorizationsMap().get(serverDN2 + "<" + issuerDN + ">")));
         assertEquals(3, actualPrincipal.getUserRoles().size());
         Iterator<? extends Collection<String>> iter = actualPrincipal.getUserRoles().iterator();
-        assertEquals(new LinkedHashSet<>(Arrays.asList("iamnotaperson", "Role1", "Role10", "Role2", "acme")), new LinkedHashSet<>(iter.next()));
-        assertEquals(new LinkedHashSet<>(Arrays.asList("Role1", "Role10", "Role2", "Role3", "acme")), new LinkedHashSet<>(iter.next()));
-        assertEquals(new LinkedHashSet<>(Arrays.asList("iamnotaperson", "Role10", "Role2", "acme")), new LinkedHashSet<>(iter.next()));
+        // The iteration here is not guaranteed to be in the same order since it iterates over an unordered collection
+        Set<String> roles1 = Sets.newHashSet("iamnotaperson", "Role1", "Role10", "Role2", "acme");
+        Set<String> roles2 = Sets.newHashSet("iamnotaperson", "Role10", "Role2", "acme");
+        Set<String> roles3 = Sets.newHashSet("Role1", "Role10", "Role2", "Role3", "acme");
+        Map<String,Set<String>> expected = new TreeMap<String,Set<String>>();
+        expected.put("roles1", roles1);
+        expected.put("roles2", roles2);
+        expected.put("roles3", roles3);
+        
+        while (iter.hasNext()) {
+            LinkedHashSet actual = new LinkedHashSet<>(iter.next());
+            // now match it against the expected map and remove that item; at the end our map should be empty.
+            for (Map.Entry<String,Set<String>> entry : expected.entrySet()) {
+                if (CollectionUtils.isEqualCollection(entry.getValue(), actual)) {
+                    expected.remove(entry.getKey());
+                    break;
+                }
+            }
+        }
+        
+        // We've already asserted we had 3 items in getUserRoles & we had 3 in our expected map where we removed one
+        // per iteration. Our map should now be empty.
+        Assert.assertTrue(expected.isEmpty());
+        
         assertNotNull(actualPrincipal.getUserRoles());
-        assertEquals(new ArrayList<>(Arrays.asList("Role10", "Role2", "acme")), actualPrincipal.getRoleSets());
+        Assert.assertTrue(CollectionUtils.isEqualCollection(Lists.newArrayList("Role10", "Role2", "acme"), actualPrincipal.getRoleSets()));
         assertEquals(4, cacheMisses.getCount());
         assertEquals(0, cacheHits.getCount());
     }
@@ -295,6 +316,7 @@ public class DatawavePrincipalLookupBeanTest extends EasyMockSupport {
         expect(mockPrincipalsCache.getAdvancedCache()).andReturn(mockPrincipalsAdvCache);
         expect(mockPrincipalsAdvCache.withFlags(Flag.IGNORE_RETURN_VALUES)).andReturn(mockPrincipalsAdvCache);
         expect(mockPrincipalsAdvCache.put(eq(combinedDN), anyObject(DatawavePrincipal.class))).andReturn(null);
+        expect(credentialsCacheBean.getAccumuloUserAuths()).andReturn(accumuloUserAuths);
         
         replayAll();
         
@@ -420,6 +442,7 @@ public class DatawavePrincipalLookupBeanTest extends EasyMockSupport {
         expect(mockPrincipalsCache.getAdvancedCache()).andReturn(mockPrincipalsAdvCache);
         expect(mockPrincipalsAdvCache.withFlags(Flag.IGNORE_RETURN_VALUES)).andReturn(mockPrincipalsAdvCache);
         expect(mockPrincipalsAdvCache.put(eq(combinedDN), anyObject(DatawavePrincipal.class))).andReturn(null);
+        expect(credentialsCacheBean.getAccumuloUserAuths()).andReturn(accumuloUserAuths);
         
         replayAll();
         

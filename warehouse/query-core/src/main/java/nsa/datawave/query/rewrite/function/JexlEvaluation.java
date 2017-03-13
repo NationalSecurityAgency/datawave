@@ -85,6 +85,8 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                     ColumnVisibility columnVisibility = HitListArithmetic.getColumnVisibilityForHit(document, term);
                     // if no visibility computed, then there were no hits that match fields still in the document......
                     if (columnVisibility != null) {
+                        // unused
+                        long timestamp = document.getTimestamp(); // will force an update to make the metadata valid
                         Content content = new Content(term, document.getMetadata(), document.isToKeep());
                         content.setColumnVisibility(columnVisibility);
                         attributes.add(content);

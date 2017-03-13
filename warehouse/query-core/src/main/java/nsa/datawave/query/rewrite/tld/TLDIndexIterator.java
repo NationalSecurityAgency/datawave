@@ -46,7 +46,7 @@ public class TLDIndexIterator extends IndexIterator {
         // if the start key is not inclusive, and we have a datatype/0UID, then move the start past the children thereof
         if (!r.isStartKeyInclusive() && startCf.length() > 0) {
             // we need to bump append 0xff to that byte array because we want to skip the children
-            String row = start.getRow().toString().intern();
+            String row = start.getRow().toString();
             
             Key postDoc = new Key(row, startCf + "\uffff");
             // if this puts us past the end of the range, then adjust appropriately

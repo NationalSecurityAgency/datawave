@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import nsa.datawave.marking.ColumnVisibilityCache;
-import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -172,6 +170,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     public static final String METADATA_TERM_FREQUENCY = "metadata.term.frequency.enabled";
     
+    /**
+     * Suppress event key generation making this into a psuedo re-indexing job No type prefix here as it is meant to be job level not datatype level.
+     */
+    public static final String SUPPRESS_EVENT_KEYS = "shard.suppress.event.key";
+    
     // Config option name for all tables that are "sharded"
     public static final String SHARDED_TNAMES = "sharded.table.names";
     
@@ -194,6 +197,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     private LoadingCache<String,String> dCache = null;
     protected MarkingFunctions markingFunctions;
     protected IngestConfiguration ingestConfig = IngestConfigurationFactory.getIngestConfiguration();
+    private boolean suppressEventKeys = false;
     
     /**
      * Determines whether or not we produce cardinality estimates for data
@@ -278,6 +282,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             this.bloomFilteringTimeoutThreshold = conf.getFloat(SHARD_ININDEX_BLOOM_TIMEOUT_THRESHOLD, 0.0f);
             this.bloomFilteringOptimumMaxFilterSize = conf.getInt(SHARD_ININDEX_BLOOM_OPTIMUM_MAX_FILTER_SIZE, -1);
         }
+        
+        // Event key suppression
+        this.suppressEventKeys = conf.getBoolean(SUPPRESS_EVENT_KEYS, false);
     }
     
     private void setupToReindexIfEnabled(Configuration conf) {
@@ -452,12 +459,14 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             
             Value indexedValue = createUidArray(event.getId().toString(), helper.getDeleteMode());
             
-            for (Entry<String,NormalizedContentInterface> e : fields.entries()) {
-                NormalizedContentInterface value = e.getValue();
-                byte[] visibility = getVisibility(event, value);
-                
-                values.putAll(createShardEventColumn(event, colf, value, visibility, maskedVisibility, maskedFieldHelper, shardId));
-                
+            if (!getSuppressEventKeys()) {
+                for (Entry<String,NormalizedContentInterface> e : fields.entries()) {
+                    NormalizedContentInterface value = e.getValue();
+                    byte[] visibility = getVisibility(event, value);
+                    
+                    values.putAll(createShardEventColumn(event, colf, value, visibility, maskedVisibility, maskedFieldHelper, shardId));
+                    
+                }
             }
             
             for (Entry<String,NormalizedContentInterface> e : getGlobalIndexTerms().entries()) {
@@ -1459,6 +1468,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     protected abstract boolean hasIndexTerm(String fieldName);
     
     protected abstract boolean hasReverseIndexTerm(String fieldName);
+    
+    public boolean getSuppressEventKeys() {
+        return suppressEventKeys;
+    }
     
     /**
      * helper object

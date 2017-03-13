@@ -40,6 +40,11 @@ public abstract class AppliedRule implements FilterRule {
         ageOffPeriod = options.getAgeOffPeriod();
     }
     
+    /** Perform initialization in support of a deepCopy, copying any expensive state from the parent. */
+    protected void deepCopyInit(FilterOptions newOptions, AppliedRule parentCopy) {
+        init(newOptions);
+    }
+    
     public abstract boolean isFilterRuleApplied();
     
     /*
@@ -77,7 +82,7 @@ public abstract class AppliedRule implements FilterRule {
         AppliedRule newFilter;
         try {
             newFilter = (AppliedRule) super.getClass().newInstance();
-            newFilter.init(currentOptions);
+            newFilter.deepCopyInit(currentOptions, this);
             newFilter.ageOffPeriod = new AgeOffPeriod(period.getCutOffMilliseconds());
             log.trace("Age off is " + newFilter.ageOffPeriod.getCutOffMilliseconds());
             return newFilter;
@@ -101,7 +106,7 @@ public abstract class AppliedRule implements FilterRule {
             newFilter = (AppliedRule) super.getClass().newInstance();
             FilterOptions newOptions = new FilterOptions(currentOptions);
             newOptions.setOption(AgeOffConfigParams.SCAN_START_TIMESTAMP, Long.toString(scanStart));
-            newFilter.init(newOptions);
+            newFilter.deepCopyInit(newOptions, this);
             newFilter.ageOffPeriod = new AgeOffPeriod(scanStart, currentOptions.ttl, currentOptions.ttlUnits);
             log.trace("Age off is " + newFilter.ageOffPeriod.getCutOffMilliseconds());
             return newFilter;

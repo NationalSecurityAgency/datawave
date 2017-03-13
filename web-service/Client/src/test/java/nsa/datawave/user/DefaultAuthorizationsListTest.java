@@ -7,8 +7,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.google.common.collect.Sets;
 import nsa.datawave.user.AuthorizationsListBase.SubjectIssuerDNPair;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,24 +41,33 @@ public class DefaultAuthorizationsListTest {
     public void testEmptyConstructor() {
         dal = new DefaultAuthorizationsList();
         
-        Assert.assertEquals(treeForTests, dal.getAllAuths());
-        Assert.assertEquals(authMapForTests, dal.getAuths());
+        Assert.assertTrue(dal.getAllAuths().isEmpty());
+        Assert.assertTrue(dal.getAuths().isEmpty());
+        
         Assert.assertEquals(EMPTY, dal.getHeadContent());
         Assert.assertEquals(TITLE, dal.getTitle());
         Assert.assertEquals(TITLE, dal.getPageHeader());
         
-        Set<String> auths = new HashSet<String>();
-        auths.add("dnAuths1");
-        auths.add("dnAuths2");
+        Set<String> auths = Sets.newHashSet("dnAuths1", "dnAuths2");
         dal.addAuths("DN", "issuerDN", auths);
         dal.addAuths("DN2", "issuerDN2", auths);
         dal.setUserAuths("DN", "issuerDN", auths);
         
         Assert.assertEquals(2, dal.getAllAuths().size());
+        Assert.assertTrue(CollectionUtils.isEqualCollection(dal.getAllAuths(), auths));
         Assert.assertEquals(2, dal.getAuths().size());
         Assert.assertEquals(EMPTY, dal.getHeadContent());
         Assert.assertEquals(TITLE, dal.getTitle());
         Assert.assertEquals(TITLE, dal.getPageHeader());
+        
+        // Test getAuths()
+        LinkedHashMap<SubjectIssuerDNPair,Set<String>> expectedGetAuths = new LinkedHashMap<SubjectIssuerDNPair,Set<String>>();
+        expectedGetAuths.put(new SubjectIssuerDNPair("DN", "issuerDN"), new TreeSet<String>(auths));
+        expectedGetAuths.put(new SubjectIssuerDNPair("DN2", "issuerDN2"), new TreeSet<String>(auths));
+        Assert.assertTrue(CollectionUtils.isEqualCollection(dal.getAuths().entrySet(), expectedGetAuths.entrySet()));
+        
+        // Test userAuths
+        Assert.assertTrue(CollectionUtils.isEqualCollection(dal.userAuths, Sets.newHashSet("dnAuths1", "dnAuths2")));
         
         Map<String,Set<String>> authMapping = new HashMap<String,Set<String>>();
         authMapping.put("authMapKey", auths);
@@ -64,14 +75,36 @@ public class DefaultAuthorizationsListTest {
         dal.setAuthMapping(authMapping);
         
         Assert.assertEquals(2, dal.getAuthMapping().size());
+        Assert.assertTrue(CollectionUtils.isEqualCollection(dal.getAuthMapping().entrySet(), authMapping.entrySet()));
         
-        String toStringExpected = "userAuths=[dnAuths1, dnAuths2], entityAuths=[DN<issuerDN>=[dnAuths1, dnAuths2]DN2<issuerDN2>=[dnAuths1, dnAuths2]], authMapping=[authMapKey->(dnAuths1,dnAuths2,), authMapKey2->(dnAuths1,dnAuths2,), ]";
-        
-        Assert.assertEquals(toStringExpected, dal.toString());
+        // toString() matching is not a good test when the underlying data structure does not use ordered collections.
+        // tested individual pieces above should suffice
+        // String toStringExpected =
+        // "userAuths=[dnAuths1, dnAuths2], entityAuths=[DN<issuerDN>=[dnAuths1, dnAuths2]DN2<issuerDN2>=[dnAuths1, dnAuths2]], authMapping=[authMapKey->(dnAuths1,dnAuths2,), authMapKey2->(dnAuths1,dnAuths2,), ]";
+        // Assert.assertEquals(toStringExpected, dal.toString());
         
         String mcExpected = "<h2>Auths for user Subject: DN (Issuer issuerDN)</h2><table><tr><td>dnAuths1</td><td>dnAuths2</td></tr></table><h2>Auths for Subject: DN2 (Issuer: issuerDN2)</h2><table><tr><td>dnAuths1</td><td>dnAuths2</td></tr></table><h2>Roles to Accumulo Auths</h2><table><tr><th>Role</th><th>Accumulo Authorizations</th></tr><tr><td>authMapKey</td><td>dnAuths1,dnAuths2</td></tr><tr class=\"highlight\"><td>authMapKey2</td><td>dnAuths1,dnAuths2</td></tr></table>";
         String mainContent = dal.getMainContent();
-        Assert.assertEquals(mcExpected, mainContent);
+        // Testing expected string with an unordered collection doesn't always work, we'll need to parse this as we go
+        // Assert.assertEquals(mcExpected, mainContent);
+        Assert.assertEquals("<h2>Auths for user Subject: DN (Issuer issuerDN)</h2><table><tr>", mainContent.substring(0, 64));
+        Assert.assertTrue("<td>dnAuths1</td><td>dnAuths2</td>".equals(mainContent.substring(64, 98))
+                        || "<td>dnAuths2</td><td>dnAuths1</td>".equals(mainContent.substring(64, 98)));
+        Assert.assertTrue(mainContent.substring(98, 173).equals("</tr></table><h2>Auths for Subject: DN2 (Issuer: issuerDN2)</h2><table><tr>"));
+        Assert.assertTrue("<td>dnAuths1</td><td>dnAuths2</td>".equals(mainContent.substring(173, 207))
+                        || "<td>dnAuths2</td><td>dnAuths1</td>".equals(mainContent.substring(173, 207)));
+        Assert.assertTrue("</tr></table><h2>Roles to Accumulo Auths</h2><table><tr><th>Role</th><th>Accumulo Authorizations</th></tr><tr>".equals(mainContent
+                        .substring(207, 317)));
+        Assert.assertTrue("<td>authMapKey</td><td>dnAuths1,dnAuths2</td>".equals(mainContent.substring(317, 362))
+                        || "<td>authMapKey</td><td>dnAuths2,dnAuths1</td>".equals(mainContent.substring(317, 362))
+                        || "<td>authMapKey2</td><td>dnAuths1,dnAuths2</td>".equals(mainContent.substring(317, 362))
+                        || "<td>authMapKey2</td><td>dnAuths2,dnAuths1</td>".equals(mainContent.substring(317, 362)));
+        Assert.assertTrue("</tr><tr class=\"highlight\">".equals(mainContent.substring(362, 389)));
+        Assert.assertTrue("<td>authMapKey</td><td>dnAuths1,dnAuths2</td>".equals(mainContent.substring(389, 435))
+                        || "<td>authMapKey</td><td>dnAuths2,dnAuths1</td>".equals(mainContent.substring(389, 435))
+                        || "<td>authMapKey2</td><td>dnAuths1,dnAuths2</td>".equals(mainContent.substring(389, 435))
+                        || "<td>authMapKey2</td><td>dnAuths2,dnAuths1</td>".equals(mainContent.substring(389, 435)));
+        Assert.assertTrue("</tr></table>".equals(mainContent.substring(435)));
         
         // Tests for the SCHEMA nested class
         Assert.assertEquals(null, dal.getSchema().getFieldName(0));
@@ -88,6 +121,10 @@ public class DefaultAuthorizationsListTest {
         Assert.assertEquals(true, dal.getSchema().isInitialized(null));
         Assert.assertEquals(true, dal.cachedSchema().isInitialized(null));
         
+    }
+    
+    @Test
+    public void testDefaultAuthList() {
         // Testing the bugfix for DefaultAuthorizationsList with mock data
         String random = "ABC|DEF|GHI|JKL|MNO";
         

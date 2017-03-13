@@ -8,36 +8,7 @@ import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
 import nsa.datawave.webservice.query.exception.DatawaveErrorCode;
 import nsa.datawave.webservice.query.exception.QueryException;
 
-import org.apache.commons.jexl2.parser.ASTAdditiveNode;
-import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTDivNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTMulNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl2.parser.*;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
@@ -553,6 +524,20 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
             node.jjtGetChild(i).jjtAccept(this, sb);
             if (i < numChildren - 1) {
                 sb.append(" / ");
+            }
+        }
+        
+        return sb;
+    }
+    
+    @Override
+    public Object visit(ASTModNode node, Object data) {
+        StringBuilder sb = (StringBuilder) data;
+        int numChildren = node.jjtGetNumChildren();
+        for (int i = 0; i < numChildren; i++) {
+            node.jjtGetChild(i).jjtAccept(this, sb);
+            if (i < numChildren - 1) {
+                sb.append(" % ");
             }
         }
         

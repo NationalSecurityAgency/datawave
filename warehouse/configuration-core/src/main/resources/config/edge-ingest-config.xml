@@ -38,7 +38,7 @@
 
     <property>
         <name>protobufedge.spring.config</name>
-        <value>config/EdgeSpringConfig.xml</value>
+        <value>${EDGE_DEFINITION_FILE}</value>
     </property>
 
     <property>

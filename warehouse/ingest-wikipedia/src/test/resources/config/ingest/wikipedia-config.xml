@@ -81,7 +81,7 @@
 
 <property>
   <name>wikipedia.content.index.fields</name>
-  <value>REVISION_TEXT,REVISION_COMMENT</value>
+  <value>REVISION_TEXT_TOKEN,REVISION_COMMENT_TOKEN</value>
 </property>
 
 <!--  ********************************************

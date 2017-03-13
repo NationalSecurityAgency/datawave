@@ -4,7 +4,7 @@
     <parent>
         <groupId>nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.3.1-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-warehouse</artifactId>
     <packaging>pom</packaging>
@@ -40,7 +40,8 @@
     <properties>
         <assembly.basedir>.</assembly.basedir>
         <!-- set env property to its default value -->
-        <build.env>dev</build.env>
+        <!-- commented this out so profiles other than dev build properly.  May need to put it back.  -->
+        <!-- <build.env>dev</build.env> -->
         <datawave.root>${project.parent.basedir}</datawave.root>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
         <!-- <runOrder>random</runOrder> -->
@@ -550,41 +551,7 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>2.18.1</version>
-                    <configuration>
-                        <reuseForks>false</reuseForks>
-                        <forkCount>1C</forkCount>
-                        <threadCount>1</threadCount>
-                        <threadCountClasses>1</threadCountClasses>
-                        <threadCountMethods>0</threadCountMethods>
-                        <threadCountSuites>0</threadCountSuites>
-                        <groups>nsa.datawave.common.test.integration.IntegrationTest</groups>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>integration-test</id>
-                            <goals>
-                                <goal>integration-test</goal>
-                            </goals>
-                            <configuration>
-                                <includes>
-                                    <include>**/*.class</include>
-                                </includes>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>verify</id>
-                            <goals>
-                                <goal>verify</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.18.1</version>
                     <configuration>
                         <reuseForks>false</reuseForks>
                         <forkCount>1C</forkCount>
@@ -593,7 +560,7 @@
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
                         <!-- BT_ROOT is for the tests that use basis tokenization -->
-                        <argLine>-XX:-UseSplitVerifier -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -XX:MaxPermSize=128M -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
+                        <argLine>-XX:-UseSplitVerifier  -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -XX:MaxPermSize=128M -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>${runOrder}</runOrder>
                         <environmentVariables>
@@ -655,10 +622,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.18.1</version>
                 <configuration combine.children="append">
                     <reuseForks>false</reuseForks>
-                    <argLine>-XX:-UseSplitVerifier -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -XX:MaxPermSize=128M -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
+                    <argLine>-XX:-UseSplitVerifier  -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -XX:MaxPermSize=128M -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                     <groups>nsa.datawave.common.test.integration.IntegrationTest</groups>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>${runOrder}</runOrder>

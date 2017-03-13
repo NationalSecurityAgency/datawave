@@ -102,6 +102,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -109,6 +110,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore("javax.security.auth.Subject")
 @PrepareForTest({Trace.class, Tracer.class})
 public class ExtendedQueryExecutorBeanTest {
     private static final Throwable ILLEGAL_STATE_EXCEPTION = new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION");
@@ -205,6 +207,9 @@ public class ExtendedQueryExecutorBeanTest {
     @Mock
     ResponseObjectFactory responseObjectFactory;
     
+    @Mock
+    AccumuloConnectionRequestBean connectionRequestBean;
+    
     QueryExpirationConfiguration queryExpirationConf;
     
     @BeforeClass
@@ -224,6 +229,7 @@ public class ExtendedQueryExecutorBeanTest {
         // Set local test input
         UUID queryId = UUID.randomUUID();
         // Set expectations of the create logic
+        expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.poll(queryId.toString())).andReturn(this.tuple);
         expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
@@ -237,6 +243,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         VoidResponse result1 = subject.adminCancel(queryId.toString());
         PowerMock.verifyAll();
         
@@ -251,6 +259,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         // Set expectations of the create logic
+        expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.poll(queryId.toString())).andReturn(null);
         expect(this.cache.get(queryId.toString())).andReturn(null);
         expect(this.persister.adminFindById(queryId.toString())).andReturn(Arrays.asList(this.query, this.query));
@@ -266,6 +275,8 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, QueryCache.class, cache);
             setInternalState(subject, Persister.class, persister);
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+            setInternalState(connectionRequestBean, EJBContext.class, context);
+            setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
             
             subject.adminCancel(queryId.toString());
         } finally {
@@ -280,6 +291,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         // Set expectations of the create logic
+        expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.poll(queryId.toString())).andReturn(null);
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(this.runningQuery.getSettings()).andReturn(this.query);
@@ -305,6 +317,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         
         VoidResponse result1 = subject.adminCancel(queryId.toString());
         PowerMock.verifyAll();
@@ -320,6 +334,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         // Set expectations of the create logic
+        expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.poll(queryId.toString())).andReturn(null);
         expect(this.cache.get(queryId.toString())).andReturn(null);
         this.query.populateMetric(isA(QueryMetric.class));
@@ -357,6 +372,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         
         VoidResponse result1 = subject.adminCancel(queryId.toString());
         PowerMock.verifyAll();
@@ -372,6 +389,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         // Set expectations
+        expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.poll(queryId.toString())).andReturn(this.tuple);
         expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
@@ -385,6 +403,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(connectionRequestBean, EJBContext.class, context);
         VoidResponse result1 = subject.adminClose(queryId.toString());
         PowerMock.verifyAll();
         
@@ -399,6 +419,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         // Set expectations
+        expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.poll(queryId.toString())).andReturn(null);
         expect(this.cache.get(queryId.toString())).andReturn(null);
         expect(this.persister.adminFindById(queryId.toString())).andReturn(null);
@@ -412,6 +433,8 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, QueryCache.class, cache);
             setInternalState(subject, Persister.class, persister);
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+            setInternalState(connectionRequestBean, EJBContext.class, context);
+            setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
             subject.adminClose(queryId.toString());
         } finally {
             PowerMock.verifyAll();
@@ -426,6 +449,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         // Set expectations of the create logic
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).andReturn(this.tuple);
@@ -442,6 +466,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         VoidResponse result1 = subject.cancel(queryId.toString());
         PowerMock.verifyAll();
         
@@ -459,6 +485,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         
         // Set expectations of the create logic
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(2);
         expect(this.principal.getName()).andReturn(userName);
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).andReturn(null);
@@ -479,6 +506,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         
         try {
             subject.cancel(queryId.toString());
@@ -497,6 +526,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         
         // Set expectations of the create logic
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(2);
         expect(this.principal.getName()).andReturn(userName);
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).andReturn(null);
@@ -529,6 +559,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         VoidResponse result1 = subject.cancel(queryId.toString());
         PowerMock.verifyAll();
         
@@ -546,6 +578,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         
         // Set expectations
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
@@ -563,6 +596,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         
         try {
             subject.close(queryId.toString());
@@ -579,6 +614,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         // Set expectations
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getShortName()).andReturn(userSid);
         expect(this.principal.getProxyServers()).andReturn(new ArrayList<String>(0)).anyTimes();
@@ -597,6 +633,8 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, QueryCache.class, cache);
             setInternalState(subject, Persister.class, persister);
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+            setInternalState(connectionRequestBean, EJBContext.class, context);
+            setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
             
             subject.close(queryId.toString());
         } finally {
@@ -678,7 +716,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        this.connectionRequestBean.requestEnd(queryId.toString());
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<PatternWrapper>(0));
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
         expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andReturn(true);
@@ -760,6 +800,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, queryParameters);
         PowerMock.verifyAll();
         
@@ -881,7 +923,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(cache.lock(queryId.toString())).andReturn(true);
         expect(this.runningQuery.getSettings()).andReturn(this.query);
+        this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.runningQuery.getConnection()).andReturn(this.connector);
+        this.connectionRequestBean.requestEnd(queryId.toString());
         
         this.runningQuery.setActiveCall(true);
         expectLastCall();
@@ -926,6 +970,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, queryParameters);
         PowerMock.verifyAll();
         
@@ -1006,7 +1052,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
+        this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        this.connectionRequestBean.requestEnd(queryId.toString());
         expect(this.traceInfos.get(userSid)).andReturn(Arrays.asList(PatternWrapper.wrap(query)));
         expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andThrow(
                         new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION: PROBLEM ADDING QUERY LOGIC TO CACHE"));
@@ -1034,6 +1082,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, SecurityMarking.class, marking);
         setInternalState(subject, AuditParameters.class, auditParameters);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         Throwable result1 = null;
         try {
             subject.createQueryAndNext(queryLogicName, queryParameters);
@@ -1151,7 +1201,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(cache.lock(queryId.toString())).andReturn(true);
         expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
+        this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.runningQuery.getConnection()).andReturn(this.connector);
+        this.connectionRequestBean.requestEnd(queryId.toString());
         this.runningQuery.setActiveCall(true);
         expectLastCall();
         expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
@@ -1186,6 +1238,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(null);
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
@@ -1213,6 +1266,8 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, AuditParameters.class, new AuditParameters());
             setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+            setInternalState(connectionRequestBean, EJBContext.class, context);
+            setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
             
             subject.createQueryAndNext(queryLogicName, queryParameters);
         } finally {
@@ -2642,7 +2697,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(new HashMap<String,String>());
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
+        connectionRequestBean.requestBegin(queryName);
         expect(this.connectionFactory.getConnection(eq("connPool1"), eq(Priority.NORMAL), isA(Map.class))).andReturn(this.connector);
+        connectionRequestBean.requestEnd(queryName);
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
@@ -2666,6 +2723,8 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, AuditParameters.class, auditParameters);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         VoidResponse result1 = subject.reset(queryName);
         PowerMock.verifyAll();
         

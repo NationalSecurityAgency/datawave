@@ -13,7 +13,11 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
+import java.net.MalformedURLException;
 import nsa.datawave.core.iterators.ColumnRangeIterator;
+import nsa.datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
+import nsa.datawave.core.iterators.filesystem.FileSystemCache;
+import nsa.datawave.core.iterators.querylock.QueryLock;
 import nsa.datawave.data.type.Type;
 import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.rewrite.DocumentSerialization.ReturnType;
@@ -44,7 +48,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -54,9 +57,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,6 +71,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 public class QueryOptions implements OptionDescriber {
     private static final Logger log = Logger.getLogger(QueryOptions.class);
@@ -157,25 +158,25 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String ALL_INDEX_ONLY_TERMS = "contains.index.only.terms.all";
     
-    public static final String HDFS_CACHE_BASE_URI = "hdfs.cache.base.uri";
-    
-    public static final String HDFS_CACHE_BASE_URI_ALTERNATIVES = "hdfs.cache.base.uri.alternatives";
-    
-    public static final String HDFS_CACHE_REUSED = "hdfs.cache.reused";
+    public static final String HDFS_SITE_CONFIG_URLS = "hdfs.site.config.urls";
     
     public static final String HDFS_FILE_COMPRESSION_CODEC = "hdfs.file.compression.codec";
     
+    public static final String ZOOKEEPER_CONFIG = "zookeeper.config";
+    
+    public static final String IVARATOR_CACHE_BASE_URI_ALTERNATIVES = "ivarator.cache.base.uri.alternatives";
+    
+    public static final String IVARATOR_CACHE_BUFFER_SIZE = "ivarator.cache.buffer.size";
+    
+    public static final String IVARATOR_SCAN_PERSIST_THRESHOLD = "ivarator.scan.persist.threshold";
+    
+    public static final String IVARATOR_SCAN_TIMEOUT = "ivarator.scan.timeout";
+    
     public static final String QUERY_MAPPING_COMPRESS = "query.mapping.compress";
     
-    public static final String HDFS_SITE_CONFIG_URLS = "hdfs.site.config.urls";
-    
-    public static final String HDFS_CACHE_BUFFER_SIZE = "hdfs.cache.buffer.size";
-    
-    public static final String HDFS_SCAN_PERSIST_THRESHOLD = "hdfs.scan.persist.threshold";
-    
-    public static final String HDFS_SCAN_TIMEOUT = "hdfs.scan.timeout";
-    
     public static final String MAX_INDEX_RANGE_SPLIT = "max.index.range.split";
+    
+    public static final String MAX_IVARATOR_OPEN_FILES = "max.ivarator.open.files";
     
     public static final String MAX_IVARATOR_SOURCES = "max.ivarator.sources";
     
@@ -257,16 +258,19 @@ public class QueryOptions implements OptionDescriber {
     
     protected boolean allowFieldIndexEvaluation = true;
     
-    protected String hdfsCacheBaseURI = null;
-    protected List<String> hdfsCacheBaseURIAlternatives = null;
-    protected boolean hdfsCacheReused = false;
     protected String hdfsSiteConfigURLs = null;
-    protected FileSystem hdfsFileSystem = null;
-    protected long hdfsCacheScanPersistThreshold = 100000L;
-    protected long hdfsCacheScanTimeout = 1000L * 60 * 60;
-    protected int hdfsCacheBufferSize = 10000;
     protected String hdfsFileCompressionCodec = null;
+    protected FileSystemCache fsCache = null;
+    
+    protected String zookeeperConfig = null;
+    
+    protected List<String> ivaratorCacheBaseURIAlternatives = null;
+    protected long ivaratorCacheScanPersistThreshold = 100000L;
+    protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
+    protected int ivaratorCacheBufferSize = 10000;
+    
     protected int maxIndexRangeSplit = 11;
+    protected int ivaratorMaxOpenFiles = 100;
     
     protected int maxIvaratorSources = 33;
     
@@ -305,9 +309,11 @@ public class QueryOptions implements OptionDescriber {
     public QueryOptions() {
         try {
             this.typeMetadataProvider = TypeMetadataProvider.Factory.createTypeMetadataProvider();
+            log.debug("made a typeMetadataProvider:" + typeMetadataProvider);
+            log.debug("and the bridge has uri: " + this.typeMetadataProvider.getBridge().getUri());
         } catch (Throwable th) {
             // for now, do not allow problems with the TypeMetadataProvider to affect instantiation.
-            log.info("was unable to create a TypeMetadataProvider from its Factory: " + th.getMessage());
+            log.info("was unable to create a TypeMetadataProvider from its Factory: ", th);
         }
     }
     
@@ -368,16 +374,14 @@ public class QueryOptions implements OptionDescriber {
         this.evaluationFilter = other.evaluationFilter;
         this.fiAggregator = other.fiAggregator;
         
-        this.hdfsCacheBaseURI = other.hdfsCacheBaseURI;
-        this.hdfsCacheBaseURIAlternatives = other.hdfsCacheBaseURIAlternatives;
-        this.hdfsCacheReused = other.hdfsCacheReused;
+        this.ivaratorCacheBaseURIAlternatives = other.ivaratorCacheBaseURIAlternatives;
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
-        this.hdfsFileSystem = other.hdfsFileSystem;
-        this.hdfsCacheBufferSize = other.hdfsCacheBufferSize;
-        this.hdfsCacheScanPersistThreshold = other.hdfsCacheScanPersistThreshold;
-        this.hdfsCacheScanTimeout = other.hdfsCacheScanTimeout;
+        this.ivaratorCacheBufferSize = other.ivaratorCacheBufferSize;
+        this.ivaratorCacheScanPersistThreshold = other.ivaratorCacheScanPersistThreshold;
+        this.ivaratorCacheScanTimeout = other.ivaratorCacheScanTimeout;
         this.hdfsFileCompressionCodec = other.hdfsFileCompressionCodec;
         this.maxIndexRangeSplit = other.maxIndexRangeSplit;
+        this.ivaratorMaxOpenFiles = other.ivaratorMaxOpenFiles;
         this.maxIvaratorSources = other.maxIvaratorSources;
         
         this.compressResults = other.compressResults;
@@ -454,6 +458,7 @@ public class QueryOptions implements OptionDescriber {
         // first, we will see it the query passed over the serialized TypeMetadata.
         // If it did, use that.
         if (this.typeMetadata != null && this.typeMetadata.size() != 0) {
+            log.debug("the query passed the typeMetadata");
             return this.typeMetadata;
             
             // if the query did not contain the TypeMetadata in its options,
@@ -463,9 +468,12 @@ public class QueryOptions implements OptionDescriber {
         } else if (this.metadataTableName != null && this.typeMetadataAuthsKey != null && this.typeMetadataProvider != null) {
             TypeMetadata typeMetadata = this.typeMetadataProvider.getTypeMetadata(this.metadataTableName, this.typeMetadataAuthsKey);
             if (typeMetadata != null) {
+                log.debug("got a typeMetadata from hdfs");
+                log.debug("and the bridge uri is " + typeMetadataProvider.getBridge().getUri());
                 return typeMetadata;
             }
         }
+        log.debug("making a nothing typeMetadata");
         return new TypeMetadata();
     }
     
@@ -573,49 +581,6 @@ public class QueryOptions implements OptionDescriber {
         this.allowFieldIndexEvaluation = allowFieldIndexEvaluation;
     }
     
-    public String getHdfsCacheBaseURI() {
-        return hdfsCacheBaseURI;
-    }
-    
-    public void setHdfsCacheBaseURI(String hdfsIvaratorCacheURI) {
-        this.hdfsCacheBaseURI = hdfsIvaratorCacheURI;
-    }
-    
-    public List<String> getHdfsCacheBaseURIAlternativesAsList() {
-        return hdfsCacheBaseURIAlternatives;
-    }
-    
-    public String getHdfsCacheBaseURIAlternatives() {
-        if (hdfsCacheBaseURIAlternatives == null) {
-            return null;
-        } else {
-            StringBuilder builder = new StringBuilder();
-            for (String hdfsCacheBaseURI : hdfsCacheBaseURIAlternatives) {
-                if (builder.length() > 0) {
-                    builder.append(',');
-                }
-                builder.append(hdfsCacheBaseURI);
-            }
-            return builder.toString();
-        }
-    }
-    
-    public void setHdfsCacheBaseURIAlternatives(String hdfsCacheBaseURIAlternatives) {
-        if (hdfsCacheBaseURIAlternatives == null || hdfsCacheBaseURIAlternatives.isEmpty()) {
-            this.hdfsCacheBaseURIAlternatives = null;
-        } else {
-            this.hdfsCacheBaseURIAlternatives = Arrays.asList(StringUtils.split(hdfsCacheBaseURIAlternatives, ','));
-        }
-    }
-    
-    public boolean isHdfsCacheReused() {
-        return hdfsCacheReused;
-    }
-    
-    public void setHdfsCacheReused(boolean hdfsCacheReused) {
-        this.hdfsCacheReused = hdfsCacheReused;
-    }
-    
     public String getHdfsSiteConfigURLs() {
         return hdfsSiteConfigURLs;
     }
@@ -624,51 +589,16 @@ public class QueryOptions implements OptionDescriber {
         this.hdfsSiteConfigURLs = hadoopConfigURLs;
     }
     
-    public FileSystem getHdfsFileSystem() {
-        if (hdfsFileSystem == null && hdfsSiteConfigURLs != null && hdfsCacheBaseURI != null) {
-            hdfsFileSystem = fileSystemCache.getIfPresent(hdfsCacheBaseURI);
-            if (hdfsFileSystem == null) {
-                try {
-                    final FileSystem fs;
-                    Configuration conf = new Configuration();
-                    for (String url : StringUtils.split(hdfsSiteConfigURLs, ',')) {
-                        conf.addResource(new URL(url));
-                    }
-                    URI hdfsCacheURI = new URI(hdfsCacheBaseURI);
-                    hdfsFileSystem = FileSystem.get(hdfsCacheURI, conf);
-                    fileSystemCache.put(hdfsCacheBaseURI, hdfsFileSystem);
-                } catch (IOException ioe) {
-                    throw new IllegalStateException("Unable to instantiate hdfs file system", ioe);
-                } catch (URISyntaxException use) {
-                    throw new IllegalArgumentException("Unable to parse hdfs site config URLs", use);
-                }
-            }
+    public FileSystemCache getFileSystemCache() throws MalformedURLException {
+        if (this.fsCache == null && this.hdfsSiteConfigURLs != null) {
+            this.fsCache = new FileSystemCache(this.hdfsSiteConfigURLs);
         }
-        return hdfsFileSystem;
+        return this.fsCache;
     }
     
-    public int getHdfsCacheBufferSize() {
-        return hdfsCacheBufferSize;
-    }
-    
-    public void setHdfsCacheBufferSize(int hdfsCacheBufferSize) {
-        this.hdfsCacheBufferSize = hdfsCacheBufferSize;
-    }
-    
-    public long getHdfsCacheScanPersistThreshold() {
-        return hdfsCacheScanPersistThreshold;
-    }
-    
-    public void setHdfsCacheScanPersistThreshold(long hdfsCacheScanPersistThreshold) {
-        this.hdfsCacheScanPersistThreshold = hdfsCacheScanPersistThreshold;
-    }
-    
-    public long getHdfsCacheScanTimeout() {
-        return hdfsCacheScanTimeout;
-    }
-    
-    public void setHdfsCacheScanTimeout(long hdfsCacheScanTimeout) {
-        this.hdfsCacheScanTimeout = hdfsCacheScanTimeout;
+    public QueryLock getQueryLock() throws MalformedURLException, ConfigException {
+        return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache()).forIvaratorDirs(getIvaratorCacheBaseURIAlternatives())
+                        .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
     }
     
     public String getHdfsFileCompressionCodec() {
@@ -679,12 +609,79 @@ public class QueryOptions implements OptionDescriber {
         this.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
     }
     
+    public String getZookeeperConfig() {
+        return zookeeperConfig;
+    }
+    
+    public void setZookeeperConfig(String zookeeperConfig) {
+        this.zookeeperConfig = zookeeperConfig;
+    }
+    
+    public List<String> getIvaratorCacheBaseURIsAsList() {
+        return ivaratorCacheBaseURIAlternatives;
+    }
+    
+    public String getIvaratorCacheBaseURIAlternatives() {
+        if (ivaratorCacheBaseURIAlternatives == null) {
+            return null;
+        } else {
+            StringBuilder builder = new StringBuilder();
+            for (String hdfsCacheBaseURI : ivaratorCacheBaseURIAlternatives) {
+                if (builder.length() > 0) {
+                    builder.append(',');
+                }
+                builder.append(hdfsCacheBaseURI);
+            }
+            return builder.toString();
+        }
+    }
+    
+    public void setIvaratorCacheBaseURIAlternatives(String ivaratorCacheBaseURIAlternatives) {
+        if (ivaratorCacheBaseURIAlternatives == null || ivaratorCacheBaseURIAlternatives.isEmpty()) {
+            this.ivaratorCacheBaseURIAlternatives = null;
+        } else {
+            this.ivaratorCacheBaseURIAlternatives = Arrays.asList(StringUtils.split(ivaratorCacheBaseURIAlternatives, ','));
+        }
+    }
+    
+    public int getIvaratorCacheBufferSize() {
+        return ivaratorCacheBufferSize;
+    }
+    
+    public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
+        this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
+    }
+    
+    public long getIvaratorCacheScanPersistThreshold() {
+        return ivaratorCacheScanPersistThreshold;
+    }
+    
+    public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
+        this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
+    }
+    
+    public long getIvaratorCacheScanTimeout() {
+        return ivaratorCacheScanTimeout;
+    }
+    
+    public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
+        this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
+    }
+    
     public int getMaxIndexRangeSplit() {
         return maxIndexRangeSplit;
     }
     
     public void setMaxIndexRangeSplit(int maxIndexRangeSplit) {
         this.maxIndexRangeSplit = maxIndexRangeSplit;
+    }
+    
+    public int getIvaratorMaxOpenFiles() {
+        return ivaratorMaxOpenFiles;
+    }
+    
+    public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
+        this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
     }
     
     public int getMaxIvaratorSources() {
@@ -793,19 +790,18 @@ public class QueryOptions implements OptionDescriber {
                         "Allow the evaluation to occur purely on values pulled from the field index for queries only accessing indexed fields (default is true)");
         options.put(TERM_FREQUENCY_FIELDS, "comma-delimited list of fields requiring term frequencies");
         options.put(CONTENT_EXPANSION_FIELDS, "comma-delimited list of fields used for content function expansions");
-        options.put(HDFS_CACHE_BASE_URI,
-                        "A URI of where all query's caches are to be located for ivarators (caching field index iterators).  Only used for closed checks if alternatives are specified.");
-        options.put(HDFS_CACHE_BASE_URI_ALTERNATIVES,
-                        "A list of URIs of where all query's caches are to be located for ivarators (caching field index iterators)");
-        options.put(HDFS_FILE_COMPRESSION_CODEC, "A hadoop compression codec to use for files if supported");
-        options.put(HDFS_CACHE_REUSED,
-                        "A boolean denoting whether we attempt to reuse cached ivarator results when iterators are torn down and reconstituted (default is false)");
         options.put(HDFS_SITE_CONFIG_URLS, "URLs (comma delimited) of where to find the hadoop hdfs and core site configuration files");
-        options.put(HDFS_CACHE_BUFFER_SIZE, "The size of the hdfs cache buffer size (items held in memory before dumping to hdfs).  Default is 10000.");
-        options.put(HDFS_SCAN_PERSIST_THRESHOLD,
+        options.put(HDFS_FILE_COMPRESSION_CODEC, "A hadoop compression codec to use for files if supported");
+        options.put(IVARATOR_CACHE_BASE_URI_ALTERNATIVES,
+                        "A list of URIs of where all query's caches are to be located for ivarators (caching field index iterators)");
+        options.put(IVARATOR_CACHE_BUFFER_SIZE, "The size of the hdfs cache buffer size (items held in memory before dumping to hdfs).  Default is 10000.");
+        options.put(IVARATOR_SCAN_PERSIST_THRESHOLD,
                         "The number of underlying field index keys scanned before the hdfs cache buffer is forced to persist).  Default is 100000.");
+        options.put(IVARATOR_SCAN_TIMEOUT, "The time after which the hdfs cache buffer is forced to persist.  Default is 60 minutes.");
         options.put(MAX_INDEX_RANGE_SPLIT,
                         "The maximum number of ranges to split a field index scan (ivarator) range into for multithreading.  Note the thread pool size is controlled via an accumulo property.");
+        options.put(MAX_IVARATOR_OPEN_FILES,
+                        "The maximum number of files that can be opened at one time during a merge sort.  If more that this number of files are created, then compactions will occur");
         options.put(MAX_IVARATOR_SOURCES,
                         " The maximum number of sources to use for ivarators across all ivarated terms within the query.  Note the thread pool size is controlled via an accumulo property.");
         options.put(COMPRESS_SERVER_SIDE_RESULTS, "GZIP compress the serialized Documents before returning to the webserver");
@@ -1089,36 +1085,36 @@ public class QueryOptions implements OptionDescriber {
             this.setHdfsSiteConfigURLs(options.get(HDFS_SITE_CONFIG_URLS));
         }
         
-        if (options.containsKey(HDFS_CACHE_BASE_URI)) {
-            this.setHdfsCacheBaseURI(options.get(HDFS_CACHE_BASE_URI));
-        }
-        
-        if (options.containsKey(HDFS_CACHE_BASE_URI_ALTERNATIVES)) {
-            this.setHdfsCacheBaseURIAlternatives(options.get(HDFS_CACHE_BASE_URI_ALTERNATIVES));
-        }
-        
         if (options.containsKey(HDFS_FILE_COMPRESSION_CODEC)) {
             this.setHdfsFileCompressionCodec(options.get(HDFS_FILE_COMPRESSION_CODEC));
         }
         
-        if (options.containsKey(HDFS_CACHE_REUSED)) {
-            this.setHdfsCacheReused(Boolean.parseBoolean(options.get(HDFS_CACHE_REUSED)));
+        if (options.containsKey(ZOOKEEPER_CONFIG)) {
+            this.setZookeeperConfig(options.get(ZOOKEEPER_CONFIG));
         }
         
-        if (options.containsKey(HDFS_CACHE_BUFFER_SIZE)) {
-            this.setHdfsCacheBufferSize(Integer.parseInt(options.get(HDFS_CACHE_BUFFER_SIZE)));
+        if (options.containsKey(IVARATOR_CACHE_BASE_URI_ALTERNATIVES)) {
+            this.setIvaratorCacheBaseURIAlternatives(options.get(IVARATOR_CACHE_BASE_URI_ALTERNATIVES));
         }
         
-        if (options.containsKey(HDFS_SCAN_PERSIST_THRESHOLD)) {
-            this.setHdfsCacheScanPersistThreshold(Long.parseLong(options.get(HDFS_SCAN_PERSIST_THRESHOLD)));
+        if (options.containsKey(IVARATOR_CACHE_BUFFER_SIZE)) {
+            this.setIvaratorCacheBufferSize(Integer.parseInt(options.get(IVARATOR_CACHE_BUFFER_SIZE)));
         }
         
-        if (options.containsKey(HDFS_SCAN_TIMEOUT)) {
-            this.setHdfsCacheScanTimeout(Long.parseLong(options.get(HDFS_SCAN_TIMEOUT)));
+        if (options.containsKey(IVARATOR_SCAN_PERSIST_THRESHOLD)) {
+            this.setIvaratorCacheScanPersistThreshold(Long.parseLong(options.get(IVARATOR_SCAN_PERSIST_THRESHOLD)));
+        }
+        
+        if (options.containsKey(IVARATOR_SCAN_TIMEOUT)) {
+            this.setIvaratorCacheScanTimeout(Long.parseLong(options.get(IVARATOR_SCAN_TIMEOUT)));
         }
         
         if (options.containsKey(MAX_INDEX_RANGE_SPLIT)) {
             this.setMaxIndexRangeSplit(Integer.parseInt(options.get(MAX_INDEX_RANGE_SPLIT)));
+        }
+        
+        if (options.containsKey(MAX_IVARATOR_OPEN_FILES)) {
+            this.setIvaratorMaxOpenFiles(Integer.parseInt(options.get(MAX_IVARATOR_OPEN_FILES)));
         }
         
         if (options.containsKey(MAX_IVARATOR_SOURCES)) {

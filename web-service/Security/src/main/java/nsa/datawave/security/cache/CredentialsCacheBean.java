@@ -2,13 +2,43 @@ package nsa.datawave.security.cache;
 
 import static nsa.datawave.webservice.query.exception.DatawaveErrorCode.UNKNOWN_SERVER_ERROR;
 
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.RolesAllowed;
+import javax.annotation.security.RunAs;
+import javax.ejb.LocalBean;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
+import javax.enterprise.event.Observes;
+import javax.inject.Inject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+
+import nsa.datawave.configuration.ConfigurationEvent;
 import nsa.datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import nsa.datawave.configuration.RefreshLifecycle;
 import nsa.datawave.security.authorization.DatawavePrincipal;
 import nsa.datawave.security.util.DnUtils;
 import nsa.datawave.webservice.common.cache.SharedCacheCoordinator;
+import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import nsa.datawave.webservice.common.exception.DatawaveWebApplicationException;
 import nsa.datawave.webservice.query.exception.QueryException;
 import nsa.datawave.webservice.result.GenericResponse;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.framework.recipes.shared.SharedCountReader;
@@ -23,31 +53,10 @@ import org.infinispan.context.Flag;
 import org.infinispan.filter.KeyValueFilter;
 import org.infinispan.iteration.EntryIterable;
 import org.infinispan.metadata.Metadata;
-import org.jboss.logging.Logger;
 import org.jboss.security.AuthenticationManager;
 import org.jboss.security.CacheableManager;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.LocalBean;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A service for managing the credentials cache. It should be noted that there are two caches: one for authorization service query responses and another for
@@ -59,6 +68,7 @@ import java.util.Set;
 // tells the container to initialize on startup
 @Singleton
 // this is a singleton bean in the container
+@RunAs("InternalUser")
 @RolesAllowed({"JBossAdministrator", "Administrator", "SecurityUser", "InternalUser"})
 @DeclareRoles({"JBossAdministrator", "Administrator", "SecurityUser", "InternalUser"})
 @MBean
@@ -66,7 +76,7 @@ import java.util.Set;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 // transactions not supported directly by this bean
 public class CredentialsCacheBean {
-    protected Logger log = Logger.getLogger(getClass());
+    protected Logger log = LoggerFactory.getLogger(getClass());
     private static final String FLUSH_PRINCIPALS_COUNTER = "flushPrincipals";
     
     @Resource(name = "java:jboss/jaas/datawave")
@@ -79,8 +89,21 @@ public class CredentialsCacheBean {
     @Inject
     private SharedCacheCoordinator cacheCoordinator;
     
+    @Inject
+    private AccumuloConnectionFactory accumuloConnectionFactory;
+    
+    private Set<String> accumuloUserAuths = new HashSet<>();
+    
+    private Exception flushPrincipalsException;
+    
     @PostConstruct
     protected void postConstruct() {
+        try {
+            retrieveAccumuloAuthorizations();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        
         // Watch for eviction requests coming from other web servers. If we get one, do a local eviction
         // as well. Note that this will push through to Accumulo, and there is a possible edge case. If
         // host one evicts and removes from accumulo, then host 2 gets a new request for the same DN and
@@ -343,6 +366,88 @@ public class CredentialsCacheBean {
             @SuppressWarnings("unchecked")
             CacheableManager<?,Principal> cacheableManager = (CacheableManager<?,Principal>) authManager;
             cacheableManager.flushCache();
+        }
+    }
+    
+    @SuppressWarnings("unused")
+    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+    // transactions not supported directly by this bean
+    public void onConfigurationUpdate(@Observes ConfigurationEvent event) {
+        log.debug("Received a configuration update event. Re-querying Accumulo user authorizations and invalidating principals cache.");
+        try {
+            HashSet<String> oldAccumuloAuths = new HashSet<>(accumuloUserAuths);
+            
+            log.trace("Received refresh event on 0x{}. Retrieving new Accumulo authorizations.", Integer.toHexString(System.identityHashCode(this)));
+            retrieveAccumuloAuthorizations();
+            
+            if (!accumuloUserAuths.equals(oldAccumuloAuths)) {
+                // Flush the principals cache (and attempt to tell other web servers to do the same)
+                // If there's a problem, however, do not fail the entire refresh event. Do that at the end.
+                try {
+                    flushPrincipals();
+                } catch (Exception e) {
+                    flushPrincipalsException = e;
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @SuppressWarnings("unused")
+    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+    public void onRefreshComplete(@Observes RefreshLifecycle refreshLifecycle) {
+        switch (refreshLifecycle) {
+            case INITIATED:
+                flushPrincipalsException = null;
+                break;
+            case COMPLETE:
+                // Now that the refresh is complete, throw any flush principals exception that might have happened.
+                // We want to let the rest of the refresh complete internally before throwing the error so that we
+                // don't leave this server in an inconsistent state.
+                if (flushPrincipalsException != null) {
+                    throw new RuntimeException("Error flushing principals cache: " + flushPrincipalsException.getMessage(), flushPrincipalsException);
+                }
+                break;
+        }
+    }
+    
+    @GET
+    @Path("/listAccumuloAuths")
+    @Produces({"text/plain", "application/json"})
+    @JmxManaged
+    public Set<String> getAccumuloUserAuths() {
+        return accumuloUserAuths;
+    }
+    
+    @GET
+    @Path("/reloadAccumuloAuths")
+    @Produces({"application/xml", "text/xml", "application/json"})
+    public GenericResponse<String> reloadAccumuloAuthorizations() {
+        GenericResponse<String> response = new GenericResponse<>();
+        try {
+            retrieveAccumuloAuthorizations();
+            response.setResult("Authorizations reloaded. Remember to flush the principals cache to ensure principals are reloaded with new auths applied.");
+            return response;
+        } catch (Exception e) {
+            response.setResult("Unable to reload Accumulo authorizations.");
+            throw new DatawaveWebApplicationException(e, response);
+        }
+    }
+    
+    private void retrieveAccumuloAuthorizations() throws Exception {
+        Map<String,String> trackingMap = accumuloConnectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+        Connector c = accumuloConnectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+        try {
+            Authorizations auths = c.securityOperations().getUserAuthorizations(c.whoami());
+            HashSet<String> authSet = new HashSet<>();
+            for (byte[] auth : auths.getAuthorizations()) {
+                authSet.add(new String(auth).intern());
+            }
+            accumuloUserAuths = Collections.unmodifiableSet(authSet);
+            log.debug("Accumulo User Authorizations: {}", accumuloUserAuths);
+        } finally {
+            accumuloConnectionFactory.returnConnection(c);
         }
     }
 }

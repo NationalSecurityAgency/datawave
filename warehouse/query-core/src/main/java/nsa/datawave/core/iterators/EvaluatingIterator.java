@@ -1,25 +1,15 @@
 package nsa.datawave.core.iterators;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.NavigableSet;
-import java.util.Set;
-import java.util.TreeSet;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import nsa.datawave.core.iterators.uid.ShardUidMappingIterator;
 import nsa.datawave.core.iterators.uid.UidMapper;
 import nsa.datawave.core.iterators.uid.UidMappingIterator;
 import nsa.datawave.data.hash.UID;
 import nsa.datawave.data.hash.UIDConstants;
 import nsa.datawave.marking.MarkingFunctions;
-import nsa.datawave.marking.MarkingFunctionsFactory;
 import nsa.datawave.query.QueryParameters;
 import nsa.datawave.query.config.GenericShardQueryConfiguration;
 import nsa.datawave.query.filter.FilteringMaster;
@@ -30,7 +20,6 @@ import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.rewrite.iterator.QueryOptions;
 import nsa.datawave.query.util.StringTuple;
 import nsa.datawave.util.StringUtils;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -47,10 +36,18 @@ import org.apache.commons.lang.math.LongRange;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  *

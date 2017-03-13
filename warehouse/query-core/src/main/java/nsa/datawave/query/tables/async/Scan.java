@@ -95,6 +95,10 @@ public class Scan implements Callable<Scan> {
         this.visitorFunctions = visitorFunctions;
     }
     
+    public List<Function<ScannerChunk,ScannerChunk>> getVisitors() {
+        return this.visitorFunctions;
+    }
+    
     public boolean finished() {
         if (caller.isShutdown() && log.isTraceEnabled()) {
             log.trace("Prematurely shutting down because we were forced to stop");

@@ -23,16 +23,17 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         super(other);
     }
     
-    public HdfsBackedSortedSet(FileSystem fs, Path uniqueDir) throws IOException {
-        this(null, fs, uniqueDir);
+    public HdfsBackedSortedSet(FileSystem fs, Path uniqueDir, int maxOpenFiles) throws IOException {
+        this(null, fs, uniqueDir, maxOpenFiles);
     }
     
-    public HdfsBackedSortedSet(Comparator<? super E> comparator, FileSystem fs, Path uniqueDir) throws IOException {
-        this(comparator, 10000, fs, uniqueDir);
+    public HdfsBackedSortedSet(Comparator<? super E> comparator, FileSystem fs, Path uniqueDir, int maxOpenFiles) throws IOException {
+        this(comparator, 10000, fs, uniqueDir, maxOpenFiles);
     }
     
-    public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, FileSystem fs, Path uniqueDir) throws IOException {
-        super(comparator, bufferPersistThreshold, new SortedSetHdfsFileHandlerFactory(fs, uniqueDir));
+    public HdfsBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, FileSystem fs, Path uniqueDir, int maxOpenFiles)
+                    throws IOException {
+        super(comparator, bufferPersistThreshold, maxOpenFiles, new SortedSetHdfsFileHandlerFactory(fs, uniqueDir));
         
         // now load up this sorted set with any existing files
         FileStatus[] files = fs.listStatus(uniqueDir);
@@ -118,6 +119,7 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
             }
         }
         
+        @Override
         public void deleteFile() {
             try {
                 if (!fs.delete(file, true)) {

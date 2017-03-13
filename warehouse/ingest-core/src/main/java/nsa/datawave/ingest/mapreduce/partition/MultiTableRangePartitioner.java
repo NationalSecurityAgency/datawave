@@ -29,19 +29,19 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     
     private volatile boolean cacheFilesRead = false;
     private Text holder = new Text();
-    private Map<String,Text[]> splitsByTable;
+    private ThreadLocal<Map<String,Text[]>> splitsByTable = new ThreadLocal<Map<String,Text[]>>();
     private DecimalFormat formatter = new DecimalFormat("000");
     private Configuration conf;
     private PartitionLimiter partitionLimiter;
     private Object semaphore = new Object();
     
     private void readCacheFilesIfNecessary() {
-        if (cacheFilesRead) {
+        if (splitsByTable.get() != null) {
             return;
         }
         
         synchronized (semaphore) {
-            if (cacheFilesRead) {
+            if (splitsByTable.get() != null) {
                 return;
             }
             
@@ -59,8 +59,8 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
             
             try {
                 NonShardedSplitsFile.Reader reader = new NonShardedSplitsFile.Reader(context.getConfiguration(), localCacheFiles, isTrimmed());
-                splitsByTable = reader.getSplitsByTable();
-                if (splitsByTable.isEmpty()) {
+                splitsByTable.set(reader.getSplitsByTable());
+                if (splitsByTable.get().isEmpty()) {
                     log.error("Non-sharded splits by table cannot be empty.  If this is a development system, please create at least one split in one of the non-sharded tables (see bin/ingest/seed_index_splits.sh).");
                     throw new IOException("splits by table cannot be empty");
                 }
@@ -78,7 +78,7 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
         readCacheFilesIfNecessary();
         
         String tableName = key.getTableName().toString();
-        Text[] cutPointArray = splitsByTable.get(tableName);
+        Text[] cutPointArray = splitsByTable.get().get(tableName);
         
         if (null == cutPointArray)
             return (tableName.hashCode() & Integer.MAX_VALUE) % numPartitions;

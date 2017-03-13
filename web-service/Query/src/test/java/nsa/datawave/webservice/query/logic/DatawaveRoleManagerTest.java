@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import nsa.datawave.security.authorization.DatawavePrincipal;
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,6 +24,8 @@ public class DatawaveRoleManagerTest {
     
     @Before
     public void beforeEachTest() {
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
         createAndSetWithSingleRole();
     }
     

@@ -34,7 +34,7 @@ public class TypeMetadataBridge {
     }
     
     public void setUri(String uri) throws Exception {
-        
+        log.debug("I just set the uri to:" + uri);
         this.uri = uri;
         this.fileSystem = FileSystem.get(new URI(this.uri), new Configuration());
     }
@@ -72,10 +72,6 @@ public class TypeMetadataBridge {
     public FileObject getFileObject(String key) {
         return fileObjectMap.get(key);
     }
-    
-    // public void setFileObject(FileObject fileObject) {
-    // this.fileObject = fileObject;
-    // }
     
     public DefaultFileSystemManager getFileSystem() {
         return fileSystemManager;
@@ -124,7 +120,6 @@ public class TypeMetadataBridge {
             FileObject fileObject = fileSystemManager.resolveFile(this.getUri() + this.getDir() + "/" + metadataTableName + "/" + this.getFileName());
             this.fileObjectMap.put(metadataTableName, fileObject);
         }
-        // this.fileObject = fileSystemManager.resolveFile(this.getUri() + this.getDir() + "/" + this.getFileName());
     }
     
     @Override

@@ -25,6 +25,7 @@ import javax.security.auth.login.FailedLoginException;
 import nsa.datawave.security.authorization.DatawavePrincipal;
 import nsa.datawave.security.authorization.DatawavePrincipalLookupBean;
 import nsa.datawave.security.util.DnUtils;
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import nsa.datawave.security.util.MockCallbackHandler;
 import nsa.datawave.security.util.MockDatawaveCertVerifier;
 
@@ -60,6 +61,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     
     @Before
     public void setUp() throws Exception {
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        
         MockDatawaveCertVerifier.issuerSupported = true;
         MockDatawaveCertVerifier.verify = true;
         

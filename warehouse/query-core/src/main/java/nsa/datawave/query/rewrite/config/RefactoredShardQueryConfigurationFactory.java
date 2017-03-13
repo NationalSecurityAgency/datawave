@@ -99,15 +99,17 @@ public class RefactoredShardQueryConfigurationFactory {
         config.setExpandAllTerms(configuredLogic.isExpandAllTerms());
         
         config.setHdfsSiteConfigURLs(configuredLogic.getHdfsSiteConfigURLs());
-        config.setHdfsCacheBaseURI(configuredLogic.getHdfsCacheBaseURI());
-        config.setHdfsCacheBaseURISelection(configuredLogic.getHdfsCacheBaseURISelection());
-        config.setHdfsPushCacheBaseURISelectionDown(configuredLogic.isHdfsPushCacheBaseURISelectionDown());
-        config.setHdfsCacheReused(configuredLogic.isHdfsCacheReused());
-        config.setHdfsCacheBufferSize(configuredLogic.getHdfsCacheBufferSize());
-        config.setHdfsCacheScanPersistThreshold(configuredLogic.getHdfsCacheScanPersistThreshold());
-        config.setHdfsCacheScanTimeout(configuredLogic.getHdfsCacheScanTimeout());
         config.setHdfsFileCompressionCodec(configuredLogic.getHdfsFileCompressionCodec());
+        config.setZookeeperConfig(configuredLogic.getZookeeperConfig());
+        
+        config.setIvaratorCacheBaseURIs(configuredLogic.getIvaratorCacheBaseURIs());
+        config.setIvaratorFstHdfsBaseURIs(configuredLogic.getIvaratorFstHdfsBaseURIs());
+        config.setIvaratorCacheBufferSize(configuredLogic.getIvaratorCacheBufferSize());
+        config.setIvaratorCacheScanPersistThreshold(configuredLogic.getIvaratorCacheScanPersistThreshold());
+        config.setIvaratorCacheScanTimeout(configuredLogic.getIvaratorCacheScanTimeout());
+        
         config.setMaxFieldIndexRangeSplit(configuredLogic.getMaxFieldIndexRangeSplit());
+        config.setIvaratorMaxOpenFiles(configuredLogic.getIvaratorMaxOpenFiles());
         config.setMaxIvaratorSources(configuredLogic.getMaxIvaratorSources());
         config.setMaxEvaluationPipelines(configuredLogic.getMaxEvaluationPipelines());
         config.setMaxPipelineCachedResults(configuredLogic.getMaxPipelineCachedResults());

@@ -24,7 +24,6 @@ import nsa.datawave.query.util.DateIndexHelperFactory;
 import nsa.datawave.query.util.MetadataHelperFactory;
 import nsa.datawave.query.util.TypeMetadata;
 import nsa.datawave.query.util.TypeMetadataHelper;
-import nsa.datawave.query.util.TypeMetadataProvider;
 import nsa.datawave.query.util.TypeMetadataWriter;
 import nsa.datawave.security.util.ScannerHelper;
 import nsa.datawave.webservice.query.QueryImpl;
@@ -250,6 +249,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                     String hitString = hitTerm.getData().toString();
                     log.debug("as string:" + hitString);
                     log.debug("expectedHitTerms:" + expectedHitTerms);
+                    Assert.assertNotEquals(hitTerm.getTimestamp(), Long.MAX_VALUE);
                     // make sure this hitString is in the map, and remove it
                     boolean result = expectedHitTerms.get(uuid).remove(hitString);
                     if (result == false) {

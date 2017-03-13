@@ -95,10 +95,9 @@
         <!-- The max value or list expansion for a single field using an FST ivarator -->
         <property name="maxOrExpansionFstThreshold" value="20" />	<!-- was ${beq.orExpansionFstThreshold} -->
         <property name="hdfsSiteConfigURLs" value="" />	<!--  was ${hdfs.site.config.urls} -->
-        <property name="hdfsCacheBaseURI" value="file:///tmp/IvaratorCache" />	<!-- was ${hdfs.cache.base.uri} -->
-        <property name="hdfsCacheReused" value="true" />
-        <property name="hdfsCacheBufferSize" value="10000" />
-        <property name="hdfsCacheScanPersistThreshold" value="100000" />
+        <property name="ivaratorCacheBaseURIs" value="file:///tmp/IvaratorCache" />	<!-- was ${ivarator.cache.base.uris} -->
+        <property name="ivaratorCacheBufferSize" value="10000" />
+        <property name="ivaratorCacheScanPersistThreshold" value="100000" />
         <!-- property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />	 -->
         <property name="modelTableName" value="DatawaveMetadata" />
         <property name="modelName" value="DATAWAVE" />

@@ -1,9 +1,5 @@
 package nsa.datawave.query.dashboard;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic;
 import nsa.datawave.webservice.common.extjs.ExtJsResponse;
 import nsa.datawave.webservice.query.Query;
@@ -11,10 +7,13 @@ import nsa.datawave.webservice.query.cache.ResultsPage;
 import nsa.datawave.webservice.query.dashboard.DashboardFields;
 import nsa.datawave.webservice.query.dashboard.DashboardSummary;
 import nsa.datawave.webservice.query.logic.QueryLogicTransformer;
-import nsa.datawave.webservice.query.result.event.DefaultEvent;
+import nsa.datawave.webservice.query.result.event.EventBase;
 import nsa.datawave.webservice.result.BaseQueryResponse;
-
 import org.apache.commons.collections.iterators.TransformIterator;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Aggregate a range of query metrics into a single DashboardSummary object.
@@ -44,7 +43,7 @@ public class DashboardQueryLogic extends RefactoredShardQueryLogic implements Qu
         QueryLogicTransformer transformer = super.getTransformer(settings);
         DashboardSummary summary = new DashboardSummary(settings.getEndDate());
         while (origIter.hasNext()) {
-            DefaultEvent event = (DefaultEvent) transformer.transform(origIter.next());
+            EventBase event = (EventBase) transformer.transform(origIter.next());
             DashboardFields.addEvent(summary, event);
         }
         

@@ -1753,6 +1753,14 @@ public class IngestJob extends Configured implements Tool {
             }
         }
         
+        if (MetricsConfiguration.isEnabled(conf)) {
+            String metricsTable = MetricsConfiguration.getTable(conf);
+            int priority = MetricsConfiguration.getTablePriority(conf);
+            if (org.apache.commons.lang.StringUtils.isNotBlank(metricsTable)) {
+                tablePriorities.put(metricsTable, priority);
+            }
+        }
+        
         return tablePriorities;
     }
     

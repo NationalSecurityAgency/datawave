@@ -61,6 +61,8 @@ public class AccumuloBlobStorePollManager extends ConfiguredPollManager {
     private Connector connector;
     private ColumnVisibility columnVisibility;
     private int chunkSize = DEFAULT_CHUNK_SIZE;
+    private long batchWriteIntervalSize = DEFAULT_BUFFER / 2;
+    
     private ByteBuffer copyBuffer;
     
     private String fileTable;
@@ -237,6 +239,9 @@ public class AccumuloBlobStorePollManager extends ConfiguredPollManager {
         batchWriterConfig.setMaxMemory(batchWriterMemory);
         batchWriterConfig.setMaxWriteThreads(batchWriterThreads);
         
+        // limit the size of the mutation to be half the writer's max memory
+        batchWriteIntervalSize = batchWriterMemory / 2;
+        
         copyBuffer = ByteBuffer.allocate(chunkSize);
         
         // Verify directories exist
@@ -272,6 +277,10 @@ public class AccumuloBlobStorePollManager extends ConfiguredPollManager {
         File file = event.getFile();
         String originalFile = file.getName();
         
+        if (log.isDebugEnabled()) {
+            log.debug("Processing " + originalFile + " by thread " + Thread.currentThread().getId());
+        }
+        
         long size = file.length();
         String sizeStr = Long.toString(size);
         String chunkNumStr = "";
@@ -285,6 +294,7 @@ public class AccumuloBlobStorePollManager extends ConfiguredPollManager {
         Mutation m = new Mutation(fileRowKey);
         FileInputStream fis = null;
         FileChannel channel;
+        
         try {
             initializeBatchWritersIfNecessary();
             
@@ -297,14 +307,20 @@ public class AccumuloBlobStorePollManager extends ConfiguredPollManager {
                 
                 eof = readChunk(channel, copyBuffer);
                 
-                if (size > chunkSize) // No col qual if the file fits in one chunk
+                if (size > chunkSize) { // No col qual if the file fits in one chunk
                     // 0-pad the chunk number to ensure numeric sorting in Accumulo (10 is the max digits for an int in Java)
                     chunkNumStr = String.format("%010d", chunkNumber);
+                }
                 m.put(sizeStr, chunkNumStr, columnVisibility, timestamp, new Value(copyBuffer));
+                if ((m.size() * chunkSize) > batchWriteIntervalSize) {
+                    batchWriter.addMutation(m);
+                    m = new Mutation(fileRowKey);
+                }
             }
             
-            batchWriter.addMutation(m);
-            
+            if (m.size() > 0) {
+                batchWriter.addMutation(m);
+            }
             if (processed < size)
                 throw new IOException("Did not read enough bytes for " + file.getAbsolutePath() + ". Expected " + size + " but read " + processed);
             

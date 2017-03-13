@@ -43,4 +43,9 @@ public class SortedSetTempFileHandler implements SortedSetFileHandler {
         return (file.exists() ? file.length() : -1);
     }
     
+    @Override
+    public void deleteFile() {
+        this.file.delete();
+    }
+    
 }

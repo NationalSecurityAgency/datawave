@@ -1,5 +1,6 @@
 package nsa.datawave.query.rewrite.iterator.builder;
 
+import nsa.datawave.core.iterators.querylock.QueryLock;
 import nsa.datawave.query.rewrite.iterator.profile.QuerySpanCollector;
 import org.apache.hadoop.fs.FileSystem;
 
@@ -9,13 +10,14 @@ import org.apache.hadoop.fs.FileSystem;
 public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     
     protected FileSystem hdfsFileSystem;
-    protected String hdfsCacheDirURI;
-    protected long hdfsCacheScanPersistThreshold = 100000L;
-    protected long hdfsCacheScanTimeout = 1000L * 60 * 60;
-    protected int hdfsCacheBufferSize = 10000;
-    protected boolean hdfsCacheReused = true;
     protected String hdfsFileCompressionCodec;
+    protected QueryLock queryLock;
+    protected String ivaratorCacheDirURI;
+    protected long ivaratorCacheScanPersistThreshold = 100000L;
+    protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
+    protected int ivaratorCacheBufferSize = 10000;
     protected int maxRangeSplit = 11;
+    protected int ivaratorMaxOpenFiles = 100;
     protected boolean collectTimingDetails = false;
     protected QuerySpanCollector querySpanCollector = null;
     
@@ -27,38 +29,6 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
         this.hdfsFileSystem = hdfsFileSystem;
     }
     
-    public String getHdfsCacheDirURI() {
-        return hdfsCacheDirURI;
-    }
-    
-    public void setHdfsCacheDirURI(String hdfsCacheDirURI) {
-        this.hdfsCacheDirURI = hdfsCacheDirURI;
-    }
-    
-    public int getHdfsCacheBufferSize() {
-        return hdfsCacheBufferSize;
-    }
-    
-    public void setHdfsCacheBufferSize(int hdfsCacheBufferSize) {
-        this.hdfsCacheBufferSize = hdfsCacheBufferSize;
-    }
-    
-    public long getHdfsCacheScanPersistThreshold() {
-        return hdfsCacheScanPersistThreshold;
-    }
-    
-    public void setHdfsCacheScanPersistThreshold(long hdfsCacheScanPersistThreshold) {
-        this.hdfsCacheScanPersistThreshold = hdfsCacheScanPersistThreshold;
-    }
-    
-    public long getHdfsCacheScanTimeout() {
-        return hdfsCacheScanTimeout;
-    }
-    
-    public void setHdfsCacheScanTimeout(long hdfsCacheScanTimeout) {
-        this.hdfsCacheScanTimeout = hdfsCacheScanTimeout;
-    }
-    
     public String getHdfsFileCompressionCodec() {
         return hdfsFileCompressionCodec;
     }
@@ -67,12 +37,44 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
         this.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
     }
     
-    public boolean isHdfsCacheReused() {
-        return hdfsCacheReused;
+    public QueryLock getQueryLock() {
+        return queryLock;
     }
     
-    public void setHdfsCacheReused(boolean hdfsCacheReused) {
-        this.hdfsCacheReused = hdfsCacheReused;
+    public void setQueryLock(QueryLock queryLock) {
+        this.queryLock = queryLock;
+    }
+    
+    public String getIvaratorCacheDirURI() {
+        return ivaratorCacheDirURI;
+    }
+    
+    public void setIvaratorCacheDirURI(String ivaratorCacheDirURI) {
+        this.ivaratorCacheDirURI = ivaratorCacheDirURI;
+    }
+    
+    public int getIvaratorCacheBufferSize() {
+        return ivaratorCacheBufferSize;
+    }
+    
+    public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
+        this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
+    }
+    
+    public long getIvaratorCacheScanPersistThreshold() {
+        return ivaratorCacheScanPersistThreshold;
+    }
+    
+    public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
+        this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
+    }
+    
+    public long getIvaratorCacheScanTimeout() {
+        return ivaratorCacheScanTimeout;
+    }
+    
+    public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
+        this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
     }
     
     public int getMaxRangeSplit() {
@@ -83,6 +85,14 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
         this.maxRangeSplit = maxRangeSplit;
     }
     
+    public int getIvaratorMaxOpenFiles() {
+        return ivaratorMaxOpenFiles;
+    }
+    
+    public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
+        this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
+    }
+    
     public void setCollectTimingDetails(boolean collectTimingDetails) {
         this.collectTimingDetails = collectTimingDetails;
     }
@@ -90,4 +100,5 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     public void setQuerySpanCollector(QuerySpanCollector querySpanCollector) {
         this.querySpanCollector = querySpanCollector;
     }
+    
 }

@@ -1,17 +1,12 @@
 package nsa.datawave.query.language.parser.jexl;
 
-import com.google.common.collect.*;
 import nsa.datawave.query.language.parser.ParseException;
-import nsa.datawave.query.language.tree.*;
 import org.junit.*;
 
 import java.util.*;
 
 public class JexlControlledQueryParserTest {
     
-    private Map<String,Set<String>> includedValues = new HashMap<>();
-    private Map<String,Set<String>> excludedValues = new HashMap<>();
-    private Set<String> allowedFields = new HashSet<>();
     private JexlControlledQueryParser parser;
     
     @Test(expected = nsa.datawave.query.language.parser.ParseException.class)
@@ -29,6 +24,7 @@ public class JexlControlledQueryParserTest {
      * never matched.
      * 
      * @throws ParseException
+     *             if we fail to parse.
      */
     @Test
     public void testAtomWithDollaBillSign() throws ParseException {
@@ -94,7 +90,9 @@ public class JexlControlledQueryParserTest {
         parser.setIncludedValues(includedValMap);
         
         String expandedQuery = parser.parse("$9001_1='dudududuu'").getOriginalQuery();
-        Assert.assertEquals("($9001_1='dudududuu') && ((filter:includeRegex($1337_1, 'Doe') || filter:includeRegex($1337_1, 'John')))", expandedQuery);
+        // Note: Or clause is not order dependent and may flip between jvm impls / versions.
+        Assert.assertTrue("($9001_1='dudududuu') && ((filter:includeRegex($1337_1, 'Doe') || filter:includeRegex($1337_1, 'John')))".equals(expandedQuery)
+                        || "($9001_1='dudududuu') && ((filter:includeRegex($1337_1, 'John') || filter:includeRegex($1337_1, 'Doe')))".equals(expandedQuery));
     }
     
     @Test
@@ -113,7 +111,12 @@ public class JexlControlledQueryParserTest {
         parser.setExcludedValues(excludedValMap);
         
         String expandedQuery = parser.parse("$9001_1='dudududuu'").getOriginalQuery();
-        Assert.assertEquals("($9001_1='dudududuu') && ((not(filter:includeRegex($1337_1, 'Doe')) && not(filter:includeRegex($1337_1, 'John'))))", expandedQuery);
+        
+        // Note: Or clause is not order dependent and may flip between jvm impls / versions.
+        Assert.assertTrue("($9001_1='dudududuu') && ((not(filter:includeRegex($1337_1, 'Doe')) && not(filter:includeRegex($1337_1, 'John'))))"
+                        .equals(expandedQuery)
+                        || "($9001_1='dudududuu') && ((not(filter:includeRegex($1337_1, 'John')) && not(filter:includeRegex($1337_1, 'Doe'))))"
+                                        .equals(expandedQuery));
     }
     
     @Test

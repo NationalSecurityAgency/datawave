@@ -171,15 +171,14 @@ public class EdgeKeyVersioningCache {
     }
     
     private void readCache() throws IOException {
-        
-        File cacheFile = new File(KEY_VERSION_CACHE_FILE);
-        
-        BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(cacheFile)));
-        
+        BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(getFileFromDistributedFileCache())));
         log.info("Got edge key version cache file from distributed cache.");
-        
         this.edgeKeyVersionDateChange = readCache(in);
-        
+    }
+    
+    protected File getFileFromDistributedFileCache() {
+        String cachFileDir = conf.get(KEY_VERSION_DIST_CACHE_DIR, null);
+        return new File(cachFileDir, KEY_VERSION_CACHE_FILE);
     }
     
     /**

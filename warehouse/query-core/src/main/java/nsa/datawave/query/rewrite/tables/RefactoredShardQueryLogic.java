@@ -11,7 +11,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
@@ -291,18 +290,19 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     protected int maxIndexBatchSize = 1000;
     
-    private String hdfsCacheBaseURI = null;
-    // if this is set, then the hdfsCacheBaseURI will be randomly selected from
-    // this list
-    private List<String> hdfsCacheBaseURISelection = null;
-    private boolean hdfsPushCacheBaseURISelectionDown = false;
-    private boolean hdfsCacheReused = false;
     private String hdfsSiteConfigURLs = null;
-    private int hdfsCacheBufferSize = 10000;
-    private long hdfsCacheScanPersistThreshold = 100000L;
-    private long hdfsCacheScanTimeout = 1000L * 60 * 60;
     private String hdfsFileCompressionCodec = null;
+    
+    private String zookeeperConfig = null;
+    
+    private List<String> ivaratorCacheBaseURIs = null;
+    private String ivaratorFstHdfsBaseURIs = null;
+    private int ivaratorCacheBufferSize = 10000;
+    private long ivaratorCacheScanPersistThreshold = 100000L;
+    private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
+    
     private int maxFieldIndexRangeSplit = 11;
+    private int ivaratorMaxOpenFiles = 100;
     private int maxIvaratorSources = 33;
     private int maxEvaluationPipelines = 25;
     private int maxPipelineCachedResults = 25;
@@ -452,15 +452,17 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.setMaxIndexBatchSize(other.getMaxIndexBatchSize());
         
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
-        this.setHdfsCacheBaseURI(other.getHdfsCacheBaseURI());
-        this.setHdfsCacheBaseURISelection(other.getHdfsCacheBaseURISelection());
-        this.setHdfsPushCacheBaseURISelectionDown(other.isHdfsPushCacheBaseURISelectionDown());
-        this.setHdfsCacheReused(other.isHdfsCacheReused());
-        this.setHdfsCacheBufferSize(other.getHdfsCacheBufferSize());
-        this.setHdfsCacheScanPersistThreshold(other.getHdfsCacheScanPersistThreshold());
-        this.setHdfsCacheScanTimeout(other.getHdfsCacheScanTimeout());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
+        this.setZookeeperConfig(other.getZookeeperConfig());
+        
+        this.setIvaratorCacheBaseURIs(other.getIvaratorCacheBaseURIs());
+        this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
+        this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
+        this.setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
+        this.setIvaratorCacheScanTimeout(other.getIvaratorCacheScanTimeout());
+        
         this.setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
+        this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
         this.setMaxIvaratorSources(other.getMaxIvaratorSources());
         this.setMaxEvaluationPipelines(other.getMaxEvaluationPipelines());
         this.setMaxPipelineCachedResults(other.getMaxPipelineCachedResults());
@@ -604,18 +606,6 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         config.setAuthorizations(auths);
         config.setMaxScannerBatchSize(getMaxScannerBatchSize());
         config.setMaxIndexBatchSize(getMaxIndexBatchSize());
-        
-        // if the hdfs base uri selection has been set and we are not pushing it
-        // down to the tservers, then override the hdfs base uri randomly
-        if (!isHdfsPushCacheBaseURISelectionDown() && getHdfsCacheBaseURISelectionAsList() != null && !getHdfsCacheBaseURISelectionAsList().isEmpty()) {
-            int index = new Random().nextInt(getHdfsCacheBaseURISelectionAsList().size());
-            this.setHdfsCacheBaseURI(getHdfsCacheBaseURISelectionAsList().get(index));
-            config.setHdfsCacheBaseURI(this.getHdfsCacheBaseURI());
-            // to ensure that the cache base uri does not get reset on this
-            // instance, clear out the selection list
-            this.setHdfsCacheBaseURISelection(null);
-            config.setHdfsCacheBaseURISelection(null);
-        }
         
         setScannerFactory(new ScannerFactory(config));
         
@@ -1761,24 +1751,16 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.fullTableScanEnabled = fullTableScanEnabled;
     }
     
-    public String getHdfsCacheBaseURI() {
-        return hdfsCacheBaseURI;
+    public List<String> getIvaratorCacheBaseURIsAsList() {
+        return ivaratorCacheBaseURIs;
     }
     
-    public void setHdfsCacheBaseURI(String hdfsCacheBaseURI) {
-        this.hdfsCacheBaseURI = hdfsCacheBaseURI;
-    }
-    
-    public List<String> getHdfsCacheBaseURISelectionAsList() {
-        return hdfsCacheBaseURISelection;
-    }
-    
-    public String getHdfsCacheBaseURISelection() {
-        if (hdfsCacheBaseURISelection == null) {
+    public String getIvaratorCacheBaseURIs() {
+        if (ivaratorCacheBaseURIs == null) {
             return null;
         } else {
             StringBuilder builder = new StringBuilder();
-            for (String hdfsCacheBaseURI : hdfsCacheBaseURISelection) {
+            for (String hdfsCacheBaseURI : ivaratorCacheBaseURIs) {
                 if (builder.length() > 0) {
                     builder.append(',');
                 }
@@ -1788,28 +1770,48 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         }
     }
     
-    public void setHdfsCacheBaseURISelection(String hdfsCacheBaseURISelection) {
-        if (hdfsCacheBaseURISelection == null || hdfsCacheBaseURISelection.isEmpty()) {
-            this.hdfsCacheBaseURISelection = null;
+    public void setIvaratorCacheBaseURIs(String ivaratorCacheBaseURIs) {
+        if (ivaratorCacheBaseURIs == null || ivaratorCacheBaseURIs.isEmpty()) {
+            this.ivaratorCacheBaseURIs = null;
         } else {
-            this.hdfsCacheBaseURISelection = Arrays.asList(StringUtils.split(hdfsCacheBaseURISelection, ','));
+            this.ivaratorCacheBaseURIs = Arrays.asList(StringUtils.split(ivaratorCacheBaseURIs, ','));
         }
     }
     
-    public boolean isHdfsPushCacheBaseURISelectionDown() {
-        return hdfsPushCacheBaseURISelectionDown;
+    public String getIvaratorFstHdfsBaseURIs() {
+        return ivaratorFstHdfsBaseURIs;
     }
     
-    public void setHdfsPushCacheBaseURISelectionDown(boolean hdfsPushCacheBaseURISelectionDown) {
-        this.hdfsPushCacheBaseURISelectionDown = hdfsPushCacheBaseURISelectionDown;
+    public void setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
+        this.ivaratorFstHdfsBaseURIs = ivaratorFstHdfsBaseURIs;
     }
     
-    public boolean isHdfsCacheReused() {
-        return hdfsCacheReused;
+    public int getIvaratorCacheBufferSize() {
+        return ivaratorCacheBufferSize;
     }
     
-    public void setHdfsCacheReused(boolean hdfsCacheReused) {
-        this.hdfsCacheReused = hdfsCacheReused;
+    public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
+        this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
+    }
+    
+    public long getIvaratorCacheScanPersistThreshold() {
+        return ivaratorCacheScanPersistThreshold;
+    }
+    
+    public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
+        this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
+    }
+    
+    public long getIvaratorCacheScanTimeout() {
+        return ivaratorCacheScanTimeout;
+    }
+    
+    public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
+        this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
+    }
+    
+    public void setIvaratorCacheScanTimeoutMinutes(long hdfsCacheScanTimeoutMinutes) {
+        this.ivaratorCacheScanTimeout = hdfsCacheScanTimeoutMinutes * 1000 * 60;
     }
     
     public String getHdfsSiteConfigURLs() {
@@ -1820,34 +1822,6 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.hdfsSiteConfigURLs = hadoopConfigURLs;
     }
     
-    public int getHdfsCacheBufferSize() {
-        return hdfsCacheBufferSize;
-    }
-    
-    public void setHdfsCacheBufferSize(int hdfsCacheBufferSize) {
-        this.hdfsCacheBufferSize = hdfsCacheBufferSize;
-    }
-    
-    public long getHdfsCacheScanPersistThreshold() {
-        return hdfsCacheScanPersistThreshold;
-    }
-    
-    public void setHdfsCacheScanPersistThreshold(long hdfsCacheScanPersistThreshold) {
-        this.hdfsCacheScanPersistThreshold = hdfsCacheScanPersistThreshold;
-    }
-    
-    public long getHdfsCacheScanTimeout() {
-        return hdfsCacheScanTimeout;
-    }
-    
-    public void setHdfsCacheScanTimeout(long hdfsCacheScanTimeout) {
-        this.hdfsCacheScanTimeout = hdfsCacheScanTimeout;
-    }
-    
-    public void setHdfsCacheScanTimeoutMinutes(long hdfsCacheScanTimeoutMinutes) {
-        this.hdfsCacheScanTimeout = hdfsCacheScanTimeoutMinutes * 1000 * 60;
-    }
-    
     public String getHdfsFileCompressionCodec() {
         return hdfsFileCompressionCodec;
     }
@@ -1856,12 +1830,28 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
     }
     
+    public String getZookeeperConfig() {
+        return zookeeperConfig;
+    }
+    
+    public void setZookeeperConfig(String zookeeperConfig) {
+        this.zookeeperConfig = zookeeperConfig;
+    }
+    
     public int getMaxFieldIndexRangeSplit() {
         return maxFieldIndexRangeSplit;
     }
     
     public void setMaxFieldIndexRangeSplit(int maxFieldIndexRangeSplit) {
         this.maxFieldIndexRangeSplit = maxFieldIndexRangeSplit;
+    }
+    
+    public int getIvaratorMaxOpenFiles() {
+        return ivaratorMaxOpenFiles;
+    }
+    
+    public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
+        this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
     }
     
     public int getMaxIvaratorSources() {

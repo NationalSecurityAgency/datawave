@@ -3,12 +3,8 @@ package nsa.datawave.webservice.common.cache;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -29,6 +25,8 @@ import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.curator.framework.recipes.shared.SharedCount;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.framework.recipes.shared.VersionedValue;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.BoundedExponentialBackoffRetry;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
@@ -64,13 +62,20 @@ public class SharedCacheCoordinator implements Serializable {
     
     private int evictionReaperIntervalInSeconds;
     private int numLocks;
+    private final int maxRetries;
     
     private final HashMap<Integer,InterProcessLock> locks;
     private final HashMap<String,Integer> localCounters;
     private transient HashMap<String,SharedCount> sharedCounters;
+    private transient HashMap<String,SharedCountListener> sharedCountListeners;
     
     private final HashMap<String,Boolean> localBooleans;
     private transient HashMap<String,SharedBoolean> sharedBooleans;
+    private transient HashMap<String,SharedBooleanListener> sharedBooleanListeners;
+    
+    private final Map<String,SharedTriState.STATE> localTriStates;
+    private transient Map<String,SharedTriState> sharedTriStates;
+    private transient Map<String,SharedTriStateListener> sharedTriStateListeners;
     
     private transient PathChildrenCache evictionPathCache;
     private transient Timer evictionReaper;
@@ -87,16 +92,27 @@ public class SharedCacheCoordinator implements Serializable {
     public SharedCacheCoordinator(@ConfigProperty(name = "dw.cache.coordinator.namespace") String namespace,
                     @ConfigProperty(name = "dw.warehouse.zookeepers") String zookeeperConnectionString, @ConfigProperty(
                                     name = "dw.cacheCoordinator.evictionReaperIntervalSeconds", defaultValue = "30") int evictionReaperIntervalInSeconds,
-                    @ConfigProperty(name = "dw.cacheCoordinator.numLocks", defaultValue = "300") int numLocks) {
+                    @ConfigProperty(name = "dw.cacheCoordinator.numLocks", defaultValue = "300") int numLocks, @ConfigProperty(
+                                    name = "dw.cacheCoordinator.maxRetries", defaultValue = "10") int maxRetries) {
         ArgumentChecker.notNull(namespace, zookeeperConnectionString);
         
         locks = new HashMap<>();
         localCounters = new HashMap<>();
         localBooleans = new HashMap<>();
+        
+        localTriStates = new HashMap<>();
+        
         sharedCounters = new HashMap<>();
+        sharedCountListeners = new HashMap<>();
         sharedBooleans = new HashMap<>();
+        sharedBooleanListeners = new HashMap<>();
+        
+        sharedTriStates = new HashMap<>();
+        sharedTriStateListeners = new HashMap<>();
+        
         this.numLocks = numLocks;
         this.evictionReaperIntervalInSeconds = evictionReaperIntervalInSeconds;
+        this.maxRetries = maxRetries;
         
         curatorClient = CuratorFrameworkFactory.builder().namespace(namespace).retryPolicy(new BoundedExponentialBackoffRetry(100, 5000, 10))
                         .connectString(zookeeperConnectionString).build();
@@ -107,6 +123,28 @@ public class SharedCacheCoordinator implements Serializable {
     @PostConstruct
     public void start() {
         curatorClient.start();
+        
+        curatorClient.getConnectionStateListenable().addListener(new ConnectionStateListener() {
+            private ConnectionState lastState;
+            
+            @Override
+            public void stateChanged(CuratorFramework client, ConnectionState newState) {
+                switch (newState) {
+                    case LOST:
+                        shutdownCounters();
+                        shutdownBooleans();
+                        break;
+                    case RECONNECTED:
+                        // Re-connect counters after
+                        if (lastState == ConnectionState.LOST) {
+                            restartCounters();
+                            restartBooleans();
+                        }
+                        break;
+                }
+                lastState = newState;
+            }
+        });
         
         String rootPath = ZKPaths.makePath("/", "evictions");
         try {
@@ -156,6 +194,84 @@ public class SharedCacheCoordinator implements Serializable {
             }
         };
         evictionReaper.schedule(reaperTask, delayPeriod, delayPeriod);
+    }
+    
+    private void shutdownCounters() {
+        for (String counterName : localCounters.keySet()) {
+            SharedCount count = sharedCounters.remove(counterName);
+            localCounters.put(counterName, count.getCount());
+            try {
+                count.removeListener(sharedCountListeners.get(counterName));
+                count.close();
+            } catch (IOException e) {
+                // ignore -- we're going to abandon this counter.
+                log.warn("Error closing counter " + counterName + " after connection lost.", e);
+            }
+        }
+    }
+    
+    private void restartCounters() {
+        for (Entry<String,Integer> entry : localCounters.entrySet()) {
+            String counterName = entry.getKey();
+            try {
+                System.out.println("**** RE-REGISTER " + counterName);
+                reregisterCounter(counterName, sharedCountListeners.get(counterName), entry.getValue());
+            } catch (Exception e) {
+                log.error("Unable to re-register shared counter " + counterName, e);
+            }
+        }
+    }
+    
+    private void shutdownBooleans() {
+        for (String booleanName : localBooleans.keySet()) {
+            SharedBoolean sharedBoolean = sharedBooleans.remove(booleanName);
+            localBooleans.put(booleanName, sharedBoolean.getBoolean());
+            try {
+                sharedBoolean.removeListener(sharedBooleanListeners.get(booleanName));
+                sharedBoolean.close();
+            } catch (IOException e) {
+                // ignore -- we're going to abandon this counter.
+                log.warn("Error closing shared boolean " + booleanName + " after connection lost.", e);
+            }
+        }
+    }
+    
+    private void restartBooleans() {
+        for (Entry<String,Boolean> entry : localBooleans.entrySet()) {
+            String booleanName = entry.getKey();
+            try {
+                System.out.println("**** RE-REGISTER " + booleanName);
+                reregisterBoolean(booleanName, sharedBooleanListeners.get(booleanName), entry.getValue());
+            } catch (Exception e) {
+                log.error("Unable to re-register shared boolean " + booleanName, e);
+            }
+        }
+    }
+    
+    private void shutdownTriStates() {
+        for (String triStateName : localTriStates.keySet()) {
+            SharedTriState sharedTriState = sharedTriStates.remove(triStateName);
+            localTriStates.put(triStateName, sharedTriState.getState());
+            try {
+                sharedTriState.removeListener(sharedTriStateListeners.get(triStateName));
+                sharedTriState.close();
+            } catch (IOException e) {
+                // ignore -- we're going to abandon this counter.
+                log.warn("Error closing shared TriState " + triStateName + " after connection lost.", e);
+            }
+        }
+    }
+    
+    private void restartTriStates() {
+        for (Entry<String,SharedTriState.STATE> entry : localTriStates.entrySet()) {
+            String triStateName = entry.getKey();
+            try {
+                System.out.println("**** RE-REGISTER " + triStateName);
+                reregisterTriState(triStateName, sharedTriStateListeners.get(triStateName), entry.getValue());
+            } catch (Exception e) {
+                log.error("Unable to re-register shared TriState " + triStateName, e);
+            }
+        }
     }
     
     @PreDestroy
@@ -216,11 +332,17 @@ public class SharedCacheCoordinator implements Serializable {
      *            a listener that is called when the counter value changes
      */
     public void registerCounter(String counterName, SharedCountListener listener) throws Exception {
+        reregisterCounter(counterName, listener, 1);
+    }
+    
+    private void reregisterCounter(String counterName, SharedCountListener listener, int seedValue) throws Exception {
         ArgumentChecker.notNull(counterName, listener);
+        Preconditions.checkArgument(!sharedCounters.containsKey(counterName), "Counter " + counterName + " has already been registered!");
         
-        SharedCount count = new SharedCount(curatorClient, ZKPaths.makePath("/counters", counterName), 1);
+        SharedCount count = new SharedCount(curatorClient, ZKPaths.makePath("/counters", counterName), seedValue);
         count.start();
         sharedCounters.put(counterName, count);
+        sharedCountListeners.put(counterName, listener);
         localCounters.put(counterName, count.getCount());
         
         count.addListener(listener);
@@ -254,45 +376,46 @@ public class SharedCacheCoordinator implements Serializable {
         ArgumentChecker.notNull(counterName);
         
         SharedCount count = sharedCounters.get(counterName);
-        Preconditions.checkArgument(count != null, "Invalid counter name: " + counterName);
+        Preconditions.checkArgument(count != null, "Invalid counter name: " + counterName + ". Shared counter may be down.");
         
         VersionedValue<Integer> currentCount = count.getVersionedValue();
         int newCount = currentCount.getValue() + 1;
-        localCounters.put(counterName, newCount);
+        int tries = 0;
         while (!count.trySetCount(currentCount, newCount)) {
-            newCount = count.getCount() + 1;
+            currentCount = count.getVersionedValue();
+            newCount = currentCount.getValue() + 1;
+            if (++tries >= maxRetries) {
+                // We've exceeded our max tries to update the counter. Try to re-register it and also throw an exception to
+                // indicate that we didn't necessarily update the shared count.
+                sharedCounters.remove(counterName);
+                count.removeListener(sharedCountListeners.get(counterName));
+                count.close();
+                reregisterCounter(counterName, sharedCountListeners.get(counterName), newCount);
+                throw new IllegalStateException("Unable to increment shared counter " + counterName + " after " + maxRetries
+                                + " attempts. Zookeeper connection may be down.");
+            }
         }
-    }
-    
-    /**
-     * Increments the shared distributed counter named {@code counterName} by one.
-     */
-    public void decrementCounter(String counterName) throws Exception {
-        ArgumentChecker.notNull(counterName);
-        
-        SharedCount count = sharedCounters.get(counterName);
-        Preconditions.checkArgument(count != null, "Invalid counter name: " + counterName);
-        
-        int newCount = count.getCount() - 1;
         localCounters.put(counterName, newCount);
-        while (!count.trySetCount(newCount)) {
-            newCount = count.getCount() - 1;
-        }
     }
     
     /**
-     * Registers a distributed shared counter named {@code counterName}. This counter can be watched on many servers, and can be used to coordinate local
+     * Registers a distributed shared boolean named {@code booleanName}. This boolean can be watched on many servers, and can be used to coordinate local
      * in-memory global operations.
      *
      * @param booleanName
-     *            the name of the counter
+     *            the name of the boolean
      * @param listener
-     *            a listener that is called when the counter value changes
+     *            a listener that is called when the boolean value changes
      */
     public void registerBoolean(String booleanName, SharedBooleanListener listener) throws Exception {
+        reregisterBoolean(booleanName, listener, false);
+    }
+    
+    private void reregisterBoolean(String booleanName, SharedBooleanListener listener, boolean seedValue) throws Exception {
         ArgumentChecker.notNull(booleanName, listener);
+        Preconditions.checkArgument(!sharedBooleans.containsKey(booleanName), "Boolean " + booleanName + " has already been registered!");
         
-        SharedBoolean sharedBoolean = new SharedBoolean(curatorClient, ZKPaths.makePath("/booleans", booleanName), false);
+        SharedBoolean sharedBoolean = new SharedBoolean(curatorClient, ZKPaths.makePath("/booleans", booleanName), seedValue);
         log.debug("created a sharedBoolean:" + sharedBoolean);
         sharedBoolean.start();
         sharedBooleans.put(booleanName, sharedBoolean);
@@ -304,7 +427,7 @@ public class SharedCacheCoordinator implements Serializable {
     }
     
     /**
-     * Given the shared counter {@code counterName}, checks whether or not the locally cached value matches the expected shared value of {@code expectedValue}.
+     * Given the shared boolean {@code booleanName}, checks whether or not the locally cached value matches the expected shared value of {@code expectedValue}.
      * If the value does not match, the local cached value is updated.
      *
      * @param booleanName
@@ -325,7 +448,7 @@ public class SharedCacheCoordinator implements Serializable {
     }
     
     /**
-     * Increments the shared distributed counter named {@code counterName} by one.
+     * Sets the shared distributed boolean named {@code booleanName} to the passed state value.
      */
     public void setBoolean(String booleanName, boolean state) throws Exception {
         log.info("someone wants to setBoolean to " + state);
@@ -336,14 +459,100 @@ public class SharedCacheCoordinator implements Serializable {
         log.debug("got " + sharedBoolean + " from " + sharedBooleans);
         
         boolean newBoolean = state;
-        localBooleans.put(booleanName, state);
         log.debug("put(" + booleanName + ", " + state + ")" + "into localBooleans:" + localBooleans);
+        int tries = 0;
         while (!sharedBoolean.trySetBoolean(newBoolean)) {
             newBoolean = state;
+            if (++tries >= maxRetries) {
+                // We've exceeded our max tries to update the boolean. Try to re-register it and also throw an exception to
+                // indicate that we didn't necessarily update the shared boolean.
+                sharedBooleans.remove(booleanName);
+                sharedBoolean.removeListener(sharedBooleanListeners.get(booleanName));
+                sharedBoolean.close();
+                reregisterBoolean(booleanName, sharedBooleanListeners.get(booleanName), newBoolean);
+                throw new IllegalStateException("Unable to update shared boolean " + booleanName + " to " + state + " after " + maxRetries
+                                + " attempts. Zookeeper connection may be down.");
+            }
         }
+        localBooleans.put(booleanName, state);
         log.debug("sharedBoolean now:" + sharedBoolean);
         log.debug("localBooleans:" + localBooleans);
         log.debug("sharedBooleans:" + sharedBooleans);
+    }
+    
+    // tristate
+    
+    public void registerTriState(String triStateName, SharedTriStateListener listener) throws Exception {
+        reregisterTriState(triStateName, listener, SharedTriState.STATE.UPDATED);
+    }
+    
+    private void reregisterTriState(String triStateName, SharedTriStateListener listener, SharedTriState.STATE seedValue) throws Exception {
+        ArgumentChecker.notNull(triStateName, listener);
+        Preconditions.checkArgument(!sharedTriStates.containsKey(triStateName), "STATE " + triStateName + " has already been registered!");
+        
+        SharedTriState sharedTriState = new SharedTriState(curatorClient, ZKPaths.makePath("/triStates", triStateName), seedValue);
+        log.debug("created a sharedTriState:" + sharedTriState);
+        sharedTriState.start();
+        sharedTriStates.put(triStateName, sharedTriState);
+        log.debug("sharedTriStates has:" + sharedTriStates);
+        localTriStates.put(triStateName, sharedTriState.getState());
+        log.debug("localBooleans has:" + localBooleans);
+        log.debug("registered a TriState that is " + sharedTriState.getState());
+        sharedTriState.addListener(listener);
+    }
+    
+    /**
+     * Given the shared TriState {@code triStateName}, checks whether or not the locally cached value matches the expected shared value of {@code expectedValue}
+     * . If the value does not match, the local cached value is updated.
+     *
+     * @param triStateName
+     *            the name of the state whose locally cached value is to be tested
+     * @param expectedValue
+     *            the shared value/expected local value of the state
+     * @return {@code true} if the local cached value already matches {@code expectedValue} and {@code false} if not (while at the same time updating the local
+     *         cached value to {@code expectedValue}
+     */
+    public boolean checkTriState(String triStateName, SharedTriState.STATE expectedValue) {
+        ArgumentChecker.notNull(triStateName);
+        
+        SharedTriState sharedTriState = sharedTriStates.get(triStateName);
+        Preconditions.checkArgument(sharedTriState != null, "Invalid TriState name: " + triStateName);
+        log.debug("got " + sharedTriState + " from " + sharedTriStates);
+        log.debug("checking to see if sharedTriState " + sharedTriState + " is the same as expected value:" + expectedValue);
+        return sharedTriState.getState() == expectedValue;
+    }
+    
+    /**
+     * Changes the shared distributed triState named {@code triStateName} to the passed value.
+     */
+    public void setTriState(String triStateName, SharedTriState.STATE state) throws Exception {
+        log.info("someone wants to setTriState to " + state);
+        ArgumentChecker.notNull(triStateName);
+        
+        SharedTriState sharedTriState = sharedTriStates.get(triStateName);
+        Preconditions.checkArgument(sharedTriState != null, "Invalid state name: " + triStateName);
+        log.debug("got " + sharedTriState + " from " + sharedTriStates);
+        
+        SharedTriState.STATE newTriState = state;
+        log.debug("put(" + triStateName + ", " + state + ")" + "into localTriStates:" + localTriStates);
+        int tries = 0;
+        while (!sharedTriState.trySetState(newTriState)) {
+            newTriState = state;
+            if (++tries >= maxRetries) {
+                // We've exceeded our max tries to update the triState. Try to re-register it and also throw an exception to
+                // indicate that we didn't necessarily update the shared triState.
+                sharedTriStates.remove(triStateName);
+                sharedTriState.removeListener(sharedTriStateListeners.get(triStateName));
+                sharedTriState.close();
+                reregisterTriState(triStateName, sharedTriStateListeners.get(triStateName), newTriState);
+                throw new IllegalStateException("Unable to update shared TriState " + triStateName + " to " + state + " after " + maxRetries
+                                + " attempts. Zookeeper connection may be down.");
+            }
+        }
+        localTriStates.put(triStateName, state);
+        log.debug("sharedTriState now:" + sharedTriState);
+        log.debug("localTriStates:" + localTriStates);
+        log.debug("sharedTriStates:" + sharedTriStates);
     }
     
     /**

@@ -3,11 +3,8 @@ package nsa.datawave.security.authorization;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -25,21 +22,16 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
 import com.codahale.metrics.annotation.Timed;
-import nsa.datawave.configuration.ConfigurationEvent;
 import nsa.datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import nsa.datawave.security.cache.CredentialsCacheBean;
 import nsa.datawave.security.cache.PrincipalsCache;
 import nsa.datawave.security.util.DnUtils;
 import nsa.datawave.webservice.common.cache.SharedCacheCoordinator;
-import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.infinispan.Cache;
@@ -66,9 +58,6 @@ import org.slf4j.LoggerFactory;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class DatawavePrincipalLookupBean implements DatawavePrincipalLookup {
     private Logger log = LoggerFactory.getLogger(getClass());
-    
-    @Inject
-    private AccumuloConnectionFactory accumuloConnectionFactory;
     
     @Inject
     private PrincipalFactory principalFactory;
@@ -100,8 +89,6 @@ public class DatawavePrincipalLookupBean implements DatawavePrincipalLookup {
     @Inject
     @Metric(name = "dw.auth.cacheMisses", absolute = true)
     private Counter cacheMisses;
-    
-    private Set<String> accumuloUserAuths = new HashSet<>();
     
     /*
      * (non-Javadoc)
@@ -220,7 +207,7 @@ public class DatawavePrincipalLookupBean implements DatawavePrincipalLookup {
                 for (Entry<String,Collection<String>> entry : datawavePrincipal.getAuthorizationsMap().entrySet()) {
                     TreeSet<String> auths = new TreeSet<>();
                     auths.addAll(entry.getValue());
-                    auths.retainAll(accumuloUserAuths);
+                    auths.retainAll(credentialsCacheManager.getAccumuloUserAuths());
                     datawavePrincipal.setAuthorizations(entry.getKey(), auths);
                     mergedAuths.addAll(auths);
                 }
@@ -326,47 +313,5 @@ public class DatawavePrincipalLookupBean implements DatawavePrincipalLookup {
             throw new IllegalArgumentException("DatawavePrincipalLookupConfiguration not found in JNDI under java:/authorization/datawavePrincipalLookupConfig");
         if (datawavePrincipalLookupConfig.getProjectName() == null)
             throw new IllegalArgumentException("DatawavePrincipalLookupConfiguration must define projectName");
-        
-        try {
-            retrieveAccumuloAuthorizations();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-    
-    protected void retrieveAccumuloAuthorizations() throws Exception {
-        Map<String,String> trackingMap = accumuloConnectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-        Connector c = accumuloConnectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
-        try {
-            Authorizations auths = c.securityOperations().getUserAuthorizations(c.whoami());
-            HashSet<String> authSet = new HashSet<>();
-            for (byte[] auth : auths.getAuthorizations()) {
-                authSet.add(new String(auth).intern());
-            }
-            accumuloUserAuths = authSet;
-            log.debug("Accumulo User Authorizations: {}", accumuloUserAuths);
-        } finally {
-            accumuloConnectionFactory.returnConnection(c);
-        }
-    }
-    
-    @SuppressWarnings("unused")
-    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-    // transactions not supported directly by this bean
-    public void onConfigurationUpdate(@Observes ConfigurationEvent event) {
-        log.debug("Received a configuration update event. Re-querying Accumulo user authorizations and invalidating principals cache.");
-        try {
-            HashSet<String> oldAccumuloAuths = new HashSet<>(accumuloUserAuths);
-            
-            retrieveAccumuloAuthorizations();
-            
-            if (!accumuloUserAuths.equals(oldAccumuloAuths)) {
-                // Since we just re-loaded the Accumulo user auths, we need to flush cached principals so
-                // that we'll re-compute them using the (possibly) new Accumulo auths.
-                credentialsCacheManager.flushPrincipals();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }

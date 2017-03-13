@@ -1,12 +1,8 @@
 package nsa.datawave.query.tables.content;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
-
+import com.google.common.collect.Lists;
 import nsa.datawave.core.iterators.EvaluatingIterator;
+import nsa.datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import nsa.datawave.query.QueryParameters;
 import nsa.datawave.query.config.ContentQueryConfiguration;
 import nsa.datawave.query.tables.ScannerFactory;
@@ -18,7 +14,6 @@ import nsa.datawave.webservice.query.configuration.GenericQueryConfiguration;
 import nsa.datawave.webservice.query.exception.QueryException;
 import nsa.datawave.webservice.query.logic.BaseQueryLogic;
 import nsa.datawave.webservice.query.logic.QueryLogicTransformer;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -32,7 +27,11 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Lists;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * This query table implementation returns a QueryResults object that contains documents from the Shard table. The query will contain the shard id, datatype,
@@ -54,10 +53,6 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
     
     private static final String PARENT_ONLY = "\1";
     private static final String ALL = "\u10FFFF";
-    // The FULL_CONTENT_COLUMN_FAMILY constant is also defined in the class
-    // nsa.datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler.
-    // Any change to its value should also be made in that class.
-    private static final String FULL_CONTENT_COLUMN_FAMILY = "d";
     
     private int queryThreads = 100;
     private ScannerFactory scannerFactory;
@@ -210,7 +205,7 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
                     
                     // Create and add a Range
                     final String row = shardId;
-                    final String cf = FULL_CONTENT_COLUMN_FAMILY;
+                    final String cf = ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY;
                     final String cq = datatype + EvaluatingIterator.NULL_BYTE_STRING + uid;
                     final Key startKey = new Key(row, cf, cq + EvaluatingIterator.NULL_BYTE_STRING);
                     final Key endKey = new Key(row, cf, cq + endKeyTerminator);

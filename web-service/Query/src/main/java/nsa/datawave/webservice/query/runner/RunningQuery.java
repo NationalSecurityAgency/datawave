@@ -159,6 +159,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.connection = connection;
             long start = System.currentTimeMillis();
             GenericQueryConfiguration configuration = this.logic.initialize(this.connection, this.settings, this.calculatedAuths);
+            this.lastPageNumber = 0;
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
             // the configuration query string should now hold the planned query

@@ -145,7 +145,9 @@ public class TypeMetadataProvider implements FileListener {
                     
                     this.needUpdate.set(false);
                     this.typeMetadataLoaded.set(true);
-                    log.debug("reloaded TypeMetadataProvider.typeMetadataMap =" + TypeMetadataProvider.typeMetadataMap);
+                    if (log.isTraceEnabled()) {
+                        log.trace("reloaded TypeMetadataProvider.typeMetadataMap =" + TypeMetadataProvider.typeMetadataMap);
+                    }
                     ois.close();
                 }
             } catch (IOException | ClassNotFoundException ex) {

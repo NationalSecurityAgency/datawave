@@ -3,13 +3,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>4.3.0-SNAPSHOT</version>
+    <version>4.3.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>datawave-parent</name>
     <url>http://datawave.example.com</url>
     <modules>
         <module>web-service</module>
         <module>warehouse</module>
+        <module>type-metadata-hdfs</module>
     </modules>
     <properties>
         <assembly.basedir>${project.basedir}</assembly.basedir>
@@ -40,7 +41,7 @@
         <version.google-guava>15.0</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <version.hadoop>2.6.0-cdh5.8.0</version.hadoop>
+        <version.hadoop>2.6.0-cdh5.9.1</version.hadoop>
         <version.hornetq>2.4.7.Final</version.hornetq>
         <version.htrace>4.0.1-incubating</version.htrace>
         <!-- CDH 5.7.0 dependency -->
@@ -73,12 +74,13 @@
         <version.spring>4.3.2.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.7.0</version.stream>
+        <version.surefire.plugin>2.19.1</version.surefire.plugin>
         <version.thrift>0.9.1</version.thrift>
         <version.weld>2.2.14.Final</version.weld>
         <version.weld-se>2.2.9.Final</version.weld-se>
         <version.wildfly>9.0.1.Final</version.wildfly>
         <version.xerces>2.11.0</version.xerces>
-        <version.zookeeper>3.4.5-cdh5.8.0</version.zookeeper>
+        <version.zookeeper>3.4.5-cdh5.9.1</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
         <!-- <runOrder>random</runOrder> -->
     </properties>
@@ -937,7 +939,6 @@
                         <quiet>true</quiet>
                         <directories combine.children="append">
                             <file>${datawave.root}/properties</file>
-                            <file>${datawave.root}/../properties</file>
                             <file>${user.home}/.m2/datawave/properties</file>
                         </directories>
                         <files combine.children="append">
@@ -1017,6 +1018,39 @@
                     <version>1.4</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>2.18.1</version>
+                    <configuration>
+                        <reuseForks>false</reuseForks>
+                        <forkCount>1C</forkCount>
+                        <threadCount>1</threadCount>
+                        <threadCountClasses>1</threadCountClasses>
+                        <threadCountMethods>0</threadCountMethods>
+                        <threadCountSuites>0</threadCountSuites>
+                        <groups>nsa.datawave.common.test.integration.IntegrationTest</groups>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>integration-test</id>
+                            <goals>
+                                <goal>integration-test</goal>
+                            </goals>
+                            <configuration>
+                                <includes>
+                                    <include>**/*.class</include>
+                                </includes>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>verify</id>
+                            <goals>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>2.6</version>
                     <configuration>
@@ -1065,6 +1099,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>2.4</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${version.surefire.plugin}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1426,6 +1465,29 @@
                                     <file>dev.properties</file>
                                     <file>dev-passwords.properties</file>
                                     <file>bamboo.properties</file>
+                                </files>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>wikipedia</id>
+            <properties>
+                <build.env>wikipedia</build.env>
+                <env>wikipedia</env>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>nsa.datawave</groupId>
+                            <artifactId>read-properties</artifactId>
+                            <configuration>
+                                <files>
+                                    <file>wikipedia.properties</file>
+                                    <file>wikipedia-passwords.properties</file>
                                 </files>
                             </configuration>
                         </plugin>

@@ -78,7 +78,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     
     /**
      * Configuration parameter to specify the name of the normalizer that should be used for this datatype. This parameter supports multiple datatypes, so valid
-     * values would be something like pcs.data.default.type.class
+     * values would be something like mydatatype.data.default.type.class
      */
     public static final String DEFAULT_TYPE = ".data.default.type.class";
     
@@ -93,14 +93,14 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /**
      * Configuration parameter to specify the precedence of types to be used for this datatype. The last type found to handle a field will be the one used.
      * Field specific types will override this list. This parameter supports multiple datatypes, so valid values would be something like
-     * pcs.data.type.class.list. The instance for each type configuration is the index into this list starting with "0" which can be used in property names when
-     * multiple of the same type is specified.
+     * mydatatype.data.type.class.list. The instance for each type configuration is the index into this list starting with "0" which can be used in property
+     * names when multiple of the same type is specified.
      */
     public static final String TYPE_LIST = ".data.type.class.list";
     
     /**
      * Configuration parameter to specify the names of the fields that should be indexed and NOT persisted with the event fields. This parameter supports
-     * multiple datatypes , valid value would be something like "pcs.data.category.index.only";
+     * multiple datatypes , valid value would be something like "mydatatype.data.category.index.only";
      */
     public static final String INDEX_ONLY_FIELDS = ".data.category.index.only";
     

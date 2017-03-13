@@ -137,6 +137,9 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
         try {
             if (resought.get()) {
                 resought.set(false);
+                
+                kv = Iterators.emptyIterator();
+                
                 for (RecordIterator recordIterator : iterators) {
                     kv = Iterators.concat(kv, new RfileIterator(recordIterator));
                 }

@@ -10,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import nsa.datawave.security.authorization.DatawavePrincipal;
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +29,7 @@ public class AuthorizationsUtilTest {
     
     @Before
     public void initialize() {
+        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         methodAuths = "A,C";
         userAuths = new HashSet<>();
         userAuths.add(Sets.newHashSet("A", "C", "D"));

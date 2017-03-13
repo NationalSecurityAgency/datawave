@@ -31,7 +31,7 @@ public class DepthVisitorTest {
     
     @Test
     public void testOr2() throws Exception {
-        String originalQuery = "FOO == 'abc' or FOO = 'bcd' or FOO = 'asdf'";
+        String originalQuery = "FOO == 'abc' or FOO = 'bcd' or FOO = 'abcdef'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         
         Assert.assertEquals(2, DepthVisitor.getDepth(script, 3));
@@ -42,7 +42,7 @@ public class DepthVisitorTest {
     
     @Test
     public void testOr3() throws Exception {
-        String originalQuery = "FOO == 'abc' or FOO = 'bcd' or FOO = 'asdf' or FOO = 'asdf' or FOO = 'asdf' or FOO = 'asdf' or FOO = 'asdf' or FOO = 'asdf' or FOO = 'asdf' or FOO = 'asdf' or FOO = 'asdf'";
+        String originalQuery = "FOO == 'abc' or FOO = 'bcd' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         
         Assert.assertEquals(2, DepthVisitor.getDepth(script, 3));
@@ -64,7 +64,7 @@ public class DepthVisitorTest {
     
     @Test
     public void testAnd2() throws Exception {
-        String originalQuery = "FOO == 'abc' and FOO = 'bcd' and FOO = 'asdf'";
+        String originalQuery = "FOO == 'abc' and FOO = 'bcd' and FOO = 'abcdef'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         
         Assert.assertEquals(2, DepthVisitor.getDepth(script, 3));
@@ -75,7 +75,7 @@ public class DepthVisitorTest {
     
     @Test
     public void testAnd3() throws Exception {
-        String originalQuery = "FOO == 'abc' and FOO = 'bcd' and FOO = 'asdf' and FOO = 'asdf' and FOO = 'asdf' and FOO = 'asdf' and FOO = 'asdf' and FOO = 'asdf' and FOO = 'asdf' and FOO = 'asdf' and FOO = 'asdf'";
+        String originalQuery = "FOO == 'abc' and FOO = 'bcd' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         
         Assert.assertEquals(2, DepthVisitor.getDepth(script, 3));
@@ -86,7 +86,7 @@ public class DepthVisitorTest {
     
     @Test
     public void testParen() throws Exception {
-        String originalQuery = "FOO == 'abc' or (FOO = 'bcd' and FOO = 'asdf')";
+        String originalQuery = "FOO == 'abc' or (FOO = 'bcd' and FOO = 'abcdef')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         
         Assert.assertEquals(4, DepthVisitor.getDepth(script, 5));
@@ -99,7 +99,7 @@ public class DepthVisitorTest {
     
     @Test
     public void testParen1() throws Exception {
-        String originalQuery = "FOO == 'abc' or (FOO = 'bcd' and (FOO = 'asdf'))";
+        String originalQuery = "FOO == 'abc' or (FOO = 'bcd' and (FOO = 'abcdef'))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         
         Assert.assertEquals(5, DepthVisitor.getDepth(script, 6));
@@ -113,7 +113,7 @@ public class DepthVisitorTest {
     
     @Test
     public void testParen2() throws Exception {
-        String originalQuery = "(FOO == 'abc' or (FOO = 'bcd' and (FOO = 'asdf')))";
+        String originalQuery = "(FOO == 'abc' or (FOO = 'bcd' and (FOO = 'abcdef')))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         
         Assert.assertEquals(6, DepthVisitor.getDepth(script, 7));

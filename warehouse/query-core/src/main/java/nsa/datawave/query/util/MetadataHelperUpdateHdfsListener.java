@@ -1,8 +1,9 @@
 package nsa.datawave.query.util;
 
-import nsa.datawave.webservice.common.cache.SharedBooleanListener;
-import nsa.datawave.webservice.common.cache.SharedBooleanReader;
 import nsa.datawave.webservice.common.cache.SharedCacheCoordinator;
+import nsa.datawave.webservice.common.cache.SharedTriState;
+import nsa.datawave.webservice.common.cache.SharedTriStateListener;
+import nsa.datawave.webservice.common.cache.SharedTriStateReader;
 import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
@@ -75,8 +76,8 @@ public class MetadataHelperUpdateHdfsListener {
     
     private void registerCacheListener(final String metadataTableName) {
         if (log.isDebugEnabled())
-            log.debug("created listener for table:" + metadataTableName);
-        final SharedCacheCoordinator watcher = new SharedCacheCoordinator(metadataTableName, this.zookeepers, 30, 300);
+            log.debug("created UpdateHdfs listener for table:" + metadataTableName);
+        final SharedCacheCoordinator watcher = new SharedCacheCoordinator(metadataTableName, this.zookeepers, 30, 300, 10);
         try {
             watcher.start();
         } catch (Exception e) {
@@ -84,16 +85,16 @@ public class MetadataHelperUpdateHdfsListener {
         } catch (Error e) {
             throw new RuntimeException("Error starting Watcher for MetadataHelper", e);
         }
-        final String booleanName = metadataTableName + ":needsUpdate";
+        final String triStateName = metadataTableName + ":needsUpdate";
         try {
-            watcher.registerBoolean(booleanName, new SharedBooleanListener() {
+            watcher.registerTriState(triStateName, new SharedTriStateListener() {
                 @Override
-                public void booleanHasChanged(SharedBooleanReader reader, boolean value) throws Exception {
+                public void stateHasChanged(SharedTriStateReader reader, SharedTriState.STATE value) throws Exception {
                     if (log.isDebugEnabled())
-                        log.debug("booleanHasChanged(" + reader + ", " + value + ")");
+                        log.debug("stateHasChanged(" + reader + ", " + value + ") for " + triStateName);
                     
-                    if (value) {
-                        maybeUpdateTypeMetadataInHdfs(watcher, booleanName, metadataTableName);
+                    if (value != SharedTriState.STATE.UPDATED) {
+                        maybeUpdateTypeMetadataInHdfs(watcher, triStateName, metadataTableName);
                     }
                 }
                 
@@ -103,55 +104,61 @@ public class MetadataHelperUpdateHdfsListener {
                         log.debug("stateChanged(" + client + ", " + newState + ")");
                 }
             });
-            watcher.setBoolean(booleanName, true);
-            this.maybeUpdateTypeMetadataInHdfs(watcher, booleanName, metadataTableName);
+            watcher.setTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE);
             
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
     
-    private void maybeUpdateTypeMetadataInHdfs(final SharedCacheCoordinator watcher, String booleanName, String metadataTableName) throws Exception {
+    private void maybeUpdateTypeMetadataInHdfs(final SharedCacheCoordinator watcher, String triStateName, String metadataTableName) throws Exception {
         
         boolean locked = false;
         InterProcessMutex lock = (InterProcessMutex) watcher.getMutex("lock");
         try {
             locked = lock.acquire(10000, TimeUnit.MILLISECONDS);
             if (!locked)
-                log.warn("Unable to acquire lock. May be making duplicate updateTypeMetadata calls.");
+                log.debug("Unable to acquire lock to update " + metadataTableName + ". Another webserver is updating the typeMetadata.");
             else
-                log.trace("Obtained lock on updateTypeMetadata");
+                log.debug("Obtained lock on updateTypeMetadata for " + metadataTableName);
         } catch (Exception e) {
-            log.warn("Unable to acquire lock. May be making duplicate updateTypeMetadata calls.");
+            log.warn("Got Exception trying to acquire lock to update " + metadataTableName + ".", e);
         }
         
         try {
             if (locked) {
-                log.debug("checkBoolean(" + booleanName + ", " + true);
-                if (watcher.checkBoolean(booleanName, true)) {
-                    if (log.isDebugEnabled())
-                        log.debug(this + " Needs update is True! Will write the TypeMetadata map to hdfs");
-                    // get a connection for my MetadataHelper, and get the TypeMetadata map
-                    ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(this.instance)
-                                    .withZkHosts(this.zookeepers));
-                    Connector connector = instance.getConnector(this.username, new PasswordToken(this.password));
-                    metadataHelper.initialize(connector, "DatawaveMetadata", allMetadataAuths);
-                    this.typeMetadataWriter.writeTypeMetadataMap(this.metadataHelper.getTypeMetadataMap(), metadataTableName);
-                    if (log.isDebugEnabled())
-                        log.debug(this + " set the sharedBoolean needsUpdate to False");
-                    watcher.setBoolean(booleanName, false);
-                } else {
-                    if (log.isDebugEnabled())
-                        log.debug(this + "  Needs update is False! Someone else already wrote the TypeMetadata map, just release the lock");
+                try {
+                    log.debug("checkTriState(" + triStateName + ", " + true);
+                    if (watcher.checkTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE)) {
+                        watcher.setTriState(triStateName, SharedTriState.STATE.UPDATING);
+                        if (log.isDebugEnabled())
+                            log.debug(this + " Needs update is True! Will write the TypeMetadata map to hdfs");
+                        // get a connection for my MetadataHelper, and get the TypeMetadata map
+                        ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(this.instance)
+                                        .withZkHosts(this.zookeepers));
+                        Connector connector = instance.getConnector(this.username, new PasswordToken(this.password));
+                        metadataHelper.initialize(connector, "DatawaveMetadata", allMetadataAuths);
+                        this.typeMetadataWriter.writeTypeMetadataMap(this.metadataHelper.getTypeMetadataMap(), metadataTableName);
+                        if (log.isDebugEnabled())
+                            log.debug(this + " set the sharedBoolean needsUpdate to False for " + metadataTableName);
+                        watcher.setTriState(triStateName, SharedTriState.STATE.UPDATED);
+                    } else {
+                        if (log.isDebugEnabled())
+                            log.debug(this + "  Needs update is False! Someone else already wrote the TypeMetadata map, just release the lock");
+                    }
+                } catch (Exception ex) {
+                    log.warn("Unable to write TypeMetadataMap for " + metadataTableName, ex);
+                    watcher.setTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE);
+                    
                 }
             }
-            
         } finally {
             if (locked) {
                 lock.release();
+                if (log.isDebugEnabled())
+                    log.debug(this + " released the lock for " + metadataTableName);
+                
             }
-            if (log.isDebugEnabled())
-                log.debug(this + " released the lock");
         }
     }
 }

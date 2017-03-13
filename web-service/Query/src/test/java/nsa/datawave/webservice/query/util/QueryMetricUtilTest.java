@@ -2,6 +2,7 @@ package nsa.datawave.webservice.query.util;
 
 import java.util.UUID;
 
+import nsa.datawave.security.util.DnUtils.NpeUtils;
 import nsa.datawave.webservice.query.metric.QueryMetric;
 import nsa.datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import org.apache.accumulo.core.data.Mutation;

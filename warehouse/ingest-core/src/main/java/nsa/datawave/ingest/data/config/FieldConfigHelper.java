@@ -14,6 +14,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -58,7 +59,7 @@ public class FieldConfigHelper {
             return null;
         }
         
-        try (InputStream in = FieldConfigHelper.class.getClassLoader().getResourceAsStream(fieldConfigFile)) {
+        try (InputStream in = getAsStream(fieldConfigFile)) {
             if (in != null) {
                 log.info("Loading field configuration from configuration file: " + fieldConfigFile);
                 return new FieldConfigHelper(in, baseIngestHelper);
@@ -69,6 +70,24 @@ public class FieldConfigHelper {
             throw new IllegalArgumentException("Exception reading field config file '" + fieldConfigFile + "': " + e.getMessage(), e);
         }
         
+    }
+    
+    /*
+     * Opens a configuration path as an InputStream. If no scheme is given (e.g. http://), then the classpath is assumed.
+     */
+    private static InputStream getAsStream(String fieldConfigPath) {
+        URI uri = URI.create(fieldConfigPath);
+        
+        if (uri.getScheme() == null) {
+            return FieldConfigHelper.class.getClassLoader().getResourceAsStream(fieldConfigPath);
+        } else {
+            try {
+                return uri.toURL().openStream();
+            } catch (IOException e) {
+                log.error("Could not open config location: " + fieldConfigPath, e);
+                return null;
+            }
+        }
     }
     
     public String toString() {

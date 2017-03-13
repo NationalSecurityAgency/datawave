@@ -55,6 +55,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**
  *
@@ -79,9 +80,10 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
     
     @Override
     public IteratorOptions describeOptions() {
-        Map<String,String> options = new HashMap<String,String>();
+        Map<String,String> options = new HashMap<>();
         
         options.put(QUERY, "The JEXL query to evaluate documents against");
+        options.put(QUERY_ID, "The query id");
         options.put(TYPE_METADATA, "encapsulation of a map of field name to a multimap of ingest-type to DataType class names");
         options.put(TYPE_METADATA_AUTHS, "subset of metadata auths that the user has. Used as a key for the TypeMetadataProvider");
         options.put(QUERY_MAPPING_COMPRESS, "Boolean value to indicate Normalizer mapping is compressed");
@@ -110,6 +112,10 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         } else if (!this.disableEvaluation) {
             log.error("If a query is not specified, evaluation must be disabled.");
             return false;
+        }
+        
+        if (options.containsKey(QUERY_ID)) {
+            this.queryId = options.get(QUERY_ID);
         }
         
         if (options.containsKey(QUERY_MAPPING_COMPRESS)) {
@@ -231,7 +237,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         
     }
     
-    protected void createAndSeekIndexIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+    protected void createAndSeekIndexIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException, ConfigException {
         boolean isQueryFullySatisfiedInitialState = true;
         String hitListOptionString = documentOptions.get("hit.list");
         
@@ -277,7 +283,8 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         this.fieldIndexResults.seek(range, columnFamilies, inclusive);
     }
     
-    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException,
+                    ConfigException {
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
         
         // Take the document Keys and transform it into Entry<Key,Document>, removing Attributes for this Document
@@ -294,7 +301,12 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         
         this.range = range;
         
-        Iterator<Entry<Key,Document>> fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
+        Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
+        try {
+            fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
+        } catch (ConfigException e) {
+            throw new IOException("Unable to create document iterator", e);
+        }
         
         // Inject the data type as a field if the user requested it
         if (this.includeDatatype) {

@@ -1,6 +1,7 @@
 package nsa.datawave.query.rewrite.ancestor;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.*;
 
 import nsa.datawave.query.jexl.DatawaveJexlContext;
@@ -26,13 +27,13 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**
  * This is an ancestor QueryIterator implementation (all ancestor's metadata up to the TLD is included with each child)
@@ -187,7 +188,8 @@ public class AncestorQueryIterator extends QueryIterator {
     }
     
     @Override
-    protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs) {
+    protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
+                    throws MalformedURLException, ConfigException {
         if (log.isTraceEnabled()) {
             log.trace(documentRange);
         }
@@ -197,11 +199,11 @@ public class AncestorQueryIterator extends QueryIterator {
         indexOnlyFields.addAll(this.getTermFrequencyFields());
         
         return new AncestorIndexBuildingVisitor(this, this.myEnvironment, this.getTimeFilter(), this.getTypeMetadata(), indexOnlyFields,
-                        this.getFieldIndexKeyDataTypeFilter(), this.fiAggregator, this.getHdfsFileSystem(), this.getHdfsCacheBaseURI(),
-                        this.getHdfsCacheBaseURIAlternativesAsList(), this.getHdfsCacheSubDirPrefix(), this.getHdfsFileCompressionCodec(),
-                        this.isHdfsCacheReused(), this.getHdfsCacheBufferSize(), this.getHdfsCacheScanPersistThreshold(), this.getHdfsCacheScanTimeout(),
-                        this.getMaxIndexRangeSplit(), this.getMaxIvaratorSources(), this.getTypeMetadata().keySet(), Collections.<String> emptySet(),
-                        this.getTermFrequencyFields(), isQueryFullySatisfied, sortedUIDs).limit(documentRange);
+                        this.getFieldIndexKeyDataTypeFilter(), this.fiAggregator, this.getFileSystemCache(), this.getQueryLock(),
+                        this.getIvaratorCacheBaseURIsAsList(), this.getQueryId(), this.getHdfsCacheSubDirPrefix(), this.getHdfsFileCompressionCodec(),
+                        this.getIvaratorCacheBufferSize(), this.getIvaratorCacheScanPersistThreshold(), this.getIvaratorCacheScanTimeout(),
+                        this.getMaxIndexRangeSplit(), this.getIvaratorMaxOpenFiles(), this.getMaxIvaratorSources(), this.getTypeMetadata().keySet(),
+                        Collections.<String> emptySet(), this.getTermFrequencyFields(), isQueryFullySatisfied, sortedUIDs).limit(documentRange);
     }
     
     /**

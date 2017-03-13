@@ -271,10 +271,10 @@ public class DnUtils {
      * Encapsulates the known/valid NPE OU list, and whatever else is needed for NPE handling Static inner-class, so that injection of the configured OUs is
      * only performed on-demand/if needed
      */
-    private static class NpeUtils {
+    public static class NpeUtils {
         
         /** Property containing a comma-delimited list of OUs */
-        static final String NPE_OU_PROPERTY = "npe.ou.entries";
+        public static final String NPE_OU_PROPERTY = "npe.ou.entries";
         
         /** Parsed NPE OU identifiers */
         static final List<String> NPE_OU_LIST;
@@ -283,9 +283,9 @@ public class DnUtils {
         
         static {
             List<String> npeOUs = new ArrayList<String>();
-            String ouString = PROPS.getProperty(NPE_OU_PROPERTY);
+            String ouString = System.getProperty(NPE_OU_PROPERTY, PROPS.getProperty(NPE_OU_PROPERTY));
             if (null == ouString || ouString.isEmpty()) {
-                throw new IllegalStateException(PROPS_RESOURCE + " contains no '" + NPE_OU_PROPERTY + "' property");
+                throw new IllegalStateException("No '" + NPE_OU_PROPERTY + "' value has been configured");
             }
             // Normalize and load...
             String[] ouArray = ouString.split(",");

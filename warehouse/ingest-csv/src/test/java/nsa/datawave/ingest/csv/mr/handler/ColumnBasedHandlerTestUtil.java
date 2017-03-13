@@ -22,6 +22,7 @@ import nsa.datawave.ingest.test.StandaloneTaskAttemptContext;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -224,7 +225,9 @@ public class ColumnBasedHandlerTestUtil {
             MyCachingContextWriter contextWriter = new MyCachingContextWriter();
             StandaloneTaskAttemptContext<Text,RawRecordContainerImpl,BulkIngestKey,Value> ctx = new StandaloneTaskAttemptContext<>(
                             ((RawRecordContainerImpl) event).getConf(), new StandaloneStatusReporter());
+            
             try {
+                contextWriter.setup(ctx.getConfiguration(), false);
                 edgeHandler.process(null, event, eventFields, ctx, contextWriter);
                 contextWriter.commit(ctx);
                 for (Map.Entry<BulkIngestKey,Value> entry : contextWriter.getCache().entries()) {

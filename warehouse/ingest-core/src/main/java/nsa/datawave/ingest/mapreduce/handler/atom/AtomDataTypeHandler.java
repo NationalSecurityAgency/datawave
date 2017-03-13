@@ -1,13 +1,7 @@
 package nsa.datawave.ingest.mapreduce.handler.atom;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-
-import nsa.datawave.marking.MarkingFunctions;
-import nsa.datawave.marking.FlattenedVisibilityCache;
+import com.google.common.base.Strings;
+import com.google.common.collect.Multimap;
 import nsa.datawave.ingest.data.RawRecordContainer;
 import nsa.datawave.ingest.data.Type;
 import nsa.datawave.ingest.data.TypeRegistry;
@@ -19,9 +13,9 @@ import nsa.datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import nsa.datawave.ingest.mapreduce.job.BulkIngestKey;
 import nsa.datawave.ingest.mapreduce.job.writer.ContextWriter;
 import nsa.datawave.ingest.metadata.RawRecordMetadata;
+import nsa.datawave.marking.MarkingFunctions;
 import nsa.datawave.util.StringUtils;
 import nsa.datawave.util.TextUtil;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -32,15 +26,17 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.Multimap;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
  * Handler that creates entries in a table for use with an Atom service.
  *
- * ROW: category name \0 (Long.MAX_VALUE - timestamp), where category name is a field name COLF: field value \0 uuid COLQ: column visibility string CV: event
- * column visibility VIS: now
+ * ROW: category name \0 (Long.MAX_VALUE - timestamp), where category name is a field name COLF: field value \0 uuid COLQ: event visibility string CV: event
+ * column visibility timestamp: now
  *
  */
 public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
@@ -205,7 +201,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
             String id = event.getAltIds().iterator().next();
             if ("".equals(this.fieldOverrides[i])) {
                 for (NormalizedContentInterface nci : fields.get(atomFieldName)) {
-                    String columnQualifier = getVisibility(event, nci);
+                    String columnQualifier = getColumnQualifier(event, nci);
                     Key k = createKey(keyFieldName, nci.getEventFieldValue(), columnQualifier, id, event.getVisibility(), event.getDate());
                     BulkIngestKey bk = new BulkIngestKey(tname, k);
                     contextWriter.write(bk, NULL_VALUE, context);
@@ -226,26 +222,24 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
                 }
             } else {
                 
-                for (NormalizedContentInterface nci : fields.get(atomFieldName)) {
-                    String columnQualifier = getVisibility(event, nci);
-                    // use the override
-                    Key k = createKey(keyFieldName, this.fieldOverrides[i], columnQualifier, id, event.getVisibility(), event.getDate());
-                    BulkIngestKey bk = new BulkIngestKey(tname, k);
-                    contextWriter.write(bk, NULL_VALUE, context);
-                    count++;
-                    Key categoryKey = new Key(keyFieldName, "", "", event.getVisibility(), event.getDate());
-                    categories.add(categoryKey);
-                    
-                    if (subCategories.containsKey(atomFieldName)) {
-                        if (subCategories.get(atomFieldName).contains(this.fieldOverrides[i])) {
-                            Key k2 = createKey(keyFieldName + "/" + this.fieldOverrides[i], this.fieldOverrides[i], columnQualifier, id, event.getVisibility(),
-                                            event.getDate());
-                            BulkIngestKey bk2 = new BulkIngestKey(tname, k2);
-                            contextWriter.write(bk2, NULL_VALUE, context);
-                            count++;
-                            Key categoryKey2 = new Key(keyFieldName + "/" + this.fieldOverrides[i], "", "", event.getVisibility(), event.getDate());
-                            categories.add(categoryKey2);
-                        }
+                String columnQualifier = getColumnQualifier(event, null);
+                // use the override
+                Key k = createKey(keyFieldName, this.fieldOverrides[i], columnQualifier, id, event.getVisibility(), event.getDate());
+                BulkIngestKey bk = new BulkIngestKey(tname, k);
+                contextWriter.write(bk, NULL_VALUE, context);
+                count++;
+                Key categoryKey = new Key(keyFieldName, "", "", event.getVisibility(), event.getDate());
+                categories.add(categoryKey);
+                
+                if (subCategories.containsKey(atomFieldName)) {
+                    if (subCategories.get(atomFieldName).contains(this.fieldOverrides[i])) {
+                        Key k2 = createKey(keyFieldName + "/" + this.fieldOverrides[i], this.fieldOverrides[i], columnQualifier, id, event.getVisibility(),
+                                        event.getDate());
+                        BulkIngestKey bk2 = new BulkIngestKey(tname, k2);
+                        contextWriter.write(bk2, NULL_VALUE, context);
+                        count++;
+                        Key categoryKey2 = new Key(keyFieldName + "/" + this.fieldOverrides[i], "", "", event.getVisibility(), event.getDate());
+                        categories.add(categoryKey2);
                     }
                 }
             }
@@ -260,7 +254,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
         return count;
     }
     
-    public Key createKey(String fieldName, String fieldValue, String columnVisibility, String uuid, ColumnVisibility viz, long timestamp) {
+    public Key createKey(String fieldName, String fieldValue, String columnQualifier, String uuid, ColumnVisibility viz, long timestamp) {
         
         Text row = new Text(fieldName);
         TextUtil.textAppend(row, (Long.MAX_VALUE - timestamp));
@@ -268,7 +262,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
         Text colf = new Text(fieldValue);
         TextUtil.textAppend(colf, uuid);
         
-        return new Key(row, colf, new Text(columnVisibility), viz, System.currentTimeMillis());
+        return new Key(row, colf, new Text(columnQualifier), viz, System.currentTimeMillis());
         
     }
     
@@ -280,7 +274,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
      * @return the visibility
      */
     
-    protected String getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
+    protected String getColumnQualifier(RawRecordContainer event, NormalizedContentInterface value) {
         ColumnVisibility visibility = event.getVisibility();
         if (value.getMarkings() != null && !value.getMarkings().isEmpty()) {
             try {

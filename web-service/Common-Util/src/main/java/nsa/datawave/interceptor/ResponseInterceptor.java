@@ -31,17 +31,18 @@ public class ResponseInterceptor implements ContainerResponseFilter {
     
     @AroundInvoke
     public Object invoke(InvocationContext ctx) throws Exception {
-        boolean isResponseObject = Response.class.isAssignableFrom(ctx.getMethod().getReturnType());
-        boolean isBaseResponseObject = BaseResponse.class.isAssignableFrom(ctx.getMethod().getReturnType());
+        long start = System.currentTimeMillis();
+        Object r = ctx.proceed();
+        boolean isResponseObject = r instanceof Response;
+        boolean isBaseResponseObject = r instanceof BaseResponse;
         
         // If response type is not BaseResponse or subclass, then move on
         if (!isResponseObject && !isBaseResponseObject)
-            return ctx.proceed();
+            return r;
         
-        long start = System.currentTimeMillis();
         // Invoke the method
         if (isResponseObject) {
-            Response result = (Response) ctx.proceed();
+            Response result = (Response) r;
             long end = System.currentTimeMillis();
             result.getMetadata().add(Constants.OPERATION_TIME, (end - start));
             if (result.getEntity() instanceof BaseResponse)
@@ -50,7 +51,7 @@ public class ResponseInterceptor implements ContainerResponseFilter {
         } else {
             BaseResponse result;
             try {
-                result = (BaseResponse) ctx.proceed();
+                result = (BaseResponse) r;
             } catch (NoResultsException e) {
                 e.setStartTime(start);
                 e.setEndTime(System.currentTimeMillis());
