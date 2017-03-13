@@ -266,7 +266,7 @@
                                     <descriptors combine.children="append">
                                         <descriptor>src/main/assembly/dist.xml</descriptor>
                                     </descriptors>
-                                    <tarLongFileMode>gnu</tarLongFileMode>
+                                    <tarLongFileMode>posix</tarLongFileMode>
                                 </configuration>
                             </execution>
                         </executions>

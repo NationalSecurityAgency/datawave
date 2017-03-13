@@ -144,7 +144,7 @@
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
-            <artifactId>powermock-easymock</artifactId>
+            <artifactId>powermock-easymock-release-full</artifactId>
             <classifier>full</classifier>
             <scope>test</scope>
         </dependency>

@@ -132,7 +132,7 @@
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
-            <artifactId>powermock-easymock</artifactId>
+            <artifactId>powermock-easymock-release-full</artifactId>
             <classifier>full</classifier>
             <scope>test</scope>
         </dependency>
@@ -175,7 +175,7 @@
                     <descriptors>
                         <descriptor>src/main/assembly/dist.xml</descriptor>
                     </descriptors>
-                    <tarLongFileMode>gnu</tarLongFileMode>
+                    <tarLongFileMode>posix</tarLongFileMode>
                 </configuration>
                 <executions>
                     <execution>

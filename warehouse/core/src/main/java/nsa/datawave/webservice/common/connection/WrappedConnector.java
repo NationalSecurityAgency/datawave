@@ -16,11 +16,12 @@ import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("deprecation")
 public class WrappedConnector extends Connector {
-    private final Logger log = Logger.getLogger(WrappedConnector.class);
+    private static final Logger log = LoggerFactory.getLogger(WrappedConnector.class);
     
     private Connector mock = null;
     private Connector real = null;
@@ -33,23 +34,25 @@ public class WrappedConnector extends Connector {
     
     @Override
     public BatchScanner createBatchScanner(String tableName, Authorizations authorizations, int numQueryThreads) throws TableNotFoundException {
-        BatchScanner batchScanner;
+        BatchScannerDelegate delegate;
         if (mock.tableOperations().list().contains(tableName)) {
             if (log.isTraceEnabled()) {
                 log.trace("Creating mock batch scanner for table: " + tableName);
             }
-            batchScanner = mock.createBatchScanner(tableName, authorizations, numQueryThreads);
+            BatchScanner batchScanner = mock.createBatchScanner(tableName, authorizations, numQueryThreads);
+            delegate = new BatchScannerDelegate(batchScanner);
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("Creating real batch scanner for table: " + tableName);
             }
-            batchScanner = real.createBatchScanner(tableName, authorizations, numQueryThreads);
+            BatchScanner batchScanner = real.createBatchScanner(tableName, authorizations, numQueryThreads);
+            delegate = new BatchScannerDelegate(batchScanner);
             if (scannerClassLoaderContext != null && !"".equals(scannerClassLoaderContext.trim())) {
                 log.trace("Setting " + scannerClassLoaderContext + " classpath context on a new batch scanner.");
-                batchScanner.setContext(scannerClassLoaderContext);
+                delegate.setContext(scannerClassLoaderContext);
             }
         }
-        return new BatchScannerDelegate(batchScanner);
+        return delegate;
     }
     
     @Override
@@ -72,11 +75,12 @@ public class WrappedConnector extends Connector {
     public BatchDeleter createBatchDeleter(String tableName, Authorizations authorizations, int numQueryThreads, BatchWriterConfig config)
                     throws TableNotFoundException {
         BatchDeleter deleter = real.createBatchDeleter(tableName, authorizations, numQueryThreads, config);
+        BatchDeleterDelegate delegate = new BatchDeleterDelegate(deleter);
         if (scannerClassLoaderContext != null && !"".equals(scannerClassLoaderContext.trim())) {
             log.trace("Setting " + scannerClassLoaderContext + " classpath context on a new batch deleter.");
-            deleter.setContext(scannerClassLoaderContext);
+            delegate.setContext(scannerClassLoaderContext);
         }
-        return new BatchDeleterDelegate(deleter);
+        return delegate;
     }
     
     @Override
@@ -96,23 +100,25 @@ public class WrappedConnector extends Connector {
     
     @Override
     public Scanner createScanner(String tableName, Authorizations authorizations) throws TableNotFoundException {
-        Scanner scanner;
+        ScannerDelegate delegate;
         if (mock.tableOperations().list().contains(tableName)) {
             if (log.isTraceEnabled()) {
                 log.trace("Creating mock scanner for table: " + tableName);
             }
-            scanner = mock.createScanner(tableName, authorizations);
+            Scanner scanner = mock.createScanner(tableName, authorizations);
+            delegate = new ScannerDelegate(scanner);
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("Creating real scanner for table: " + tableName);
             }
-            scanner = real.createScanner(tableName, authorizations);
+            Scanner scanner = real.createScanner(tableName, authorizations);
+            delegate = new ScannerDelegate(scanner);
             if (scannerClassLoaderContext != null && !"".equals(scannerClassLoaderContext.trim())) {
                 log.trace("Setting " + scannerClassLoaderContext + " classpath context on a new scanner.");
-                scanner.setContext(scannerClassLoaderContext);
+                delegate.setContext(scannerClassLoaderContext);
             }
         }
-        return new ScannerDelegate(scanner);
+        return delegate;
     }
     
     @Override

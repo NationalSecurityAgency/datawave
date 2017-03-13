@@ -518,7 +518,7 @@
                                     <descriptors>
                                         <descriptor>src/main/assembly/dist.xml</descriptor>
                                     </descriptors>
-                                    <tarLongFileMode>gnu</tarLongFileMode>
+                                    <tarLongFileMode>posix</tarLongFileMode>
                                     <finalName>${project.artifactId}-${project.version}</finalName>
                                 </configuration>
                             </execution>

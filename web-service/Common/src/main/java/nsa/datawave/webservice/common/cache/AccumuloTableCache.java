@@ -125,7 +125,7 @@ public class AccumuloTableCache {
             } catch (Exception e) {
                 throw new EJBException("Error starting AccumuloTableCache", e);
             }
-
+            
             try {
                 cacheCoordinator.registerTriState(tableName + ":needsUpdate", new SharedTriStateListener() {
                     @Override
