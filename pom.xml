@@ -97,7 +97,7 @@
                 <version>${version.stream}</version>
             </dependency>
             <dependency>
-                <groupId>com.esotericsoftware</groupId>
+                <groupId>com.esotericsoftware.minlog</groupId>
                 <artifactId>minlog</artifactId>
                 <version>${version.minlog}</version>
             </dependency>
@@ -886,24 +886,20 @@
         </repository>
         -->
         <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
             <id>jboss</id>
             <url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
         </repository>
         <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
             <id>cloudera</id>
             <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+        </repository>
+        <repository>
+            <id>geowave</id>
+            <url>http://geowave-maven.s3-website-us-east-1.amazonaws.com/release</url>
+        </repository>
+        <repository>
+            <id>boundless</id>
+            <url>http://repo.boundlessgeo.com/main/</url>
         </repository>
     </repositories>
     <build>

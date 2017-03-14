@@ -64,7 +64,7 @@ public class AssertProperties extends AbstractMojo {
 
         // Remove all provided properties
         Set<String> expectedProperties = getExpectedPropertyMap.keySet();
-        expectedProperties.remove(propertyNames);
+        expectedProperties.removeAll(propertyNames);
 
         if (expectedProperties.size() > 0) {
             StringBuilder errorMessage = new StringBuilder();

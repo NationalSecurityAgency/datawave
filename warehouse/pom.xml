@@ -69,11 +69,6 @@
                 <version>${version.stream}</version>
             </dependency>
             <dependency>
-                <groupId>com.esotericsoftware</groupId>
-                <artifactId>minlog</artifactId>
-                <version>1.2</version>
-            </dependency>
-            <dependency>
                 <groupId>com.esotericsoftware.kryo</groupId>
                 <artifactId>kryo</artifactId>
                 <version>2.20</version>
@@ -82,6 +77,11 @@
                 <groupId>com.esotericsoftware.kryonet</groupId>
                 <artifactId>kryonet</artifactId>
                 <version>2.20</version>
+            </dependency>
+            <dependency>
+                <groupId>com.esotericsoftware.minlog</groupId>
+                <artifactId>minlog</artifactId>
+                <version>1.2</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -107,16 +107,6 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>2.1</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-jci</groupId>
-                <artifactId>commons-jci-core</artifactId>
-                <version>1.0</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-jci</groupId>
-                <artifactId>commons-jci-fam</artifactId>
-                <version>1.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-logging</groupId>
@@ -306,6 +296,16 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
+                <artifactId>commons-jci-core</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-jci-fam</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>3.3.2</version>
             </dependency>
@@ -441,7 +441,7 @@
                 <version>${version.jetty}</version>
             </dependency>
             <dependency>
-                <groupId>org.objectweb.asm</groupId>
+                <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
                 <version>4.0</version>
             </dependency>

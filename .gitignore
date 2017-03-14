@@ -39,3 +39,4 @@ target/
 **/target/
 
 .DS_Store
+web-service/geoserver/gs-web-app/overlays/

@@ -19,20 +19,12 @@
             <artifactId>stream</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.esotericsoftware</groupId>
+            <groupId>com.esotericsoftware.minlog</groupId>
             <artifactId>minlog</artifactId>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-jci</groupId>
-            <artifactId>commons-jci-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-jci</groupId>
-            <artifactId>commons-jci-fam</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-logging</groupId>
@@ -130,6 +122,14 @@
         <dependency>
             <groupId>nsa.datawave.webservice</groupId>
             <artifactId>Query</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-jci-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-jci-fam</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -582,7 +582,7 @@
                                             <include>org.objenesis:objenesis</include>
                                             <include>com.esotericsoftware:minlog</include>
                                             <include>com.esotericsoftware.reflectasm:reflectasm</include>
-                                            <include>org.objectweb.asm:asm</include>
+                                            <include>org.ow2.asm:asm</include>
                                             <include>io.protostuff:protostuff-api</include>
                                             <include>io.protostuff:protostuff-core</include>
                                         </includes>

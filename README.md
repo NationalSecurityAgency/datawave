@@ -23,3 +23,12 @@ pushd contrib/assert-properties
 mvn clean install
 popd
 ```
+
+Note that you may also need to install JPoller artifacts in your local maven repository since we currently depend on them and they are not published in maven's central repository.
+
+```bash
+pushd contrib/jpoller
+mvn install:install-file -Dfile=org.sadun.util.jar -DgroupId=org.sadun -DartifactId=util -Dversion=1.5.1 -Dpackaging=jar
+mvn install:install-file -Dfile=pollmgt.jar -DgroupId=org.sadun -DartifactId=JPoller -Dversion=1.5.1 -Dpackaging=jar
+popd
+```

@@ -412,7 +412,7 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.objectweb.asm</groupId>
+                <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
                 <version>${version.asm}</version>
                 <exclusions>
