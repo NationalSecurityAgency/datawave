@@ -46,7 +46,7 @@ import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
-import org.apache.hadoop.mapreduce.lib.output.MultipleTextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Joiner;
@@ -54,12 +54,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-
-public class MultiRFileOutputFormatter extends MultipleTextOutputFormat<BulkIngestKey,Value> {
+public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
     
     private static final Logger log = Logger.getLogger(MultiRFileOutputFormatter.class);
     

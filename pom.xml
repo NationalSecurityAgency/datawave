@@ -901,6 +901,11 @@
             <id>boundless</id>
             <url>http://repo.boundlessgeo.com/main/</url>
         </repository>
+        <repository>
+            <id>osgeo</id>
+            <name>Open Source Geospatial Foundation Repository</name>
+            <url>http://download.osgeo.org/webdav/geotools/</url>
+        </repository>
     </repositories>
     <build>
         <pluginManagement>
@@ -1325,7 +1330,7 @@
                                         <docletArtifact>
                                             <groupId>com.lunatech.jax-doclets</groupId>
                                             <artifactId>doclets</artifactId>
-                                            <version>0.10.0</version>
+                                            <version>0.10.1</version>
                                         </docletArtifact>
                                     </docletArtifacts>
                                     <classifier>jaxbdocs</classifier>
@@ -1369,7 +1374,7 @@
                                         <docletArtifact>
                                             <groupId>com.lunatech.jax-doclets</groupId>
                                             <artifactId>doclets</artifactId>
-                                            <version>0.10.0</version>
+                                            <version>0.10.1</version>
                                         </docletArtifact>
                                     </docletArtifacts>
                                     <classifier>jaxrsdocs</classifier>
