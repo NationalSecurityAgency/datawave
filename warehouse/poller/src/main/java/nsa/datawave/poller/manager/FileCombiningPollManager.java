@@ -971,8 +971,9 @@ public class FileCombiningPollManager extends ConfiguredPollManager implements R
                 sendToHdfs();
         } else {
             log.info("Did not write any bytes out of {} to {} and hence dropping.", bytesRead, currentOutGzipFile.getAbsolutePath());
-            if (!currentOutGzipFile.delete())
-                log.trace("Failed to delete: {}", currentOutGzipFile.toString());
+            if (!currentOutGzipFile.delete()) {
+                log.trace("Failed to delete: {}", currentOutGzipFile);
+            }
         }
         
         cleanupContributors(stillWorkingFile);

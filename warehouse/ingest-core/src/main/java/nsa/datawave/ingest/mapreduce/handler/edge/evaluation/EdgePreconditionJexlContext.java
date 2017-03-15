@@ -68,8 +68,10 @@ public class EdgePreconditionJexlContext extends MultimapContext {
                 filterFields.addAll(extractTermsFromJexlScript(script));
             }
         }
-        
-        log.trace("Time to create filtered keys from edge definitions: " + (System.currentTimeMillis() - start) + "ms.");
+
+        if (log.isTraceEnabled()) {
+            log.trace("Time to create filtered keys from edge definitions: " + (System.currentTimeMillis() - start) + "ms.");
+        }
         
         return filterFields;
     }
@@ -112,8 +114,10 @@ public class EdgePreconditionJexlContext extends MultimapContext {
             
             if (null != nciCollection) {
                 for (NormalizedContentInterface nci : nciCollection) {
-                    
-                    log.trace("Adding: " + filterFieldKey + "." + nci.getEventFieldValue() + " to context.");
+
+                    if (log.isTraceEnabled()) {
+                        log.trace("Adding: " + filterFieldKey + "." + nci.getEventFieldValue() + " to context.");
+                    }
                     
                     this.set(normalizeTerm(filterFieldKey), nci.getEventFieldValue());
                 }

@@ -39,7 +39,7 @@ public class EdgePreconditionJexlEvaluation implements Predicate<Script> {
             // based on the number of matches
             Collection<?> matches = (Collection<?>) scriptExecuteResult;
             matched = (matches.size() > 0);
-        } else {
+        } else if (log.isDebugEnabled()) {
             log.debug("Unable to process non-Boolean result from JEXL evaluation '" + scriptExecuteResult);
         }
         return matched;

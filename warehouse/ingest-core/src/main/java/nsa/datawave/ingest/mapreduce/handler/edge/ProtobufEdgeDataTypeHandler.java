@@ -392,7 +392,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 removedCount++;
             }
         }
-        log.trace("Removed " + removedCount + " edges with preconditions prior to event processing.");
+        if (log.isTraceEnabled()) {
+            log.trace("Removed " + removedCount + " edges with preconditions prior to event processing.");
+        }
         
     }
     
@@ -518,7 +520,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 long time = System.currentTimeMillis() - start;
                 // only worth logging those that took some time....
                 if (time > 1) {
-                    log.trace("Time to set terms on the filtered context & EdgePreconditionJexlEvaluations: " + time + "ms.");
+                    if (log.isTraceEnabled()) {
+                        log.trace("Time to set terms on the filtered context & EdgePreconditionJexlEvaluations: " + time + "ms.");
+                    }
                 }
             }
         }
@@ -608,13 +612,17 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 if (edgeDef.hasJexlPrecondition()) {
                     long start = System.currentTimeMillis();
                     if (!edgePreconditionEvaluation.apply(scriptCache.get(edgeDef.getJexlPrecondition()))) {
-                        
-                        log.trace("Time to evaluate event(-): " + (System.currentTimeMillis() - start) + "ms.");
+
+                        if (log.isTraceEnabled()) {
+                            log.trace("Time to evaluate event(-): " + (System.currentTimeMillis() - start) + "ms.");
+                        }
                         continue;
                         
                     } else {
-                        
-                        log.trace("Time to evaluate event(+): " + (System.currentTimeMillis() - start) + "ms.");
+
+                        if (log.isTraceEnabled()) {
+                            log.trace("Time to evaluate event(+): " + (System.currentTimeMillis() - start) + "ms.");
+                        }
                         
                     }
                 }

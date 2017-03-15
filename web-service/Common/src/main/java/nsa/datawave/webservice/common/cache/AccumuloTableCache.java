@@ -131,13 +131,13 @@ public class AccumuloTableCache {
                     @Override
                     public void stateHasChanged(SharedTriStateReader reader, SharedTriState.STATE value) throws Exception {
                         if (log.isDebugEnabled())
-                            log.debug("stateHasChanged(" + reader + ", " + value + ")");
+                            log.debug("table: + " + tableName + " stateHasChanged(" + reader + ", " + value + "). This listener does nothing");
                     }
                     
                     @Override
                     public void stateChanged(CuratorFramework client, ConnectionState newState) {
                         if (log.isDebugEnabled())
-                            log.debug("stateChanged(" + client + ", " + newState + ")");
+                            log.debug("table: + " + tableName + " stateChanged(" + client + ", " + newState + "). This listener does nothing");
                     }
                 });
             } catch (Exception e) {
@@ -159,7 +159,7 @@ public class AccumuloTableCache {
                     }
                 });
             } catch (Exception e) {
-                throw new RuntimeException("Unable to create shared counters: " + e.getMessage(), e);
+                throw new RuntimeException("table: + " + tableName + " Unable to create shared counters: " + e.getMessage(), e);
             }
             detail.setWatcher(cacheCoordinator);
             details.put(entry.getKey(), entry.getValue());
@@ -266,7 +266,7 @@ public class AccumuloTableCache {
             log.error("Unable to send message about cache reload");
         }
         handleReload(tableName);
-        log.debug("in reloadCache, called handleReloadTypeMetadata(" + tableName + ")");
+        log.debug("table: + " + tableName + " in reloadCache, called handleReloadTypeMetadata(" + tableName + ")");
         handleReloadTypeMetadata(tableName);
         return response;
     }
@@ -275,7 +275,7 @@ public class AccumuloTableCache {
         try {
             details.get(tableName).getWatcher().setTriState(tableName + ":needsUpdate", SharedTriState.STATE.NEEDS_UPDATE);
         } catch (Exception e) {
-            log.warn("could not update the triState '" + tableName + ":needsUpdate' on watcher for table " + tableName, e);
+            log.warn("table: + " + tableName + " could not update the triState '" + tableName + ":needsUpdate' on watcher for table " + tableName, e);
         }
         
     }
@@ -318,7 +318,7 @@ public class AccumuloTableCache {
     }
     
     private void sendCacheReloadMessage(String tableName) {
-        log.warn("sending cache reload message about table " + tableName);
+        log.warn("table: + " + tableName + " sending cache reload message about table " + tableName);
         
         jmsContext.createProducer().send(cacheTopic, tableName);
     }

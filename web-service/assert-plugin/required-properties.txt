@@ -7,10 +7,6 @@ accumulo.admin.uuidpool.size, number of Accumulo connections in the admin priori
 accumulo.high.uuidpool.size, number of Accumulo connections in the high priority connection pool
 accumulo.low.uuidpool.size, number of Accumulo connections in the low priority connection pool
 accumulo.normal.uuidpool.size, number of Accumulo connections in the normal/medium priority connection pool
-accumulo.admin.fipool.size, number of Accumulo connections in the admin priority connection pool
-accumulo.high.fipool.size, number of Accumulo connections in the high priority connection pool
-accumulo.low.fipool.size, number of Accumulo connections in the low priority connection pool
-accumulo.normal.fipool.size, number of Accumulo connections in the normal/medium priority connection pool
 accumulo.user.name, name of the Accumulo user for the connection pools
 accumulo.user.password, password for the Accumulo user -- SET IN PRIVATE MAVEN SETTINGS
 atom.table.name, name of the table that contains the Atom entries created by the AtomDataTypeHandler

@@ -198,7 +198,9 @@ public class DatawavePrincipalLookupBean implements DatawavePrincipalLookup {
                 if (null != rawRoles && rawRoles.length > 1) {
                     Arrays.sort(rawRoles);
                 }
-                log.debug("{} returned the following roles for {}: {}", authorizationService.getClass().getName(), userName, Arrays.toString(rawRoles));
+                if (log.isDebugEnabled()) {
+                    log.debug("{} returned the following roles for {}: {}", authorizationService.getClass().getName(), userName, Arrays.toString(rawRoles));
+                }
                 
                 DatawavePrincipal datawavePrincipal = principalFactory.createPrincipal(userName, rawRoles);
                 
@@ -247,10 +249,11 @@ public class DatawavePrincipalLookupBean implements DatawavePrincipalLookup {
             InterProcessLock lock = cacheCoordinator.getMutex(key);
             try {
                 locked = lock.acquire(2, TimeUnit.MINUTES);
-                if (!locked)
+                if (!locked) {
                     log.warn("Unable to acquire lock on {}. May be making duplicate authorization service calls.", key);
-                else
+                } else {
                     log.trace("Obtained lock on principal lookup cache");
+                }
             } catch (Exception e) {
                 log.warn("Unable to acquire lock on {}. May be making duplicate authorization service calls.", key);
             }

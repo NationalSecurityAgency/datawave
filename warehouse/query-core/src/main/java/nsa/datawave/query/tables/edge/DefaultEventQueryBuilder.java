@@ -50,7 +50,7 @@ public class DefaultEventQueryBuilder {
             node = (DatawaveTreeNode) node.getChildAt(0);
         }
         
-        log.debug("Beginning transform of query: " + jexlQueryString);
+        log.debug("Beginning transform of query: {}", jexlQueryString);
         
         // Traverse the tree, create new query string
         Set<String> edgeQueries = new HashSet<>();

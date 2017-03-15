@@ -87,7 +87,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
                 connector.tableOperations().create(tableName);
                 connector.tableOperations().attachIterator(tableName, ageoffConfig, EnumSet.allOf(IteratorUtil.IteratorScope.class));
             } catch (TableExistsException e) {
-                log.debug("Attempted to create cache table " + tableName + " but someone else beat us to the punch.");
+                log.debug("Attempted to create cache table {} but someone else beat us to the punch.", tableName);
             } catch (TableNotFoundException e) {
                 // ignore -- we just created the table so it must exist
                 log.error("The impossible happened - created a table and set an iterator on it but the table doesn't exist.", e);

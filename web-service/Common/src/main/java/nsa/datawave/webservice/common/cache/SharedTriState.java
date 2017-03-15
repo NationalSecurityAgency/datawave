@@ -115,8 +115,7 @@ public class SharedTriState implements Closeable, SharedTriStateReader, Listenab
     
     private static STATE fromBytes(byte[] bytes) {
         if (log.isDebugEnabled()) {
-            log.debug("fromBytes(" + Arrays.toString(bytes) + ") and bytes.length > 0 && bytes[0] == (byte) 1 returning:"
-                            + (bytes.length > 0 && bytes[0] == (byte) 1));
+            log.debug("fromBytes(" + Arrays.toString(bytes) + ") and STATE:" + STATE.forValue((int)bytes[0]));
         }
         return STATE.forValue((int) bytes[0]);
     }

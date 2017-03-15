@@ -246,7 +246,7 @@ public class CredentialsCacheBean {
         DnList otherDNs = listDNsMatching(dns[0]);
         if (otherDNs != null) {
             for (String otherDN : otherDNs.getDns()) {
-                log.debug("Evicting " + otherDN + " due to partial match with " + dns[0] + ". Original DN: " + dn);
+                log.debug("Evicting {} due to partial match with {}. Original DN: {}", otherDN, dns[0], dn);
                 ignoreReturnCache.remove(otherDN);
             }
         }
@@ -263,7 +263,7 @@ public class CredentialsCacheBean {
                         principalsToFlush.add(p);
                 }
                 for (Principal p : principalsToFlush) {
-                    log.debug("Evicting " + p + " from the JBoss authentication cache. Original DN: " + dn);
+                    log.debug("Evicting {} from the JBoss authentication cache. Original DN: {}", p, dn);
                     cacheableManager.flushCache(p);
                 }
             }
@@ -274,7 +274,7 @@ public class CredentialsCacheBean {
             try {
                 cacheCoordinator.sendEvictMessage(dn);
             } catch (Exception e) {
-                log.error("Unable to send eviction message to the rest of the cluster: " + e.getMessage(), e);
+                log.error("Unable to send eviction message to the rest of the cluster: {}", e.getMessage(), e);
             }
         }
         
@@ -376,8 +376,10 @@ public class CredentialsCacheBean {
         log.debug("Received a configuration update event. Re-querying Accumulo user authorizations and invalidating principals cache.");
         try {
             HashSet<String> oldAccumuloAuths = new HashSet<>(accumuloUserAuths);
-            
-            log.trace("Received refresh event on 0x{}. Retrieving new Accumulo authorizations.", Integer.toHexString(System.identityHashCode(this)));
+
+            if (log.isTraceEnabled()) {
+                log.trace("Received refresh event on 0x{}. Retrieving new Accumulo authorizations.", Integer.toHexString(System.identityHashCode(this)));
+            }
             retrieveAccumuloAuthorizations();
             
             if (!accumuloUserAuths.equals(oldAccumuloAuths)) {

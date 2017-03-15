@@ -101,7 +101,7 @@ public class TypeMetadataBridge {
         Path sink = new Path(this.dir + "/" + metadataTableName + "/" + this.fileName);
         this.fileSystem.delete(sink, false);
         this.fileSystem.rename(source, sink);
-        log.debug("renamed " + source + " to " + sink);
+        log.debug("table:" + metadataTableName + " renamed " + source + " to " + sink);
     }
     
     public static class ShutdownThread implements Runnable {

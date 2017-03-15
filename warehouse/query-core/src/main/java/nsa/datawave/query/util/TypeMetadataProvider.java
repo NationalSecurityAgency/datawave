@@ -85,19 +85,20 @@ public class TypeMetadataProvider implements FileListener {
      * @throws Exception
      */
     public void init() {
-        try {
-            for (String metadataTableName : this.metadataTableNames) {
-                DefaultFileMonitor monitor = new DefaultFileMonitor(this);
+        for (String metadataTableName : this.metadataTableNames) {
+            DefaultFileMonitor monitor = new DefaultFileMonitor(this);
+            try {
                 monitor.setDelay(delay);
                 monitor.setRecursive(false);
                 monitor.addFile(this.bridge.getFileObject(metadataTableName));
                 log.debug("monitoring " + this.bridge.getFileObject(metadataTableName));
                 monitor.start();
                 this.monitors.put(metadataTableName, monitor);
+            } catch (Exception ex) {
+                monitor.stop();
+                throw new RuntimeException("Failed to create TypeMetadataProvider with " + this.bridge.getUri() + this.bridge.getDir() + "/"
+                        + this.bridge.getFileName(), ex);
             }
-        } catch (Exception ex) {
-            throw new RuntimeException("Failed to create TypeMetadataProvider with " + this.bridge.getUri() + this.bridge.getDir() + "/"
-                            + this.bridge.getFileName(), ex);
         }
     }
     

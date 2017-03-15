@@ -306,7 +306,9 @@ public class MetadataHelper implements ApplicationContextAware {
         // make sure that the first entry contains all the Authorizations in the allMetadataAuths
         Authorizations minimized = minimizedCollection.iterator().next(); // get the first one, which has all auths common to all in the original collection
         Set<String> minimizedUserAuths = Sets.newHashSet(MetadataHelper.getAuthsAsStringCollection(minimized));
-        log.debug("minimizedUserAuths:" + minimizedUserAuths + " with size " + minimizedUserAuths.size());
+        if (log.isDebugEnabled()) {
+            log.debug("minimizedUserAuths:" + minimizedUserAuths + " with size " + minimizedUserAuths.size());
+        }
         Set<Set<String>> powerset = Sets.powerSet(minimizedUserAuths);
         Set<Set<String>> set = Sets.newHashSet();
         for (Set<String> sub : powerset) {
@@ -318,19 +320,22 @@ public class MetadataHelper implements ApplicationContextAware {
     
     public Map<Set<String>,TypeMetadata> getTypeMetadataMap() throws TableNotFoundException {
         Collection<Set<String>> powerset = getAllMetadataAuthsPowerSet(this.allMetadataAuths);
-        log.debug("powerset:" + powerset);
-        for (Set<String> s : powerset) {
-            log.debug("powerset has :" + s);
+        if (log.isDebugEnabled()) {
+            log.debug("powerset:" + powerset);
         }
         Map<Set<String>,TypeMetadata> map = Maps.newHashMap();
         
         Collection<Authorizations> auths = Sets.newHashSet();
         for (Set<String> a : powerset) {
-            log.debug("get TypeMetadata with auths:" + a);
+            if (log.isDebugEnabled()) {
+                log.debug("get TypeMetadata with auths:" + a);
+            }
             
             Authorizations at = new Authorizations(a.toArray(new String[a.size()]));
-            
-            log.debug("made an Authorizations:" + at);
+
+            if (log.isDebugEnabled()) {
+                log.debug("made an Authorizations:" + at);
+            }
             TypeMetadata tm = this.allFieldMetadataHelper.getTypeMetadataHelper().getTypeMetadataForAuths(Collections.singleton(at));
             map.put(a, tm);
         }

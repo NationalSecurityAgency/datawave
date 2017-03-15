@@ -145,8 +145,9 @@ public class SequenceFileCombiningPollManager extends FileCombiningPollManager {
         }
         
         if (log.isTraceEnabled()) {
-            for (final Entry<String,String> p : conf)
+            for (final Entry<String,String> p : conf) {
                 log.trace("Property {} -> {}", p.getKey(), p.getValue());
+            }
         } else {
             // Ensure that the Configuration Resources are parsed
             // and integrated into internal properties data structure

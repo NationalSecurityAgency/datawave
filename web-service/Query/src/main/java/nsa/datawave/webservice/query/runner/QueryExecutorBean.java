@@ -231,7 +231,9 @@ public class QueryExecutorBean implements QueryExecutor {
     
     @Inject
     private QueryMetricFactory metricFactory;
-    AccumuloConnectionRequestBean accumuloConnectionRequestBean;
+
+    @Inject
+    private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
     
     private Multimap<String,PatternWrapper> traceInfos;
     private CacheListener traceCacheListener;
@@ -713,8 +715,13 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             
             // close the logic on exception
-            if (null != logic) {
-                logic.close();
+            try {
+                if (null != logic) {
+                    logic.close();
+                }
+            } catch (Exception e) {
+                log.error("Error closing query logic", e);
+                response.addException(new QueryException(DatawaveErrorCode.CLOSE_ERROR, e).getBottomQueryException());
             }
             
             if (null != connection) {

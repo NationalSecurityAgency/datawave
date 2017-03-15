@@ -233,7 +233,9 @@ public class CachedResultsBean {
     
     @Inject
     private QueryMetricFactory metricFactory;
-    AccumuloConnectionRequestBean accumuloConnectionRequestBean;
+
+    @Inject
+    private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
     
     static {
         BASE_COLUMNS = StringUtils.join(CacheableQueryRow.getFixedColumnSet(), ",");

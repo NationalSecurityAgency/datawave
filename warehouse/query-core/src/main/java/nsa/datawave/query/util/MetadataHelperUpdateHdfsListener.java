@@ -76,14 +76,14 @@ public class MetadataHelperUpdateHdfsListener {
     
     private void registerCacheListener(final String metadataTableName) {
         if (log.isDebugEnabled())
-            log.debug("created UpdateHdfs listener for table:" + metadataTableName);
+            log.debug("table:" + metadataTableName + " created UpdateHdfs listener for table:" + metadataTableName);
         final SharedCacheCoordinator watcher = new SharedCacheCoordinator(metadataTableName, this.zookeepers, 30, 300, 10);
         try {
             watcher.start();
         } catch (Exception e) {
-            throw new RuntimeException("Error starting Watcher for MetadataHelper", e);
+            throw new RuntimeException("table:" + metadataTableName + " Error starting Watcher for MetadataHelper", e);
         } catch (Error e) {
-            throw new RuntimeException("Error starting Watcher for MetadataHelper", e);
+            throw new RuntimeException("table:" + metadataTableName + " Error starting Watcher for MetadataHelper", e);
         }
         final String triStateName = metadataTableName + ":needsUpdate";
         try {
@@ -91,7 +91,7 @@ public class MetadataHelperUpdateHdfsListener {
                 @Override
                 public void stateHasChanged(SharedTriStateReader reader, SharedTriState.STATE value) throws Exception {
                     if (log.isDebugEnabled())
-                        log.debug("stateHasChanged(" + reader + ", " + value + ") for " + triStateName);
+                        log.debug("table:" + metadataTableName + " stateHasChanged(" + reader + ", " + value + ") for " + triStateName);
                     
                     if (value != SharedTriState.STATE.UPDATED) {
                         maybeUpdateTypeMetadataInHdfs(watcher, triStateName, metadataTableName);
@@ -101,7 +101,7 @@ public class MetadataHelperUpdateHdfsListener {
                 @Override
                 public void stateChanged(CuratorFramework client, ConnectionState newState) {
                     if (log.isDebugEnabled())
-                        log.debug("stateChanged(" + client + ", " + newState + ")");
+                        log.debug("table:" + metadataTableName + " stateChanged(" + client + ", " + newState + ")");
                 }
             });
             watcher.setTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE);
@@ -118,21 +118,22 @@ public class MetadataHelperUpdateHdfsListener {
         try {
             locked = lock.acquire(10000, TimeUnit.MILLISECONDS);
             if (!locked)
-                log.debug("Unable to acquire lock to update " + metadataTableName + ". Another webserver is updating the typeMetadata.");
+                log.debug("table:" + metadataTableName + " Unable to acquire lock to update " + metadataTableName
+                        + ". Another webserver is updating the typeMetadata.");
             else
-                log.debug("Obtained lock on updateTypeMetadata for " + metadataTableName);
+                log.debug("table:" + metadataTableName + " Obtained lock on updateTypeMetadata for " + metadataTableName);
         } catch (Exception e) {
-            log.warn("Got Exception trying to acquire lock to update " + metadataTableName + ".", e);
+            log.warn("table:" + metadataTableName + " Got Exception trying to acquire lock to update " + metadataTableName + ".", e);
         }
         
         try {
             if (locked) {
                 try {
-                    log.debug("checkTriState(" + triStateName + ", " + true);
+                    log.debug("table:" + metadataTableName + " checkTriState(" + triStateName + ", " + SharedTriState.STATE.NEEDS_UPDATE);
                     if (watcher.checkTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE)) {
                         watcher.setTriState(triStateName, SharedTriState.STATE.UPDATING);
                         if (log.isDebugEnabled())
-                            log.debug(this + " Needs update is True! Will write the TypeMetadata map to hdfs");
+                            log.debug("table:" + metadataTableName + "  " + this + " setTriState to UPDATING");
                         // get a connection for my MetadataHelper, and get the TypeMetadata map
                         ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(this.instance)
                                         .withZkHosts(this.zookeepers));
@@ -140,15 +141,19 @@ public class MetadataHelperUpdateHdfsListener {
                         metadataHelper.initialize(connector, "DatawaveMetadata", allMetadataAuths);
                         this.typeMetadataWriter.writeTypeMetadataMap(this.metadataHelper.getTypeMetadataMap(), metadataTableName);
                         if (log.isDebugEnabled())
-                            log.debug(this + " set the sharedBoolean needsUpdate to False for " + metadataTableName);
+                            log.debug("table:" + metadataTableName + " " + this + " set the sharedTriState needsUpdate to UPDATED for " + metadataTableName);
                         watcher.setTriState(triStateName, SharedTriState.STATE.UPDATED);
                     } else {
                         if (log.isDebugEnabled())
-                            log.debug(this + "  Needs update is False! Someone else already wrote the TypeMetadata map, just release the lock");
+                            log.debug("table:" + metadataTableName + " " + this
+                                    + "  STATE is not NEEDS_UPDATE! Someone else may be writing the TypeMetadata map, just release the lock");
                     }
                 } catch (Exception ex) {
-                    log.warn("Unable to write TypeMetadataMap for " + metadataTableName, ex);
+                    log.warn("table:" + metadataTableName + " Unable to write TypeMetadataMap for " + metadataTableName, ex);
                     watcher.setTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE);
+                    if (log.isDebugEnabled()) {
+                        log.debug("After exception, set the SharedTriState STATE to NEEDS_UPDATE");
+                    }
                     
                 }
             }
@@ -156,7 +161,7 @@ public class MetadataHelperUpdateHdfsListener {
             if (locked) {
                 lock.release();
                 if (log.isDebugEnabled())
-                    log.debug(this + " released the lock for " + metadataTableName);
+                    log.debug("table:" + metadataTableName + " " + this + " released the lock for " + metadataTableName);
                 
             }
         }

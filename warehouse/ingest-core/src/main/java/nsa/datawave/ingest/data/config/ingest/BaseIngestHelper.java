@@ -143,12 +143,15 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     
     protected Set<String> indexedFields = Sets.newHashSet();
     protected Map<String,Pattern> indexedPatterns = Maps.newHashMap();
+    protected Set<String> unindexedFields = Sets.newHashSet();
     
     protected Set<String> reverseIndexedFields = Sets.newHashSet();
     protected Map<String,Pattern> reverseIndexedPatterns = Maps.newHashMap();
-    
+    protected Set<String> reverseUnindexedFields = Sets.newHashSet();
+
     // for all the atoms that are normalized, but not indexed
     protected Set<String> normalizedFields = Sets.newHashSet();
+    protected Set<String> unNormalizedFields = Sets.newHashSet();
     protected Map<String,Pattern> normalizedPatterns = Maps.newHashMap();
     
     protected Set<String> allIndexFields = Sets.newTreeSet(); // the indexed
@@ -778,12 +781,22 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     
     @Override
     public boolean isNormalizedField(String fieldName) {
-        for (Pattern pattern : this.normalizedPatterns.values()) {
-            if (pattern.matcher(fieldName).matches()) {
-                return true;
+        if (this.normalizedFields.contains(fieldName)) {
+            return true;
+        } else if (this.unNormalizedFields.contains(fieldName)) {
+            return false;
+        } else if (this.normalizedPatterns.isEmpty()) { // avoids filling unNormalizedFields if not necessary
+            return false;
+        } else {
+            for (Pattern pattern : this.normalizedPatterns.values()) {
+                if (pattern.matcher(fieldName).matches()) {
+                    this.normalizedFields.add(fieldName);
+                    return true;
+                }
             }
+            this.unNormalizedFields.add(fieldName);
+            return false;
         }
-        return this.normalizedFields.contains(fieldName);
     }
     
     @Override
@@ -799,6 +812,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             return true;
         } else if (this.indexedFields.contains(fieldName)) {
             return true;
+        } else if (this.unindexedFields.contains(fieldName)) {
+            return false;
+        } else if (this.indexedPatterns.isEmpty()) { // avoids filling unindexedFields if not necessary
+            return false;
         } else {
             for (Pattern pattern : this.indexedPatterns.values()) {
                 if (pattern.matcher(fieldName).matches()) {
@@ -806,8 +823,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                     return true;
                 }
             }
+            this.unindexedFields.add(fieldName);
+            return false;
         }
-        return false;
     }
     
     @Override
@@ -820,7 +838,24 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
     
     private boolean isReverseIndexed(String fieldName) {
-        return this.reverseIndexedFields.contains(fieldName);
+        if (fieldHelper != null && fieldHelper.isReverseIndexedField(fieldName)) {
+            return true;
+        } else if (this.reverseIndexedFields.contains(fieldName)) {
+            return true;
+        } else if (this.reverseUnindexedFields.contains(fieldName)) {
+            return false;
+        } else if (this.reverseIndexedPatterns.isEmpty()) { // avoid filling reverseUnindexedFields if not necessary
+            return false;
+        } else {
+            for (Pattern pattern : this.reverseIndexedPatterns.values()) {
+                if (pattern.matcher(fieldName).matches()) {
+                    this.reverseIndexedFields.add(fieldName); // update so we don't need to match the next time we see it
+                    return true;
+                }
+            }
+            this.reverseUnindexedFields.add(fieldName);
+            return false;
+        }
     }
     
     /**

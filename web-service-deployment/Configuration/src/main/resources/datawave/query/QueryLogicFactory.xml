@@ -316,7 +316,6 @@
         </property>
         <property name="auditType" value="ACTIVE" />
         <property name="logicDescription" value="Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value." />
-        <property name="connPoolName" value="FICOUNT" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
     

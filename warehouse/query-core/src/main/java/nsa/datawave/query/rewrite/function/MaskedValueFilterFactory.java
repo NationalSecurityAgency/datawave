@@ -21,10 +21,12 @@ public class MaskedValueFilterFactory {
     private static MaskedValueFilterInterface createInstance() {
         
         ClassLoader thisClassLoader = MaskedValueFilterFactory.class.getClassLoader();
-        if (thisClassLoader instanceof VFSClassLoader) {
-            log.debug("thisClassLoader is a VFSClassLoader with resources:" + Arrays.toString(((VFSClassLoader) thisClassLoader).getFileObjects()));
-        } else {
-            log.debug("thisClassLoader is a :" + thisClassLoader.getClass());
+        if (log.isDebugEnabled()) {
+            if (thisClassLoader instanceof VFSClassLoader) {
+                log.debug("thisClassLoader is a VFSClassLoader with resources:" + Arrays.toString(((VFSClassLoader) thisClassLoader).getFileObjects()));
+            } else {
+                log.debug("thisClassLoader is a :" + thisClassLoader.getClass());
+            }
         }
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext();
         MaskedValueFilterInterface instance = null;
@@ -43,9 +45,9 @@ public class MaskedValueFilterFactory {
         } catch (Throwable t) {
             // got here because the VFSClassLoader on the tservers does not implement findResources
             // none of the spring wiring will work, so fall back to reflection:
-            log.warn("got " + t);
+            log.warn("got {}", t);
             String className = System.getProperty(MASKED_VALUE_FILTER_CLASSNAME);
-            log.debug(MASKED_VALUE_FILTER_CLASSNAME + className);
+            log.debug("{}{}", MASKED_VALUE_FILTER_CLASSNAME, className);
             if (className != null) {
                 try {
                     instance = (MaskedValueFilterInterface) Class.forName(className).newInstance();
