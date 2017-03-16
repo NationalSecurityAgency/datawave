@@ -231,7 +231,7 @@ public class QueryExecutorBean implements QueryExecutor {
     
     @Inject
     private QueryMetricFactory metricFactory;
-
+    
     @Inject
     private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
     

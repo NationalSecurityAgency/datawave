@@ -376,7 +376,7 @@ public class CredentialsCacheBean {
         log.debug("Received a configuration update event. Re-querying Accumulo user authorizations and invalidating principals cache.");
         try {
             HashSet<String> oldAccumuloAuths = new HashSet<>(accumuloUserAuths);
-
+            
             if (log.isTraceEnabled()) {
                 log.trace("Received refresh event on 0x{}. Retrieving new Accumulo authorizations.", Integer.toHexString(System.identityHashCode(this)));
             }

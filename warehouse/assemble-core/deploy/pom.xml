@@ -580,7 +580,7 @@
                                             <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.esotericsoftware.kryo:kryo</include>
                                             <include>org.objenesis:objenesis</include>
-                                            <include>com.esotericsoftware:minlog</include>
+                                            <include>com.esotericsoftware.minlog:minlog</include>
                                             <include>com.esotericsoftware.reflectasm:reflectasm</include>
                                             <include>org.ow2.asm:asm</include>
                                             <include>io.protostuff:protostuff-api</include>

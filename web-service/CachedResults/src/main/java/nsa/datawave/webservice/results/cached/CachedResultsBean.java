@@ -233,7 +233,7 @@ public class CachedResultsBean {
     
     @Inject
     private QueryMetricFactory metricFactory;
-
+    
     @Inject
     private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
     

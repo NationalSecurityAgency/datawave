@@ -320,21 +320,21 @@ public class MetadataHelper implements ApplicationContextAware {
     
     public Map<Set<String>,TypeMetadata> getTypeMetadataMap() throws TableNotFoundException {
         Collection<Set<String>> powerset = getAllMetadataAuthsPowerSet(this.allMetadataAuths);
-        if (log.isDebugEnabled()) {
-            log.debug("powerset:" + powerset);
+        if (log.isTraceEnabled()) {
+            log.trace("powerset:" + powerset);
         }
         Map<Set<String>,TypeMetadata> map = Maps.newHashMap();
         
         Collection<Authorizations> auths = Sets.newHashSet();
         for (Set<String> a : powerset) {
-            if (log.isDebugEnabled()) {
-                log.debug("get TypeMetadata with auths:" + a);
+            if (log.isTraceEnabled()) {
+                log.trace("get TypeMetadata with auths:" + a);
             }
             
             Authorizations at = new Authorizations(a.toArray(new String[a.size()]));
-
-            if (log.isDebugEnabled()) {
-                log.debug("made an Authorizations:" + at);
+            
+            if (log.isTraceEnabled()) {
+                log.trace("made an Authorizations:" + at);
             }
             TypeMetadata tm = this.allFieldMetadataHelper.getTypeMetadataHelper().getTypeMetadataForAuths(Collections.singleton(at));
             map.put(a, tm);

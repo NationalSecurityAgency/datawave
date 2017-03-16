@@ -97,7 +97,7 @@ public class TypeMetadataProvider implements FileListener {
             } catch (Exception ex) {
                 monitor.stop();
                 throw new RuntimeException("Failed to create TypeMetadataProvider with " + this.bridge.getUri() + this.bridge.getDir() + "/"
-                        + this.bridge.getFileName(), ex);
+                                + this.bridge.getFileName(), ex);
             }
         }
     }

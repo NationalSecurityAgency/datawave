@@ -612,14 +612,14 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 if (edgeDef.hasJexlPrecondition()) {
                     long start = System.currentTimeMillis();
                     if (!edgePreconditionEvaluation.apply(scriptCache.get(edgeDef.getJexlPrecondition()))) {
-
+                        
                         if (log.isTraceEnabled()) {
                             log.trace("Time to evaluate event(-): " + (System.currentTimeMillis() - start) + "ms.");
                         }
                         continue;
                         
                     } else {
-
+                        
                         if (log.isTraceEnabled()) {
                             log.trace("Time to evaluate event(+): " + (System.currentTimeMillis() - start) + "ms.");
                         }

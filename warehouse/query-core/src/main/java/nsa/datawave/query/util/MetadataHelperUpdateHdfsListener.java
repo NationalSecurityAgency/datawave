@@ -119,7 +119,7 @@ public class MetadataHelperUpdateHdfsListener {
             locked = lock.acquire(10000, TimeUnit.MILLISECONDS);
             if (!locked)
                 log.debug("table:" + metadataTableName + " Unable to acquire lock to update " + metadataTableName
-                        + ". Another webserver is updating the typeMetadata.");
+                                + ". Another webserver is updating the typeMetadata.");
             else
                 log.debug("table:" + metadataTableName + " Obtained lock on updateTypeMetadata for " + metadataTableName);
         } catch (Exception e) {
@@ -131,9 +131,13 @@ public class MetadataHelperUpdateHdfsListener {
                 try {
                     log.debug("table:" + metadataTableName + " checkTriState(" + triStateName + ", " + SharedTriState.STATE.NEEDS_UPDATE);
                     if (watcher.checkTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("table:" + metadataTableName + " " + this + " STATE is NEEDS_UPDATE. Will write the TypeMetadata map to hdfs");
+                        }
                         watcher.setTriState(triStateName, SharedTriState.STATE.UPDATING);
-                        if (log.isDebugEnabled())
+                        if (log.isDebugEnabled()) {
                             log.debug("table:" + metadataTableName + "  " + this + " setTriState to UPDATING");
+                        }
                         // get a connection for my MetadataHelper, and get the TypeMetadata map
                         ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(this.instance)
                                         .withZkHosts(this.zookeepers));
@@ -144,9 +148,10 @@ public class MetadataHelperUpdateHdfsListener {
                             log.debug("table:" + metadataTableName + " " + this + " set the sharedTriState needsUpdate to UPDATED for " + metadataTableName);
                         watcher.setTriState(triStateName, SharedTriState.STATE.UPDATED);
                     } else {
-                        if (log.isDebugEnabled())
+                        if (log.isDebugEnabled()) {
                             log.debug("table:" + metadataTableName + " " + this
-                                    + "  STATE is not NEEDS_UPDATE! Someone else may be writing the TypeMetadata map, just release the lock");
+                                            + "  STATE is not NEEDS_UPDATE! Someone else may be writing the TypeMetadata map, just release the lock");
+                        }
                     }
                 } catch (Exception ex) {
                     log.warn("table:" + metadataTableName + " Unable to write TypeMetadataMap for " + metadataTableName, ex);

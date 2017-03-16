@@ -148,7 +148,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     protected Set<String> reverseIndexedFields = Sets.newHashSet();
     protected Map<String,Pattern> reverseIndexedPatterns = Maps.newHashMap();
     protected Set<String> reverseUnindexedFields = Sets.newHashSet();
-
+    
     // for all the atoms that are normalized, but not indexed
     protected Set<String> normalizedFields = Sets.newHashSet();
     protected Set<String> unNormalizedFields = Sets.newHashSet();
@@ -844,7 +844,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             return true;
         } else if (this.reverseUnindexedFields.contains(fieldName)) {
             return false;
-        } else if (this.reverseIndexedPatterns.isEmpty()) { // avoid filling reverseUnindexedFields if not necessary
+        } else if (this.reverseIndexedPatterns.isEmpty()) { // avoids filling reverseUnindexedFields if not necessary
             return false;
         } else {
             for (Pattern pattern : this.reverseIndexedPatterns.values()) {

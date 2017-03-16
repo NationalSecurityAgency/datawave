@@ -202,7 +202,7 @@
                         <configuration>
                             <outputDirectory>lib</outputDirectory>
                             <!-- just grab the non-provided runtime dependencies -->
-                            <includeArtifactIds>commons-cli,httpclient,commons-digester3,bcprov-jdk16</includeArtifactIds>
+                            <includeArtifactIds>commons-cli,commons-httpclient,commons-digester3,bcprov-jdk16</includeArtifactIds>
                             <excludeGroupIds>org.apache.httpcomponents</excludeGroupIds>
                             <!-- don't include the httpclient from httpcomponents, only include the org.apache.commons one -->
                             <excludeTransitive>false</excludeTransitive>
@@ -229,7 +229,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
             </plugin>
         </plugins>
     </build>

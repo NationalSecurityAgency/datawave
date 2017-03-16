@@ -68,7 +68,7 @@ public class EdgePreconditionJexlContext extends MultimapContext {
                 filterFields.addAll(extractTermsFromJexlScript(script));
             }
         }
-
+        
         if (log.isTraceEnabled()) {
             log.trace("Time to create filtered keys from edge definitions: " + (System.currentTimeMillis() - start) + "ms.");
         }
@@ -114,7 +114,7 @@ public class EdgePreconditionJexlContext extends MultimapContext {
             
             if (null != nciCollection) {
                 for (NormalizedContentInterface nci : nciCollection) {
-
+                    
                     if (log.isTraceEnabled()) {
                         log.trace("Adding: " + filterFieldKey + "." + nci.getEventFieldValue() + " to context.");
                     }
