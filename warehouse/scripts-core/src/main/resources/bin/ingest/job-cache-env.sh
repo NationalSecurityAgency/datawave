@@ -1,0 +1,6 @@
+#!/bin/bash
+
+BASE_WORK_DIR=${BASE_WORK_DIR}
+BASE_WORK_DIR=${BASE_WORK_DIR:-/data/Ingest}
+
+JOB_CACHE_DIR="$BASE_WORK_DIR/jobCacheA"
