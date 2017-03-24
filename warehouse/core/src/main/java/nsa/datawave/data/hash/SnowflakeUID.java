@@ -17,7 +17,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
  * timestamp, 20-bit machine ID, and a 24-bit one-up sequence ID.
  * <p>
  * In order to achieve uniqueness, no two threads should use the same machine ID at the same time anywhere in the cluster. Although there are many ways to
- * manage unique machine IDs, each ID is presumed to have been calculated from an 8-bit node ID, a 6-bit poller ID, and a 6-bit thread ID. In other words, each
+ * manage unique machine IDs, each ID is presumed to have been calculated from an 8-bit node ID, a 6-bit process ID, and a 6-bit thread ID. In other words, each
  * machine ID uniquely identifies a single thread within a particular JVM on a particular host.
  * <p>
  * A {@link SnowflakeUID} cannot be used like a {@link HashUID} to recreate equivalent instances from duplicate data. The trade-off is that it helps contiguous
@@ -50,9 +50,9 @@ public class SnowflakeUID extends UID {
     public static int MAX_NODE_ID = 255;
     
     /**
-     * Max value for the 6-bit poller ID (2nd portion of the 20-bit machine ID field)
+     * Max value for the 6-bit process ID (2nd portion of the 20-bit machine ID field)
      */
-    public static int MAX_POLLER_ID = 63;
+    public static int MAX_PROCESS_ID = 63;
     
     /**
      * Max value for the 6-bit thread ID (3rd portion of the 20-bit machine ID field)
@@ -123,55 +123,55 @@ public class SnowflakeUID extends UID {
     }
     
     /**
-     * Creates a Snowflake-based UID builder based on the node, poller, and thread responsible for queuing the generation of such UIDs
+     * Creates a Snowflake-based UID builder based on the node, process, and thread responsible for queuing the generation of such UIDs
      * 
      * @param nodeId
      *            one-up, 8-bit index value for the staging host responsible for queuing the generation of this UID
-     * @param pollerId
-     *            one-up, 6-bit index value for the poller responsible for queuing the generation of this UID
+     * @param processId
+     *            one-up, 6-bit index value for the process responsible for queuing the generation of this UID
      * @param threadId
-     *            one-up, 6-bit index value for the poller thread responsible for queuing the generation of this UID
+     *            one-up, 6-bit index value for the process thread responsible for queuing the generation of this UID
      * @return a builder used for creating Snowflake-based UIDs
      */
-    protected static SnowflakeUIDBuilder builder(int nodeId, int pollerId, int threadId) {
-        return new SnowflakeUIDBuilder(nodeId, pollerId, threadId);
+    protected static SnowflakeUIDBuilder builder(int nodeId, int processId, int threadId) {
+        return new SnowflakeUIDBuilder(nodeId, processId, threadId);
     }
     
     /**
-     * Creates a Snowflake-based UID builder based on an initial timestamp and the node, poller, and thread responsible for queuing the generation of such UIDs
+     * Creates a Snowflake-based UID builder based on an initial timestamp and the node, process, and thread responsible for queuing the generation of such UIDs
      *
      * @param timestamp
      *            the initial timestamp to use for generating UIDs
      * @param nodeId
      *            one-up, 8-bit index value for the staging host responsible for queuing the generation of this UID
-     * @param pollerId
-     *            one-up, 6-bit index value for the poller responsible for queuing the generation of this UID
+     * @param processId
+     *            one-up, 6-bit index value for the process responsible for queuing the generation of this UID
      * @param threadId
-     *            one-up, 6-bit index value for the poller thread responsible for queuing the generation of this UID
+     *            one-up, 6-bit index value for the process thread responsible for queuing the generation of this UID
      * @return a builder used for creating Snowflake-based UIDs
      */
-    protected static SnowflakeUIDBuilder builder(long timestamp, int nodeId, int pollerId, int threadId) {
-        return new SnowflakeUIDBuilder(timestamp, nodeId, pollerId, threadId);
+    protected static SnowflakeUIDBuilder builder(long timestamp, int nodeId, int processId, int threadId) {
+        return new SnowflakeUIDBuilder(timestamp, nodeId, processId, threadId);
     }
     
     /**
-     * Creates a Snowflake-based UID builder based on an initial timestamp, sequence ID, and the node, poller, and thread responsible for queuing the generation
-     * of such UIDs
+     * Creates a Snowflake-based UID builder based on an initial timestamp, sequence ID, and the node, process, and thread responsible for queuing the
+     * generation of such UIDs
      * 
      * @param timestamp
      *            the initial timestamp to use for generating UIDs
      * @param nodeId
      *            one-up, 8-bit index value for the staging host responsible for queuing the generation of this UID
-     * @param pollerId
-     *            one-up, 6-bit index value for the poller responsible for queuing the generation of this UID
+     * @param processId
+     *            one-up, 6-bit index value for the process responsible for queuing the generation of this UID
      * @param threadId
-     *            one-up, 6-bit index value for the poller thread responsible for queuing the generation of this UID
+     *            one-up, 6-bit index value for the process thread responsible for queuing the generation of this UID
      * @param sequenceId
      *            the initial 24-bit sequence value to use for generating UIDs
      * @return a builder used for creating Snowflake-based UIDs
      */
-    protected static SnowflakeUIDBuilder builder(long timestamp, int nodeId, int pollerId, int threadId, int sequenceId) {
-        return new SnowflakeUIDBuilder(timestamp, nodeId, pollerId, threadId, sequenceId);
+    protected static SnowflakeUIDBuilder builder(long timestamp, int nodeId, int processId, int threadId, int sequenceId) {
+        return new SnowflakeUIDBuilder(timestamp, nodeId, processId, threadId, sequenceId);
     }
     
     /**
@@ -292,11 +292,11 @@ public class SnowflakeUID extends UID {
     }
     
     /**
-     * Returns the 6-bit "poller ID" portion (2nd field) of the machine ID
+     * Returns the 6-bit "process ID" portion (2nd field) of the machine ID
      * 
-     * @return the "poller ID" portion of the machine ID
+     * @return the "process ID" portion of the machine ID
      */
-    public int getPollerId() {
+    public int getProcessId() {
         if (null != snowflake) {
             BigInteger fragment = new BigInteger(snowflake.toString(16), 16);
             return fragment.and(PID_MASK).shiftRight(30).intValue();

@@ -23,8 +23,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.Text;
@@ -33,7 +31,6 @@ import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
@@ -109,8 +106,9 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
                 ingestLabel = ingestLabel.toUpperCase();
             }
             
-            writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getPollerDuration(), "RAW_FILE_" + ingestLabel + "_POLLER_LATENCY_MS");
-            writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getDelayPollerToIngest(), "RAW_FILE_" + ingestLabel + "_DELAY_POLLER_INGEST_MS");
+            writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getRawFileTransformDuration(), "RAW_FILE_" + ingestLabel + "_ASRAW_LATENCY_MS");
+            writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getDelayRawFileTransformToIngest(), "RAW_FILE_" + ingestLabel
+                            + "_DELAY_ASRAW_INGEST_MS");
             writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getIngestJobDuration(), "RAW_FILE_" + ingestLabel + "_INGEST_JOB_LATENCY_MS");
             if (fileLatency.hasLoaderPhase()) {
                 writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getDelayIngestToLoader(), "RAW_FILE_" + ingestLabel + "_DELAY_INGEST_LOADER_MS");

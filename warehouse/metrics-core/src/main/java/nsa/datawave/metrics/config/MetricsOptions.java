@@ -41,9 +41,6 @@ public class MetricsOptions extends Options {
         super.addOption(OptionBuilder.withArgName("Stop date for processing metrics.").hasArg()
                         .withDescription("Stop date for processing metrics, as yyyyMMddHHmm or yyyyMMdd.").create("end"));
         
-        super.addOption(OptionBuilder.withArgName("Ignore poller metrics for correlation").hasArg().withDescription("Ignore poller metrics for correlation")
-                        .create("ignorePollerMetrics"));
-        
         super.addOption(OptionBuilder.withArgName("Ignore flag maker metrics for correlation").hasArg()
                         .withDescription("Ignore flag maker metrics for correlation").create("ignoreFlagMakerMetrics"));
     }

@@ -32,12 +32,10 @@ CLASSPATH=$(findJar javatuples):${CLASSPATH}
 CLASSPATH=$(findJar joda-time):${CLASSPATH}
 CLASSPATH=$(findJar log4j):${CLASSPATH}
 CLASSPATH=$(findJar datawave-core):${CLASSPATH}
-# For Poller Summaries
 CLASSPATH=$(findJar datawave-query-core):${CLASSPATH}
 
 CLASSPATH=$(findJar datawave-metrics-core):${CLASSPATH}
 CLASSPATH=$(findJar datawave-ingest-core):${CLASSPATH}
-CLASSPATH=$(findJar datawave-poller):${CLASSPATH}
 CLASSPATH=$(findJar Common-Util):${CLASSPATH}
 
 #
@@ -58,12 +56,6 @@ then
 fi
 
 RETURN_CODE_2=255
-if ((`pgrep -f "\-Dapp=PollerMetricsSummaryLoader" | wc -l`==0))
-then
-	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar nsa.datawave.metrics.analytic.PollerMetricsSummaryLoader -Dapp=PollerMetricsSummaryLoader $SCHEDULER_OPTIONS \
-	-libjars $LIBJARS -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD $@
-	RETURN_CODE_2=$?
-fi
 
 RETURN_CODE_3=255
 if ((`pgrep -f "\-Dapp=QueryMetricsSummaryLoader" | wc -l`==0))

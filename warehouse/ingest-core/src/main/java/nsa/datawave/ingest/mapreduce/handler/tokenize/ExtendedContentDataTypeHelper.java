@@ -403,8 +403,8 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
     }
     
     /**
-     * Since this helper may be used in the RecordReader during ingest as opposed to in the event poller, all configs will be loaded which means that the
-     * data.name value is actually random. We need to override getType to return the correct one.
+     * Since this helper may be used in the RecordReader during ingest, all configs will be loaded which means that the data.name value is actually random. We
+     * need to override getType to return the correct one.
      */
     @Override
     public Type getType() {

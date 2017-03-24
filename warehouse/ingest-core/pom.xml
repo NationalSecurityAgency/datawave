@@ -38,11 +38,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-poller</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>nsa.datawave.webservice</groupId>
             <artifactId>Common-Util</artifactId>
             <version>${project.version}</version>

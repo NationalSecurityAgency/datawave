@@ -47,15 +47,6 @@ ONE_HR_CHILD_REDUCE_MAX_MEMORY_MB, Amount of Java heap for one hour child ingest
 ONE_HR_INGEST_DATA_TYPES, CSV list of datatypes to run in the one hour ingest slot.
 #ONE_HR_INGEST_GROUPING, String to use for grouping files for a one hour ingest job based on dates ("yyyy/MM/dd", "yyyy/MM", "yyyy", or "none").
 ONE_HR_INGEST_REDUCERS, Number of reducers for the one hour ingest slot.
-POLLER_CLIENT_OPTS, CSV list of options for each datatype's poller process whose offset is aligned to POLLER_DATA_TYPES.
-POLLER_DATA_TYPES, CSV list of datatypes to run in the poller
-POLLER_FIFTEEN_MIN_FILE_BLOCK_SIZE_MB, Minimum sequence file size to create for fifteen minute datatypes.
-POLLER_FIVE_MIN_FILE_BLOCK_SIZE_MB, Minimum sequence file size to create for five minute datatypes.
-POLLER_INPUT_DIRECTORIES, CSV of local directories whose offset is aligned to POLLER_DATA_TYPES.
-POLLER_JMX_PORT_START, Port used for remote JMX calls to the poller process.
-POLLER_ONE_HR_FILE_BLOCK_SIZE_MB, Target size for one hour sequence files created by the poller.
-POLLER_OUTPUT_DIRECTORIES, CSV list of local output directories by the poller whose offset is aligned to POLLER_DATA_TYPES.
-POLLER_THREADS, Number of threads to run inside of a single poller instance.
 PROTOBUF_EDGE_TABLE_NAME,  Name of the DATAWAVE protocol buffer enabled edge table
 PYTHON, Path to Python executable.
 RCPT_TO, CSV list of email address to mail for various messages.
@@ -65,7 +56,6 @@ SHARD_REVERSE_INDEX_TABLE_NAME, Name of the DATAWAVE global reverse index, usual
 SHARD_TABLE_NAME, Name of the DATAWAVE date-partitioned, with in-partition index, table, usually 'shard'.
 DATE_INDEX_TABLE_NAME, Name of the DATAWAVE date index table, usually 'dateIndex'.
 SHARD_INDEX_STATS_TABLE_NAME, Name of the Accumulo table used for keeping statistics about the global forward index, usually 'shardIndexStats'
-STAGING_HOSTS, CSV of hosts that will run DATAWAVE pollers.
 USERNAME, Accumulo user name, currently the same across warehouse and ingest clusters.
 WAREHOUSE_ACCUMULO_HOME, Local installation of Accumulo for the warehouse cluster.
 WAREHOUSE_HADOOP_CONF, Path on local disk to Hadoop configuration for the warehouse cluster.

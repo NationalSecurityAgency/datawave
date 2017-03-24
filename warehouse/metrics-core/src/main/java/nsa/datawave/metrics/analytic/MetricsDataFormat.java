@@ -9,8 +9,8 @@ public class MetricsDataFormat {
     public static final int BULK_LENGTH = 6;
     
     public static enum MetricsField {
-        EVENT_COUNT("Event Count"), POLLER_DURATION("Poller Process"), INGEST_DELAY("Sequence File on HDFS"), INGEST_DURATION("Ingest Process"), LOADER_DELAY(
-                        "R File on HDFS"), LOADER_DURATION("Loader Process");
+        EVENT_COUNT("Event Count"), RAWFILE_TRANSFORM_DURATION("Raw File Transform Process"), INGEST_DELAY("Sequence File on HDFS"), INGEST_DURATION(
+                        "Ingest Process"), LOADER_DELAY("R File on HDFS"), LOADER_DURATION("Loader Process");
         
         private String str;
         

@@ -18,7 +18,6 @@
         <module>edge-dictionary-core</module>
         <module>data-dictionary-core</module>
         <module>ingest-core</module>
-        <module>poller</module>
         <module>query-core</module>
         <module>ingest-core-configuration</module>
         <module>ingest-csv</module>
@@ -27,10 +26,6 @@
         <module>assemble-core</module>
         <module>ingest-wikipedia</module>
         <module>metrics-core</module>
-        <module>metrics-dashboard-web-core</module>
-        <module>metrics-ingest-web-core</module>
-        <module>metrics-query-web-core</module>
-        <module>metrics-web-core</module>
         <module>operationTools</module>
     </modules>
     <scm>
@@ -196,35 +191,6 @@
             <dependency>
                 <groupId>nsa.datawave</groupId>
                 <artifactId>datawave-metrics-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-metrics-dashboard-web-core</artifactId>
-                <version>${project.version}</version>
-                <type>war</type>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-metrics-ingest-web-core</artifactId>
-                <version>${project.version}</version>
-                <type>war</type>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-metrics-query-web-core</artifactId>
-                <version>${project.version}</version>
-                <type>war</type>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-metrics-web-core</artifactId>
-                <version>${project.version}</version>
-                <type>war</type>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-poller</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

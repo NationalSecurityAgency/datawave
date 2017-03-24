@@ -7,8 +7,8 @@ import nsa.datawave.ingest.data.RawRecordContainer;
 import nsa.datawave.ingest.data.config.NormalizedContentInterface;
 import nsa.datawave.ingest.mapreduce.job.BulkIngestKey;
 import nsa.datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
-import nsa.datawave.poller.manager.mapreduce.StandaloneStatusReporter;
-import nsa.datawave.poller.manager.mapreduce.StandaloneTaskAttemptContext;
+import nsa.datawave.ingest.mapreduce.StandaloneStatusReporter;
+import nsa.datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;

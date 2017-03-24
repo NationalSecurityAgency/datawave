@@ -63,7 +63,7 @@ public class SnowflakeUIDTest {
         assertTrue(uid.compare(new SnowflakeUID(BigInteger.ONE, 10), uid) < 0);
         assertTrue(uid.getMachineId() < 0);
         assertTrue(uid.getNodeId() < 0);
-        assertTrue(uid.getPollerId() < 0);
+        assertTrue(uid.getProcessId() < 0);
         assertTrue(uid.getThreadId() < 0);
         assertTrue(uid.getTimestamp() < 0);
         assertNotEquals(false, uid.hashCode());
@@ -83,7 +83,7 @@ public class SnowflakeUIDTest {
         assertNull(result1.newId(System.currentTimeMillis(), 0).getSnowflake());
         assertNull(result1.newId(System.currentTimeMillis()).getSnowflake());
         
-        // Test node, poller, sequence ID based builder
+        // Test node, process, sequence ID based builder
         SnowflakeUIDBuilder result2 = SnowflakeUID.builder(255, 63, 63);
         assertNotNull(result2);
         result2.setRadix(6);
@@ -136,10 +136,10 @@ public class SnowflakeUIDTest {
         }
         assertNotNull(result9);
         
-        // Test poller ID validation
+        // Test process ID validation
         Exception result10 = null;
         try {
-            new SnowflakeUIDBuilder(System.currentTimeMillis(), 0, SnowflakeUID.MAX_POLLER_ID + 1, 0, 0);
+            new SnowflakeUIDBuilder(System.currentTimeMillis(), 0, SnowflakeUID.MAX_PROCESS_ID + 1, 0, 0);
         } catch (IllegalArgumentException e) {
             result10 = e;
         }
@@ -187,7 +187,7 @@ public class SnowflakeUIDTest {
         String result2 = result1.getBaseUid();
         long result3 = result1.getTimestamp();
         int result4 = result1.getNodeId();
-        int result5 = result1.getPollerId();
+        int result5 = result1.getProcessId();
         int result6 = result1.getThreadId();
         int result7 = result1.getMachineId();
         int result8 = result1.getSequenceId();
@@ -221,7 +221,7 @@ public class SnowflakeUIDTest {
         String result2 = result1.getBaseUid();
         long result3 = result1.getTimestamp();
         int result4 = result1.getNodeId();
-        int result5 = result1.getPollerId();
+        int result5 = result1.getProcessId();
         int result6 = result1.getThreadId();
         int result7 = result1.getMachineId();
         int result8 = result1.getSequenceId();
@@ -286,7 +286,7 @@ public class SnowflakeUIDTest {
         assertNotEquals(timestamp, uid.getTimestamp());
         assertEquals(SnowflakeUID.MAX_MACHINE_ID, uid.getMachineId());
         assertEquals(SnowflakeUID.MAX_NODE_ID, uid.getNodeId());
-        assertEquals(SnowflakeUID.MAX_POLLER_ID, uid.getPollerId());
+        assertEquals(SnowflakeUID.MAX_PROCESS_ID, uid.getProcessId());
         assertEquals(SnowflakeUID.MAX_THREAD_ID, uid.getThreadId());
         assertEquals(2, uid.getSequenceId());
         assertNull(uid.getExtra());
@@ -299,7 +299,7 @@ public class SnowflakeUIDTest {
         assertNotEquals(timestamp, uid.getTimestamp());
         assertEquals(SnowflakeUID.MAX_MACHINE_ID, uid.getMachineId());
         assertEquals(SnowflakeUID.MAX_NODE_ID, uid.getNodeId());
-        assertEquals(SnowflakeUID.MAX_POLLER_ID, uid.getPollerId());
+        assertEquals(SnowflakeUID.MAX_PROCESS_ID, uid.getProcessId());
         assertEquals(SnowflakeUID.MAX_THREAD_ID, uid.getThreadId());
         assertEquals(2, uid.getSequenceId());
         assertEquals("something_extra", uid.getExtra());

@@ -16,5 +16,3 @@ stop_all
 
 echo "Stopping ingesters..."
 ./stop-ingest.sh $@
-echo "Stopping pollers..."
-./stop-poller.sh $@

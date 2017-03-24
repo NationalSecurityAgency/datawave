@@ -28,7 +28,6 @@ then
 
 	CLASSPATH=datawave-metrics-core-$METRICS_VERSION.jar:${CLASSPATH}
 	CLASSPATH=datawave-ingest-core-$INGEST_VERSION.jar:${CLASSPATH}
-	CLASSPATH=datawave-poller-$INGEST_VERSION.jar:${CLASSPATH}
 
 	findJar (){
   	ls -1 $1-[0-9]*.jar | sort | tail -1

@@ -55,7 +55,7 @@ public class FlagMakerMetricsMapper extends Mapper<Text,Counters,Text,Mutation> 
         statsPersist.put("", "", new Value(serializeCounters(counters)));
         context.write(null, statsPersist);
         
-        // Breaking it down into individual counters like in the Poller... Can't get individual stats when batch-processing in the FlagMaker
+        // Breaking it down into individual counters... Can't get individual stats when batch-processing in the FlagMaker
         for (Counter c : counters.getGroup(InputFile.class.getSimpleName())) {
             Text outFile = new Text(c.getName());
             Mutation m = new Mutation(outFile);

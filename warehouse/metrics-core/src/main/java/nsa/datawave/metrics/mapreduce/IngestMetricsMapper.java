@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import nsa.datawave.ingest.metric.IngestInput;
 import nsa.datawave.ingest.metric.IngestOutput;
 import nsa.datawave.ingest.metric.IngestProcess;
-import nsa.datawave.ingest.metric.IngestOutput;
 import nsa.datawave.metrics.mapreduce.util.TypeNameConverter;
 
 import org.apache.accumulo.core.data.Mutation;
@@ -82,8 +81,8 @@ public class IngestMetricsMapper extends Mapper<Text,Counters,Text,Mutation> {
             
             String type;
             try {
-                type = typeNameConverter.convertPollerToIngest(fName.substring(0, fName.indexOf('_')));
-                type = stripPollerNumber(type);
+                type = typeNameConverter.convertRawFileTransformerToIngest(fName.substring(0, fName.indexOf('_')));
+                type = stripRawFileTransformerNumber(type);
             } catch (StringIndexOutOfBoundsException e) {
                 // From the normal ingest process, we shouldn't get here. However, when
                 // forcing test data through, sometime a file may be incorrectly named,
@@ -184,9 +183,10 @@ public class IngestMetricsMapper extends Mapper<Text,Counters,Text,Mutation> {
     }
     
     /**
-     * We can have multiple pollers per datatype, each returning a file with the prefix {type}.{number}. This method returns just the {type} portion.
+     * We can have multiple transformer processes per datatype, each returning a file with the prefix {datatype}.{transformerNumber}. This method returns just
+     * the {datatype} portion.
      */
-    public static String stripPollerNumber(String type) {
+    public static String stripRawFileTransformerNumber(String type) {
         final int wheresTheDot = type.indexOf('.');
         if (wheresTheDot == -1) {
             return type;

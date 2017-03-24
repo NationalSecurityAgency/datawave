@@ -15,7 +15,7 @@ public class FileLatency implements Writable {
     private String fileName;
     // lazily initialized durations
     private boolean areDurationsReady = false;
-    private long pollerDuration, delayPollerToIngest, ingestJobDuration, delayIngestToLoader, loaderDuration, totalLatency;
+    private long rawFileTransformDuration, delayRawFileTransformToIngest, ingestJobDuration, delayIngestToLoader, loaderDuration, totalLatency;
     private boolean hasLoaderPhase;
     
     public FileLatency(Collection<Phase> phases, long eventCount, String fileName) {
@@ -89,14 +89,14 @@ public class FileLatency implements Writable {
         return totalLatency;
     }
     
-    public long getPollerDuration() {
+    public long getRawFileTransformDuration() {
         ensureDurationsAreReady();
-        return pollerDuration;
+        return rawFileTransformDuration;
     }
     
-    public long getDelayPollerToIngest() {
+    public long getDelayRawFileTransformToIngest() {
         ensureDurationsAreReady();
-        return delayPollerToIngest;
+        return delayRawFileTransformToIngest;
     }
     
     public long getIngestJobDuration() {
@@ -127,7 +127,7 @@ public class FileLatency implements Writable {
     
     private void calculateDurations() {
         Iterator<Phase> phaseIterator = this.getPhases().iterator();
-        Phase pollerPhase = phaseIterator.next();
+        Phase rawFileTransformPhase = phaseIterator.next();
         Phase ingestJobPhase = phaseIterator.next();
         Phase loaderPhase = null;
         // only exists for bulk ingest
@@ -137,8 +137,8 @@ public class FileLatency implements Writable {
         
         this.hasLoaderPhase = (null != loaderPhase);
         
-        long receiveTime = pollerPhase.start();
-        long pollerCompletionTime = pollerPhase.end();
+        long receiveTime = rawFileTransformPhase.start();
+        long rawFileTransformCompletionTime = rawFileTransformPhase.end();
         long ingestJobStartTime = ingestJobPhase.start();
         long ingestJobCompletionTime = ingestJobPhase.end();
         long loadTime;
@@ -157,8 +157,8 @@ public class FileLatency implements Writable {
         }
         
         this.totalLatency = loadTime - receiveTime;
-        this.pollerDuration = pollerCompletionTime - receiveTime;
-        this.delayPollerToIngest = ingestJobStartTime - pollerCompletionTime;
+        this.rawFileTransformDuration = rawFileTransformCompletionTime - receiveTime;
+        this.delayRawFileTransformToIngest = ingestJobStartTime - rawFileTransformCompletionTime;
         this.ingestJobDuration = ingestJobCompletionTime - ingestJobStartTime;
         
         this.areDurationsReady = true;
@@ -178,8 +178,8 @@ public class FileLatency implements Writable {
             return false;
         return Objects.equals(this.eventCount, other.eventCount) && Objects.equals(this.fileName, other.fileName) && Objects.equals(this.phases, other.phases)
                         && Objects.equals(this.getTotalLatency(), other.getTotalLatency())
-                        && Objects.equals(this.getPollerDuration(), other.getPollerDuration())
-                        && Objects.equals(this.getDelayPollerToIngest(), other.getDelayPollerToIngest())
+                        && Objects.equals(this.getRawFileTransformDuration(), other.getRawFileTransformDuration())
+                        && Objects.equals(this.getDelayRawFileTransformToIngest(), other.getDelayRawFileTransformToIngest())
                         && Objects.equals(this.getIngestJobDuration(), other.getIngestJobDuration())
                         && Objects.equals(this.getDelayIngestToLoader(), other.getDelayIngestToLoader())
                         && Objects.equals(this.getLoaderDuration(), other.getLoaderDuration());
@@ -187,7 +187,7 @@ public class FileLatency implements Writable {
     
     @Override
     public int hashCode() {
-        return Objects.hash(this.eventCount, this.fileName, this.phases, this.getTotalLatency(), this.getPollerDuration(), this.getDelayPollerToIngest(),
-                        this.getIngestJobDuration(), this.getDelayIngestToLoader(), this.getLoaderDuration());
+        return Objects.hash(this.eventCount, this.fileName, this.phases, this.getTotalLatency(), this.getRawFileTransformDuration(),
+                        this.getDelayRawFileTransformToIngest(), this.getIngestJobDuration(), this.getDelayIngestToLoader(), this.getLoaderDuration());
     }
 }

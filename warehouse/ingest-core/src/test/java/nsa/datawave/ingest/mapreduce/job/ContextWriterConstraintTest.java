@@ -5,7 +5,7 @@ import com.google.common.collect.TreeMultimap;
 import nsa.datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import nsa.datawave.ingest.mapreduce.job.writer.BulkContextWriter;
 import nsa.datawave.ingest.mapreduce.job.writer.LiveContextWriter;
-import nsa.datawave.poller.manager.mapreduce.StandaloneTaskAttemptContext;
+import nsa.datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
