@@ -48,20 +48,6 @@ public class CompositeFieldIngestHelper implements CompositeIngest {
         compositeFieldNormalizer.setCompositeFieldDefinitions(compositeFieldDefinitions);
     }
     
-    /**
-     * @deprecated
-     */
-    public String getSep() {
-        return compositeFieldNormalizer.getSep();
-    }
-    
-    /**
-     * @deprecated
-     */
-    public void setSep(String sep) {
-        compositeFieldNormalizer.setSep(sep);
-    }
-    
     /*
      * (non-Javadoc)
      * 

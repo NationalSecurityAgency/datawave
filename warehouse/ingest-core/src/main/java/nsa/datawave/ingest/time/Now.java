@@ -63,12 +63,6 @@ public class Now {
         return now.get();
     }
     
-    /**
-     * Close is now longer needed as there is really only one underlying instance
-     */
-    @Deprecated
-    public void close() {}
-    
     public boolean equals(Object o2) {
         if (o2 instanceof Now) {
             return timer == ((Now) o2).timer && now == ((Now) o2).now;

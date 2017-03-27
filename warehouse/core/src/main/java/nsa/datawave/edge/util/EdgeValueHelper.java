@@ -66,14 +66,6 @@ public class EdgeValueHelper {
      * @deprecated As of 2.2.1, replaced by {@link nsa.datawave.edge.util.EdgeValue}
      */
     @Deprecated
-    public static List<Long> decodeCount(Key key, Value value) {
-        return decodeCount(EdgeKey.decode(key), value);
-    }
-    
-    /**
-     * @deprecated As of 2.2.1, replaced by {@link nsa.datawave.edge.util.EdgeValue}
-     */
-    @Deprecated
     public static List<Long> decodeCount(EdgeKey edgeKey, Value value) {
         List<Long> retLong = new ArrayList<>(1);
         try {

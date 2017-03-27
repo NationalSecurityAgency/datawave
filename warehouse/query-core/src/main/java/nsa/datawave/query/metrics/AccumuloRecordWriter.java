@@ -230,13 +230,6 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         }
     }
     
-    /**
-     * @deprecated Use {@link #setZooKeeperInstance(Configuration,String,String)} instead
-     */
-    public static void setZooKeeperInstance(JobContext job, String instanceName, String zooKeepers) {
-        setZooKeeperInstance(job.getConfiguration(), instanceName, zooKeepers);
-    }
-    
     public static void setZooKeeperInstance(Configuration conf, String instanceName, String zooKeepers) {
         if (conf.getBoolean(INSTANCE_HAS_BEEN_SET, false))
             throw new IllegalStateException("Instance info can only be set once per job");
@@ -247,57 +240,22 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         conf.set(ZOOKEEPERS, zooKeepers);
     }
     
-    /**
-     * @deprecated Use {@link #setMockInstance(Configuration,String)} instead
-     */
-    public static void setMockInstance(JobContext job, String instanceName) {
-        setMockInstance(job.getConfiguration(), instanceName);
-    }
-    
     public static void setMockInstance(Configuration conf, String instanceName) {
         conf.setBoolean(INSTANCE_HAS_BEEN_SET, true);
         conf.setBoolean(MOCK, true);
         conf.set(INSTANCE_NAME, instanceName);
     }
     
-    /**
-     * @deprecated Use {@link #setMaxMutationBufferSize(Configuration,long)} instead
-     */
-    public static void setMaxMutationBufferSize(JobContext job, long numberOfBytes) {
-        setMaxMutationBufferSize(job.getConfiguration(), numberOfBytes);
-    }
-    
     public static void setMaxMutationBufferSize(Configuration conf, long numberOfBytes) {
         conf.setLong(MAX_MUTATION_BUFFER_SIZE, numberOfBytes);
-    }
-    
-    /**
-     * @deprecated Use {@link #setMaxLatency(Configuration,int)} instead
-     */
-    public static void setMaxLatency(JobContext job, int numberOfMilliseconds) {
-        setMaxLatency(job.getConfiguration(), numberOfMilliseconds);
     }
     
     public static void setMaxLatency(Configuration conf, int numberOfMilliseconds) {
         conf.setInt(MAX_LATENCY, numberOfMilliseconds);
     }
     
-    /**
-     * @deprecated Use {@link #setMaxWriteThreads(Configuration,int)} instead
-     */
-    public static void setMaxWriteThreads(JobContext job, int numberOfThreads) {
-        setMaxWriteThreads(job.getConfiguration(), numberOfThreads);
-    }
-    
     public static void setMaxWriteThreads(Configuration conf, int numberOfThreads) {
         conf.setInt(NUM_WRITE_THREADS, numberOfThreads);
-    }
-    
-    /**
-     * @deprecated Use {@link #setLogLevel(Configuration,Level)} instead
-     */
-    public static void setLogLevel(JobContext job, Level level) {
-        setLogLevel(job.getConfiguration(), level);
     }
     
     public static void setLogLevel(Configuration conf, Level level) {
@@ -305,36 +263,12 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         conf.setInt(LOGLEVEL, level.toInt());
     }
     
-    /**
-     * @deprecated Use {@link #setSimulationMode(Configuration)} instead
-     */
-    public static void setSimulationMode(JobContext job) {
-        setSimulationMode(job.getConfiguration());
-    }
-    
     public static void setSimulationMode(Configuration conf) {
         conf.setBoolean(SIMULATE, true);
     }
     
-    /**
-     * @deprecated Use {@link #getUsername(Configuration)} instead
-     */
-    protected static String getUsername(JobContext job) {
-        return getUsername(job.getConfiguration());
-    }
-    
     protected static String getUsername(Configuration conf) {
         return conf.get(USERNAME);
-    }
-    
-    /**
-     * WARNING: The password is stored in the Configuration and shared with all MapReduce tasks; It is BASE64 encoded to provide a charset safe conversion to a
-     * string, and is not intended to be secure.
-     * 
-     * @deprecated Use {@link #getPassword(Configuration)} instead
-     */
-    protected static byte[] getPassword(JobContext job) {
-        return getPassword(job.getConfiguration());
     }
     
     /**
@@ -345,33 +279,12 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         return Base64.decodeBase64(conf.get(PASSWORD, "").getBytes());
     }
     
-    /**
-     * @deprecated Use {@link #canCreateTables(Configuration)} instead
-     */
-    protected static boolean canCreateTables(JobContext job) {
-        return canCreateTables(job.getConfiguration());
-    }
-    
     protected static boolean canCreateTables(Configuration conf) {
         return conf.getBoolean(CREATETABLES, false);
     }
     
-    /**
-     * @deprecated Use {@link #getDefaultTableName(Configuration)} instead
-     */
-    protected static String getDefaultTableName(JobContext job) {
-        return getDefaultTableName(job.getConfiguration());
-    }
-    
     protected static String getDefaultTableName(Configuration conf) {
         return conf.get(DEFAULT_TABLE_NAME);
-    }
-    
-    /**
-     * @deprecated Use {@link #getInstance(Configuration)} instead
-     */
-    protected static Instance getInstance(JobContext job) {
-        return getInstance(job.getConfiguration());
     }
     
     protected static Instance getInstance(Configuration conf) {
@@ -380,57 +293,22 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         return new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(conf.get(INSTANCE_NAME)).withZkHosts(conf.get(ZOOKEEPERS)));
     }
     
-    /**
-     * @deprecated Use {@link #getMaxMutationBufferSize(Configuration)} instead
-     */
-    protected static long getMaxMutationBufferSize(JobContext job) {
-        return getMaxMutationBufferSize(job.getConfiguration());
-    }
-    
     protected static long getMaxMutationBufferSize(Configuration conf) {
         return conf.getLong(MAX_MUTATION_BUFFER_SIZE, DEFAULT_MAX_MUTATION_BUFFER_SIZE);
-    }
-    
-    /**
-     * @deprecated Use {@link #getMaxLatency(Configuration)} instead
-     */
-    protected static int getMaxLatency(JobContext job) {
-        return getMaxLatency(job.getConfiguration());
     }
     
     protected static int getMaxLatency(Configuration conf) {
         return conf.getInt(MAX_LATENCY, DEFAULT_MAX_LATENCY);
     }
     
-    /**
-     * @deprecated Use {@link #getMaxWriteThreads(Configuration)} instead
-     */
-    protected static int getMaxWriteThreads(JobContext job) {
-        return getMaxWriteThreads(job.getConfiguration());
-    }
-    
     protected static int getMaxWriteThreads(Configuration conf) {
         return conf.getInt(NUM_WRITE_THREADS, DEFAULT_NUM_WRITE_THREADS);
-    }
-    
-    /**
-     * @deprecated Use {@link #getLogLevel(Configuration)} instead
-     */
-    protected static Level getLogLevel(JobContext job) {
-        return getLogLevel(job.getConfiguration());
     }
     
     protected static Level getLogLevel(Configuration conf) {
         if (conf.get(LOGLEVEL) != null)
             return Level.toLevel(conf.getInt(LOGLEVEL, Level.INFO.toInt()));
         return null;
-    }
-    
-    /**
-     * @deprecated Use {@link #getSimulationMode(Configuration)} instead
-     */
-    protected static boolean getSimulationMode(JobContext job) {
-        return getSimulationMode(job.getConfiguration());
     }
     
     protected static boolean getSimulationMode(Configuration conf) {

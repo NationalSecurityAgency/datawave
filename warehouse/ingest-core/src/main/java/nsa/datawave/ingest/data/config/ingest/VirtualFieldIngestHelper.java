@@ -40,20 +40,6 @@ public class VirtualFieldIngestHelper implements VirtualIngest {
         virtualFieldNormalizer.setVirtualFieldDefinitions(virtualFieldDefinitions);
     }
     
-    /**
-     * @deprecated
-     */
-    public String getSep() {
-        return virtualFieldNormalizer.getSep();
-    }
-    
-    /**
-     * @deprecated
-     */
-    public void setSep(String sep) {
-        virtualFieldNormalizer.setSep(sep);
-    }
-    
     @Override
     public String getDefaultVirtualFieldSeparator() {
         return virtualFieldNormalizer.getDefaultSeparator();
