@@ -65,7 +65,7 @@ public class SharedTriState implements Closeable, SharedTriStateReader, Listenab
     
     public void setState(STATE newState) throws Exception {
         this.sharedValue.setValue(toBytes(newState));
-        log.debug("someone setState to " + newState);
+        log.trace("setState(" + newState + ")");
     }
     
     public boolean trySetState(STATE newState) throws Exception {

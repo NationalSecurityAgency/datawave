@@ -141,7 +141,7 @@ public class RefactoredShardQueryConfigurationFactory {
         
         config.setAllowShortcutEvaluation(configuredLogic.getAllowShortcutEvaluation());
         config.setAllowFieldIndexEvaluation(configuredLogic.isAllowFieldIndexEvaluation());
-        config.setBypassAccumulo(configuredLogic.getBypassAccumulo());
+        config.setBypassAccumulo(configuredLogic.isBypassAccumulo());
         config.setSpeculativeScanning(configuredLogic.getSpeculativeScanning());
         config.setLimitFields(configuredLogic.getLimitFields());
         config.setBackoffEnabled(configuredLogic.getBackoffEnabled());

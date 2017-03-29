@@ -54,6 +54,7 @@ public class TestBaseQueryLogic {
         expect(this.copy.getMarkingFunctions()).andReturn(null);
         expect(this.copy.getResponseObjectFactory()).andReturn(null);
         expect(this.copy.getSelectorExtractor()).andReturn(null);
+        expect(this.copy.isBypassAccumulo()).andReturn(false);
         
         // Run the test
         PowerMock.replayAll();

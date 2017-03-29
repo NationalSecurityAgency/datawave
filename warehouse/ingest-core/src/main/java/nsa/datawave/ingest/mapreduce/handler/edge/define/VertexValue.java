@@ -1,8 +1,8 @@
 package nsa.datawave.ingest.mapreduce.handler.edge.define;
 
-import java.util.Map;
-
 import nsa.datawave.ingest.data.config.NormalizedContentInterface;
+
+import java.util.Map;
 
 /**
  * Combines a VertexDefinition with value obtained from a {@link nsa.datawave.ingest.data.config.NormalizedContentInterface}.
@@ -14,7 +14,7 @@ public class VertexValue {
         INDEXED, EVENT
     };
     
-    private String inexedFieldName = null;
+    private String indexedFieldName = null;
     private String indexedFieldValue = null;
     private String eventFieldName = null;
     private String eventFieldValue = null;
@@ -29,12 +29,14 @@ public class VertexValue {
     private String relationshipType = null;
     private String collectionType = null;
     
+    public VertexValue() {}
+    
     public VertexValue(boolean useRealm, String indexedRealmLabel, String eventRealmLabel, String relationshipType, String collectionType,
                     NormalizedContentInterface nci) {
         
         this.relationshipType = relationshipType;
         this.collectionType = collectionType;
-        this.inexedFieldName = nci.getIndexedFieldName();
+        this.indexedFieldName = nci.getIndexedFieldName();
         this.indexedFieldValue = nci.getIndexedFieldValue();
         this.eventFieldName = nci.getEventFieldName();
         this.eventFieldValue = nci.getEventFieldValue();
@@ -94,8 +96,12 @@ public class VertexValue {
         this.hasMaskedValue = masked;
     }
     
+    public void setFieldName(String indexedFieldName) {
+        this.indexedFieldName = indexedFieldName;
+    }
+    
     public String getFieldName() {
-        return inexedFieldName;
+        return indexedFieldName;
     }
     
     public String getRelationshipIndex() {
@@ -144,6 +150,14 @@ public class VertexValue {
     
     public String getRelationshipType() {
         return relationshipType != null ? relationshipType : null;
+    }
+    
+    public void setCollectionType(String collectionType) {
+        this.collectionType = collectionType;
+    }
+    
+    public void setRelationshipType(String relationshipType) {
+        this.relationshipType = relationshipType;
     }
     
     @Override

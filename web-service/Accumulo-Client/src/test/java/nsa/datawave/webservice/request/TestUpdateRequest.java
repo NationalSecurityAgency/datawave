@@ -1,15 +1,14 @@
 package nsa.datawave.webservice.request;
 
-import java.net.URL;
-import java.util.Collections;
-
-import nsa.datawave.webservice.objects.OptionallyEncodedString;
+import nsa.datawave.webservice.query.util.OptionallyEncodedString;
 import nsa.datawave.webservice.request.objects.Mutation;
 import nsa.datawave.webservice.request.objects.MutationEntry;
 import nsa.datawave.webservice.request.objects.TableUpdate;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.net.URL;
+import java.util.Collections;
 
 public class TestUpdateRequest {
     

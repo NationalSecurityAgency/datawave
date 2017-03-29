@@ -416,13 +416,19 @@ public class SharedCacheCoordinator implements Serializable {
         Preconditions.checkArgument(!sharedBooleans.containsKey(booleanName), "Boolean " + booleanName + " has already been registered!");
         
         SharedBoolean sharedBoolean = new SharedBoolean(curatorClient, ZKPaths.makePath("/booleans", booleanName), seedValue);
-        log.debug("table:" + booleanName + " created a sharedBoolean:" + sharedBoolean);
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + booleanName + " created a sharedBoolean:" + sharedBoolean);
+        }
         sharedBoolean.start();
         sharedBooleans.put(booleanName, sharedBoolean);
-        log.debug("table:" + booleanName + " sharedBooleans has:" + sharedBooleans);
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + booleanName + " sharedBooleans has:" + sharedBooleans);
+        }
         localBooleans.put(booleanName, sharedBoolean.getBoolean());
-        log.debug("table:" + booleanName + " localBooleans has:" + localBooleans);
-        log.debug("table:" + booleanName + " registered a boolean that is " + sharedBoolean.getBoolean());
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + booleanName + " localBooleans has:" + localBooleans);
+            log.trace("table:" + booleanName + " registered a boolean that is " + sharedBoolean.getBoolean());
+        }
         sharedBoolean.addListener(listener);
     }
     
@@ -442,8 +448,10 @@ public class SharedCacheCoordinator implements Serializable {
         
         SharedBoolean sharedBoolean = sharedBooleans.get(booleanName);
         Preconditions.checkArgument(sharedBoolean != null, "Invalid boolean name: " + booleanName);
-        log.debug("table:" + booleanName + " got " + sharedBoolean + " from " + sharedBooleans);
-        log.debug("table:" + booleanName + " checking to see if sharedBoolean " + sharedBoolean + " is the same as expected value:" + expectedValue);
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + booleanName + " got " + sharedBoolean + " from " + sharedBooleans);
+            log.trace("table:" + booleanName + " checking to see if sharedBoolean " + sharedBoolean + " is the same as expected value:" + expectedValue);
+        }
         return sharedBoolean.getBoolean() == expectedValue;
     }
     
@@ -451,15 +459,19 @@ public class SharedCacheCoordinator implements Serializable {
      * Sets the shared distributed boolean named {@code booleanName} to the passed state value.
      */
     public void setBoolean(String booleanName, boolean state) throws Exception {
-        log.info("table:" + booleanName + " someone wants to setBoolean to " + state);
+        log.trace("table:" + booleanName + " setBoolean(" + state + ")");
         ArgumentChecker.notNull(booleanName);
         
         SharedBoolean sharedBoolean = sharedBooleans.get(booleanName);
         Preconditions.checkArgument(sharedBoolean != null, "Invalid boolean name: " + booleanName);
-        log.debug("table:" + booleanName + " got " + sharedBoolean + " from " + sharedBooleans);
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + booleanName + " got " + sharedBoolean + " from " + sharedBooleans);
+        }
         
         boolean newBoolean = state;
-        log.debug("table:" + booleanName + " put(" + booleanName + ", " + state + ")" + "into localBooleans:" + localBooleans);
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + booleanName + " put(" + booleanName + ", " + state + ")" + "into localBooleans:" + localBooleans);
+        }
         int tries = 0;
         while (!sharedBoolean.trySetBoolean(newBoolean)) {
             newBoolean = state;
@@ -475,9 +487,11 @@ public class SharedCacheCoordinator implements Serializable {
             }
         }
         localBooleans.put(booleanName, state);
-        log.debug("table:" + booleanName + " sharedBoolean now:" + sharedBoolean);
-        log.debug("table:" + booleanName + " localBooleans:" + localBooleans);
-        log.debug("table:" + booleanName + " sharedBooleans:" + sharedBooleans);
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + booleanName + " sharedBoolean now:" + sharedBoolean);
+            log.trace("table:" + booleanName + " localBooleans:" + localBooleans);
+            log.trace("table:" + booleanName + " sharedBooleans:" + sharedBooleans);
+        }
     }
     
     // tristate
@@ -495,10 +509,13 @@ public class SharedCacheCoordinator implements Serializable {
             log.trace("table:" + triStateName + " created a sharedTriState:" + sharedTriState);
         sharedTriState.start();
         sharedTriStates.put(triStateName, sharedTriState);
-        log.debug("table:" + triStateName + " sharedTriStates has:" + sharedTriStates);
+        if (log.isTraceEnabled())
+            log.trace("table:" + triStateName + " sharedTriStates has:" + sharedTriStates);
         localTriStates.put(triStateName, sharedTriState.getState());
-        log.debug("table:" + triStateName + " localTriStates has:" + localTriStates);
-        log.debug("table:" + triStateName + " registered a TriState that is " + sharedTriState.getState());
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + triStateName + " localTriStates has:" + localTriStates);
+            log.trace("table:" + triStateName + " registered a TriState that is " + sharedTriState.getState());
+        }
         sharedTriState.addListener(listener);
     }
     
@@ -518,8 +535,10 @@ public class SharedCacheCoordinator implements Serializable {
         
         SharedTriState sharedTriState = sharedTriStates.get(triStateName);
         Preconditions.checkArgument(sharedTriState != null, "Invalid TriState name: " + triStateName);
-        log.debug("table:" + triStateName + " got " + sharedTriState + " from " + sharedTriStates);
-        log.debug("table:" + triStateName + " checking to see if sharedTriState " + sharedTriState + " is the same as expected value:" + expectedValue);
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + triStateName + " got " + sharedTriState + " from " + sharedTriStates);
+            log.trace("table:" + triStateName + " checking to see if sharedTriState " + sharedTriState + " is the same as expected value:" + expectedValue);
+        }
         return sharedTriState.getState() == expectedValue;
     }
     
@@ -527,33 +546,26 @@ public class SharedCacheCoordinator implements Serializable {
      * Changes the shared distributed triState named {@code triStateName} to the passed value.
      */
     public void setTriState(String triStateName, SharedTriState.STATE state) throws Exception {
-        log.info("table:" + triStateName + " someone wants to setTriState to " + state);
+        log.trace("table:" + triStateName + " setTriState(" + state + ")");
         ArgumentChecker.notNull(triStateName);
         
         SharedTriState sharedTriState = sharedTriStates.get(triStateName);
         Preconditions.checkArgument(sharedTriState != null, "Invalid state name: " + triStateName);
-        log.debug("table:" + triStateName + " got " + sharedTriState + " from " + sharedTriStates);
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + triStateName + " got " + sharedTriState + " from " + sharedTriStates);
+        }
         
         SharedTriState.STATE newTriState = state;
-        log.debug("table:" + triStateName + " put(" + triStateName + ", " + state + ")" + "into localTriStates:" + localTriStates);
-        int tries = 0;
-        while (!sharedTriState.trySetState(newTriState)) {
-            newTriState = state;
-            if (++tries >= maxRetries) {
-                // We've exceeded our max tries to update the triState. Try to re-register it and also throw an exception to
-                // indicate that we didn't necessarily update the shared triState.
-                sharedTriStates.remove(triStateName);
-                sharedTriState.removeListener(sharedTriStateListeners.get(triStateName));
-                sharedTriState.close();
-                reregisterTriState(triStateName, sharedTriStateListeners.get(triStateName), newTriState);
-                throw new IllegalStateException("table:" + triStateName + " Unable to update shared TriState " + triStateName + " to " + state + " after "
-                                + maxRetries + " attempts. Zookeeper connection may be down.");
-            }
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + triStateName + " put(" + triStateName + ", " + state + ")" + "into localTriStates:" + localTriStates);
         }
+        sharedTriState.setState(newTriState);
         localTriStates.put(triStateName, state);
-        log.debug("table:" + triStateName + " sharedTriState now:" + sharedTriState);
-        log.debug("table:" + triStateName + " localTriStates:" + localTriStates);
-        log.debug("table:" + triStateName + " sharedTriStates:" + sharedTriStates);
+        if (log.isTraceEnabled()) {
+            log.trace("table:" + triStateName + " sharedTriState now:" + sharedTriState);
+            log.trace("table:" + triStateName + " localTriStates:" + localTriStates);
+            log.trace("table:" + triStateName + " sharedTriStates:" + sharedTriStates);
+        }
     }
     
     /**

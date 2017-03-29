@@ -15,7 +15,7 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
 
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Uses the SharedCacheCoordinator to register listeners so that when an event is fired (for example, when a new model is loaded) the TypeMetadata map will be
@@ -136,7 +136,7 @@ public class MetadataHelperUpdateHdfsListener {
                         }
                         watcher.setTriState(triStateName, SharedTriState.STATE.UPDATING);
                         if (log.isDebugEnabled()) {
-                            log.debug("table:" + metadataTableName + "  " + this + " setTriState to UPDATING");
+                            log.debug("table:" + metadataTableName + " " + this + " setTriState to UPDATING");
                         }
                         // get a connection for my MetadataHelper, and get the TypeMetadata map
                         ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(this.instance)
@@ -144,14 +144,14 @@ public class MetadataHelperUpdateHdfsListener {
                         Connector connector = instance.getConnector(this.username, new PasswordToken(this.password));
                         metadataHelper.initialize(connector, "DatawaveMetadata", allMetadataAuths);
                         this.typeMetadataWriter.writeTypeMetadataMap(this.metadataHelper.getTypeMetadataMap(), metadataTableName);
-                        if (log.isDebugEnabled())
+                        if (log.isDebugEnabled()) {
                             log.debug("table:" + metadataTableName + " " + this + " set the sharedTriState needsUpdate to UPDATED for " + metadataTableName);
+                        }
                         watcher.setTriState(triStateName, SharedTriState.STATE.UPDATED);
                     } else {
-                        if (log.isDebugEnabled()) {
+                        if (log.isDebugEnabled())
                             log.debug("table:" + metadataTableName + " " + this
                                             + "  STATE is not NEEDS_UPDATE! Someone else may be writing the TypeMetadata map, just release the lock");
-                        }
                     }
                 } catch (Exception ex) {
                     log.warn("table:" + metadataTableName + " Unable to write TypeMetadataMap for " + metadataTableName, ex);

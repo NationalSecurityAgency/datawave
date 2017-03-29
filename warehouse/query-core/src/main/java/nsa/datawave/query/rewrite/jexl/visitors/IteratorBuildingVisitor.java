@@ -275,7 +275,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             limitedMap = Maps.newHashMap();
         }
         Object obj = super.visit(node, data);
-        if (obj == null && delayedEqNodes.size() == 1) {
+        if (root == null && delayedEqNodes.size() == 1) {
             JexlNode eqNode = delayedEqNodes.iterator().next();
             obj = visit((ASTEQNode) eqNode, data);
         }

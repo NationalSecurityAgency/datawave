@@ -17,7 +17,7 @@ import org.apache.commons.codec.binary.Base64;
  * encoded.
  * <p>
  * <strong>Note:</strong> Consider not using this class directly, but rather keeping your underlying type as a string, and using the
- * {@link #OptionallyEncodedStringAdapter} instead. Here is an example:
+ * {@link OptionallyEncodedStringAdapter} instead. Here is an example:
  * 
  * <pre>
  *     &#64;XmlRootElement
@@ -46,7 +46,7 @@ import org.apache.commons.codec.binary.Base64;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class OptionallyEncodedString {
     
-    @XmlAttribute(required = false)
+    @XmlAttribute
     private Boolean base64Encoded = null;
     
     @XmlValue
@@ -64,7 +64,7 @@ public class OptionallyEncodedString {
     
     public String getValue() {
         if (this.base64Encoded != null && this.base64Encoded.equals(Boolean.TRUE)) {
-            byte[] incoming = null;
+            byte[] incoming;
             String decoded = null;
             
             try {
@@ -86,8 +86,7 @@ public class OptionallyEncodedString {
         try {
             byte[] incoming = value.getBytes("UTF-8");
             if (this.base64Encoded != null && this.base64Encoded.equals(Boolean.TRUE)) {
-                byte[] decoded = Base64.decodeBase64(incoming);
-                return decoded;
+                return Base64.decodeBase64(incoming);
             } else {
                 return incoming;
             }

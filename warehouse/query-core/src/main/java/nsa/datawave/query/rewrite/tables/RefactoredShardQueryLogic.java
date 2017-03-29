@@ -255,11 +255,6 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     private boolean allowFieldIndexEvaluation = true;
     
     /**
-     * By default don't allow accumulo bypass
-     */
-    private boolean bypassAccumulo = false;
-    
-    /**
      * By default don't use speculative scanning.
      */
     private boolean speculativeScanning = false;
@@ -484,7 +479,6 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.setCardinalityConfiguration(other.getCardinalityConfiguration());
         this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
         this.setAllowFieldIndexEvaluation(other.isAllowFieldIndexEvaluation());
-        this.setBypassAccumulo(other.getBypassAccumulo());
         this.setSpeculativeScanning(other.speculativeScanning);
         this.setBackoffEnabled(other.getBackoffEnabled());
         this.setUnsortedUIDsEnabled(other.getUnsortedUIDsEnabled());
@@ -1029,7 +1023,12 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
             config.setTypeMetadataInHdfs(typeMetadataInHdfsBool);
         }
         
-        config.setMetadataTableName(this.metadataTableName);
+        // Get the BYPASS_ACCUMULO parameter if given
+        String bypassAccumuloString = settings.findParameter(BYPASS_ACCUMULO).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(bypassAccumuloString)) {
+            Boolean bypassAccumuloBool = Boolean.parseBoolean(bypassAccumuloString);
+            config.setBypassAccumulo(bypassAccumuloBool);
+        }
         
         // Get the DATE_INDEX_TIME_TRAVEL parameter if given
         String dateIndexTimeTravelString = settings.findParameter(QueryOptions.DATE_INDEX_TIME_TRAVEL).getParameterValue().trim();
@@ -2138,14 +2137,6 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     public void setLimitAnyFieldLookups(boolean limitAnyFieldLookups) {
         this.limitAnyFieldLookups = limitAnyFieldLookups;
-    }
-    
-    public boolean getBypassAccumulo() {
-        return bypassAccumulo;
-    }
-    
-    public void setBypassAccumulo(boolean bypassAccumulo) {
-        this.bypassAccumulo = bypassAccumulo;
     }
     
     public boolean getSpeculativeScanning() {

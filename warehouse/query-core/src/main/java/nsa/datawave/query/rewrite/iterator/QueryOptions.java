@@ -300,22 +300,11 @@ public class QueryOptions implements OptionDescriber {
     
     protected Queue<Entry<Range,String>> batchStack;
     
-    protected TypeMetadataProvider typeMetadataProvider = new TypeMetadataProvider();
+    protected TypeMetadataProvider typeMetadataProvider;
     
     protected int batchedQueries = 0;
     
     protected String metadataTableName;
-    
-    public QueryOptions() {
-        try {
-            this.typeMetadataProvider = TypeMetadataProvider.Factory.createTypeMetadataProvider();
-            log.debug("made a typeMetadataProvider:" + typeMetadataProvider);
-            log.debug("and the bridge has uri: " + this.typeMetadataProvider.getBridge().getUri());
-        } catch (Throwable th) {
-            // for now, do not allow problems with the TypeMetadataProvider to affect instantiation.
-            log.info("was unable to create a TypeMetadataProvider from its Factory: ", th);
-        }
-    }
     
     protected boolean dateIndexTimeTravel = false;
     
@@ -458,19 +447,35 @@ public class QueryOptions implements OptionDescriber {
         // first, we will see it the query passed over the serialized TypeMetadata.
         // If it did, use that.
         if (this.typeMetadata != null && this.typeMetadata.size() != 0) {
-            log.debug("the query passed the typeMetadata");
+            
             return this.typeMetadata;
             
             // if the query did not contain the TypeMetadata in its options,
             // (the TypeMetadata class member is empty) we will attempt to
             // use the hdfs typeMetadata from the TypeMetadataProvider. The query will have sent
             // us the auths to use as a key:
-        } else if (this.metadataTableName != null && this.typeMetadataAuthsKey != null && this.typeMetadataProvider != null) {
-            TypeMetadata typeMetadata = this.typeMetadataProvider.getTypeMetadata(this.metadataTableName, this.typeMetadataAuthsKey);
-            if (typeMetadata != null) {
-                log.debug("got a typeMetadata from hdfs");
-                log.debug("and the bridge uri is " + typeMetadataProvider.getBridge().getUri());
-                return typeMetadata;
+        } else if (this.metadataTableName != null && this.typeMetadataAuthsKey != null) {
+            log.debug("the query did not pass the typeMetadata");
+            // lazily create a typeMetadataProvider if we don't already have one
+            if (this.typeMetadataProvider == null) {
+                try {
+                    this.typeMetadataProvider = TypeMetadataProvider.Factory.createTypeMetadataProvider();
+                    if (log.isTraceEnabled()) {
+                        log.trace("made a typeMetadataProvider:" + typeMetadataProvider);
+                    }
+                } catch (Throwable th) {
+                    // for now, do not allow problems with the TypeMetadataProvider to affect instantiation.
+                    log.info("was unable to create a TypeMetadataProvider from its Factory: ", th);
+                }
+            }
+            if (this.typeMetadataProvider != null) {
+                TypeMetadata typeMetadata = this.typeMetadataProvider.getTypeMetadata(this.metadataTableName, this.typeMetadataAuthsKey);
+                if (typeMetadata != null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("got a typeMetadata from hdfs and the bridge uri is " + typeMetadataProvider.getBridge().getUri());
+                    }
+                    return typeMetadata;
+                }
             }
         }
         log.debug("making a nothing typeMetadata");

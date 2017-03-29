@@ -3,8 +3,12 @@ package nsa.datawave.ingest.mapreduce.handler.edge;
 import com.google.common.base.Charsets;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.hash.*;
-
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnel;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+import com.google.common.hash.PrimitiveSink;
 import nsa.datawave.data.normalizer.DateNormalizer;
 import nsa.datawave.data.type.LcNoDiacriticsType;
 import nsa.datawave.edge.protobuf.EdgeData.MetadataValue.Metadata;
@@ -16,31 +20,26 @@ import nsa.datawave.ingest.data.Type;
 import nsa.datawave.ingest.data.TypeRegistry;
 import nsa.datawave.ingest.data.config.ConfigurationHelper;
 import nsa.datawave.ingest.data.config.DataTypeHelper;
-import nsa.datawave.ingest.data.config.DataTypeHelperImpl;
 import nsa.datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import nsa.datawave.ingest.data.config.NormalizedContentInterface;
 import nsa.datawave.ingest.data.config.ingest.BaseIngestHelper;
 import nsa.datawave.ingest.data.config.ingest.IngestHelperInterface;
 import nsa.datawave.ingest.mapreduce.EventMapper;
 import nsa.datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
-
-import nsa.datawave.ingest.mapreduce.handler.edge.evaluation.EdgePreconditionCacheHelper;
-import nsa.datawave.ingest.mapreduce.handler.edge.evaluation.EdgePreconditionJexlContext;
-import nsa.datawave.ingest.mapreduce.handler.edge.evaluation.EdgePreconditionJexlEvaluation;
-
 import nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDataBundle;
 import nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
 import nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
 import nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDirection;
 import nsa.datawave.ingest.mapreduce.handler.edge.define.VertexValue;
 import nsa.datawave.ingest.mapreduce.handler.edge.define.VertexValue.ValueType;
-
+import nsa.datawave.ingest.mapreduce.handler.edge.evaluation.EdgePreconditionCacheHelper;
+import nsa.datawave.ingest.mapreduce.handler.edge.evaluation.EdgePreconditionJexlContext;
+import nsa.datawave.ingest.mapreduce.handler.edge.evaluation.EdgePreconditionJexlEvaluation;
 import nsa.datawave.ingest.mapreduce.job.BulkIngestKey;
 import nsa.datawave.ingest.mapreduce.job.writer.ContextWriter;
 import nsa.datawave.ingest.metadata.RawRecordMetadata;
 import nsa.datawave.ingest.table.config.LoadDateTableConfigHelper;
 import nsa.datawave.ingest.time.Now;
-import nsa.datawave.marking.FlattenedVisibilityCache;
 import nsa.datawave.marking.MarkingFunctions;
 import nsa.datawave.util.StringUtils;
 import nsa.datawave.util.time.DateHelper;
@@ -61,21 +60,20 @@ import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.Map;
-import java.util.List;
-import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.Set;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Date;
-import java.util.Calendar;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
-import java.util.Collection;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static nsa.datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_LOADER_PRIORITY;
 import static nsa.datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_NAME;
@@ -118,7 +116,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     public static final String INCLUDE_ALL_EDGES = "protobufedge.include.all.edges";
     
-    private static final long ONE_DAY = 1000 * 60 * 60 * 24;
+    protected static final long ONE_DAY = 1000 * 60 * 60 * 24;
     private static final Now now = Now.getInstance();
     
     private Map<String,Map<String,String>> edgeTypeLookup = new HashMap<>();
@@ -142,12 +140,15 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     private Map<String,IngestHelperInterface> helpers = null;
     private Map<String,EdgeDefinitionConfigurationHelper> edges = null;
     
-    private TaskAttemptContext taskAttemptContext = null;
-    private boolean useStatsLogBloomFilter = false;
-    private FailurePolicy setUpFailurePolicy = FailurePolicy.FAIL_JOB;
+    protected TaskAttemptContext taskAttemptContext = null;
+    protected boolean useStatsLogBloomFilter = false;
+    protected FailurePolicy setUpFailurePolicy = FailurePolicy.FAIL_JOB;
     protected FailurePolicy processFailurePolicy = FailurePolicy.FAIL_JOB;
     
-    private EdgeKeyVersioningCache versioningCache = null;
+    protected EdgeKeyVersioningCache versioningCache = null;
+    
+    protected HashSet<String> edgeRelationships = new HashSet<>();
+    protected HashSet<String> collectionType = new HashSet<>();
     
     long futureDelta, pastDelta;
     long newFormatStartDate;
@@ -158,14 +159,16 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     @Override
     public void setup(TaskAttemptContext context) {
-        this.taskAttemptContext = context;
-        
         log.info("Running SpringProtobuf Edge Handler setup");
+        this.taskAttemptContext = context;
+        setup(context.getConfiguration());
+    }
+    
+    public void setup(Configuration conf) {
         
         markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
         
         // This will fail if the TypeRegistry has not been initialized in the VM.
-        Configuration conf = context.getConfiguration();
         TypeRegistry registry = TypeRegistry.getInstance(conf);
         
         // Grab the edge table name
@@ -239,11 +242,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
         registry.put(EDGE_DEFAULT_DATA_TYPE, null);
         
-        HashSet<String> edgeRelationships, collectionType;
+        // HashSet<String> edgeRelationships, collectionType;
         
         if (ctx.containsBean(EDGE_SPRING_RELATIONSHIPS) && ctx.containsBean(EDGE_SPRING_COLLECTIONS)) {
-            edgeRelationships = (HashSet<String>) ctx.getBean(EDGE_SPRING_RELATIONSHIPS);
-            collectionType = (HashSet<String>) ctx.getBean(EDGE_SPRING_COLLECTIONS);
+            edgeRelationships.addAll((HashSet<String>) ctx.getBean(EDGE_SPRING_RELATIONSHIPS));
+            collectionType.addAll((HashSet<String>) ctx.getBean(EDGE_SPRING_COLLECTIONS));
         } else {
             log.error("Edge relationships and or collection types are not configured correctly. Cannot build edge definitions");
             if (setUpFailurePolicy == FailurePolicy.FAIL_JOB) {
@@ -340,7 +343,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
         
         // instantiate ingest helpers for each type
-        this.setupIngestHelpers(context, registry); // fills out helpers Map
+        this.setupIngestHelpers(this.taskAttemptContext, registry); // fills out helpers Map
         
         log.info("Found edge definitions for " + edges.keySet().size() + " data types.");
         
@@ -398,10 +401,10 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
     }
     
-    private static final class KeyFunnel implements Funnel<Key> {
+    protected static final class KeyFunnel implements Funnel<Key> {
         
         /**
-         * 
+         *
          */
         private static final long serialVersionUID = 3536725437637012624L;
         
@@ -448,7 +451,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         return false;
     }
     
-    private void setupIngestHelpers(TaskAttemptContext context, TypeRegistry registry) {
+    protected void setupIngestHelpers(TaskAttemptContext context, TypeRegistry registry) {
         /**
          * Set up the ingest helpers for the known datatypes.
          */
@@ -476,11 +479,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     }
     
     // used so we don't write duplicate stats entries for events with multiple field values;
-    private Set<HashCode> activityLog = null;
-    private Set<HashCode> durationLog = null;
+    protected Set<HashCode> activityLog = null;
+    protected Set<HashCode> durationLog = null;
     
-    private BloomFilter<Key> activityLogBloom = null;
-    private BloomFilter<Key> durationLogBloom = null;
+    protected BloomFilter<Key> activityLogBloom = null;
+    protected BloomFilter<Key> durationLogBloom = null;
     
     @Override
     public long process(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
@@ -604,14 +607,18 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          */
         for (EdgeDefinition edgeDef : edgeDefs) {
             
+            String enrichmentFieldName = getEnrichmentFieldName(edgeDef);
+            String jexlPreconditions = null;
+            
             /**
              * Fail fast for setting up precondition evaluations
              */
             if (evaluatePreconditions) {
                 
                 if (edgeDef.hasJexlPrecondition()) {
+                    jexlPreconditions = edgeDef.getJexlPrecondition();
                     long start = System.currentTimeMillis();
-                    if (!edgePreconditionEvaluation.apply(scriptCache.get(edgeDef.getJexlPrecondition()))) {
+                    if (!edgePreconditionEvaluation.apply(scriptCache.get(jexlPreconditions))) {
                         
                         if (log.isTraceEnabled()) {
                             log.trace("Time to evaluate event(-): " + (System.currentTimeMillis() - start) + "ms.");
@@ -679,7 +686,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                                 edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsAcquisition, event.getDate());
                                 
                                 if (this.enableMetadata) {
-                                    registerEventMetadata(eventMetadataRegistry, edgeDef, edgeValue);
+                                    registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPreconditions);
                                 }
                             }
                             
@@ -703,7 +710,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                                     edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsAcquisition, event.getDate());
                                     
                                     if (this.enableMetadata) {
-                                        registerEventMetadata(eventMetadataRegistry, edgeDef, edgeValue);
+                                        registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPreconditions);
                                     }
                                 }
                             }
@@ -828,7 +835,12 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     protected void maskEdge(EdgeDataBundle edgeDataBundle, RawRecordContainer record) {}
     
-    private void registerEventMetadata(Map<Key,Set<Metadata>> eventMetadataRegistry, EdgeDefinition edgeDef, EdgeDataBundle edgeValue) {
+    protected void registerEventMetadata(Map<Key,Set<Metadata>> eventMetadataRegistry, String enrichmentFieldName, EdgeDataBundle edgeValue) {
+        registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, null);
+    }
+    
+    private void registerEventMetadata(Map<Key,Set<Metadata>> eventMetadataRegistry, String enrichmentFieldName, EdgeDataBundle edgeValue,
+                    String jexlPrecondition) {
         // add to the eventMetadataRegistry map
         Key baseKey = createMetadataEdgeKey(edgeValue, edgeValue.getSource(), edgeValue.getSource().getIndexedFieldValue(), edgeValue.getSink(), edgeValue
                         .getSink().getIndexedFieldValue(), this.getVisibility(edgeValue));
@@ -848,22 +860,32 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                         .setDate(DateHelper.format(new Date(edgeValue.getEventDate())));
         Metadata.Builder reverseBuilder = Metadata.newBuilder().setDate(DateHelper.format(new Date(edgeValue.getEventDate())))
                         .setSource(edgeValue.getSink().getFieldName()).setSink(edgeValue.getSource().getFieldName());
-        if (edgeDef.isEnrichmentEdge()) {
-            forwardBuilder.setEnrichment(edgeDef.getEnrichmentField()).setEnrichmentIndex(edgeValue.getEnrichedIndex());
-            reverseBuilder.setEnrichment(edgeDef.getEnrichmentField()).setEnrichmentIndex(edgeValue.getEnrichedIndex());
+        if (enrichmentFieldName != null) {
+            forwardBuilder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeValue.getEnrichedIndex());
+            reverseBuilder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeValue.getEnrichedIndex());
         }
         
-        if (edgeDef.hasJexlPrecondition()) {
-            forwardBuilder.setJexlPrecondition(edgeDef.getJexlPrecondition());
-            reverseBuilder.setJexlPrecondition(edgeDef.getJexlPrecondition());
+        if (jexlPrecondition != null) {
+            forwardBuilder.setJexlPrecondition(jexlPrecondition);
+            reverseBuilder.setJexlPrecondition(jexlPrecondition);
         }
         
         eventMetadataRegistry.get(fwdMetaKey).add(forwardBuilder.build());
         eventMetadataRegistry.get(revMetaKey).add(reverseBuilder.build());
     }
     
-    private void writeMetadataMap(TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
+    private String getEnrichmentFieldName(EdgeDefinition edgeDef) {
+        return (edgeDef.isEnrichmentEdge() ? edgeDef.getEnrichmentField() : null);
+    }
+    
+    protected void writeMetadataMap(TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
                     ContextWriter<KEYOUT,VALUEOUT> contextWriter, Map<Key,Set<Metadata>> metadataRegistry) throws IOException, InterruptedException {
+        writeMetadataMap(context, contextWriter, metadataRegistry, this.metadataTableName);
+    }
+    
+    protected void writeMetadataMap(TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
+                    ContextWriter<KEYOUT,VALUEOUT> contextWriter, Map<Key,Set<Metadata>> metadataRegistry, String tableName) throws IOException,
+                    InterruptedException {
         for (Entry<Key,Set<Metadata>> entry : metadataRegistry.entrySet()) {
             Key metaKey = entry.getKey();
             nsa.datawave.edge.protobuf.EdgeData.MetadataValue.Builder valueBuilder = nsa.datawave.edge.protobuf.EdgeData.MetadataValue.newBuilder();
@@ -871,7 +893,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             nsa.datawave.edge.protobuf.EdgeData.MetadataValue value = valueBuilder.build();
             
             // write out a metadataRegistry key
-            BulkIngestKey bulk = new BulkIngestKey(new Text(this.metadataTableName), metaKey);
+            BulkIngestKey bulk = new BulkIngestKey(new Text(tableName), metaKey);
             contextWriter.write(bulk, new Value(value.toByteArray()), context);
         }
     }
@@ -910,7 +932,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     /*
      * This part makes the determination as to what type of edge key to build
      */
-    private long writeEdges(EdgeDataBundle value, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
+    protected long writeEdges(EdgeDataBundle value, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
                     ContextWriter<KEYOUT,VALUEOUT> contextWriter, boolean validActivtyDate, boolean sameActivityDate, long acquisitionDate) throws IOException,
                     InterruptedException {
         
@@ -933,7 +955,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         return edgesCreated;
     }
     
-    private long writeEdges(EdgeDataBundle value, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
+    protected long writeEdges(EdgeDataBundle value, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
                     ContextWriter<KEYOUT,VALUEOUT> contextWriter, EdgeKey.DATE_TYPE date_type) throws IOException, InterruptedException {
         
         // the number of key values that have been written
@@ -1040,7 +1062,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         return createEdgeKey(edgeValue, source, sourceValue, sink, sinkValue, visibility, truncatedEventDate, EdgeKey.DATE_TYPE.OLD_ACQUISITION);
     }
     
-    private Key createEdgeKey(EdgeDataBundle edgeValue, VertexValue source, String sourceValue, VertexValue sink, String sinkValue, Text visibility,
+    protected Key createEdgeKey(EdgeDataBundle edgeValue, VertexValue source, String sourceValue, VertexValue sink, String sinkValue, Text visibility,
                     EdgeKey.DATE_TYPE date_type) {
         return createEdgeKey(edgeValue, source, sourceValue, sink, sinkValue, visibility, edgeValue.getEventDate(), date_type);
     }
@@ -1059,7 +1081,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         return key;
     }
     
-    private Key createStatsKey(STATS_TYPE statsType, EdgeDataBundle edgeValue, VertexValue vertex, String value, Text visibility, EdgeKey.DATE_TYPE date_type) {
+    protected Key createStatsKey(STATS_TYPE statsType, EdgeDataBundle edgeValue, VertexValue vertex, String value, Text visibility, EdgeKey.DATE_TYPE date_type) {
         String typeName = edgeValue.getDataTypeName();
         nsa.datawave.edge.util.EdgeKey.EdgeKeyBuilder builder = nsa.datawave.edge.util.EdgeKey.newBuilder(EDGE_FORMAT.STATS).escape();
         builder.setSourceData(value).setStatsType(statsType).setType(edgeValue.getEdgeType()).setYyyymmdd(edgeValue.getYyyyMMdd(date_type))
@@ -1119,7 +1141,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
     }
     
-    private int writeKey(Key key, Value val, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
+    protected int writeKey(Key key, Value val, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
                     ContextWriter<KEYOUT,VALUEOUT> contextWriter) throws IOException, InterruptedException {
         if (key == null)
             return 0;
@@ -1212,7 +1234,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
     }
     
-    private Text getDurationVisibility(EdgeDataBundle value) {
+    protected Text getDurationVisibility(EdgeDataBundle value) {
         if (value.getForceMaskedVisibility()) {
             return new Text(flatten(value.getMaskedVisibility()));
         } else {

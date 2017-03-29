@@ -44,6 +44,9 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     @Inject
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
+    protected boolean bypassAccumulo;
+    
+    public static final String BYPASS_ACCUMULO = "rfile.debug";
     
     /**
      * Override number of results to return in a query, will not be higher that what is set in the web service configuration.
@@ -74,6 +77,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setMarkingFunctions(other.getMarkingFunctions());
         setResponseObjectFactory(other.getResponseObjectFactory());
         setSelectorExtractor(other.getSelectorExtractor());
+        setBypassAccumulo(other.isBypassAccumulo());
     }
     
     public MarkingFunctions getMarkingFunctions() {
@@ -178,6 +182,14 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     @Override
     public void setLogicName(String logicName) {
         this.logicName = logicName;
+    }
+    
+    public boolean isBypassAccumulo() {
+        return bypassAccumulo;
+    }
+    
+    public void setBypassAccumulo(boolean bypassAccumulo) {
+        this.bypassAccumulo = bypassAccumulo;
     }
     
     @Override

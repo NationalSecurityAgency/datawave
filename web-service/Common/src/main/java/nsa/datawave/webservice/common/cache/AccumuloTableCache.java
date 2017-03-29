@@ -130,18 +130,20 @@ public class AccumuloTableCache {
                 cacheCoordinator.registerTriState(tableName + ":needsUpdate", new SharedTriStateListener() {
                     @Override
                     public void stateHasChanged(SharedTriStateReader reader, SharedTriState.STATE value) throws Exception {
-                        if (log.isDebugEnabled())
+                        if (log.isDebugEnabled()) {
                             log.debug("table:" + tableName + " stateHasChanged(" + reader + ", " + value + "). This listener does nothing");
+                        }
                     }
                     
                     @Override
                     public void stateChanged(CuratorFramework client, ConnectionState newState) {
-                        if (log.isDebugEnabled())
+                        if (log.isDebugEnabled()) {
                             log.debug("table:" + tableName + " stateChanged(" + client + ", " + newState + "). This listener does nothing");
+                        }
                     }
                 });
             } catch (Exception e) {
-                e.printStackTrace();
+                log.debug("Failure registering a triState for " + tableName, e);
             }
             
             try {
@@ -266,16 +268,16 @@ public class AccumuloTableCache {
             log.error("Unable to send message about cache reload");
         }
         handleReload(tableName);
-        log.debug("table:" + tableName + " in reloadCache, called handleReloadTypeMetadata(" + tableName + ")");
         handleReloadTypeMetadata(tableName);
         return response;
     }
     
     private void handleReloadTypeMetadata(String tableName) {
         try {
+            log.debug("table:" + tableName + " handleReloadTypeMetadata(" + tableName + ")");
             details.get(tableName).getWatcher().setTriState(tableName + ":needsUpdate", SharedTriState.STATE.NEEDS_UPDATE);
-        } catch (Exception e) {
-            log.warn("table:" + tableName + " could not update the triState '" + tableName + ":needsUpdate' on watcher for table " + tableName, e);
+        } catch (Throwable e) {
+            log.debug("table:" + tableName + " could not update the triState '" + tableName + ":needsUpdate' on watcher for table " + tableName, e);
         }
         
     }

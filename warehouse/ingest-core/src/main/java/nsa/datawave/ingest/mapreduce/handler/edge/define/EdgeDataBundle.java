@@ -1,10 +1,5 @@
 package nsa.datawave.ingest.mapreduce.handler.edge.define;
 
-import java.io.IOException;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-
 import nsa.datawave.edge.util.EdgeKey;
 import nsa.datawave.edge.util.EdgeValue.EdgeValueBuilder;
 import nsa.datawave.edge.util.EdgeValueHelper;
@@ -14,16 +9,17 @@ import nsa.datawave.ingest.data.config.MaskedFieldHelper;
 import nsa.datawave.ingest.data.config.NormalizedContentInterface;
 import nsa.datawave.ingest.data.config.ingest.IngestHelperInterface;
 import nsa.datawave.ingest.mapreduce.handler.edge.define.VertexValue.ValueType;
-import nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
-import nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDirection;
 import nsa.datawave.marking.MarkingFunctions;
 import nsa.datawave.marking.MarkingFunctions.Exception;
-import nsa.datawave.marking.MarkingFunctionsFactory;
 import nsa.datawave.util.time.DateHelper;
-
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Combines an EdgeDefinition with values obtained from Event data.
@@ -71,26 +67,31 @@ public class EdgeDataBundle {
     private long activityDate;
     private boolean validActivityDate;
     
-    public EdgeDataBundle(EdgeDefinition edgeDef, NormalizedContentInterface ifaceSource, NormalizedContentInterface ifaceSink, RawRecordContainer event,
-                    IngestHelperInterface helper) {
-        
+    public EdgeDataBundle(RawRecordContainer event, String typeName, String id, IngestHelperInterface helper) {
         this.mf = MarkingFunctions.Factory.createMarkingFunctions();
         this.event = event;
+        this.eventDate = event.getDate();
+        this.edgeType = typeName;
+        this.uuid = id;
+        this.helper = helper;
+    }
+    
+    public EdgeDataBundle(EdgeDefinition edgeDef, NormalizedContentInterface ifaceSource, NormalizedContentInterface ifaceSink, RawRecordContainer event,
+                    IngestHelperInterface helper) {
+        this(event, edgeDef.getEdgeType().toString(), null, helper);
+        
         this.setSource(new VertexValue(edgeDef.isUseRealm(), edgeDef.getSourceIndexedFieldRealm(), edgeDef.getSourceEventFieldRealm(), edgeDef
                         .getSourceRelationship(), edgeDef.getSourceCollection(), ifaceSource));
         this.setSink(new VertexValue(edgeDef.isUseRealm(), edgeDef.getSinkIndexedFieldRealm(), edgeDef.getSourceEventFieldRealm(), edgeDef
                         .getSinkRelationship(), edgeDef.getSinkCollection(), ifaceSink));
         this.edgeDefinition = edgeDef;
         
-        this.edgeType = edgeDef.getEdgeType().toString();
         this.edgeDirection = edgeDef.getDirection();
-        this.eventDate = event.getDate();
         if (event.getAltIds() != null && event.getAltIds().size() > 0) {
             this.uuid = event.getAltIds().iterator().next();
         }
         // even though event, etc references are saved above, passing in the event
         // prevents future bug
-        
         this.initFieldMasking(helper, event);
         this.initMarkings(getSource().getMarkings(), getSink().getMarkings());
     }
@@ -327,6 +328,10 @@ public class EdgeDataBundle {
         } else {
             return DateHelper.format(this.eventDate);
         }
+    }
+    
+    public String getUuid() {
+        return this.uuid;
     }
     
     public String getEnrichedValue() {

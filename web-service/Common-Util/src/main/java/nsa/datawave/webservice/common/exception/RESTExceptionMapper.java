@@ -35,12 +35,6 @@ public class RESTExceptionMapper implements ExceptionMapper<Exception> {
     @Override
     public Response toResponse(Exception e) {
         
-        Level level = Level.TRACE;
-        if (e instanceof LoggableFailure) {
-            level = Level.WARN;
-        }
-        log.log(level, "Turning this exception into a response", e);
-        
         synchronized (lock) {
             if (null == RESPONSE_ORIGIN) {
                 RESPONSE_ORIGIN = System.getProperty("cluster.name") + "/" + System.getProperty("jboss.host.name");
@@ -58,6 +52,12 @@ public class RESTExceptionMapper implements ExceptionMapper<Exception> {
         if ((e instanceof EJBException) && ((e.getCause() instanceof WebApplicationException) || (e.getCause() instanceof QueryException))) {
             e = (Exception) e.getCause();
         }
+        
+        Level level = Level.TRACE;
+        if (!(e instanceof WebApplicationException) || ((WebApplicationException) e).getResponse().getStatus() >= 500) {
+            level = Level.WARN;
+        }
+        log.log(level, "Turning this exception into a response", e);
         
         if (e instanceof WebApplicationException) {
             WebApplicationException web = (WebApplicationException) e;
