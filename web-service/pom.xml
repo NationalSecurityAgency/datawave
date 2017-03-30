@@ -28,7 +28,6 @@
         <module>EdgeDictionary</module>
         <module>Atom</module>
         <module>Query-WebSocket</module>
-        <module>Query-HUD</module>
         <module>WebRoot</module>
         <module>Modification</module>
         <module>Rest-API</module>
