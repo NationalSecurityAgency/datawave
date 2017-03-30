@@ -297,7 +297,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         PropogatingCombiner propAgg = null;
         
         for (Entry<String,String> familyOption : options.entrySet()) {
-            Combiner agg = createAggregator(familyOption.getValue());
+            Object agg = createAggregator(familyOption.getValue());
             if (agg instanceof PropogatingCombiner) {
                 propAgg = PropogatingCombiner.class.cast(agg);
                 propAgg.setPropogate(shouldPropogate);
@@ -319,32 +319,12 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
      * @param options
      * @return
      */
-    private Combiner createAggregator(String className) {
-        Combiner a = null;
+    private Object createAggregator(String className) {
         try {
-            Class<? extends Combiner> clazz = null;
-            if (null != env.getConfig()) {
-                String context = env.getConfig().get(Property.TABLE_CLASSPATH);
-                if (null != context && !context.equals("")) {
-                    clazz = AccumuloVFSClassLoader.getContextManager().loadClass(context, className, Combiner.class);
-                } else {
-                    clazz = AccumuloVFSClassLoader.loadClass(className, Combiner.class);
-                }
-            } else {
-                clazz = AccumuloVFSClassLoader.loadClass(className, Combiner.class);
-            }
-            a = clazz.newInstance();
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("class not found: " + className);
-        } catch (InstantiationException e) {
-            throw new IllegalArgumentException("instantiation exception: " + className);
-        } catch (IllegalAccessException e) {
-            throw new IllegalArgumentException("illegal access exception: " + className);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("IO Exception: " + className);
+            return this.getClass().getClassLoader().loadClass(className).newInstance();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Exception while attempting to create : " + className);
         }
-        
-        return a;
     }
     
 }

@@ -32,29 +32,10 @@ for arg in $@; do
   fi
 done
 
-PID=`ps -wwef | egrep "bash .*one-hr-ingest-server.sh" | grep -v grep | awk {'print $2'}`
-if [ -z "$PID" ]; then
-        echo "no one hour ingest server running"
-else
-        echo "stopping one hour ingest server $SIGNAL"
-        kill $SIGNAL $PID
-fi
 
-PID=`ps -wwef | egrep "bash .*fifteen-min-ingest-server.sh" | grep -v grep | awk {'print $2'}`
-if [ -z "$PID" ]; then
-        echo "no fifteen minute ingest server running"
-else
-        echo "stopping fifteen minute ingest server $SIGNAL"
-        kill $SIGNAL $PID
-fi
+STOP_INGEST_SERVERS_CMD=$THIS_DIR/stop-ingest-servers.sh
 
-PID=`ps -wwef | egrep "bash .*five-min-ingest-server.sh" | grep -v grep | awk {'print $2'}`
-if [ -z "$PID" ]; then
-        echo "no five minute ingest server running"
-else
-        echo "stopping five minute ingest server $SIGNAL"
-        kill $SIGNAL $PID
-fi
+$STOP_INGEST_SERVERS_CMD -type all -signal $SIGNAL
 
 ./kill-jobs-regex.sh '.*IngestJob.*'
 

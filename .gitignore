@@ -1,6 +1,6 @@
 **/bin
 # Don't ignore the scripts bin dirs
-!**/scripts/src/**/bin/
+!**/scripts-core/src/**/bin/
 !**/web-service-ear/src/main/wildfly/overlay/bin
 !**/web-service-deployment/web-service-ear/src/main/wildfly/overlay/bin
 **/*.iml

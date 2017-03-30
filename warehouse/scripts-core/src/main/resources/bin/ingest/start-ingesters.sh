@@ -43,33 +43,12 @@ fi
 echo "LOG_DIR:" $LOG_DIR
 echo "FLAG_DIR:" $FLAG_DIR
 
+START_INGEST_SERVERS_CMD=$THIS_DIR/start-ingest-servers.sh
 CLEAN_CMD=$THIS_DIR/start-cleaner.sh
 MAPFILE_LOADER_CMD=$THIS_DIR/start-loader.sh
 FLAG_MAKER_CMD=$THIS_DIR/start-flag-maker.sh
 
-PID=`ps -wwef | egrep "bash .*one-hr-ingest-server.sh" | grep -v  grep | awk {'print $2'}`
-if [ -z $PID ]; then
-        echo "starting one hour ingest server"
-        ./one-hr-ingest-server.sh $PWD $FLAG_DIR $LOG_DIR> $LOG_DIR/one-hr-ingest.log 2>&1 &
-else
-        echo "one hour ingest server already running"
-fi
-
-PID=`ps -wwef | egrep "bash .*fifteen-min-ingest-server.sh" | grep -v  grep | awk {'print $2'}`
-if [ -z $PID ]; then
-        echo "starting fifteen minute ingest server"
-        ./fifteen-min-ingest-server.sh $PWD $FLAG_DIR $LOG_DIR> $LOG_DIR/fifteen-min-ingest.log 2>&1 &
-else
-        echo "fifteen minute ingest server already running"
-fi
-
-PID=`ps -wwef | egrep "bash .*five-min-ingest-server.sh" | grep -v  grep | awk {'print $2'}`
-if [ -z $PID ]; then
-        echo "starting five minute ingest server"
-        ./five-min-ingest-server.sh $PWD $FLAG_DIR $LOG_DIR> $LOG_DIR/five-min-ingest.log 2>&1 &
-else
-        echo "five minute ingest server already running"
-fi
+$START_INGEST_SERVERS_CMD -type all
 
 sleep 1
 
