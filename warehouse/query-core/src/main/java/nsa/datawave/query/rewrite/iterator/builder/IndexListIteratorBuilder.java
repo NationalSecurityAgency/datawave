@@ -14,6 +14,7 @@ import nsa.datawave.query.rewrite.iterator.logic.IndexIteratorBridge;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -27,6 +28,7 @@ import org.apache.lucene.util.fst.FST;
 public class IndexListIteratorBuilder extends IvaratorBuilder implements IteratorBuilder {
     private static Logger log = Logger.getLogger(IndexListIteratorBuilder.class);
     
+    protected FileSystem fstHdfsFileSystem;
     protected Boolean negated;
     protected Set<String> values;
     protected URI fstURI;
@@ -50,6 +52,14 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
         }
         setValue(builder.toString());
         this.values = values;
+    }
+    
+    public FileSystem getFstHdfsFileSystem() {
+        return fstHdfsFileSystem;
+    }
+    
+    public void setFstHdfsFileSystem(FileSystem fstHdfsFileSystem) {
+        this.fstHdfsFileSystem = fstHdfsFileSystem;
     }
     
     public URI getFstURI() {
@@ -91,7 +101,7 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                                     ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles,
                                     hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
                 } else {
-                    FST fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstURI), hdfsFileCompressionCodec, hdfsFileSystem);
+                    FST fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstURI), hdfsFileCompressionCodec, fstHdfsFileSystem);
                     listIterator = new DatawaveFieldIndexListIteratorJexl(new Text(field), fst, this.timeFilter, this.datatypeFilter, negated,
                                     ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles,
                                     hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);

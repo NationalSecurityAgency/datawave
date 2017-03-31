@@ -1137,6 +1137,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
         if (parameters.containsKey(ExceededOrThresholdMarkerJexlNode.FST_URI_PROP)) {
             builder.setFstURI((URI) parameters.get(ExceededOrThresholdMarkerJexlNode.FST_URI_PROP));
+            builder.setFstHdfsFileSystem(hdfsFileSystem.getFileSystem(builder.getFstURI()));
         }
         
         builder.canBuildDocument(!limitLookup && this.isQueryFullySatisfied);
