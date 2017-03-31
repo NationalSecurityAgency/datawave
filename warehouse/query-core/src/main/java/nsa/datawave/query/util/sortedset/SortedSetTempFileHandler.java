@@ -48,4 +48,8 @@ public class SortedSetTempFileHandler implements SortedSetFileHandler {
         this.file.delete();
     }
     
+    @Override
+    public String toString() {
+        return file.toString();
+    }
 }

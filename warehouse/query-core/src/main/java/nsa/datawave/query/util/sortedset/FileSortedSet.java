@@ -18,6 +18,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import nsa.datawave.webservice.query.exception.DatawaveErrorCode;
 import nsa.datawave.webservice.query.exception.QueryException;
+import org.apache.log4j.Logger;
 
 /**
  * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
@@ -28,6 +29,7 @@ import nsa.datawave.webservice.query.exception.QueryException;
  * @param <E>
  */
 public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
+    private static Logger log = Logger.getLogger(FileSortedSet.class);
     protected boolean persisted = false;
     protected SortedSet<E> set = null;
     // A null entry placeholder
@@ -150,6 +152,10 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
     private void persist(SortedSet<E> set) throws IOException {
         boolean verified = false;
         Exception failure = null;
+        if (log.isDebugEnabled()) {
+            log.debug("Persisting " + handler);
+        }
+        long start = System.currentTimeMillis();
         for (int i = 0; i < 10 && !verified; i++) {
             try {
                 int actualSize = 0;
@@ -193,7 +199,12 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
                 }
                 
                 verified = true;
+                if (log.isDebugEnabled()) {
+                    long delta = System.currentTimeMillis() - start;
+                    log.debug("Persisting " + handler + " took " + delta + "ms");
+                }
             } catch (Exception e) {
+                log.warn("Attempt #" + i + " failed to persist " + handler);
                 // ok, try again
                 failure = e;
             }
@@ -718,6 +729,15 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
             } else {
                 return set.comparator().compare(o1, o2) == 0;
             }
+        }
+    }
+    
+    @Override
+    public String toString() {
+        if (persisted) {
+            return handler.toString();
+        } else {
+            return set.toString();
         }
     }
     

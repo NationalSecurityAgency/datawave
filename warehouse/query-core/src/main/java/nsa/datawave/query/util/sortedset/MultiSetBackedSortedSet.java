@@ -158,4 +158,9 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
         }
         return lastSet.last();
     }
+    
+    @Override
+    public String toString() {
+        return sets.toString();
+    }
 }

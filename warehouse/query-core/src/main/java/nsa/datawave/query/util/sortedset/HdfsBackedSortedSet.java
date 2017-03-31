@@ -83,8 +83,13 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         public SortedSetFileHandler createHandler() throws IOException {
             // generate a unique file name
             fileCount++;
-            Path file = new Path(uniqueDir, FILENAME_PREFIX + fileCount);
+            Path file = new Path(uniqueDir, FILENAME_PREFIX + fileCount + '.' + System.currentTimeMillis());
             return new SortedSetHdfsFileHandler(fs, file);
+        }
+        
+        @Override
+        public String toString() {
+            return uniqueDir.toString() + " (fileCount=" + fileCount + ')';
         }
         
     }
@@ -100,11 +105,17 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         
         @Override
         public InputStream getInputStream() throws IOException {
+            if (log.isDebugEnabled()) {
+                log.debug("Creating " + file);
+            }
             return fs.open(file);
         }
         
         @Override
         public OutputStream getOutputStream() throws IOException {
+            if (log.isDebugEnabled()) {
+                log.debug("Reading " + file);
+            }
             return fs.create(file);
         }
         
@@ -122,12 +133,20 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         @Override
         public void deleteFile() {
             try {
+                if (log.isDebugEnabled()) {
+                    log.debug("Deleting " + file);
+                }
                 if (!fs.delete(file, true)) {
                     log.error("Failed to delete file " + file + ": delete returned false");
                 }
             } catch (IOException e) {
                 log.error("Failed to delete file " + file, e);
             }
+        }
+        
+        @Override
+        public String toString() {
+            return file.toString();
         }
         
     }

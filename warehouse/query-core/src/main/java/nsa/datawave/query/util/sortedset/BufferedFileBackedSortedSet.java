@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.SortedSet;
 
 import nsa.datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
+import org.apache.log4j.Logger;
 
 /**
  * This is a sorted set that will hold up to a specified number of entries before flushing the data to disk. Files will be created as needed. An additional
@@ -19,6 +20,7 @@ import nsa.datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
  * @param <E>
  */
 public class BufferedFileBackedSortedSet<E extends Serializable> implements SortedSet<E> {
+    private static final Logger log = Logger.getLogger(BufferedFileBackedSortedSet.class);
     protected static final int DEFAULT_BUFFER_PERSIST_THRESHOLD = 1000;
     protected static final int DEFAULT_MAX_OPEN_FILES = 100;
     
@@ -150,6 +152,10 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     public Iterator<E> iterator() {
         // first lets compact down the sets if needed
         try {
+            // if we have any persisted sets, then ensure we are persisted
+            if (set.getSets().size() > 1) {
+                persist();
+            }
             compact(maxOpenFiles);
         } catch (IOException ioe) {
             throw new RuntimeException("Unable to compact file backed sorted set", ioe);
@@ -159,7 +165,10 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     
     public void compact(int maxFiles) throws IOException {
         // if we have more sets than we are allowed, then we need to compact this down
-        if (maxFiles > 0) {
+        if (maxFiles > 0 && set.getSets().size() > maxFiles) {
+            if (log.isDebugEnabled()) {
+                log.debug("Compacting " + handlerFactory);
+            }
             while (set.getSets().size() > maxFiles) {
                 List<SortedSet<E>> sets = set.getSets();
                 int numSets = sets.size();
@@ -183,7 +192,16 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
                     }
                 }
                 if (!setToCompact.isEmpty()) {
-                    newSet.addSet(compact(setToCompact));
+                    if (log.isDebugEnabled()) {
+                        log.debug("Starting compaction for " + setToCompact);
+                    }
+                    long start = System.currentTimeMillis();
+                    FileSortedSet<E> compaction = compact(setToCompact);
+                    if (log.isDebugEnabled()) {
+                        long delta = System.currentTimeMillis() - start;
+                        log.debug("Compacted " + setToCompact + " -> " + compaction + " in " + delta + "ms");
+                    }
+                    newSet.addSet(compaction);
                     setToCompact.clear();
                 }
                 this.set = newSet;
