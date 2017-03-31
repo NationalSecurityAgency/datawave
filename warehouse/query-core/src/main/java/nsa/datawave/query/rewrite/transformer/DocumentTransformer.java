@@ -426,7 +426,10 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
         if (timestamp == Long.MAX_VALUE) {
             String row = documentKey.getRow().toString();
             dataDate = DateHelper.parseWithGMT(row);
-            log.debug("Document.getTimestamp() returned Log.MAX_VALUE - " + documentKey.toString() + " - computed dataDate from row: " + dataDate.toString());
+            if (log.isTraceEnabled()) {
+                log.trace("Document.getTimestamp() returned Log.MAX_VALUE - " + documentKey.toString() + " - computed dataDate from row: "
+                                + dataDate.toString());
+            }
         } else {
             dataDate = new Date(timestamp);
         }
