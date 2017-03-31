@@ -841,7 +841,7 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
      */
     public String getIndexedFieldDataTypesAsString() {
         
-        if (null == this.getIndexedFields()) {
+        if (null == this.getIndexedFields() || this.getIndexedFields().isEmpty()) {
             return "";
         }
         StringBuilder sb = new StringBuilder();

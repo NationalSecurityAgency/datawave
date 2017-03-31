@@ -23,9 +23,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
 
-import nsa.datawave.data.type.Type;
 import nsa.datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
 import nsa.datawave.query.rewrite.exceptions.DatawaveFatalQueryException;
 import nsa.datawave.query.rewrite.exceptions.InvalidQueryException;
@@ -60,8 +58,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     
     private RefactoredShardQueryConfiguration config;
     protected MetadataHelper metadataHelper;
+    protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
-    protected Multimap<String,Type<?>> typeMap;
     
     Map<String,String> previouslyExpanded = Maps.newHashMap();
     
@@ -76,6 +74,15 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         
         this.metadataHelper = metadataHelper;
         
+        if (config.getIndexedFields() != null && !config.getIndexedFields().isEmpty()) {
+            indexedFields = config.getIndexedFields();
+        } else {
+            try {
+                indexedFields = this.metadataHelper.getIndexedFields(config.getDatatypeFilter());
+            } catch (TableNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
         try {
             indexOnlyFields = this.metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
@@ -156,7 +163,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         if (null == script)
                             script = JexlASTHelper.parseJexlQuery(query);
                         
-                        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexOnlyFields, debug, this.metadataHelper)) {
+                        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, debug, this.metadataHelper)) {
                             
                             if (log.isTraceEnabled()) {
                                 log.trace("Need to pull up non-executable query: " + JexlStringBuildingVisitor.buildQuery(script));
@@ -165,10 +172,11 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 }
                                 DefaultQueryPlanner.logQuery(script, "Failing query:");
                             }
-                            script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, config, metadataHelper);
+                            script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, config, indexedFields, indexOnlyFields,
+                                            metadataHelper);
                             madeChange = true;
                             
-                            STATE state = ExecutableDeterminationVisitor.getState(script, config, metadataHelper, debug);
+                            STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, false, debug, metadataHelper);
                             
                             /**
                              * We could achieve better performance if we live with the small number of queries that error due to the full table scan exception.
@@ -185,10 +193,11 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                                     DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
                                     throw new DatawaveFatalQueryException(qe);
                                 }
-                                script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, config, metadataHelper);
+                                script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, config, indexedFields, indexOnlyFields,
+                                                metadataHelper);
                             }
                             
-                            state = ExecutableDeterminationVisitor.getState(script, config, metadataHelper, debug);
+                            state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, false, debug, metadataHelper);
                             
                             if (state != STATE.EXECUTABLE) {
                                 if (state == STATE.ERROR) {

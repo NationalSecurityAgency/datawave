@@ -129,6 +129,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     protected MetadataHelper helper;
     protected boolean forFieldIndex;
+    protected Set<String> indexedFields = null;
     protected Set<String> indexOnlyFields = null;
     protected RefactoredShardQueryConfiguration config;
     
@@ -162,10 +163,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return (STATE) node.jjtAccept(visitor, "");
     }
     
-    public static STATE getState(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexOnlyFields, boolean forFieldIndex,
-                    List<String> debugOutput, MetadataHelper metadataHelper) {
-        ExecutableDeterminationVisitor visitor = new ExecutableDeterminationVisitor(config, metadataHelper, forFieldIndex, debugOutput);
-        visitor.setIndexOnlyFields(indexOnlyFields);
+    public static STATE getState(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+                    boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
+        ExecutableDeterminationVisitor visitor = new ExecutableDeterminationVisitor(config, metadataHelper, forFieldIndex, debugOutput).setIndexOnlyFields(
+                        indexOnlyFields).setIndexedFields(indexedFields);
         return (STATE) node.jjtAccept(visitor, "");
     }
     
@@ -181,9 +182,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return isExecutable(node, config, helper, false, debugOutput);
     }
     
-    public static boolean isExecutable(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexOnlyFields, List<String> debugOutput,
-                    MetadataHelper metadataHelper) {
-        return isExecutable(node, config, indexOnlyFields, false, debugOutput, metadataHelper);
+    public static boolean isExecutable(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+                    List<String> debugOutput, MetadataHelper metadataHelper) {
+        return isExecutable(node, config, indexedFields, indexOnlyFields, false, debugOutput, metadataHelper);
     }
     
     public static boolean isExecutable(JexlNode node, RefactoredShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex,
@@ -192,9 +193,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return state == STATE.EXECUTABLE;
     }
     
-    public static boolean isExecutable(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexOnlyFields, boolean forFieldIndex,
-                    List<String> debugOutput, MetadataHelper metadataHelper) {
-        STATE state = getState(node, config, indexOnlyFields, forFieldIndex, debugOutput, metadataHelper);
+    public static boolean isExecutable(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+                    boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
+        STATE state = getState(node, config, indexedFields, indexOnlyFields, forFieldIndex, debugOutput, metadataHelper);
         return state == STATE.EXECUTABLE;
     }
     
@@ -440,12 +441,20 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
             if (!identifier.image.equals(Constants.ANY_FIELD)) {
-                try {
-                    if (this.helper.getIndexedFields(config.getDatatypeFilter()).contains(JexlASTHelper.deconstructIdentifier(identifier)) == false) {
-                        return true;
+                if (this.indexedFields == null) {
+                    if (config.getIndexedFields() != null && !config.getIndexedFields().isEmpty()) {
+                        this.indexedFields = config.getIndexedFields();
+                    } else {
+                        try {
+                            this.indexedFields = this.helper.getIndexedFields(config.getDatatypeFilter());
+                        } catch (Exception ex) {
+                            log.error("Could not determine whether a field is indexed", ex);
+                            throw new RuntimeException("got exception when using MetadataHelper to get indexed fields ", ex);
+                        }
                     }
-                } catch (Exception ex) {
-                    throw new RuntimeException("got exception when using MetadataHelper to get indexed fields ", ex);
+                }
+                if (this.indexedFields.contains(JexlASTHelper.deconstructIdentifier(identifier)) == false) {
+                    return true;
                 }
             }
         }
@@ -458,7 +467,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
                 this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
             } catch (TableNotFoundException e) {
                 log.error("Could not determine whether field is index only", e);
-                throw new RuntimeException(e);
+                throw new RuntimeException("got exception when using MetadataHelper to get index only fields", e);
             }
         }
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
@@ -483,6 +492,11 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     public ExecutableDeterminationVisitor setIndexOnlyFields(Set<String> indexOnlyFields) {
         this.indexOnlyFields = indexOnlyFields;
+        return this;
+    }
+    
+    public ExecutableDeterminationVisitor setIndexedFields(Set<String> indexedFields) {
+        this.indexedFields = indexedFields;
         return this;
     }
     

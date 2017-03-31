@@ -280,10 +280,10 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
         config.setDataTypes(fieldToDataTypeMap);
         config.setQueryFieldsDatatypes(fieldToDataTypeMap);
         
-        final Set<String> indexedFields = metadataHelper.getIndexedFields(null);
+        final Set<String> indexedFields = metadataHelper.getIndexedFields(dataTypes);
         config.setIndexedFields(indexedFields);
         
-        final Multimap<String,Type<?>> normalizedFields = metadataHelper.getFieldsToDatatypes(null);
+        final Multimap<String,Type<?>> normalizedFields = metadataHelper.getFieldsToDatatypes(dataTypes);
         config.setNormalizedFieldsDatatypes(normalizedFields);
         
         if (log.isTraceEnabled()) {

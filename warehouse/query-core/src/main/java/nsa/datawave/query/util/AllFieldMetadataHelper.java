@@ -173,8 +173,8 @@ public class AllFieldMetadataHelper {
      * @throws InstantiationException
      * @throws ExecutionException
      */
-    @Cacheable(value = "isIndexed", key = "{#root.target.auths,#root.target.metadataTableName,#colf,#key}", cacheManager = "metadataHelperCacheManager",
-                    sync = true)
+    @Cacheable(value = "isIndexed", key = "{#root.target.auths,#root.target.metadataTableName,#colf,#key}", cacheManager = "cacheManager", sync = true)
+    // using cache with higher maximumSize
     public Boolean isIndexed(Text colf, Entry<String,Entry<String,Set<String>>> key) throws TableNotFoundException, InstantiationException, ExecutionException {
         log.debug("cache fault for isIndexed(" + this.auths + "," + this.metadataTableName + "," + colf + "," + key + ")");
         Preconditions.checkNotNull(key);
