@@ -69,6 +69,9 @@ public class AncestorQueryIterator extends QueryIterator {
         
         super.init(source, options, env);
         
+        // force evaluation of ranges to find missed hits
+        this.mustUseFieldIndex = true;
+        
         // TODO: Figure out why this is in the TLD logic:
         
         // Replace the fieldIndexKeyDataTypeFilter with a chain of "anded" index-filtering predicates.
