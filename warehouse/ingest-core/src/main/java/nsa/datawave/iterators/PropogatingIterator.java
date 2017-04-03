@@ -315,7 +315,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     
     /**
      * Create the aggregator using the provided options.
-     * 
+     *
      * @param options
      * @return
      */

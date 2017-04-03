@@ -83,6 +83,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                 throw new RuntimeException(e);
             }
         }
+        
         try {
             indexOnlyFields = this.metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
