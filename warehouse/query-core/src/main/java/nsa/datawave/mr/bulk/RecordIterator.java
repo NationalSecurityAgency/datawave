@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -396,6 +397,19 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         SortedKeyValueIterator<Key,Value> newIter = topIter;
         
         BulkIteratorEnvironment myData = new BulkIteratorEnvironment();
+        // ensure we create the iterators in priority order
+        Collections.sort(iterators, new Comparator<AccumuloIterator>() {
+            @Override
+            public int compare(AccumuloIterator o1, AccumuloIterator o2) {
+                if (o1.getPriority() < o2.getPriority()) {
+                    return -1;
+                } else if (o1.getPriority() > o2.getPriority()) {
+                    return 1;
+                } else {
+                    return o1.getIteratorName().compareTo(o2.getIteratorName());
+                }
+            }
+        });
         for (AccumuloIterator iterator : iterators) {
             
             IteratorSetting settings = scanIterators.get(iterator.getIteratorName());
