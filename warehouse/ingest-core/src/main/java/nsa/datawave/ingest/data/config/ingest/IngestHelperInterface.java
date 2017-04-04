@@ -42,9 +42,26 @@ public interface IngestHelperInterface extends DataTypeHelper {
     
     List<Type<?>> getDataTypes(String fieldName);
     
-    Map<String,String> getNormalizedMaskedValues();
+    String getNormalizedMaskedValue(final String key);
     
-    Map<String,String> getMaskedValues();
+    /**
+     * @return true if there exists any mappings
+     */
+    boolean hasMappings();
+    
+    /**
+     * @param key
+     *            field name for which to retrieve the mapping
+     * @return true if there exists a mapping for this key else false
+     */
+    boolean contains(final String key);
+    
+    /**
+     * @param key
+     *            field name for which to retrieve the mapping
+     * @return masked value (NOT NORMALIZED)
+     */
+    String get(final String key);
     
     boolean getDeleteMode();
     

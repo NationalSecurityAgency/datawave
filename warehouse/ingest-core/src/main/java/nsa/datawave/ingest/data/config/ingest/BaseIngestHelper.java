@@ -550,26 +550,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // of MaskedFieldHelper. If so, then normalize the values
         if (embeddedHelper instanceof MaskedFieldHelper) {
             mfHelper = (MaskedFieldHelper) embeddedHelper;
-            normalizedMaskedValues = new HashMap<>();
-            maskedValues = new HashMap<>();
-            
-            // add the unmasked values to the AbstractIngestHelper protected
-            // variable
-            
-            for (Entry<String,String> e : mfHelper.getMaskedValues().entrySet()) {
-                String fieldName = aliaser.normalizeAndAlias(e.getKey());
-                if (e.getValue().isEmpty()) {
-                    normalizedMaskedValues.put(fieldName, e.getValue());
-                } else {
-                    try {
-                        normalizedMaskedValues.put(fieldName, this.normalizeFieldValue(fieldName.toUpperCase(), e.getValue()).iterator().next());
-                    } catch (Exception ex) {
-                        log.warn(this.getType().typeName() + ": Unable to normalize masked value of '" + e.getValue() + "' for " + fieldName, ex);
-                        normalizedMaskedValues.put(fieldName, e.getValue());
-                    }
-                }
-                maskedValues.put(fieldName, e.getValue());
-            }
         }
     }
     

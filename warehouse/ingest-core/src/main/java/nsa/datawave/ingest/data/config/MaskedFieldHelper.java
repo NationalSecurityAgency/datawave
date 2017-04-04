@@ -1,11 +1,6 @@
 package nsa.datawave.ingest.data.config;
 
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.hadoop.conf.Configuration;
-
-import nsa.datawave.ingest.data.RawRecordContainer;
 
 public interface MaskedFieldHelper {
     
@@ -18,14 +13,22 @@ public interface MaskedFieldHelper {
     void setup(Configuration config);
     
     /**
-     * @return Map of field names to masked values.
+     * @return true if there exists any mappings
      */
-    Map<String,String> getMaskedValues();
+    boolean hasMappings();
     
     /**
-     * Returns a list of unmasked values
-     *
-     * @return unmodifiable set of unmasked values
+     * @param key
+     *            field name for which to retrieve the mapping
+     * @return true if there exists a mapping for this key else false
      */
-    Set<String> getUnmaskedValues();
+    boolean contains(final String key);
+    
+    /**
+     * @param key
+     *            field name for which to retrieve the mapping
+     * @return moved to meth
+     */
+    String get(final String key);
+    
 }
