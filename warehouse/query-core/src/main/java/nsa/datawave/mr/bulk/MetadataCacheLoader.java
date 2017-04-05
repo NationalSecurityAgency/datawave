@@ -49,8 +49,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
         
         // determine the table id
         final String metadataString = inputKey.getStartKey().getRow().toString().intern();
-        final String tableId = (metadataString.indexOf(";") < 0 ? metadataString.substring(0, metadataString.indexOf("<")) : metadataString.substring(0,
-                        metadataString.indexOf(";")));
+        final String tableId = getTableId(metadataString);
         
         // determine our stop criteria
         final String stopRow = inputKey.getEndKey().getRow().toString().intern();
@@ -112,6 +111,23 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
         }
         
         return locations;
+    }
+    
+    /**
+     * Pull the table id off of the beginning of a metadata table row
+     *
+     * @param row
+     * @return the tableId
+     */
+    public static String getTableId(String row) {
+        // pull the characters up to the first ; or <
+        for (int i = 1; i < row.length(); i++) {
+            char c = row.charAt(i);
+            if (c == ';' || c == '<') {
+                return row.substring(0, i);
+            }
+        }
+        return row;
     }
     
     /**
