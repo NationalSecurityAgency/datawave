@@ -230,6 +230,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
                 String location = entry.first();
                 Set<String> fileLocations = entry.second();
                 if (fileLocations != null && !fileLocations.isEmpty()) {
+                    
                     if (location == null || location.isEmpty()) {
                         log.warn("Unable to find a location associated with " + range.toString() + " : ? -> " + fileLocations);
                     }

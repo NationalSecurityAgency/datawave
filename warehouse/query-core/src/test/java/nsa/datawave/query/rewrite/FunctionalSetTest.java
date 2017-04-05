@@ -248,7 +248,6 @@ public abstract class FunctionalSetTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        logic.setFullTableScanEnabled(false);
         if (log.isDebugEnabled()) {
             log.debug("testFunctionsAsArguments");
         }

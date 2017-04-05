@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import nsa.datawave.query.util.Tuple2;
 
 import org.apache.accumulo.core.client.Connector;
@@ -73,6 +72,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
         
         String baseLocation = defaultBasePath + MultiRfileInputformat.tableStr + tableId + Path.SEPARATOR;
         try {
+            
             while (rowIter.hasNext()) {
                 
                 Iterator<Entry<Key,Value>> row = rowIter.next();
@@ -101,7 +101,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
                 
                 locations.add(new Tuple2<String,Set<String>>(location, fileLocations));
                 
-                // if this row is equal to or past our stop row, them terminate
+                // if this row is equal to or past our stop row, then terminate
                 if (endRow.compareTo(stopRow) >= 0) {
                     break;
                 }
@@ -136,7 +136,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
         if (range.getEndKey() != null) {
             endRow = range.getEndKey().getRow();
             // if we have a non-inclusive end key with a null byte at the end, then strip the null byte
-            // such that we can create an inclusive range;
+            // such that we can create an inclusive range.
             if (!range.isEndKeyInclusive() && endRow.getBytes()[endRow.getLength() - 1] == 0) {
                 byte[] endRowBytes = new byte[endRow.getLength() - 1];
                 System.arraycopy(endRow.getBytes(), 0, endRowBytes, 0, endRowBytes.length);

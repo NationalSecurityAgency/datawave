@@ -125,6 +125,11 @@ public class QueryModelVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
+        AtomicBoolean state = (AtomicBoolean) node.jjtAccept(hasMethodVisitor, new AtomicBoolean(false));
+        if (state.get()) {
+            // this reference has a child that is a method
+            return node.jjtAccept(this.simpleQueryModelVisitor, null);
+        }
         if (this.expandedNodes.contains(node)) {
             return node;
         }
