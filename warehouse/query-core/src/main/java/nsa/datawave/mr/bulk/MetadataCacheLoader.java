@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 import nsa.datawave.query.util.Tuple2;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.RowIterator;
 import org.apache.accumulo.core.client.Scanner;
@@ -64,7 +63,6 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
         scanner.fetchColumnFamily(MetadataSchema.TabletsSection.DataFileColumnFamily.NAME);
         scanner.fetchColumnFamily(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME);
         scanner.fetchColumnFamily(MetadataSchema.TabletsSection.FutureLocationColumnFamily.NAME);
-        
         scanner.setRange(metadataRange);
         
         RowIterator rowIter = new RowIterator(scanner);

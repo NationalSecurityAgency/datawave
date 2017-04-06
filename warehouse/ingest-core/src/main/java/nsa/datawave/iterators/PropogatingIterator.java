@@ -326,5 +326,4 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
             throw new IllegalArgumentException("Exception while attempting to create : " + className);
         }
     }
-    
 }
