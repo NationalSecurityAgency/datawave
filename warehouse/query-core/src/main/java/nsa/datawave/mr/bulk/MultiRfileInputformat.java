@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
+import java.util.concurrent.TimeUnit;
 import nsa.datawave.ingest.data.config.ingest.AccumuloHelper;
 import nsa.datawave.ingest.mapreduce.job.RFileInputFormat;
 import nsa.datawave.mr.bulk.split.FileRangeSplit;
@@ -64,6 +65,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
      */
     public static final String MERGE_RANGE = "merge.range";
     public static final String CACHE_METADATA = "rfile.cache.metdata";
+    public static final String CACHE_METADATA_EXPIRE_SECONDS = "rfile.cache.expire.seconds";
     public static final String CACHE_RETRIEVE_SIZE = "rfile.size.compute";
     public static final String CACHE_METADATA_SIZE = "rfile.cache.metdata.size";
     private static final String HDFS_BASE = "hdfs://";
@@ -201,7 +203,8 @@ public class MultiRfileInputformat extends RFileInputFormat {
             synchronized (MultiRfileInputformat.class) {
                 if (null == locationMap) {
                     final long size = conf.getLong(CACHE_METADATA_SIZE, 10000);
-                    locationMap = CacheBuilder.newBuilder().maximumSize(size)
+                    final long seconds = conf.getInt(CACHE_METADATA_EXPIRE_SECONDS, 7200);
+                    locationMap = CacheBuilder.newBuilder().maximumSize(size).expireAfterWrite(seconds, TimeUnit.SECONDS)
                                     .build(new MetadataCacheLoader(instance.getConnector(BulkInputFormat.getUsername(conf), token), defaultBasePath));
                 }
             }
