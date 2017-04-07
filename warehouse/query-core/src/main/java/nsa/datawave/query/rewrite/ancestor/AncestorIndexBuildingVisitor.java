@@ -66,29 +66,15 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
         
         final List<Map.Entry<Key,Value>> keys = new ArrayList<>();
-        final String tld = getTLDId(rangeLimiter.getStartKey());
-        final String dataType = getDataType(rangeLimiter.getStartKey());
+        Range wholeDocRange = getWholeDocRange(rangeLimiter);
+        final String tld = getTLDId(wholeDocRange.getStartKey());
+        final String dataType = getDataType(wholeDocRange.getStartKey());
         Collection<String> members = familyTreeMap.get(tld);
         
         // use the cached tree if available
         if (members == null) {
             SortedKeyValueIterator<Key,Value> kvIter = source.deepCopy(env);
-            
-            try {
-                kvIter.seek(getWholeDocRange(rangeLimiter), Collections.<ByteSequence> emptyList(), false);
-                ByteSequence cq = null;
-                members = new ArrayList<>();
-                while (kvIter.hasTop()) {
-                    Key nextKey = kvIter.getTopKey();
-                    if (!nextKey.getColumnFamilyData().equals(cq)) {
-                        cq = nextKey.getColumnFamilyData();
-                        members.add(getUid(nextKey));
-                    }
-                    kvIter.next();
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            members = getMembers(wholeDocRange.getStartKey().getRow().toString(), tld, dataType, kvIter);
             
             // set the members for later use
             familyTreeMap.put(tld, members);
@@ -100,6 +86,44 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
         
         return keys;
+    }
+
+    /**
+     * Get all uids for a given tldUid and dataType and row from the iterator, seeking between keys
+     * @param row
+     * @param tldUid
+     * @param dataType
+     * @param iterator
+     * @return
+     */
+    private List<String> getMembers(String row, String tldUid, String dataType, SortedKeyValueIterator<Key,Value> iterator) {
+        final List<String> members = new ArrayList<>();
+        Key startKey = new Key(row, dataType + Constants.NULL_BYTE_STRING + tldUid);
+        Key endKey = new Key(row, dataType + Constants.NULL_BYTE_STRING + tldUid + Constants.MAX_UNICODE_STRING);
+
+        // inclusive to catch the first uid
+        Range range = new Range(startKey, true, endKey, false);
+        try {
+            iterator.seek(range, Collections.<ByteSequence> emptyList(), false);
+
+            while (iterator.hasTop()) {
+                Key nextKey = iterator.getTopKey();
+                String keyTld = getTLDId(nextKey);
+                if (keyTld.equals(tldUid)) {
+                    members.add(getUid(nextKey));
+                } else {
+                    break;
+                }
+
+                // seek to the next child by shifting the startKey
+                startKey = new Key(row, nextKey.getColumnFamily().toString() + Constants.NULL_BYTE_STRING);
+                iterator.seek(new Range(startKey, true, endKey, true), Collections.<ByteSequence> emptyList(), false);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return members;
     }
     
     /**
@@ -120,7 +144,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
     }
     
     /**
-     * Extract the uid from an fi key
+     * Extract the uid from an event key, format shardId dataType\0UID FieldName\0FieldValue NULL
      * 
      * @param key
      * @return
@@ -134,11 +158,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
             int index = cf.indexOf('\0');
             if (index >= 0) {
                 String uid = cf.substring(index + 1);
-                int index2 = uid.indexOf('\0');
-                if (index2 >= 0) {
-                    uid = uid.substring(0, index2);
-                }
-                
+
                 return uid;
             }
         }
@@ -147,7 +167,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
     }
     
     /**
-     * Extract the TLD uid from an fi key
+     * Extract the TLD uid from an event key
      * 
      * @param key
      * @return
@@ -183,7 +203,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
             if (endCf.charAt(endCf.length() - 1) == '\0') {
                 endCf = endCf.substring(0, endCf.length() - 1);
             }
-            Key postDoc = new Key(row, endCf = "\uffff");
+            Key postDoc = new Key(row, endCf + Character.MAX_CODE_POINT);
             result = new Range(r.getStartKey(), r.isStartKeyInclusive(), postDoc, false);
         }
         
@@ -192,7 +212,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
             // we need to bump append 0xff to that byte array because we want to skip the children
             String row = start.getRow().toString().intern();
             
-            Key postDoc = new Key(row, startCf + "\uffff");
+            Key postDoc = new Key(row, startCf + Character.MAX_CODE_POINT);
             // if this puts us past the end of teh range, then adjust appropriately
             if (result.contains(postDoc)) {
                 result = new Range(postDoc, false, result.getEndKey(), result.isEndKeyInclusive());

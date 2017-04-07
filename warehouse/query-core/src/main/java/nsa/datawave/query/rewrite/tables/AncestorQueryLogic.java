@@ -13,11 +13,12 @@ import nsa.datawave.query.rewrite.planner.QueryPlanner;
  *
  */
 public class AncestorQueryLogic extends RefactoredShardQueryLogic {
-    private DefaultQueryPlanner planner;
-    
     public AncestorQueryLogic() {
         super();
         setUidIntersector(new AncestorUidIntersector());
+        QueryPlanner planner = new AncestorQueryPlanner();
+        setQueryPlanner(planner);
+        setRangeStream();
         setIter();
     }
     
@@ -28,7 +29,12 @@ public class AncestorQueryLogic extends RefactoredShardQueryLogic {
     
     @Override
     public void setQueryPlanner(QueryPlanner planner) {
+        if (!(planner instanceof DefaultQueryPlanner)) {
+            throw new IllegalArgumentException("Query logic requires DefaultQueryPlanner compatibility");
+        }
+
         super.setQueryPlanner(planner);
+        setRangeStream();
         setIter();
     }
     
@@ -46,14 +52,8 @@ public class AncestorQueryLogic extends RefactoredShardQueryLogic {
         return true;
     }
     
-    @Override
-    public QueryPlanner getQueryPlanner() {
-        if (planner == null) {
-            planner = new AncestorQueryPlanner();
-            planner.setRangeStreamClass(AncestorRangeStream.class.getCanonicalName());
-        }
-        
-        return planner;
+    private void setRangeStream() {
+        ((DefaultQueryPlanner) getQueryPlanner()).setRangeStreamClass(AncestorRangeStream.class.getCanonicalName());
     }
     
     private void setIter() {

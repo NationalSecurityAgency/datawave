@@ -12,10 +12,10 @@ public class RootNegationCheckVisitor {
     
     public static Boolean hasTopLevelNegation(JexlNode script) {
         RootNegationCheckVisitor visitor = new RootNegationCheckVisitor();
-        return visitor.recurseRoot(script);
+        return visitor.isNegation(script);
     }
     
-    private boolean recurseRoot(JexlNode node) {
+    private boolean isNegation(JexlNode node) {
         boolean hasNegation = false;
         for (int i = 0; i < node.jjtGetNumChildren() && !hasNegation; i++) {
             JexlNode child = node.jjtGetChild(i);
