@@ -463,19 +463,19 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                 
                 // write the reverse index table:
                 bw = con.createBatchWriter(SHARD_RINDEX_TABLE_NAME, bwConfig);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("First"));
+                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("First")).reverse());
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(firstUID));
                 bw.addMutation(mutation);
                 
                 bw = con.createBatchWriter(SHARD_RINDEX_TABLE_NAME, bwConfig);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("Second"));
+                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("Second")).reverse());
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(secondUID));
                 bw.addMutation(mutation);
                 
                 bw = con.createBatchWriter(SHARD_RINDEX_TABLE_NAME, bwConfig);
-                mutation = new Mutation(lcNoDiacriticsType.normalize("Third"));
+                mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("Third")).reverse());
                 mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(thirdUID));
                 bw.addMutation(mutation);
