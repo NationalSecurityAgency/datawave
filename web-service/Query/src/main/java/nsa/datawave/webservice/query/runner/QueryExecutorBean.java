@@ -65,8 +65,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -1173,7 +1173,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *
      * @param uuid
      * @param uuidType
-     * @param uuidInformation
+     * @param uriInfo
      * @param httpHeaders
      * @return content results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -1189,15 +1189,15 @@ public class QueryExecutorBean implements QueryExecutor {
      * @HTTP 500 internal server error
      */
     @GET
-    @Path("/lookupContentUUID/{uuidType}/{uuid}/{uuidInformation}")
+    @Path("/lookupContentUUID/{uuidType}/{uuid}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupContentUUID", absolute = true)
     public <T> T lookupContentByUUID(@Required("uuidType") @PathParam("uuidType") String uuidType, @Required("uuid") @PathParam("uuid") String uuid,
-                    @PathParam("uuidInformation") PathSegment uuidInformation, @Required("httpHeaders") @Context HttpHeaders httpHeaders) {
-        return this.lookupContentByUUID(uuidType, uuid, uuidInformation.getMatrixParameters(), httpHeaders);
+                    @Context UriInfo uriInfo, @Required("httpHeaders") @Context HttpHeaders httpHeaders) {
+        return this.lookupContentByUUID(uuidType, uuid, uriInfo.getQueryParameters(), httpHeaders);
     }
     
     private <T> T lookupContentByUUID(String uuidType, String uuid, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
@@ -1276,7 +1276,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *
      * @param uuidType
      * @param uuid
-     * @param uuidInformation
+     * @param uriInfo
      * @param httpHeaders
      * @return
      * @return event results, either as a paged BaseQueryResponse (automatically closed upon return) or StreamingOutput
@@ -1300,8 +1300,8 @@ public class QueryExecutorBean implements QueryExecutor {
     @Override
     @Timed(name = "dw.query.lookupUUID", absolute = true)
     public <T> T lookupUUID(@Required("uuidType") @PathParam("uuidType") String uuidType, @Required("uuid") @PathParam("uuid") String uuid,
-                    @PathParam("uuidInformation") PathSegment uuidInformation, @Required("httpHeaders") @Context HttpHeaders httpHeaders) {
-        return this.lookupUUID(uuidType, uuid, uuidInformation.getMatrixParameters(), httpHeaders);
+                    @Context UriInfo uriInfo, @Required("httpHeaders") @Context HttpHeaders httpHeaders) {
+        return this.lookupUUID(uuidType, uuid, uriInfo.getQueryParameters(), httpHeaders);
     }
     
     <T> T lookupUUID(String uuidType, String uuid, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {

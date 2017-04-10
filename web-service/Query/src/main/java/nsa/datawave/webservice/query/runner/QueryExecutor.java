@@ -4,8 +4,8 @@ import java.util.Date;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriInfo;
 
 import nsa.datawave.webservice.query.QueryPersistence;
 import nsa.datawave.webservice.result.BaseQueryResponse;
@@ -58,7 +58,7 @@ public interface QueryExecutor {
      * 
      * @param uuid
      * @param uuidType
-     * @param queryParameters
+     * @param uriInfo
      * @param httpHeaders
      * @return content results, either as a paged BaseQueryResponse or StreamingOutput
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -74,7 +74,7 @@ public interface QueryExecutor {
      * @HTTP 400 invalid or missing parameter
      * @HTTP 500 internal server error
      */
-    <T> T lookupContentByUUID(String uuidType, String uuid, PathSegment uuidInformation, HttpHeaders httpHeaders);
+    <T> T lookupContentByUUID(String uuidType, String uuid, UriInfo uriInfo, HttpHeaders httpHeaders);
     
     /**
      * 
@@ -99,7 +99,7 @@ public interface QueryExecutor {
      * 
      * @param uuidType
      * @param uuid
-     * @param uuidInformation
+     * @param uriInfo
      * @param httpHeaders
      * @return
      * @return event results, either as a paged BaseQueryResponse (automatically closed upon return) or StreamingOutput
@@ -115,7 +115,7 @@ public interface QueryExecutor {
      * @HTTP 400 invalid or missing parameter
      * @HTTP 500 internal server error
      */
-    <T> T lookupUUID(String uuidType, String uuid, PathSegment uuidInformation, HttpHeaders httpHeaders);
+    <T> T lookupUUID(String uuidType, String uuid, UriInfo uriInfo, HttpHeaders httpHeaders);
     
     /**
      * 

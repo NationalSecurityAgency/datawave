@@ -123,6 +123,48 @@ public class AuthorizationsUtil {
         return mergedAuths;
     }
     
+    /**
+     * Similar functionality to the above getDowngradedAuths, but returns in a Stringas opposed to a Set, and only returns the user's auths and not those for
+     * any chained entity. This makes it easier to swap out queryParameters to use for createQueryAndNext(). Uses buildAuthorizationString to find the
+     * authorizations the user has and compares those to the authorizations requested. Verifies that the user has access to the authorizations, and will return
+     * the downgraded authorities if they are valid. If the request authorities they don't have, or request not authorizations, an exception is thrown.
+     *
+     * @param principal
+     *            the principal representing the user to verify that {@code requested} are all valid authorizations
+     * @param requested
+     *            the requested downgrade authorizations
+     * @return requested, unless the user represented by {@code principal} does not have one or more of the auths in {@code requested}
+     */
+    public static String downgradeUserAuths(Principal principal, String requested) {
+        if (requested == null || requested.trim().isEmpty()) {
+            throw new IllegalArgumentException("Requested authorizations must not be empty");
+        }
+        
+        List<String> requestedList = AuthorizationsUtil.splitAuths(requested);
+        // Find all authorizations the user has access to
+        String userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
+        List<String> userList = AuthorizationsUtil.splitAuths(userAuths);
+        List<String> missingAuths = new ArrayList<>();
+        List<String> finalAuthsList = new ArrayList<>();
+        
+        for (String temp : requestedList) {
+            // user requested auth they don't have
+            if (!userList.contains(temp)) {
+                missingAuths.add(temp);
+            } else { // user requested auth they do have
+                finalAuthsList.add(temp);
+            }
+        }
+        // All auths requested are auths the user has, return downgraded string for auths
+        if (missingAuths.isEmpty()) {
+            String finalAuths = AuthorizationsUtil.buildAuthorizationString(Collections.singletonList(finalAuthsList));
+            return finalAuths;
+        } else {
+            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
+                            + requested + ", User: " + userAuths.toString());
+        }
+    }
+    
     public static List<String> splitAuths(String requestedAuths) {
         return Arrays.asList(Iterables.toArray(Splitter.on(',').omitEmptyStrings().trimResults().split(requestedAuths), String.class));
     }
