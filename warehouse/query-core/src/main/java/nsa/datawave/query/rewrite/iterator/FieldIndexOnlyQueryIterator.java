@@ -225,7 +225,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         this.myEnvironment = env;
         
         if (collectTimingDetails) {
-            trackingSpan = new QuerySpan();
+            trackingSpan = new QuerySpan(getStatsdClient());
             this.source = new SourceTrackingIterator(trackingSpan, source);
         } else {
             this.source = source;

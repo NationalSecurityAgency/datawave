@@ -152,6 +152,10 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         super.deepCopy(other);
     }
     
+    private boolean gatherTimingDetails() {
+        return collectTimingDetails || (statsdHostAndPort != null);
+    }
+    
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         if (log.isTraceEnabled()) {
@@ -181,8 +185,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         this.documentOptions = options;
         this.myEnvironment = env;
         
-        if (collectTimingDetails) {
-            trackingSpan = new MultiThreadedQuerySpan();
+        if (gatherTimingDetails()) {
+            trackingSpan = new MultiThreadedQuerySpan(getStatsdClient());
             this.source = new SourceTrackingIterator(trackingSpan, source);
         } else {
             this.source = source;
@@ -277,7 +281,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 if (log.isTraceEnabled()) {
                     log.trace("Received non-inclusive event specific range: " + documentRange);
                 }
-                if (collectTimingDetails) {
+                if (gatherTimingDetails()) {
                     this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.EmptyTree, trackingSpan, new EmptyTreeIterable());
                 } else {
                     this.seekKeySource = new EmptyTreeIterable();
@@ -297,7 +301,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 // we can only trim if we're certain that the projected fields
                 // aren't needed for evaluation
                 
-                if (collectTimingDetails) {
+                if (gatherTimingDetails()) {
                     this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.DocumentSpecificTree, trackingSpan,
                                     new DocumentSpecificNestedIterator(documentKey));
                 } else {
@@ -314,6 +318,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                             getSerialPipelineRequest(), querySpanCollector, trackingSpan, this, sourceForDeepCopies.deepCopy(myEnvironment), myEnvironment);
             
             pipelineIter.setCollectTimingDetails(collectTimingDetails);
+            // TODO pipelineIter.setStatsdHostAndPort(statsdHostAndPort);
             
             pipelineIter.startPipeline();
             
@@ -325,6 +330,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 this.serializedDocuments = new ResultCountingIterator(serializedDocuments, resultCount);
             }
             
+            // only add the final document tracking iterator which sends stats back to the client if collectTimingDetails is true
             if (collectTimingDetails) {
                 Range r = (documentRange == null) ? this.range : documentRange;
                 // if there is no document to return, then add an empty document
@@ -338,7 +344,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         } catch (Exception e) {
             handleException(e);
         } finally {
-            if (collectTimingDetails && trackingSpan != null && querySpanCollector != null) {
+            if (gatherTimingDetails() && trackingSpan != null && querySpanCollector != null) {
                 querySpanCollector.addQuerySpan(trackingSpan);
             }
             if (null != span) {
@@ -442,7 +448,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                     log.trace("Using init()'ialized source: " + subDocIter.getClass().getName());
                 }
                 
-                if (collectTimingDetails) {
+                if (gatherTimingDetails()) {
                     subDocIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, subDocIter);
                 }
                 
@@ -477,7 +483,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 log.trace("Using init()'ialized source: " + this.initKeySource.getClass().getName());
             }
             
-            if (collectTimingDetails) {
+            if (gatherTimingDetails()) {
                 docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter);
             }
             
@@ -564,8 +570,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                     final NestedQueryIterator<Key> documentSpecificSource, QuerySpanCollector querySpanCollector) {
         
         QuerySpan trackingSpan = null;
-        if (collectTimingDetails) {
-            trackingSpan = new QuerySpan();
+        if (gatherTimingDetails()) {
+            trackingSpan = new QuerySpan(getStatsdClient());
         }
         if (log.isTraceEnabled()) {
             log.trace("createDocumentPipeline");
@@ -618,7 +624,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         CompositeMetadata compositeMetadata = new CompositeMetadata(this.getCompositeMetadata());
         Aggregation a = new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
                         this.disableIndexOnlyDocuments(), this.getEvaluationFilter());
-        if (collectTimingDetails) {
+        if (gatherTimingDetails()) {
             documents = Iterators.transform(sourceIterator, new EvaluationTrackingFunction<>(QuerySpan.Stage.Aggregation, trackingSpan, a));
         } else {
             documents = Iterators.transform(sourceIterator, a);
@@ -626,7 +632,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         
         // Inject the data type as a field if the user requested it
         if (this.includeDatatype) {
-            if (collectTimingDetails) {
+            if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DataTypeAsField, trackingSpan, new DataTypeAsField(
                                 this.datatypeKey)));
             } else {
@@ -634,7 +640,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             }
         }
         
-        if (collectTimingDetails) {
+        if (gatherTimingDetails()) {
             documents = new EvaluationTrackingIterator(QuerySpan.Stage.DocumentEvaluation, trackingSpan, getEvaluation(documentSpecificSource, deepSourceCopy,
                             documents, compositeMetadata, typeMetadataWithNonIndexed));
         } else {
@@ -649,14 +655,14 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         
         // apply any configured post processing
         documents = getPostProcessingChain(documents);
-        if (collectTimingDetails) {
+        if (gatherTimingDetails()) {
             documents = new EvaluationTrackingIterator(QuerySpan.Stage.PostProcessing, trackingSpan, documents);
         }
         
         // Filter out masked values if requested
         if (this.filterMaskedValues) {
             MaskedValueFilterInterface mvfi = MaskedValueFilterFactory.get(this.isIncludeGroupingContext(), this.isReducedResponse());
-            if (collectTimingDetails) {
+            if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.MaskedValueFilter, trackingSpan, mvfi));
             } else {
                 documents = Iterators.transform(documents, mvfi);
@@ -664,7 +670,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         }
         
         // now filter the attributes to those with the keep flag set true
-        if (collectTimingDetails) {
+        if (gatherTimingDetails()) {
             documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.AttributeKeepFilter, trackingSpan,
                             new AttributeKeepFilter<Key>()));
         } else {
@@ -673,7 +679,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         
         // Project fields using a whitelist or a blacklist before serialization
         if (this.projectResults) {
-            if (collectTimingDetails) {
+            if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentProjection, trackingSpan, getProjection()));
             } else {
                 documents = Iterators.transform(documents, getProjection());
@@ -684,7 +690,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         
         // Filter out any Documents which are empty (e.g. due to attribute
         // projection or visibility filtering)
-        if (collectTimingDetails) {
+        if (gatherTimingDetails()) {
             documents = statelessFilter(documents, new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan,
                             new EmptyDocumentFilter()));
             // if the UIDs are sorted, then we can mask out the CQ using the KeyAdjudicator
@@ -704,7 +710,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         }
         
         if (this.limitFieldsMap.size() > 0) {
-            if (collectTimingDetails) {
+            if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents,
                                 new EvaluationTrackingFunction<>(QuerySpan.Stage.LimitFields, trackingSpan, new LimitFields(this.getLimitFieldsMap())));
             } else {
@@ -714,13 +720,15 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         
         // do I need to remove the grouping context I added above?
         if (groupingContextAddedByMe) {
-            if (collectTimingDetails) {
+            if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.RemoveGroupingContext, trackingSpan,
                                 new RemoveGroupingContext()));
             } else {
                 documents = Iterators.transform(documents, new RemoveGroupingContext());
             }
         }
+        
+        // only add the pipeline query span collection iterator which will cache metrics with each document if collectTimingDetails is true
         if (collectTimingDetails) {
             // if there is not a result, then add the trackingSpan to the
             // QuerySpanCollector
@@ -1140,6 +1148,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                         .disableIndexOnly(disableFiEval).limit(this.sourceLimit);
         
         iteratorBuildingVisitor.setCollectTimingDetails(this.collectTimingDetails);
+        // TODO: iteratorBuildingVisitor.setStatsPort(this.statsdHostAndPort);
         iteratorBuildingVisitor.setQuerySpanCollector(this.querySpanCollector);
         
         return iteratorBuildingVisitor;

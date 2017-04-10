@@ -254,9 +254,13 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     
     protected boolean sequentialScheduler = false;
     
-    protected Boolean collectTimingDetails = false;
+    protected boolean collectTimingDetails = false;
     
-    protected Boolean logTimingDetails = false;
+    protected boolean logTimingDetails = false;
+    
+    protected boolean sendTimingToStatsd = true;
+    protected String statsdHost = "localhost";
+    protected int statsdPort = 8125;
     
     protected boolean limitAnyFieldLookups = true;
     
@@ -1434,6 +1438,10 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         
         this.setLogTimingDetails(copy.getLogTimingDetails());
         this.setCollectTimingDetails(copy.getCollectTimingDetails());
+        this.setSendTimingToStatsd(copy.getSendTimingToStatsd());
+        this.setStatsdHost(copy.getStatsdHost());
+        this.setStatsdPort(copy.getStatsdPort());
+        
         this.setQuery(query);
         this.setCollapseDatePercentThreshold(copy.getCollapseDatePercentThreshold());
         this.setSerializeQueryIterator(copy.getSerializeQueryIterator());
@@ -1476,6 +1484,30 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     
     public void setLogTimingDetails(boolean logTimingDetails) {
         this.logTimingDetails = logTimingDetails;
+    }
+    
+    public String getStatsdHost() {
+        return statsdHost;
+    }
+    
+    public void setStatsdHost(String statsdHost) {
+        this.statsdHost = statsdHost;
+    }
+    
+    public int getStatsdPort() {
+        return statsdPort;
+    }
+    
+    public void setStatsdPort(int statsdPort) {
+        this.statsdPort = statsdPort;
+    }
+    
+    public boolean getSendTimingToStatsd() {
+        return sendTimingToStatsd;
+    }
+    
+    public void setSendTimingToStatsd(boolean sendTimingToStatsd) {
+        this.sendTimingToStatsd = sendTimingToStatsd;
     }
     
     public boolean isCleanupShardsAndDaysQueryHints() {

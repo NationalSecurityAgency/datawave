@@ -18,7 +18,7 @@ public class QuerySpanTest {
     @Test
     public void testQuerySpanAggregation() {
         
-        QuerySpan qs1 = new QuerySpan();
+        QuerySpan qs1 = new QuerySpan(null);
         advanceIterators(qs1);
         
         Assert.assertEquals(7, qs1.getSeekCount());
@@ -29,7 +29,7 @@ public class QuerySpanTest {
     @Test
     public void testMultiThreadedQuerySpanAggregation() {
         
-        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan();
+        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan(null);
         advanceIterators(qs1);
         
         Assert.assertEquals(7, qs1.getSeekCount());
@@ -40,11 +40,11 @@ public class QuerySpanTest {
     @Test
     public void testMultiThreadedQuerySpanCollection() {
         
-        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan();
+        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan(null);
         advanceIterators(qs1);
-        MultiThreadedQuerySpan qs2 = new MultiThreadedQuerySpan();
+        MultiThreadedQuerySpan qs2 = new MultiThreadedQuerySpan(null);
         advanceIterators(qs2);
-        MultiThreadedQuerySpan qs3 = new MultiThreadedQuerySpan();
+        MultiThreadedQuerySpan qs3 = new MultiThreadedQuerySpan(null);
         advanceIterators(qs3);
         
         QuerySpanCollector qsc = new QuerySpanCollector();
@@ -61,11 +61,11 @@ public class QuerySpanTest {
     @Test
     public void testMultiThreadedQuerySpanAcrossThreads() {
         
-        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan();
+        MultiThreadedQuerySpan qs1 = new MultiThreadedQuerySpan(null);
         advanceIterators(qs1);
-        MultiThreadedQuerySpan qs2 = new MultiThreadedQuerySpan();
+        MultiThreadedQuerySpan qs2 = new MultiThreadedQuerySpan(null);
         advanceIterators(qs2);
-        MultiThreadedQuerySpan qs3 = new MultiThreadedQuerySpan();
+        MultiThreadedQuerySpan qs3 = new MultiThreadedQuerySpan(null);
         advanceIterators(qs3);
         
         QuerySpanCollector qsc = new QuerySpanCollector();

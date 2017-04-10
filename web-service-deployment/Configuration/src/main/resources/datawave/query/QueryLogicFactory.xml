@@ -233,6 +233,9 @@
             </map>
         </property>
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
+        <property name="sendTimingToStatsd" value="false" />
+        <property name="statsdHost" value="localhost" />
+        <property name="statsdPort" value="8125" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
     

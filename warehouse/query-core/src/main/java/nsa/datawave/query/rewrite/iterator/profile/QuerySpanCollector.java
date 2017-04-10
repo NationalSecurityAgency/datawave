@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 
 public class QuerySpanCollector {
-    
     private AtomicLong seekCount = new AtomicLong();
     private AtomicLong nextCount = new AtomicLong();
     private AtomicLong sourceCount = new AtomicLong();
@@ -47,7 +46,7 @@ public class QuerySpanCollector {
         QuerySpan combinedQuerySpan = null;
         if (hasEntries()) {
             synchronized (this) {
-                combinedQuerySpan = new QuerySpan();
+                combinedQuerySpan = new QuerySpan(null);
                 combinedQuerySpan.setNext(this.nextCount.getAndSet(0));
                 combinedQuerySpan.setSeek(this.seekCount.getAndSet(0));
                 combinedQuerySpan.setSourceCount(this.sourceCount.getAndSet(0));
@@ -99,4 +98,21 @@ public class QuerySpanCollector {
             log.trace(sb.toString());
         }
     }
+    
+    public long getSeekCount() {
+        return seekCount.longValue();
+    }
+    
+    public long getNextCount() {
+        return nextCount.longValue();
+    }
+    
+    public long getSourceCount() {
+        return sourceCount.longValue();
+    }
+    
+    public Map<String,Long> getStageTimers() {
+        return Collections.unmodifiableMap(stageTimers);
+    }
+    
 }
