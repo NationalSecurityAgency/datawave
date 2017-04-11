@@ -6,8 +6,8 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import java.util.*;
 
 /**
- * Specialty AncestorIndexStream implementation. Wraps existing IndexStream delegate to prevent returning overlapping
- * ranges from ancestors during expansions which would otherwise result in duplicate hits
+ * Specialty AncestorIndexStream implementation. Wraps existing IndexStream delegate to prevent returning overlapping ranges from ancestors during expansions
+ * which would otherwise result in duplicate hits
  */
 public class AncestorIndexStream implements IndexStream {
     private final IndexStream delegate;
@@ -58,8 +58,8 @@ public class AncestorIndexStream implements IndexStream {
     }
     
     /**
-     * For a given tuple, remove any matches that are descendants of other matches. This prevents the same uid from being
-     * evaluated multiple times and potentially returning duplicate documents
+     * For a given tuple, remove any matches that are descendants of other matches. This prevents the same uid from being evaluated multiple times and
+     * potentially returning duplicate documents
      * 
      * @param tuple
      * @return

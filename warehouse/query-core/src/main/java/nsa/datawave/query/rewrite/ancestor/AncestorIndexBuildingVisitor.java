@@ -87,9 +87,10 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         
         return keys;
     }
-
+    
     /**
      * Get all uids for a given tldUid and dataType and row from the iterator, seeking between keys
+     * 
      * @param row
      * @param tldUid
      * @param dataType
@@ -100,12 +101,12 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         final List<String> members = new ArrayList<>();
         Key startKey = new Key(row, dataType + Constants.NULL_BYTE_STRING + tldUid);
         Key endKey = new Key(row, dataType + Constants.NULL_BYTE_STRING + tldUid + Constants.MAX_UNICODE_STRING);
-
+        
         // inclusive to catch the first uid
         Range range = new Range(startKey, true, endKey, false);
         try {
             iterator.seek(range, Collections.<ByteSequence> emptyList(), false);
-
+            
             while (iterator.hasTop()) {
                 Key nextKey = iterator.getTopKey();
                 String keyTld = getTLDId(nextKey);
@@ -114,7 +115,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
                 } else {
                     break;
                 }
-
+                
                 // seek to the next child by shifting the startKey
                 startKey = new Key(row, nextKey.getColumnFamily().toString() + Constants.NULL_BYTE_STRING);
                 iterator.seek(new Range(startKey, true, endKey, true), Collections.<ByteSequence> emptyList(), false);
@@ -122,7 +123,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
+        
         return members;
     }
     
@@ -158,7 +159,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
             int index = cf.indexOf('\0');
             if (index >= 0) {
                 String uid = cf.substring(index + 1);
-
+                
                 return uid;
             }
         }

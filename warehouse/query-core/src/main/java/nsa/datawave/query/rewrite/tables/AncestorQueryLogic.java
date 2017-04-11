@@ -32,7 +32,7 @@ public class AncestorQueryLogic extends RefactoredShardQueryLogic {
         if (!(planner instanceof DefaultQueryPlanner)) {
             throw new IllegalArgumentException("Query logic requires DefaultQueryPlanner compatibility");
         }
-
+        
         super.setQueryPlanner(planner);
         setRangeStream();
         setIter();
