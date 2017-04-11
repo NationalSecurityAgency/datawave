@@ -356,7 +356,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     private boolean accrueStats = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
-    private boolean sendTimingToStatsd = true;
+    private boolean sendTimingToStatsd = false;
     private String statsdHost = "localhost";
     private int statsdPort = 8125;
     
