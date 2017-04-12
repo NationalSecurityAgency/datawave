@@ -1295,7 +1295,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @GET
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
-    @Path("/lookupUUID/{uuidType}/{uuid}/{uuidInformation}")
+    @Path("/lookupUUID/{uuidType}/{uuid}")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupUUID", absolute = true)
