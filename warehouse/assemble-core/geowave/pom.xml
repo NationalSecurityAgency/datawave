@@ -15,6 +15,10 @@
     <dependencies>
         <dependency>
             <groupId>mil.nga.giat</groupId>
+            <artifactId>geowave-adapter-raster</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>mil.nga.giat</groupId>
             <artifactId>geowave-adapter-vector</artifactId>
         </dependency>
         <dependency>
