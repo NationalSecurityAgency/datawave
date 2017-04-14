@@ -1,10 +1,10 @@
 package nsa.datawave.query.tables.content;
 
 import com.google.common.collect.Lists;
-import nsa.datawave.core.iterators.EvaluatingIterator;
 import nsa.datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import nsa.datawave.query.QueryParameters;
 import nsa.datawave.query.config.ContentQueryConfiguration;
+import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.tables.ScannerFactory;
 import nsa.datawave.query.transformer.ContentQueryTransformer;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -206,8 +206,8 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
                     // Create and add a Range
                     final String row = shardId;
                     final String cf = ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY;
-                    final String cq = datatype + EvaluatingIterator.NULL_BYTE_STRING + uid;
-                    final Key startKey = new Key(row, cf, cq + EvaluatingIterator.NULL_BYTE_STRING);
+                    final String cq = datatype + Constants.NULL_BYTE_STRING + uid;
+                    final Key startKey = new Key(row, cf, cq + Constants.NULL_BYTE_STRING);
                     final Key endKey = new Key(row, cf, cq + endKeyTerminator);
                     final Range r = new Range(startKey, true, endKey, false);
                     ranges.add(r);

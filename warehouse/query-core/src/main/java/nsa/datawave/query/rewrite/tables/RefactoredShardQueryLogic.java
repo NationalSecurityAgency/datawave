@@ -17,7 +17,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import nsa.datawave.core.iterators.EvaluatingIterator;
 import nsa.datawave.data.type.NoOpType;
 import nsa.datawave.data.type.Type;
 import nsa.datawave.marking.MarkingFunctions;
@@ -155,7 +154,7 @@ import com.google.common.util.concurrent.MoreExecutors;
  *     names in {@link #filterClassNames}.
  *  6. The query limits the results (default: 5000) using the setMaxResults method. In addition, "max.results.override" can be passed to the
  *     query as part of the Parameters object which allows query specific limits (but will not be more than set default)
- *  7. Projection can be accomplished by setting the {@link EvaluatingIterator RETURN_FIELDS} parameter to a '/'-separated list of field names.
+ *  7. Projection can be accomplished by setting the {@link QueryParameters RETURN_FIELDS} parameter to a '/'-separated list of field names.
  * 
  * </pre>
  * 

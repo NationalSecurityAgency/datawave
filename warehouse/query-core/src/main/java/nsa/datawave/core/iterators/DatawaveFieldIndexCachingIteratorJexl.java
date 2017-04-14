@@ -17,7 +17,6 @@ import java.util.TreeSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import nsa.datawave.core.iterators.querylock.QueryLock;
-import nsa.datawave.query.iterators.JumpingIterator;
 import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.rewrite.iterator.profile.QuerySpan;
 import nsa.datawave.query.rewrite.iterator.profile.QuerySpanCollector;
@@ -52,9 +51,9 @@ import org.apache.log4j.Logger;
  * Event key: CF, {datatype}\0{UID}
  * 
  */
-public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator implements JumpingIterator<Key,Value> {
+public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator {
     public static final Collection<ByteSequence> EMPTY_COL_FAMS = new ArrayList<>();
-    public static final Logger log = Logger.getLogger(DatawaveFieldIndexIteratorJexl.class);
+    public static final Logger log = Logger.getLogger(DatawaveFieldIndexCachingIteratorJexl.class);
     public static final String NULL_BYTE = Constants.NULL_BYTE_STRING;
     public static final String ONE_BYTE = "\u0001";
     public static final PartialKey DEFAULT_RETURN_KEY_TYPE = PartialKey.ROW_COLFAM;
@@ -391,22 +390,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 querySpanCollector.addQuerySpan(querySpan);
             }
         }
-    }
-    
-    /**
-     * This is basically a seek except we don't do it if we are already at/past the jumpKey. This avoids rewinding an iterator.
-     * 
-     * @param jumpKey
-     * @return true if we have a topkey after seeking
-     * @throws IOException
-     */
-    @Override
-    public boolean jump(Key jumpKey) throws IOException {
-        // If I have top and it's less then the jumpKey, we need to move, otherwise stay where we are.
-        if (this.topKey != null && (jumpKey.compareTo(topKey) > 0)) {
-            seek(new Range(jumpKey, true, lastRangeSeeked.getEndKey(), lastRangeSeeked.isEndKeyInclusive()), EMPTY_CFS, false);
-        }
-        return this.topKey != null;
     }
     
     @Override

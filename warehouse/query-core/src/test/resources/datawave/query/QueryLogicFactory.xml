@@ -60,13 +60,6 @@
         <constructor-arg value="/DATAWAVE_EDGE.xml" />
     </bean> 
     
-    <bean id="EdgeEventQuery" scope="prototype"  parent="BaseEventQuery" class="nsa.datawave.query.tables.edge.DefaultEdgeEventQueryLogic">
-        <property name="logicDescription" value="Use results of an EdgeQuery to obtain events that created the edge." />
-        <property name="edgeQueryModel" ref="edgeQueryModel" />
-        <property name="edgeModelName" value="DATAWAVE_EDGE" />
-        <property name="modelTableName" value="DatawaveMetadata" />
-    </bean>
-    
     <bean id="ExtendedEdgeQuery" scope="prototype" parent="RewriteEdgeQuery" class="nsa.datawave.query.edge.DefaultExtendedEdgeQueryLogic">
         <property name="edgeQueryModel" ref="edgeQueryModel" />
         <property name="modelTableName" value="DatawaveMetadata" />

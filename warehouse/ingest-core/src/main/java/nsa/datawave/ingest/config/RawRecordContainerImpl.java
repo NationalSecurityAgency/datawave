@@ -16,7 +16,6 @@ import java.util.concurrent.ConcurrentSkipListSet;
 
 import nsa.datawave.data.hash.UID;
 import nsa.datawave.data.hash.UIDBuilder;
-import nsa.datawave.ingest.data.RawDataError;
 import nsa.datawave.ingest.data.RawRecordContainer;
 import nsa.datawave.ingest.data.Type;
 import nsa.datawave.ingest.data.TypeRegistry;
@@ -60,14 +59,14 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     private Map<Type,Boolean> useTimeInUid = new HashMap<>();
     
     private Configuration conf = null;
-    private Multimap<Type,RawDataError> fatalErrors = HashMultimap.create();
+    private Multimap<Type,String> fatalErrors = HashMultimap.create();
     private Multimap<Type,IgnorableErrorHelperInterface> ignorableErrorHelpers = HashMultimap.create();
     
     private long eventDate = 0;
     private Type dataType = null;
     private UID uid = null;
     private UIDBuilder<UID> uidBuilder;
-    private Set<RawDataError> errors = new ConcurrentSkipListSet<>();
+    private Set<String> errors = new ConcurrentSkipListSet<>();
     private ColumnVisibility visibility = null;
     private String rawFileName = null;
     private long rawFileTimeStamp = 0L;
@@ -79,7 +78,6 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     
     // RawRecordContainer support
     Map<String,String> securityMarkings = null;
-    Set<String> errorsAsStrings = null;
     
     public RawRecordContainerImpl() {
         uidBuilder = UID.builder();
@@ -186,40 +184,31 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     
     @Override
     public Collection<String> getErrors() {
-        if (null == errorsAsStrings) {
-            errorsAsStrings = Sets.newConcurrentHashSet();
-            for (RawDataError raw : errors) {
-                errorsAsStrings.add(raw.toString());
-            }
-        }
-        return Collections.unmodifiableSet(errorsAsStrings);
+        return Collections.unmodifiableSet(errors);
     }
     
     @Override
     public void setErrors(Collection<String> errors) {
         for (String err : errors) {
-            this.errors.add(RawDataError.valueOf(err));
+            this.errors.add(err);
         }
     }
     
     @Override
     public void addError(String error) {
-        RawDataError rde = RawDataError.valueOf(error);
-        errors.add(rde);
+        errors.add(error);
     }
     
     @Override
     public void removeError(String error) {
-        RawDataError rde = RawDataError.valueOf(error);
-        if (null != rde && null != errors && errors.contains(rde)) {
-            errors.remove(rde);
+        if (null != errors && errors.contains(error)) {
+            errors.remove(error);
         }
     }
     
     @Override
     public boolean hasError(String error) {
-        RawDataError rde = RawDataError.valueOf(error);
-        return errors.contains(rde);
+        return errors.contains(error);
     }
     
     /**
@@ -230,8 +219,8 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     @Override
     public boolean fatalError() {
         Set<String> fatalErrors = getFatalErrors();
-        for (RawDataError e : errors) {
-            if (fatalErrors.contains(e.name())) {
+        for (String e : errors) {
+            if (fatalErrors.contains(e)) {
                 return true;
             }
         }
@@ -246,12 +235,12 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     @Override
     public boolean ignorableError() {
         Set<String> fatalErrors = getFatalErrors();
-        for (RawDataError err : errors) {
-            if (fatalErrors.contains(err.name())) {
+        for (String err : errors) {
+            if (fatalErrors.contains(err)) {
                 // if one helper deems it ignorable, then this error is ignorable
                 boolean ignorable = false;
                 for (IgnorableErrorHelperInterface helper : getIgnorableErrorHelpers()) {
-                    if (helper.isIgnorableFatalError(this, err.name())) {
+                    if (helper.isIgnorableFatalError(this, err)) {
                         ignorable = true;
                     }
                 }
@@ -333,7 +322,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     /**
      * Stores the record number in the raw file that this raw record container came from.
      * 
-     * @param recNum
+     * @param rawRecordNumber
      */
     @Override
     public void setRawRecordNumber(long rawRecordNumber) {
@@ -352,7 +341,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     /**
      * Stores the timestamp of the raw input file that this raw record container came from.
      * 
-     * @param rawFileTimeStamp
+     * @param rawRecordTimestamp
      */
     @Override
     public void setRawFileTimestamp(long rawRecordTimestamp) {
@@ -505,12 +494,12 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     public Set<String> getFatalErrors() {
         Set<String> localErrors = new HashSet<>();
         
-        for (RawDataError rde : this.fatalErrors.get(null)) {
-            localErrors.add(rde.name());
+        for (String rde : this.fatalErrors.get(null)) {
+            localErrors.add(rde);
         }
         
-        for (RawDataError rde : this.fatalErrors.get(getDataType())) {
-            localErrors.add(rde.name());
+        for (String rde : this.fatalErrors.get(getDataType())) {
+            localErrors.add(rde);
         }
         return Collections.unmodifiableSet(localErrors);
     }
@@ -589,7 +578,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         String[] errors = this.conf.getStrings(INGEST_ERRORS_LIST, DEFAULT_INGEST_ERRORS);
         if (errors != null) {
             for (String error : errors) {
-                this.fatalErrors.put(null, RawDataError.valueOf(error));
+                this.fatalErrors.put(null, error);
             }
         }
         
@@ -615,7 +604,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
                     errors = this.conf.getStrings(propName);
                     if (errors != null) {
                         for (String error : errors) {
-                            this.fatalErrors.put(dataType, RawDataError.valueOf(error));
+                            this.fatalErrors.put(dataType, error);
                         }
                     }
                 }
@@ -652,8 +641,8 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
             builder.setDataType(this.dataType.typeName());
         if (null != this.uid)
             builder.setUid(this.uid.toString());
-        for (RawDataError error : errors)
-            builder.addErrors(error.name());
+        for (String error : errors)
+            builder.addErrors(error);
         if (null != this.visibility)
             builder.setVisibility(ByteString.copyFrom(this.visibility.getExpression()));
         if (null != this.rawFileName)
@@ -696,7 +685,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         errors = new ConcurrentSkipListSet<>();
         if (0 != data.getErrorsCount()) {
             for (String error : data.getErrorsList())
-                errors.add(RawDataError.valueOf(error));
+                errors.add(error);
         }
         if (data.hasVisibility() && null != data.getVisibility())
             setVisibility(new ColumnVisibility(data.getVisibility().toByteArray()));

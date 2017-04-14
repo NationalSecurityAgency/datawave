@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 
 import nsa.datawave.data.type.Type;
 import nsa.datawave.query.QueryParameters;
-import nsa.datawave.query.config.GenericShardQueryConfiguration;
 import nsa.datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import nsa.datawave.query.language.tree.QueryNode;
 import nsa.datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
@@ -134,7 +133,7 @@ public class DiscoveryLogic extends RefactoredShardIndexQueryTable {
         if (null != settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)
                         && !settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue().trim().isEmpty()) {
             Set<String> dataTypeFilter = new HashSet<>(Arrays.asList(StringUtils.split(settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)
-                            .getParameterValue().trim(), GenericShardQueryConfiguration.PARAM_VALUE_SEP)));
+                            .getParameterValue().trim(), Constants.PARAM_VALUE_SEP)));
             config.setDatatypeFilter(dataTypeFilter);
             if (log.isDebugEnabled()) {
                 log.debug("Data type filter set to " + dataTypeFilter);

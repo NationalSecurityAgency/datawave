@@ -58,19 +58,6 @@ public class DateHelperTest {
     }
     
     @Test
-    public void parseWithGmtIgnoresTrailingCharacters() throws Exception {
-        String dateStrWithTrailingCharacters = "20130201010101_1";
-        
-        SimpleDateFormat gmtFormat = new SimpleDateFormat(TO_SECOND);
-        gmtFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-        long expected = gmtFormat.parse(dateStrWithTrailingCharacters).getTime();
-        @SuppressWarnings("deprecation")
-        // testing a deprecated method
-        long actual = DateHelper.parseTimeExactToSecondsWithGMT(dateStrWithTrailingCharacters).getTime();
-        Assert.assertEquals(DATE_HELPER_SHOULD_IGNORE_TRAILING_CHARS, expected, actual);
-    }
-    
-    @Test
     public void parseToSecondsWithGmtIgnoresTrailingCharacters() throws Exception {
         String dateStrWithTrailingCharacters = "20130201_1";
         

@@ -209,16 +209,6 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     }
     
     /**
-     * Deprecated in 2.2.3, use getConnectionUserName(String poolName)
-     *
-     * @return name of the user used in the connection pools
-     */
-    @Deprecated
-    public String getConnectionUserName() {
-        return connectionPoolsConfiguration.getPools().get(this.defaultPoolName).getUsername();
-    }
-    
-    /**
      * @param poolName
      *            the name of the pool to query
      * @return name of the user used in the connection pools

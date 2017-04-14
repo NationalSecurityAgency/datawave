@@ -38,16 +38,6 @@ public class Type implements Comparable<Type> {
     /**
      * This will return the name of the type
      * 
-     * @deprecated Please use outputName() when generating accumulo Keys, and use typeName() otherwise.
-     * @return The name of the type
-     */
-    public String name() {
-        return this.name;
-    }
-    
-    /**
-     * This will return the name of the type
-     * 
      * @return the name of the type
      */
     public String typeName() {

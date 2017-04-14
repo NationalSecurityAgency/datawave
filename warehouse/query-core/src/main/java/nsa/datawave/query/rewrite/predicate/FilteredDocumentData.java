@@ -89,47 +89,6 @@ public class FilteredDocumentData extends KeyToDocumentData {
     }
     
     /**
-     * Given a Key pointing to the start of an document to aggregate, construct a Range that should encapsulate the "document" to be aggregated together. Also
-     * checks to see if data was found for the constructed Range before returning.
-     * 
-     * @param documentKey
-     *            A Key of the form "bucket type\x00uid: "
-     * @deprecated replaced by the non-static instance method
-     * @return
-     */
-    @Deprecated
-    public List<Entry<Key,Value>> collectAttributesForDocumentKey(Key documentStartKey, SortedKeyValueIterator<Key,Value> source, Equality equality,
-                    EventDataQueryFilter filter, Set<Key> docKeys) throws IOException {
-        
-        final List<Entry<Key,Value>> documentAttributes;
-        if (null == documentStartKey) {
-            documentAttributes = Collections.emptyList();
-        } else {
-            documentAttributes = new Vector<>(50);
-            WeakReference<Key> docAttrKey = new WeakReference<>(source.getTopKey());
-            
-            while (equality.partOf(documentStartKey, docAttrKey.get())) {
-                
-                if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
-                    docKeys.add(getDocKey(docAttrKey.get()));
-                    documentAttributes.add(Maps.immutableEntry(docAttrKey.get(), source.getTopValue()));
-                }
-                
-                source.next();
-                
-                if (source.hasTop()) {
-                    docAttrKey = new WeakReference<>(source.getTopKey());
-                } else {
-                    break;
-                }
-                
-            }
-        }
-        
-        return documentAttributes;
-    }
-    
-    /**
      * Get the key range.
      * 
      * @param from

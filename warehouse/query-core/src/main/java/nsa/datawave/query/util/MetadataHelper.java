@@ -1556,16 +1556,6 @@ public class MetadataHelper implements ApplicationContextAware {
         allFieldMetadataHelper.evictCaches();
     }
     
-    /**
-     * Invalidates all elements in all internal caches
-     */
-    @Deprecated
-    public static void clearCaches() {
-        if (log.isTraceEnabled()) {
-            log.trace("deprecated call to clearCaches");
-        }
-    }
-    
     public static void basicIterator(Connector connector, String tableName, Collection<Authorizations> auths) throws TableNotFoundException,
                     InvalidProtocolBufferException {
         if (log.isTraceEnabled())

@@ -4,7 +4,6 @@ import nsa.datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import nsa.datawave.ingest.table.config.ShardTableConfigHelper;
 import nsa.datawave.query.MockAccumuloRecordWriter;
 import nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic;
-import nsa.datawave.query.tables.ShardQueryLogic;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -157,20 +156,6 @@ public final class QueryTestTableHelper {
     public static void configureLogicToScanTables(RefactoredShardQueryLogic logic) {
         logic.setMetadataTableName(METADATA_TABLE_NAME);
         logic.setDateIndexTableName(DATE_INDEX_TABLE_NAME);
-        logic.setTableName(SHARD_TABLE_NAME);
-        logic.setIndexTableName(SHARD_INDEX_TABLE_NAME);
-        logic.setReverseIndexTableName(SHARD_RINDEX_TABLE_NAME);
-        logic.setModelTableName(MODEL_TABLE_NAME);
-        logic.setMaxResults(5000);
-        logic.setMaxRowsToScan(25000);
-    }
-    
-    /**
-     * Use the refactored query logic method. This one will be deleted.
-     */
-    @Deprecated
-    public static void configureLogicToScanTables(ShardQueryLogic logic) {
-        logic.setMetadataTableName(METADATA_TABLE_NAME);
         logic.setTableName(SHARD_TABLE_NAME);
         logic.setIndexTableName(SHARD_INDEX_TABLE_NAME);
         logic.setReverseIndexTableName(SHARD_RINDEX_TABLE_NAME);

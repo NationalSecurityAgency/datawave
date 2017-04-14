@@ -31,53 +31,6 @@ public class EdgeValueHelper {
     
     private EdgeValueHelper() {}
     
-    // decode
-    /**
-     * @deprecated As of 2.2.1, replaced by {@link nsa.datawave.edge.util.EdgeValue}
-     */
-    @Deprecated
-    public static List<Long> decodeValue(Key key, Value value) {
-        return decodeValue(EdgeKey.decode(key), value);
-    }
-    
-    /**
-     * @deprecated As of 2.2.1, replaced by {@link nsa.datawave.edge.util.EdgeValue}
-     */
-    @Deprecated
-    public static List<Long> decodeValue(EdgeKey edgeKey, Value value) {
-        if (edgeKey.getFormat() == EDGE_FORMAT.STANDARD) {
-            return decodeCount(edgeKey, value);
-        } else if (edgeKey.getFormat() == EDGE_FORMAT.STATS) {
-            if (edgeKey.getStatsType() == STATS_TYPE.ACTIVITY) {
-                return decodeActivityHistogram(value);
-            } else if (edgeKey.getStatsType() == STATS_TYPE.DURATION) {
-                return decodeDurationHistogram(value);
-            } else if (edgeKey.getStatsType() == STATS_TYPE.LINKS) {
-                return Lists.newArrayList(decodeLinkCount(value));
-            } else {
-                throw new IllegalStateException("Invalid value data for given Stats Edge Key:" + edgeKey.getStatsType());
-            }
-        } else {
-            throw new IllegalStateException("Invalid value data for given Edge Key.");
-        }
-    }
-    
-    /**
-     * @deprecated As of 2.2.1, replaced by {@link nsa.datawave.edge.util.EdgeValue}
-     */
-    @Deprecated
-    public static List<Long> decodeCount(EdgeKey edgeKey, Value value) {
-        List<Long> retLong = new ArrayList<>(1);
-        try {
-            EdgeData.EdgeValue valueProto = EdgeData.EdgeValue.parseFrom(value.get());
-            retLong.add(valueProto.getCount());
-        } catch (InvalidProtocolBufferException e) {
-            // Probably an old edge value
-            retLong.add(new VarLenEncoder().decode(value.get()));
-        }
-        return retLong;
-    }
-    
     public static List<Long> decodeActivityHistogram(Value value) {
         try {
             return decodeActivityHistogram(EdgeData.EdgeValue.parseFrom(value.get()).getHoursList());
@@ -135,74 +88,6 @@ public class EdgeValueHelper {
     }
     
     // encode stuff
-    /**
-     * @deprecated As of 2.2.1, replaced by {@link nsa.datawave.edge.util.EdgeValue}
-     */
-    @Deprecated
-    public static Value encodeValue(Key key, Long count) {
-        return encodeValue(EdgeKey.decode(key), count);
-    }
-    
-    /**
-     * @deprecated As of 2.2.1, replaced by {@link nsa.datawave.edge.util.EdgeValue}
-     */
-    @Deprecated
-    public static Value encodeValue(Key key, List<Long> longs) {
-        return encodeValue(EdgeKey.decode(key), longs);
-    }
-    
-    /**
-     * @deprecated As of 2.2.1, replaced by {@link nsa.datawave.edge.util.EdgeValue}
-     */
-    @Deprecated
-    public static Value encodeValue(EdgeKey edgeKey, Long count) {
-        List<Long> longs = new ArrayList<>();
-        longs.add(count);
-        return encodeValue(edgeKey, longs);
-    }
-    
-    /**
-     * @deprecated As of 2.2.1, replaced by {@link nsa.datawave.edge.util.EdgeValue}
-     */
-    @Deprecated
-    public static Value encodeValue(EdgeKey edgeKey, List<Long> longs) {
-        if (edgeKey.getFormat() == EDGE_FORMAT.STANDARD) {
-            return encodeCount(longs);
-        } else if (edgeKey.getFormat() == EDGE_FORMAT.STATS) {
-            if (edgeKey.getStatsType() == STATS_TYPE.ACTIVITY) {
-                return encodeActivityHistogram(longs);
-            } else if (edgeKey.getStatsType() == STATS_TYPE.DURATION) {
-                return encodeDurationHistogram(longs);
-            } else {
-                throw new IllegalArgumentException("Invalid value data for given Stats Edge Key.");
-            }
-        } else {
-            throw new IllegalArgumentException("Invalid value data for given Edge Key.");
-        }
-    }
-    
-    /**
-     * @deprecated As of 2.2.1, replaced by {@link nsa.datawave.edge.util.EdgeValue}
-     */
-    @Deprecated
-    public static Value encodeCount(Long count) {
-        List<Long> aCount = new ArrayList<>();
-        aCount.add(count);
-        return encodeCount(aCount);
-    }
-    
-    /**
-     * @deprecated As of 2.2.1, replaced by {@link nsa.datawave.edge.util.EdgeValue}
-     */
-    @Deprecated
-    public static Value encodeCount(List<Long> count) {
-        if (count.size() != 1) {
-            throw new IllegalArgumentException("Too many items declared in count list (more than one)");
-        }
-        EdgeValue.Builder builder = EdgeValue.newBuilder();
-        builder.setCount(count.get(0));
-        return new Value(builder.build().toByteArray());
-    }
     
     public static Value encodeActivityHistogram(List<Long> longs) {
         if (longs.size() != ACTIVITY_HISTOGRAM_LENGTH) {

@@ -7,9 +7,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import nsa.datawave.query.config.GenericShardQueryConfiguration;
 import nsa.datawave.query.enrich.DataEnricher;
 
+import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.util.StringUtils;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -61,10 +61,10 @@ public class EnrichingIterator implements SortedKeyValueIterator<Key,Value>, Opt
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
-        options.put(ENRICHMENT_CLASSES, "'" + GenericShardQueryConfiguration.PARAM_VALUE_SEP + "' separated list of classes to use to enrich the data");
+        options.put(ENRICHMENT_CLASSES, "'" + Constants.PARAM_VALUE_SEP + "' separated list of classes to use to enrich the data");
         options.put(QUERY, "The query that was submitted");
         options.put(SUB_ITERATOR_CLASS, "The class name of the iterator that lives below the Enriching Iterator.");
-        options.put(UNEVALUATED_FIELDS, "'" + GenericShardQueryConfiguration.PARAM_VALUE_SEP + "' separated list of fields that do not exist in the event.");
+        options.put(UNEVALUATED_FIELDS, "'" + Constants.PARAM_VALUE_SEP + "' separated list of fields that do not exist in the event.");
         return new IteratorOptions(getClass().getSimpleName(), "Enriches the data passing through the iterator", options, null);
     }
     
@@ -87,8 +87,8 @@ public class EnrichingIterator implements SortedKeyValueIterator<Key,Value>, Opt
         String fields = options.get(UNEVALUATED_FIELDS);
         String classes = options.get(ENRICHMENT_CLASSES);
         String subClass = options.get(SUB_ITERATOR_CLASS);
-        String[] classNames = StringUtils.split(classes, GenericShardQueryConfiguration.PARAM_VALUE_SEP);
-        String[] unevaluatedFields = StringUtils.split(fields, GenericShardQueryConfiguration.PARAM_VALUE_SEP);
+        String[] classNames = StringUtils.split(classes, Constants.PARAM_VALUE_SEP);
+        String[] unevaluatedFields = StringUtils.split(fields, Constants.PARAM_VALUE_SEP);
         
         Map<String,Object> enricherOptions = new HashMap<>();
         enricherOptions.put("query", query);

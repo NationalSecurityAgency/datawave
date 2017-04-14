@@ -15,7 +15,7 @@ import java.util.Set;
 import nsa.datawave.data.hash.UID;
 import nsa.datawave.ingest.config.IngestConfiguration;
 import nsa.datawave.ingest.config.IngestConfigurationFactory;
-import nsa.datawave.ingest.data.RawDataError;
+import nsa.datawave.ingest.data.RawDataErrorNames;
 import nsa.datawave.ingest.data.RawRecordContainer;
 import nsa.datawave.ingest.data.Type;
 import nsa.datawave.ingest.data.TypeRegistry;
@@ -303,7 +303,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         
         // event runtime exception if any
         if (record.getAuxData() instanceof Exception) {
-            allFields.put(ERROR_FIELD, new NormalizedFieldAndValue(ERROR_FIELD, RawDataError.RUNTIME_EXCEPTION.name()));
+            allFields.put(ERROR_FIELD, new NormalizedFieldAndValue(ERROR_FIELD, RawDataErrorNames.RUNTIME_EXCEPTION));
             getStackTrace(buffer, (Exception) (record.getAuxData()));
             allFields.put(STACK_TRACE_FIELD, new NormalizedFieldAndValue(STACK_TRACE_FIELD, new String(buffer.getData(), 0, buffer.getLength())));
             buffer.reset();

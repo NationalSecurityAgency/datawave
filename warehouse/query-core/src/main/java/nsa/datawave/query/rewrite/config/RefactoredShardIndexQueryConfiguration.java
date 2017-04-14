@@ -3,9 +3,7 @@ package nsa.datawave.query.rewrite.config;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import nsa.datawave.query.config.ShardQueryConfiguration;
 import nsa.datawave.query.rewrite.tables.RefactoredShardIndexQueryTable;
-import nsa.datawave.query.tables.shard.ShardIndexQueryTable;
 import nsa.datawave.webservice.query.Query;
 
 import org.apache.accumulo.core.data.Range;
@@ -14,12 +12,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
-/**
- * Thin wrapper around the {@link ShardQueryConfiguration} for use by the {@link ShardIndexQueryTable}
- * 
- * 
- * 
- */
 public class RefactoredShardIndexQueryConfiguration extends RefactoredShardQueryConfiguration {
     private static final long serialVersionUID = 7616552164239289739L;
     

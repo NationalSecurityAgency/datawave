@@ -426,13 +426,7 @@
         <property name="includeHierarchyFields" value="false" />
     </bean>
 
-
-    <bean id="IndexStatsQuery" parent="baseQueryLogic" scope="prototype"  class="nsa.datawave.query.tables.shard.IndexStatsQueryLogic">
-        <property name="auditType" value="PASSIVE" />
-        <property name="selectorExtractor"><null/></property>
-    </bean>
-
-	<bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="nsa.datawave.query.metrics.QueryMetricQueryLogic">
+    <bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="nsa.datawave.query.metrics.QueryMetricQueryLogic">
 	    <property name="logicDescription" value="Query Metrics query" />
 	    <property name="includeHierarchyFields" value="false" />
 	    <property name="modelTableName" value="${query.metrics.table.basename}_m" />
@@ -614,12 +608,4 @@
     <bean id="edgeEventQueryModel" class="nsa.datawave.query.model.edge.EdgeQueryModel" factory-method="loadModel">
         <constructor-arg value="/DATAWAVE_EDGE.xml" />
     </bean>
-    
-    <bean id="EdgeEventQuery" scope="prototype"  parent="BaseEventQuery" class="nsa.datawave.query.tables.edge.DefaultEdgeEventQueryLogic">
-        <property name="logicDescription" value="Use results of an EdgeQuery to obtain events that created the edge." />
-        <property name="edgeQueryModel" ref="edgeEventQueryModel" />
-        <property name="edgeModelName" value="DATAWAVE_EDGE" />
-        <property name="modelTableName" value="DatawaveMetadata" />
-    </bean>
-    
 </beans>
