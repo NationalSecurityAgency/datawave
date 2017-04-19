@@ -32,6 +32,7 @@
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
+        <version.curator>2.11.0</version.curator>
         <version.deltaspike>1.5.4</version.deltaspike>
         <version.dropwizard-metrics>1.3.3</version.dropwizard-metrics>
         <version.easymock>3.3.1</version.easymock>
@@ -431,6 +432,16 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-jexl</artifactId>
                 <version>${version.commons-jexl}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-framework</artifactId>
+                <version>${version.curator}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-recipes</artifactId>
+                <version>${version.curator}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.deltaspike.core</groupId>
@@ -840,6 +851,13 @@
                 <artifactId>junit</artifactId>
                 <version>${version.junit}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-test</artifactId>
+                <version>${version.curator}</version>
+                <scope>test</scope>
+                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>org.easymock</groupId>

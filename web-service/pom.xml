@@ -54,7 +54,6 @@
         <version.commons-httpclient>3.1</version.commons-httpclient>
         <version.commons-net>3.5</version.commons-net>
         <version.commons-pool2>2.4.2</version.commons-pool2>
-        <version.curator>2.11.0</version.curator>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
         <version.javassist>3.18.1-GA</version.javassist>
@@ -324,16 +323,6 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-framework</artifactId>
-                <version>${version.curator}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-recipes</artifactId>
-                <version>${version.curator}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.geronimo.specs</groupId>
                 <artifactId>geronimo-activation_1.1_spec</artifactId>
                 <version>${version.geronimo-activation}</version>
@@ -538,13 +527,6 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-test</artifactId>
-                <version>${version.curator}</version>
-                <scope>test</scope>
-                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>org.apache.mrunit</groupId>
