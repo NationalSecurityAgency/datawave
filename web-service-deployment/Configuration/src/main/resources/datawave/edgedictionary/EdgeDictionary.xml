@@ -24,6 +24,4 @@
         <property name="numThreads" value="8" />
 	</bean>
 
-    <bean id="DatawaveEdgeDictionary" class="nsa.datawave.webservice.edgedictionary.DefaultDatawaveEdgeDictionaryImpl" />
-
 </beans>

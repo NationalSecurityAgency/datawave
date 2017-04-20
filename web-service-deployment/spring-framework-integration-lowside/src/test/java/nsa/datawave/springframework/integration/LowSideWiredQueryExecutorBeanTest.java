@@ -23,7 +23,6 @@ import nsa.datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import nsa.datawave.query.util.DateIndexHelperFactory;
 import nsa.datawave.security.authorization.BasePrincipalFactoryConfiguration;
 import nsa.datawave.security.authorization.DatawavePrincipalLookup;
-import nsa.datawave.webservice.edgedictionary.DatawaveEdgeDictionary;
 import nsa.datawave.webservice.edgedictionary.DefaultDatawaveEdgeDictionaryImpl;
 import nsa.datawave.webservice.operations.configuration.LookupBeanConfiguration;
 import nsa.datawave.webservice.query.cache.QueryExpirationConfiguration;

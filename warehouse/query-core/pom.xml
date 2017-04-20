@@ -303,28 +303,12 @@
         </dependency>
     </dependencies>
     <build>
-        <!-- Resources were previously commented out below due to a reported Spring conflict. 
-        Reinstating them with specific 'includes' b/c having no resource filtering for tests is becoming
-        even more problematic. Hopefully this will avoid the previous Spring conflict as well -->
         <resources>
             <resource>
                 <filtering>true</filtering>
                 <directory>src/main/resources</directory>
-                <includes>
-                    <include>**/metadata.properties</include>
-                    <include>**/DATAWAVE_EDGE.xml</include>
-                </includes>
             </resource>
         </resources>
-        <testResources>
-            <testResource>
-                <directory>src/test/resources</directory>
-                <includes>
-                    <include>**/*.properties</include>
-                    <include>**/*.xml</include>
-                </includes>
-            </testResource>
-        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
