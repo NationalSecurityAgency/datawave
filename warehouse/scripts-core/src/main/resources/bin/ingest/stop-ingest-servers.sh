@@ -2,17 +2,15 @@
 function usage
 {
     echo -e "usage: stop-ingest-servers.sh [options] where options include:\n
-    \t-type\tWhich ingesters to stop (all,onehr,fivemin,fifteenmin) eg -type all
+    \t-type\tWhich ingesters to stop (all,bulk,live) eg -type all
     \t-signal\tSignal command to send as first arg to kill
     \t-help\tprint this message\n"
 }
 
-ONEHR_SCRIPT="one-hr-ingest-server.sh"
-ONEHR_TEXT="one hour"
-FIFTEENMIN_SCRIPT="fifteen-min-ingest-server.sh"
-FIFTEENMIN_TEXT="fifteen minute"
-FIVEMIN_SCRIPT="five-min-ingest-server.sh"
-FIVEMIN_TEXT="five minute"
+BULK_SCRIPT="bulk-ingest-server.sh"
+BULK_TEXT="bulk"
+LIVE_SCRIPT="live-ingest-server.sh"
+LIVE_TEXT="live"
 
 TYPE=""
 
@@ -46,19 +44,16 @@ TYPES_TO_RUN=""
 
 case $TYPE in
     all)
-        TYPES_TO_RUN="ONEHR FIFTEENMIN FIVEMIN"
+        TYPES_TO_RUN="BULK LIVE"
     ;;
-    onehr)
-        TYPES_TO_RUN="ONEHR"
+    bulk)
+        TYPES_TO_RUN="BULK"
     ;;
-    fifteenmin)
-        TYPES_TO_RUN="FIFTEENMIN"
-    ;;
-    fivemin)
-        TYPES_TO_RUN="FIVEMIN"
+    live)
+        TYPES_TO_RUN="LIVE"
     ;;
     *)
-        echo "UNKNOWN TYPE -- Was $TYPE but expected all, onehr, fifteenmin, or fivemin"
+        echo "UNKNOWN TYPE -- Was $TYPE but expected all, bulk, or live"
         exit
     ;;
 esac

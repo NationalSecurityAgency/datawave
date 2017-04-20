@@ -13,9 +13,8 @@ FORCE=true
 
 
 host=`hostname -s`
-ps -efww | egrep "bash .*one-hr-ingest-server.sh" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*/$host: \1: One Hour Ingest Server/"
-ps -efww | egrep "bash .*fifteen-min-ingest-server.sh" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*/$host: \1: Fifteen Minute Ingest Server/"
-ps -efww | egrep "bash .*five-min-ingest-server.sh" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*/$host: \1: Five Minute Ingest Server/"
+ps -efww | egrep "bash .*bulk-ingest-server.sh" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*/$host: \1: Bulk Ingest Server/"
+ps -efww | egrep "bash .*live-ingest-server.sh" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*/$host: \1: Live Ingest Server/"
 ps -efww | egrep "bash .*execute-ingest.sh.*" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*ingest.sh .*\/flags\/\([[:graph:]]*\).*/$host: \1: Ingest Job \2/"
 ps -efww | egrep "python .*cleanupserver.py.*" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*/$host: \1: Cleanup Server/"
 ./listLoader.sh
