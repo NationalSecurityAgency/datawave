@@ -3,6 +3,8 @@ package nsa.datawave.webservice.query.metric;
 import nsa.datawave.security.authorization.DatawavePrincipal;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Alternative;
@@ -14,6 +16,11 @@ public class NoOpQueryMetricHandler implements QueryMetricHandler {
     @Override
     public void updateMetric(BaseQueryMetric metric, DatawavePrincipal datawavePrincipal) throws Exception {
         
+    }
+    
+    @Override
+    public Map<String,String> getEventFields(BaseQueryMetric queryMetric) {
+        return new HashMap<>();
     }
     
     @Override

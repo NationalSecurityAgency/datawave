@@ -15,6 +15,7 @@
                 <value>classpath*:CacheContext.xml</value>
                 <value>classpath*:datawave/security/PrincipalFactory.xml</value>
                 <value>classpath*:datawave/query/QueryExpiration.xml</value>
+                <value>classpath*:datawave/query/QueryMetricsWriter.xml</value>
                 <value>classpath*:datawave/query/*QueryLogicFactory.xml</value>
                 <value>classpath*:datawave/query/CachedResults*.xml</value>
 				<value>classpath*:datawave/datadictionary/DataDictionary.xml</value>
