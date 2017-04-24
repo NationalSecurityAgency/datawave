@@ -2,15 +2,14 @@ package nsa.datawave.webservice.query.util;
 
 import java.security.Principal;
 import java.text.ParseException;
+import java.util.UUID;
+import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
+import java.util.Map;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import javax.ejb.EJBContext;
 import javax.ejb.EJBException;
 import javax.ws.rs.core.HttpHeaders;
@@ -41,7 +40,6 @@ import nsa.datawave.webservice.result.GenericResponse;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.springframework.util.StringUtils;
 
 /**
  * Utility for performing optimized queries based on UUIDs

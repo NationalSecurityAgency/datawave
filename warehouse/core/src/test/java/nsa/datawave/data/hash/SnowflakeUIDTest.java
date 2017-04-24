@@ -12,7 +12,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.curator.test.TestingServer;
 import org.apache.hadoop.conf.Configuration;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,13 +24,22 @@ public class SnowflakeUIDTest {
     
     private String data = "20100901: the quick brown fox jumped over the lazy dog";
     private String data2 = "20100831: the quick brown fox jumped over the lazy dog";
+    private Configuration conf = new Configuration();
+    TestingServer zkTestServer;
     
     @Before
-    public void setup() {
-        Configuration conf = new Configuration();
+    public void setup() throws Exception {
         conf.set(UIDConstants.CONFIG_UID_TYPE_KEY, SnowflakeUID.class.getSimpleName());
         conf.set(UIDConstants.CONFIG_MACHINE_ID_KEY, "" + SnowflakeUID.MAX_MACHINE_ID);
+        zkTestServer = new TestingServer(2888);
+        conf.set("snowflake.zookeepers", zkTestServer.getConnectString());
+        conf.set("snowdlake.zookeeper.enabled", "true");
         builder = UID.builder(conf);
+    }
+    
+    @After
+    public void cleanup() throws IOException {
+        zkTestServer.stop();
     }
     
     @Test
@@ -427,5 +438,38 @@ public class SnowflakeUIDTest {
         
         assertTrue(a.equals(b));
         assertTrue(b.equals(a));
+    }
+    
+    @Test
+    public void testZkCache() throws Exception {
+        
+        long startingTimestamp = 12345678;
+        int myMachineId = 41610;
+        
+        ZkSnowflakeCache.init(conf.get("snowflake.zookeepers"), 5, 1000);
+        ZkSnowflakeCache.store(BigInteger.valueOf(myMachineId), startingTimestamp);// stash the timestamp
+        
+        int startingSequence = SnowflakeUID.MAX_SEQUENCE_ID - 1;
+        SnowflakeUIDBuilder builder = SnowflakeUID.builder(startingTimestamp, 10, 10, 10, startingSequence);
+        
+        SnowflakeUID uid = builder.newId();
+        
+        assertEquals(myMachineId, uid.getMachineId());
+        
+        assertEquals(startingTimestamp + 1, uid.getTimestamp());
+        assertEquals(startingSequence, uid.getSequenceId()); // Initial sequence ID
+        assertEquals(startingTimestamp + 1, ZkSnowflakeCache.getLastCachedTid(BigInteger.valueOf(uid.getMachineId()))); // cached timestamp
+        
+        uid = builder.newId();
+        assertEquals(startingTimestamp + 1, uid.getTimestamp()); // Same timestamp
+        assertEquals(startingSequence + 1, uid.getSequenceId()); // Incremented sequence ID
+        assertEquals(startingTimestamp + 2, ZkSnowflakeCache.getLastCachedTid(BigInteger.valueOf(uid.getMachineId()))); // cached ts also incremented
+        
+        uid = builder.newId();
+        assertEquals(startingTimestamp + 2, uid.getTimestamp()); // Incremented timestamp to next millisecond
+        assertEquals(0, uid.getSequenceId()); // Rolled over sequence ID to zero
+        assertEquals(startingTimestamp + 2, ZkSnowflakeCache.getLastCachedTid(BigInteger.valueOf(uid.getMachineId()))); // cached ts also incremented
+        ZkSnowflakeCache.stop();
+        
     }
 }

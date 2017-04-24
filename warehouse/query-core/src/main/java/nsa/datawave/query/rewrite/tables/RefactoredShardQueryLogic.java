@@ -16,7 +16,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
 import nsa.datawave.core.iterators.EvaluatingIterator;
 import nsa.datawave.data.type.NoOpType;
 import nsa.datawave.data.type.Type;
@@ -72,7 +71,6 @@ import nsa.datawave.webservice.query.logic.BaseQueryLogic;
 import nsa.datawave.webservice.query.logic.QueryLogicTransformer;
 import nsa.datawave.webservice.query.logic.WritesQueryMetrics;
 import nsa.datawave.webservice.query.result.event.ResponseObjectFactory;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -2286,5 +2284,4 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     public void setFailOutsideValidDateRange(boolean failOutsideValidDateRange) {
         this.failOutsideValidDateRange = failOutsideValidDateRange;
     }
-    
 }

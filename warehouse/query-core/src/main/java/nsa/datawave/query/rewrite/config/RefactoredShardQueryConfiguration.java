@@ -1577,5 +1577,4 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     public void setSortedUIDs(boolean sortedUIDs) {
         this.sortedUIDs = sortedUIDs;
     }
-    
 }

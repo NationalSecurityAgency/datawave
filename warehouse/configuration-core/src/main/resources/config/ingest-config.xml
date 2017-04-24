@@ -29,6 +29,16 @@
 </property>
 
 <property>
+  <name>snowflake.zookeepers</name>
+  <value>${SNOWFLAKE_ZOOKEEPERS}</value>
+</property>
+
+<property>
+  <name>snowflake.zookeeper.enabled</name>
+  <value>${SNOWFLAKE_ZOOKEEPER_ENABLED}</value>
+</property>
+
+<property>
    <name>shard.table.index.bloom.enable</name>
    <value>false</value>
 </property>

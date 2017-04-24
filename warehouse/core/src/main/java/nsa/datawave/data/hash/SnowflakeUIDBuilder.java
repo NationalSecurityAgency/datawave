@@ -28,7 +28,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
     
     private long tid;
     
-    private static long previousTid;
+    private long previousTid = -1;
     
     /**
      * Constructor for creating uninitialized UIDs intended only for deserialization purposes
@@ -73,14 +73,14 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
      * seed value
      */
     private SnowflakeUIDBuilder(long timestamp, final BigInteger machineId, int sequenceId) {
-        // Validate and assign the timestamp ID (tid)
-        tid = validateTimestamp(timestamp);
-        
         // The machine ID has already been validated, so just assign it (mid)
-        mid = machineId;
+        this.mid = machineId;
+        
+        // Validate and assign the timestamp ID (tid)
+        this.tid = validateTimestamp(timestamp);
         
         // Validate and assign the initial sequence ID (sid)
-        sid = validateSequenceId(sequenceId);
+        this.sid = validateSequenceId(sequenceId);
         
         // Set the radix
         this.radix = SnowflakeUID.DEFAULT_RADIX;
@@ -94,9 +94,6 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
      *            based on the current milliseconds from the epoch
      * @param machineId
      *            unique 20-bit machine ID between 0 and 1048575, inclusively
-     * @param sequenceId
-     *            the initial seed value for a 24-bit, one-up counter (max value of 16777215), or a negative integer to allow the builder to specify the seed
-     *            value
      */
     protected SnowflakeUIDBuilder(long timestamp, int machineId) {
         this(timestamp, validateMachineId(machineId), 0);
@@ -320,7 +317,6 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
                 }
             }
         }
-        
         return snowflake;
     }
     
@@ -373,25 +369,70 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
         return sequenceId;
     }
     
-    private static long validateTimestamp(long timestamp) {
+    private long validateTimestamp(long timestamp) {
         if (timestamp > SnowflakeUID.MAX_TIMESTAMP || (previousTid + 1) > SnowflakeUID.MAX_TIMESTAMP) {
             throw new IllegalArgumentException("Max timestamp is " + SnowflakeUID.MAX_TIMESTAMP);
         }
         // removed initial check for timestamp <= 0 since we should ignore any timestamp passed in to this method
         // and assign it to either the current time or previous TID + 1
-        if (previousTid <= 0) {
-            timestamp = System.currentTimeMillis();
+        if (this.previousTid <= 0) {
+            timestamp = initializeTimestamp();
+            
         } else {
-            timestamp = previousTid + 1;
+            timestamp = this.previousTid + 1;
         }
         
-        if (timestamp <= previousTid) {
-            LOGGER.error("Current tid is less than the previous.  This could cause uid collisions.\n" + "Timestamp: " + timestamp + ", Previous: "
-                            + previousTid + ", System Time: " + System.currentTimeMillis());
-            timestamp = previousTid + 1;
+        if (timestamp <= this.previousTid) {
+            LOGGER.error("Current tid is less than the previous.  This could cause uid collisions.\n" + "Mid: " + mid + ", Timestamp: " + timestamp
+                            + ", Previous: " + previousTid + ", System Time: " + System.currentTimeMillis());
+            timestamp = this.previousTid + 1;
         }
-        // TODO: stash the timestamp in ZK
-        previousTid = timestamp;
+        
+        // stash the timestamp in ZK
+        this.previousTid = timestamp;
+        
+        storeTimestamp();
+        
         return timestamp;
     }
+    
+    private void storeTimestamp() {
+        if (ZkSnowflakeCache.isInitialized()) {
+            try {
+                ZkSnowflakeCache.store(mid, this.previousTid);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Caching ZK ts: " + this.previousTid + ", mid: " + this.mid);
+                }
+                
+            } catch (Exception e) {
+                LOGGER.error("Unable to store snowflake id from zookeeper for " + mid, e);
+                throw new RuntimeException(e);
+            }
+        }
+    }
+    
+    private long initializeTimestamp() {
+        long timestamp;
+        long lastCachedTid = 0;
+        if (ZkSnowflakeCache.isInitialized()) {
+            try {
+                lastCachedTid = ZkSnowflakeCache.getLastCachedTid(this.mid);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Getting ZK ts: " + lastCachedTid + " mid: " + this.mid);
+                }
+                
+            } catch (Exception e) {
+                LOGGER.error("Unable to retrieve snowflake id from zookeeper for " + mid, e);
+                throw new RuntimeException(e);
+                
+            }
+        }
+        if (lastCachedTid > 0) {
+            timestamp = lastCachedTid + 1;
+        } else {
+            timestamp = System.currentTimeMillis();
+        }
+        return timestamp;
+    }
+    
 }

@@ -15,6 +15,7 @@ import nsa.datawave.util.StringUtils;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
+import org.apache.log4j.Logger;
 
 /**
  * Internal, DATAWAVE-specific, unique identifier. Instead of using a UUID which consumes 128 bits, we are using:
@@ -36,6 +37,8 @@ import org.apache.hadoop.io.Writable;
  */
 
 public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable {
+    
+    private static final Logger LOGGER = Logger.getLogger(UID.class);
     
     protected static final String[] EMPTY_EXTRAS = {};
     protected static final String NULL = "" + null;
@@ -197,8 +200,13 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable 
         if (SnowflakeUID.class.getSimpleName().equals(type)) {
             int machineId = config.getInt(CONFIG_MACHINE_ID_KEY, -1);
             if (machineId >= 0) {
-                long timestamp = (null != time) ? time.getTime() : -1;
-                builder = (UIDBuilder) ((timestamp >= 0) ? SnowflakeUID.builder(timestamp, machineId) : SnowflakeUID.builder(machineId));
+                if (config.getBoolean("snowflake.zookeeper.enabled", false)) {
+                    ZkSnowflakeCache.init(config.get("snowflake.zookeepers"), config.getInt("snowflake.zk.init.retries", 5),
+                                    config.getInt("snowflake.zk.init.sleep", 1000));
+                } else {
+                    LOGGER.warn("Attempting to generate snowflake ids without caching could cause uid collisions in the event of clock roll-back");
+                }
+                builder = (UIDBuilder) SnowflakeUID.builder(machineId);
             } else {
                 final String message = "A 20-bit, non-negative, integer Machine ID must be configured with the " + CONFIG_MACHINE_ID_KEY
                                 + " property key in order to build " + SnowflakeUID.class.getSimpleName() + "s";
