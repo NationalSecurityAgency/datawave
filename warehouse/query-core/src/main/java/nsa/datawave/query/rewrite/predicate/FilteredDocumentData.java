@@ -92,7 +92,7 @@ public class FilteredDocumentData extends KeyToDocumentData {
      * Given a Key pointing to the start of an document to aggregate, construct a Range that should encapsulate the "document" to be aggregated together. Also
      * checks to see if data was found for the constructed Range before returning.
      * 
-     * @param documentKey
+     * @param documentStartKey
      *            A Key of the form "bucket type\x00uid: "
      * @deprecated replaced by the non-static instance method
      * @return

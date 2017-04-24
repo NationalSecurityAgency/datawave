@@ -93,7 +93,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
  * </p>
  * 
  * 
- * @TODO -- Break this class apart
+ * TODO -- Break this class apart
  * 
  */
 @Configuration
@@ -445,12 +445,10 @@ public class MetadataHelper implements ApplicationContextAware {
     
     /**
      * Fetch the {@link Set} of all fields contained in the database. This will provide a cached view of the fields which is updated every
-     * {@link #updateInterval} milliseconds.
+     * {@code updateInterval} milliseconds.
      *
      * @return
      * @throws TableNotFoundException
-     * @throws ExecutionException
-     * @throws IOException
      */
     public Set<String> getAllFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         if (log.isTraceEnabled())
@@ -477,7 +475,6 @@ public class MetadataHelper implements ApplicationContextAware {
      * 
      * @return
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     public Set<String> getIndexOnlyFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
@@ -505,10 +502,7 @@ public class MetadataHelper implements ApplicationContextAware {
     /***
      * @param modelName
      * @return
-     * @throws InstantiationException
-     * @throws IllegalAccessException
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unevaluatedFields, Set<String> ingestTypeFilter)
                     throws TableNotFoundException {
@@ -853,12 +847,10 @@ public class MetadataHelper implements ApplicationContextAware {
     }
     
     /**
-     * A map of composite name to the ordered list of it for example, mapping of COLOR -> ['COLOR_WHEELS,0', 'MAKE_COLOR,1' ]. If called multiple time, it
-     * returns the same cached map.
+     * A map of composite name to the ordered list of it for example, mapping of {@code COLOR -> ['COLOR_WHEELS,0', 'MAKE_COLOR,1' ]}. If called multiple time,
+     * it returns the same cached map.
      * 
      * @return An unmodifiable Multimap
-     * @throws InstantiationException
-     * @throws IllegalAccessException
      * @throws TableNotFoundException
      */
     public Multimap<String,CompositeNameAndIndex> getFieldToCompositeMap() throws TableNotFoundException {
@@ -871,11 +863,11 @@ public class MetadataHelper implements ApplicationContextAware {
     }
     
     /**
-     * Fetch the set of {@link Type<?>}s that are configured for this <code>fieldName</code> as specified in the table pointed to by the
+     * Fetch the set of {@link Type}s that are configured for this <code>fieldName</code> as specified in the table pointed to by the
      * <code>metadataTableName</code> parameter.
      *
      * @param fieldName
-     *            The name of the field to fetch the {@link Type<?>}s for. If null then all dataTypes are returned.
+     *            The name of the field to fetch the {@link Type}s for. If null then all dataTypes are returned.
      * @return
      * @throws InstantiationException
      * @throws IllegalAccessException
@@ -890,7 +882,6 @@ public class MetadataHelper implements ApplicationContextAware {
      * @throws InstantiationException
      * @throws IllegalAccessException
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     public Set<Type<?>> getDatatypesForField(String fieldName, Set<String> ingestTypeFilter) throws InstantiationException, IllegalAccessException,
                     TableNotFoundException {
@@ -960,7 +951,7 @@ public class MetadataHelper implements ApplicationContextAware {
     }
     
     /**
-     * Fetch the set of {@link Type<?>}s that are configured for this <code>fieldName</code> as specified in the table pointed to by the
+     * Fetch the set of {@link Type}s that are configured for this <code>fieldName</code> as specified in the table pointed to by the
      * <code>metadataTableName</code> parameter.
      *
      * @param ingestTypeFilter
@@ -998,10 +989,7 @@ public class MetadataHelper implements ApplicationContextAware {
      * @param datawaveType
      * @param ingestTypeFilter
      * @return
-     * @throws InstantiationException
-     * @throws IllegalAccessException
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     public Set<String> getFieldsForDatatype(Class<? extends Type<?>> datawaveType, Set<String> ingestTypeFilter) throws TableNotFoundException {
         return this.allFieldMetadataHelper.getFieldsForDatatype(datawaveType, ingestTypeFilter);
@@ -1116,7 +1104,6 @@ public class MetadataHelper implements ApplicationContextAware {
      * @param ingestTypeFilter
      * @return
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     public Set<String> getIndexedFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
@@ -1139,7 +1126,6 @@ public class MetadataHelper implements ApplicationContextAware {
      * @param ingestTypeFilter
      * @return
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     public Set<String> getReverseIndexedFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
@@ -1162,7 +1148,6 @@ public class MetadataHelper implements ApplicationContextAware {
      * @param ingestTypeFilter
      * @return
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     public Set<String> getExpansionFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
@@ -1185,7 +1170,6 @@ public class MetadataHelper implements ApplicationContextAware {
      * @param ingestTypeFilter
      * @return
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     public Set<String> getContentFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
@@ -1224,8 +1208,6 @@ public class MetadataHelper implements ApplicationContextAware {
      * @param end
      * @return
      * @throws TableNotFoundException
-     * @throws InstantiationException
-     * @throws ExecutionException
      */
     public long getCardinalityForField(String fieldName, String datatype, Date begin, Date end) throws TableNotFoundException {
         log.trace("getCardinalityForField from table: " + metadataTableName);
@@ -1334,7 +1316,7 @@ public class MetadataHelper implements ApplicationContextAware {
     }
     
     /**
-     * Return the sum across all datatypes of the {@link ColumnFamilyConstants.COLF_F} on the given day.
+     * Return the sum across all datatypes of the {@link ColumnFamilyConstants#COLF_F} on the given day.
      *
      * @param fieldName
      * @param date
@@ -1345,7 +1327,7 @@ public class MetadataHelper implements ApplicationContextAware {
     }
     
     /**
-     * Return the sum across all datatypes of the {@link ColumnFamilyConstants.COLF_F} on the given day in the provided types
+     * Return the sum across all datatypes of the {@link ColumnFamilyConstants#COLF_F} on the given day in the provided types
      *
      * @param fieldName
      * @param date
@@ -1456,9 +1438,6 @@ public class MetadataHelper implements ApplicationContextAware {
      * datatype to field
      * 
      * @throws TableNotFoundException
-     * @throws ExecutionException
-     * @throws InstantiationException
-     * @throws IOException
      */
     protected Multimap<String,String> loadAllFields() throws TableNotFoundException {
         Multimap<String,String> fields = HashMultimap.create();
@@ -1498,8 +1477,6 @@ public class MetadataHelper implements ApplicationContextAware {
      * multimap of datatype to field
      * 
      * @throws TableNotFoundException
-     * @throws InstantiationException
-     * @throws ExecutionException
      */
     protected Multimap<String,String> loadIndexOnlyFields() throws TableNotFoundException {
         return this.allFieldMetadataHelper.getIndexOnlyFields();
@@ -1511,8 +1488,6 @@ public class MetadataHelper implements ApplicationContextAware {
      *
      * @return
      * @throws TableNotFoundException
-     * @throws InstantiationException
-     * @throws ExecutionException
      */
     protected Multimap<String,String> loadTermFrequencyFields() throws TableNotFoundException {
         Multimap<String,String> fields = HashMultimap.create();

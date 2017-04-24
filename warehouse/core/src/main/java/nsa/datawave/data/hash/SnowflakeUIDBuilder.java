@@ -94,9 +94,6 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
      *            based on the current milliseconds from the epoch
      * @param machineId
      *            unique 20-bit machine ID between 0 and 1048575, inclusively
-     * @param sequenceId
-     *            the initial seed value for a 24-bit, one-up counter (max value of 16777215), or a negative integer to allow the builder to specify the seed
-     *            value
      */
     protected SnowflakeUIDBuilder(long timestamp, int machineId) {
         this(timestamp, validateMachineId(machineId), 0);

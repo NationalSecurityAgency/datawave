@@ -111,9 +111,10 @@ public class QueryPlan {
     }
     
     /**
-     * @param queryTree2
+     * @param queryTree
      * @param rangeIter
-     * @param settings2
+     * @param settings
+     * @param columnFamilies
      */
     public QueryPlan(JexlNode queryTree, Iterable<Range> rangeIter, List<IteratorSetting> settings, Collection<String> columnFamilies) {
         this.queryTree = queryTree;
@@ -134,9 +135,9 @@ public class QueryPlan {
     }
     
     /**
-     * @param queryTree2
+     * @param queryTree
      * @param rangeIter
-     * @param settings2
+     * @param settings
      */
     public QueryPlan(JexlNode queryTree, Iterable<Range> rangeIter, List<IteratorSetting> settings) {
         this(queryTree, rangeIter, settings, null);

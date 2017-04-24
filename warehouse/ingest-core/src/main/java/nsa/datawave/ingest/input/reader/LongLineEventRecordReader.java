@@ -19,9 +19,9 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 /**
- * A copy of {@link LineRecordReader} which does not discard lines longer than "mapred.linerecordreader.maxlength". Instead, it returns them, leaving it to the
- * mapper to decide what to do with it. It also does not treat '\r' (CR) characters as new lines -- it uses {@link LfLineReader} instead of
- * {@link org.apache.hadoop.util.LineReader} to read lines. It also does not keep the newline if "longline.newline.included" is set to true.
+ * A copy of {@link org.apache.hadoop.mapred.LineRecordReader} which does not discard lines longer than "mapred.linerecordreader.maxlength". Instead, it returns
+ * them, leaving it to the mapper to decide what to do with it. It also does not treat '\r' (CR) characters as new lines -- it uses {@link LfLineReader} instead
+ * of {@link org.apache.hadoop.util.LineReader} to read lines. It also does not keep the newline if "longline.newline.included" is set to true.
  */
 public class LongLineEventRecordReader extends AbstractEventRecordReader<Text> implements LineReader {
     

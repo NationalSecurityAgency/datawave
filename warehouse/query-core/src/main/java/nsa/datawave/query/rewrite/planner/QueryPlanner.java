@@ -22,7 +22,7 @@ public abstract class QueryPlanner implements PushDownPlanner {
     protected UidIntersector uidIntersector = new IndexInfo();
     
     /**
-     * Process the {@link query} with the provided {@link config} to generate an {@link Iterable&lt;QueryData&gt;} to apply each to a BatchScanner.
+     * Process the {@code query} with the provided {@code config} to generate an {@link Iterable}&lt;QueryData&gt; to apply each to a BatchScanner.
      *
      * @param config
      * @param query

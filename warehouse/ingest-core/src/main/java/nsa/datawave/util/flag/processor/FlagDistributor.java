@@ -17,7 +17,7 @@ public interface FlagDistributor {
      * Allows for the setup/configuration of the FlagDistributor. Anything that needs to be configured for a particular data type must be contained within the
      * FlagDataTypeConfig. This call to this method should reset any saved state within this distributor.
      * 
-     * @param tdtc
+     * @param fdtc
      */
     void setup(FlagDataTypeConfig fdtc);
     

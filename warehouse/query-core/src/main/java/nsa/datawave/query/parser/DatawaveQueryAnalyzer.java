@@ -88,9 +88,9 @@ public class DatawaveQueryAnalyzer {
      * @param root
      *            root DatawaveTreeNode of the query parse tree.
      * @param fieldNameUpperCase
-     *            true->UPPER false->lower
+     *            {@code true->UPPER false->lower}
      * @param fieldValueUpperCase
-     *            true->UPPER false->lower
+     *            {@code true->UPPER false->lower}
      * @return root DatawaveTeeNode of the modified query parse tree.
      * @throws JavaRegexParseException
      */
@@ -290,7 +290,7 @@ public class DatawaveQueryAnalyzer {
     }
     
     /**
-     * Given a map of FieldValue -> Set<FieldNames>, replace the _ANYFIELD_ value with an OR node containing the fName-fValue pairs
+     * Given a map of {@code FieldValue -> Set<FieldNames>}, replace the _ANYFIELD_ value with an OR node containing the fName-fValue pairs
      *
      * @param root
      *            Root node of the query parse tree
@@ -997,10 +997,10 @@ public class DatawaveQueryAnalyzer {
     }
     
     /**
-     * Get the mapping of FieldNames to TreeNodes. i.e. COLOR -> maps to all nodes with COLOR as the FieldName. This method does not return any nodes which have
-     * a null term/literal
+     * Get the mapping of FieldNames to TreeNodes. i.e. {@code COLOR -> maps to all nodes with COLOR as the FieldName}. This method does not return any nodes
+     * which have a null term/literal
      *
-     * @return Multimap of FieldName -> [DatawaveTreeNode,DatawaveTreeNode,...]
+     * @return Multimap of {@code FieldName -> [DatawaveTreeNode,DatawaveTreeNode,...]}
      */
     public Multimap<String,DatawaveTreeNode> getFieldNameToNodeMap(DatawaveTreeNode root) {
         Multimap<String,DatawaveTreeNode> fieldNameToNodeMap = HashMultimap.create();
@@ -1027,10 +1027,10 @@ public class DatawaveQueryAnalyzer {
     }
     
     /**
-     * Get the mapping of FieldNames to TreeNodes. i.e. COLOR -> maps to all nodes with COLOR as the FieldName. This method does not return any nodes which have
-     * a null term/literal
+     * Get the mapping of FieldNames to TreeNodes. i.e. {@code COLOR -> maps to all nodes with COLOR as the FieldName}. This method does not return any nodes
+     * which have a null term/literal
      *
-     * @return Multimap of FieldName -> [DatawaveTreeNode,DatawaveTreeNode,...]
+     * @return Multimap of {@code FieldName -> [DatawaveTreeNode,DatawaveTreeNode,...]}
      */
     public Multimap<String,DatawaveTreeNode> getFieldNameToNodeMapWithFunctionsAndNullLiterals(DatawaveTreeNode root, Metadata metadata) {
         Multimap<String,DatawaveTreeNode> fieldNameToNodeMap = HashMultimap.create();
@@ -1096,7 +1096,7 @@ public class DatawaveQueryAnalyzer {
     /**
      * Get the mapping of FieldName to FieldValues. i.e. given the FieldName COLOR, you get all of the colors that maps to, red, blue, white, ...
      *
-     * @return Multimap<String,String> of FieldName to FieldValue
+     * @return {@code Multimap<String,String>} of FieldName to FieldValue
      */
     public Multimap<String,String> getFieldNameToValueMap(DatawaveTreeNode root) {
         Multimap<String,String> fieldNameToValueMap = HashMultimap.create();
@@ -1214,19 +1214,18 @@ public class DatawaveQueryAnalyzer {
     }
     
     /**
-     * Pass in the root node of the query parse tree and a Multimap of FieldName-> [Normalizers]. The tree will be traversed and a new mapping of
-     * FieldName:FieldValue -> normalized fieldValue will be created. This is passed to an ORing function which will replace each node with the normalized value
-     * or an or of multiple normalized values.
+     * Pass in the root node of the query parse tree and a Multimap of {@code FieldName-> [Normalizers]}. The tree will be traversed and a new mapping of
+     * {@code FieldName:FieldValue -> normalized} fieldValue will be created. This is passed to an ORing function which will replace each node with the
+     * normalized value or an or of multiple normalized values.
      *
      * The internal query maps will be updated and the root of the modified parse tree will be returned.
      *
      * @param root
      *            The root DatawaveTreeNode of the query parse tree
      * @param indexedFields
-     *            Multimap of FieldName -> [Normalizers]
+     *            Multimap of {@code FieldName -> [Normalizers]}
      * @return returns the root DatawaveTreeNode of the query parse tree after the query has been modified.
-     * @throws Exception
-     * 
+     *
      */
     public DatawaveTreeNode normalizeFieldsInQuery(DatawaveTreeNode root, Multimap<String,Type<?>> indexedFields, Metadata metadata) {
         @SuppressWarnings("unchecked")
@@ -1743,8 +1742,7 @@ public class DatawaveQueryAnalyzer {
      *
      * @param root
      *            Root node of the query parser tree
-     * @param config
-     *            Configuration
+     * @param metadataHelper
      * @return root of the modified parse tree.
      */
     public DatawaveTreeNode replaceFunctionNodes(DatawaveTreeNode root, MetadataHelper metadataHelper) {
@@ -1830,8 +1828,8 @@ public class DatawaveQueryAnalyzer {
     }
     
     /**
-     * Given a mapping of FieldName -> [multiple FieldNames] update them in the query. For single mappings, change the field name, for multiple insert an or.
-     * NOTE: It is expected that negations are pushed down to the bottom as with the demorganSubTree routine
+     * Given a mapping of {@code FieldName -> [multiple FieldNames]} update them in the query. For single mappings, change the field name, for multiple insert
+     * an or. NOTE: It is expected that negations are pushed down to the bottom as with the demorganSubTree routine
      *
      * @param root
      * @param fieldMap
@@ -1923,10 +1921,12 @@ public class DatawaveQueryAnalyzer {
     }
     
     /**
-     * Given a mapping of FieldName -> [multiple FieldNames] update them in a function node.
+     * Given a mapping of {@code FieldName -> [multiple FieldNames]} update them in a function node.
      *
-     * @param root
+     * @param functionNode
      * @param fieldMap
+     * @param args
+     * @param index
      * @return
      */
     public List<DatawaveTreeNode> applyFieldMappingToFunction(DatawaveTreeNode functionNode, Multimap<String,String> fieldMap, JexlArgument[] args, int index) {
@@ -2140,7 +2140,7 @@ public class DatawaveQueryAnalyzer {
      * This will ensure that the fieldname references in function arguments are all identifiers and subsequently will get replaced with the field values
      * appropriately upon evaluation. This will also ensure that all literals are actually literals.
      *
-     * @param prefix
+     * @param root
      */
     public void fixLiteralFunctionArgs(DatawaveTreeNode root) {
         for (DatawaveTreeNode node : getFunctionNodesUsingLiterals(root)) {

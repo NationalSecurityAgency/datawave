@@ -1,26 +1,15 @@
 package nsa.datawave.query.rewrite.util;
 
-import nsa.datawave.data.ColumnFamilyConstants;
-import nsa.datawave.data.hash.UID;
-import nsa.datawave.data.type.DateType;
-import nsa.datawave.data.type.IpAddressType;
-import nsa.datawave.data.type.LcNoDiacriticsType;
-import nsa.datawave.data.type.NumberType;
-import nsa.datawave.data.type.Type;
-import nsa.datawave.ingest.protobuf.Uid;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
-import java.util.Date;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class DateIndexTestIngest {
@@ -38,7 +27,6 @@ public class DateIndexTestIngest {
     
     /**
      *
-     * @return
      */
     public static void writeItAll(Connector con) throws Exception {
         

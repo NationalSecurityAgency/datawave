@@ -59,9 +59,9 @@ import com.google.common.io.ByteStreams;
 /**
  * This correlator is used to string together timing information for Datawave ingest metrics.
  * 
- * If we are scanning live metrics, then this mapper will output keys of the format <Timestamp>:<Type> and values that are arrays of long writable's. If we are
- * dealing with live metrics, the output value will be of length MetricsDataFormat.LIVE_LENGTH. If we are dealing with bulk metrics, the output value will be of
- * length MetricsDataFormat.BULK_LENGTH.
+ * If we are scanning live metrics, then this mapper will output keys of the format {@code <Timestamp>:<Type>} and values that are arrays of long writable's. If
+ * we are dealing with live metrics, the output value will be of length MetricsDataFormat.LIVE_LENGTH. If we are dealing with bulk metrics, the output value
+ * will be of length MetricsDataFormat.BULK_LENGTH.
  * 
  * The format of output values are:
  * 

@@ -444,8 +444,8 @@ public class DiscoveryLogic extends RefactoredShardIndexQueryTable {
     }
     
     /**
-     * This attempts to normalize all of the <value, field> tuples with the corresponding <field, normalizer> tuple. The Normalization object will determin
-     * whether or not a regex or literal is being normalized.
+     * This attempts to normalize all of the {@code <value, field>} tuples with the corresponding {@code <field, normalizer>} tuple. The Normalization object
+     * will determine whether or not a regex or literal is being normalized.
      *
      * See the {@link PatternNormalization} and {@link LiteralNormalization} implementations.
      *
@@ -473,8 +473,8 @@ public class DiscoveryLogic extends RefactoredShardIndexQueryTable {
     }
     
     /**
-     * This attempts to normalize all of the <value, field> tuples with the corresponding <field, normalizer> tuple. The Normalization object will determin
-     * whether or not a regex or literal is being normalized.
+     * This attempts to normalize all of the {@code <value, field>} tuples with the corresponding {@code <field, normalizer>} tuple. The Normalization object
+     * will determine whether or not a regex or literal is being normalized.
      *
      * See the {@link PatternNormalization} and {@link LiteralNormalization} implementations.
      *

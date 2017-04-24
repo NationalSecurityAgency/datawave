@@ -265,7 +265,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * Forms a jexl node for each found composite map and returns it as a list
      * 
      * @param foundCompositeMaps
-     *            Composite Name -> Collection<Composites>
+     *            {@code Composite Name -> Collection<Composites>}
      * @return List of composite nodes
      */
     private List<JexlNode> getNodeList(Multimap<String,Composite> foundCompositeMaps) {
@@ -362,7 +362,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * @param andChildNodeMap
      *            Ancestors "and" nodes
      * @param leafNodeMap
-     *            Leaf nodes, List<JexlNode> = bounded range; JexlNode = {EqNode, ErNode, NeNode}
+     *            {@code Leaf nodes, List<JexlNode> = bounded range; JexlNode = EqNode, ErNode, NeNode}
      * @param compositeToFieldMap
      *            Composite fields ordered from most fields to least
      * @return valid matched composite indexes
@@ -428,7 +428,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * @param andChildNodeMap
      *            Ancestors "and" nodes
      * @param leafNodeMap
-     *            Leaf nodes, List<JexlNode> = bounded range; JexlNode = {EqNode, ErNode, NeNode}
+     *            Leaf nodes, {@code List<JexlNode> = bounded range; JexlNode = EqNode, ErNode, NeNode}
      * @param compositeToFieldMap
      *            Composite fields ordered from most fields to least
      * @return valid matched composite indexes
@@ -796,7 +796,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * not want to create KEY1_KEY2 or KEY1_KEY3 so could be skipped.
      * 
      * @param mm
-     *            Multimap to sort by size of the collection<v>
+     *            Multimap to sort by size of the {@code collection<v>}
      * @param <K>
      *            Key type for mm, not relevant to sort
      * @param <V>
@@ -824,7 +824,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * 
      * @param fieldName
      * @param childNodeMap
-     * @return return the first JexlNode in map->fieldName
+     * @return return the first JexlNode in {@code map->fieldName}
      */
     private JexlNode getNodeFromAndMap(String fieldName, Multimap<String,JexlNode> childNodeMap) {
         JexlNode foundNode = null;

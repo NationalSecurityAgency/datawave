@@ -27,7 +27,7 @@ public class RangeSplitter implements List<Range> {
      * Create a range splitter
      * 
      * @param range
-     * @param maxSplits
+     * @param numRanges
      */
     public RangeSplitter(Range range, int numRanges) {
         delegate = Collections.unmodifiableList(splitRange(range, numRanges));

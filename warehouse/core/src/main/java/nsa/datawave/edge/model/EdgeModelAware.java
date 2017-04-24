@@ -12,8 +12,8 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 /**
- * Interface that allows internal field names used within the edge model to be configured and injected transparently into classes that need them.<br/>
- * <br/>
+ * Interface that allows internal field names used within the edge model to be configured and injected transparently into classes that need them.<br>
+ * <br>
  * 
  * The intention is to enforce a unified approach to field name management and usage throughout the entire codebase, so that the actual field names in use can
  * be dictated by the deployment environment rather than the code itself.
@@ -76,15 +76,15 @@ public interface EdgeModelAware {
     public static final String BAD_ACTIVITY_DATE = Fields.getInstance().getBadActivityDateFieldName();
     
     /**
-     * On-demand singleton for loading the internal model.<br/>
-     * <br/>
+     * On-demand singleton for loading the internal model.<br>
+     * <br>
      * 
      * With the edge schema, since field names don't exist on disk in the way that they do for events, we have the flexiblity to alter the names within the
-     * model to suit the query syntax preferred by the target deployment environment. This class uses Spring injection to load and map the internal model.<br/>
-     * <br/>
+     * model to suit the query syntax preferred by the target deployment environment. This class uses Spring injection to load and map the internal model.<br>
+     * <br>
      * 
-     * NOTE:<br/>
-     * <br/>
+     * NOTE:<br>
+     * <br>
      * Since the EdgeModelAware interface is intended to provide a single point of access to field names for all application tiers, it is important to ensure
      * that the Spring config is available within a variety of distinct classloading contexts...ie, within webservers, tservers, etc. If the config fails to
      * load at any tier, then edge queries will fail. FATAL log entries are emitted when this case arises.

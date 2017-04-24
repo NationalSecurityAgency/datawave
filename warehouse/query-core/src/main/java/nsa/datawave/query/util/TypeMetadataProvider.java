@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is created on the tservers. It provides a singleton map of auths to the appropriate TypeMetadata loaded by the TypeMetadataHelper and written to vfs.
- * This Monitors the file in vfs so that when the file is updated, the singleton Map<Set<String>>,TypeMetadata> is refreshed.
+ * This Monitors the file in vfs so that when the file is updated, the singleton {@code Map<Set<String>>,TypeMetadata>} is refreshed.
  *
  */
 public class TypeMetadataProvider implements FileListener {
@@ -81,8 +81,6 @@ public class TypeMetadataProvider implements FileListener {
     
     /**
      * set up the monitor so that when the file system data is changed, our singleton will be refreshed
-     * 
-     * @throws Exception
      */
     public void init() {
         for (String metadataTableName : this.metadataTableNames) {

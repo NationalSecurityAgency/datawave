@@ -109,7 +109,6 @@ public class MessageWrappingFileCombiningPollManager extends FileCombiningPollMa
      * Do something with the file. Here it adds the message header, calls the super to copy the file, and then adds the message trailer.
      * 
      * @param inputFile
-     * @param in
      * @param out
      * @return number of bytes processed
      */

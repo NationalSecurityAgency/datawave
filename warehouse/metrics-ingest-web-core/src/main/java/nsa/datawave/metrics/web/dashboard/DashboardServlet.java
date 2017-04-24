@@ -28,9 +28,7 @@ import org.apache.log4j.Logger;
 import org.joda.time.MutableDateTime;
 
 /**
- * <code>
- * 
- * @Path("/DataWave/Ingest/Metrics/services/dashboard </code>
+ * <code>&#064;Path("/DataWave/Ingest/Metrics/services/dashboard")</code>
  */
 @WebServlet("services/dashboard")
 public class DashboardServlet extends MetricsServlet {
@@ -59,7 +57,7 @@ public class DashboardServlet extends MetricsServlet {
     /**
      *
      * @param ctx
-     * @param hours
+     * @param days
      *            The number of hours of statistics to retrieve
      * @param interval
      *            The number of minutes to aggregate for each summary

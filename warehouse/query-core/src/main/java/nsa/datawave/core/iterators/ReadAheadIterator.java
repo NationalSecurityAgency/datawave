@@ -33,7 +33,7 @@ public class ReadAheadIterator implements SortedKeyValueIterator<Key,Value>, Opt
     /**
      * Name of the queue-size option.
      *
-     * @deprecated this option really shouldn't be used as there is no reason to have a queue size > 1.
+     * @deprecated this option really shouldn't be used as there is no reason to have a {@code queue size > 1}.
      */
     @Deprecated
     public static final String QUEUE_SIZE = "queue.size";

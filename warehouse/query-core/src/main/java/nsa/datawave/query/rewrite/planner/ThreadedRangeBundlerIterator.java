@@ -68,12 +68,15 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     }
     
     /**
+     * @param original
      * @param queryTree
-     * @param settings
-     * @param query
      * @param ranges
-     * @param config
-     * @param helper
+     * @param maxRanges
+     * @param docToCombine
+     * @param maxWaitValue
+     * @param maxWaitUnit
+     * @param settings
+     * @param docSpecificLimitOverride
      */
     public ThreadedRangeBundlerIterator(QueryData original, ASTJexlScript queryTree, CloseableIterable<QueryPlan> ranges, final long maxRanges,
                     final int docToCombine, long maxWaitValue, TimeUnit maxWaitUnit, Query settings, boolean docSpecificLimitOverride) {
@@ -392,8 +395,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     }
     
     /**
-     * @param override
-     * @param computedRanges
+     * @param plan
      * @return
      */
     private QueryData createNewQueryData(QueryPlan plan) {

@@ -209,7 +209,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     /**
      * Sets the ranges for the given scannersession.
      * 
-     * @param range
+     * @param chunkIter
      * @return
      * 
      * 

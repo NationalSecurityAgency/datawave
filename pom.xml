@@ -16,8 +16,8 @@
         <assembly.basedir>${project.basedir}</assembly.basedir>
         <datawave.root>${project.basedir}</datawave.root>
         <eclipseFormatterStyle>${datawave.root}/contrib/Eclipse-Datawave-Codestyle.xml</eclipseFormatterStyle>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.accumulo>1.6.6</version.accumulo>
         <version.arquillian-weld-ee-embedded>1.0.0.CR8</version.arquillian-weld-ee-embedded>
@@ -1273,6 +1273,26 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-jdk7-home-set</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireEnvironmentVariable>
+                                            <variableName>JDK7_HOME</variableName>
+                                            <message>In order to build docs, you must have JDK7_HOME set to the root of a Java JDK 7 installation. This is necessary for now due to an outdated plugin that is necessary to build the JAX-RS and JAX-B docs.</message>
+                                        </requireEnvironmentVariable>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <executions>
                             <!-- build javadoc jars per module for publishing to the repo -->
@@ -1285,14 +1305,15 @@
                                 <configuration>
                                     <encoding>UTF-8</encoding>
                                     <destDir>${project.build.directory}/apidocs</destDir>
-                                    <javadocVersion>1.7</javadocVersion>
+                                    <javadocVersion>1.8</javadocVersion>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
+                                    <additionalparam>-tag "HTTP:m:HTTP Return Codes" -tag "RequestHeader:m:HTTP Request Headers" -tag "ResponseHeader:m:HTTP ResponseHeader" -tag returnWrapped:m:Output</additionalparam>
                                     <show>private</show>
                                     <quiet>true</quiet>
                                     <javaApiLinks>
                                         <property>
-                                            <name>api_1.7</name>
-                                            <value>http://docs.oracle.com/javase/7/docs/api</value>
+                                            <name>api_1.8</name>
+                                            <value>http://docs.oracle.com/javase/8/docs/api</value>
                                         </property>
                                     </javaApiLinks>
                                 </configuration>
@@ -1316,6 +1337,7 @@
                                     <classifier>jaxbdocs</classifier>
                                     <destDir>${project.build.directory}/jaxbdocs</destDir>
                                     <encoding>UTF-8</encoding>
+                                    <javadocExecutable>${env.JDK7_HOME}/bin/javadoc</javadocExecutable>
                                     <javadocVersion>1.7</javadocVersion>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
                                     <show>private</show>
@@ -1363,6 +1385,7 @@
                                         <link>../jaxbdocs/</link>
                                     </links>
                                     <encoding>UTF-8</encoding>
+                                    <javadocExecutable>${JDK7_HOME}/bin/javadoc</javadocExecutable>
                                     <javadocVersion>1.7</javadocVersion>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
                                     <show>private</show>

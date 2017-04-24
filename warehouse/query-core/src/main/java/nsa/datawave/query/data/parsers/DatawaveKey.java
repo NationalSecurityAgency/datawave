@@ -230,7 +230,7 @@ public class DatawaveKey {
     }
     
     /**
-     * @param key2
+     * @param cq
      * @return
      */
     private KeyType parseTermFrequency(byte[] cq) {

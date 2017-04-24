@@ -128,7 +128,7 @@ public class FlowStatistics {
     /**
      * Show the stats periodically
      * 
-     * @param millseconds
+     * @param statsFrequency
      */
     public synchronized void showStats(long statsFrequency) {
         if (statsFrequency > 0) {

@@ -333,7 +333,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     /**
      * Stores the record number in the raw file that this raw record container came from.
      * 
-     * @param recNum
+     * @param rawRecordNumber
      */
     @Override
     public void setRawRecordNumber(long rawRecordNumber) {
@@ -352,7 +352,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     /**
      * Stores the timestamp of the raw input file that this raw record container came from.
      * 
-     * @param rawFileTimeStamp
+     * @param rawRecordTimestamp
      */
     @Override
     public void setRawFileTimestamp(long rawRecordTimestamp) {

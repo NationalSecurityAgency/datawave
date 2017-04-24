@@ -31,9 +31,9 @@ import com.google.common.collect.Multimap;
 /**
  * Object that summarizes the events that are processed by the EventMapper. This object extracts metadata about the events (i.e. fields, indexed fields, field
  * frequency, etc.) and creates mutations for a accumulo table with the format:
- * <p/>
- * <br />
- * <table border="1">
+ * <p>
+ * <br>
+ * <table border="1" summary="">
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -80,7 +80,7 @@ import com.google.common.collect.Multimap;
  * <td>Field Name</td>
  * <td>Table Name</td>
  * <td>YYYYMMDD\0DataType</td>
- * <td>Count</td> (See SummingCombiner.VARLEN)
+ * <td>Count (See SummingCombiner.VARLEN)</td>
  * </tr>
  * </table>
  */

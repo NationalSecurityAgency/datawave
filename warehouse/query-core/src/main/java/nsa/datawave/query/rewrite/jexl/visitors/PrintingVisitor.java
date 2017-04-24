@@ -137,7 +137,6 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
      * 
      * @param query
      *            JEXL query string
-     * @throws IOException
      */
     public static void printQuery(String query) throws ParseException {
         // Instantiate a parser and visitor

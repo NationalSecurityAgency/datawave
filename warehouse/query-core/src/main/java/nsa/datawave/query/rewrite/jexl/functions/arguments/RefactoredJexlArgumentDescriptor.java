@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.common.collect.Sets;
 import nsa.datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
 import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
 import nsa.datawave.query.util.DateIndexHelper;
@@ -29,7 +28,7 @@ public interface RefactoredJexlArgumentDescriptor {
      * @param datatypeFilter
      * @return The query which will be used against the global index
      */
-    public JexlNode getIndexQuery(RefactoredShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
+    JexlNode getIndexQuery(RefactoredShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     Set<String> datatypeFilter);
     
     /**
@@ -39,7 +38,7 @@ public interface RefactoredJexlArgumentDescriptor {
      * @param datatypeFilter
      * @return the set of fields
      */
-    public Set<String> fields(MetadataHelper metadata, Set<String> datatypeFilter);
+    Set<String> fields(MetadataHelper metadata, Set<String> datatypeFilter);
     
     /**
      * Get the fields separated into sets that are required to satisfy this function. So if one of the identifiers is actually an "OR" expression, then each of
@@ -49,7 +48,7 @@ public interface RefactoredJexlArgumentDescriptor {
      * @param datatypeFilter
      * @return the set of fields
      */
-    public Set<Set<String>> fieldSets(MetadataHelper metadata, Set<String> datatypeFilter);
+    Set<Set<String>> fieldSets(MetadataHelper metadata, Set<String> datatypeFilter);
     
     /**
      * Get the fields that are referenced by the specified argument in this function. Argument 0 is the first argument to the function (child node 3 of the
@@ -61,27 +60,27 @@ public interface RefactoredJexlArgumentDescriptor {
      * @param arg
      * @return the set of fields referenced by the specified arg
      */
-    public Set<String> fieldsForNormalization(MetadataHelper metadata, Set<String> datatypeFilter, int arg);
+    Set<String> fieldsForNormalization(MetadataHelper metadata, Set<String> datatypeFilter, int arg);
     
     /**
      * Should expansions (e.g. from a model) use ORs or ANDs. For example isNull should use ANDs, but includeRegex should use ORs.
      * 
      * @return true is an OR node is required
      */
-    public boolean useOrForExpansion();
+    boolean useOrForExpansion();
     
     /**
-     * Are the string literal arguments regexes. Used to determine how to normalize them (@see nsa.datawave.data.type.AbstractType<?>)
+     * Are the string literal arguments regexes. Used to determine how to normalize them (see {@link nsa.datawave.data.type.BaseType})
      * 
      * @return true if literal arguments are regexes
      */
-    public boolean regexArguments();
+    boolean regexArguments();
     
     /**
      * This class of functions can be used to support the fieldSets method implementation. They look for nested OR nodes and then produce a product of the
      * underlying identifiers to produce sets of required fields.
      */
-    public static class Fields {
+    class Fields {
         public static Set<Set<String>> product(JexlNode a, JexlNode b) {
             return product(product(a), b);
         }

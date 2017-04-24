@@ -27,7 +27,6 @@ public class VariableNameVisitor extends BaseVisitor {
      * 
      * @param query
      *            JEXL query string
-     * @throws IOException
      */
     public static Set<String> parseQuery(String query) throws ParseException {
         // Instantiate a parser and visitor

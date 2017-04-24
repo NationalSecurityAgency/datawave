@@ -373,7 +373,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
     }
     
     /**
-     * Abstraction to indicate whether to use `&=` or `|=` when processing a node's subtrees.
+     * Abstraction to indicate whether to use {@code `&=` or `|=`} when processing a node's subtrees.
      */
     enum Join {
         AND, OR
