@@ -19,59 +19,59 @@ import java.util.regex.PatternSyntaxException;
 
 /**
  * Once an edge query has been parsed into a jexl tree this class is run to traverse the nodes of the tree gathering up necessary information to use to build
- * the accumulo ranges and the normalized query that will be sent to the EdgeFilterIterator for further evaluation <br>
- * <br>
+ * the accumulo ranges and the normalized query that will be sent to the EdgeFilterIterator for further evaluation <br/>
+ * <br/>
  * 
  * The high level design of how the parsing works is as follows: There are two data structures that are built during the traversal to keep track of information.
  * Once the traversal is complete and the data structures are built they are sent to the VisitationContext which then builds the ranges and normalized query and
- * gets returned.<br>
- * <br>
+ * gets returned.<br/>
+ * <br/>
  * 
- * All data is expected to be passed up since this is a depth first search nothing will be passed down<br>
- * <br>
+ * All data is expected to be passed up since this is a depth first search nothing will be passed down<br/>
+ * <br/>
  * 
- * The two data structures used:<br>
- * 1) IdentityContext<br>
- * This class stores 3 things:<br>
- * Identity: eg SOURCE, SINK, TYPE ect<br>
- * Operation: eg equals, equals regex, not equals, and not regex<br>
- * Literal: eg 'search term'<br>
- * <br>
+ * The two data structures used:<br/>
+ * 1) IdentityContext<br/>
+ * This class stores 3 things:<br/>
+ * Identity: eg SOURCE, SINK, TYPE ect<br/>
+ * Operation: eg equals, equals regex, not equals, and not regex<br/>
+ * Literal: eg 'search term'<br/>
+ * <br/>
  * 
  * During the Traversal lists of IdentityContexts are built. A list of IdentityContexts must all have the same Identity. For example you can only have a list of
  * IdentityContexts with all SOURCE identities or all TYPE identities. Once a list of IdentityContexts is finished being built it is stored in a QueryContext
- * The only exception is for exclusion expressions (!= !~) and functions.<br>
- * <br>
+ * The only exception is for exclusion expressions (!= !~) and functions.<br/>
+ * <br/>
  * 
- * 2) QueryContext<br>
+ * 2) QueryContext<br/>
  * This class stores a list of IdentityContexts for each supported search term. (Eg 1 list of IdentityContexts for source or edge type ect...) Once a list has
- * been set it cannot be changed/modified/added to<br>
- * <br>
+ * been set it cannot be changed/modified/added to<br/>
+ * <br/>
  * 
  * During the Traversal lists of QueryContexts are built. Once traversal is over we must have 1 or more QueryContexts which are then used to build the
- * ranges/normalized query.<br>
- * <br>
+ * ranges/normalized query.<br/>
+ * <br/>
  * 
  * 
- * The 3 basic rules that are enforced are:<br>
- * for equivalence expressions (== =~)<br>
- * 1) cant and like identifiers<br>
- * 2) can't or unlike identifiers<br>
- * for exclude expressions (!= !~)<br>
- * 3) only use and<br>
- * <br>
+ * The 3 basic rules that are enforced are:<br/>
+ * for equivalence expressions (== =~)<br/>
+ * 1) cant and like identifiers<br/>
+ * 2) can't or unlike identifiers<br/>
+ * for exclude expressions (!= !~)<br/>
+ * 3) only use and<br/>
+ * <br/>
  * 
- * There are two basic types of queries that are allowed/expected to be run:<br>
- * <br>
+ * There are two basic types of queries that are allowed/expected to be run:<br/>
+ * <br/>
  * 
- * {@code (SOURCE == 's1' || SOURCE == 's2'|| SOURCE == ...) && (SINK == 't1' || SINK == 't2' || ...)}<br>
- * <br>
+ * (SOURCE == 's1' || SOURCE == 's2'|| SOURCE == ...) && (SINK == 't1' || SINK == 't2' || ...)<br/>
+ * <br/>
  * 
- * or<br>
- * <br>
+ * or<br/>
+ * <br/>
  * 
- * {@code (SOURCE == 's1' && SINK == 's2') || (SOURCE == 's2 && SINK == 's2) || ...}<br>
- * <br>
+ * (SOURCE == 's1' && SINK == 's2') || (SOURCE == 's2 && SINK == 's2) || ...<br/>
+ * <br/>
  */
 public class RewriteEdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeModelAware {
     private static final Logger log = Logger.getLogger(RewriteEdgeTableRangeBuildingVisitor.class);
@@ -233,7 +233,7 @@ public class RewriteEdgeTableRangeBuildingVisitor extends BaseVisitor implements
      * 
      * There is one exception where a QueryContext list and a IdentityContext list could be returned by the children in which case the returned IdentityContext
      * list is immediately packaged into a new QueryContext and is then combined with the returned other QueryContext list Happens with a query like this:
-     * {@code (SOURCE == 'source1' && SINK == 'sink') || (SOURCE == 'source2')}
+     * (SOURCE == 'source1' && SINK == 'sink') || (SOURCE == 'source2')
      * 
      * Or node will return either a list of IdentityContexts or QueryContexts
      */

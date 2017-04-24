@@ -70,6 +70,7 @@ public abstract class AbstractNGramTokenizationStrategy {
      * @param tokenizer
      *            The tokenizer responsible for generating the next available n-gram
      * @return the next n-gram in the stream, or null if no n-gram was generated
+     * @throws IOException
      */
     protected String increment(final NGramTokenizer tokenizer) throws TokenizationException {
         final AbstractNGramTokenizationStrategy source = this.getSourceStrategy();
@@ -200,6 +201,8 @@ public abstract class AbstractNGramTokenizationStrategy {
         
         /**
          * Sets the number of n-grams tokenized prior to the exception being thrown
+         * 
+         * @return the number of n-grams tokenized prior to the exception being thrown
          */
         protected void setNGramCount(int ngramCount) {
             this.ngramCount = ngramCount;

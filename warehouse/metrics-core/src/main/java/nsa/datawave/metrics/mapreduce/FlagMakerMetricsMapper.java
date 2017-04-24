@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
  * <p>
  *
  * FlagMakerMetrics table: Row Colf Colq Value ----------------------------------------------------------------------------------- |input file |duration |job
- * end time |{@code <serialized job counters>}
+ * end time |<serialized job counters>
  *
  */
 public class FlagMakerMetricsMapper extends Mapper<Text,Counters,Text,Mutation> {

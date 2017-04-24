@@ -48,11 +48,15 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Multimap;
 
 /**
- * <h1>Overview</h1> QueryTable implementation that works with the JEXL grammar. This QueryTable uses the DATAWAVE metadata, global index, and sharded event
- * table to return results based on the query. The runServerQuery method is the main method that is called from the web service, and it contains the logic used
- * to run the queries against ACCUMULO. Example queries:
- *
  * <pre>
+ * <h2>Overview</h2>
+ * QueryTable implementation that works with the JEXL grammar. This QueryTable
+ * uses the DATAWAVE metadata, global index, and sharded event table to return
+ * results based on the query. The runServerQuery method is the main method
+ * that is called from the web service, and it contains the logic used to
+ * run the queries against ACCUMULO. Example queries:
+ * 
+ *  <b>Single Term Query</b>
  *  <b>Single Term Query</b>
  *  'foo' - looks in global index for foo, and if any entries are found, then the query
  *          is rewritten to be field1 == 'foo' or field2 == 'foo', etc. This is then passed
@@ -60,35 +64,37 @@ import com.google.common.collect.Multimap;
  *          table.
  * 
  *  <b>Boolean expression</b>
+ *  <b>Boolean expression</b>
  *  field == 'foo' - For fielded queries, those that contain a field, an operator, and a literal (string or number),
  *                   the query is parsed and the set of eventFields in the query that are indexed is determined by
  *                   querying the metadata table. Depending on the conjunctions in the query (or, and, not) and the
  *                   eventFields that are indexed, the query may be sent down the optimized path or the full scan path.
- * </pre>
- *
- * We are not supporting all of the operators that JEXL supports at this time. We are supporting the following operators:
  * 
- * <pre>
+ *  We are not supporting all of the operators that JEXL supports at this time. We are supporting the following operators:
+ * 
  *  ==, !=, &gt;, &ge;, &lt;, &le;, =~, and !~
+ * 
+ *  Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction
+ *  with other supported operators. A sample function has been created, called between, and is bound to the 'f' namespace. An
+ *  example using this function is : "f:between(LATITUDE,60.0, 70.0)"
+ * 
+ *  <h2>Constraints on Query Structure</h2>
+ *  Queries that are sent to this class need to be formatted such that there is a space on either side of the operator. We are
+ *  rewriting the query in some cases and the current implementation is expecting a space on either side of the operator. Users
+ *  should also be aware that the literals used in the query need to match the data in the table. For example, '123', 123, and 123.0
+ *  are treated differently. JEXL looks at the literal used in the query and will try to coerce the field value to the appropriate
+ *  type. If an error occurs in the evaluation we are skipping the event.
+ * 
+ *  <h2>Notes on Optimization</h2>
+ *  Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
+ * 
+ *  1. An 'or' conjunction exists in the query but not all of the terms are indexed.
+ *  2. No indexed terms exist in the query
+ *  3. An unsupported operator exists in the query
+ *
  * </pre>
  *
- * Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction with other supported operators.
- * A sample function has been created, called between, and is bound to the 'f' namespace. An example using this function is : "f:between(LATITUDE,60.0, 70.0)"
- * 
- * <h1>Constraints on Query Structure</h1> Queries that are sent to this class need to be formatted such that there is a space on either side of the operator.
- * We are rewriting the query in some cases and the current implementation is expecting a space on either side of the operator. Users should also be aware that
- * the literals used in the query need to match the data in the table. For example, '123', 123, and 123.0 are treated differently. JEXL looks at the literal
- * used in the query and will try to coerce the field value to the appropriate type. If an error occurs in the evaluation we are skipping the event.
- * 
- * <h1>Notes on Optimization</h1> Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
- * <ol>
- * <li>An 'or' conjunction exists in the query but not all of the terms are indexed.</li>
- * <li>No indexed terms exist in the query</li>
- * <li>An unsupported operator exists in the query</li>
- * </ol>
- *
- *
- * @deprecated - see nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic
+ * Deprecated - see nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic
  */
 @Deprecated
 public class ShardQueryTable extends ShardQueryLogic {

@@ -1317,7 +1317,7 @@ public class EvaluatingIterator extends ShardUidMappingIterator implements Sorte
      * When this iterator returns an entry, the key is actually *before* the last key this iterator actually read. Upon reseek, we'll receive a range that's of
      * the form:
      *
-     * {@code (<last returned key>, <scan range last key><)|]>}
+     * (<last returned key>, <scan range last key><)|]>
      *
      * Since the last returned key is before the last key we actually read, we can definitely reperform work and potentially infinite loop if that key/value
      * pair will always cause a buffer flush by Accumulo.

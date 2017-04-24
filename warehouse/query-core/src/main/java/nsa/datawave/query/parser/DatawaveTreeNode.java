@@ -193,7 +193,7 @@ public class DatawaveTreeNode extends DefaultMutableTreeNode {
     /**
      * Get this node's operator.
      *
-     * @return String of the JEXL operator for this node, i.e. {@code == , != , <=, etc}.
+     * @return String of the JEXL operator for this node, i.e. == , != , <=, etc.
      */
     public String getOperator() {
         return operator;

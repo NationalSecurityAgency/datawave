@@ -222,7 +222,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
     /**
      * Method that ensures if we have to skip the current key, we do so with the contract provided by the create UID iterator.
      * 
-     * @param range
+     * @param startKey
      */
     protected Range skipKey(Range range) {
         Key startKey = range.getStartKey();
@@ -320,6 +320,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
      * 
      * @param k
      * @param day
+     * @param skipKey
      * @return
      */
     public static Key makeRootKey(Key k, String day) {

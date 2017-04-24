@@ -61,7 +61,7 @@ public class EdgeKeyUtil {
     }
     
     /**
-     * Method to break an edge key into it's respective parts and place them in a map of edge fieldname =&gt; value.
+     * Method to break an edge key into it's respective parts and place them in a map of edge fieldname => value.
      *
      * Warning, will neglect to add fields if the key is corrupted. Test for null in return value to use safely.
      *

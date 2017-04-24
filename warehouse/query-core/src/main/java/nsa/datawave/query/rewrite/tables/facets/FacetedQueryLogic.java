@@ -216,14 +216,14 @@ public class FacetedQueryLogic extends IndexQueryLogic {
     }
     
     /**
-     * @param facet
+     * @param string
      */
     public void addFacet(String facet) {
         facetedConfig.addFacetedField(facet);
     }
     
     /**
-     * @param isStreaming
+     * @param b
      */
     public void setStreaming(boolean isStreaming) {
         facetedConfig.setStreamingMode(isStreaming);

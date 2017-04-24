@@ -2435,11 +2435,11 @@ public final class StandardLexer extends nsa.datawave.ingest.data.tokenize.Lexer
     private int yycolumn;
     
     /**
-     * {@code zzAtBOL == true <=>} the scanner is currently at the beginning of a line
+     * zzAtBOL == true <=> the scanner is currently at the beginning of a line
      */
     private boolean zzAtBOL = true;
     
-    /** {@code zzAtEOF == true <=>} the scanner is at the EOF */
+    /** zzAtEOF == true <=> the scanner is at the EOF */
     private boolean zzAtEOF;
     
     /** denotes if the user-EOF-code has already been executed */

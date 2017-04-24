@@ -49,9 +49,11 @@ import org.apache.log4j.Logger;
  * debugging and reprocessing.
  * 
  * <p>
- * This class creates the following Mutations or Key/Values: <br>
- * <br>
- * <table border="1" summary="">
+ * This class creates the following Mutations or Key/Values:
+ * </p>
+ * <br />
+ * <br />
+ * <table border="1">
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>

@@ -8,8 +8,7 @@ import javax.ws.rs.core.MultivaluedMap;
  * will create a query. Note that the logic name is part of the websocket endpoint.
  * 
  * <pre>
- * {@code
- * 
+ * <code>
  * {
  *     "query: "MY_FIELD =~ \'somevalueprefix.*\'",
  *     "queryName": "myQuery",
@@ -21,7 +20,7 @@ import javax.ws.rs.core.MultivaluedMap;
  *     "auths": "auth1,auth2,auth3",
  *     "columnVisibility": "A&B|C"
  * }
- * }
+ * </code>
  * </pre>
  */
 public class CreateQueryMessage implements QueryMessage {

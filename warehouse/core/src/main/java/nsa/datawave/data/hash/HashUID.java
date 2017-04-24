@@ -71,7 +71,7 @@ public class HashUID extends UID {
      *            The data to hash.
      * @param time
      *            The time to use, can be null (@see Event.getTimeForUID()).
-     * @param extras
+     * @param extra
      *            Extra stuff to append to the end of the UID, can be null.
      */
     protected HashUID(final byte[] data, final Date time, final String... extras) {

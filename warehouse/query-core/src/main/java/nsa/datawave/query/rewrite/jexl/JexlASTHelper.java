@@ -175,7 +175,7 @@ public class JexlASTHelper {
     }
     
     /**
-     * Fetch the literal off of the grandchild, removing a leading {@link #IDENTIFIER_PREFIX} if present. Throws an exception if there is no literal
+     * Fetch the literal off of the grandchild, removing a leading {@value #IDENTIFIER_PREFIX} if present. Throws an exception if there is no literal
      * 
      * @param node
      * @return
@@ -390,7 +390,7 @@ public class JexlASTHelper {
     }
     
     /**
-     * Rebuild the identifier with the {@link #IDENTIFIER_PREFIX} if the identifier starts with an invalid character per the Jexl IDENTIFIER definition
+     * Rebuild the identifier with the {@value #IDENTIFIER_PREFIX} if the identifier starts with an invalid character per the Jexl IDENTIFIER definition
      * 
      * @param fieldName
      * @return
@@ -400,7 +400,7 @@ public class JexlASTHelper {
     }
     
     /**
-     * Rebuild the identifier with the {@link #IDENTIFIER_PREFIX} if the identifier starts with an invalid character per the Jexl IDENTIFIER definition
+     * Rebuild the identifier with the {@value #IDENTIFIER_PREFIX} if the identifier starts with an invalid character per the Jexl IDENTIFIER definition
      * 
      * @param fieldName
      * @param includeGroupingContext

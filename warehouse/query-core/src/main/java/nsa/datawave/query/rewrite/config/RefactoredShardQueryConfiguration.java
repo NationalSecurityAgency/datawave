@@ -30,14 +30,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * A GenericQueryConfiguration implementation that provides the additional logic on top of the traditional query that is needed to run a DATAWAVE sharded
  * boolean-logic query
- *
+ * </p>
+ * *
+ * <p/>
  * <p>
  * Provides support for normalizers, enricher classes, filter classes, projection, and datatype filters, in addition to additional parameters also exposed in
  * the Webservice QueryTable interface
- *
+ * </p>
+ * *
+ * <p/>
  * <p>
  * This class can be initialized with an instance of a ShardQueryLogic or ShardQueryTable which will grab the already configured parameters from the Accumulo
  * Webservice QueryTable and apply them to this configuration object
+ * </p>
  */
 public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration {
     @SuppressWarnings("unused")

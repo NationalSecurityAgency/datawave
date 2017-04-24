@@ -224,8 +224,8 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     /**
      * Check that the user has one of the required roles principal my be null when there is no intent to control access to QueryLogic
      * 
-     * @param principal
-     * @return true/false
+     * @param true/false
+     * @return
      */
     public boolean canRunQuery(Principal principal);
     

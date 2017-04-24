@@ -52,7 +52,10 @@ public abstract class IndexLookup {
     }
     
     /**
-     * 
+     * @param iter
+     * @param fieldsToValues
+     * @param config
+     * @param b
      */
     protected boolean timedScan(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, final RefactoredShardQueryConfiguration config,
                     final Set<String> datatypeFilter, final Set<Text> fields, final boolean isReverse, final long timeout, final Logger log) {

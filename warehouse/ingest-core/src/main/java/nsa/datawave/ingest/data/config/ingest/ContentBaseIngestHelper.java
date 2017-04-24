@@ -173,7 +173,7 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     }
     
     /**
-     * Utility method to take a {@code String[]} and return a {@code Set<String>} where the values are trimmed
+     * Utility method to take a String[] and return a Set<String> where the values are trimmed
      * 
      * @param items
      *            String[] of items to trim and turn into a set
@@ -196,8 +196,8 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     /**
      *
      * @param items
-     *            Set of strings where each item is of the {@code pattern-> SUBTYPE=field1,field2,...,fieldN}
-     * @return {@code Map<String,Set<String>} which is a map of SUBTYPE to a set of fields to tokenize
+     *            Set of strings where each item is of the pattern-> SUBTYPE=field1,field2,...,fieldN
+     * @return Map<String,Set<String> which is a map of SUBTYPE to a set of fields to tokenize
      */
     public static Map<String,Set<String>> buildSubtypeTokenizationWhitelist(Set<String> items) {
         Map<String,Set<String>> subtypeTokenizationMap = Maps.newHashMap();

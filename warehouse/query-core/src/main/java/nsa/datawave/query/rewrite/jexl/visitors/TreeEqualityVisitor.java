@@ -87,9 +87,11 @@ public class TreeEqualityVisitor implements ParserVisitor {
     
     /**
      * Accept the visitor on all this node's children.
-     *
-     * @param node1
-     * @param node2
+     * 
+     * @param visitor
+     *            the visitor
+     * @param data
+     *            contextual data
      * @return result of visit
      **/
     private Object visitEquality(SimpleNode node1, SimpleNode node2) {

@@ -22,6 +22,8 @@ public interface FieldIndexAggregator {
      * @param itr
      * @param doc
      * @param attrs
+     * @param field
+     * @param value
      * @return
      */
     public Key apply(SortedKeyValueIterator<Key,Value> itr, Document doc, AttributeFactory attrs) throws IOException;

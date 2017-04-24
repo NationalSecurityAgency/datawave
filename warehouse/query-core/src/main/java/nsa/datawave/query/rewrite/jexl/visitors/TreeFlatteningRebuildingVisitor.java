@@ -185,11 +185,11 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     }
     
     /**
-     * Advances a child reference expression, if one is embedded Ex. {@code Ref RefExpr <-- this way we at Ref RefExpr}
+     * Advances a child reference expression, if one is embedded Ex. Ref RefExpr <-- this whay we at Ref RefExpr
      * 
      * will become
      * 
-     * {@code Ref RefExpr <-- this still way we at}
+     * Ref RefExpr <-- this still whay we at
      * 
      * @param jexlNode
      *            Incoming JexlNode

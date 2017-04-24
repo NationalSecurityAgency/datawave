@@ -940,7 +940,7 @@ public class DefaultTokenSearch implements TokenSearch {
     /**
      * Obtain a reference to a stopword set, referenced by the system property <code>STOP_WORD_LIST</code> or <code>stopwords.txt</code> if the property is not
      * set.
-     * <p>
+     * <p/>
      * If no stopwords are found in the cache for the specified filename, this method will invoke {@link #getStopWords(String)} to load the list.
      * 
      * @throws IOException
@@ -952,8 +952,8 @@ public class DefaultTokenSearch implements TokenSearch {
     
     /**
      * Obtain a reference to a stopword set, possibly cached.
-     * <p>
-     * If no stopwords are found in the cache for the specified filename, this method will invoke {@link Factory#loadStopWords(String)} to load the list.
+     * <p/>
+     * If no stopwords are found in the cache for the specified filename, this method will invoke {@link #loadStopWords(String)} to load the list.
      * 
      * @param filename
      * @throws IOException

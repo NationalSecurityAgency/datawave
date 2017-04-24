@@ -161,7 +161,7 @@ public class LookupBean {
      * As a workaround until we upgrade, let's remove the duplication.
      * 
      * @param queryParameters
-     * @return {@code MultivalueMap<String, String>} with not duplicate values
+     * @return MultivalueMap<String, String> with not duplicate values
      */
     
     public static MultivaluedMap<String,String> deduplicateQueryParameters(MultivaluedMap<String,String> queryParameters) {

@@ -92,7 +92,7 @@ public class ShardIndexKeyFunctor implements KeyFunctor {
     /**
      * A key is to be considered by the bloom filter if the field name and field value are supplied.
      * 
-     * @param cbKey
+     * @param key
      */
     static boolean isKeyInBloomFilter(org.apache.accumulo.core.data.Key cbKey) {
         // if we have a row with the field name and a column familiy with the field value, then

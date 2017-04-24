@@ -241,6 +241,10 @@ public class JexlNodeFactory {
      * @param fieldName
      * @param fieldValues
      * @return
+     * @throws TableNotFoundException
+     * @throws IOException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
      */
     public static JexlNode createNodeTreeFromFieldValues(ContainerType containerType, JexlNode node, JexlNode orgNode, String fieldName,
                     Collection<String> fieldValues) {
@@ -1261,10 +1265,9 @@ public class JexlNodeFactory {
     /**
      * Create a new ASTGENode from the given field name and value
      * 
-     * @param namespace
-     * @param function
-     * @param field
-     * @param args
+     * @param original
+     * @param fieldName
+     * @param fieldValue
      * @return
      */
     public static JexlNode buildFunctionNode(String namespace, String function, String field, Object... args) {
@@ -1350,8 +1353,7 @@ public class JexlNodeFactory {
     /**
      * Given the provide newNode, add the fieldName (as an identifier) and the literal
      * 
-     * @param newNode
-     * @param identifier
+     * @param compositeName
      * @param literal
      * @return
      */
@@ -1394,10 +1396,10 @@ public class JexlNodeFactory {
     }
     
     /**
-     * Like {@link #buildUntypedNewNode(JexlNode, ASTIdentifier, String)} except it does not wrap {@code literal} in an {@link ASTReference}
+     * Like {@link #buildUntypedNewNode(JexlNode, String, JexlNode)} except it does not wrap {@link literal} in an {@link ASTReference}
      * 
      * @param newNode
-     * @param identifier
+     * @param compositeName
      * @param literal
      * @return
      */
@@ -1540,8 +1542,7 @@ public class JexlNodeFactory {
     /**
      * Creates a reference expression fro a child node
      * 
-     * @param childContainer
-     * @param wrappingContainer
+     * @param child
      * @return
      */
     public static JexlNode createExpression(JexlNode childContainer, JexlNode wrappingContainer) {

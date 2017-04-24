@@ -90,7 +90,8 @@ public class FacetedConfiguration {
     /**
      * Sets the faceted fields.
      * 
-     * @param fields
+     * @param Sets
+     *            .new
      */
     public void setFacetedFields(final Set<String> fields) {
         this.facetedFields = Sets.newTreeSet(fields);

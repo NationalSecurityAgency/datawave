@@ -55,7 +55,7 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable 
      *            Extra stuff to prepend to the UID, which can be null if specified as optional
      * @param isPrefixOptional
      *            if true, the prefix is optional and should not be validated for null
-     * @param extras
+     * @param extra
      *            Extra stuff to append to the UID, which can be null
      */
     protected UID(final String prefix, boolean isPrefixOptional, final String... extras) {

@@ -514,10 +514,8 @@ public class IndexInfo implements Writable, UidIntersector {
     }
     
     /**
-     * Intersection is where the logic becomes a bit more interesting. We will handle this in stages. So let's evaluate this in terms of three types of nodes <br>
-     * 1) {@code UNKNOWN -- COUNT likely > 20, but we can't be certain}<br>
-     * 2) {@code LARGE -- COUNT > 20 AT SOME POINT}<br>
-     * 3) {@code small < 20}
+     * Intersection is where the logic becomes a bit more interesting. We will handle this in stages. So let's evaluate this in terms of three types of nodes 1)
+     * UNKNOWN -- COUNT likely > 20, but we can't be certain 2) LARGE -- COUNT > 20 AT SOME POINT 3) small < 20
      * 
      * The reason we differentiate 1 from 2 is that 1 originates from the Index or from an Ivarat'd nodes.
      * 

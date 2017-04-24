@@ -146,6 +146,12 @@ public class Statistics extends MetricsServlet {
         return compactingByTable;
     }
     
+    /**
+     * Returns the master client.
+     * 
+     * @return
+     */
+    
     public static class MasterCacheReloader extends CacheLoader<Quartet<String,String,String,String>,MasterMonitorInfo> {
         
         /*

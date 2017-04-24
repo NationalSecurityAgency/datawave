@@ -163,9 +163,8 @@ public class OrIteratorJexl implements JumpingIterator<Key,Value> {
     }
     
     /**
-     * Given a seek range, clear out our priority queue, call seek on all underlying FieldIndexIterators which will search the various
-     * {@code FieldName->FieldValue} parts of our query, and push them back into the priority queue if they have a top key. Poll the priority queue to get the
-     * minimum topkey.
+     * Given a seek range, clear out our priority queue, call seek on all underlying FieldIndexIterators which will search the various FieldName->FieldValue
+     * parts of our query, and push them back into the priority queue if they have a top key. Poll the priority queue to get the minimum topkey.
      *
      * The underlying iterators will handle all of the FieldIndex logic, pass them the unmodified seek range.
      *

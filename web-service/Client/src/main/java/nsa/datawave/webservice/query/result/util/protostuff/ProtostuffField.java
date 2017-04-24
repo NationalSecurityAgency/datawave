@@ -7,7 +7,7 @@ import java.util.Map;
  * Helper class to make protostuff serialization more type-safe. The enumeration prevents errors trying to keep protostuff strings and indices in sync across
  * protostuff serialization methods. Using this class, the string and indices can be defined in a single place, the enum.
  * 
- * NOTE: the {@code Enum<E>} MUST contain an entry for field number 0. No real way to enforce this at compile time.
+ * NOTE: the Enum<E> MUST contain an entry for field number 0. No real way to enforce this at compile time.
  * 
  * @param <E>
  */

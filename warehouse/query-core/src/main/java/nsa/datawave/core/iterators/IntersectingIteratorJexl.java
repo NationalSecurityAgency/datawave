@@ -185,7 +185,7 @@ public class IntersectingIteratorJexl implements JumpingIterator<Key,Value> {
     /**
      * Find the next key in the current TermSource that is at or beyond the cursor (currentRow, currentTerm, currentDocID).
      *
-     * @param ts
+     * @param sourceID
      *            The index of the current source in <code>sources</code>
      * @return True if the source advanced beyond the cursor
      * @throws IOException

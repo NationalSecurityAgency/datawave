@@ -8,7 +8,7 @@ import java.util.Collection;
 
 /**
  *
- * This class operates against a {@code Multimap<String, NormalizedContentInterface>} normalizedFields during ingest.
+ * This class operates against a Multimap<String, NormalizedContentInterface> normalizedFields during ingest.
  *
  */
 public class EdgePreconditionJexlEvaluation implements Predicate<Script> {

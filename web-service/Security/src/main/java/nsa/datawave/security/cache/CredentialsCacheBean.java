@@ -287,8 +287,8 @@ public class CredentialsCacheBean {
     }
     
     /**
-     * List DNs for principals stored in the cache. This list can include single DN values as well as values containing multiple DNs surrounded with {@code <>},
-     * for when proxied entities were in use (via the X-ProxiedEntitiesChain and X-ProxiedIssuersChain headers).
+     * List DNs for principals stored in the cache. This list can include single DN values as well as values containing multiple DNs surrounded with <>, for
+     * when proxied entities were in use (via the X-ProxiedEntitiesChain and X-ProxiedIssuersChain headers).
      *
      * @param includeAll
      *            If true, then all enties are returned. Otherwise, only those entries in-memory on this server are returned. Default is false.

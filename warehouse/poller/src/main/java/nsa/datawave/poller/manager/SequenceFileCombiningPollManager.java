@@ -466,7 +466,7 @@ public class SequenceFileCombiningPollManager extends FileCombiningPollManager {
     
     /**
      * updateMetrics
-     * <p>
+     * <p/>
      * This logic had been duplicated in two different derived classes, in Ingest-Base project. Moved here to make maintenance easier.
      *
      * @param reporter

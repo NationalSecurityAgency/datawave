@@ -9,8 +9,8 @@ import nsa.datawave.query.rewrite.predicate.ConfiguredPredicate;
  * @param <A>
  * 
  * @see AbstractVersionFilter
- * @see nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic
- * @see nsa.datawave.query.rewrite.tables.RefactoredTLDQueryLogic
+ * @see RefactoredShardQueryLogic
+ * @see RefactoredTLDQueryLogic
  */
 public class NormalizedVersionPredicate<A> extends AbstractVersionFilter<A> implements ConfiguredPredicate<A> {
     @Override

@@ -49,11 +49,11 @@ import javax.inject.Inject;
  * 
  * <p>
  * This set would normally includes all tokenized content fields. In terms of keys in the DatawaveMetadata table, this set would contain all rows in the
- * {@code DatawaveMetadata} table which have a {@link ColumnFamilyConstants#COLF_I} but not a {@link ColumnFamilyConstants#COLF_E}
+ * {@code DatawaveMetadata} table which have a {@link EventMetadata#COLF_I} but not a {@link EventMetadata#COLF_E}
  * </p>
  * 
  * 
- * TODO -- Break this class apart
+ * @TODO -- Break this class apart
  * 
  */
 @Configuration

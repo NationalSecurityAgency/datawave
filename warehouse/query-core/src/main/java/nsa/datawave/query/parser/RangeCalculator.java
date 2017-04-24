@@ -230,10 +230,10 @@ public class RangeCalculator {
     /** Formats dates into shard YYYYMMDD format */
     private SimpleDateFormat shardDateFormatter;
     
-    /** Forward global {@code term->shard/doc index} */
+    /** Forward global term->shard/doc index */
     private String shardIndexTableName;
     
-    /** Reverse global {@code term->shard/doc index} */
+    /** Reverse global term->shard/doc index */
     private String shardReverseIndexTableName;
     
     /** Number of threads used in batch scanner when performing range lookups */
@@ -245,7 +245,7 @@ public class RangeCalculator {
     /** exceeding this threshold for shards ina day will return a single range of the entire day */
     private int shardsPerDayThreshold = 100;
     
-    /** Total number of unique terms you will expand a range to; i.e. {@code X <= 500 and X >=1 yields 500 potential terms}. */
+    /** Total number of unique terms you will expand a range to; i.e. X <= 500 and X >=1 yields 500 potential terms. */
     private int rangeExpansionThreshold = 1000;
     
     /** Total number of query terms we will allow in the entire query */
@@ -883,7 +883,7 @@ public class RangeCalculator {
     
     /**
      * Eliminate overlapping ranges from the set of ranges.
-     * <p>
+     * <p/>
      * Ranges appear in the form:
      * <dl>
      * <dt>day:</dt>
@@ -893,13 +893,13 @@ public class RangeCalculator {
      * <dt>shard/datatype/uid (event specific range):</dt>
      * <dd>20120101_0/datatype/foo.bar.baz</dd>
      * </dl>
-     * <p>
+     * <p/>
      * The ranges are provided to this method in sorted order so that day ranges appear before shard/datatype ranges for that day, which in turn appear before
      * shard/datatype/uid ranges for the same shard and datatype.
-     * <p>
+     * <p/>
      * As a result, we can iterate through the sorted ranges and eliminate those that overlap. If we have a day, we can remove all other ranges for shards that
      * fall within that day. If we have a range for a shard,datatype, we can remove all event specific ranges for that shard,datatype pair.
-     * <p>
+     * <p/>
      * Shards are stored in the row, datatypes and uid's are stored in the column family separated by a null
      *
      * @param ranges
@@ -957,7 +957,7 @@ public class RangeCalculator {
      * <li>Various RuntimeExceptions</li>
      * <li>Exit with empty range due to no match in index</li>
      * <li>Exit with known good range</li>
-     * </ul>
+     * <ul>
      *
      * @param node
      *            the range node to evaluate.
@@ -1047,12 +1047,12 @@ public class RangeCalculator {
      * <li>Too many terms in query, throws TooManyTermsException</li>
      * <li>Incomplete range, returns null</li>
      * <li>Various RuntimeExceptions</li>
-     * <li>Early exit due to term count exceeding maximum cardinality parameter for a non-required field, returns dummy range that is incomplete</li>
+     * <li>Early exit due to term count exceeding maximum cardinality parameter for a non-required field, returns dummy range that is incomplete</lu>
      * <li>Exit due to term count exceeding range expansion, returns incomplete range</li>
      * <li>Exit due to term count exceeding range expansion for index-only field, throws RangeExpansionException</li>
      * <li>Exit with empty range due to no match in index</li>
      * <li>Exit with known good range</li>
-     * </ul>
+     * <ul>
      *
      * @param node
      *            the range node to evaluate.

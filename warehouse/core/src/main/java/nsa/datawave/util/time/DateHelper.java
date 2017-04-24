@@ -91,7 +91,7 @@ public class DateHelper {
      * Return a string representing the given time (in millis) in yyyyMMddhh format in a consistent way not dependent on local settings for calendar, timezone,
      * or locale by using Zulu timezone and US locale.
      * 
-     * @param date
+     * @param inMillis
      * @return the formatted date
      */
     public static String formatToHour(Date date) {
@@ -255,7 +255,7 @@ public class DateHelper {
      * <li>
      * checks that endDate is not null or throws a NullPointerException</li>
      * <li>
-     * checks that beginDate &lt;= endDate or throws an IllegalArgumentException</li>
+     * checks that beginDate <= endDate or throws an IllegalArgumentException</li>
      * <li>
      * checks that both beginDate and endDate are within the allowable date range for DATAWAVE, which is one millisecond after -0001/12/31 (0001/01/01) and one
      * millisecond before 10000/01/01 (9999/12/31) or throws an IllegalArgumentException otherwise</li>
@@ -266,7 +266,7 @@ public class DateHelper {
      * @throws NullPointerException
      *             if beginDate or endDate is null.
      * @throws IllegalArgumentException
-     *             if beginDate &gt; endDate or either beginDate or endDate are outside the allowable date range for DATAWAVE.
+     *             if beginDate > endDate or either beginDate or endDate are outside the allowable date range for DATAWAVE.
      */
     public static void validateDateRange(Date beginDate, Date endDate) {
         

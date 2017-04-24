@@ -81,8 +81,8 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
     }
     
     /**
-     * Checks to see if a given {@code <field, value>} mapping has been observed before by this builder. This method is intended to only be called when a
-     * visitor is building an IndexIterator.
+     * Checks to see if a given <field, value> mapping has been observed before by this builder. This method is intended to only be called when a visitor is
+     * building an IndexIterator.
      * 
      * This method will return <code>true</code> if the mapping has been observed before. It will return <code>false</code> if not and update the internal
      * mapping so that future calls with the same arguments return <code>true</code>.

@@ -25,7 +25,7 @@ public class ValueCombiner implements Iterator<Value> {
      * Constructs an iterator over Values whose Keys are versions of the current topKey of the source SortedKeyValueIterator.
      * 
      * @param source
-     *            The {@code SortedKeyValueIterator<Key,Value>} from which to read data.
+     *            The SortedKeyValueIterator<Key,Value> from which to read data.
      */
     public ValueCombiner(SortedKeyValueIterator<Key,Value> source) {
         this.source = source;

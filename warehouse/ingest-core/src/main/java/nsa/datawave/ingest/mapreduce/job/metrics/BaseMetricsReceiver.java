@@ -20,9 +20,9 @@ import java.util.TreeMap;
 
 /**
  * The basic functionality shared by all current MetricsReceivers.
- * <p>
+ * <p/>
  * Currently the metrics name is treated as the column family. It will have a combiner added to sum the values.
- * <p>
+ * <p/>
  * Each field's name/value will be appended with a delimiter (null character) and placed in the column qualifier.
  */
 abstract public class BaseMetricsReceiver<OK,OV> implements MetricsReceiver<OK,OV> {

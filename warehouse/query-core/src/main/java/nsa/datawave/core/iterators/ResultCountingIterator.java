@@ -44,10 +44,15 @@ import com.google.common.collect.Sets;
  * <li>The key is start_key of the range passed to seek() which ensures that the key is not automatically filtered out due to falling outside the range.</li>
  * <li>The value is a {@link VLongWritable} which is the number of k/v pairs obtained below this iterator.</li>
  * </ul>
- *
+ * </p>
+ * 
  * <p>
  * When using a {@link BatchScanner}, be aware that this will return <code>n</code> counts, where <code>n</code> is the number of ranges set. It is up to the
  * client to sum the counts for each range together.
+ * </p>
+ * 
+ * 
+ * 
  */
 public class ResultCountingIterator extends WrappingIterator {
     private static final Logger log = Logger.getLogger(ResultCountingIterator.class);
@@ -193,9 +198,9 @@ public class ResultCountingIterator extends WrappingIterator {
     }
     
     /**
-     * Kryo serialized object ResultCountTuple which contains a {@code long count, int visibilityLength, byte[] visibility}
+     * Kryo serialized object ResultCountTuple which contains a long count, int visibilityLength, byte[] visibility
      * 
-     * @return serialized form of the count and rolled up visibility
+     * @return serialized form of the count & rolled up visibility
      */
     @Override
     public Value getTopValue() {
@@ -243,7 +248,7 @@ public class ResultCountingIterator extends WrappingIterator {
     }
     
     /**
-     * Simple tuple class implementing Kryo Serialization. Will hold the count and rolled up column visibility.
+     * Simple tuple class implementing Kryo Serialization. Will hold the count & rolled up column visibility.
      *
      * The serialized object will be of the form: long - count int - length of visibility expression byte array byte[] - rolled up ColumnVisibility
      */

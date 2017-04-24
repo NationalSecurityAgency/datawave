@@ -189,7 +189,7 @@ public class StatsLinksEdgeCombiner extends WrappingIterator implements OptionDe
          * Constructs an iterator over Values whose Keys are versions of the current topKey of the source SortedKeyValueIterator.
          * 
          * @param source
-         *            The {@code SortedKeyValueIterator<Key,Value>} from which to read data.
+         *            The SortedKeyValueIterator<Key,Value> from which to read data.
          */
         public ValueIterator(final SortedKeyValueIterator<Key,Value> source) {
             this.source = source;

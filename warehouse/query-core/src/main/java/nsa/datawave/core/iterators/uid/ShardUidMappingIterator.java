@@ -270,21 +270,17 @@ public class ShardUidMappingIterator extends UidMappingIterator {
         return new KeyValue(newKey, replacement[ORG_UID_INDEX].getBytes());
     }
     
+    /**
+     * Replace the uid in the specified "part" of the value (delimited by '\0' characters)
+     * 
+     * @param value
+     * @param partIndex
+     * @return The value with the uid replaced. Null if no changes required
+     */
     private static final int ORG_UID_INDEX = 0;
     private static final int NEW_UID_INDEX = 1;
     private static final int CQ_INDEX = 2;
     
-    /**
-     * Replace the uid in the specified "part" of the value (delimited by '\0' characters)
-     *
-     * @param value
-     * @param partIndex
-     * @param startKey
-     * @param startKeyInclusive
-     * @param endKey
-     * @param endKeyInclusive
-     * @return The value with the uid replaced. Null if no changes required
-     */
     private String[] replaceUid(String value, int partIndex, boolean startKey, boolean startKeyInclusive, boolean endKey, boolean endKeyInclusive) {
         String[] parts = StringUtils.split(value, '\0', true);
         if (parts.length <= partIndex) {

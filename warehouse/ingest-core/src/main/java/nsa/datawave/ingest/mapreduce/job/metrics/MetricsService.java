@@ -17,23 +17,20 @@ import java.util.Set;
 
 /**
  * Receives ingest metrics and processes them asynchronously. Once the queue fills up, this service will block metrics producers.
- * <p>
- * Metrics have four components <br>
- * 1) Name : Name for this metric <br>
- * 2) Labels : Labels are used to determine if this metric is recorded. <br>
- * 3) Fields : Fields are like labels except that they will be recorded along with the name and value.<br>
- * 3) Value : The magnitude of this metric (usually count). <br>
- * <p>
+ * <p/>
+ * Metrics have four components </br> 1) Name : Name for this metric <br/>
+ * 2) Labels : Labels are used to determine if this metric is recorded. <br/>
+ * 3) Fields : Fields are like labels except that they will be recorded along with the name and value.<br/>
+ * 3) Value : The magnitude of this metric (usually count). <br/>
+ * <p/>
  * An example metric looks like:
+ * <p/>
  * 
  * <pre>
- * {@code
- * 
  *     name = "KeyValueCounts"
  *     labels = { "table": "shard", "dataType": "flow1" }
  *     fields = { "dataType": "flow1", "fileExtension" : "gz" }
  *     value = 1
- * }
  * </pre>
  */
 public class MetricsService<OK,OV> implements AutoCloseable {

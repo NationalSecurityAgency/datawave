@@ -38,21 +38,25 @@ import com.google.protobuf.InvalidProtocolBufferException;
  * Iterator used for global index lookups in ShardQueryLogic. This iterator will aggregate range information for a query term so that we don't pass back too
  * many ranges to the web service. This iterator is set up in the RangeCalculator and is constructed with ranges that contain the start and end term, field
  * name, and start and end dates
- *
+ * </p>
+ * 
  * <p>
  * This iterator has two required properties (SHARDS_PER_DAY and EVENTS_PER_DAY) that must be set and one optional property (DATA_TYPES). This iterator uses
  * these properties to determine what type of ranges to pass up to the range calculator.
- *
+ * </p>
+ * 
  * <p>
  * As this iterator is consuming K/V from the global index for a term, it will return a range that corresponds to the entire day (all shards for that day) if
  * there are more events per day in the global index than EVENTS_PER_DAY or if the number of shards that contain entries for the term is more than
  * SHARDS_PER_DAY. If neither of these thresholds is hit for the day, then this iterator will return a set of ranges that will either be event specific or shard
- * and datatype specific (if there are no UIDs in the Uid.List). If the cardinality exceeds {@link #EVENTS_PER_DAY}, the code will return {@link Long#MAX_VALUE}
+ * and datatype specific (if there are no UIDs in the Uid.List). If the cardinality exceeds {@link #EVENTS_PER_DAY}, the code will return {@link Long.MAX_VALUE}
  * as the cardinality for that day.
- *
+ * </p>
+ * 
  * <p>
  * NOTE: This iterator assumes that it will be receiving key/values pairs from the global index for one term in a sorted order.
- *
+ * </p>
+ * 
  */
 public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
     /**

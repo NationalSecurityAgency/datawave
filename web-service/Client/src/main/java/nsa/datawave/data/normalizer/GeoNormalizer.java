@@ -63,7 +63,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
      *
      * [number][non-numeric nor decimal dot][number]
      *
-     * @throws IllegalArgumentException
+     * @throws NormalizationException
      *             , if unable to parse the numbers on either side of the delimiter
      */
     @Override
@@ -141,7 +141,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
     /**
      * Convert a Degrees / Minutes / Seconds latitude or longitude into decimal degrees.
      *
-     * @param val
+     * @param value
      * @return
      */
     public static double convertDMStoDD(String val) throws NormalizationException {
@@ -265,6 +265,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
          *
          * @param latitude
          * @param longitude
+         * @param precision
          */
         public GeoPoint(double latitude, double longitude) throws OutOfRangeException {
             this.latitude = latitude;
@@ -277,6 +278,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
          *
          * @param latitude
          * @param longitude
+         * @param precision
          * @throws ParseException
          */
         public GeoPoint(String latitude, String longitude) throws OutOfRangeException, ParseException {
@@ -306,7 +308,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
          * <p>
          * For example:
          * <p>
-         * {@code [45, -150] => [135, 30] => 103350..0000000000000000}
+         * <code>[45, -150] => [135, 30] => 103350..0000000000000000</code>
          *
          * @return
          */
@@ -338,7 +340,7 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
          * <p>
          * For example:
          * <p>
-         * {@code [45, -150] => [135, 30] => 103350..0000000000000000}
+         * <code>[45, -150] => [135, 30] => 103350..0000000000000000</code>
          *
          * @return
          */

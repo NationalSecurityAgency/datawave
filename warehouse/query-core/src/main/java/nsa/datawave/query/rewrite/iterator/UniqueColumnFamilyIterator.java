@@ -13,8 +13,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
 /**
- * For a given scan range, this iterator will return the first key in a {@code <row, column family>}. The sequence of keys output from this iterator will
- * therefore always contain a unique {@code <row, column family>} tuple.
+ * For a given scan range, this iterator will return the first key in a <row, column family>. The sequence of keys output from this iterator will therefore
+ * always contain a unique <row, column family> tuple.
  *
  */
 public class UniqueColumnFamilyIterator extends org.apache.accumulo.core.iterators.WrappingIterator {
@@ -47,7 +47,7 @@ public class UniqueColumnFamilyIterator extends org.apache.accumulo.core.iterato
     }
     
     /**
-     * A bit of a hack, similar to the ColumnFamilySkippingIterator. This will call next a 32 times before finally seeking for the next {@code <row, colf>}.
+     * A bit of a hack, similar to the ColumnFamilySkippingIterator. This will call next a 32 times before finally seeking for the next <row, colf>.
      * 
      * The source iterator may or may not have a top after this method returns, and there is no guarantee of another viable top key/value being set.
      */

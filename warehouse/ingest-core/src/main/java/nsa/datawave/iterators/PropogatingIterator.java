@@ -32,7 +32,7 @@ import nsa.datawave.ingest.table.aggregator.PropogatingCombiner;
  * Purpose: Handle arbitrary propogating aggregations.
  * 
  * Design: Though very similar to the DeletingIterator, due to private methods and members, we cannot directly extend the DeletingIterator. As a result, the
- * class extends SKVI. This class {@code USES --> PropogatingAggregator}. Note that propAgg can be null
+ * class extends SKVI. This class USES --> PropogatingAggregator. Note that propAgg can be null
  * 
  * Initially the TotalAggregatingIterator, this class was a direct copy. At some point it was identified that there was an artifact where deletes would not be
  * propogated. As a result, this class becomes nearly identical to the DeletingIterator, whereby deletes are always propogated until a full major compaction.
@@ -316,7 +316,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     /**
      * Create the aggregator using the provided options.
      *
-     * @param className
+     * @param options
      * @return
      */
     private Object createAggregator(String className) {

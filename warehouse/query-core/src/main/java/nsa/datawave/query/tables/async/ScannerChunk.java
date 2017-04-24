@@ -70,7 +70,7 @@ public class ScannerChunk {
     }
     
     /**
-     * @param ranges
+     * @param ranges2
      */
     protected void setRanges(Collection<Range> ranges) {
         if (ranges.size() > 0) {

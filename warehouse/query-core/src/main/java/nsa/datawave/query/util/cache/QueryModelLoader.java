@@ -33,7 +33,7 @@ public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<
      * @param connector
      * @param tableName
      * @param auths
-     * @param allFields
+     * @param columnFamilyList
      */
     public QueryModelLoader(Connector connector, String tableName, Set<Authorizations> auths, Set<String> allFields) {
         super(connector, tableName, auths, new ArrayList<Text>());

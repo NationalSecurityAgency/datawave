@@ -54,31 +54,31 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     
     /**
      * Configuration parameter to specify the fields that should be indexed. This parameter supports multiple datatypes, so a valid value would be something
-     * like {@code <type>.data.category.index}.
+     * like <type>.data.category.index.
      */
     public static final String INDEX_FIELDS = ".data.category.index";
     
     /**
      * Configuration parameter to specify which fields should NOT be indexed, implying that all other event fields should be indexed. This parameter supports
-     * multiple datatypes, so a valid value would be something like {@code <type>.data.category.index.blacklist}.
+     * multiple datatypes, so a valid value would be something like <type>.data.category.index.blacklist.
      */
     public static final String BLACKLIST_INDEX_FIELDS = ".data.category.index.blacklist";
     
     /**
      * Configuration parameter to specify the fields that should be indexed in reverse This parameter supports multiple datatypes, so a valid value would be
-     * something like {@code <type>.data.category.index}.
+     * something like <type>.data.category.index.
      */
     public static final String REVERSE_INDEX_FIELDS = ".data.category.index.reverse";
     
     /**
      * Configuration parameter to specify which fields should NOT be revser indexed, implying that all other event fields should be reverse indexed. This
-     * parameter supports multiple datatypes, so a valid value would be something like {@code <type>.data.category.index.reverse.blacklist}.
+     * parameter supports multiple datatypes, so a valid value would be something like <type>.data.category.index.reverse.blacklist.
      */
     public static final String BLACKLIST_REVERSE_INDEX_FIELDS = ".data.category.index.reverse.blacklist";
     
     /**
      * Configuration parameter to specify the name of the normalizer that should be used for this datatype. This parameter supports multiple datatypes, so valid
-     * values would be something like {@code mydatatype.data.default.type.class}
+     * values would be something like mydatatype.data.default.type.class
      */
     public static final String DEFAULT_TYPE = ".data.default.type.class";
     
@@ -86,15 +86,15 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     
     /**
      * Configuration parameter to specify the name of the type that should be used for a particular field for this datatype. This parameter supports multiple
-     * datatypes and fields, so a valid value would be something like {@code product.productid.data.field.type.class}
+     * datatypes and fields, so a valid value would be something like product.productid.data.field.type.class
      */
     public static final String FIELD_TYPE = ".data.field.type.class";
     
     /**
      * Configuration parameter to specify the precedence of types to be used for this datatype. The last type found to handle a field will be the one used.
      * Field specific types will override this list. This parameter supports multiple datatypes, so valid values would be something like
-     * {@code mydatatype.data.type.class.list}. The instance for each type configuration is the index into this list starting with "0" which can be used in
-     * property names when multiple of the same type is specified.
+     * mydatatype.data.type.class.list. The instance for each type configuration is the index into this list starting with "0" which can be used in property
+     * names when multiple of the same type is specified.
      */
     public static final String TYPE_LIST = ".data.type.class.list";
     

@@ -160,7 +160,7 @@ public class JavaRegexAnalyzer {
      * Set the regex on this analyzer. This will do the parsing of the regex into its parts up front. Note that this parser only needs to parse enough for the
      * purposes of the applyRegexCaseSensitivity and the determination of the leading and trailing literals.
      * 
-     * @param regex
+     * @param value
      */
     public void setRegex(String regex) throws JavaRegexParseException {
         regexParts = null;
@@ -693,6 +693,7 @@ public class JavaRegexAnalyzer {
      * For example, 1.2.1* has the potential to match 001.002.001.*, 001.002.010.*, or 001.002.100.*. This method will return an expansion of 001.002.001.* for
      * that input.
      * 
+     * @param ip
      * @return If the zero-padded variant consists of octets of length 3, the zero-padded regex variant. Else, the original ip address.
      * @throws JavaRegexParseException
      */
@@ -800,8 +801,8 @@ public class JavaRegexAnalyzer {
      * Split up a list of parts using a specified separator. If a separator is found inside of a nested group, then that group and its ancestors begin and end
      * parentheses will be returned as separate parts. Separators are included as separate parts.
      * 
-     * @param character
-     * @param escaped
+     * @param parts
+     * @param separator
      * @return the part lists
      * @throws JavaRegexParseException
      */
@@ -912,6 +913,7 @@ public class JavaRegexAnalyzer {
     /**
      * Determine the minimum and maximum number of characters that a regex will match
      * 
+     * @param regex
      * @return the min and max number of characters that the regex will match
      * @throws JavaRegexParseException
      */
@@ -922,7 +924,7 @@ public class JavaRegexAnalyzer {
     /**
      * Determine the minimum and maximum number of characters that a regex will match
      * 
-     * @param parts
+     * @param regex
      * @return the min and max number of characters that the regex will match
      * @throws JavaRegexParseException
      */
@@ -1038,7 +1040,7 @@ public class JavaRegexAnalyzer {
      *            The bounds to update
      * @param quantity
      *            The quantity to update both the min and max with
-     * @param parts
+     * @param regexParts
      *            The regex parts
      * @param partIndex
      *            The current regex pointer

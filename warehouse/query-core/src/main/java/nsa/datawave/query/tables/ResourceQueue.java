@@ -72,6 +72,7 @@ public class ResourceQueue implements Closeable {
      * Constructor that accepts the type of pool, the connector, and the capacity
      * 
      * @param capacity
+     * @param cxn
      * @param type
      * @throws Exception
      */

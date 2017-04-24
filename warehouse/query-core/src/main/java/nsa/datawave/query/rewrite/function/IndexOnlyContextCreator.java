@@ -46,9 +46,10 @@ import com.google.common.base.Function;
  * 
  * <br>
  * Notice that the index-only field name must be appended with a special suffix. Such a suffix is not contained in the original query, but is added by the
- * {@link DefaultQueryPlanner} in the JBoss process when it calls the {@code IndexOnlyVisitor} as part of the process to update the JEXL query tree. <br>
+ * {@link DefaultQueryPlanner} in the JBoss process when it calls the {@link IndexOnlyVisitor} as part of the process to update the JEXL query tree. <br>
  * 
  * @see IndexOnlyJexlContext
+ * @see IndexOnlyVisitor
  * @see DefaultQueryPlanner
  */
 public class IndexOnlyContextCreator extends JexlContextCreator {

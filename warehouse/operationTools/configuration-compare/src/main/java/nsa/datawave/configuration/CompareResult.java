@@ -5,7 +5,7 @@ import java.util.Collection;
 
 /**
  * Houses the results from running a comparison on two different type configurations.
- * <p>
+ * <p/>
  * Prefixes will be removed on prefixed fields. Example: "dataflow1.helper.classes" will be reported as "helper.classes".
  */
 public class CompareResult {

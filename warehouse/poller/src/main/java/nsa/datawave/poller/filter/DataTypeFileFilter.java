@@ -80,7 +80,7 @@ public class DataTypeFileFilter implements FilenameFilter, DatatypeAwareFilename
     /**
      * Add a configuration resource
      * 
-     * @param conf
+     * @param resource
      */
     public void setConfiguration(Configuration conf) {
         this.conf = conf;

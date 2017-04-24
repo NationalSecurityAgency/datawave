@@ -40,6 +40,8 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
      *
      * @param script
      * @return the modified node tree
+     * @throws TableNotFoundException
+     * @throws ExecutionException
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T pushFunctions(T script, MetadataHelper helper, Set<String> datatypeFilter) {

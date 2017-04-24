@@ -67,7 +67,7 @@ public abstract class AbstractNormalizer implements TextNormalizer {
      * Convert a field value regex to work against its normalized form.
      * 
      * @param fieldName
-     * @param fieldRegex
+     * @param fieldValue
      * @return the normalized field value, or the original field value otherwise.
      * @throws NormalizationException
      *             if the value cannot be normalized

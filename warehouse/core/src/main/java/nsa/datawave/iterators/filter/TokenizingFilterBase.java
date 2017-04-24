@@ -11,31 +11,28 @@ import org.apache.accumulo.core.data.Value;
  * TokenizingAgeoffFilter cuts a field into tokens (splitting at a specified set of delimiters), and makes ageoff decisions based on whether or not any of the
  * supplied tokens are in its configuration. If multiple of the configured tokens are found among the field's tokens, the TTL of the token appearing first in
  * the configuration is applied.
- * <p>
+ * <p/>
  * This can be used to specify ageoff based on a field with, for example, comma separated values.
- * <p>
+ * <p/>
  * A sample configuration might look like:
  *
  * <pre>
- * {@code
+ * &lt;rule&gt;
+ *   &lt;filterClass&gt;nsa.datawave.iterators.filter.ColumnQualifierTokenFilter&lt;/filterClass&gt;
+ *   &lt;!-- Any tokens without specified TTLs will ageoff after 3000ms --&lt;
+ *   &lt;ttl units="ms"&gt;3000&lt;/ttl&gt;
  * 
- * <rule>
- *   <filterClass>nsa.datawave.iterators.filter.ColumnQualifierTokenFilter</filterClass>
- *   <!-- Any tokens without specified TTLs will ageoff after 3000ms --<
- *   <ttl units="ms">3000</ttl>
+ *   &lt;!-- Field is comma separated --&gt;
+ *   &lt;delimiters&gt;,&lt;/delimiters&gt;
  * 
- *   <!-- Field is comma separated -->
- *   <delimiters>,</delimiters>
- * 
- *   <matchPattern>
+ *   &lt;matchPattern&gt;
  *     "foo": 5d,
  *     "bar": 300ms,
- *     "baz", <!-- use rule's default TTL -->
- *   </matchPattern>
- * </rule>
- * }
+ *     "baz", &lt;!-- use rule's default TTL --&gt;
+ *   &lt;/matchPattern&gt;
+ * &lt;/rule&gt;
  * </pre>
- *
+ * <p/>
  * With such a configuration:
  * <ul>
  * <li>a cell with column qualifier foo,bar would be aged off after 5 days ('foo' wins, since it appears first in configuration),</li>

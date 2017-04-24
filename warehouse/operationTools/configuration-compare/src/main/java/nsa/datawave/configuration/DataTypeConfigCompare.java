@@ -7,10 +7,10 @@ import java.util.*;
 
 /**
  * A utility for comparing data type configuration files. The comparison will report fields that are the same and fields that are different.
- * <p>
- * The comparison follows the following rules: 1) There must be a data.name config. This will be used as the expected prefix. <br>
- * 2) If a field starts with the detected prefix, it will be compared to the corresponding (prefixed) value in the other config. <br>
- * 3) If a field is not prefixed, it will be compared to the same field in the other config. <br>
+ * <p/>
+ * The comparison follows the following rules: 1) There must be a data.name config. This will be used as the expected prefix. <br/>
+ * 2) If a field starts with the detected prefix, it will be compared to the corresponding (prefixed) value in the other config. <br/>
+ * 3) If a field is not prefixed, it will be compared to the same field in the other config. <br/>
  */
 public class DataTypeConfigCompare {
     

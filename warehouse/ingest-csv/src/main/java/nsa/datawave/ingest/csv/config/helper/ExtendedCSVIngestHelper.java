@@ -114,6 +114,8 @@ public class ExtendedCSVIngestHelper extends CSVIngestHelper {
     
     /**
      * Override the normalize call to enable event field value normalization
+     * 
+     * @throws
      */
     public Set<NormalizedContentInterface> normalize(NormalizedContentInterface nci) {
         

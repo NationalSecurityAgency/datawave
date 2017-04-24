@@ -182,7 +182,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * 
      * @param filename
      * @param count
-     * @return filename with the count inserted as follows: {@code path/name + extension -> path/name + _count + extension}
+     * @return filename with the count inserted as follows: path/name + extension -> path/name + _count + extension
      */
     protected Path insertFileCount(Path filename, int count) {
         String name = filename.getName();
@@ -195,7 +195,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
      * Remove a count from a filename. The filename is expected to end with _count.extension.
      * 
      * @param filename
-     * @return filename with the count removed as follows: {@code path/name + _count + extension -> path/name + extension}
+     * @return filename with the count removed as follows: path/name + _count + extension -> path/name + extension
      */
     protected Path removeFileCount(Path filename) {
         String name = filename.getName();

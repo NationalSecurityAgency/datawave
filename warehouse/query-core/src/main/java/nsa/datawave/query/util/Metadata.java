@@ -93,7 +93,7 @@ public class Metadata implements Serializable, OptionDescriber {
     }
     
     /**
-     * Get the Set of all fields marked as containing term frequency information, {@link nsa.datawave.data.ColumnFamilyConstants#COLF_TF}.
+     * Get the Set of all fields marked as containing term frequency information, {@link EventMetadata#COLF_TF}.
      */
     public Set<String> getTermFrequencyFields() {
         return Collections.unmodifiableSet(this.termFrequencyFields);

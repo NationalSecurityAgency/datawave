@@ -41,7 +41,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
     boolean usePrecomputedFacets = false;
     
     /**
-     * @param type
+     * @param documentcount
      */
     public FacetedQueryPlanner(FacetedSearchType type) {
         facetedConfig = new FacetedConfiguration();

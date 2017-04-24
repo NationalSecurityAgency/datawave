@@ -13,17 +13,17 @@ import org.apache.log4j.Logger;
  * 
  * any data type TTL will follow the same units specified in ttl units
  * 
- * <pre>
- * {@code
+ * <p>
  * 
- * <rules>
- *     <rule>
- *         <filterClass>nsa.datawave.iterators.filter.ageoff.MaximumAgeOffFilter</filterClass>
- *         <ttl units="d">720</ttl>
- *     </rule>
- * </rules>
- * }
+ * <pre>
+ * <rules> <rule> 
+ *      <filterClass> nsa.datawave.iterators.filter.ageoff.MaximumAgeOffFilter </filterClass>
+ *      <ttl units="d"> 720 </ttl>
+ * </rule> </rules>
+ * 
  * </pre>
+ * 
+ * </p>
  */
 public class MaximumAgeOffFilter extends AppliedRule {
     
@@ -76,7 +76,7 @@ public class MaximumAgeOffFilter extends AppliedRule {
      * 
      * @param options
      *            {@code Map} object containing the TTL, TTL_UNITS, and MATCHPATTERN for the filter rule.
-     * @see nsa.datawave.iterators.filter.AgeOffConfigParams
+     * @see nsa.datawave.iterator.filter.AgeOffConfigParams
      */
     
     public void init(FilterOptions options) {

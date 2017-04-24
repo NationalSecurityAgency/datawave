@@ -14,11 +14,13 @@ import org.apache.commons.jexl2.parser.ParseException;
 /**
  * <p>
  * {@link DataFilter} is an abstract implementation to filter out results returned by an iterator.
- *
+ * </p>
+ * 
  * <p>
- * After instantiating a {@link DataFilter}, the user must call the {@link #init(SortedKeyValueIterator, Map, QueryEvaluator)} method. This will initialize the
+ * After instantiating a {@link DataFilter}, the user must call the {@link #init(SortedKeyValueIterator, Map<String, Object>)} method. This will initialize the
  * {@link DataFilter} and prepare it to filter results.
- *
+ * </p>
+ * 
  * <p>
  * The user can then use the {@link #accept(Key, Value)} or {@link #getContextMap(Key, Value)} methods to filter results:
  * <ul>
@@ -26,18 +28,23 @@ import org.apache.commons.jexl2.parser.ParseException;
  * <li>{@link #getContextMap(Key, Value)} will gather the necessary additional information needed to perform the implemented filtering algorithm into a
  * <code>Map&lt;String, Object&gt;</code> that can be loaded into a {@link JexlContext} and evaluated with a {@link org.apache.commons.jexl2.Expression}</li>
  * </ul>
+ * </p>
+ * 
+ * 
+ * 
  */
 public abstract class DataFilter {
     
     /**
-     * Initialization method for all DataFilters. The {@link SortedKeyValueIterator} should point directly to the current tablet the
-     * {@link org.apache.accumulo.core.client.Scanner} is using (i.e. the source should not be a custom sub-iterator). The query and any unevaluated fields
-     * (e.g. "BODY", "HEAD", etc) should also be provided.
+     * Initialization method for all DataFilters. The {@link SortedKeyValueIterator} should point directly to the current tablet the {@link Scanner} is using
+     * (i.e. the source should not be a custom sub-iterator). The query and any unevaluated fields (e.g. "BODY", "HEAD", etc) should also be provided.
      * 
      * @param source
      *            A SortedKeyValueIterator that points directly to the current tablet
-     * @param options
-     * @param evaluator
+     * @param query
+     *            The query being operated on
+     * @param unevaluatedFields
+     *            Any unevaluated fields
      * @throws ParseException
      */
     public abstract void init(SortedKeyValueIterator<Key,Value> source, Map<String,Object> options, QueryEvaluator evaluator) throws ParseException;
@@ -55,7 +62,7 @@ public abstract class DataFilter {
     
     /**
      * Given a key/value pair, {@link #getContextMap(Key, Value)} generates a <code>Map&lt;String, Object&gt;</code> with the necessary values to needed by Jexl
-     * to perform the filtering in a single {@link nsa.datawave.ingest.data.RawRecordContainer} evaluation.
+     * to perform the filtering in a single {@link #Event} evaluation.
      * 
      * @param key
      * @param value

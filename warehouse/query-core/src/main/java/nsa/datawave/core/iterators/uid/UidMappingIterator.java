@@ -188,6 +188,10 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
      * Map the seek parameters so that they include all uids that map to the original range
      * 
      * @param range
+     * @param column
+     *            families
+     * @param inclusive
+     *            column families filter
      * @return the modified seek parameters
      */
     protected Range mapRange(Range range) {
@@ -223,7 +227,7 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
      * Map the seek parameters so that they include all uids that map to the original range. Uses mapRange and mapColumnFamilies
      * 
      * @param range
-     * @param columnFamilies
+     * @param column
      *            families
      * @param inclusive
      *            column families filter

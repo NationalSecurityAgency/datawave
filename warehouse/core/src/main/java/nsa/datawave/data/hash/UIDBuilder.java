@@ -25,7 +25,7 @@ public interface UIDBuilder<UID_TYPE extends UID> {
     /**
      * Build a new UID, which may be appended with one or more "extra" values, if specified
      * <p>
-     * <b>Note:</b> Any extra values will be presumably, but not necessarily, delimited by the {@link UIDConstants#DEFAULT_SEPARATOR} character
+     * <b>Note:</b> Any extra values will be presumably, but not necessarily, delimited by the {@link UIDConstants.SEPARATOR} character
      * 
      * @param extras
      *            values to append, if any

@@ -62,6 +62,7 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
      * @param tokenizer
      *            The tokenizer responsible for generating the next available n-gram
      * @return the next n-gram in the stream, or null at some termination state, such as EOS
+     * @throws IOException
      */
     protected String increment(final NGramTokenizer tokenizer) throws TokenizationException {
         String ngram = super.increment(tokenizer);

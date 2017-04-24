@@ -39,6 +39,7 @@ public interface MetricsReceiver<OK,OV> {
      * @param labels
      * @param fields
      * @param value
+     * @return true if the metric was processed by this handler, false, otherwise
      */
     void process(MetricsStore<OK,OV> store, Metric metric, Map<String,String> labels, Multimap<String,NormalizedContentInterface> fields, long value);
     

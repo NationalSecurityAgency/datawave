@@ -236,7 +236,7 @@ public class PhoneNumber implements Serializable, Comparable<PhoneNumber> {
     /**
      * This will go through the data string looking for a phone number.
      * 
-     * @param number
+     * @param data
      *            The data to look for phone numbers in
      * @return A string containing what is believed to be a phone number
      * @throws IllegalArgumentException

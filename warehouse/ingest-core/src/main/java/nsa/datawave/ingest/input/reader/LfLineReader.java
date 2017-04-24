@@ -25,6 +25,7 @@ public class LfLineReader implements LineReader {
      * 
      * @param in
      *            The input stream
+     * @throws IOException
      */
     public LfLineReader(InputStream in) {
         this(in, DEFAULT_BUFFER_SIZE);
@@ -50,6 +51,7 @@ public class LfLineReader implements LineReader {
      *            The input stream
      * @param bufferSize
      *            Size of the read buffer
+     * @throws IOException
      */
     public LfLineReader(InputStream in, int bufferSize) {
         this.in = in;

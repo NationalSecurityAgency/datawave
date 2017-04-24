@@ -61,111 +61,97 @@ import org.apache.log4j.Logger;
  * INSERT Example using Column Visibility: <br>
  * 
  * <pre>
- * {@code
- * 
- * <ModificationRequest>
- *   <Events>
- *     <Event>
- *       <shardId>20120731_9</shardId>
- *       <datatype>myDatatype</datatype>
- *       <eventUid>0000-0000-0000-0000</eventUid>
- *     </Event>
- *   </Events>
- *   <mode>INSERT</mode>
- *   <fieldName>TEST</fieldName>
- *   <fieldValue>ABC</fieldValue>
- *   <columnVisibility>PUBLIC</columnVisibility>
- * </ModificationRequest>
- * }
+ * &lt;ModificationRequest&gt;
+ *   &lt;Events&gt;
+ *     &lt;Event&gt;
+ *       &lt;shardId&gt;20120731_9&lt;/shardId&gt;
+ *       &lt;datatype&gt;myDatatype&lt;/datatype&gt;
+ *       &lt;eventUid&gt;0000-0000-0000-0000&lt;/eventUid&gt;
+ *     &lt;/Event&gt;
+ *   &lt;/Events&gt;
+ *   &lt;mode&gt;INSERT&lt;/mode&gt;
+ *   &lt;fieldName&gt;TEST&lt;/fieldName&gt;
+ *   &lt;fieldValue&gt;ABC&lt;/fieldValue&gt;
+ *   &lt;columnVisibility&gt;PUBLIC&lt;/columnVisibility&gt;
+ * &lt;/ModificationRequest&gt;
  * </pre>
  * 
  * <br>
  * DELETE Example when removing a single value using Column Visibility: <br>
  * 
  * <pre>
- * {@code
- * 
- * <ModificationRequest>
- *   <Events>
- *     <Event>
- *       <shardId>20120731_9</shardId>
- *       <datatype>myDatatype</datatype>
- *       <eventUid>0000-0000-0000-0000</eventUid>
- *     </Event>
- *   </Events>
- *   <mode>DELETE</mode>
- *   <fieldName>TEST</fieldName>
- *   <fieldValue>ABC</fieldValue>
- *   <columnVisibility>PRIVATE</columnVisibility>
- * </ModificationRequest>
- * }
+ * &lt;ModificationRequest&gt;
+ *   &lt;Events&gt;
+ *     &lt;Event&gt;
+ *       &lt;shardId&gt;20120731_9&lt;/shardId&gt;
+ *       &lt;datatype&gt;myDatatype&lt;/datatype&gt;
+ *       &lt;eventUid&gt;0000-0000-0000-0000&lt;/eventUid&gt;
+ *     &lt;/Event&gt;
+ *   &lt;/Events&gt;
+ *   &lt;mode&gt;DELETE&lt;/mode&gt;
+ *   &lt;fieldName&gt;TEST&lt;/fieldName&gt;
+ *   &lt;fieldValue&gt;ABC&lt;/fieldValue&gt;
+ *   &lt;columnVisibility&gt;PRIVATE&lt;/columnVisibility&gt;
+ * &lt;/ModificationRequest&gt;
  * </pre>
  * 
  * <br>
  * DELETE Example when removing all entries for a field with a specific value (different column visibilities): <br>
  * 
  * <pre>
- * {@code
- * 
- * <ModificationRequest>
- *   <Events>
- *     <Event>
- *       <shardId>20120731_9</shardId>
- *       <datatype>myDatatype</datatype>
- *       <eventUid>0000-0000-0000-0000</eventUid>
- *     </Event>
- *   </Events>
- *   <mode>DELETE</mode>
- *   <fieldName>TEST</fieldName>
- *   <fieldValue>ABC</fieldValue>
- * </ModificationRequest>
- * }
+ * &lt;ModificationRequest&gt;
+ *   &lt;Events&gt;
+ *     &lt;Event&gt;
+ *       &lt;shardId&gt;20120731_9&lt;/shardId&gt;
+ *       &lt;datatype&gt;myDatatype&lt;/datatype&gt;
+ *       &lt;eventUid&gt;0000-0000-0000-0000&lt;/eventUid&gt;
+ *     &lt;/Event&gt;
+ *   &lt;/Events&gt;
+ *   &lt;mode&gt;DELETE&lt;/mode&gt;
+ *   &lt;fieldName&gt;TEST&lt;/fieldName&gt;
+ *   &lt;fieldValue&gt;ABC&lt;/fieldValue&gt;
+ * &lt;/ModificationRequest&gt;
  * </pre>
- *
+ * 
  * <br>
  * UPDATE Example when removing a single value and replacing it with a new one using ColumnVisibilities:<br>
  * 
  * <pre>
- * {@code
- * <ModificationRequest>
- *   <Events>
- *     <Event>
- *       <shardId>20120731_9</shardId>
- *       <datatype>myDatatype</datatype>
- *       <eventUid>0000-0000-0000-0000</eventUid>
- *     </Event>
- *   </Events>
- *   <mode>UPDATE</mode>
- *   <fieldName>TEST</fieldName>
- *   <fieldValue>XYZ</fieldValue>
- *   <columnVisibility>PRIVATE|PUBLIC</columnVisibility>
- *   <oldFieldValue>ABC</oldFieldValue>
- *   <oldColumnVisibility>PRIVATE</oldColumnVisibility>
- * </ModificationRequest>
- * }
+ * &lt;ModificationRequest&gt;
+ *   &lt;Events&gt;
+ *     &lt;Event&gt;
+ *       &lt;shardId&gt;20120731_9&lt;/shardId&gt;
+ *       &lt;datatype&gt;myDatatype&lt;/datatype&gt;
+ *       &lt;eventUid&gt;0000-0000-0000-0000&lt;/eventUid&gt;
+ *     &lt;/Event&gt;
+ *   &lt;/Events&gt;
+ *   &lt;mode&gt;UPDATE&lt;/mode&gt;
+ *   &lt;fieldName&gt;TEST&lt;/fieldName&gt;
+ *   &lt;fieldValue&gt;XYZ&lt;/fieldValue&gt;
+ *   &lt;columnVisibility&gt;PRIVATE|PUBLIC&lt;/columnVisibility&gt;
+ *   &lt;oldFieldValue&gt;ABC&lt;/oldFieldValue&gt;
+ *   &lt;oldColumnVisibility&gt;PRIVATE&lt;/oldColumnVisibility&gt;
+ * &lt;/ModificationRequest&gt;
  * </pre>
  * 
  * <br>
  * * UPDATE Example removing all entries for a field with a specific value (different column visibilities) and replacing it with a new one:<br>
  * 
  * <pre>
- * {@code
- * 
- * <ModificationRequest>
- *   <Events>
- *     <Event>
- *       <shardId>20120731_9</shardId>
- *       <datatype>myDatatype</datatype>
- *       <eventUid>0000-0000-0000-0000</eventUid>
- *     </Event>
- *   </Events>
- *   <mode>UPDATE</mode>
- *   <fieldName>TEST</fieldName>
- *   <fieldValue>XYZ</fieldValue>
- *   <oldFieldValue>ABC</oldFieldValue>
- *   <columnVisibility>PRIVATE|PUBLIC</columnVisibility>
- * </ModificationRequest>
- * }
+ * &lt;ModificationRequest&gt;
+ *   &lt;Events&gt;
+ *     &lt;Event&gt;
+ *       &lt;shardId&gt;20120731_9&lt;/shardId&gt;
+ *       &lt;datatype&gt;myDatatype&lt;/datatype&gt;
+ *       &lt;eventUid&gt;0000-0000-0000-0000&lt;/eventUid&gt;
+ *     &lt;/Event&gt;
+ *   &lt;/Events&gt;
+ *   &lt;mode&gt;UPDATE&lt;/mode&gt;
+ *   &lt;fieldName&gt;TEST&lt;/fieldName&gt;
+ *   &lt;fieldValue&gt;XYZ&lt;/fieldValue&gt;
+ *   &lt;oldFieldValue&gt;ABC&lt;/oldFieldValue&gt;
+ *   &lt;columnVisibility&gt;PRIVATE|PUBLIC&lt;/columnVisibility&gt;
+ * &lt;/ModificationRequest&gt;
  * </pre>
  * 
  */
@@ -513,6 +499,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * @param shardId
      * @param datatype
      * @param eventUid
+     * @param cl
+     * @param ac
      * @param fieldName
      * @param fieldValue
      * @param isIndexed

@@ -13,7 +13,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 /**
- * This is an Iterator that simply wraps an underlying {@code SortedKeyValueIterator<Key, Value>}.
+ * This is an Iterator that simply wraps an underlying SortedKeyValueIterator<Key, Value>.
  * 
  * 
  * 

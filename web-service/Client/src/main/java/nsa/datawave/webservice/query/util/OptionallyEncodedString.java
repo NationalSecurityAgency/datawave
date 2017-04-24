@@ -34,13 +34,10 @@ import org.apache.commons.codec.binary.Base64;
  * contained an invalid XML character, then the marshalled XML would look like:
  * 
  * <pre>
- * {@code
- * 
- *     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
- *     <DataClass>
- *         <DataString base64Encoded="true">BASE_64_STUFF_HERE</DataString>
- *     </DataClass>
- * }
+ *     &lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+ *     &lt;DataClass>
+ *         &lt;DataString base64Encoded="true">BASE_64_STUFF_HERE&lt;/DataString>
+ *     &lt;/DataClass>
  * </pre>
  * 
  * @see OptionallyEncodedStringAdapter

@@ -121,8 +121,8 @@ public interface TokenSearch {
         private Factory() {}
         
         /**
-         * Returns the default TokenSearch implementation. <br>
-         * <br>
+         * Returns the default TokenSearch implementation. <br/>
+         * <br/>
          * Throws a RuntimeException if the default implementation cannot be instantiated for any reason
          * 
          * @return
@@ -138,8 +138,8 @@ public interface TokenSearch {
         
         /**
          * If tokenSearchClass is not null/empty, the specified class will be instantiated via no-arg constructor and returned. If the specified class can not
-         * be instantiated for any reason, then an instance of Throwable will be thrown. <br>
-         * <br>
+         * be instantiated for any reason, then an instance of Throwable will be thrown. <br/>
+         * <br/>
          * If tokenSearchClass is null/empty, then a RuntimeException will be thrown.
          * 
          * @return
@@ -153,8 +153,8 @@ public interface TokenSearch {
         
         /**
          * If tokenSearchClass is not null/empty, the specified class will be instantiated via the specified constructor args (best-match). If the class can not
-         * be instantiated for any reason, then an instance of Throwable will be thrown. <br>
-         * <br>
+         * be instantiated for any reason, then an instance of Throwable will be thrown. <br/>
+         * <br/>
          * If tokenSearchClass is null/empty, then a RuntimeException will be thrown.
          * 
          */
@@ -167,15 +167,15 @@ public interface TokenSearch {
         
         /**
          * Load stopwords from the specified file located in the classpath.
-         * <p>
+         * <p/>
          * If a directory name is specified, e.g: <code>tmp/stopwords.txt</code> that path will be used when searching for the resource. Otherwise, the package
          * contianing the DefaultTokenSearch class may be used.
-         * <p>
+         * <p/>
          * The current thread's context classloader will be used to load the specified filename as a resource.
          * 
          * @param filename
          *            the filename containing the stoplist to load, located using the rules described above.
-         * @return a lucene {@code CharArraySet} containing the stopwords. This is configured to be case insensitive.
+         * @return a lucene <code>CharArraySet</code> containing the stopwords. This is configured to be case insensitive.
          * @throws IOException
          *             if there is a problem finding or loading the specified stop word file..
          */

@@ -13,17 +13,14 @@ import java.util.Map;
 /**
  * The field filter can drop fields based on the presence of other preferred fields. This is configuration driven and expects colon delimited pairs, A:B, where
  * if A is present in the fields, then any occurrences of B will be removed.
- * <p>
+ * <p/>
  * Example:
  * 
  * <pre>
- * {@code
- * 
  *     <property>
  *         <name>datatype1.data.field.filter</name>
  *         <value>KEEP1:DROP1,KEEP2:DROP2</value>
  *     </property>
- * }
  * </pre>
  */
 public class IngestFieldFilter {

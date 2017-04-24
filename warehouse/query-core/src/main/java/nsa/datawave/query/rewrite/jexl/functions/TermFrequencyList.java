@@ -16,7 +16,7 @@ import com.google.common.collect.TreeMultimap;
 
 /**
  * Represents a List of integer offsets, corresponding to word positions, in a given field, for a term. This is intended to be used in the scope of a Map from
- * term to {@link TermFrequencyList}
+ * term to {@link TermFrequenceList}
  */
 public class TermFrequencyList {
     

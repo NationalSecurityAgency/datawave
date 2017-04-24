@@ -33,8 +33,10 @@ public class NormalizerConfigLoader extends Loader<String,Multimap<String,Type<?
     private static final Logger log = Logger.getLogger(NormalizerConfigLoader.class);
     
     /**
-     * @param conf
-     * @param configItem
+     * @param connector
+     * @param tableName
+     * @param auths
+     * @param columnFamilyList
      * @throws IOException
      */
     public NormalizerConfigLoader(final Configuration conf, String configItem) throws IOException {

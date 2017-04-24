@@ -104,8 +104,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
     }
     
     /**
-     * Given an iterator over {@code Entry<Key, Value>}, and a set of normalizers, this method will merge the attributes scanned over by the supplied iterator
-     * into <code>this</code> Document.
+     * Given an iterator over <code>Entry<Key, Value></code>, and a set of normalizers, this method will merge the attributes scanned over by the supplied
+     * iterator into <code>this</code> Document.
      *
      * @param iter
      * @param typeMetadata

@@ -146,7 +146,7 @@ public interface MarkingFunctions {
          * Turn a serialized set of markings into a map
          * 
          * @param encodedMarkings
-         * @return {@code Map<String, String>}
+         * @return Map<String, String>
          */
         public static Map<String,String> fromString(String encodedMarkings) {
             ObjectMapper objectMapper = new ObjectMapper();

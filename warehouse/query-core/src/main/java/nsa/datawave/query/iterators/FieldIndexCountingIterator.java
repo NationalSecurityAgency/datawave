@@ -378,7 +378,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
      * This needs to also handle the condition where there are no FI keys in a given row, in that case it should continue moving rows until it there is no top
      * key, it's out of the range, or it finally finds one.
      *
-     * @return True if and only if we have a top key that is a field index key in the parent range.
+     * @return True if & only if we have a top key that is a field index key in the parent range.
      * @throws IOException
      */
     protected boolean advanceToFieldIndex() throws IOException {

@@ -10,7 +10,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 
 /**
- * Specialization of SequenceFileInputFormat that expects an {@link RawRecordContainer} object as the value.
+ * Specialization of SequenceFileInputFormat that expects an {@link Event} object as the value.
  * 
  * 
  * 

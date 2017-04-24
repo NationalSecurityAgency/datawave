@@ -32,13 +32,10 @@ import org.apache.log4j.Logger;
  * <p>
  *
  * <pre>
- * {@code
- * 
  *  Row         Colf                            Colq                   Value
  * -----------------------------------------------------------------------------------
  * |end_time    |[event_type\0count\0duration]  |[job_id(\0out_dir)?]  |<array writable of input files>
  * |job_id      |out_dir                        |                      |<serialized job counters file>
- * }
  * </pre>
  * <p>
  * There are no values stored- all information is a part of the key (row, column family, column qualifier).

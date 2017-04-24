@@ -160,8 +160,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     /**
      * Initialize the user, table, and authorization information for the configuration object that will be used with an Accumulo InputFormat.
      * 
-     * @param conf
-     *            the Hadoop Configuration object
+     * @param job
+     *            the Hadoop Job object
      * @param user
      *            a valid accumulo user
      * @param passwd
@@ -332,14 +332,14 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     
     /**
      * Sets the max # of values that may be returned for an individual Accumulo cell. By default, applied before all other Accumulo iterators (highest priority)
-     * leveraged in the scan by the record reader. To adjust priority use setIterator() &amp; setIteratorOptions() w/ the VersioningIterator type explicitly.
+     * leveraged in the scan by the record reader. To adjust priority use setIterator() & setIteratorOptions() w/ the VersioningIterator type explicitly.
      * 
      * @param conf
      *            the Hadoop configuration object
      * @param maxVersions
      *            the max number of versions per accumulo cell
      * @throws IOException
-     *             if maxVersions is &lt; 1
+     *             if maxVersions is < 1
      */
     public static void setMaxVersions(Configuration conf, int maxVersions) throws IOException {
         if (maxVersions < 1)
@@ -698,10 +698,11 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
     
     /**
-     * Clears the list of the iterator settings (for iterators to apply to a scanner) from this configuration.
+     * Gets a list of the iterator settings (for iterators to apply to a scanner) from this configuration.
      * 
      * @param conf
      *            the Hadoop configuration object
+     * @return a list of iterators
      * @see #addIterator(Configuration, IteratorSetting)
      */
     public static void clearIterators(Configuration conf) {
@@ -1204,7 +1205,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
     
     /**
-     * The Class IteratorSetting. Encapsulates specifics for an Accumulo iterator's name &amp; priority.
+     * The Class IteratorSetting. Encapsulates specifics for an Accumulo iterator's name & priority.
      */
     static class AccumuloIterator {
         

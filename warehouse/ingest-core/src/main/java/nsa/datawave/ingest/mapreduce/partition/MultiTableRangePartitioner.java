@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * Range partitioner that uses a split file with the format: {@code tableName<tab>splitPoint}
+ * Range partitioner that uses a split file with the format: tableName<tab>splitPoint
  * 
  */
 public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value> implements DelegatePartitioner {

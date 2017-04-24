@@ -24,7 +24,8 @@ public class WritableUtil {
     /**
      * Natively parses a text object into a long in base 10.
      * 
-     * @param t
+     * @param text
+     * @param radix
      * @return
      * @throws NumberFormatException
      */

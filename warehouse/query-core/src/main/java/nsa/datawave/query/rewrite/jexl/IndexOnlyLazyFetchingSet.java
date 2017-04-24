@@ -9,12 +9,12 @@ import java.util.Iterator;
 import nsa.datawave.query.rewrite.iterator.IndexOnlyFunctionIterator;
 
 /**
- * Uses the IndexOnlyFunctioniterator to lazily fetch index-only values when accessors are triggered, such as {@code iterator()} or {@code size()}. Some
- * accessors, particularly {@code iterator()} and {@code isEmpty()}, are optimized to fetch only as much data is immediately needed, which helps to miminize the
- * potentially huge memory footprint associated with index-only fields. For example, {@code isEmpty()} fetches only the first matching term-frequency (tf)
- * field, and the default {@code Iterator<E>} returned by {@code iterator()} fetches only a single matching record at a time for each invocation of its
- * {@code next()} method. Such an optimization does not apply to most other methods, which automatically trigger the complete fetching of matching records into
- * memory, such as {@code size()} and {@code toArray()}.
+ * Uses the IndexOnlyFunctioniterator to lazily fetch index-only values when accessors are triggered, such as <code>iterator()</code> or <code>size()</code>.
+ * Some accessors, particularly <code>iterator()</code> and <code>isEmpty()</code>, are optimized to fetch only as much data is immediately needed, which helps
+ * to miminize the potentially huge memory footprint associated with index-only fields. For example, <code>isEmpty()</code> fetches only the first matching
+ * term-frequency (tf) field, and the default Iterator<E> returned by <code>iterator()</code> fetches only a single matching record at a time for each
+ * invocation of its <code>next()</code> method. Such an optimization does not apply to most other methods, which automatically trigger the complete fetching of
+ * matching records into memory, such as <code>size()</code> and <code>toArray()</code>.
  * 
  * @param <E>
  *            The type of values stored in the set

@@ -79,16 +79,16 @@ public class UserOperationsBean {
      * <p>
      * An example scenario where this comes into play is an external person querying through an internal server. The external party will have an authorization
      * for their organization, say EXT1 for example, whereas the server will have the INT authorization. We want to be able to return data with releasabilities
-     * such as {@code INT&EXT1}, {@code INT&ALL_EXT}, but not data such as {@code INT&EXT2}. There is no single merged list of authorizations that will allow
-     * the correct data to come back. So, instead we test all data against each authorization set. For the {@code INT&EXT2} data example, the server's
-     * authorizations will allow the data to be returned since the server has INT. The user's authorizations will not allow the data to be returned however
-     * since the user has neither INT nor EXT2. In this scenario, the result for {@link AuthorizationsListBase#getAllAuths()} will contain both INT and EXT1
-     * even though the user does not have INT. The INT auth must be passed when queries are created, else no data would be returned (since the INT auth would be
-     * removed from the server's auths and then no data would be returned).
+     * such as INT&EXT1, INT&ALL_EXT, but not data such as INT&EXT2. There is no single merged list of authorizations that will allow the correct data to come
+     * back. So, instead we test all data against each authorization set. For the INT&EXT2 data example, the server's authorizations will allow the data to be
+     * returned since the server has INT. The user's authorizations will not allow the data to be returned however since the user has neither INT nor EXT2. In
+     * this scenario, the result for {@link AuthorizationsListBase#getAllAuths()} will contain both INT and EXT1 even though the user does not have INT. The INT
+     * auth must be passed when queries are created, else no data would be returned (since the INT auth would be removed from the server's auths and then no
+     * data would be returned).
      * <p>
      * For most use cases, a GUI can compute the intersection of all authorizations that are not domains and then include the union of organizations. This will
-     * not always be the case, however. Consider data marked with something like: {@code FOO&INT|FOO&EXT}. If a system needs to support querying data such as
-     * that, then a simple intersection of everything except organization will no longer work.
+     * not always be the case, however. Consider data marked with something like: FOO&INT|FOO&EXT. If a system needs to support querying data such as that, then
+     * a simple intersection of everything except organization will no longer work.
      * <p>
      * Note that the the return type can be changed by specifying an Accept header, or by adding a suffix to the request URL. The following suffix to return
      * type mppings are:

@@ -15,7 +15,7 @@ import org.apache.lucene.util.Version;
 /**
  * Filters {@link StandardTokenizer} with {@link StandardFilter}, {@link LowerCaseFilter} and {@link StopFilter}, using a list of English stop words (unless
  * otherwise specified).
- * <p>
+ * <p/>
  * This analyzer does NOT provide the ability to apply BASIS RLP processing
  * 
  */
@@ -38,7 +38,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     
     /**
      * Build an analyzer with the default stop words: ({@link #STOP_WORDS_SET}).
-     * <p>
+     * <p/>
      * This hides the matchVersion parameter we don't always want consumers to have to be concerned with it. Generally matchVersion will be set to the current
      * Lucene version.
      */
@@ -48,7 +48,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     
     /**
      * Build an analyzer with the given specified words.
-     * <p>
+     * <p/>
      * This hides the matchVersion parameter we don't always want consumers to have to be concerned with it. Generally matchVersion will be set to the current
      * Lucene version.
      * 

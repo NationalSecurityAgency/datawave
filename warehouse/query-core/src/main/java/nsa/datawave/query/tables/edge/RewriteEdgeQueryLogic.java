@@ -165,6 +165,8 @@ public class RewriteEdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * 
      * @param helper
      * @param config
+     * @return
+     * @throws Exception
      */
     protected void loadQueryModel(MetadataHelper helper, RewriteEdgeQueryConfiguration config) {
         String model = config.getModelName() == null ? "" : config.getModelName();
@@ -210,6 +212,8 @@ public class RewriteEdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * 
      * @param queryString
      * @return
+     * @throws TableNotFoundException
+     * @throws ParseException
      */
     protected String applyQueryModel(String queryString) {
         ASTJexlScript origScript = null;

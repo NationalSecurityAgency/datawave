@@ -30,7 +30,8 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     
     /**
      * @param currentNode
-     * @param config
+     * @param tree
+     * @param shards
      */
     public TupleToRange(JexlNode currentNode, RefactoredShardQueryConfiguration config) {
         this.currentScript = currentNode;

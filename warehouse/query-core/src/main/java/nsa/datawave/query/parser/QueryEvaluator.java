@@ -164,11 +164,9 @@ public class QueryEvaluator {
      * This method is called when a field has more than one value associated with it. In the case where a field has multiple values, a Object[] is placed into
      * the MapContext with the values. The query is rewritten to test all of the values in the object array.
      *
-     * @param root
+     * @param query
      * @param fieldName
      * @param fieldValues
-     * @param specialFieldName
-     * @param validUnevaluatedFieldNames
      * @return
      */
     public DatawaveTreeNode rewriteQuery(DatawaveTreeNode root, String fieldName, Collection<String> fieldValues, String specialFieldName,
@@ -684,10 +682,10 @@ public class QueryEvaluator {
      *
      * @param fName
      *            The Field Name
-     * @param fValue
+     * @param fieldValue
      *            The Field Value
-     * @return {@code List<String>} containing all normalized forms of the fieldValue. NOTE: Currently we are returning a list of strings, because Accumulo only
-     *         uses strings at present.
+     * @return List<String> containing all normalized forms of the fieldValue. NOTE: Currently we are returning a list of strings, because Accumulo only uses
+     *         strings at present.
      */
     public List<String> getNormalizedFieldValue(String fName, String fValue) {
         List<String> normStrings = new ArrayList<>();

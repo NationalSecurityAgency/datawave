@@ -295,6 +295,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
      * @param stream
      * @param t
      * @throws IOException
+     * @throws ClassNotFoundException
      */
     protected void writeObject(ObjectOutputStream stream, E t) throws IOException {
         if (t == null) {

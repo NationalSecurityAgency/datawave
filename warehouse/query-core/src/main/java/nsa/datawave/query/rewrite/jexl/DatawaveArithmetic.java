@@ -141,7 +141,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
      *            the right operator
      * @param operator
      *            the operator
-     * @return {@code -1 if left < right; +1 if left > right; 0 if left == right}
+     * @return -1 if left &lt; right; +1 if left &gt > right; 0 if left == right
      * @throws ArithmeticException
      *             if either left or right is null
      * @since 2.1

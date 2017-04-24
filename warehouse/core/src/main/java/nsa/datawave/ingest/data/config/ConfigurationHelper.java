@@ -123,6 +123,7 @@ public class ConfigurationHelper extends Configuration {
      * @param delimiter
      *            delimiter
      * @return parameter value
+     * @throws MapReduceConfigurationException
      */
     public static Set<String> getRequiredSetOfStrings(final Configuration conf, final String propertyName, final String delimiter) {
         final String p = conf.get(propertyName);
