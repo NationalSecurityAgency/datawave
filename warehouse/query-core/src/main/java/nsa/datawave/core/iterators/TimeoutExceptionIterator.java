@@ -47,8 +47,6 @@ public class TimeoutExceptionIterator extends WrappingIterator {
     
     /**
      * Set the return key
-     * 
-     * @return
      */
     protected void setReturnKey() {
         lastValue = EXCEPTEDVALUE;

@@ -40,7 +40,7 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 /**
- * Replace any node in the query which has an Identifier of {@link Constants.ANY_FIELD} with a conjunction (or) of discrete names for the given term from the
+ * Replace any node in the query which has an Identifier of {@link Constants#ANY_FIELD} with a conjunction (or) of discrete names for the given term from the
  * global index.
  * 
  * 
@@ -362,10 +362,8 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     /**
      * Performs a lookup in the global index for an ANYFIELD term and returns the field names where the term is found
      * 
-     * @param config
-     * @param expansionFields
-     *            - limit expansion to this set of fields, if present. If empty or null, no limit
      * @param node
+     * @param positive
      * @return set of field names from the global index for the nodes value
      * @throws TableNotFoundException
      * @throws IllegalAccessException

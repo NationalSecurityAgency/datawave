@@ -63,11 +63,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>
  * QueryIterator is the entry point to the Datawave query iterator stack. At a high level, this iterator has a source of Document Keys (row + columnfamily) and
  * applies a series of transformations and predicates to satisfy the Datawave query requirements.
- * </p>
+ *
+ * <br>
  * 
- * <br />
- * 
- * <h4>Document Keys</h4>
+ * <h1>Document Keys</h1>
  * <p>
  * The source of Document Keys is one of the following:
  * <ol>
@@ -75,17 +74,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <li>"Date-Range" scan (formerly known as "full-table scan")</li>
  * </ol>
  * In addition to the Accumulo Key pointing to the document, a Document containing index-only fields matched by the query and a {@link java.util.List} of the
- * {@link Entry&lt;Key,Value&gt;}
- * </p>
+ * {@link Entry}&lt;Key,Value&gt;
+ *
+ * <br>
  * 
- * <br />
- * 
- * <h4>Transformations/Predicates</h4>
+ * <h1>Transformations/Predicates</h1>
  * <p>
  * The following transformations/predicates are applied (order sensitive):
  * <ol>
  * <li>Filter on timestamp</li>
- * <li>Build Document from {@link Entry&lt;Key,Value&gt;} and {@link Type} mapping</li>
+ * <li>Build Document from {@link Entry}&lt;Key,Value&gt; and {@link Type} mapping</li>
  * <li>Compute top-level visibility and apply to Document Key</li>
  * <li>Include the datatype as an attribute, if enabled</li>
  * <li>Remove empty documents</li>
@@ -94,8 +92,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <li>PostProcessing Enrichment - Variable enrichment, e.g. term frequency enrichment</li>
  * <li>Serialize Document to a Value, e.g. Kryo, Writable, etc</li>
  * </ol>
- * </p>
- * 
+ *
  */
 public class QueryIterator extends QueryOptions implements SortedKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator,
                 SourceFactory<Key,Value> {

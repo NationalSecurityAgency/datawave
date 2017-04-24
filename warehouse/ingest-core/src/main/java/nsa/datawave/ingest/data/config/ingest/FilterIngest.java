@@ -5,8 +5,9 @@ import nsa.datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * A marker interface that demonstrates an {@link IngestHelperInterface} must apply a filter to the event fields.
- * <p/>
- * {@see nsa.datawave.ingest.data.config.ingest.IngestFieldFilter}
+ * <p>
+ * 
+ * @see nsa.datawave.ingest.data.config.ingest.IngestFieldFilter
  */
 public interface FilterIngest {
     

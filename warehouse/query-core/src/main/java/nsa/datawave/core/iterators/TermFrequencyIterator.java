@@ -351,7 +351,7 @@ public class TermFrequencyIterator extends WrappingIterator {
     }
     
     /**
-     * A field name and value which is sorted on <value>\0<name>
+     * A field name and value which is sorted on {@code <value>\0<name>}
      */
     public static class FieldValue implements Comparable<FieldValue> {
         private int nullOffset;

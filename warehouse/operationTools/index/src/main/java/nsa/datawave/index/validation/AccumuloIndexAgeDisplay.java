@@ -141,7 +141,7 @@ public class AccumuloIndexAgeDisplay {
     }
     
     /**
-     * Pull data from accumulo, create a collection of delete cmds for th accumulo script for indexes > 1 day
+     * Pull data from accumulo, create a collection of delete cmds for th accumulo script for {@code indexes > 1 day}
      */
     public void extractDataFromAccumulo() {
         dataBuckets = new ArrayList[buckets.length];

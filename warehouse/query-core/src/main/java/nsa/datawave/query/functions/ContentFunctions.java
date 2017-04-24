@@ -21,36 +21,42 @@ import org.apache.log4j.Logger;
  *
  * <b>Functions</b>
  * <ul>
- * <li>content:within(int, map, term1, term2, ...)</li>
+ * <li>content:within(int, map, term1, term2, ...)
  * <ul>
  * <li>Returns true if the terms occur within the specified distance of each other</li>
  * <li>The distance parameter is the maximum acceptable distance (term offset) between the terms provided</li>
  * <li>For example, for the phrase "the quick brown fox" content:within(2, 'quick', 'brown', 'fox') will return true because the difference in word offsets one
- * and three is less than or equal to two (3 - 1 <= 2). Searching for content:within(1, 'quick', 'brown', 'fox') will fail because it is impossible for three
- * terms to have a minimum distance of two.</li>
+ * and three is less than or equal to two ({@code 3 - 1 <= 2}). Searching for content:within(1, 'quick', 'brown', 'fox') will fail because it is impossible for
+ * three terms to have a minimum distance of two.
  * </ul>
- * <li>content:within(zone, int, map, term1, term2, ...)</li>
+ * </li>
+ * <li>content:within(zone, int, map, term1, term2, ...)
  * <ul>
  * <li>Same as content:within() but with a zone specified</li>
  * </ul>
- * <li>content:adjacent(map, term1, term2, ...)</li>
+ * </li>
+ * <li>content:adjacent(map, term1, term2, ...)
  * <ul>
  * <li>Calls within() with a distance of num(terms) - 1, meaning that all of the terms occur next to each other</li>
  * <li>e.g. content:adjacent(map, term1, term2, term3) will call content:within(2, map, term1, term2, term3)</li>
  * </ul>
- * <li>content:adjacent(zone, map, term1, term2, ...)</li>
+ * </li>
+ * <li>content:adjacent(zone, map, term1, term2, ...)
  * <ul>
  * <li>Same as content:adjacent() but with a zone specified</li>
  * </ul>
- * <li>content:phrase(map, term1, term2, ...)</li>
+ * </li>
+ * <li>content:phrase(map, term1, term2, ...)
  * <ul>
  * <li>Only matches true on documents that contain the terms adjacent to each other in the order provided. Synonyms at the same position are considered
  * adjacent.</li>
  * </ul>
- * <li>content:phrase(zone, map, term1, term2, ...)</li>
+ * </li>
+ * <li>content:phrase(zone, map, term1, term2, ...)
  * <ul>
  * <li>Same as content:phrase() but with a zone specified</li>
  * </ul>
+ * </li>
  * </ul>
  *
  * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by ContentFunctionsDescriptor. This is kept as a separate class to reduce accumulo
@@ -230,9 +236,11 @@ public class ContentFunctions {
      *
      * @param distance
      *            The maximum acceptable distance for the terms to occur near each other
-     * @param offsets
+     * @param termOffsetMap
      *            A list of integer offset lists. One integer offset list for each term.
-     * @return true if a permutation of the terms exists where all terms are within {@link #distance} of each other, false otherwise
+     * @param orderMatters
+     * @param terms
+     * @return true if a permutation of the terms exists where all terms are within {@code distance} of each other, false otherwise
      */
     private static boolean process(int distance, Map<String,List<Integer>> termOffsetMap, boolean orderMatters, String[] terms) {
         
@@ -314,19 +322,23 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return true if a permutation of the terms exists where all terms are within {@link #distance} of each other, false otherwise
+     * @return true if a permutation of the terms exists where all terms are within {@code distance} of each other, false otherwise
      */
     public static boolean within(int distance, Map<String,List<Integer>> termOffsetMap, String... terms) {
         return process(distance, termOffsetMap, false, terms);
     }
     
-/**
-     * Like {@link #within(int, Map, String...) but limited to only finding a match in a single zone.
+    /**
+     * Like {@link #within(int, Map, String...)} but limited to only finding a match in a single zone.
      *
-     * @param zone The zone to search within
-     * @param distance The maximum acceptable distance for the terms to occur near each other
-     * @param termOffsetMap A map of terms and their offset lists
-     * @param terms The array of terms
+     * @param zone
+     *            The zone to search within
+     * @param distance
+     *            The maximum acceptable distance for the terms to occur near each other
+     * @param termOffsetMap
+     *            A map of terms and their offset lists
+     * @param terms
+     *            The array of terms
      * @return true if a permutation of the terms exists where all terms are within the specified distance of each other in the same zone, false otherwise
      * @see #within(int, Map, String...)
      */
@@ -336,7 +348,7 @@ public class ContentFunctions {
     
     /**
      * A wrapper function around searching for a occurrence where the terms exist next to each other Calls {@link #within} with a distance argument of the
-     * length of {@link #offsets}
+     * length of {@code termOffsetMap}
      *
      * @param termOffsetMap
      *            A map of terms and their offset lists
@@ -370,7 +382,7 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @returns True if the specified phrase occurs in the order that the terms were provided
+     * @return True if the specified phrase occurs in the order that the terms were provided
      */
     public static boolean phrase(Map<String,List<Integer>> termOffsetMap, String... terms) {
         return process(-1, termOffsetMap, true, terms);
@@ -385,7 +397,7 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @returns True if the specified phrase occurs in the order that the terms were provided in the specified zone
+     * @return True if the specified phrase occurs in the order that the terms were provided in the specified zone
      */
     public static boolean phrase(String zone, Map<String,List<Integer>> termOffsetMap, String... terms) {
         return process(-1, termOffsetMap, true, terms);
@@ -398,9 +410,11 @@ public class ContentFunctions {
      *
      * @param distance
      *            The maximum acceptable distance for the terms to occur near each other
-     * @param offsets
+     * @param termOffsetMaps
      *            A list of map of terms to a list of integer offset lists. One integer offset list for each term.
-     * @return true if a permutation of the terms exists where all terms are within {@link #distance} of each other, false otherwise
+     * @param orderMatters
+     * @param terms
+     * @return true if a permutation of the terms exists where all terms are within {@code distance} of each other, false otherwise
      */
     private static boolean process(int distance, Collection<Map<String,List<Integer>>> termOffsetMaps, boolean orderMatters, String[] terms) {
         for (Map<String,List<Integer>> termOffsetMap : termOffsetMaps) {
@@ -420,19 +434,23 @@ public class ContentFunctions {
      *            A list of map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return true if a permutation of the terms exists where all terms are within {@link #distance} of each other, false otherwise
+     * @return true if a permutation of the terms exists where all terms are within {@code distance} of each other, false otherwise
      */
     public static boolean within(int distance, Collection<Map<String,List<Integer>>> termOffsetMaps, String... terms) {
         return process(distance, termOffsetMaps, false, terms);
     }
     
-/**
-     * Like {@link #within(int, Map, String...) but limited to only finding a match in a single zone.
+    /**
+     * Like {@link #within(int, Map, String...)} but limited to only finding a match in a single zone.
      *
-     * @param zone The zone to search within
-     * @param distance The maximum acceptable distance for the terms to occur near each other
-     * @param termOffsetMaps A list of map of terms and their offset lists
-     * @param terms The array of terms
+     * @param zone
+     *            The zone to search within
+     * @param distance
+     *            The maximum acceptable distance for the terms to occur near each other
+     * @param termOffsetMaps
+     *            A list of map of terms and their offset lists
+     * @param terms
+     *            The array of terms
      * @return true if a permutation of the terms exists where all terms are within the specified distance of each other in the same zone, false otherwise
      * @see #within(int, Map, String...)
      */
@@ -442,7 +460,7 @@ public class ContentFunctions {
     
     /**
      * A wrapper function around searching for a occurrence where the terms exist next to each other Calls {@link #within} with a distance argument of the
-     * length of {@link #offsets}
+     * length of {@code termOffsetMaps}
      *
      * @param termOffsetMaps
      *            A list of map of terms and their offset lists
@@ -476,7 +494,7 @@ public class ContentFunctions {
      *            A list of map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @returns True if the specified phrase occurs in the order that the terms were provided
+     * @return True if the specified phrase occurs in the order that the terms were provided
      */
     public static boolean phrase(Collection<Map<String,List<Integer>>> termOffsetMaps, String... terms) {
         return process(-1, termOffsetMaps, true, terms);
@@ -491,7 +509,7 @@ public class ContentFunctions {
      *            A list of map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @returns True if the specified phrase occurs in the order that the terms were provided in the specified zone
+     * @return True if the specified phrase occurs in the order that the terms were provided in the specified zone
      */
     public static boolean phrase(String zone, Collection<Map<String,List<Integer>>> termOffsetMaps, String... terms) {
         return process(-1, termOffsetMaps, true, terms);

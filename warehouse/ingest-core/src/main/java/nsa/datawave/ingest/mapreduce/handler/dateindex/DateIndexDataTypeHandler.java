@@ -47,9 +47,9 @@ import com.google.common.collect.Multimap;
  * specified in the configuration and are checked upon the call to setup(). This index will support multiple dates being indexed in the same table.
  * 
  * <p>
- * This class creates the following Mutations or Key/Values: <br />
- * <br />
- * <table border="1">
+ * This class creates the following Mutations or Key/Values: <br>
+ * <br>
+ * <table border="1" summary="">
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>

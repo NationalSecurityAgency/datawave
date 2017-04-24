@@ -27,7 +27,6 @@ import java.util.Set;
 
 import nsa.datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CachingTokenFilter;
@@ -52,14 +51,14 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
 
 /**
- * This processor verifies if the attribute {@link AnalyzerAttribute} is defined in the {@link QueryConfigHandler}. If it is and the analyzer is not
- * <code>null</code>, it looks for every {@link FieldQueryNode} that is not {@link WildcardQueryNode}, {@link FuzzyQueryNode} or {@link ParametricQueryNode}
+ * This processor verifies if the attribute {@link ConfigurationKeys#ANALYZER} is defined in the {@link QueryConfigHandler}. If it is and the analyzer is not
+ * <code>null</code>, it looks for every {@link FieldQueryNode} that is not {@link WildcardQueryNode}, {@link FuzzyQueryNode} or {@link RegexpQueryNode}
  * contained in the query node tree, then it applies the analyzer to that {@link FieldQueryNode} object if the field name is present in the
- * <code>tokenizedFields</code> set. <br/>
- * <br/>
+ * <code>tokenizedFields</code> set. <br>
+ * <br>
  * If the analyzer returns one or more terms that are not identical to the input, an {@link OrQueryNode} containing the original query node and a
- * {@link QuotedFieldQueryNode} containing whitespace delimited tokens is returned. <br/>
- * If no term is returned by the analyzer the original query node is returned. <br/>
+ * {@link QuotedFieldQueryNode} containing whitespace delimited tokens is returned. <br>
+ * If no term is returned by the analyzer the original query node is returned. <br>
  * If unfieldedTokenized is set to true, nodes
  * 
  * @see Analyzer

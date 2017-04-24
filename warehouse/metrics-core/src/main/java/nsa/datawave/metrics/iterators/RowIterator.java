@@ -19,9 +19,9 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
 
 /**
- * This iterator groups several entries from a single row into a single entry.<br />
- * One must take care using this on data where a single row will not fit efficiently into memory.<br />
- * This iterator is ideal for constructing a row iterators that perform SQL-like functions or that transform an entire row.<br />
+ * This iterator groups several entries from a single row into a single entry.<br>
+ * One must take care using this on data where a single row will not fit efficiently into memory.<br>
+ * This iterator is ideal for constructing a row iterators that perform SQL-like functions or that transform an entire row.<br>
  * 
  */
 public abstract class RowIterator extends WrappingIterator implements OptionDescriber {
@@ -123,9 +123,9 @@ public abstract class RowIterator extends WrappingIterator implements OptionDesc
     }
     
     /**
-     * Perform processing on the row<br />
-     * Note: the processor *can* modify the row in the process<br />
-     * The state of the row when this method ends is the set of key/value pairs to pass up the stack<br />
+     * Perform processing on the row<br>
+     * Note: the processor *can* modify the row in the process<br>
+     * The state of the row when this method ends is the set of key/value pairs to pass up the stack<br>
      * 
      * This method can do selection, projection, rename columns, combine columns, etc. Note: this may affect the sort order; to ensure that it doesn't, avoid
      * modifying the row portion of the keys

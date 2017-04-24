@@ -74,7 +74,6 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
      * @param bytes
      * @param expectBinary
      * @return the value
-     * @throws UnsupportedEncodingException
      */
     public static String decode(byte[] bytes, boolean expectBinary) {
         synchronized (NormalizedFieldAndValue.class) {

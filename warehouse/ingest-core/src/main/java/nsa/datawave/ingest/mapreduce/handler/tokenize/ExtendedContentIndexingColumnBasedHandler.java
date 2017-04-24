@@ -66,9 +66,9 @@ import com.google.common.collect.Multimap;
  * </p>
  * 
  * <p>
- * This class creates the following Mutations or Key/Values in addition to those created by the {@link ShardedDataTypeHandler}: <br />
- * <br />
- * <table border="1">
+ * This class creates the following Mutations or Key/Values in addition to those created by the {@link ShardedDataTypeHandler}: <br>
+ * <br>
+ * <table border="1" summary="">
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -94,14 +94,12 @@ import com.google.common.collect.Multimap;
  * <td>Base64 encoded, GZIPed document</td>
  * </tr>
  * </table>
- * </p>
- * 
+ *
  * <p>
  * The document is not placed into the RawRecordContainer object with the rest of the fields in an attempt to prevent any slow-downs when scanning over the
  * RawRecordContainer objects. Placing them into their own column family also allows a locality group to be set so that they will all be located within the same
  * RFiles and not add additional bloat to the RFiles containing the rest of the shard table.
- * </p>
- * 
+ *
  * @param <KEYIN>
  * @param <KEYOUT>
  * @param <VALUEOUT>
@@ -219,7 +217,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     /**
      * This method will block until all of the documents have been written to Accumulo, or a timeout has been reached.
      * 
-     * @TODO make the timeout configurable
+     * TODO make the timeout configurable
      */
     @Override
     public void close(TaskAttemptContext context) {
@@ -429,14 +427,14 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         }
     }
     
-    /**
-     * Return true if this term appears to be empty (all spaces)
-     * 
-     * @param termAndZone
-     * @return true if term is zero or more spaces
-     */
     static final Pattern EMPTY_PATTERN = Pattern.compile("\\s*");
     
+    /**
+     * Return true if this term appears to be empty (all spaces)
+     *
+     * @param term
+     * @return true if term is zero or more spaces
+     */
     protected static boolean isEmptyTerm(String term) {
         return ((term.length() == 0) || EMPTY_PATTERN.matcher(term).matches());
     }
@@ -523,7 +521,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     }
     
     /**
-     * Writes the document's content into the {@link #ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY} column family. The data is compressed (GZIP) and Base64 encoded before being
+     * Writes the document's content into the {@link #FULL_CONTENT_COLUMN_FAMILY} column family. The data is compressed (GZIP) and Base64 encoded before being
      * placed into the value.
      * 
      * @param event

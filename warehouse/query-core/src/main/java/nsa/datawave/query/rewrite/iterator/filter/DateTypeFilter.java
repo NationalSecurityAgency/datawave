@@ -69,13 +69,13 @@ public class DateTypeFilter extends Filter {
     }
     
     /**
-     * Determines if the edge key matches the desired date type.
+     * Determines if the edge key matches the desired date type.<br>
+     * <strong>note:</strong> Some edges qualify as both an acquisition and an activity edge. Hence, can't simply negate the return value of isAcquisitionEdge
+     * or isActivityEdge.
      *
      * @param k
      * @param V
      * @return boolean - true if it is a match.
-     *
-     * @note Some edges qualify as both an acquisition and an activity edge. Hence, can't simply negate the return value of isAcquisitionEdge or isActivityEdge.
      */
     @Override
     public boolean accept(Key k, Value V) {

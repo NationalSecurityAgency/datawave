@@ -12,7 +12,8 @@ import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 
 /**
- * Function to transform the attributes for an event as Entry<Key,Value> to Entry<Key,String> where the Entry's value is the fieldName from the Key <br/>
+ * Function to transform the attributes for an event as {@code Entry<Key,Value>} to {@code Entry<Key,String>} where the Entry's value is the fieldName from the
+ * Key <br>
  * 
  * 
  * 

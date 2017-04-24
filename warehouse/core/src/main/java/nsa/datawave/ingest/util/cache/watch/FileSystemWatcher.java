@@ -33,7 +33,7 @@ public abstract class FileSystemWatcher<V> extends Reloadable<V> {
     }
     
     /**
-     * @param filePath2
+     * @param filePath
      * @return
      * @throws NoSuchAlgorithmException
      * @throws IOException

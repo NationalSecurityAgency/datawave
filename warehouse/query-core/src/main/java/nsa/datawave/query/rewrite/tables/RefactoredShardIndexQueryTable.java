@@ -462,7 +462,6 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
      * @param literals
      * @param patterns
      * @param reverseIndex
-     * @param uniqueTermsOnly
      * @return The scanner used
      * @throws TableNotFoundException
      */

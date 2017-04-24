@@ -276,12 +276,10 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * A map of composite name to the ordered list of it for example, mapping of COLOR -> ['COLOR_WHEELS,0', 'MAKE_COLOR,1' ]. If called multiple time, it
-     * returns the same cached map.
+     * A map of composite name to the ordered list of it for example, mapping of {@code COLOR -> ['COLOR_WHEELS,0', 'MAKE_COLOR,1' ]}. If called multiple time,
+     * it returns the same cached map.
      * 
      * @return An unmodifiable Multimap
-     * @throws InstantiationException
-     * @throws IllegalAccessException
      * @throws TableNotFoundException
      */
     @Cacheable(value = "getFieldToCompositeMap", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
@@ -353,11 +351,9 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * Fetch the set of {@link Type<?>}s that are configured for this <code>fieldName</code> as specified in the table pointed to by the
+     * Fetch the set of {@link Type}s that are configured for this <code>fieldName</code> as specified in the table pointed to by the
      * <code>metadataTableName</code> parameter.
      * 
-     * @param compositeName
-     *            The name of the field to fetch the {@link Type<?>}s for. If null then all dataTypes are returned.
      * @param ingestTypeFilter
      *            Any projection of datatypes to limit the fetch for.
      * @return
@@ -411,10 +407,7 @@ public class AllFieldMetadataHelper {
      * @param datawaveType
      * @param ingestTypeFilter
      * @return
-     * @throws InstantiationException
-     * @throws IllegalAccessException
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     @Cacheable(value = "getFieldsForDatatype", key = "{#datawaveType,#ingestTypeFilter}", cacheManager = "metadataHelperCacheManager")
     public Set<String> getFieldsForDatatype(Class<? extends Type<?>> datawaveType, Set<String> ingestTypeFilter) throws TableNotFoundException {
@@ -442,7 +435,7 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * Fetch the Set of all fields marked as containing term frequency information, {@link EventMetadata#COLF_TF}.
+     * Fetch the Set of all fields marked as containing term frequency information, {@link ColumnFamilyConstants#COLF_TF}.
      * 
      * @return
      * @throws TableNotFoundException
@@ -469,7 +462,6 @@ public class AllFieldMetadataHelper {
      * @param ingestTypeFilter
      * @return
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     public Set<String> getExpansionFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
@@ -492,7 +484,6 @@ public class AllFieldMetadataHelper {
      * @param ingestTypeFilter
      * @return
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     public Set<String> getContentFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
@@ -593,13 +584,10 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * Fetches the first entry from each row in the {@link metadataTableName} table. This equates to the set of all fields that have occurred in the database.
+     * Fetches the first entry from each row in the {@link #metadataTableName} table. This equates to the set of all fields that have occurred in the database.
      * Returns a multimap of datatype to field
      * 
      * @throws TableNotFoundException
-     * @throws ExecutionException
-     * @throws InstantiationException
-     * @throws IOException
      */
     @Cacheable(value = "loadAllFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
     public Multimap<String,String> loadAllFields() throws TableNotFoundException {
@@ -640,12 +628,10 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * Fetches results from {@link metadataTableName} and calculates the set of fieldNames which are indexed but do not appear as an attribute on the Event
+     * Fetches results from {@link #metadataTableName} and calculates the set of fieldNames which are indexed but do not appear as an attribute on the Event
      * Returns a multimap of datatype to field
      * 
      * @throws TableNotFoundException
-     * @throws InstantiationException
-     * @throws ExecutionException
      */
     @Cacheable(value = "getIndexOnlyFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
     public Multimap<String,String> getIndexOnlyFields() throws TableNotFoundException {
@@ -710,12 +696,11 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * Fetch the Set of all fields marked as containing term frequency information, {@link EventMetadata#COLF_TF}. Returns a multimap of datatype to field
+     * Fetch the Set of all fields marked as containing term frequency information, {@link ColumnFamilyConstants#COLF_TF}. Returns a multimap of datatype to
+     * field
      * 
      * @return
      * @throws TableNotFoundException
-     * @throws InstantiationException
-     * @throws ExecutionException
      */
     @Cacheable(value = "loadTermFrequencyFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
     public Multimap<String,String> loadTermFrequencyFields() throws TableNotFoundException {
@@ -737,12 +722,10 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * Fetch the Set of all fields marked as being indexed, {@link EventMetadata#COLF_I}. Returns a multimap of datatype to field
+     * Fetch the Set of all fields marked as being indexed, {@link ColumnFamilyConstants#COLF_I}. Returns a multimap of datatype to field
      * 
      * @return
      * @throws TableNotFoundException
-     * @throws InstantiationException
-     * @throws ExecutionException
      */
     @Cacheable(value = "loadIndexedFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
     public Multimap<String,String> loadIndexedFields() throws TableNotFoundException {
@@ -766,12 +749,10 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * Fetch the Set of all fields marked as being reverse indexed, {@link EventMetadata#COLF_RI}. Returns a multimap of datatype to field
+     * Fetch the Set of all fields marked as being reverse indexed, {@link ColumnFamilyConstants#COLF_RI}. Returns a multimap of datatype to field
      *
      * @return
      * @throws TableNotFoundException
-     * @throws InstantiationException
-     * @throws ExecutionException
      */
     @Cacheable(value = "loadReverseIndexedFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
     public Multimap<String,String> loadReverseIndexedFields() throws TableNotFoundException {
@@ -795,12 +776,10 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * Fetch the Set of all fields marked as being indexed, {@link EventMetadata#COLF_I}. Returns a multimap of datatype to field
+     * Fetch the Set of all fields marked as being indexed, {@link ColumnFamilyConstants#COLF_I}. Returns a multimap of datatype to field
      * 
      * @return
      * @throws TableNotFoundException
-     * @throws InstantiationException
-     * @throws ExecutionException
      */
     @Cacheable(value = "loadIndexedFields", key = "{#root.target.fullUserAuths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
     public Multimap<String,String> loadAllIndexedFields() throws TableNotFoundException {
@@ -824,12 +803,10 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * Fetch the Set of all fields marked as being expansion fields, {@link EventMetadata#COLF_EXP}. Returns a multimap of datatype to field
+     * Fetch the Set of all fields marked as being expansion fields, {@link ColumnFamilyConstants#COLF_EXP}. Returns a multimap of datatype to field
      * 
      * @return
      * @throws TableNotFoundException
-     * @throws InstantiationException
-     * @throws ExecutionException
      */
     @Cacheable(value = "loadExpansionFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
     public Multimap<String,String> loadExpansionFields() throws TableNotFoundException {
@@ -852,12 +829,10 @@ public class AllFieldMetadataHelper {
     }
     
     /**
-     * Fetch the set of all fields marked as being content fields, {@link EventMetadata#COLF_CONTENT}. Returns a multimap of datatype to field
+     * Fetch the set of all fields marked as being content fields, {@link ColumnFamilyConstants#COLF_CONTENT}. Returns a multimap of datatype to field
      * 
      * @return
      * @throws TableNotFoundException
-     * @throws InstantiationException
-     * @throws ExecutionException
      */
     @Cacheable(value = "loadContentFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
     public Multimap<String,String> loadContentFields() throws TableNotFoundException {
@@ -882,12 +857,10 @@ public class AllFieldMetadataHelper {
     /**
      * Fetch the Set of all datatypes that appear in the DatawaveMetadata table.
      * 
-     * By scanning for all {@link EventMetadata#COLF_E}, we will find all of the datatypes currently ingested by virtue that a datatype must have at least one
-     * field that appears in an event.
+     * By scanning for all {@link ColumnFamilyConstants#COLF_E}, we will find all of the datatypes currently ingested by virtue that a datatype must have at
+     * least one field that appears in an event.
      * 
      * @throws TableNotFoundException
-     * @throws InstantiationException
-     * @throws ExecutionException
      */
     @Cacheable(value = "loadDatatypes", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
     public Set<String> loadDatatypes() throws TableNotFoundException {

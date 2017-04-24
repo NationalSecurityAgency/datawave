@@ -36,8 +36,6 @@ public class GroupingRequiredFilterFunctionsDescriptor implements RefactoredJexl
         
         /**
          * Returns 'true' because none of these functions should influence the index query.
-         * 
-         * @throws
          */
         @Override
         public JexlNode getIndexQuery(RefactoredShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper,

@@ -103,7 +103,7 @@ public class BooleanLogicIteratorJexl implements JumpingIterator<Key,Value>, Opt
      * @param source
      *            The underlying SortedkeyValueIterator.
      * @param options
-     *            A Map<String, String> of options.
+     *            A {@code Map<String, String>} of options.
      * @param env
      *            The iterator environment
      * @throws IOException

@@ -253,7 +253,7 @@ public class JobSetupUtil {
     }
     
     /**
-     * @param jconf
+     * @param dayRange
      * @param log
      * @return
      */

@@ -44,7 +44,6 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     }
     
     /**
-     * @param fs
      * @param filePath
      * @param configuredDiff
      * @throws IOException
@@ -173,7 +172,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     
     /**
      * Xml tag names cannot start with a number, so it was not previously possible to include extended options for items that begin with a number. The new
-     * prefix, provided by this method, provides a mechanism for doing this. Check if attribute "name" exists, e.g. <field name='abc'>value</field>
+     * prefix, provided by this method, provides a mechanism for doing this. Check if attribute "name" exists, e.g. &lt;field name='abc'&gt;value&lt;/field&gt;
      * 
      * @param nodeName
      *            xml tag name, e.g. field using the above example

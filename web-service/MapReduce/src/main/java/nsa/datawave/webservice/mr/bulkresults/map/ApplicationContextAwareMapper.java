@@ -15,7 +15,6 @@ public class ApplicationContextAwareMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extend
      * 
      * @param contextPath
      *            is a possibly CSV of spring config file locations
-     * @return A Spring Application Context.
      */
     protected void setApplicationContext(String contextPath) {
         this.applicationContext = new ClassPathXmlApplicationContext(contextPath.split(","));

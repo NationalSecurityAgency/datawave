@@ -12,7 +12,7 @@ import nsa.datawave.webservice.query.exception.DatawaveErrorCode;
  * function to test whether two key/value pairs match within datafields of the same (grouping context) group For example FROM_ADDRESS.1 == 1.2.3.4 and
  * DIRECTION.1 == 1
  * 
- * Collection<?> timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal)
+ * {@code Collection<?> timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal)}
  */
 public class TimeFunction extends JexlQueryFunction {
     

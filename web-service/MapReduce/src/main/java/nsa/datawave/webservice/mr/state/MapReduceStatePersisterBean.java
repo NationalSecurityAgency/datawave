@@ -58,10 +58,10 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Maintains information in a table about the state of a MapReduce job <br />
+ * Maintains information in a table about the state of a MapReduce job <br>
  *
  * MapReduce Table
- * <table>
+ * <table summary="">
  * <tr>
  * <th>Row</th>
  * <th>ColF</th>
@@ -113,7 +113,7 @@ import java.util.concurrent.TimeUnit;
  * </table>
  *
  * MapReduce Index
- * <table>
+ * <table summary="">
  * <tr>
  * <th>Row</th>
  * <th>ColF</th>
@@ -519,7 +519,7 @@ public class MapReduceStatePersisterBean {
      * 
      * @param id
      *            bulk results id
-     * @param jobId
+     * @param mapReduceJobId
      *            map reduce job id
      * @throws QueryException
      */

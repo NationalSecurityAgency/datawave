@@ -46,7 +46,7 @@ public class StringUtils {
      * @param str
      * @param delimiter
      * @param includeEmptyStrings
-     * @return Iterable<String>
+     * @return Iterable&lt;String&gt;
      */
     public static Iterable<String> splitIterable(String str, char delimiter, boolean includeEmptyStrings) {
         return new SplitIterable(str, delimiter, includeEmptyStrings);
@@ -148,7 +148,7 @@ public class StringUtils {
      * 
      * @param str
      * @param delimiter
-     * @return Iterable<String>
+     * @return Iterable&lt;String&gt;
      */
     public static Iterable<String> splitIterable(String str, char delimiter) {
         // first trim the delimiters off the end
@@ -168,7 +168,7 @@ public class StringUtils {
      * identical to String.split().
      * 
      * @param str
-     * @param delimiter
+     * @param regex
      * @return String[]
      */
     public static String[] split(String str, String regex) {
@@ -191,8 +191,8 @@ public class StringUtils {
      * String.split if the regex is more than a simply character match.
      * 
      * @param str
-     * @param delimiter
-     * @return Iterable<String>
+     * @param regex
+     * @return Iterable&lt;String&gt;
      */
     public static Iterable<String> splitIterable(String str, String regex) {
         if (regex.length() == 1) {
@@ -306,7 +306,7 @@ public class StringUtils {
      * @param includeEmptyStrings
      * @param indexesToReturn
      *            the indexes of the strings to return (must be ordered from lowest to highest)
-     * @return Iterable<String>
+     * @return Iterable&lt;String&gt;
      */
     public static Iterable<String> splitIterable(String str, char delimiter, boolean includeEmptyStrings, int[] indexesToReturn) {
         return new SubSplitIterable(str, delimiter, includeEmptyStrings, indexesToReturn);
@@ -319,7 +319,7 @@ public class StringUtils {
      * @param delimiter
      * @param indexesToReturn
      *            the indexes of the strings to return (must be ordered from lowest to highest)
-     * @return Iterable<String>
+     * @return Iterable&lt;String&gt;
      */
     public static Iterable<String> splitIterable(String str, char delimiter, int[] indexesToReturn) {
         // first trim the delimiters off the end
@@ -337,7 +337,7 @@ public class StringUtils {
      * This routine is the same as split(str, delimiter) except that only the indexed strings specified are returned.
      * 
      * @param str
-     * @param delimiter
+     * @param regex
      * @param indexesToReturn
      *            the indexes of the strings to return (must be ordered from lowest to highest)
      * @return String[]

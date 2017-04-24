@@ -122,8 +122,6 @@ public class TextSummary extends MetricsServlet {
     /**
      * Scans over both a set of <code>TimeSpan</code> objects and a <code>MetricsSummary</code> to build up a data type to latency mapping for each time span.
      * 
-     * @param itr
-     *            an iterator over a set of timespans
      * @param dataType
      *            the data type the summary applies to
      * @param summary

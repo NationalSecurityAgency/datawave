@@ -898,9 +898,9 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
      * 
      * @param is
      *            the iterator setting object to configure
-     * @param stamp_start
+     * @param start
      *            the stamp_start timestamp, inclusive (yyyyMMddHHmmssz)
-     * @param stamp_end
+     * @param end
      *            the stamp_end timestamp, inclusive (yyyyMMddHHmmssz)
      */
     public static void setRange(IteratorSetting is, String start, String end) {
@@ -912,13 +912,13 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
      * 
      * @param is
      *            the iterator setting object to configure
-     * @param stamp_start
+     * @param start
      *            the stamp_start timestamp (yyyyMMddHHmmssz)
-     * @param stamp_startInclusive
+     * @param startInclusive
      *            boolean indicating whether the stamp_start is inclusive
-     * @param stamp_end
+     * @param end
      *            the stamp_end timestamp (yyyyMMddHHmmssz)
-     * @param stamp_endInclusive
+     * @param endInclusive
      *            boolean indicating whether the stamp_end is inclusive
      */
     public static void setRange(IteratorSetting is, String start, boolean startInclusive, String end, boolean endInclusive) {
@@ -931,9 +931,9 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
      * 
      * @param is
      *            the iterator setting object to configure
-     * @param stamp_start
+     * @param start
      *            the stamp_start timestamp (yyyyMMddHHmmssz)
-     * @param stamp_startInclusive
+     * @param startInclusive
      *            boolean indicating whether the stamp_start is inclusive
      */
     public static void setStart(IteratorSetting is, String start, boolean startInclusive) {
@@ -946,9 +946,9 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
      * 
      * @param is
      *            the iterator setting object to configure
-     * @param stamp_end
+     * @param end
      *            the stamp_end timestamp (yyyyMMddHHmmssz)
-     * @param stamp_endInclusive
+     * @param endInclusive
      *            boolean indicating whether the stamp_end is inclusive
      */
     public static void setEnd(IteratorSetting is, String end, boolean endInclusive) {
@@ -961,9 +961,9 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
      * 
      * @param is
      *            the iterator setting object to configure
-     * @param stamp_start
+     * @param start
      *            the stamp_start timestamp, inclusive
-     * @param stamp_end
+     * @param end
      *            the stamp_end timestamp, inclusive
      */
     public static void setRange(IteratorSetting is, long start, long end) {
@@ -975,13 +975,13 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
      * 
      * @param is
      *            the iterator setting object to configure
-     * @param stamp_start
+     * @param start
      *            the stamp_start timestamp
-     * @param stamp_startInclusive
+     * @param startInclusive
      *            boolean indicating whether the stamp_start is inclusive
-     * @param stamp_end
+     * @param end
      *            the stamp_end timestamp
-     * @param stamp_endInclusive
+     * @param endInclusive
      *            boolean indicating whether the stamp_end is inclusive
      */
     public static void setRange(IteratorSetting is, long start, boolean startInclusive, long end, boolean endInclusive) {
@@ -994,9 +994,9 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
      * 
      * @param is
      *            the iterator setting object to configure
-     * @param stamp_start
+     * @param start
      *            the stamp_start timestamp
-     * @param stamp_startInclusive
+     * @param startInclusive
      *            boolean indicating whether the stamp_start is inclusive
      */
     public static void setStart(IteratorSetting is, long start, boolean startInclusive) {
@@ -1010,9 +1010,9 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
      * 
      * @param is
      *            the iterator setting object to configure
-     * @param stamp_end
+     * @param end
      *            the stamp_end timestamp
-     * @param stamp_endInclusive
+     * @param endInclusive
      *            boolean indicating whether the stamp_end is inclusive
      */
     public static void setEnd(IteratorSetting is, long end, boolean endInclusive) {

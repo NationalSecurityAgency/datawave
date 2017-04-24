@@ -118,7 +118,7 @@ public class FieldedTerm extends Term implements Comparable<FieldedTerm> {
     /**
      * Determines if the query term matches the row term. The String passed to this method should not contain any field or realm information, only the term.
      * 
-     * @param rowString
+     * @param selector
      * @return True if the query term matches this row
      */
     public boolean isSelectorMatch(String selector) {

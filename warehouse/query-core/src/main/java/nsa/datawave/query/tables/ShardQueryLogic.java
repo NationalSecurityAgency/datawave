@@ -81,14 +81,11 @@ import com.google.common.collect.Sets;
 //import nsa.datawave.ingest.util.RegionTimer;
 
 /**
+ * <h2>Overview</h2> QueryTable implementation that works with the JEXL grammar. This QueryTable uses the DATAWAVE metadata, global index, and sharded event
+ * table to return results based on the query. The runServerQuery method is the main method that is called from the web service, and it contains the logic used
+ * to run the queries against ACCUMULO. Example queries:
+ *
  * <pre>
- * <h2>Overview</h2>
- * QueryTable implementation that works with the JEXL grammar. This QueryTable
- * uses the DATAWAVE metadata, global index, and sharded event table to return
- * results based on the query. The runServerQuery method is the main method
- * that is called from the web service, and it contains the logic used to
- * run the queries against ACCUMULO. Example queries:
- * 
  *  <b>Single Term Query</b>
  *  'foo' - looks in global index for foo, and if any entries are found, then the query
  *          is rewritten to be field1 == 'foo' or field2 == 'foo', etc. This is then passed
@@ -100,28 +97,31 @@ import com.google.common.collect.Sets;
  *                   the query is parsed and the set of eventFields in the query that are indexed is determined by
  *                   querying the metadata table. Depending on the conjunctions in the query (or, and, not) and the
  *                   eventFields that are indexed, the query may be sent down the optimized path or the full scan path.
- * 
- *  We are not supporting all of the operators that JEXL supports at this time. We are supporting the following operators:
- * 
+ * </pre>
+ *
+ * We are not supporting all of the operators that JEXL supports at this time. We are supporting the following operators:
+ *
+ * <pre>
  *  ==, !=, &gt;, &ge;, &lt;, &le;, =~, !~, and the reserved word 'null'
+ * </pre>
+ *
+ * Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction with other supported operators.
+ * A sample function has been created, called between, and is bound to the 'f' namespace. An example using this function is : "f:between(LATITUDE,60.0, 70.0)"
  * 
- *  Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction
- *  with other supported operators. A sample function has been created, called between, and is bound to the 'f' namespace. An
- *  example using this function is : "f:between(LATITUDE,60.0, 70.0)"
+ * <h2>Constraints on Query Structure</h2> Queries that are sent to this class need to be formatted such that there is a space on either side of the operator.
+ * We are rewriting the query in some cases and the current implementation is expecting a space on either side of the operator.
  * 
- *  <h2>Constraints on Query Structure</h2>
- *  Queries that are sent to this class need to be formatted such that there is a space on either side of the operator. We are
- *  rewriting the query in some cases and the current implementation is expecting a space on either side of the operator.
- * 
- *  <h2>Notes on Optimization</h2>
- *  Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
- * 
+ * <h2>Notes on Optimization</h2> Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
+ *
+ * <pre>
  *  1. An 'or' conjunction exists in the query but not all of the terms are indexed.
  *  2. No indexed terms exist in the query
  *  3. An unsupported operator exists in the query
- * 
- *  <h2>Notes on Features</h2>
- * 
+ * </pre>
+ *
+ * <h2>Notes on Features</h2>
+ *
+ * <pre>
  *  1. If there is no type specified for a field in the metadata table, then it defaults to using the NoOpType. The default
  *     can be overriden by calling setDefaultType()
  *  2. We support fields that are indexed, but not in the event. An example of this is for text documents, where the text is tokenized
@@ -131,24 +131,23 @@ import com.google.common.collect.Sets;
  *  4. We support the ability to define a list of {@link DataEnricher}s to add additional information to returned events. Found events are
  *     passed through the {@link EnrichingMaster} which passes the event through each configured data enricher class. Only the value
  *     can be modified. The key *cannot* be modified through this interface (as it could break the sorted order). Enriching must be enabled
- *     by setting {@link #useEnrichers} to true and providing a list of {@link nsa.datawave.query.enrich.DataEnrich} class names in
+ *     by setting {@link #useEnrichers} to true and providing a list of {@link nsa.datawave.query.enrich.DataEnricher} class names in
  *     {@link #enricherClassNames}.
  *  5. A list of {@link nsa.datawave.query.filter.DataFilter}s can be specified to remove found Events before they are returned to the user.
  *     These data filters can return a true/false value on whether the Event should be returned to the user or discarded. Additionally,
- *     the filter can return a Map<String, Object> that can be passed into a JexlContext (provides the necessary information for Jexl to
+ *     the filter can return a {@code Map<String, Object>} that can be passed into a JexlContext (provides the necessary information for Jexl to
  *     evaluate an Event based on information not already present in the Event or information that doesn't need to be returned with the Event.
  *     Filtering must be enabled by setting {@link #useFilters} to true and providing a list of {@link nsa.datawave.query.filter.DataFilter} class
  *     names in {@link #filterClassNames}.
  *  6. The query limits the results (default: 5000) using the setMaxResults method. In addition, "max.results.override" can be passed to the
  *     query as part of the Parameters object which allows query specific limits (but will not be more than set default)
- *  7. Projection can be accomplished by setting the {@link EvaluatingIterator.RETURN_FIELDS} parameter to a '/'-separated list of field names.
- *
+ *  7. Projection can be accomplished by setting the {@link QueryParameters#RETURN_FIELDS} parameter to a '/'-separated list of field names.
  * </pre>
  *
  * @see nsa.datawave.query.enrich
  * @see nsa.datawave.query.filter
  *
- *      Deprecated - see nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic
+ * @deprecated - see nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic
  */
 @Deprecated
 public abstract class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
@@ -399,26 +398,11 @@ public abstract class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     /**
      * Performs a lookup in the global index / reverse index and returns a RangeCalculator
      *
-     * @param c
+     * @param config
      *            Accumulo connection
-     * @param auths
-     *            authset for queries
-     * @param indexedFields
+     * @param indexedFieldNames
      *            multimap of indexed field name and Normalizers used
-     * @param terms
-     *            multimap of field name and QueryTerm object
-     * @param begin
-     *            query begin date
-     * @param end
-     *            query end date
-     * @param dateFormatter
-     * @param indexTableName
-     * @param reverseIndexTableName
-     * @param queryString
-     *            original query string
-     * @param queryThreads
-     * @param datatypes
-     *            - optional list of types
+     * @param root
      * @return range calculator
      * @throws TableNotFoundException
      */
@@ -1174,7 +1158,7 @@ public abstract class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * Collapse ranges that refer to documents within the same document tree (i.e. the same baseUid)
      *
      * @param ranges
-     * @param reqireRangeOverlapToCollapse
+     * @param requireRangeOverlapToCollapse
      *            if true then ranges must overlap inorder to collapse, otherwise one range is created per shard, datatype, base uid combination
      * @return a collapsed set of ranges
      */
@@ -1381,12 +1365,8 @@ public abstract class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * matching FieldName designators and be OR'd into the query. i.e. COLOR == 'red' or INDICATOR == 'red' or NAME == 'red'
      *
      * @param config
-     * @param analyzer
      * @param root
-     * @param connection
-     * @param auths
      * @return
-     * @throws QueryException
      */
     protected DatawaveTreeNode fixUnfieldedQuery(GenericShardQueryConfiguration config, DatawaveTreeNode root) throws InstantiationException,
                     IllegalAccessException {

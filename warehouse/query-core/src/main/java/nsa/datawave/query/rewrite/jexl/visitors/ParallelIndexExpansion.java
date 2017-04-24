@@ -204,10 +204,8 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     /**
      * Performs a lookup in the global index for an ANYFIELD term and returns the field names where the term is found
      * 
-     * @param config
-     * @param expansionFields
-     *            - limit expansion to this set of fields, if present. If empty or null, no limit
      * @param node
+     * @param positive
      * @return set of field names from the global index for the nodes value
      * @throws TableNotFoundException
      * @throws IllegalAccessException
@@ -408,7 +406,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     }
     
     /**
-     * Abstraction to indicate whether to use `&=` or `|=` when processing a node's subtrees.
+     * Abstraction to indicate whether to use {@code `&=` or `|=`} when processing a node's subtrees.
      */
     enum Join {
         AND, OR
