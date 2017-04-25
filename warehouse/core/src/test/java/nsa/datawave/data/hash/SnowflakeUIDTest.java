@@ -458,17 +458,17 @@ public class SnowflakeUIDTest {
         
         assertEquals(startingTimestamp + 1, uid.getTimestamp());
         assertEquals(startingSequence, uid.getSequenceId()); // Initial sequence ID
-        assertEquals(startingTimestamp + 1, ZkSnowflakeCache.getLastCachedTid(BigInteger.valueOf(uid.getMachineId()))); // cached timestamp
+        assertEquals(startingTimestamp + 1, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId())))); // cached timestamp
         
         uid = builder.newId();
         assertEquals(startingTimestamp + 1, uid.getTimestamp()); // Same timestamp
         assertEquals(startingSequence + 1, uid.getSequenceId()); // Incremented sequence ID
-        assertEquals(startingTimestamp + 2, ZkSnowflakeCache.getLastCachedTid(BigInteger.valueOf(uid.getMachineId()))); // cached ts also incremented
+        assertEquals(startingTimestamp + 2, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId())))); // cached ts also incremented
         
         uid = builder.newId();
         assertEquals(startingTimestamp + 2, uid.getTimestamp()); // Incremented timestamp to next millisecond
         assertEquals(0, uid.getSequenceId()); // Rolled over sequence ID to zero
-        assertEquals(startingTimestamp + 2, ZkSnowflakeCache.getLastCachedTid(BigInteger.valueOf(uid.getMachineId()))); // cached ts also incremented
+        assertEquals(startingTimestamp + 2, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId())))); // cached ts also incremented
         ZkSnowflakeCache.stop();
         
     }

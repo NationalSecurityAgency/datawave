@@ -31,6 +31,7 @@
 <property>
   <name>snowflake.zookeepers</name>
   <value>${SNOWFLAKE_ZOOKEEPERS}</value>
+  <description>List of zookeepers for caching snowflake timestamps if enabled</description>
 </property>
 
 <property>

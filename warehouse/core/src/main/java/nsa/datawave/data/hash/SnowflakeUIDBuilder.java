@@ -73,6 +73,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
      * seed value
      */
     private SnowflakeUIDBuilder(long timestamp, final BigInteger machineId, int sequenceId) {
+
         // The machine ID has already been validated, so just assign it (mid)
         this.mid = machineId;
         
@@ -373,6 +374,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
         if (timestamp > SnowflakeUID.MAX_TIMESTAMP || (previousTid + 1) > SnowflakeUID.MAX_TIMESTAMP) {
             throw new IllegalArgumentException("Max timestamp is " + SnowflakeUID.MAX_TIMESTAMP);
         }
+
         // removed initial check for timestamp <= 0 since we should ignore any timestamp passed in to this method
         // and assign it to either the current time or previous TID + 1
         if (this.previousTid <= 0) {
@@ -383,7 +385,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
         }
         
         if (timestamp <= this.previousTid) {
-            LOGGER.error("Current tid is less than the previous.  This could cause uid collisions.\n" + "Mid: " + mid + ", Timestamp: " + timestamp
+            LOGGER.warn("Current tid is less than the previous.  This could cause uid collisions.\n" + "Mid: " + mid + ", Timestamp: " + timestamp
                             + ", Previous: " + previousTid + ", System Time: " + System.currentTimeMillis());
             timestamp = this.previousTid + 1;
         }
