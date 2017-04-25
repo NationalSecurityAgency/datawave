@@ -130,7 +130,7 @@ import java.util.Set;
  * write data to the context in the appropriate format For bulk ingest the MultiRFileOutputFormatter is then used to format the output which is placed in the
  * {@code <workDir>/mapFiles} directory For live ingest the AccumuloOutputFormat is then used to apply the mutations directly to accumulo
  */
-public class IngestJob extends Configured implements Tool {
+public class IngestJob implements Tool {
     
     public static final String DAEMON_PROCESSES_PROPERTY = "accumulo.ingest.daemons";
     public static final String REDUCE_TASKS_ARG_PREFIX = "-mapreduce.job.reduces=";
@@ -198,6 +198,8 @@ public class IngestJob extends Configured implements Tool {
     protected ArrayList<Path> jobDependencies = new ArrayList<>();
     
     protected boolean writeDirectlyToDest = false;
+    
+    private Configuration hadoopConfiguration;
     
     public static void main(String[] args) throws Exception {
         System.out.println("Running main");
@@ -1828,4 +1830,13 @@ public class IngestJob extends Configured implements Tool {
         return tables;
     }
     
+    @Override
+    public Configuration getConf() {
+        return hadoopConfiguration;
+    }
+    
+    @Override
+    public void setConf(Configuration conf) {
+        this.hadoopConfiguration = conf;
+    }
 }

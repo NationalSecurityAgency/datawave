@@ -208,7 +208,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     }
     
     private void defineOffsetsForTables(Configuration conf) {
-        offsetsByTable = new HashMap<>();
+        offsetsByTable = new TreeMap<>();
         int offset = 0;
         numShards = ShardIdFactory.getNumShards(conf);
         for (String tableName : conf.getStrings(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES)) {

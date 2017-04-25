@@ -56,7 +56,6 @@
         <version.commons-pool2>2.4.2</version.commons-pool2>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
-        <version.javassist>3.18.1-GA</version.javassist>
         <version.jms>1.1</version.jms>
         <version.mrunit>1.0.0</version.mrunit>
         <version.protobuf>2.5.0</version.protobuf>
@@ -546,7 +545,7 @@
             <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-module-junit4-rule-agent</artifactId>
-                <version>1.5.1</version>
+                <version>1.6.1</version>
                 <scope>test</scope>
                 <optional>true</optional>
             </dependency>

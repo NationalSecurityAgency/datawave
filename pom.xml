@@ -50,6 +50,7 @@
         <version.httpcomponents-httpcore>4.2.1</version.httpcomponents-httpcore>
         <version.infinispan>7.2.3.Final</version.infinispan>
         <version.jackson>2.5.1</version.jackson>
+        <version.javassist>3.20.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
         <version.javax-validation>1.1.0.Final</version.javax-validation>
         <version.jcommander>1.35</version.jcommander>
