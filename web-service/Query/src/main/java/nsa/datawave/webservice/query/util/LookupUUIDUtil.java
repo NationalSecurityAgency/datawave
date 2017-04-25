@@ -2,15 +2,14 @@ package nsa.datawave.webservice.query.util;
 
 import java.security.Principal;
 import java.text.ParseException;
+import java.util.UUID;
+import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
+import java.util.Map;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import javax.ejb.EJBContext;
 import javax.ejb.EJBException;
 import javax.ws.rs.core.HttpHeaders;
@@ -41,7 +40,6 @@ import nsa.datawave.webservice.result.GenericResponse;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.springframework.util.StringUtils;
 
 /**
  * Utility for performing optimized queries based on UUIDs
@@ -315,7 +313,12 @@ public class LookupUUIDUtil {
             queryParameters.putSingle(QueryParameters.QUERY_STRING, validatedCriteria.getRawQueryString());
             // Override the extraneous query details
             
-            final String userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
+            String userAuths;
+            if (queryParameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
+                userAuths = AuthorizationsUtil.downgradeUserAuths(principal, queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS));
+            } else {
+                userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
+            }
             if (queryParameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
                 queryParameters.remove(QueryParameters.QUERY_AUTHORIZATIONS);
             }
@@ -405,55 +408,13 @@ public class LookupUUIDUtil {
         return type;
     }
     
-    /*
-     * Lookup content based on the events, if any, contained in the specified BaseQueryResponse
+    /**
+     * Returns the EJB context that was active when this class was created.
      * 
-     * @param criteria presumably valid lookup criteria
-     * 
-     * @param uuidQueryResponse the results of a UUID lookup query
-     * 
-     * @return a BaseQueryResponse if the criteria contains a null HttpHeaders value, or StreamingOutput if a valid, non-null HttpHeaders value is provided
+     * @return
      */
-    @SuppressWarnings("unchecked")
-    private <T> T lookupContentByEvents(final AbstractUUIDLookupCriteria criteria, final BaseQueryResponse uuidQueryResponse) {
-        // Initialize the return value
-        T contentResponse = null;
-        
-        // Validate for the expected response implementation
-        final EventQueryResponseBase eventResponse = this.validatePagedResponse(uuidQueryResponse);
-        
-        // Find out who/what called this method
-        final Principal principal = this.ctx.getCallerPrincipal();
-        String sid = principal.getName();
-        
-        // Initialize the reusable query input
-        final String userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
-        final String queryName = sid + '-' + UUID.randomUUID();
-        final Date endDate = new Date();
-        final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);
-        
-        // Create manageable batches of contentQuery strings based on the configured upper limit of UUIDS, if any
-        final List<StringBuilder> batchedContentQueryStrings = this.createContentQueryStrings(eventResponse);
-        
-        // Perform criteria validation if paging through next results
-        final AbstractUUIDLookupCriteria validatedCriteria;
-        if (criteria instanceof NextContentCriteria) {
-            validatedCriteria = this.validateLookupCriteria(criteria, false);
-        } else {
-            validatedCriteria = criteria;
-        }
-        
-        // Perform the lookup
-        boolean allEventMockResponse = (uuidQueryResponse instanceof AllEventMockResponse);
-        if (null != validatedCriteria.getStreamingOutputHeaders()) {
-            contentResponse = (T) this.lookupStreamedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
-                            allEventMockResponse);
-        } else {
-            contentResponse = (T) this.lookupPagedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
-                            allEventMockResponse);
-        }
-        
-        return contentResponse;
+    public EJBContext getContext() {
+        return ctx;
     }
     
     /**
@@ -534,6 +495,57 @@ public class LookupUUIDUtil {
         contentQueryResponse = this.lookupContentByNextResponse(unvalidatedCriteria, nextQueryResponse);
         
         return contentQueryResponse;
+    }
+    
+    /*
+     * Lookup content based on the events, if any, contained in the specified BaseQueryResponse
+     * 
+     * @param criteria presumably valid lookup criteria
+     * 
+     * @param uuidQueryResponse the results of a UUID lookup query
+     * 
+     * @return a BaseQueryResponse if the criteria contains a null HttpHeaders value, or StreamingOutput if a valid, non-null HttpHeaders value is provided
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T lookupContentByEvents(final AbstractUUIDLookupCriteria criteria, final BaseQueryResponse uuidQueryResponse) {
+        // Initialize the return value
+        T contentResponse = null;
+        
+        // Validate for the expected response implementation
+        final EventQueryResponseBase eventResponse = this.validatePagedResponse(uuidQueryResponse);
+        
+        // Find out who/what called this method
+        final Principal principal = this.ctx.getCallerPrincipal();
+        String sid = principal.getName();
+        
+        // Initialize the reusable query input
+        final String userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
+        final String queryName = sid + '-' + UUID.randomUUID();
+        final Date endDate = new Date();
+        final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);
+        
+        // Create manageable batches of contentQuery strings based on the configured upper limit of UUIDS, if any
+        final List<StringBuilder> batchedContentQueryStrings = this.createContentQueryStrings(eventResponse);
+        
+        // Perform criteria validation if paging through next results
+        final AbstractUUIDLookupCriteria validatedCriteria;
+        if (criteria instanceof NextContentCriteria) {
+            validatedCriteria = this.validateLookupCriteria(criteria, false);
+        } else {
+            validatedCriteria = criteria;
+        }
+        
+        // Perform the lookup
+        boolean allEventMockResponse = (uuidQueryResponse instanceof AllEventMockResponse);
+        if (null != validatedCriteria.getStreamingOutputHeaders()) {
+            contentResponse = (T) this.lookupStreamedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
+                            allEventMockResponse);
+        } else {
+            contentResponse = (T) this.lookupPagedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
+                            allEventMockResponse);
+        }
+        
+        return contentResponse;
     }
     
     private EventQueryResponseBase lookupPagedContent(final String queryName, final AbstractUUIDLookupCriteria validatedCriteria,

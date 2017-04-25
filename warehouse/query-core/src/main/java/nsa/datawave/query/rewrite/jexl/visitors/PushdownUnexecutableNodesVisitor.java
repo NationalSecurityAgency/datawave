@@ -87,13 +87,13 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
                     this.indexedFields = this.helper.getIndexedFields(config.getDatatypeFilter());
                 } catch (Exception ex) {
                     log.error("Could not determine indexed fields", ex);
-                    throw new RuntimeException("got exception when using MetadataHelper to get indexed fields ", ex);
+                    throw new RuntimeException("got exception when using MetadataHelper to get indexed fields", ex);
                 }
             }
         }
         if (this.indexOnlyFields == null) {
             try {
-                this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
+                this.indexOnlyFields = this.helper.getIndexOnlyFields(config.getDatatypeFilter());
             } catch (TableNotFoundException e) {
                 log.error("Could not determine index only fields", e);
                 throw new RuntimeException("got exception when using MetadataHelper to get index only fields", e);

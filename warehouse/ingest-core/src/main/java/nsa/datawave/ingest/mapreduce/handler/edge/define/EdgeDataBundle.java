@@ -115,9 +115,8 @@ public class EdgeDataBundle {
         }
         if (helper.isEmbeddedHelperMaskedFieldHelper()) {
             MaskedFieldHelper maskedFieldHelper = helper.getEmbeddedHelperAsMaskedFieldHelper();
-            Map<String,String> maskedValues = maskedFieldHelper.getMaskedValues();
-            initVertexMasking(this.getSource(), maskedValues);
-            initVertexMasking(this.getSink(), maskedValues);
+            initVertexMasking(this.getSource(), maskedFieldHelper);
+            initVertexMasking(this.getSink(), maskedFieldHelper);
             if ((!this.getSource().hasMaskedValue()) && (!this.getSink().hasMaskedValue())) {
                 this.requiresMasking = false;
             }
@@ -126,9 +125,11 @@ public class EdgeDataBundle {
         }
     }
     
-    private void initVertexMasking(VertexValue vertex, Map<String,String> maskedValues) {
-        if (maskedValues.containsKey(vertex.getFieldName())) {
-            vertex.setMaskedValue(this.getHelper().getNormalizedMaskedValues().get(vertex.getFieldName()));
+    private void initVertexMasking(final VertexValue vertex, final MaskedFieldHelper maskedFieldHelper) {
+        final String fieldName = vertex.getFieldName();
+        if (maskedFieldHelper.contains(fieldName)) {
+            final String maskedValue = helper.getNormalizedMaskedValue(fieldName);
+            vertex.setMaskedValue(maskedValue);
             vertex.setHasMaskedValue(true);
         }
     }

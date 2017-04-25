@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.collect.Lists;
+import nsa.datawave.query.rewrite.statsd.QueryStatsDClient;
 import org.apache.log4j.Logger;
 
 /**
@@ -27,6 +28,8 @@ public class QuerySpan {
     private Logger log = Logger.getLogger(this.getClass());
     
     protected Collection<QuerySpan> sources;
+    
+    protected QueryStatsDClient client;
     
     protected long sourceCount = 1;
     
@@ -56,18 +59,22 @@ public class QuerySpan {
         RemoveGroupingContext
     };
     
-    public QuerySpan() {
+    public QuerySpan(QueryStatsDClient client) {
+        this.client = client;
         sources = Lists.newArrayList();
         sourceCount = 1;
     }
     
     public QuerySpan createSource() {
-        QuerySpan newSpan = new QuerySpan();
-        sources.add(newSpan);
+        QuerySpan newSpan = new QuerySpan(client);
+        addSource(newSpan);
         return newSpan;
     }
     
     public void addSource(QuerySpan sourceSpan) {
+        if (client != null) {
+            client.addSource();
+        }
         sources.add(sourceSpan);
     }
     
@@ -115,6 +122,9 @@ public class QuerySpan {
     
     synchronized public void next() {
         next++;
+        if (client != null) {
+            client.next();
+        }
         if (log.isTraceEnabled()) {
             logStack("next()");
         }
@@ -122,6 +132,9 @@ public class QuerySpan {
     
     synchronized public void seek() {
         seek++;
+        if (client != null) {
+            client.seek();
+        }
         if (log.isTraceEnabled()) {
             logStack("seek()");
         }
@@ -141,6 +154,9 @@ public class QuerySpan {
     public void addStageTimer(QuerySpan.Stage stageName, long elapsed) {
         stageTimers.put(stageName.toString(), elapsed);
         stageTimerTotal += elapsed;
+        if (client != null) {
+            client.timing(stageName.toString(), elapsed);
+        }
     }
     
     public boolean hasEntries() {

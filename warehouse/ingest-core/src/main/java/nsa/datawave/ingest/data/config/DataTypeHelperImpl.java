@@ -6,6 +6,7 @@ import java.util.Set;
 import nsa.datawave.ingest.data.Type;
 import nsa.datawave.ingest.data.TypeRegistry;
 
+import nsa.datawave.ingest.data.config.ingest.FieldNameAliaserNormalizer;
 import nsa.datawave.policy.IngestPolicyEnforcer;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -29,6 +30,8 @@ public class DataTypeHelperImpl implements DataTypeHelper {
     protected final Set<String> fieldsToDowncase = new HashSet<>();
     protected IngestPolicyEnforcer ingestPolicyEnforcer;
     
+    protected FieldNameAliaserNormalizer aliaser;
+    
     @Override
     public void setup(Configuration config) {
         initType(config);
@@ -51,6 +54,9 @@ public class DataTypeHelperImpl implements DataTypeHelper {
             logger.error(e.getLocalizedMessage());
             throw new RuntimeException(e.getLocalizedMessage());
         }
+        
+        aliaser = new FieldNameAliaserNormalizer();
+        aliaser.setup(getType(), config);
     }
     
     private void initType(final Configuration config) {

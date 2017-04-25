@@ -29,6 +29,17 @@
 </property>
 
 <property>
+  <name>snowflake.zookeepers</name>
+  <value>${SNOWFLAKE_ZOOKEEPERS}</value>
+  <description>List of zookeepers for caching snowflake timestamps if enabled</description>
+</property>
+
+<property>
+  <name>snowflake.zookeeper.enabled</name>
+  <value>${SNOWFLAKE_ZOOKEEPER_ENABLED}</value>
+</property>
+
+<property>
    <name>shard.table.index.bloom.enable</name>
    <value>false</value>
 </property>

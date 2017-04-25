@@ -38,6 +38,7 @@ import nsa.datawave.query.rewrite.jexl.functions.IdentityAggregator;
 import nsa.datawave.query.rewrite.predicate.ConfiguredPredicate;
 import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
 import nsa.datawave.query.rewrite.predicate.TimeFilter;
+import nsa.datawave.query.rewrite.statsd.QueryStatsDClient;
 import nsa.datawave.query.util.CompositeMetadata;
 import nsa.datawave.query.util.TypeMetadata;
 import nsa.datawave.query.util.TypeMetadataProvider;
@@ -119,6 +120,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String INCLUDE_DATATYPE = "include.datatype";
     public static final String LOG_TIMING_DETAILS = "log.timing.details";
     public static final String COLLECT_TIMING_DETAILS = "collect.timing.details";
+    public static final String STATSD_HOST_COLON_PORT = "statsd.host.colon.port";
     public static final String DATATYPE_FIELDNAME = "include.datatype.fieldname";
     
     // pass through to Evaluating iterator to ensure consistency between query
@@ -295,6 +297,10 @@ public class QueryOptions implements OptionDescriber {
     boolean sortedUIDs = true;
     
     protected boolean collectTimingDetails = false;
+    
+    protected String statsdHostAndPort = null;
+    
+    protected QueryStatsDClient statsdClient = null;
     
     protected boolean serialEvaluationPipeline = false;
     
@@ -776,6 +782,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(FILTER_MASKED_VALUES, "Filter the masked values when both the masked and unmasked variants are in the result set.");
         options.put(INCLUDE_DATATYPE, "Include the data type as a field in the document.");
         options.put(COLLECT_TIMING_DETAILS, "Collect timing details about the underlying iterators");
+        options.put(STATSD_HOST_COLON_PORT,
+                        "A configured statsd host:port which will be used to send resource and timing details from the underlying iterators if configured");
         options.put(INCLUDE_HIERARCHY_FIELDS, "Include the hierarchy fields (CHILD_COUNT and PARENT_UID) as document fields.");
         options.put(DATATYPE_FIELDNAME, "The field name to use when inserting the fieldname into the document.");
         options.put(DATATYPE_FILTER, "CSV of data type names that should be included when scanning.");
@@ -960,6 +968,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(COLLECT_TIMING_DETAILS)) {
             this.collectTimingDetails = Boolean.parseBoolean(options.get(COLLECT_TIMING_DETAILS));
+        }
+        
+        if (options.containsKey(STATSD_HOST_COLON_PORT)) {
+            this.statsdHostAndPort = options.get(STATSD_HOST_COLON_PORT);
         }
         
         if (options.containsKey(INCLUDE_HIERARCHY_FIELDS)) {
@@ -1522,6 +1534,53 @@ public class QueryOptions implements OptionDescriber {
     
     public void setMaxPipelineCachedResults(int maxCachedResults) {
         this.maxPipelineCachedResults = maxCachedResults;
+    }
+    
+    public String getStatsdHostAndPort() {
+        return statsdHostAndPort;
+    }
+    
+    public void setStatsdHostAndPort(String statsdHostAndPort) {
+        this.statsdHostAndPort = statsdHostAndPort;
+    }
+    
+    public QueryStatsDClient getStatsdClient() {
+        if (statsdHostAndPort != null && queryId != null) {
+            if (statsdClient == null) {
+                synchronized (queryId) {
+                    if (statsdClient == null) {
+                        setStatsdClient(new QueryStatsDClient(queryId, getStatsdHost(statsdHostAndPort), getStatsdPort(statsdHostAndPort)));
+                    }
+                }
+            }
+        }
+        return statsdClient;
+    }
+    
+    private String getStatsdHost(String statsdHostAndPort) {
+        int index = statsdHostAndPort.indexOf(':');
+        if (index == -1) {
+            return statsdHostAndPort;
+        } else if (index == 0) {
+            return "localhost";
+        } else {
+            return statsdHostAndPort.substring(0, index);
+        }
+    }
+    
+    private int getStatsdPort(String statsdHostAndPort) {
+        int index = statsdHostAndPort.indexOf(':');
+        if (index == -1) {
+            return 8125;
+        } else if (index == statsdHostAndPort.length() - 1) {
+            return 8125;
+        } else {
+            return Integer.parseInt(statsdHostAndPort.substring(index + 1));
+        }
+    }
+    
+    public void setStatsdClient(QueryStatsDClient statsdClient) {
+        this.statsdClient = statsdClient;
     }
     
 }

@@ -701,9 +701,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         IngestHelperInterface helper = this.getHelper(event.getDataType());
         boolean deleteMode = helper.getDeleteMode();
         
-        if (null != maskedFieldHelper && maskedFieldHelper.getMaskedValues().containsKey(column)) {
+        if (null != maskedFieldHelper && maskedFieldHelper.contains(column)) {
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
-            final String normalizedMaskedValue = helper.getNormalizedMaskedValues().get(column);
+            final String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
             
             Text colf = new Text(column);
             Text colq = new Text(shardId);
@@ -877,8 +877,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         }
         
         // If this field needs to be masked, then create two keys
-        if (null != maskedFieldHelper && maskedFieldHelper.getMaskedValues().containsKey(indexedFieldName)) {
-            final String maskedFieldValue = maskedFieldHelper.getMaskedValues().get(indexedFieldName);
+        if (null != maskedFieldHelper && maskedFieldHelper.contains(indexedFieldName)) {
+            final String maskedFieldValue = maskedFieldHelper.get(indexedFieldName);
             
             // Generate a key for the original, unmasked field field value
             if (!StringUtils.isEmpty(fieldValue)) {
@@ -970,7 +970,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             value = NULL_VALUE;
         }
         
-        if (null != maskedFieldHelper && maskedFieldHelper.getMaskedValues().containsKey(fieldName)) {
+        if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Put unmasked colq with original visibility
                 Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getDate(), deleteMode);
@@ -979,7 +979,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             }
             
             // We need to use the normalized masked values
-            final String normalizedMaskedValue = helper.getNormalizedMaskedValues().get(fieldName);
+            final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
                 Text maskedColq = new Text(normalizedMaskedValue);
                 TextUtil.textAppend(maskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
@@ -1037,7 +1037,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             value = NULL_VALUE;
         }
         
-        if (maskedFieldHelper.getMaskedValues().containsKey(fieldName)) {
+        if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Put unmasked colq with original visibility
                 Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getDate(), deleteMode);
@@ -1046,7 +1046,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             }
             
             // We need to use the normalized masked values
-            final String normalizedMaskedValue = helper.getNormalizedMaskedValues().get(fieldName);
+            final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
                 Text maskedColq = new Text(normalizedMaskedValue);
                 TextUtil.textAppend(maskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
@@ -1119,9 +1119,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         IngestHelperInterface helper = this.getHelper(event.getDataType());
         boolean deleteMode = helper.getDeleteMode();
         
-        if (maskedFieldHelper.getMaskedValues().containsKey(fieldName)) {
+        if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
-            final String normalizedMaskedValue = helper.getNormalizedMaskedValues().get(fieldName);
+            final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
             
             Text colf = new Text(fieldName);
             Text colq = new Text(shardId);
@@ -1251,9 +1251,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         IngestHelperInterface helper = this.getHelper(event.getDataType());
         boolean deleteMode = helper.getDeleteMode();
         
-        if (null != maskedFieldHelper && maskedFieldHelper.getMaskedValues().containsKey(fieldName)) {
+        if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
-            final String normalizedMaskedValue = helper.getNormalizedMaskedValues().get(fieldName);
+            final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
             
             Text colf = new Text(directionColFam);
             Text colq = new Text(fieldName);

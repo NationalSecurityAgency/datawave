@@ -133,7 +133,15 @@ public class QueryModelVisitor extends RebuildingVisitor {
         Multimap<String,JexlNode> lowerBounds = ArrayListMultimap.create(), upperBounds = ArrayListMultimap.create();
         List<JexlNode> others = Lists.newArrayList();
         for (JexlNode child : JexlNodes.children(node)) {
-            log.debug("visiting:" + JexlStringBuildingVisitor.buildQuery(child));
+            if (log.isTraceEnabled()) {
+                log.trace("visiting:" + JexlStringBuildingVisitor.buildQuery(child));
+            }
+            // if this child has a method attached, be sure to descend into it for model substitutions
+            AtomicBoolean state = (AtomicBoolean) child.jjtAccept(hasMethodVisitor, new AtomicBoolean(false));
+            if (state.get()) {
+                child = (JexlNode) child.jjtAccept(this.simpleQueryModelVisitor, null);
+            }
+            
             switch (id(child)) {
                 case ParserTreeConstants.JJTGENODE:
                 case ParserTreeConstants.JJTGTNODE:

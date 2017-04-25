@@ -166,6 +166,12 @@ public class RefactoredShardQueryConfigurationFactory {
         
         config.setDebugMultithreadedSources(configuredLogic.isDebugMultithreadedSources());
         
+        config.setCollectTimingDetails(configuredLogic.getCollectTimingDetails());
+        config.setLogTimingDetails(configuredLogic.getLogTimingDetails());
+        config.setSendTimingToStatsd(configuredLogic.getSendTimingToStatsd());
+        config.setStatsdHost(configuredLogic.getStatsdHost());
+        config.setStatsdPort(configuredLogic.getStatsdPort());
+        
         return config;
     }
 }

@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
+import java.util.concurrent.TimeUnit;
 import nsa.datawave.ingest.data.config.ingest.AccumuloHelper;
 import nsa.datawave.ingest.mapreduce.job.RFileInputFormat;
 import nsa.datawave.mr.bulk.split.FileRangeSplit;
@@ -64,9 +65,9 @@ public class MultiRfileInputformat extends RFileInputFormat {
      */
     public static final String MERGE_RANGE = "merge.range";
     public static final String CACHE_METADATA = "rfile.cache.metdata";
+    public static final String CACHE_METADATA_EXPIRE_SECONDS = "rfile.cache.expire.seconds";
     public static final String CACHE_RETRIEVE_SIZE = "rfile.size.compute";
     public static final String CACHE_METADATA_SIZE = "rfile.cache.metdata.size";
-    public static final String CACHE_METADATA_RETRIES = "rfile.cache.metdata.retries";
     private static final String HDFS_BASE = "hdfs://";
     private static final String ACCUMULO_BASE_PATH = "/accumulo";
     
@@ -74,7 +75,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
     private static final Logger log = Logger.getLogger(MultiRfileInputformat.class);
     public static final String tableStr = Path.SEPARATOR + "tables" + Path.SEPARATOR;
     
-    private static LoadingCache<Range,Tuple2<String,Set<String>>> locationMap = null;
+    private static LoadingCache<Range,Set<Tuple2<String,Set<String>>>> locationMap = null;
     
     protected static Map<String,String> dfsUriMap = new ConcurrentHashMap<String,String>();
     protected static Map<String,String> dfsDirMap = new ConcurrentHashMap<String,String>();
@@ -201,104 +202,60 @@ public class MultiRfileInputformat extends RFileInputFormat {
         if (conf.getBoolean(CACHE_METADATA, false) == true) {
             synchronized (MultiRfileInputformat.class) {
                 if (null == locationMap) {
-                    final int retries = conf.getInt(CACHE_METADATA_RETRIES, Integer.MAX_VALUE);
                     final long size = conf.getLong(CACHE_METADATA_SIZE, 10000);
-                    locationMap = CacheBuilder.newBuilder().maximumSize(size)
-                                    .build(new MetadataCacheLoader(instance.getConnector(BulkInputFormat.getUsername(conf), token), defaultBasePath, retries));
+                    final long seconds = conf.getInt(CACHE_METADATA_EXPIRE_SECONDS, 7200);
+                    locationMap = CacheBuilder.newBuilder().maximumSize(size).expireAfterWrite(seconds, TimeUnit.SECONDS)
+                                    .build(new MetadataCacheLoader(instance.getConnector(BulkInputFormat.getUsername(conf), token), defaultBasePath));
                 }
             }
         }
         
         for (Range range : ranges) {
-            Text startRow;
+            // turn this range into a range of rows against the accumulo metadata: (e.g. <tableId>;row)
+            Range metadataRange = MetadataCacheLoader.createMetadataRange(tableId, range);
             
-            if (range.getStartKey() != null)
-                startRow = range.getStartKey().getRow();
-            else
-                startRow = new Text();
+            Set<Tuple2<String,Set<String>>> metadataEntries;
+            try {
+                if (null == locationMap) {
+                    metadataEntries = new MetadataCacheLoader(conn, defaultBasePath).load(metadataRange);
+                } else {
+                    metadataEntries = locationMap.get(metadataRange);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to get rfile locations from accumulo metadata", e);
+            }
             
-            Key startKey = new Key(new KeyExtent(new Text(tableId), startRow, null).getMetadataEntry());
-            Range metadataRange = new Range(startKey, true, startKey.followingKey(PartialKey.ROW), false);
-            if (null == locationMap) {
-                Scanner scanner = conn.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
-                MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
-                scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
-                scanner.fetchColumnFamily(MetadataSchema.TabletsSection.DataFileColumnFamily.NAME);
-                scanner.fetchColumnFamily(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME);
-                scanner.fetchColumnFamily(MetadataSchema.TabletsSection.FutureLocationColumnFamily.NAME);
-                
-                scanner.setRange(metadataRange);
-                
-                RowIterator rowIter = new RowIterator(scanner);
-                
-                String baseLocation = defaultBasePath + tableStr + tableId + Path.SEPARATOR;
-                
-                while (rowIter.hasNext()) {
-                    Iterator<Entry<Key,Value>> row = rowIter.next();
-                    String location = "";
-                    Set<String> fileLocations = Sets.newHashSet();
+            if (metadataEntries == null || metadataEntries.isEmpty()) {
+                throw new IOException("Unable to find location or files associated with " + range.toString());
+            }
+            
+            for (Tuple2<String,Set<String>> entry : metadataEntries) {
+                String location = entry.first();
+                Set<String> fileLocations = entry.second();
+                if (fileLocations != null && !fileLocations.isEmpty()) {
                     
-                    while (row.hasNext()) {
-                        Entry<Key,Value> entry = row.next();
-                        Key key = entry.getKey();
-                        
-                        if (key.getColumnFamily().equals(MetadataSchema.TabletsSection.DataFileColumnFamily.NAME)) {
-                            String fileLocation = entry.getKey().getColumnQualifier().toString();
-                            if (!fileLocation.startsWith(HDFS_BASE))
-                                fileLocation = baseLocation.concat(entry.getKey().getColumnQualifier().toString());
-                            fileLocations.add(fileLocation);
-                        }
-                        
-                        if (key.getColumnFamily().equals(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME)
-                                        || key.getColumnFamily().equals(MetadataSchema.TabletsSection.FutureLocationColumnFamily.NAME)) {
-                            location = entry.getValue().toString();
-                        }
-                        
+                    if (location == null || location.isEmpty()) {
+                        log.warn("Unable to find a location associated with " + range.toString() + " : ? -> " + fileLocations);
                     }
-                    
-                    if (location.isEmpty() || fileLocations.isEmpty())
-                        throw new IOException("Unable to find location or files associated with " + range.toString() + " " + location + " " + fileLocations);
                     
                     for (String fileLocation : fileLocations) {
                         
                         Path path = new Path(fileLocation);
                         
-                        long length = path.getFileSystem(conf).getFileStatus(path).getLen();
+                        boolean pullSize = conf.getBoolean(CACHE_RETRIEVE_SIZE, false);
+                        long length = Long.MAX_VALUE;
+                        if (pullSize) {
+                            length = path.getFileSystem(conf).getFileStatus(path).getLen();
+                        }
+                        
                         String[] locations = new String[] {location};
                         
                         binnedRanges.put(range, new RfileSplit(path, 0, length, locations));
                         
                         rowMap.put(range.getStartKey().getRow(), range);
                     }
-                }
-                
-            } else {
-                Tuple2<String,Set<String>> cachedMetadata;
-                try {
-                    cachedMetadata = locationMap.get(metadataRange);
-                    
-                    if (null != cachedMetadata && cachedMetadata.first() != null && cachedMetadata.second() != null) {
-                        String location = cachedMetadata.first();
-                        Set<String> fileLocations = cachedMetadata.second();
-                        for (String fileLocation : fileLocations) {
-                            
-                            Path path = new Path(fileLocation);
-                            
-                            boolean pullSize = conf.getBoolean(CACHE_RETRIEVE_SIZE, false);
-                            long length = Long.MAX_VALUE;
-                            if (pullSize) {
-                                length = path.getFileSystem(conf).getFileStatus(path).getLen();
-                            }
-                            
-                            String[] locations = new String[] {location};
-                            
-                            binnedRanges.put(range, new RfileSplit(path, 0, length, locations));
-                            
-                            rowMap.put(range.getStartKey().getRow(), range);
-                        }
-                    }
-                } catch (ExecutionException e) {
-                    throw new RuntimeException(e);
+                } else {
+                    log.warn("Unable to find a some files associated with " + range.toString() + " : " + location);
                 }
             }
         }

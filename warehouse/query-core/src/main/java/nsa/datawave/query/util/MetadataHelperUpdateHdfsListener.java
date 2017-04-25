@@ -37,6 +37,7 @@ public class MetadataHelperUpdateHdfsListener {
     private String instance;
     private String username;
     private String password;
+    private long lockWaitTime = 1000L; // configurable in MetadataHelperCacheListenerContext.xml
     
     public void setPassword(String password) {
         this.password = password;
@@ -68,6 +69,14 @@ public class MetadataHelperUpdateHdfsListener {
         registerCacheListeners();
     }
     
+    public long getLockWaitTime() {
+        return lockWaitTime;
+    }
+    
+    public void setLockWaitTime(long lockWaitTime) {
+        this.lockWaitTime = lockWaitTime;
+    }
+    
     private void registerCacheListeners() {
         for (String metadataTableName : metadataTableNames) {
             registerCacheListener(metadataTableName);
@@ -90,20 +99,21 @@ public class MetadataHelperUpdateHdfsListener {
             watcher.registerTriState(triStateName, new SharedTriStateListener() {
                 @Override
                 public void stateHasChanged(SharedTriStateReader reader, SharedTriState.STATE value) throws Exception {
-                    if (log.isDebugEnabled())
-                        log.debug("table:" + metadataTableName + " stateHasChanged(" + reader + ", " + value + ") for " + triStateName);
-                    
-                    if (value != SharedTriState.STATE.UPDATED) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("table:" + metadataTableName + " stateHasChanged(" + reader + ", " + value + ") for " + triStateName);
+                    }
+                    if (value == SharedTriState.STATE.NEEDS_UPDATE) {
                         maybeUpdateTypeMetadataInHdfs(watcher, triStateName, metadataTableName);
                     }
                 }
                 
                 @Override
                 public void stateChanged(CuratorFramework client, ConnectionState newState) {
-                    if (log.isDebugEnabled())
-                        log.debug("table:" + metadataTableName + " stateChanged(" + client + ", " + newState + ")");
+                    if (log.isTraceEnabled())
+                        log.trace("table:" + metadataTableName + " stateChanged(" + client + ", " + newState + ")");
                 }
             });
+            // The first time we register a cachelistener, tell it to update the type metadata. This happens when the webserver is (re)started
             watcher.setTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE);
             
         } catch (Exception e) {
@@ -116,7 +126,7 @@ public class MetadataHelperUpdateHdfsListener {
         boolean locked = false;
         InterProcessMutex lock = (InterProcessMutex) watcher.getMutex("lock");
         try {
-            locked = lock.acquire(10000, TimeUnit.MILLISECONDS);
+            locked = lock.acquire(this.lockWaitTime, TimeUnit.MILLISECONDS);
             if (!locked)
                 log.debug("table:" + metadataTableName + " Unable to acquire lock to update " + metadataTableName
                                 + ". Another webserver is updating the typeMetadata.");
@@ -149,9 +159,13 @@ public class MetadataHelperUpdateHdfsListener {
                         }
                         watcher.setTriState(triStateName, SharedTriState.STATE.UPDATED);
                     } else {
-                        if (log.isDebugEnabled())
-                            log.debug("table:" + metadataTableName + " " + this
-                                            + "  STATE is not NEEDS_UPDATE! Someone else may be writing the TypeMetadata map, just release the lock");
+                        if (log.isDebugEnabled()) {
+                            log.debug("table:"
+                                            + metadataTableName
+                                            + " "
+                                            + this
+                                            + "  STATE is not NEEDS_UPDATE! Someone else may be writing or has already written the TypeMetadata map, just release the lock");
+                        }
                     }
                 } catch (Exception ex) {
                     log.warn("table:" + metadataTableName + " Unable to write TypeMetadataMap for " + metadataTableName, ex);
@@ -165,8 +179,8 @@ public class MetadataHelperUpdateHdfsListener {
         } finally {
             if (locked) {
                 lock.release();
-                if (log.isDebugEnabled())
-                    log.debug("table:" + metadataTableName + " " + this + " released the lock for " + metadataTableName);
+                if (log.isTraceEnabled())
+                    log.trace("table:" + metadataTableName + " " + this + " released the lock for " + metadataTableName);
                 
             }
         }

@@ -12,10 +12,6 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -125,9 +121,6 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 public class DefaultQueryPlanner extends QueryPlanner {
@@ -1432,6 +1425,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(sourceLimit), false);
                 if (config.getCollectTimingDetails()) {
                     addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(true), false);
+                }
+                if (config.getSendTimingToStatsd()) {
+                    addOption(cfg, QueryOptions.STATSD_HOST_COLON_PORT, config.getStatsdHost() + ':' + Integer.toString(config.getStatsdPort()), false);
                 }
                 if (config.getHdfsSiteConfigURLs() != null) {
                     addOption(cfg, QueryOptions.HDFS_SITE_CONFIG_URLS, config.getHdfsSiteConfigURLs(), false);

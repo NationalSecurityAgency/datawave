@@ -71,7 +71,6 @@ import nsa.datawave.webservice.query.logic.BaseQueryLogic;
 import nsa.datawave.webservice.query.logic.QueryLogicTransformer;
 import nsa.datawave.webservice.query.logic.WritesQueryMetrics;
 import nsa.datawave.webservice.query.result.event.ResponseObjectFactory;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -353,8 +352,12 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
                     .expireAfterAccess(24, TimeUnit.HOURS).build();
     
     private boolean accrueStats = false;
-    private Boolean collectTimingDetails = false;
-    private Boolean logTimingDetails = false;
+    private boolean collectTimingDetails = false;
+    private boolean logTimingDetails = false;
+    private boolean sendTimingToStatsd = false;
+    private String statsdHost = "localhost";
+    private int statsdPort = 8125;
+    
     private CardinalityConfiguration cardinalityConfiguration = null;
     
     protected Map<String,Profile> configuredProfiles = Maps.newHashMap();
@@ -475,6 +478,9 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.setAccrueStats(other.getAccrueStats());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
+        this.setSendTimingToStatsd(other.getSendTimingToStatsd());
+        this.setStatsdHost(other.getStatsdHost());
+        this.setStatsdPort(other.getStatsdPort());
         this.setCardinalityConfiguration(other.getCardinalityConfiguration());
         this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
         this.setAllowFieldIndexEvaluation(other.isAllowFieldIndexEvaluation());
@@ -2187,6 +2193,30 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.logTimingDetails = logTimingDetails;
     }
     
+    public String getStatsdHost() {
+        return statsdHost;
+    }
+    
+    public void setStatsdHost(String statsdHost) {
+        this.statsdHost = statsdHost;
+    }
+    
+    public int getStatsdPort() {
+        return statsdPort;
+    }
+    
+    public void setStatsdPort(int statsdPort) {
+        this.statsdPort = statsdPort;
+    }
+    
+    public boolean getSendTimingToStatsd() {
+        return sendTimingToStatsd;
+    }
+    
+    public void setSendTimingToStatsd(boolean sendTimingToStatsd) {
+        this.sendTimingToStatsd = sendTimingToStatsd;
+    }
+    
     public void setCacheModel(boolean cacheModel) {
         this.cacheModel = cacheModel;
     }
@@ -2254,5 +2284,4 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     public void setFailOutsideValidDateRange(boolean failOutsideValidDateRange) {
         this.failOutsideValidDateRange = failOutsideValidDateRange;
     }
-    
 }

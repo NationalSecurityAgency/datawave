@@ -3,6 +3,7 @@ package nsa.datawave.query.rewrite.iterator.profile;
 import java.util.Map;
 
 import com.google.common.collect.Lists;
+import nsa.datawave.query.rewrite.statsd.QueryStatsDClient;
 
 /**
  * Keeps state about the particular session that you are within.
@@ -17,20 +18,19 @@ public class MultiThreadedQuerySpan extends QuerySpan {
     public QuerySpan getThreadSpecificQuerySpan() {
         QuerySpan querySpan = threadLocalQuerySpan.get();
         if (querySpan == null) {
-            querySpan = new QuerySpan();
+            querySpan = new QuerySpan(client);
             threadLocalQuerySpan.set(querySpan);
         }
         return querySpan;
     }
     
-    public MultiThreadedQuerySpan() {
-        sources = Lists.newArrayList();
-        sourceCount = 1;
+    public MultiThreadedQuerySpan(QueryStatsDClient client) {
+        super(client);
     }
     
     @Override
     public QuerySpan createSource() {
-        QuerySpan newSpan = new MultiThreadedQuerySpan();
+        QuerySpan newSpan = new MultiThreadedQuerySpan(client);
         getThreadSpecificQuerySpan().addSource(newSpan);
         return newSpan;
     }

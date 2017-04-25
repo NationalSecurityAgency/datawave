@@ -106,6 +106,7 @@
                 <include>com.google.code.gson:gson</include>
                 <include>org.apache.lucene:lucene-core</include>
                 <include>com.clearspring.analytics:stream</include>
+                <include>com.timgroup:java-statsd-client</include>
                 <!-- for dependency injection -->
                 <include>org.springframework:spring-aop</include>
                 <include>org.springframework:spring-core</include>

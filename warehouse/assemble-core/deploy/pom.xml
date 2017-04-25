@@ -4,7 +4,7 @@
     <parent>
         <groupId>nsa.datawave</groupId>
         <artifactId>assemble-core</artifactId>
-        <version>4.3.1-SNAPSHOT</version>
+        <version>4.4.0-SNAPSHOT</version>
     </parent>
     <artifactId>deploy-datawave-core</artifactId>
     <packaging>pom</packaging>
@@ -614,6 +614,7 @@
                                             <include>com.google.code.gson:gson</include>
                                             <include>com.clearspring.analytics:stream</include>
                                             <include>org.apache.lucene:lucene-core</include>
+                                            <include>com.timgroup:java-statsd-client</include>
                                             <!-- for dependency injection -->
                                             <include>org.springframework:spring-aop</include>
                                             <include>org.springframework:spring-core</include>

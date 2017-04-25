@@ -130,15 +130,15 @@ public class AccumuloTableCache {
                 cacheCoordinator.registerTriState(tableName + ":needsUpdate", new SharedTriStateListener() {
                     @Override
                     public void stateHasChanged(SharedTriStateReader reader, SharedTriState.STATE value) throws Exception {
-                        if (log.isDebugEnabled()) {
-                            log.debug("table:" + tableName + " stateHasChanged(" + reader + ", " + value + "). This listener does nothing");
+                        if (log.isTraceEnabled()) {
+                            log.trace("table:" + tableName + " stateHasChanged(" + reader + ", " + value + "). This listener does nothing");
                         }
                     }
                     
                     @Override
                     public void stateChanged(CuratorFramework client, ConnectionState newState) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("table:" + tableName + " stateChanged(" + client + ", " + newState + "). This listener does nothing");
+                        if (log.isTraceEnabled()) {
+                            log.trace("table:" + tableName + " stateChanged(" + client + ", " + newState + "). This listener does nothing");
                         }
                     }
                 });

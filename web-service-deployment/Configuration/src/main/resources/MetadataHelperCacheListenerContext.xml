@@ -32,6 +32,7 @@
 		<property name="password" value="${accumulo.user.password}" />
 		<property name="username" value="${accumulo.user.name}" />
 		<property name="allMetadataAuths" ref="allMetadataAuths" />
+		<property name="lockWaitTime" value="1000" />
 
 		<property name="metadataTableNames" >
 			<util:list>

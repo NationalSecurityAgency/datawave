@@ -1,10 +1,12 @@
 package nsa.datawave.ingest.data.config.ingest;
 
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import nsa.datawave.data.normalizer.NormalizationException;
+import nsa.datawave.data.type.Type;
 import nsa.datawave.ingest.data.config.DataTypeHelperImpl;
 import nsa.datawave.ingest.data.config.MaskedFieldHelper;
 
@@ -26,9 +28,6 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     
     /* Map of field names to normalizers, null key is the default normalizer */
     protected MaskedFieldHelper mfHelper = null;
-    protected Map<String,String> normalizedMaskedValues = null;
-    protected Map<String,String> maskedValues = null;
-    protected Set<String> unMaskedValues = null;
     protected Set<String> shardExclusions = new HashSet<>();
     protected boolean hasIndexBlacklist = false;
     protected boolean hasReverseIndexBlacklist = false;
@@ -50,19 +49,50 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     }
     
     /**
-     * 
-     * @return map of field names to normalized masked values
+     * return map of field names to normalized masked value
      */
-    public Map<String,String> getNormalizedMaskedValues() {
-        return normalizedMaskedValues;
+    public String getNormalizedMaskedValue(final String key) {
+        if (mfHelper != null && mfHelper.contains(key)) {
+            final String value = mfHelper.get(key);
+            if (value.isEmpty()) {
+                return value;
+            }
+            
+            final String fieldName = aliaser.normalizeAndAlias(key);
+            try {
+                final Set<String> normalizedValues = normalizeFieldValue(fieldName.toUpperCase(), value);
+                final String first = normalizedValues.iterator().next();
+                return first;
+            } catch (final Exception ex) {
+                log.warn(this.getType().typeName() + ": Unable to normalize masked value of '" + value + "' for " + fieldName, ex);
+                return value;
+            }
+        }
+        return null;
     }
     
-    /**
-     * 
-     * @return map of field names to masked values (NOT NORMALIZED)
-     */
-    public Map<String,String> getMaskedValues() {
-        return maskedValues;
+    @Override
+    public boolean hasMappings() {
+        if (mfHelper == null) {
+            return false;
+        }
+        return mfHelper.hasMappings();
+    }
+    
+    @Override
+    public boolean contains(final String key) {
+        if (mfHelper == null) {
+            return false;
+        }
+        return mfHelper.contains(key);
+    }
+    
+    @Override
+    public String get(final String key) {
+        if (mfHelper == null) {
+            return null;
+        }
+        return mfHelper.get(key);
     }
     
     /**
@@ -113,6 +143,22 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
         }
         input.removeAll(removeList);
         input.addAll(addList);
+    }
+    
+    /**
+     * This is a helper routine that will return a normalized field value using the configured normalizer
+     *
+     * @param fieldValue
+     * @return the normalized field values
+     */
+    protected Set<String> normalizeFieldValue(final String fieldName, final String fieldValue) throws NormalizationException {
+        final Collection<Type<?>> dataTypes = getDataTypes(fieldName);
+        final HashSet<String> values = new HashSet<>(dataTypes.size());
+        for (final nsa.datawave.data.type.Type<?> dataType : dataTypes) {
+            final String normalized = dataType.normalize(fieldValue);
+            values.add(normalized);
+        }
+        return values;
     }
     
 }
