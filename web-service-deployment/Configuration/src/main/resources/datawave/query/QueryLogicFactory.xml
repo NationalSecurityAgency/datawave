@@ -426,7 +426,13 @@
         <property name="includeHierarchyFields" value="false" />
     </bean>
 
-    <bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="nsa.datawave.query.metrics.QueryMetricQueryLogic">
+
+    <bean id="IndexStatsQuery" parent="baseQueryLogic" scope="prototype"  class="nsa.datawave.query.tables.shard.IndexStatsQueryLogic">
+        <property name="auditType" value="PASSIVE" />
+        <property name="selectorExtractor"><null/></property>
+    </bean>
+
+	<bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="nsa.datawave.query.metrics.QueryMetricQueryLogic">
 	    <property name="logicDescription" value="Query Metrics query" />
 	    <property name="includeHierarchyFields" value="false" />
 	    <property name="modelTableName" value="${query.metrics.table.basename}_m" />
