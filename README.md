@@ -1,4 +1,4 @@
-#Building Datawave
+# Building Datawave
 
 To perform a full (non-release) 'dev' build  without unit tests:
 
@@ -11,7 +11,7 @@ This command will produce the following deployment archives:
 1. Web Service: `./web-service-deployment/web-service-ear/target/datawave-web-service-${project.version}-dev.tar.gz`
 2. Ingest: `./warehouse/assemble-core/deploy/target/datawave-dev-${project.version}-dist.tar.gz`
 
-###Building A Release
+### Building A Release
 
 In order to build a release, you must also define the dist variable by adding `-Ddist` to the command-line as follows:
 
@@ -25,7 +25,7 @@ that only runs with JDK 7 currently. Therefore, in order to execute a release bu
 to the installation (i.e., `${JDK7_HOME}/bin/javadoc` should exist). This is a stopgap measure that we hope to fix
 in the near future.
 
-###Prerequisites
+### Prerequisites
 
 Note that, currently, you may have to install the read-properties and assert-properties plugins before you are able
 to build:
