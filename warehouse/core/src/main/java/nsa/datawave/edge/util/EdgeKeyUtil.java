@@ -14,7 +14,7 @@ import java.util.*;
  * Utility class for generating regular expressions to scan various formats of the edge table.
  */
 public class EdgeKeyUtil {
-    private static final String edgeTypePrefix = "(?:^|STATS/[^/]+/)";
+    protected static final String edgeTypePrefix = "(?:^|STATS/[^/]+/)";
     
     public static Set<String> normalizeSource(String source, List<? extends Type<?>> dataTypes, boolean protobuffEdgeFormat) {
         Set<String> normalized = new HashSet<>();
