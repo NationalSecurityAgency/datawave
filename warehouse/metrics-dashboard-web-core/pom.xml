@@ -4,7 +4,7 @@
     <parent>
         <groupId>nsa.datawave</groupId>
         <artifactId>datawave-warehouse</artifactId>
-        <version>4.3.2-SNAPSHOT</version>
+        <version>4.3.2</version>
     </parent>
     <artifactId>datawave-metrics-dashboard-web-core</artifactId>
     <packaging>war</packaging>
