@@ -1922,7 +1922,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *
      * @param id
      *            - the id of the query to locate (@Required)
-     * @see nsa.datawave.webservice.query.runner.QueryExecutorBean#get(String)) for the @Required definition
+     * @see nsa.datawave.webservice.query.runner.QueryExecutorBean#get(String) get(String) for the @Required definition
      *
      * @return nsa.datawave.webservice.result.QueryImplListResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -1966,7 +1966,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *
      * @param name
      *            the name of the query to locate (@Required)
-     * @see nsa.datawave.webservice.query.runner.QueryExecutorBean#list(String)) for the @Required definition
+     * @see nsa.datawave.webservice.query.runner.QueryExecutorBean#list(String) list(String) for the @Required definition
      *
      * @return nsa.datawave.webservice.result.QueryImplListResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2070,8 +2070,6 @@ public class QueryExecutorBean implements QueryExecutor {
      *            - defaults to old logic, name of class that this query should be run with (optional)
      * @param newQuery
      *            - defaults to old query, string used in lookup (optional, auditing required if changed)
-     * @param newJustification
-     *            - defaults to old justification, query string justification (required if any auditable properties are updated)
      * @param newColumnVisibility
      *            - defaults to old column visibility, for query AND justification (optional, auditing required if changed)
      * @param newBeginDate
@@ -2090,10 +2088,10 @@ public class QueryExecutorBean implements QueryExecutor {
      *            - defaults to old, optional parameters to the query, a semi-colon separated list name=value pairs (optional, auditing required if changed)
      * @param trace
      *            - optional (defaults to {@code false}) indication of whether or not the query should be traced using the distributed tracing mechanism
-     * @see nsa.datawave.webservice.query.runner.QueryExecutorBean#duplicateQuery(String, String, String, String, String, String, Date, Date, String, Date,
-     *      Integer, QueryPersistence, String, boolean)
+     * @see nsa.datawave.webservice.query.runner.QueryExecutorBean#duplicateQuery(String, String, String, String, String, Date, Date, String, Date, Integer,
+     *      QueryPersistence, String, boolean)
      *
-     * @return nsa.datawave.webservice.result.GenericResponse<String>
+     * @return {@code nsa.datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
@@ -2213,7 +2211,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @see nsa.datawave.webservice.query.runner.QueryExecutorBean#updateQuery(String, String, String, String, java.util.Date, java.util.Date, String,
      *      java.util.Date, Integer, nsa.datawave.webservice.query.QueryPersistence, String)
      *
-     * @return nsa.datawave.webservice.result.GenericResponse<String>
+     * @return {@code nsa.datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
@@ -2589,7 +2587,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @param logicName
      * @param queryParameters
      *
-     * @return nsa.datawave.webservice.result.GenericResponse<String>
+     * @return {@code nsa.datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the

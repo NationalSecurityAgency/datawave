@@ -44,7 +44,7 @@ public class DocumentSerialization {
     public static final int ZLIB_NUMBER = 2;
     
     /**
-     * If a user-supplied ReturnType is specified, use it; otherwise, use the default ReturnType of {@link QueryOptions.DEFAULT_RETURN_TYPE}
+     * If a user-supplied ReturnType is specified, use it; otherwise, use the default ReturnType of {@link #DEFAULT_RETURN_TYPE}
      *
      * @param settings
      * @return

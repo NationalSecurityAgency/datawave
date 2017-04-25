@@ -6,12 +6,12 @@ import org.apache.accumulo.core.client.Connector;
 
 public interface AccumuloConnectionFactory {
     
-    public enum Priority {
+    enum Priority {
         
         LOW, NORMAL, HIGH, ADMIN
     }
     
-    public enum State {
+    enum State {
         
         WAITING, CONNECTED
     }
@@ -21,19 +21,19 @@ public interface AccumuloConnectionFactory {
      *            the name of the pool to query
      * @return name of the user used in the connection pools
      */
-    public String getConnectionUserName(String poolName);
+    String getConnectionUserName(String poolName);
     
     /**
      * Gets a connection from the pool with the assigned priority
      *
-     * Deprecated in 2.2.3, use getConnection(String poolName, Priority priority, Map<String, String> trackingMap)
+     * Deprecated in 2.2.3, use {@link #getConnection(Priority, Map)}
      *
      * @param priority
      *            the connection's Priority
      * @return accumulo connection
      * @throws Exception
      */
-    public Connector getConnection(Priority priority, Map<String,String> trackingMap) throws Exception;
+    Connector getConnection(Priority priority, Map<String,String> trackingMap) throws Exception;
     
     /**
      * Gets a connection from the named pool with the assigned priority
@@ -47,7 +47,7 @@ public interface AccumuloConnectionFactory {
      * @return Accumulo connection
      * @throws Exception
      */
-    public Connector getConnection(String poolName, Priority priority, Map<String,String> trackingMap) throws Exception;
+    Connector getConnection(String poolName, Priority priority, Map<String,String> trackingMap) throws Exception;
     
     /**
      * Returns the connection to the pool with the associated priority.
@@ -56,7 +56,7 @@ public interface AccumuloConnectionFactory {
      *            The connection to return
      * @throws Exception
      */
-    public void returnConnection(Connector connection) throws Exception;
+    void returnConnection(Connector connection) throws Exception;
     
-    public Map<String,String> getTrackingMap(StackTraceElement[] stackTrace);
+    Map<String,String> getTrackingMap(StackTraceElement[] stackTrace);
 }

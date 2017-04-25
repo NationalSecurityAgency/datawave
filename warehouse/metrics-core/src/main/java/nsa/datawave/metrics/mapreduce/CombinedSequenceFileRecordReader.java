@@ -9,7 +9,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileRecordReader;
 
 /**
- * A generic base class for combing sequence files for input into map jobs. For any given <K,V> pair of types, this logic is the same.
+ * A generic base class for combing sequence files for input into map jobs. For any given {@code <K,V>} pair of types, this logic is the same.
  * 
  * @param <K>
  * @param <V>

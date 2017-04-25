@@ -13,8 +13,6 @@ public interface FilterRule {
      * 
      * @param options
      *            {@code Map} object
-     * @param env
-     *            environment for this execution
      */
     public void init(FilterOptions options);
     

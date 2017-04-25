@@ -583,8 +583,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
     
     /**
-     * Determines whether or not it is safe to bring map files online. This asks Accumulo for its stats for major compaction (running & queued), and will return
-     * false if either "too many" compactions are running/queued.
+     * Determines whether or not it is safe to bring map files online. This asks Accumulo for its stats for major compaction (running and queued), and will
+     * return false if either "too many" compactions are running/queued.
      */
     public boolean canBringMapFilesOnline(long lastOnlineTime, long notificationDelta) {
         Level level = (notificationDelta > (5 * 60 * 1000)) ? Level.INFO : Level.DEBUG;
@@ -886,7 +886,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         }
         
         /**
-         * Return a rfile with .1 appended before the extension. foo.ext -> foo.1.ext foo -> foo.1
+         * Return a rfile with .1 appended before the extension. {@code foo.ext -> foo.1.ext foo -> foo.1}
          * 
          * @param rfile
          * @return a rfile with .1 appended before the extension

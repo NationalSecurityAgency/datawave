@@ -199,11 +199,9 @@ public class MapReduceBean {
     /**
      * Execute a Oozie workflow with the given workFlow name and runtime parameters
      * 
-     * @param workFlow
-     * @param parameters
+     * @param queryParameters
      * @return
      */
-    
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
@@ -367,7 +365,7 @@ public class MapReduceBean {
      * @param parameters
      *            A semi-colon separated list name:value pairs. These are the required and optional parameters listed in the MapReduceConfiguration objects
      *            returned in the call to list()
-     * @return nsa.datawave.webservice.result.GenericResponse<String> job id
+     * @return {@code nsa.datawave.webservice.result.GenericResponse<String>} job id
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
@@ -558,7 +556,7 @@ public class MapReduceBean {
      * Cancels any MapReduce jobs with the specified jobId and clears out the results directory
      *
      * @param jobId
-     * @return nsa.datawave.webservice.result.GenericResponse<Boolean>
+     * @return {@code nsa.datawave.webservice.result.GenericResponse<Boolean>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
@@ -661,7 +659,7 @@ public class MapReduceBean {
      * Kill any job running associated with the BulkResults id and start a new job.
      *
      * @param jobId
-     * @return nsa.datawave.webservice.result.GenericResponse<String>
+     * @return {@code nsa.datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
@@ -970,7 +968,7 @@ public class MapReduceBean {
     /**
      * Removes the MapReduce entry and associated data
      * 
-     * @param jobid
+     * @param jobId
      * @return nsa.datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain

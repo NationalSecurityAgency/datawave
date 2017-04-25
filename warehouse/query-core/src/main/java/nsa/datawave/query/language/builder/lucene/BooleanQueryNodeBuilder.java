@@ -43,8 +43,8 @@ import org.apache.lucene.search.Query;
 
 /**
  * Builds a {@link BooleanQuery} object from a {@link BooleanQueryNode} object. Every children in the {@link BooleanQueryNode} object must be already tagged
- * using {@link QueryTreeBuilder#QUERY_TREE_BUILDER_TAGID} with a {@link Query} object. <br/>
- * <br/>
+ * using {@link QueryTreeBuilder#QUERY_TREE_BUILDER_TAGID} with a {@link Query} object. <br>
+ * <br>
  * It takes in consideration if the children is a {@link ModifierQueryNode} to define the {@link BooleanClause}.
  */
 public class BooleanQueryNodeBuilder implements QueryBuilder {

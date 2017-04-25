@@ -570,8 +570,7 @@
                         <threadCountClasses>0</threadCountClasses>
                         <threadCountMethods>1</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <!-- BT_ROOT is for the tests that use basis tokenization -->
-                        <argLine>-XX:-UseSplitVerifier  -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
+                        <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>random</runOrder>
                         <!-- write temporary files to the target directory.
@@ -642,7 +641,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration combine.children="append">
                     <reuseForks>false</reuseForks>
-                    <argLine>-XX:-UseSplitVerifier  -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -XX:MaxPermSize=128M -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
+                    <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                     <groups>nsa.datawave.common.test.integration.IntegrationTest</groups>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>${runOrder}</runOrder>

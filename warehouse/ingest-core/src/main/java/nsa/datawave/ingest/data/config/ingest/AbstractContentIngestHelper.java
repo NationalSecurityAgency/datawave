@@ -49,10 +49,10 @@ public abstract class AbstractContentIngestHelper extends BaseIngestHelper {
      * Return true if the specified field should be indexed. Overridden here so that content indexed or reverse content indexed fields are also considered
      * indexed fields. Obeys the semantics of
      * 
-     * @link {@link #isContentIndexField(String)} and
-     * @link {@link #isReverseContentIndexField(String)} such that field names should not include the token field name designator if any is specified.
+     * {@link #isContentIndexField(String)} and {@link #isReverseContentIndexField(String)} such that field names should not include the token field name
+     * designator if any is specified.
      * 
-     * @param field
+     * @param fieldName
      * @return
      */
     @Override

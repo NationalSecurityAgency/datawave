@@ -19,7 +19,7 @@ public interface MarkingsHelper {
     
     /**
      * Parameter to specify field marking. This parameter supports multiple datatypes and fields, so a valid value would be something like
-     * <type>.<field>.data.field.marking
+     * {@code <type>.<field>.data.field.marking}
      */
     public static final String FIELD_MARKING = ".data.field.marking";
     

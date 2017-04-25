@@ -68,7 +68,7 @@ public abstract class GenericQueryConfiguration {
     }
     
     /**
-     * Return the configured Iterator<QueryData>
+     * Return the configured {@code Iterator<QueryData>}
      * 
      * @return
      */

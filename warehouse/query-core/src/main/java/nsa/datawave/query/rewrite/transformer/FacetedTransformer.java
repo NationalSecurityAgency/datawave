@@ -38,7 +38,8 @@ public class FacetedTransformer extends DocumentTransformer {
      * 
      * @param logic
      * @param settings
-     * @param factory
+     * @param markingFunctions
+     * @param responseObjectFactory
      */
     public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
@@ -85,7 +86,10 @@ public class FacetedTransformer extends DocumentTransformer {
      * Accepts an attribute. The document data will be placed into the value of the Field.
      *
      * @param documentKey
-     * @param document
+     * @param fieldName
+     * @param attr
+     * @param topLevelColumnVisibility
+     * @param markingFunctions
      * @return
      */
     protected Collection<FieldCardinalityBase> buildFacets(Key documentKey, String fieldName, Attribute<?> attr, ColumnVisibility topLevelColumnVisibility,

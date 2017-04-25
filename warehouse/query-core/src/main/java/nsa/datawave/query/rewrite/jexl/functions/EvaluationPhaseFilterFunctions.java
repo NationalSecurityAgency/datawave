@@ -324,7 +324,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param start
      *            : A start date in one of the formats specified above
      * 
-     * @returns True if the datetime occurs after the provided datetime value
+     * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Object fieldValue, String start) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -348,7 +348,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param start
      *            : A start date in one of the formats specified above
      * 
-     * @returns True if the datetime occurs after the provided datetime value
+     * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Iterable<?> fieldValue, String start) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -378,7 +378,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs after the provided datetime value
+     * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Object fieldValue, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -406,7 +406,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs after the provided datetime value
+     * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Iterable<?> fieldValue, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -435,7 +435,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param end
      *            : An end date in one of the formats specified above
      * 
-     * @returns True if the datetime occurs before the provided datetime value
+     * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Object fieldValue, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -459,7 +459,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param end
      *            : An end date in one of the formats specified above
      * 
-     * @returns True if the datetime occurs before the provided datetime value
+     * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Iterable<?> fieldValue, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -488,7 +488,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs before the provided datetime value
+     * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Object fieldValue, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -515,7 +515,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs before the provided datetime value
+     * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Iterable<?> fieldValue, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -545,7 +545,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param end
      *            : An end date in one of the formats specified above
      * 
-     * @returns True if the datetime occurs between the provided datetime values
+     * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Object fieldValue, String start, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -571,7 +571,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param end
      *            : An end date in one of the formats specified above
      * 
-     * @returns True if the datetime occurs between the provided datetime values
+     * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Iterable<?> fieldValue, String start, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -603,7 +603,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs between the provided datetime values
+     * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Object fieldValue, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -634,7 +634,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs between the provided datetime values
+     * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Iterable<?> fieldValue, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -665,7 +665,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param start
      *            : A start date in one of the formats specified above
      *
-     * @returns True if the datetime occurs after the provided datetime value
+     * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Object fieldValue, String start) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -687,7 +687,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param start
      *            : A start date in one of the formats specified above
      *
-     * @returns True if the datetime occurs after the provided datetime value
+     * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Iterable<?> fieldValue, String start) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -714,7 +714,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs after the provided datetime value
+     * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Object fieldValue, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -740,7 +740,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs after the provided datetime value
+     * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Iterable<?> fieldValue, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -772,7 +772,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      *
-     * @returns True if the datetime occurs after the provided datetime value
+     * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Object fieldValue, String pattern, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -805,7 +805,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      *
-     * @returns True if the datetime occurs after the provided datetime value
+     * @return True if the datetime occurs after the provided datetime value
      */
     public static FunctionalSet<ValueTuple> afterDate(Iterable<?> fieldValue, String pattern, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -837,7 +837,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param end
      *            : An end date in one of the formats specified above
      * 
-     * @returns True if the datetime occurs before the provided datetime value
+     * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Object fieldValue, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -859,7 +859,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param end
      *            : An end date in one of the formats specified above
      * 
-     * @returns True if the datetime occurs before the provided datetime value
+     * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Iterable<?> fieldValue, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -886,7 +886,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs before the provided datetime value
+     * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Object fieldValue, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -911,7 +911,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs before the provided datetime value
+     * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Iterable<?> fieldValue, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -942,7 +942,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      *
-     * @returns True if the datetime occurs before the provided datetime value
+     * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Object fieldValue, String pattern, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -974,7 +974,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      *
-     * @returns True if the datetime occurs before the provided datetime value
+     * @return True if the datetime occurs before the provided datetime value
      */
     public static FunctionalSet<ValueTuple> beforeDate(Iterable<?> fieldValue, String pattern, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -1007,7 +1007,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param end
      *            : An end date in one of the formats specified above
      * 
-     * @returns True if the datetime occurs between the provided datetime values
+     * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Object fieldValue, String start, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -1031,7 +1031,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param end
      *            : An end date in one of the formats specified above
      * 
-     * @returns True if the datetime occurs between the provided datetime values
+     * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Iterable<?> fieldValue, String start, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -1064,7 +1064,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs between the provided datetime values
+     * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Object fieldValue, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -1092,7 +1092,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      * 
-     * @returns True if the datetime occurs between the provided datetime values
+     * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Iterable<?> fieldValue, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -1129,7 +1129,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      *
-     * @returns True if the datetime occurs between the provided datetime values
+     * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Object fieldValue, String pattern, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -1160,7 +1160,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param rangePattern
      *            : A date format to be supplied to java.text.SimpleDateFormat
      *
-     * @returns True if the datetime occurs between the provided datetime values
+     * @return True if the datetime occurs between the provided datetime values
      */
     public static FunctionalSet<ValueTuple> betweenDates(Iterable<?> fieldValue, String pattern, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.<ValueTuple> emptySet();
@@ -1366,7 +1366,7 @@ public class EvaluationPhaseFilterFunctions {
     
     /**
      * Given a Calendar constant as returned by getGranularity(format), get the next unit of time determine by incrementing by the specified granularity. For
-     * example getNextUnit(x, DAY) would return x+<ms/day>.
+     * example getNextUnit(x, DAY) would return {@code x+<ms/day>}.
      * 
      * @param granularity
      * @return next date/time in milliseconds
@@ -1397,7 +1397,7 @@ public class EvaluationPhaseFilterFunctions {
     
     /**
      * Given a Calendar constant as returned by getGranularity(format), get the next unit of time determine by incrementing by the specified granularity. For
-     * example getNextUnit(x, DAY) would return x+<ms/day>.
+     * example getNextUnit(x, DAY) would return {@code x+<ms/day>}.
      * 
      * @param value
      *            The value to be parsed

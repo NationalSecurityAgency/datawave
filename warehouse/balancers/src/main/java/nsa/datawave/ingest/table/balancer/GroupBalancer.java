@@ -72,7 +72,7 @@ import java.util.SortedMap;
  * </ul>
  *
  * <p>
- * To use this balancer you must extend it and implement {@link #getPartitioner()}. See {@link RegexGroupBalancer} as an example.
+ * To use this balancer you must extend it and implement {@link #getPartitioner()}.
  */
 
 public abstract class GroupBalancer extends TabletBalancer {

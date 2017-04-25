@@ -121,14 +121,14 @@ import java.util.Set;
  * live ingest), then the combiner and reducers will be run as part of the map process. Beware that potentially more data may be cached in memory when doing
  * mapOnly processing. This will only be an issue if something like the EdgeDataTypeHandler produces an unreasonable number of edges for one event. The general
  * sequence of events is as follows:
- * <p/>
+ * <p>
  * EventSequenceFileInputFormat produces an EventSequenceFileReader to read files of Event objects EventMapper used in map phase which calls processBulk on
  * DataTypeHelper implementations to produce BulkIngestKey,Value pairs BulkIngestDedupeCombiner is invoked from the DedupeContextWriter to primarily dedupe
  * BulkIngestKey,Value pairs if not running a mapOnly job, then the Delegating Partitioner will run, using the Partitioners that are configured for each table
  * or the default Partitioner if none is specified for a table. BulkIngestAggregatingReducer is used as the reducer (or invoked from the
  * AggregatingContextWriter in mapOnly mode) to produce dedupped BulkIngestKey,Value pairs The BulkContextWriter or the LiveContextWriter are at all stages to
  * write data to the context in the appropriate format For bulk ingest the MultiRFileOutputFormatter is then used to format the output which is placed in the
- * &lt;workDir&gt;/mapFiles directory For live ingest the AccumuloOutputFormat is then used to apply the mutations directly to accumulo
+ * {@code <workDir>/mapFiles} directory For live ingest the AccumuloOutputFormat is then used to apply the mutations directly to accumulo
  */
 public class IngestJob extends Configured implements Tool {
     

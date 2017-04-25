@@ -91,8 +91,6 @@ public class DefaultEdgeEventQueryLogic extends RefactoredShardQueryLogic {
     
     /**
      * Loads the query model specified by the current configuration, to be applied to the incoming query.
-     * 
-     * @return
      */
     protected void loadEdgeQueryModel() {
         String model = getEdgeModelName() == null ? "" : getEdgeModelName();

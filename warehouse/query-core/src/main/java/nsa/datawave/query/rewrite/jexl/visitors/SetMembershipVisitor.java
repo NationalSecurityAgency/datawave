@@ -35,7 +35,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 public class SetMembershipVisitor extends BaseVisitor {
     /**
      * A suffix appended to an index-only node's "image" value if found as a child of an ASTFunctionNode. The added suffix causes the field to be temporarily
-     * renamed and specially handled for fetching and evaluation via the {@link IndexOnlyJexlContext}.
+     * renamed and specially handled for fetching and evaluation via the {@link nsa.datawave.query.rewrite.jexl.IndexOnlyJexlContext}.
      * 
      * Note: The logic that originally appended this suffix appeared to have been inadvertently removed from this class (renamed from IndexOnlyVisitor) when the
      * dev branch was merged into version2.x. It has since been reapplied in conjunction with the two internal helper classes.
@@ -53,8 +53,10 @@ public class SetMembershipVisitor extends BaseVisitor {
      * Create a SetMembershopVisitor that will visit the query in search of the specified fields
      * 
      * @param expectedFields
+     * @param config
      * @param metadataHelper
-     * @param datatypeFilter
+     * @param dateIndexHelper
+     * @param fullTraversal
      */
     public SetMembershipVisitor(Set<String> expectedFields, RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper,
                     DateIndexHelper dateIndexHelper, boolean fullTraversal) {
@@ -71,7 +73,7 @@ public class SetMembershipVisitor extends BaseVisitor {
      * 
      * @param expectedFields
      * @param metadataHelper
-     * @param datatypeFilter
+     * @param dateIndexHelper
      * @param tree
      * @return true if the query contains fields that are present in the expectedFields set for the specified datatypes
      */
@@ -86,8 +88,9 @@ public class SetMembershipVisitor extends BaseVisitor {
      * Return a set of field names that are present in the expectedFields set for the specified datatypes.
      * 
      * @param expectedFields
+     * @param config
      * @param metadataHelper
-     * @param datatypeFilter
+     * @param dateIndexHelper
      * @param tree
      * @return a set of field names that are present in the expectedFields set for the specified datatypes
      */
@@ -100,8 +103,9 @@ public class SetMembershipVisitor extends BaseVisitor {
      * Return a set of field names that are present in the expectedFields set for the specified datatypes.
      * 
      * @param expectedFields
+     * @param config
      * @param metadataHelper
-     * @param datatypeFilter
+     * @param dateIndexHelper
      * @param tree
      * @param indexOnlyFieldTaggingEnabled
      *            If true, allow tagging to occur for index-only fields

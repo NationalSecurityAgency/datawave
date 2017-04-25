@@ -660,8 +660,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     
     /**
      * Check if the scan timeout has been reached. Mark as timed out and cancel the query if so.
-     * 
-     * @throws IOException
      */
     protected void checkTiming() {
         if (System.currentTimeMillis() > (startTime + scanTimeout)) {

@@ -220,7 +220,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     /**
      * Gets a connection from the pool with the assigned priority
      *
-     * Deprecated in 2.2.3, use getConnection(String poolName, Priority priority, Map<String, String> trackingMap)
+     * Deprecated in 2.2.3, use getConnection(String poolName, Priority priority, {@code Map<String, String> trackingMap)}
      *
      * @param priority
      *            the connection's Priority

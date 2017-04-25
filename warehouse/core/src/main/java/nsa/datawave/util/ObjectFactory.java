@@ -128,7 +128,7 @@ public class ObjectFactory {
     }
     
     /**
-     * Return primitive for a Primitive wrapper, i.e. int --> Integer
+     * Return primitive for a Primitive wrapper, i.e. int --&gt; Integer
      * 
      * @return the class requested
      */

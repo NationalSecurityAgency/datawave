@@ -45,7 +45,6 @@ import nsa.datawave.ingest.table.config.LoadDateTableConfigHelper;
 import nsa.datawave.ingest.util.BloomFilterUtil;
 import nsa.datawave.ingest.util.BloomFilterWrapper;
 import nsa.datawave.ingest.util.DiskSpaceStarvationStrategy;
-import nsa.datawave.marking.FlattenedVisibilityCache;
 import nsa.datawave.marking.MarkingFunctions;
 import nsa.datawave.util.TextUtil;
 import nsa.datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -56,9 +55,9 @@ import nsa.datawave.webservice.common.logging.ThreadConfigurableLogger;
  * names of these tables need to be specified in the configuration and are checked upon the call to setup().
  * 
  * <p>
- * This class creates the following Mutations or Key/Values: <br />
- * <br />
- * <table border="1">
+ * This class creates the following Mutations or Key/Values: <br>
+ * <br>
+ * <table border="1" summary="">
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>
@@ -103,9 +102,9 @@ import nsa.datawave.webservice.common.logging.ThreadConfigurableLogger;
  * 
  * <p>
  * The table with the name specified by {@link #SHARD_TNAME} will be the shard table. The shard table is partitioned into {@link #NUM_SHARDS} slices of a day.
- * The hash function is <code>(Integer.MAX_VALUE & Event.getUid().toString().hashCode()) % numShards</code>. The ShardId looks like YYYYMMDD_N, where N is the
- * result of the hash function. This approach ends up creating a tablet in Accumulo that contains one row. That row will contain all of the events that for that
- * day and hash value. To find an event that happened on a particular day, all of the tablets for that day have to be queried.
+ * The hash function is {@code (Integer.MAX_VALUE & Event.getUid().toString().hashCode()) % numShards}. The ShardId looks like YYYYMMDD_N, where N is the result
+ * of the hash function. This approach ends up creating a tablet in Accumulo that contains one row. That row will contain all of the events that for that day
+ * and hash value. To find an event that happened on a particular day, all of the tablets for that day have to be queried.
  * 
  * <p>
  * The tables with the name specified by {@link #SHARD_GIDX_TNAME} and {@link #SHARD_GRIDX_TNAME} will be the global index and global reverse index. The column
@@ -114,8 +113,6 @@ import nsa.datawave.webservice.common.logging.ThreadConfigurableLogger;
  * object. It is intended that this object will contain UIDs for events that contain the indexed term when the cardinality is low. The absence of UIDs in the
  * Uid.List object indicates that there are more than {@link nsa.datawave.ingest.table.aggregator.GlobalIndexUidAggregator#MAX} Events of that datatype that
  * contain the indexed term in the shard. This is an optimization that will allow low cardinality terms to be found more quickly.
- * 
- * 
  * 
  * @param <KEYIN>
  */
@@ -377,7 +374,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * 
      * @param context
      * @return the number of shard
-     * @deprected Use the ShardIdFactory
+     * @deprecated Use the ShardIdFactory
      */
     public static int getNumShards(TaskAttemptContext context) {
         return ShardIdFactory.getNumShards(context.getConfiguration());
@@ -388,7 +385,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * 
      * @param event
      * @return Shard id
-     * @deprected Use the ShardIdFactory
+     * @deprecated Use the ShardIdFactory
      */
     public static String getShardId(RawRecordContainer event, int numShards) {
         return ShardIdFactory.getShardId(event, numShards);
@@ -399,7 +396,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * 
      * @param event
      * @return Shard id
-     * @deprected Use the ShardIdFactory
+     * @deprecated Use the ShardIdFactory
      */
     public byte[] getShardId(RawRecordContainer event) {
         return shardIdFactory.getShardIdBytes(event);

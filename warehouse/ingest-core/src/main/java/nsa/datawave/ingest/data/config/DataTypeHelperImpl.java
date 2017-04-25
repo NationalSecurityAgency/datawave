@@ -86,9 +86,7 @@ public class DataTypeHelperImpl implements DataTypeHelper {
      * 
      * @param fieldName
      * @param fieldValue
-     * @param fieldsToDowncase
-     * @return null if the fieldValue is null or empty after <code>trim()/code>
-     *   is applied.
+     * @return null if the fieldValue is null or empty after {@code trim()} is applied.
      */
     
     public String clean(String fieldName, String fieldValue) {

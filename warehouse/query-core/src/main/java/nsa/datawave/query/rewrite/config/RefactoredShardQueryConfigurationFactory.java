@@ -11,7 +11,7 @@ import java.util.Set;
 
 /**
  * Temporary replacement of RefactoredShardQueryConfiguration(RefactoredShardQueryLogic configuredLogic, Query query) constructor to break circular dependency
- * of config & logic.
+ * of config &amp; logic.
  *
  */
 public class RefactoredShardQueryConfigurationFactory {

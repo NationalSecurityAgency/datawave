@@ -1564,7 +1564,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * 
      * @param config
      * @param cfg
-     * @throws QueryException
+     * @throws DatawaveQueryException
      */
     protected void setCommonIteratorOptions(RefactoredShardQueryConfiguration config, IteratorSetting cfg) throws DatawaveQueryException {
         // Applying filtering options, including classnames, whether applied to

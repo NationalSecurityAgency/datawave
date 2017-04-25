@@ -13,7 +13,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 /**
- * This is a SortedKeyValueIterator implementation that simply wraps an underlying Iterator<Map.Entry<Key, Value>>
+ * This is a SortedKeyValueIterator implementation that simply wraps an underlying {@code Iterator<Map.Entry<Key, Value>>}
  * 
  * 
  * 

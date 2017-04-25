@@ -1,20 +1,16 @@
 package nsa.datawave.iterators.filter.ageoff;
 
 import com.google.common.collect.Sets;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import nsa.datawave.iterators.filter.AgeOffConfigParams;
-import nsa.datawave.iterators.filter.AgeOffTtlUnits;
 import nsa.datawave.iterators.filter.ColumnVisibilityOrFilter;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableComparator;
 import org.apache.log4j.Logger;
 
 /**
@@ -25,19 +21,19 @@ import org.apache.log4j.Logger;
  * 
  * any data type TTL will follow the same units specified in ttl units
  * 
- * <p>
- * 
  * <pre>
- * <rules> <rule> 
- *      <filterClass> nsa.datawave.iterators.filter.ageoff.DataTypeAgeOffFilter </filterClass> 
- *      <ttl units="d"> 720 </ttl>
- *      <datatypes>foo,bar</datatypes> 
- *      <bar.ttl>44</bar.ttl> 
- * </rule> </rules>
+ * {@code
  * 
+ * <rules>
+ *     <rule>
+ *         <filterClass>nsa.datawave.iterators.filter.ageoff.DataTypeAgeOffFilter</filterClass>
+ *         <ttl units="d">720</ttl>
+ *         <datatypes>foo,bar</datatypes>
+ *         <bar.ttl>44</bar.ttl>
+ *     </rule>
+ * </rules>
+ * }
  * </pre>
- * 
- * </p>
  */
 public class FieldAgeOffFilter extends AppliedRule {
     

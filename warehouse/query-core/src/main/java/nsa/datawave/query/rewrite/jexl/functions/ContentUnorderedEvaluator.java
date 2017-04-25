@@ -12,13 +12,15 @@ import org.apache.log4j.Logger;
  *
  * <b>Functions</b>
  * <ul>
- * <li>content:within(int, map, term1, term2, ...)</li>
+ * <li>content:within(int, map, term1, term2, ...)
  * <ul>
  * <li>Returns true if the terms occur within the specified distance of each other</li>
  * <li>The distance parameter is the maximum acceptable distance (term offset) between the terms provided</li>
  * <li>For example, for the phrase "the quick brown fox" content:within(2, 'quick', 'brown', 'fox') will return true because the difference in word offsets one
- * and three is less than or equal to two (3 - 1 <= 2). Searching for content:within(1, 'quick', 'brown', 'fox') will fail because it is impossible for three
- * terms to have a minimum distance of two.</li>
+ * and three is less than or equal to two {@code (3 - 1 <= 2)}. Searching for {@code content:within(1, 'quick', 'brown', 'fox')} will fail because it is
+ * impossible for three terms to have a minimum distance of two.</li>
+ * </ul>
+ * </li>
  * </ul>
  * 
  * 

@@ -25,7 +25,7 @@ import org.jboss.security.identity.plugins.SimpleRoleGroup;
  * 
  * <pre>
  * <code>
- *     @Interceptors({ WebsocketSecurityInterceptor.class })
+ *     {@literal @}Interceptors({ WebsocketSecurityInterceptor.class })
  * </code>
  * </pre>
  * 

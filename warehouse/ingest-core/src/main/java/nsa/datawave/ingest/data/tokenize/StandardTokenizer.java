@@ -32,21 +32,19 @@ import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 
 /**
  * A grammar-based Tokenizer constructed with JFlex based on Lucene's {@link org.apache.lucene.analysis.standard.StandardTokenizer StandardTokenizer}
- * <p/>
+ * <p>
  * This Tokenizer allows a max token length to be set via {@link #setMaxTokenLength(int)}. Tokens longer than this length will be dropped. By default this limit
  * is set to 65536 characters.
- * <p/>
- * This Tokenizer allows the user to specify a token truncation length. Tokens longer than this length will be truncated and have the
- * <code>TruncatAttribute<code> set to true. Truncation lengths can be set on 
- * a per token type basis. If truncation length isn't specified for
- * a given type, a fallback to a default truncation length will occur. By
- * default the truncation for FILE, URL or HTTP_REQUEST tokens is 1024 
- * characters, while the default truncation length for all other types is 50.
- * <p/>
- * This Tokenizer will can be condfigured to take special action when the 
- * string <code>METABREAK</code> is encoutnered as a token. If enabled via {@link #setMetaBreakEnabled(boolean)}, an increment of {@link #metaBreakIncrement}
- * will be added for the next token, and the <code>METABREAK</code> token will be dropped. This is in place to allow KEY/VALUE pairs to be indexed as adjacent
- * strings, but provide an effective method for separating multiple KEY/VALUE pairs contained with a text stream to prevent mismatches due to overlap.
+ * <p>
+ * This Tokenizer allows the user to specify a token truncation length. Tokens longer than this length will be truncated and have the {@code TruncatAttribute}
+ * set to true. Truncation lengths can be set on a per token type basis. If truncation length isn't specified for a given type, a fallback to a default
+ * truncation length will occur. By default the truncation for FILE, URL or HTTP_REQUEST tokens is 1024 characters, while the default truncation length for all
+ * other types is 50.
+ * <p>
+ * This Tokenizer will can be condfigured to take special action when the string {@code METABREAK} is encoutnered as a token. If enabled via
+ * {@link #setMetaBreakEnabled(boolean)}, an increment of {@link #metaBreakIncrement} will be added for the next token, and the {@code METABREAK} token will be
+ * dropped. This is in place to allow KEY/VALUE pairs to be indexed as adjacent strings, but provide an effective method for separating multiple KEY/VALUE pairs
+ * contained with a text stream to prevent mismatches due to overlap.
  */
 
 public class StandardTokenizer extends Tokenizer {
@@ -86,7 +84,7 @@ public class StandardTokenizer extends Tokenizer {
     private boolean metaBreakEnabled = false;
     
     /**
-     * Creates a new instance of the {@link org.apache.lucene.analysis.standard.StandardTokenizer}. Attaches the <code>input</code> to the newly created JFlex
+     * Creates a new instance of the {@link org.apache.lucene.analysis.standard.StandardTokenizer}. Attaches the {@code input} to the newly created JFlex
      * scanner.
      *
      * @param input

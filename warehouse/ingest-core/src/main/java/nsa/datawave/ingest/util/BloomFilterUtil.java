@@ -79,8 +79,6 @@ public class BloomFilterUtil {
      * @return The number of generated n-grams
      * @throws TimeoutException
      *             if the tokenization operation takes too long in relation to the overall mapred.task.timeout
-     * @throws IOException
-     *             if a problem occurs tokenizing the field value
      */
     private int applyNgrams(final String fieldName, final Collection<NormalizedContentInterface> ncis, final AbstractNGramTokenizationStrategy strategy)
                     throws TokenizationException {
@@ -133,7 +131,7 @@ public class BloomFilterUtil {
      * of n-grams applied to a generated filter. A value less than or equal to the EMPTY_FILTER_SIZE effectively turns off pruning optimizations based on filter
      * size, which could result in unexpectedly large bloom filters.
      * 
-     * @returns desired filter size, in bytes
+     * @return desired filter size, in bytes
      */
     public int getOptimumFilterSize() {
         return this.optimumFilterSize;

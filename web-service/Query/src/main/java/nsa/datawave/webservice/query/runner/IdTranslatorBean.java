@@ -121,8 +121,7 @@ public class IdTranslatorBean {
      *            (@Required)
      * @param parentAuditId
      *            optional
-     * @return event results
-     * @return nsa.datawave.webservice.result.GenericResponse<String>
+     * @return event results - {@code nsa.datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
@@ -167,8 +166,7 @@ public class IdTranslatorBean {
      *            "13383f57-45dc-4709-934a-363117e7c473,6ea02cb3-644c-4c2e-9739-76322dfb477b"(@Required)
      * @param pagesize
      *            - optional pagesize (default 100)
-     * @return event results
-     * @return nsa.datawave.webservice.result.GenericResponse<String>
+     * @return event results - {@code nsa.datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the

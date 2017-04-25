@@ -315,8 +315,8 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     /**
      * Write the output to the context
      * 
-     * @param tableName
-     * @param mutation
+     * @param key
+     * @param value
      * @param ctx
      * @throws IOException
      * @throws InterruptedException

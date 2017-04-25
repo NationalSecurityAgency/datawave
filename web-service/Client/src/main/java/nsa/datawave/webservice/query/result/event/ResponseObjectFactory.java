@@ -35,8 +35,8 @@ public abstract class ResponseObjectFactory {
     
     /**
      * Get a KeyBase implementation. Note that this is currently used by Entry objects which are used in the LookupResponse. If a specific implementation is
-     * provided here, then a javax.ws.rs.ext.Provider must be created which implements ContextResolver<JAXBContext>. Therein a resolver for a LookupResponse
-     * needs to include the provided implementation within a jaxb context to ensure appropriate serialization.
+     * provided here, then a javax.ws.rs.ext.Provider must be created which implements {@code ContextResolver<JAXBContext>}. Therein a resolver for a
+     * LookupResponse needs to include the provided implementation within a jaxb context to ensure appropriate serialization.
      * 
      * @return
      */

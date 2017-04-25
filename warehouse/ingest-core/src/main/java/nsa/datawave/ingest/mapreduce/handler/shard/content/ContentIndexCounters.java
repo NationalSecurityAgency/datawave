@@ -9,10 +9,10 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 
 /**
  * A convenience wrapper around Hadoop MapReduce counters. Holds a set of "expected" counter names for static access. When a counter increment is submitted,
- * it's stored into a map with the counter name as the key. When a counter increment causes its value to exceed the {@link bufferSize} parameter, the counter is
- * flushed to Hadoop.
+ * it's stored into a map with the counter name as the key. When a counter increment causes its value to exceed the {@link #bufferSize} parameter, the counter
+ * is flushed to Hadoop.
  * 
- * The user *must* call {@link flush(TaskInputOutputContext)} to ensure that all counters are written to the context.
+ * The user *must* call {@link #flush(StatusReporter)} to ensure that all counters are written to the context.
  * 
  * 
  * 
@@ -70,7 +70,7 @@ public class ContentIndexCounters {
      * 
      * @param counterName
      *            The name of the counter to increment
-     * @param context
+     * @param reporter
      *            The current task's context
      */
     public void increment(String counterName, StatusReporter reporter) {
@@ -84,7 +84,7 @@ public class ContentIndexCounters {
      *            The name of the counter's group
      * @param counterName
      *            The name of the counter to increment
-     * @param context
+     * @param reporter
      *            The current task's context
      */
     public void increment(String groupName, String counterName, StatusReporter reporter) {
@@ -114,7 +114,7 @@ public class ContentIndexCounters {
      *            The name of the counter to increment
      * @param value
      *            The amount to increment the counter by
-     * @param context
+     * @param reporter
      *            The current task's context
      */
     public void incrementValue(String counterName, int value, StatusReporter reporter) {
@@ -130,7 +130,7 @@ public class ContentIndexCounters {
      *            The name of the counter to increment
      * @param value
      *            The amount to increment the counter by
-     * @param context
+     * @param reporter
      *            The current task's context
      */
     public void incrementValue(String groupName, String counterName, int value, StatusReporter reporter) {
@@ -174,7 +174,7 @@ public class ContentIndexCounters {
     /**
      * Flushes all counter values to the context and sets the values to zero.
      * 
-     * @param context
+     * @param reporter
      */
     public void flush(StatusReporter reporter) {
         if (reporter != null) {

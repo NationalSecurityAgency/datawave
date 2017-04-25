@@ -229,7 +229,7 @@ public class DateHelper {
      * <li>
      * checks that endDate is not null or throws a NullPointerException</li>
      * <li>
-     * checks that beginDate <= endDate or throws an IllegalArgumentException</li>
+     * checks that beginDate &lt;= endDate or throws an IllegalArgumentException</li>
      * <li>
      * checks that both beginDate and endDate are within the allowable date range for DATAWAVE, which is one millisecond after -0001/12/31 (0001/01/01) and one
      * millisecond before 10000/01/01 (9999/12/31) or throws an IllegalArgumentException otherwise</li>
@@ -240,7 +240,7 @@ public class DateHelper {
      * @throws NullPointerException
      *             if beginDate or endDate is null.
      * @throws IllegalArgumentException
-     *             if beginDate > endDate or either beginDate or endDate are outside the allowable date range for DATAWAVE.
+     *             if beginDate &gt; endDate or either beginDate or endDate are outside the allowable date range for DATAWAVE.
      */
     public static void validateDateRange(Date beginDate, Date endDate) {
         

@@ -14,8 +14,8 @@ import org.apache.commons.jexl2.parser.ParseException;
  * </p>
  * 
  * <p>
- * After instantiating a {@link DataEnricher}, the user must call the {@link #init(SortedKeyValueIterator, Map<String, Object>)} method. This will initialize
- * the {@link DataEnricher} and prepare it to enrich results.
+ * After instantiating a {@link DataEnricher}, the user must call the {@link #init(SortedKeyValueIterator, Map, IteratorEnvironment)} method. This will
+ * initialize the {@link DataEnricher} and prepare it to enrich results.
  * </p>
  * 
  * <p>
@@ -37,8 +37,6 @@ public abstract class DataEnricher {
      *            The configured source on the table
      * @param enricherOptions
      *            An options map to pass in DataEnricher specific values
-     * @param env
-     *            Include iterator environment
      * @throws ParseException
      */
     public abstract void init(SortedKeyValueIterator<Key,Value> source, Map<String,Object> enricherOptions, IteratorEnvironment env) throws ParseException;

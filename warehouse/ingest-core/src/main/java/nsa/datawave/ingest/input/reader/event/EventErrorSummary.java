@@ -279,9 +279,9 @@ public class EventErrorSummary implements Cloneable, JexlContext {
     }
     
     /**
-     * Match the error type against the errors. The errorType is of the form <error>{:<error text>} where the error text portion is optional. If only the error
-     * part exists, then this returns true if the errors contains error as a key. If both the error and the error text exist, then this returns true if the
-     * errors contains error as a key, and one of the values contains the specified error text.
+     * Match the error type against the errors. The errorType is of the form {@code <error> :<error text>} where the error text portion is optional. If only the
+     * error part exists, then this returns true if the errors contains error as a key. If both the error and the error text exist, then this returns true if
+     * the errors contains error as a key, and one of the values contains the specified error text.
      * 
      * @param errorType
      * @return true if matches

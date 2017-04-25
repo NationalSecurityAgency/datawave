@@ -93,14 +93,11 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
 /**
+ * <h1>Overview</h1> QueryTable implementation that works with the JEXL grammar. This QueryTable uses the DATAWAVE metadata, global index, and sharded event
+ * table to return results based on the query. The runServerQuery method is the main method that is called from the web service, and it contains the logic used
+ * to run the queries against ACCUMULO. Example queries:
+ *
  * <pre>
- * <h2>Overview</h2>
- * QueryTable implementation that works with the JEXL grammar. This QueryTable
- * uses the DATAWAVE metadata, global index, and sharded event table to return
- * results based on the query. The runServerQuery method is the main method
- * that is called from the web service, and it contains the logic used to
- * run the queries against ACCUMULO. Example queries:
- * 
  *  <b>Single Term Query</b>
  *  'foo' - looks in global index for foo, and if any entries are found, then the query
  *          is rewritten to be field1 == 'foo' or field2 == 'foo', etc. This is then passed
@@ -112,28 +109,31 @@ import com.google.common.util.concurrent.MoreExecutors;
  *                   the query is parsed and the set of eventFields in the query that are indexed is determined by
  *                   querying the metadata table. Depending on the conjunctions in the query (or, and, not) and the
  *                   eventFields that are indexed, the query may be sent down the optimized path or the full scan path.
+ * </pre>
+ *
+ * We are not supporting all of the operators that JEXL supports at this time. We are supporting the following operators:
  * 
- *  We are not supporting all of the operators that JEXL supports at this time. We are supporting the following operators:
- * 
+ * <pre>
  *  ==, !=, &gt;, &ge;, &lt;, &le;, =~, !~, and the reserved word 'null'
+ * </pre>
+ *
+ * Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction with other supported operators.
+ * A sample function has been created, called between, and is bound to the 'f' namespace. An example using this function is : "f:between(LATITUDE,60.0, 70.0)"
  * 
- *  Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction
- *  with other supported operators. A sample function has been created, called between, and is bound to the 'f' namespace. An
- *  example using this function is : "f:between(LATITUDE,60.0, 70.0)"
+ * <h1>Constraints on Query Structure</h1> Queries that are sent to this class need to be formatted such that there is a space on either side of the operator.
+ * We are rewriting the query in some cases and the current implementation is expecting a space on either side of the operator.
  * 
- *  <h2>Constraints on Query Structure</h2>
- *  Queries that are sent to this class need to be formatted such that there is a space on either side of the operator. We are
- *  rewriting the query in some cases and the current implementation is expecting a space on either side of the operator.
- * 
- *  <h2>Notes on Optimization</h2>
- *  Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
- * 
+ * <h1>Notes on Optimization</h1> Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
+ *
+ * <pre>
  *  1. An 'or' conjunction exists in the query but not all of the terms are indexed.
  *  2. No indexed terms exist in the query
  *  3. An unsupported operator exists in the query
- * 
- *  <h2>Notes on Features</h2>
- * 
+ * </pre>
+ *
+ * <h1>Notes on Features</h1>
+ *
+ * <pre>
  *  1. If there is no type specified for a field in the metadata table, then it defaults to using the NoOpType. The default
  *     can be overriden by calling setDefaultType()
  *  2. We support fields that are indexed, but not in the event. An example of this is for text documents, where the text is tokenized
@@ -145,11 +145,11 @@ import com.google.common.util.concurrent.MoreExecutors;
  *     can be modified. The key *cannot* be modified through this interface (as it could break the sorted order). Enriching must be enabled
  *     by setting {@link #useEnrichers} to true and providing a list of {@link nsa.datawave.query.enrich.DataEnricher} class names in
  *     {@link #enricherClassNames}.
- *  5. A list of {@link nsa.datawave.query.filter.DataFilter}s can be specified to remove found Events before they are returned to the user.
+ *  5. A list of {@link nsa.datawave.query.index.lookup.DataTypeFilter}s can be specified to remove found Events before they are returned to the user.
  *     These data filters can return a true/false value on whether the Event should be returned to the user or discarded. Additionally,
- *     the filter can return a Map<String, Object> that can be passed into a JexlContext (provides the necessary information for Jexl to
+ *     the filter can return a {@code Map<String, Object>} that can be passed into a JexlContext (provides the necessary information for Jexl to
  *     evaluate an Event based on information not already present in the Event or information that doesn't need to be returned with the Event.
- *     Filtering must be enabled by setting {@link #useFilters} to true and providing a list of {@link nsa.datawave.query.filter.DataFilter} class
+ *     Filtering must be enabled by setting {@link #useFilters} to true and providing a list of {@link nsa.datawave.query.index.lookup.DataTypeFilter} class
  *     names in {@link #filterClassNames}.
  *  6. The query limits the results (default: 5000) using the setMaxResults method. In addition, "max.results.override" can be passed to the
  *     query as part of the Parameters object which allows query specific limits (but will not be more than set default)
@@ -158,7 +158,6 @@ import com.google.common.util.concurrent.MoreExecutors;
  * </pre>
  * 
  * @see nsa.datawave.query.enrich
- * @see nsa.datawave.query.filter
  */
 public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     

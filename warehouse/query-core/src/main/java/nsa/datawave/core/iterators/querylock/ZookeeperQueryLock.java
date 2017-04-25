@@ -20,9 +20,9 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**
- * Created on 2/6/17. This query lock will create a /query/<queryid> file upon query start, and will remove it upon query stop. The query is considered running
- * if the file exists, or if we cannot contact zookeeper at the time. A client cleanup interval can be passed in which will automatically release the zookeeper
- * client after the specified interval of non-use.
+ * Created on 2/6/17. This query lock will create a {@code /query/<queryid>} file upon query start, and will remove it upon query stop. The query is considered
+ * running if the file exists, or if we cannot contact zookeeper at the time. A client cleanup interval can be passed in which will automatically release the
+ * zookeeper client after the specified interval of non-use.
  */
 public class ZookeeperQueryLock implements QueryLock {
     private static Logger log = Logger.getLogger(ZookeeperQueryLock.class);

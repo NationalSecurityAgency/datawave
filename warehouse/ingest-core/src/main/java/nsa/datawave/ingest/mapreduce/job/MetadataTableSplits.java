@@ -274,7 +274,6 @@ public class MetadataTableSplits {
      * 
      * @param in
      *            an input stream containing the split points to read
-     * @return a map of table name to split points
      * @throws IOException
      */
     private void readCache(BufferedReader in) throws IOException {

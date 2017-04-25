@@ -124,18 +124,19 @@ public class EdgeValueHelper {
     
     /**
      * Creates a Variable length encoded byte array of longs where the elements have the following meaning:
-     * <p/>
+     * <p>
      * 
      * <pre>
-     * 		0   < 10 sec
+     * 		0   &lt; 10 sec
      * 		1   10-30 sec
      * 		2   30-60 sec
      * 		3   1-5 min
      * 		4   5-10 min
      * 		5   10-30 min
-     * 		6   > 30 min
+     * 		6   &gt; 30 min
      * </pre>
-     * <p/>
+     * 
+     * <p>
      * The element at index N will be set if the duration matches the values above, otherwise it will be zero. The element will be set to 1 if deleteRecord is
      * false, else -1.
      * 
@@ -171,13 +172,13 @@ public class EdgeValueHelper {
     }
     
     /**
-     * Initializes a List<Long> of length len. Sets all elements to zero, except the element at index gets the value -1 if delete is true or 1 if delete is
-     * false.
+     * Initializes a List&lt;Long&gt; of length len. Sets all elements to zero, except the element at index gets the value -1 if delete is true or 1 if delete
+     * is false.
      * 
      * @param len
      * @param index
      * @param delete
-     * @return List<Long> of length len.
+     * @return List&lt;Long&gt; of length len.
      */
     public static List<Long> initUnitList(int len, int index, boolean delete) {
         List<Long> longList = new ArrayList<>(len);

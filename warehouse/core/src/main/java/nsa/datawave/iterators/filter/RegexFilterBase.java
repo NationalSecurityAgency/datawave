@@ -102,7 +102,7 @@ public abstract class RegexFilterBase extends AppliedRule {
      * 
      * @param options
      *            {@code Map} object containing the TTL, TTL_UNITS, and MATCHPATTERN for the filter rule.
-     * @see nsa.datawave.iterator.filter.AgeOffConfigParams
+     * @see nsa.datawave.iterators.filter.AgeOffConfigParams
      */
     @Override
     public void init(FilterOptions options) {

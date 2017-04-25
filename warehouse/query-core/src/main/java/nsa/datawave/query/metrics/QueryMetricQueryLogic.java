@@ -17,27 +17,30 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
 /**
- * Extension to the query logic that enforces the current user is equal to the USER field in the QueryMetrics <br />
+ * Extension to the query logic that enforces the current user is equal to the USER field in the QueryMetrics <br>
  * <p>
- * QLF.xml entry: <br />
+ * QLF.xml entry: <br>
  * 
  * <pre>
- *  &lt;bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="nsa.datawave.query.metrics.QueryMetricsQueryLogic"&gt;
- *      &lt;property name="logicDescription" value="Query Metrics query for users" /&gt;
- *      &lt;property name="includeHierarchyFields" value="false" /&gt;
- *      &lt;property name="modelTableName" value="QueryMetrics_m" /&gt;
- *      &lt;property name="modelName" value="NONE" /&gt;
- *      &lt;property name="tableName" value="QueryMetrics_e" /&gt;
- *      &lt;property name="metadataTableName" value="QueryMetrics_m" /&gt;
- *      &lt;property name="indexTableName" value="QueryMetrics_i" /&gt;
- *      &lt;property name="reverseIndexTableName" value="QueryMetrics_r" /&gt;
- *      &lt;property name="maxValueExpansionThreshold" value="1500" /&gt;
- *      &lt;property name="auditType" value="NONE" /&gt;
- *      &lt;property name="collectQueryMetrics" value="false" /&gt;
- *  &lt;/bean&gt;
+ * {@code
+ * 
+ *  <bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="nsa.datawave.query.metrics.QueryMetricsQueryLogic">
+ *      <property name="logicDescription" value="Query Metrics query for users" />
+ *      <property name="includeHierarchyFields" value="false" />
+ *      <property name="modelTableName" value="QueryMetrics_m" />
+ *      <property name="modelName" value="NONE" />
+ *      <property name="tableName" value="QueryMetrics_e" />
+ *      <property name="metadataTableName" value="QueryMetrics_m" />
+ *      <property name="indexTableName" value="QueryMetrics_i" />
+ *      <property name="reverseIndexTableName" value="QueryMetrics_r" />
+ *      <property name="maxValueExpansionThreshold" value="1500" />
+ *      <property name="auditType" value="NONE" />
+ *      <property name="collectQueryMetrics" value="false" />
+ *  </bean>
+ * }
  * </pre>
  * 
- * <br />
+ * <br>
  */
 public class QueryMetricQueryLogic extends RefactoredShardQueryLogic {
     

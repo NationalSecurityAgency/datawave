@@ -12,15 +12,17 @@ import org.apache.log4j.Logger;
  *
  * <b>Functions</b>
  * <ul>
- * <li>content:phrase(map, term1, term2, ...)</li>
+ * <li>content:phrase(map, term1, term2, ...)
  * <ul>
  * <li>Only matches true on documents that contain the terms adjacent to each other in the order provided. Synonyms at the same position are considered
  * adjacent.</li>
  * </ul>
- * <li>content:phrase(zone, map, term1, term2, ...)</li>
+ * </li>
+ * <li>content:phrase(zone, map, term1, term2, ...)
  * <ul>
  * <li>Same as content:phrase() but with a zone specified</li>
  * </ul>
+ * </li>
  * </ul>
  *
  * 
@@ -262,10 +264,6 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
     /**
      * @param offsets
      *            list of offsets to search
-     * @param fromOffset
-     *            minimum allowed starting offset
-     * @param toOffset
-     *            maximum allowed ending offset
      * @return an int[]
      */
     /*
