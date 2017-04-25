@@ -17,14 +17,6 @@ public interface AccumuloConnectionFactory {
     }
     
     /**
-     * Deprecated in 2.2.3, use getConnectionUserName(String poolName)
-     *
-     * @return name of the user used in the connection pools
-     */
-    @Deprecated
-    public String getConnectionUserName();
-    
-    /**
      * @param poolName
      *            the name of the pool to query
      * @return name of the user used in the connection pools

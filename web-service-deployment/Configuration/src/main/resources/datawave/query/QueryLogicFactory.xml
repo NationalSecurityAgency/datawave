@@ -617,12 +617,12 @@
     <bean id="edgeEventQueryModel" class="nsa.datawave.query.model.edge.EdgeQueryModel" factory-method="loadModel">
         <constructor-arg value="/DATAWAVE_EDGE.xml" />
     </bean>
-    
+
     <bean id="EdgeEventQuery" scope="prototype"  parent="BaseEventQuery" class="nsa.datawave.query.tables.edge.DefaultEdgeEventQueryLogic">
         <property name="logicDescription" value="Use results of an EdgeQuery to obtain events that created the edge." />
         <property name="edgeQueryModel" ref="edgeEventQueryModel" />
         <property name="edgeModelName" value="DATAWAVE_EDGE" />
         <property name="modelTableName" value="DatawaveMetadata" />
     </bean>
-    
+
 </beans>

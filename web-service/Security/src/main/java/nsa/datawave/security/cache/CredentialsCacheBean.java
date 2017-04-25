@@ -197,23 +197,6 @@ public class CredentialsCacheBean {
     }
     
     /**
-     * Removes all cached authorization service responses. It does not clear the cache containing principals, which are calculated based on the authorization
-     * service responses.
-     *
-     * @return a string indicating cache flush was successful
-     * @deprecated This method can cause inconsistencies in the cache. It has been re-implemented to be the same as flushAll, and will be removed from the web
-     *             API soon.
-     */
-    
-    @GET
-    @Path("/flushAuthorizationResponses")
-    @JmxManaged
-    @Deprecated
-    public String flushAuthorizationResponseCache() {
-        return "this method doesn't do anything anymore";
-    }
-    
-    /**
      * Evicts {@code dn} from the principals cache. Any authorization services responses containing the DN are also flushed.
      *
      * @param dn

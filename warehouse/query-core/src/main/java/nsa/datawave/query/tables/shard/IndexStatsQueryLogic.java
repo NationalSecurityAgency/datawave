@@ -1,28 +1,12 @@
 package nsa.datawave.query.tables.shard;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import nsa.datawave.core.iterators.EvaluatingIterator;
 import nsa.datawave.core.iterators.filter.CsvKeyFilter;
 import nsa.datawave.query.QueryParameters;
-import nsa.datawave.query.config.GenericShardQueryConfiguration;
-import nsa.datawave.query.config.ShardQueryConfiguration;
 import nsa.datawave.query.index.stats.IndexStatsRecord;
 import nsa.datawave.query.index.stats.IndexStatsSummingIterator;
 import nsa.datawave.query.index.stats.MinMaxIterator;
+import nsa.datawave.query.rewrite.Constants;
+import nsa.datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
 import nsa.datawave.security.util.ScannerHelper;
 import nsa.datawave.util.time.DateHelper;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -34,18 +18,20 @@ import nsa.datawave.webservice.query.logic.QueryLogicTransformer;
 import nsa.datawave.webservice.query.result.istat.FieldStat;
 import nsa.datawave.webservice.query.result.istat.IndexStatsResponse;
 import nsa.datawave.webservice.result.BaseQueryResponse;
-
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.*;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
 
 public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
     private static final Logger log = Logger.getLogger(IndexStatsQueryLogic.class);
@@ -83,12 +69,11 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
         };
     }
     
-    // I don't actually acr
     @Override
     public GenericQueryConfiguration initialize(Connector connector, Query query, Set<Authorizations> auths) throws Exception {
         this.connector = connector;
         
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        RefactoredShardQueryConfiguration config = new RefactoredShardQueryConfiguration();
         
         // Get the datatype set if specified
         String typeList = query.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue();
@@ -96,7 +81,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
         
         if (null != typeList && 0 != typeList.length()) {
             typeFilter = new HashSet<>();
-            typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, GenericShardQueryConfiguration.PARAM_VALUE_SEP)));
+            typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
             
             if (!typeFilter.isEmpty()) {
                 config.setDatatypeFilter(typeFilter);
@@ -117,7 +102,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
     
     @Override
     public void setupQuery(GenericQueryConfiguration config) throws Exception {
-        ShardQueryConfiguration qConf = (ShardQueryConfiguration) config;
+        RefactoredShardQueryConfiguration qConf = (RefactoredShardQueryConfiguration) config;
         
         HashSet<String> fields = new HashSet<>();
         Collections.addAll(fields, config.getQueryString().split(" "));
@@ -238,7 +223,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
         public SortedSet<Range> buildRanges(Collection<String> fields) {
             TreeSet<Range> ranges = new TreeSet<>();
             for (String field : fields) {
-                ranges.add(new Range(field, field + EvaluatingIterator.NULL_BYTE_STRING));
+                ranges.add(new Range(field, field + Constants.NULL_BYTE_STRING));
             }
             return ranges;
         }

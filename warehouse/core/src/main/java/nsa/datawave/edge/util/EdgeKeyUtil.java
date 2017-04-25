@@ -14,7 +14,7 @@ import java.util.*;
  * Utility class for generating regular expressions to scan various formats of the edge table.
  */
 public class EdgeKeyUtil {
-    private static final String edgeTypePrefix = "(?:^|STATS/[^/]+/)";
+    protected static final String edgeTypePrefix = "(?:^|STATS/[^/]+/)";
     
     public static Set<String> normalizeSource(String source, List<? extends Type<?>> dataTypes, boolean protobuffEdgeFormat) {
         Set<String> normalized = new HashSet<>();
@@ -218,96 +218,5 @@ public class EdgeKeyUtil {
     public static PartialKey getSeekToNextKey() {
         PartialKey part = PartialKey.ROW_COLFAM;
         return part;
-    }
-    
-    /**
-     *
-     * @param fieldName
-     * @param fieldValue
-     * @param protobufEdgeFormat
-     * @return
-     */
-    @Deprecated
-    public static String getCFRegexForEQNode(String fieldName, String fieldValue, boolean protobufEdgeFormat) {
-        StringBuilder regex = new StringBuilder();
-        
-        if (FieldKey.EDGE_TYPE == FieldKey.parse(fieldName)) {
-            regex.append(edgeTypePrefix).append(fieldValue.toUpperCase()).append("/.*");
-        } else {
-            regex.append(edgeTypePrefix + ".+/" + fieldValue.toUpperCase());
-            if (!protobufEdgeFormat) {
-                regex.append("/.*");
-            }
-        }
-        
-        return regex.toString();
-    }
-    
-    @Deprecated
-    public static String getEdgeRowRegex(String source, String sink) {
-        String str = source + ".*\0" + sink + "$";
-        
-        return str;
-    }
-    
-    @Deprecated
-    public static String getEdgeRowRegex(String sourcePattern) {
-        String str = "";
-        
-        return str;
-    }
-    
-    @Deprecated
-    public static String getProtobufEdgeColumnFamilyRegex(String edgeType, String edgeRelationship) {
-        String columnFamily = "";
-        
-        if (edgeType != null) {
-            columnFamily += edgeTypePrefix + edgeType + "/";
-            if (edgeRelationship != null) {
-                columnFamily += edgeRelationship;
-            } else {
-                columnFamily += ".*";
-            }
-        } else if (edgeRelationship != null) {
-            columnFamily += edgeTypePrefix + ".+/" + edgeRelationship;
-        }
-        
-        return columnFamily;
-    }
-    
-    @Deprecated
-    public static String getColumnQualifierRegexForProtobuf(String edgeAttribute1) {
-        return "[0-9]+/" + edgeAttribute1 + "/.*";
-    }
-    
-    /**
-     * Get Column family Regex string for an or node.
-     *
-     * @param lFieldName
-     *            - Left child field name
-     * @param lFieldValue
-     *            - Left child field value
-     * @param rFieldName
-     *            - Right child field name
-     * @param rFieldValue
-     *            - Right child field value
-     * @param protobufEdgeFormat
-     *            - Are we querying protobufEdge?
-     * @return
-     */
-    @Deprecated
-    public static String getCFRegexForAndNode(String lFieldName, String lFieldValue, String rFieldName, String rFieldValue, boolean protobufEdgeFormat) {
-        StringBuilder regex = new StringBuilder();
-        
-        String edgeType = (FieldKey.EDGE_TYPE == FieldKey.parse(lFieldName)) ? lFieldValue : rFieldValue;
-        String edgeRelationship = (FieldKey.EDGE_RELATIONSHIP == FieldKey.parse(lFieldName)) ? lFieldValue : rFieldValue;
-        
-        regex.append(edgeTypePrefix).append(edgeType.toUpperCase()).append('/').append(edgeRelationship.toUpperCase());
-        
-        if (!protobufEdgeFormat) {
-            regex.append("/.*");
-        }
-        
-        return regex.toString();
     }
 }

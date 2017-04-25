@@ -1,5 +1,6 @@
 package nsa.datawave.edge.util;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import nsa.datawave.edge.protobuf.EdgeData;
 import nsa.datawave.edge.util.EdgeKey.EDGE_FORMAT;
 import nsa.datawave.edge.util.EdgeKey.EdgeKeyBuilder;
@@ -26,7 +27,6 @@ public class EdgeValueHelperTest {
     private Value activityValue;
     private Value durationValue;
     
-    private List<Long> count = new ArrayList<>();
     private List<Long> activity = new ArrayList<>();
     private List<Long> duration = new ArrayList<>();
     
@@ -39,8 +39,11 @@ public class EdgeValueHelperTest {
                         .setAttribute3("ATTRIBUTE3").setColvis(new Text("ALL")).setTimestamp(1234l).setDeleted(false);
         standardKey = builder.build().encode();
         // create 3 reference Values
-        count.add(814l);
-        standardValue = EdgeValueHelper.encodeValue(standardKey, count);
+        EdgeValue.EdgeValueBuilder valueBuilder = EdgeValue.newBuilder();
+        valueBuilder.setCount(814l);
+        EdgeValue edgeValue = valueBuilder.build();
+        standardValue = edgeValue.encode();
+        
         activity.add(1l);
         activity.add(2l);
         activity.add(3l);
@@ -78,19 +81,29 @@ public class EdgeValueHelperTest {
     
     @After
     public void tearDown() throws Exception {
-        count.clear();
         activity.clear();
         duration.clear();
     }
     
     @Test
     public void testDecodeValueKeyValue() {
-        List<Long> countList = EdgeValueHelper.decodeValue(standardKey, standardValue);
+        Long count = null;
+        try {
+            count = EdgeValue.decode(standardValue).getCount();
+        } catch (InvalidProtocolBufferException e) {
+            fail("Deserialization to EdgeValue failed");
+        }
+        
+        EdgeKey edgeKey = EdgeKey.decode(standardKey);
+        
         List<Long> activityList = EdgeValueHelper.decodeActivityHistogram(activityValue);
         List<Long> durationList = EdgeValueHelper.decodeDurationHistogram(durationValue);
         
-        assertTrue(countList.size() == 1);
-        assertTrue(countList.get(0) == 814l);
+        assertTrue(count == 814l);
+        
+        assertTrue(edgeKey.getSourceRelationship().equals("SOURCEREL"));
+        assertTrue(edgeKey.getSinkRelationship().equals("SINKREL"));
+        assertTrue(edgeKey.getType().equals("TYPE"));
         
         assertTrue(activityList.size() == 24);
         for (int ii = 0; ii < activityList.size(); ii++) {

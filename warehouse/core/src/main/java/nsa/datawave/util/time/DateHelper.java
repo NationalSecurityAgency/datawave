@@ -36,8 +36,6 @@ public class DateHelper {
     
     public static final String DATE_FORMAT_STRING_TO_SECONDS = "yyyyMMddHHmmss";
     private static final DateTimeFormatter DTF_Seconds = DateTimeFormat.forPattern(DATE_FORMAT_STRING_TO_SECONDS);
-    private static final DateTimeFormatter DTF_Seconds_GMT = DateTimeFormat.forPattern(DATE_FORMAT_STRING_TO_SECONDS).withZone(
-                    DateTimeZone.forTimeZone(TimeZone.getTimeZone("GMT")));
     
     public static final String DATE_FORMAT_STRING_8601 = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     private static final DateTimeFormatter DTF_8601 = DateTimeFormat.forPattern(DATE_FORMAT_STRING_8601).withZone(DateTimeZone.UTC);
@@ -91,7 +89,7 @@ public class DateHelper {
      * Return a string representing the given time (in millis) in yyyyMMddhh format in a consistent way not dependent on local settings for calendar, timezone,
      * or locale by using Zulu timezone and US locale.
      * 
-     * @param inMillis
+     * @param date
      * @return the formatted date
      */
     public static String formatToHour(Date date) {
@@ -129,18 +127,6 @@ public class DateHelper {
      */
     public static String formatToTimeExactToSeconds(Date date) {
         return DTF_Seconds.print(date.getTime());
-    }
-    
-    /**
-     * Return a string representing the given GMT date in yyyyMMddHHmmss format in a consistent way not dependent on local settings for calendar, timezone, or
-     * locale by using Zulu timezone and US locale.
-     * 
-     * @param date
-     * @return the formatted date
-     * @deprecated
-     */
-    public static String formatToTimeExactToSecondsWithGMT(Date date) {
-        return DTF_Seconds_GMT.print(date.getTime());
     }
     
     /**
@@ -203,18 +189,6 @@ public class DateHelper {
      */
     public static Date parseWithGMT(String date) {
         return lenientParseHelper(date, DTF_day_GMT, DATE_FORMAT_STRING_TO_DAY);
-    }
-    
-    /**
-     * Converts a String in yyyyMMddHHmmss format to a GMT Date object in a consistent way not dependent on local settings for calendar, timezone, or locale by
-     * using Zulu timezone and US locale.
-     * 
-     * @param date
-     * @return the {@code Date} object
-     * @deprecated
-     */
-    public static Date parseTimeExactToSecondsWithGMT(String date) {
-        return lenientParseHelper(date, DTF_Seconds_GMT, DATE_FORMAT_STRING_TO_SECONDS);
     }
     
     /**

@@ -18,7 +18,6 @@ import nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic;
 import nsa.datawave.query.rewrite.tables.RefactoredTLDQueryLogic;
 import nsa.datawave.query.rewrite.tables.facets.FacetedQueryLogic;
 import nsa.datawave.query.tables.shard.FieldIndexCountQueryLogic;
-import nsa.datawave.query.tables.shard.IndexStatsQueryLogic;
 import nsa.datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import nsa.datawave.query.util.DateIndexHelperFactory;
 import nsa.datawave.security.authorization.BasePrincipalFactoryConfiguration;
@@ -76,11 +75,11 @@ public class LowSideWiredQueryExecutorBeanTest {
                         .addClasses(DefaultResponseObjectFactory.class, BasePrincipalFactoryConfiguration.class, QueryExpirationConfiguration.class,
                                         FacetedQueryPlanner.class, FacetedQueryLogic.class, DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class,
                                         RefactoredShardQueryLogic.class, RefactoredCountingShardQueryLogic.class, EventQueryDataDecoratorTransformer.class,
-                                        FieldIndexCountQueryLogic.class, CompositeQueryLogic.class, IndexStatsQueryLogic.class, QueryMetricQueryLogic.class,
-                                        RefactoredTLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
-                                        QueryLogicFactoryImpl.class, NoOpQueryMetricHandler.class, DatawaveRoleManager.class, EasyRoleManager.class,
-                                        CachedResultsConfiguration.class, LookupBeanConfiguration.class, DateIndexHelperFactory.class,
-                                        DefaultDatawaveEdgeDictionaryImpl.class).addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+                                        FieldIndexCountQueryLogic.class, CompositeQueryLogic.class, QueryMetricQueryLogic.class, RefactoredTLDQueryLogic.class,
+                                        ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class, QueryLogicFactoryImpl.class,
+                                        NoOpQueryMetricHandler.class, DatawaveRoleManager.class, EasyRoleManager.class, CachedResultsConfiguration.class,
+                                        LookupBeanConfiguration.class, DateIndexHelperFactory.class, DefaultDatawaveEdgeDictionaryImpl.class)
+                        .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
     
     @Test

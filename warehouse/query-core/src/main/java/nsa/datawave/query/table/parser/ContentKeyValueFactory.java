@@ -5,8 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
-import nsa.datawave.core.iterators.EvaluatingIterator;
 import nsa.datawave.marking.MarkingFunctions;
+import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
 import nsa.datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
@@ -30,7 +30,7 @@ public class ContentKeyValueFactory {
         
         c.setShardId(key.getRow().toString());
         
-        String[] field = StringUtils.split(key.getColumnQualifier().toString(), EvaluatingIterator.NULL_BYTE_STRING);
+        String[] field = StringUtils.split(key.getColumnQualifier().toString(), Constants.NULL_BYTE_STRING);
         if (field.length > 0)
             c.setDatatype(field[0]);
         if (field.length > 1)

@@ -40,24 +40,6 @@ public abstract class DataEnricher {
      * @param env
      *            Include iterator environment
      * @throws ParseException
-     * @deprecated
-     */
-    public void init(SortedKeyValueIterator<Key,Value> source, Map<String,Object> enricherOptions) throws ParseException {
-        init(source, enricherOptions, null);
-    }
-    
-    /**
-     * Initializes the DataEnricher. The options map allows DataEnrichers to pass in unique values through a generic interface. The source must be configured
-     * directly onto the underlying tablet. In other words, the source cannot have another custom iterator in between itself and the first configured iterator
-     * on the table. The enricher must have full free to seek anywhere inside of the current tablet.
-     * 
-     * @param source
-     *            The configured source on the table
-     * @param enricherOptions
-     *            An options map to pass in DataEnricher specific values
-     * @param env
-     *            Include iterator environment
-     * @throws ParseException
      */
     public abstract void init(SortedKeyValueIterator<Key,Value> source, Map<String,Object> enricherOptions, IteratorEnvironment env) throws ParseException;
     

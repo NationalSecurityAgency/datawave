@@ -27,8 +27,6 @@ import org.apache.hadoop.io.Writable;
 
 import com.google.common.base.Preconditions;
 
-//TODO LegacyBaseQueryLogicTransformer is in Query, but it extends AbstractQueryLogicTransformer in query-core
-// maybe we can change this extension for the time being until the module dependency chain gets figured out.
 public class DiscoveryTransformer extends BaseQueryLogicTransformer implements CacheableLogic {
     private List<String> variableFieldList = null;
     private BaseQueryLogic<DiscoveredThing> logic = null;

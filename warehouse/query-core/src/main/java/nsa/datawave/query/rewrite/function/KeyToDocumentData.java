@@ -214,22 +214,6 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                         cv.length(), key.getTimestamp());
     }
     
-    @Deprecated
-    public static List<Entry<Key,Value>> appendHierarchyFieldsForDocumentKey(List<Entry<Key,Value>> documentAttributes, Key key,
-                    SortedKeyValueIterator<Key,Value> source, Range seekRange, boolean includeChildCount, boolean includeParent) throws IOException {
-        // Initialize a count function
-        final DescendantCountFunction function;
-        if (includeChildCount) {
-            function = new DescendantCountFunction();
-            function.init(source, null, null);
-        } else {
-            function = null;
-        }
-        
-        // Append hierarchy
-        return appendHierarchyFields(documentAttributes, key, source, seekRange, function, includeParent);
-    }
-    
     private static List<Entry<Key,Value>> appendHierarchyFields(List<Entry<Key,Value>> documentAttributes, Key key, SortedKeyValueIterator<Key,Value> source,
                     Range seekRange, DescendantCountFunction function, boolean includeParent) throws IOException {
         if ((null != function) || includeParent) {
@@ -328,31 +312,6 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         }
         
         return basicChildCount;
-    }
-    
-    /**
-     * Get the child count for a document.
-     * 
-     * @param row
-     * @param dataType
-     * @param uid
-     * @return
-     * @deprecated Replaced by the {@link DescendantCountFunction}
-     * @throws IOException
-     */
-    @Deprecated
-    protected static int getChildCount(SortedKeyValueIterator<Key,Value> source, Range seekRange, Text row, String dataType, UID uid) throws IOException {
-        final DescendantCountFunction function = new DescendantCountFunction();
-        function.init(source, null, null);
-        
-        final Key key;
-        if ((null != row) && (null != dataType) && (null != uid)) {
-            key = new Key(row, new Text(dataType + '\0' + uid));
-        } else {
-            key = null;
-        }
-        
-        return applyDescendantCounts(function, seekRange, key, null, null, -1);
     }
     
     /**

@@ -203,51 +203,6 @@ public class ModelBean {
     }
     
     /**
-     * <strong>Administrator credentials required.</strong> Update a model; equivalent to /{name} DELETE followed by /import
-     *
-     * Deprecated in DATAWAVE 3.0 because the update will not work when the metadata table is cached as you have to wait to call this method until the cached
-     * table has been reloaded (which could be a couple of minutes). Instead use DELETE, wait for the cached table to reload, then call /import
-     *
-     * @param name
-     *            model name being loaded
-     * @param model
-     *            the model being loaded (the model name therein must match the name parameter)
-     * @param modelTableName
-     *            name of the table that contains the model
-     * @return nsa.datawave.webservice.result.VoidResponse
-     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
-     * @HTTP 200 success
-     * @HTTP 412 if model does not already exists with this name or the path name does not equate to the model name being loaded
-     * @HTTP 500 internal server error
-     */
-    @PUT
-    @Consumes({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
-    @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
-            "application/x-protostuff"})
-    @Path("/{name}")
-    @GZIP
-    @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @Interceptors(ResponseInterceptor.class)
-    @Deprecated
-    public VoidResponse updateModel(@Required("name") @PathParam("name") String name, nsa.datawave.webservice.model.Model model,
-                    @QueryParam("modelTableName") @DefaultValue("DatawaveMetadata") String modelTableName) {
-        if (log.isDebugEnabled()) {
-            log.debug("modelTableName: " + (null == modelTableName ? "" : modelTableName));
-        }
-        VoidResponse response = new VoidResponse();
-        
-        if (!name.equals(model.getName())) {
-            throw new PreConditionFailedException(null, response);
-        }
-        
-        deleteModel(model.getName(), modelTableName, false);
-        importModel(model, modelTableName);
-        
-        return response;
-    }
-    
-    /**
      * <strong>Administrator credentials required.</strong> Delete a model with the supplied name
      *
      * @param name
@@ -458,39 +413,6 @@ public class ModelBean {
             }
         }
         cache.reloadCache(tableName);
-        return response;
-    }
-    
-    /**
-     * <strong>Administrator credentials required.</strong> Update the field mappings in an existing model; equivalent to /delete followed by /insert
-     *
-     * Deprecated in DATAWAVE 3.0 because the update will not work when the metadata table is cached as you have to wait to call this method until the cached
-     * table has been reloaded (which could be a couple of minutes). Instead use DELETE, wait for the cached table to reload, then call /import
-     *
-     * @param model
-     *            list of new field mappings to update
-     * @param modelTableName
-     *            name of the table that contains the model
-     * @return nsa.datawave.webservice.result.VoidResponse
-     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
-     * @HTTP 200 success
-     * @HTTP 500 internal server error
-     */
-    @PUT
-    @Consumes({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
-    @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
-            "application/x-protostuff"})
-    @Path("/update")
-    @GZIP
-    @RolesAllowed({"Administrator", "JBossAdministrator"})
-    @Interceptors(ResponseInterceptor.class)
-    @Deprecated
-    public VoidResponse updateMapping(nsa.datawave.webservice.model.Model model,
-                    @QueryParam("modelTableName") @DefaultValue("DatawaveMetadata") String modelTableName) {
-        VoidResponse response = new VoidResponse();
-        deleteMapping(model, modelTableName);
-        insertMapping(model, modelTableName);
         return response;
     }
     

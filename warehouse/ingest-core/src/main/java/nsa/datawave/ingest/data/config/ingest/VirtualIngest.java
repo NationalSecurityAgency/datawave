@@ -548,20 +548,6 @@ public interface VirtualIngest {
             this.virtualFieldDefinitions = virtualFieldDefinitions;
         }
         
-        /**
-         * @deprecated Please use getDefaultSeparator
-         */
-        public String getSep() {
-            return defaultSeparator;
-        }
-        
-        /**
-         * @deprecated Please use setDefaultSeparator
-         */
-        public void setSep(String sep) {
-            this.defaultSeparator = sep;
-        }
-        
         public String getDefaultSeparator() {
             return defaultSeparator;
         }

@@ -1,12 +1,7 @@
 package nsa.datawave.query.tables.edge;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import nsa.datawave.query.QueryParameters;
 import nsa.datawave.query.model.edge.EdgeQueryModel;
-import nsa.datawave.query.parser.DatawaveQueryParser;
-import nsa.datawave.query.parser.DatawaveTreeNode;
 import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
 import nsa.datawave.query.rewrite.jexl.visitors.JexlStringBuildingVisitor;
 import nsa.datawave.query.rewrite.jexl.visitors.QueryModelVisitor;
@@ -14,19 +9,16 @@ import nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic;
 import nsa.datawave.webservice.edgedictionary.DatawaveEdgeDictionary;
 import nsa.datawave.webservice.query.Query;
 import nsa.datawave.webservice.query.configuration.GenericQueryConfiguration;
-import nsa.datawave.webservice.results.edgedictionary.DefaultEdgeDictionary;
 import nsa.datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
 import nsa.datawave.webservice.results.edgedictionary.MetadataBase;
-
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This Logic highjacks the Query string, and transforms it into a RefactoredShardQueryLogic query The query string is of the form:
@@ -40,8 +32,6 @@ public class DefaultEdgeEventQueryLogic extends RefactoredShardQueryLogic {
     
     private String edgeModelName = null;
     private EdgeQueryModel edgeQueryModel = null;
-    
-    private final DatawaveQueryParser queryParser = new DatawaveQueryParser(); // EdgeEventParser here?
     
     protected EdgeDictionaryBase<?,? extends MetadataBase<?>> dict;
     

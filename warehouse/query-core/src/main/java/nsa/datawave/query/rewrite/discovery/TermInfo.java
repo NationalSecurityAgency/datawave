@@ -1,8 +1,8 @@
 package nsa.datawave.query.rewrite.discovery;
 
-import nsa.datawave.core.iterators.EvaluatingIterator;
 import nsa.datawave.ingest.protobuf.Uid;
 
+import nsa.datawave.query.rewrite.Constants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -26,9 +26,9 @@ public class TermInfo {
         fieldName = key.getColumnFamily().toString();
         String colq = key.getColumnQualifier().toString();
         
-        int separator = colq.indexOf(EvaluatingIterator.NULL_BYTE_STRING);
+        int separator = colq.indexOf(Constants.NULL_BYTE_STRING);
         if (separator != -1) {
-            int end_separator = colq.lastIndexOf(EvaluatingIterator.NULL_BYTE_STRING);
+            int end_separator = colq.lastIndexOf(Constants.NULL_BYTE_STRING);
             // if we have multiple separators, then we must have a tasking data type entry.
             if (separator != end_separator) {
                 // ensure we at least have yyyyMMdd

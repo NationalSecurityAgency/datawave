@@ -46,7 +46,6 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
                                         "nsa.datawave.webservice.query.result.event")
                         .deleteClass(nsa.datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(nsa.datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .deleteClass(nsa.datawave.query.tables.edge.DefaultEdgeEventQueryLogic.class)
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>nsa.datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");

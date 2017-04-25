@@ -1,21 +1,22 @@
 package nsa.datawave.query.tables.edge;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import nsa.datawave.edge.model.EdgeModelAware;
 import nsa.datawave.edge.model.EdgeModelAware.Fields.FieldKey;
-import nsa.datawave.query.parser.DatawaveQueryParser;
-import nsa.datawave.query.parser.DatawaveTreeNode;
 import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
+import nsa.datawave.query.rewrite.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import nsa.datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
 import nsa.datawave.webservice.results.edgedictionary.EventField;
 import nsa.datawave.webservice.results.edgedictionary.MetadataBase;
-
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class DefaultEventQueryBuilder {
     private static final Logger log = LoggerFactory.getLogger(DefaultEventQueryBuilder.class);
@@ -42,25 +43,27 @@ public class DefaultEventQueryBuilder {
     }
     
     public String getEventQuery(String jexlQueryString) throws Exception {
-        DatawaveQueryParser queryParser = new DatawaveQueryParser();
-        DatawaveTreeNode node = queryParser.parseQuery(jexlQueryString);
-        if (node.getType() == ParserTreeConstants.JJTJEXLSCRIPT) {
-            if (node.getChildCount() != 1)
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(jexlQueryString);
+        JexlNode node = (JexlNode) script.jjtAccept(new TreeFlatteningRebuildingVisitor(false), script);
+        
+        if (JexlNodes.id(node) == ParserTreeConstants.JJTJEXLSCRIPT) {
+            if (node.jjtGetNumChildren() != 1) {
                 throw new IllegalArgumentException("Parsing failed for " + jexlQueryString);
-            node = (DatawaveTreeNode) node.getChildAt(0);
+            }
+            node = node.jjtGetChild(0);
         }
         
         log.debug("Beginning transform of query: {}", jexlQueryString);
         
         // Traverse the tree, create new query string
         Set<String> edgeQueries = new HashSet<>();
-        switch (node.getType()) {
+        switch (JexlNodes.id(node)) {
         // not acceptable ... must have some AND operations to
             case ParserTreeConstants.JJTEQNODE:
                 throw new IllegalArgumentException("Query not specific enough to specify an edge.");
             case ParserTreeConstants.JJTORNODE:
-                for (int ii = 0; ii < node.getChildCount(); ii++) {
-                    edgeQueries.add(createEventQueryString((DatawaveTreeNode) node.getChildAt(ii)));
+                for (int ii = 0; ii < node.jjtGetNumChildren(); ii++) {
+                    edgeQueries.add(createEventQueryString(node.jjtGetChild(ii)));
                 }
                 break;
             case ParserTreeConstants.JJTANDNODE:
@@ -83,43 +86,46 @@ public class DefaultEventQueryBuilder {
     
     // to parse SOURCE == xxx AND SINK == yy AND .... etc.
     // top level needs to be an AND node.
-    protected String createEventQueryString(DatawaveTreeNode node) {
+    protected String createEventQueryString(JexlNode node) {
         
-        switch (node.getType()) {
+        switch (JexlNodes.id(node)) {
             case ParserTreeConstants.JJTANDNODE:
                 // AND should have EQ children.
-                for (int ii = 0, doneII = node.getChildCount(); ii < doneII; ii++) {
-                    DatawaveTreeNode andChild = (DatawaveTreeNode) node.getChildAt(ii);
+                for (int ii = 0, doneII = node.jjtGetNumChildren(); ii < doneII; ii++) {
+                    JexlNode andChild = node.jjtGetChild(ii);
                     
-                    if (andChild.getType() == ParserTreeConstants.JJTORNODE) {
+                    if (JexlNodes.id(andChild) == ParserTreeConstants.JJTORNODE) {
                         // Here certain fields are allowed to be or'ed togther provided that they are all the same field
                         String fieldname = null;
                         
-                        for (int jj = 0; jj < andChild.getChildCount(); jj++) {
-                            DatawaveTreeNode orChild = (DatawaveTreeNode) andChild.getChildAt(jj);
+                        for (int jj = 0; jj < andChild.jjtGetNumChildren(); jj++) {
+                            JexlNode orChild = andChild.jjtGetChild(jj);
                             // this better be an eqNode or else
-                            if (orChild.getType() != ParserTreeConstants.JJTEQNODE) {
+                            if (JexlNodes.id(orChild) != ParserTreeConstants.JJTEQNODE) {
                                 throw new IllegalArgumentException("Invalid query string");
                             }
                             
+                            JexlASTHelper.IdentifierOpLiteral idOpLit = JexlASTHelper.getIdentifierOpLiteral(orChild);
+                            
                             // Make sure all field names are the same within this Or nodes children
                             if (fieldname == null) {
-                                fieldname = orChild.getFieldName();
-                            } else if (!fieldname.equals(orChild.getFieldName())) {
+                                fieldname = idOpLit.deconstructIdentifier();
+                            } else if (!fieldname.equals(idOpLit.deconstructIdentifier())) {
                                 throw new IllegalArgumentException("Invalid query can't or two different field names");
                             }
                             
-                            if (!this.orAbleField(orChild.getFieldName())) {
+                            if (!this.orAbleField(fieldname)) {
                                 throw new IllegalArgumentException("Invalid query OR's are not supported for field name: " + fieldname);
                             }
-                            this.parseAndAdd(orChild.getFieldName(), orChild.getFieldValue());
+                            this.parseAndAdd(fieldname, (String) idOpLit.getLiteralValue());
                         }
                     } else {
                         // this better be an eqNode or else
-                        if (andChild.getType() != ParserTreeConstants.JJTEQNODE) {
+                        if (JexlNodes.id(andChild) != ParserTreeConstants.JJTEQNODE) {
                             throw new IllegalArgumentException("Invalid query string");
                         }
-                        this.parseAndAdd(andChild.getFieldName(), andChild.getFieldValue());
+                        JexlASTHelper.IdentifierOpLiteral idOpLit = JexlASTHelper.getIdentifierOpLiteral(andChild);
+                        this.parseAndAdd(idOpLit.deconstructIdentifier(), (String) idOpLit.getLiteralValue());
                     }
                 }
                 break;

@@ -3,8 +3,8 @@ package nsa.datawave.query.table.parser;
 import java.util.HashMap;
 import java.util.Map;
 
-import nsa.datawave.core.iterators.EvaluatingIterator;
 import nsa.datawave.marking.MarkingFunctions;
+import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.util.StringUtils;
 
 import org.apache.accumulo.core.data.Key;
@@ -24,13 +24,13 @@ public class EventKeyValueFactory {
         EventKeyValue e = new EventKeyValue();
         e.setShardId(key.getRow().toString());
         
-        String[] parts = StringUtils.split(key.getColumnFamily().toString(), EvaluatingIterator.NULL_BYTE_STRING);
+        String[] parts = StringUtils.split(key.getColumnFamily().toString(), Constants.NULL_BYTE_STRING);
         if (parts.length > 0)
             e.setDatatype(parts[0]);
         if (parts.length > 1)
             e.setUid(parts[1]);
         
-        String[] field = StringUtils.split(key.getColumnQualifier().toString(), EvaluatingIterator.NULL_BYTE_STRING);
+        String[] field = StringUtils.split(key.getColumnQualifier().toString(), Constants.NULL_BYTE_STRING);
         if (field.length > 0)
             e.setFieldName(field[0]);
         if (field.length > 1)
