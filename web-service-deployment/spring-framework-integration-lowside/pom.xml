@@ -4,7 +4,7 @@
     <parent>
         <groupId>nsa.datawave.webservice</groupId>
         <artifactId>web-service-deployment</artifactId>
-        <version>4.3.2</version>
+        <version>4.3.3-SNAPSHOT</version>
     </parent>
     <artifactId>spring-framework-integration-lowside</artifactId>
     <name>spring-framework-integration-lowside</name>
