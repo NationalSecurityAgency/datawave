@@ -1421,13 +1421,17 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 addOption(cfg, Constants.RETURN_TYPE, config.getReturnType().toString(), false);
                 addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
                 
-                if (sourceLimit > 0)
+                if (sourceLimit > 0) {
                     addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(sourceLimit), false);
+                }
                 if (config.getCollectTimingDetails()) {
                     addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(true), false);
                 }
                 if (config.getSendTimingToStatsd()) {
                     addOption(cfg, QueryOptions.STATSD_HOST_COLON_PORT, config.getStatsdHost() + ':' + Integer.toString(config.getStatsdPort()), false);
+                    addOption(cfg, QueryOptions.STATSD_LATENCY_MS, Long.toString(config.getStatsdLatencyMs()), false);
+                    addOption(cfg, QueryOptions.STATSD_MAX_QUEUE_SIZE, Integer.toString(config.getStatsdMaxQueueSize()), false);
+                    addOption(cfg, QueryOptions.STATSD_KEEP_ALIVE_MS, Long.toString(config.getStatsdKeepAliveMs()), false);
                 }
                 if (config.getHdfsSiteConfigURLs() != null) {
                     addOption(cfg, QueryOptions.HDFS_SITE_CONFIG_URLS, config.getHdfsSiteConfigURLs(), false);

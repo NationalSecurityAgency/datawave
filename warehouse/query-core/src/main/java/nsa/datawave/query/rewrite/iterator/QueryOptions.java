@@ -121,6 +121,9 @@ public class QueryOptions implements OptionDescriber {
     public static final String LOG_TIMING_DETAILS = "log.timing.details";
     public static final String COLLECT_TIMING_DETAILS = "collect.timing.details";
     public static final String STATSD_HOST_COLON_PORT = "statsd.host.colon.port";
+    public static final String STATSD_LATENCY_MS = "statsd.latency.ms";
+    public static final String STATSD_MAX_QUEUE_SIZE = "statsd.max.queue.size";
+    public static final String STATSD_KEEP_ALIVE_MS = "statsd.keep.alive.ms";
     public static final String DATATYPE_FIELDNAME = "include.datatype.fieldname";
     
     // pass through to Evaluating iterator to ensure consistency between query
@@ -299,6 +302,9 @@ public class QueryOptions implements OptionDescriber {
     protected boolean collectTimingDetails = false;
     
     protected String statsdHostAndPort = null;
+    protected long statsdLatencyMs = 5000;
+    protected int statsdMaxQueueSize = 500;
+    protected long statsdKeepAliveMs = 5000;
     
     protected QueryStatsDClient statsdClient = null;
     
@@ -784,6 +790,9 @@ public class QueryOptions implements OptionDescriber {
         options.put(COLLECT_TIMING_DETAILS, "Collect timing details about the underlying iterators");
         options.put(STATSD_HOST_COLON_PORT,
                         "A configured statsd host:port which will be used to send resource and timing details from the underlying iterators if configured");
+        options.put(STATSD_LATENCY_MS, "Max latency in milliseconds before any queued statsd metrics are flushed");
+        options.put(STATSD_MAX_QUEUE_SIZE, "Max queued metrics before statsd metrics are flushed");
+        options.put(STATSD_KEEP_ALIVE_MS, "Max time in milliseconds of inactivity before related threads (statsd client and timer) are shutdown");
         options.put(INCLUDE_HIERARCHY_FIELDS, "Include the hierarchy fields (CHILD_COUNT and PARENT_UID) as document fields.");
         options.put(DATATYPE_FIELDNAME, "The field name to use when inserting the fieldname into the document.");
         options.put(DATATYPE_FILTER, "CSV of data type names that should be included when scanning.");
@@ -972,6 +981,16 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(STATSD_HOST_COLON_PORT)) {
             this.statsdHostAndPort = options.get(STATSD_HOST_COLON_PORT);
+        }
+        
+        if (options.containsKey(STATSD_LATENCY_MS)) {
+            this.statsdLatencyMs = Long.parseLong(options.get(STATSD_LATENCY_MS));
+        }
+        if (options.containsKey(STATSD_MAX_QUEUE_SIZE)) {
+            this.statsdMaxQueueSize = Integer.parseInt(options.get(STATSD_MAX_QUEUE_SIZE));
+        }
+        if (options.containsKey(STATSD_KEEP_ALIVE_MS)) {
+            this.statsdKeepAliveMs = Long.parseLong(options.get(STATSD_KEEP_ALIVE_MS));
         }
         
         if (options.containsKey(INCLUDE_HIERARCHY_FIELDS)) {
@@ -1549,7 +1568,8 @@ public class QueryOptions implements OptionDescriber {
             if (statsdClient == null) {
                 synchronized (queryId) {
                     if (statsdClient == null) {
-                        setStatsdClient(new QueryStatsDClient(queryId, getStatsdHost(statsdHostAndPort), getStatsdPort(statsdHostAndPort)));
+                        setStatsdClient(new QueryStatsDClient(queryId, getStatsdHost(statsdHostAndPort), getStatsdPort(statsdHostAndPort),
+                                        getStatsdLatencyMs(), getStatsdMaxQueueSize(), getStatsdKeepAliveMs()));
                     }
                 }
             }
@@ -1581,6 +1601,30 @@ public class QueryOptions implements OptionDescriber {
     
     public void setStatsdClient(QueryStatsDClient statsdClient) {
         this.statsdClient = statsdClient;
+    }
+    
+    public long getStatsdLatencyMs() {
+        return statsdLatencyMs;
+    }
+    
+    public void setStatsdLatencyMs(long statsdLatencyMs) {
+        this.statsdLatencyMs = statsdLatencyMs;
+    }
+    
+    public int getStatsdMaxQueueSize() {
+        return statsdMaxQueueSize;
+    }
+    
+    public void setStatsdMaxQueueSize(int statsdMaxQueueSize) {
+        this.statsdMaxQueueSize = statsdMaxQueueSize;
+    }
+    
+    public long getStatsdKeepAliveMs() {
+        return statsdKeepAliveMs;
+    }
+    
+    public void setStatsdKeepAliveMs(long statsdKeepAliveMs) {
+        this.statsdKeepAliveMs = statsdKeepAliveMs;
     }
     
 }
