@@ -44,7 +44,7 @@ public class DefaultEventQueryBuilder {
     
     public String getEventQuery(String jexlQueryString) throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(jexlQueryString);
-        JexlNode node = (JexlNode) script.jjtAccept(new TreeFlatteningRebuildingVisitor(false), script);
+        JexlNode node = (JexlNode) script.jjtAccept(new TreeFlatteningRebuildingVisitor(true), script);
         
         if (JexlNodes.id(node) == ParserTreeConstants.JJTJEXLSCRIPT) {
             if (node.jjtGetNumChildren() != 1) {
