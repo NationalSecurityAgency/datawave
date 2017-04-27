@@ -6,7 +6,7 @@ public class RawDateNormalizer extends AbstractNormalizer<String> {
     
     private static final long serialVersionUID = -3268331784114135470L;
     private DateNormalizer delegate = new DateNormalizer();
-
+    
     @Override
     public String normalize(String fieldValue) {
         return delegate.normalize(fieldValue);

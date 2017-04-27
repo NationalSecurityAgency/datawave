@@ -20,7 +20,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
     private static final long serialVersionUID = -3268331784114135470L;
     private static final Logger log = Logger.getLogger(DateNormalizer.class);
     public static final String ISO_8601_FORMAT_STRING = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-
+    
     public static final String[] FORMAT_STRINGS = {
             "EEE MMM dd HH:mm:ss zzz yyyy", // at the top just because
             ISO_8601_FORMAT_STRING, "yyyyMMddHHmmss", "yyyy-MM-dd HH:mm:ssz", "yyyy-MM-dd HH:mm:ss'Z'", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd",
@@ -28,7 +28,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
     
     private static final ThreadLocal<Map<String,SimpleDateFormat>> formatList = new ThreadLocal<Map<String,SimpleDateFormat>>() {
         protected Map<String,SimpleDateFormat> initialValue() {
-            Map<String, SimpleDateFormat> map = Maps.newHashMap();
+            Map<String,SimpleDateFormat> map = Maps.newHashMap();
             return map;
         }
     };
@@ -37,7 +37,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
         Date fieldDate = parseToDate(fieldValue);
         return parseToString(fieldDate);
     }
-
+    
     public static SimpleDateFormat getParser(String pattern) {
         SimpleDateFormat parser = formatList.get().get(pattern);
         if (parser == null) {
@@ -48,14 +48,14 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
         }
         return parser;
     }
-
+    
     public static String convertMicroseconds(String str, String pattern) {
         // check for a special case where the incoming string is specifying microseconds instead of milliseconds
         if (pattern.lastIndexOf('S') >= 0) {
             // presuming the milliseconds is the last number in the string
             int endMs = str.length();
             int startMs = -1;
-            for (int i = endMs-1; i >= 0; i--) {
+            for (int i = endMs - 1; i >= 0; i--) {
                 char c = str.charAt(i);
                 if (c >= '0' && c <= '9') {
                     startMs = i;
@@ -67,12 +67,12 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
             }
             // drop any characters after 3 digits
             if (endMs - startMs > 3) {
-                str = str.substring(0, startMs+3) + str.substring(endMs);
+                str = str.substring(0, startMs + 3) + str.substring(endMs);
             }
         }
         return str;
     }
-
+    
     public static Date parseDate(String str, String pattern) {
         SimpleDateFormat parser = getParser(pattern);
         ParsePosition pos = new ParsePosition(0);
@@ -83,7 +83,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
         }
         return null;
     }
-
+    
     public static Date parseDate(String str, String[] parsePatterns) throws ParseException {
         if (str != null && parsePatterns != null) {
             for (int i = 0; i < parsePatterns.length; i++) {
@@ -92,7 +92,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
                     return date;
                 }
             }
-
+            
             throw new ParseException("Unable to parse the date: " + str, -1);
         } else {
             throw new IllegalArgumentException("Date string nor patterns can be null");
@@ -144,7 +144,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
     
     private Collection<String> formatAll(Date date) {
         List<String> list = Lists.newArrayList();
-        for (String format  : FORMAT_STRINGS) {
+        for (String format : FORMAT_STRINGS) {
             DateFormat fs = getParser(format);
             String formatted = fs.format(date);
             if (formatted != null && formatted.length() > 0) {
