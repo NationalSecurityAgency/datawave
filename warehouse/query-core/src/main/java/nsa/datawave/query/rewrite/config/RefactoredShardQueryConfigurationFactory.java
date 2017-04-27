@@ -171,6 +171,9 @@ public class RefactoredShardQueryConfigurationFactory {
         config.setSendTimingToStatsd(configuredLogic.getSendTimingToStatsd());
         config.setStatsdHost(configuredLogic.getStatsdHost());
         config.setStatsdPort(configuredLogic.getStatsdPort());
+        config.setStatsdLatencyMs(configuredLogic.getStatsdLatencyMs());
+        config.setStatsdMaxQueueSize(configuredLogic.getStatsdMaxQueueSize());
+        config.setStatsdKeepAliveMs(configuredLogic.getStatsdKeepAliveMs());
         
         return config;
     }
