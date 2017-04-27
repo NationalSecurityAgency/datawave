@@ -65,20 +65,29 @@ fi
 # lets use twice the number of processors
 CPUS=`echo "$LOAD_JOBCACHE_CPU_MULTIPLIER * $CPUS" | bc`
 
-# Remove the ingest new job cache directory, and then load files into it
-echo Replacing ingest job cache directory: $INGEST_HDFS_NAME_NODE$JOB_CACHE_DIR
-$INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -fs $INGEST_HDFS_NAME_NODE -rm -r $INGEST_HDFS_NAME_NODE$JOB_CACHE_DIR
+# Remove the ingest new job cache directory, if it already exists, and then load files into it...
+
+if $INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -fs $INGEST_HDFS_NAME_NODE -test -d $INGEST_HDFS_NAME_NODE$JOB_CACHE_DIR > /dev/null 2>&1 ; then
+   echo "Replacing ingest job cache directory: $INGEST_HDFS_NAME_NODE$JOB_CACHE_DIR"
+   $INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -fs $INGEST_HDFS_NAME_NODE -rm -r $INGEST_HDFS_NAME_NODE$JOB_CACHE_DIR
+else
+   echo "Creating ingest job cache directory: $INGEST_HDFS_NAME_NODE$JOB_CACHE_DIR"
+fi
 find -L $tmpdir -type d | sed "s|$tmpdir||" | xargs -P $CPUS -L1 -I% $INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -fs $INGEST_HDFS_NAME_NODE -mkdir -p $INGEST_HDFS_NAME_NODE${JOB_CACHE_DIR}%
 find -L $tmpdir -type f | sed "s|$tmpdir||" | xargs -P $CPUS -L1 -I% $INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -fs $INGEST_HDFS_NAME_NODE -put ${tmpdir}% $INGEST_HDFS_NAME_NODE${JOB_CACHE_DIR}%
-$INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -setrep -R 200 $INGEST_HDFS_NAME_NODE${JOB_CACHE_DIR}
+$INGEST_HADOOP_HOME/bin/hadoop fs -conf $INGEST_HADOOP_CONF/hdfs-site.xml -setrep -R ${JOB_CACHE_REPLICATION} $INGEST_HDFS_NAME_NODE${JOB_CACHE_DIR}
 
 ########### We need this section to allow running the map file merger on the warehouse cluster ##########
 if [[ "$WAREHOUSE_HDFS_NAME_NODE" != "$INGEST_HDFS_NAME_NODE" ]]; then
-   echo Replacing warehouse job cache directory: $WAREHOUSE_HDFS_NAME_NODE$JOB_CACHE_DIR
-   $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -fs $WAREHOUSE_HDFS_NAME_NODE -rm -r $WAREHOUSE_HDFS_NAME_NODE$JOB_CACHE_DIR
+   if $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -fs $WAREHOUSE_HDFS_NAME_NODE -test -d $WAREHOUSE_HDFS_NAME_NODE$JOB_CACHE_DIR > /dev/null 2>&1 ; then
+      echo "Replacing warehouse job cache directory: $WAREHOUSE_HDFS_NAME_NODE$JOB_CACHE_DIR"
+      $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -fs $WAREHOUSE_HDFS_NAME_NODE -rm -r $WAREHOUSE_HDFS_NAME_NODE$JOB_CACHE_DIR
+   else
+      echo "Creating warehouse job cache directory: $WAREHOUSE_HDFS_NAME_NODE$JOB_CACHE_DIR"
+   fi
    find -L $tmpdir -type d | sed "s|$tmpdir||" | xargs -P $CPUS -L1 -I% $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -fs $WAREHOUSE_HDFS_NAME_NODE -mkdir -p $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}%
    find -L $tmpdir -type f | sed "s|$tmpdir||" | xargs -P $CPUS -L1 -I% $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -fs $WAREHOUSE_HDFS_NAME_NODE -put ${tmpdir}% $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}%
-   $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -setrep -R 200 $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}
+   $WAREHOUSE_HADOOP_HOME/bin/hadoop fs -conf $WAREHOUSE_HADOOP_CONF/hdfs-site.xml -setrep -R ${JOB_CACHE_REPLICATION} $WAREHOUSE_HDFS_NAME_NODE${JOB_CACHE_DIR}
 else
    echo "Warehouse and ingest are one in the same. Assuming the warehouse job cache loading is sufficient"
 fi
