@@ -1,12 +1,15 @@
 package nsa.datawave.webservice.query.metric;
 
 import java.util.Date;
+import java.util.Map;
 
 import nsa.datawave.security.authorization.DatawavePrincipal;
 
 public interface QueryMetricHandler<T extends BaseQueryMetric> {
     
     void updateMetric(T metric, DatawavePrincipal datawavePrincipal) throws Exception;
+    
+    public Map<String,String> getEventFields(BaseQueryMetric queryMetric);
     
     BaseQueryMetricListResponse<T> query(String user, String queryId, DatawavePrincipal datawavePrincipal);
     

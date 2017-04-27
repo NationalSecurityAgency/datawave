@@ -1,12 +1,7 @@
 package nsa.datawave.webservice.query.metric;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.text.DecimalFormat;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
@@ -20,6 +15,8 @@ import javax.ejb.LockType;
 import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
@@ -28,13 +25,18 @@ import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 
 import nsa.datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import nsa.datawave.configuration.RefreshEvent;
+import nsa.datawave.configuration.spring.SpringBean;
 import nsa.datawave.security.authorization.DatawavePrincipal;
+import nsa.datawave.util.timely.UdpClient;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import nsa.datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import org.apache.commons.collections.map.LRUMap;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
+import nsa.datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
@@ -60,17 +62,42 @@ public class QueryMetricsWriter {
     @Inject
     private QueryMetricHandler<? extends BaseQueryMetric> queryMetricHandler;
     
+    @Inject
+    @SpringBean(name = "QueryMetricsWriterConfiguration", refreshable = true)
+    private QueryMetricsWriterConfiguration config;
+    
+    private UdpClient timelyClient = null;
+    private Map<String,Long> lastPageMetricMap;
+    
     // queryId to lastPage Map
     private Map<String,Long> lastPageMap;
     private List<QueryMetricHolder> metricQueue;
+    private DecimalFormat df = new DecimalFormat("0.00");
     
     volatile static private AtomicBoolean receivingMetrics = new AtomicBoolean(false);
+    
+    private UdpClient createUdpClient() {
+        if (config != null && StringUtils.isNotBlank(config.getTimelyHost())) {
+            return new UdpClient(config.getTimelyHost(), config.getTimelyPort());
+        } else {
+            return null;
+        }
+    }
+    
+    public void onRefresh(@Observes RefreshEvent event, BeanManager bm) {
+        // protect timelyClient from being used in sendMetricsToTimely while re-creating the client
+        synchronized (this) {
+            timelyClient = createUdpClient();
+        }
+    }
     
     @PostConstruct
     private void init() {
         // noinspection unchecked
         lastPageMap = new LRUMap(1000);
+        lastPageMetricMap = new LRUMap(1000);
         metricQueue = new ArrayList<>();
+        timelyClient = createUdpClient();
     }
     
     @Schedule(hour = "*", minute = "*", second = "*/10", persistent = false)
@@ -159,6 +186,86 @@ public class QueryMetricsWriter {
         }
     }
     
+    synchronized private void sendMetricsToTimely(BaseQueryMetric queryMetric) {
+        
+        if (timelyClient != null && queryMetric.getQueryType().equalsIgnoreCase("RunningQuery")) {
+            try {
+                String queryId = queryMetric.getQueryId();
+                BaseQueryMetric.Lifecycle lifecycle = queryMetric.getLifecycle();
+                Map<String,String> metricValues = queryMetricHandler.getEventFields(queryMetric);
+                long createDate = queryMetric.getCreateDate().getTime();
+                
+                StringBuilder tagSb = new StringBuilder();
+                Set<String> configuredMetricTags = config.getTimelyMetricTags();
+                for (String fieldName : configuredMetricTags) {
+                    String fieldValue = metricValues.get(fieldName);
+                    if (!StringUtils.isBlank(fieldValue)) {
+                        tagSb.append(fieldName).append("=").append(fieldValue).append(" ");
+                    }
+                }
+                int tagSbLength = tagSb.length();
+                if (tagSbLength > 0) {
+                    if (tagSb.charAt(tagSbLength - 1) == ' ') {
+                        tagSb.deleteCharAt(tagSbLength - 1);
+                    }
+                }
+                tagSb.append("\n");
+                
+                timelyClient.open();
+                
+                if (lifecycle.equals(Lifecycle.RESULTS) || lifecycle.equals(Lifecycle.NEXTTIMEOUT) || lifecycle.equals(Lifecycle.MAXRESULTS)) {
+                    List<PageMetric> pageTimes = queryMetric.getPageTimes();
+                    // there should only be a maximum of one page metric as all but the last are removed by the QueryMetricsBean
+                    for (PageMetric pm : pageTimes) {
+                        Long lastPageSent = lastPageMetricMap.get(queryId);
+                        // prevent duplicate reporting
+                        if (lastPageSent == null || pm.getPageNumber() > lastPageSent) {
+                            long requestTime = pm.getPageRequested();
+                            long callTime = pm.getCallTime();
+                            if (callTime == -1) {
+                                callTime = pm.getReturnTime();
+                            }
+                            if (pm.getPagesize() > 0) {
+                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltime " + requestTime + " " + callTime + " " + tagSb.toString());
+                                String callTimePerRecord = df.format((double) callTime / pm.getPagesize());
+                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltimeperrecord " + requestTime + " " + callTimePerRecord + " "
+                                                + tagSb.toString());
+                            }
+                            lastPageMetricMap.put(queryId, pm.getPageNumber());
+                            
+                        }
+                    }
+                }
+                
+                if (lifecycle.equals(Lifecycle.CLOSED) || lifecycle.equals(Lifecycle.CANCELLED)) {
+                    // write ELAPSED_TIME
+                    timelyClient.write("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " " + tagSb.toString());
+                    
+                    // write NUM_RESULTS
+                    timelyClient.write("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " " + tagSb.toString());
+                    
+                    // clean up last page map
+                    lastPageMetricMap.remove(queryId);
+                }
+                
+                if (lifecycle.equals(Lifecycle.INITIALIZED)) {
+                    // write CREATE_TIME
+                    long createTime = queryMetric.getCreateCallTime();
+                    if (createTime == -1) {
+                        createTime = queryMetric.getSetupTime();
+                    }
+                    timelyClient.write("put dw.query.metrics.CREATE_TIME " + createDate + " " + createTime + " " + tagSb.toString());
+                    
+                    // write a COUNT value of 1 so that we can count total queries
+                    timelyClient.write("put dw.query.metrics.COUNT " + createDate + " 1 " + tagSb.toString());
+                }
+                
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+    }
+    
     private List<QueryMetricHolder> writeMetrics(QueryMetricHandler queryMetricHandler, List<QueryMetricHolder> metricQueue) throws Exception {
         
         List<QueryMetricHolder> failedMetrics = new ArrayList<>();
@@ -171,6 +278,7 @@ public class QueryMetricsWriter {
                     handleLegacyEvents(queryMetric);
                     DatawavePrincipal datawavePrincipal = queryMetricHolder.getPrincipal();
                     queryMetricHandler.updateMetric(queryMetric, datawavePrincipal);
+                    sendMetricsToTimely(queryMetric);
                 } catch (Throwable t) {
                     log.error("query metric updates failed: " + t.getMessage(), t);
                     failedMetrics.add(queryMetricHolder);

@@ -49,7 +49,7 @@ public class DateNormalizerTest {
     
     @Test
     public void testExpectedResults() throws Exception {
-        String input = "2014-10-20T17:20:20.0001Z";
+        String input = "2014-10-20T17:20:20.001Z";
         String normalized = normalizer.normalize(input);
         Assert.assertEquals("2014-10-20T17:20:20.001Z", normalized);
         
@@ -92,6 +92,10 @@ public class DateNormalizerTest {
         input = "Thu Jan 1 00:00:00 GMT 1970";
         normalized = normalizer.normalize(input);
         Assert.assertEquals("1970-01-01T00:00:00.000Z", normalized);
+        
+        input = "2014-10-20T17:20:20.345007Z";
+        normalized = normalizer.normalize(input);
+        Assert.assertEquals("2014-10-20T17:20:20.345Z", normalized);
     }
     
     @Test

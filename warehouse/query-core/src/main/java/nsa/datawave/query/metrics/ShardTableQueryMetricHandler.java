@@ -20,7 +20,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
+import javax.interceptor.Interceptor;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -253,6 +255,18 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 contextWriter.cleanup(context);
             }
         }
+    }
+    
+    public Map<String,String> getEventFields(BaseQueryMetric queryMetric) {
+        // ignore duplicates as none are expected
+        Map<String,String> eventFields = new HashMap<>();
+        ContentQueryMetricsIngestHelper ingestHelper = new ContentQueryMetricsIngestHelper(false);
+        ingestHelper.setup(conf);
+        Multimap<String,NormalizedContentInterface> fieldsToWrite = ingestHelper.getEventFieldsToWrite(queryMetric);
+        for (Entry<String,NormalizedContentInterface> entry : fieldsToWrite.entries()) {
+            eventFields.put(entry.getKey(), entry.getValue().getEventFieldValue());
+        }
+        return eventFields;
     }
     
     private Multimap<BulkIngestKey,Value> getEntries(AbstractColumnBasedHandler<Key> handler, QueryMetric updatedQueryMetric, QueryMetric storedQueryMetric,

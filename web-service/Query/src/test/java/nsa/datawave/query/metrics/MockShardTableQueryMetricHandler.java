@@ -1,6 +1,7 @@
 package nsa.datawave.query.metrics;
 
 import java.util.Date;
+import java.util.Map;
 
 import nsa.datawave.security.authorization.DatawavePrincipal;
 import nsa.datawave.webservice.query.metric.BaseQueryMetric;
@@ -27,6 +28,10 @@ public class MockShardTableQueryMetricHandler implements QueryMetricHandler<Quer
     @Override
     public void updateMetric(QueryMetric metric, DatawavePrincipal datawavePrincipal) throws Exception {
         this.mockHandler.updateMetric(metric, datawavePrincipal);
+    }
+    
+    public Map<String,String> getEventFields(BaseQueryMetric queryMetric) {
+        return this.mockHandler.getEventFields(queryMetric);
     }
     
     @Override

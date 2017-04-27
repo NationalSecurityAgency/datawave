@@ -47,7 +47,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.Script;
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
@@ -199,7 +198,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             
             // expected to be in the "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" format
             String startDate = versioningCache.getEdgeKeyVersionDateChange().entrySet().iterator().next().getValue();
-            newFormatStartDate = DateUtils.parseDate(startDate, DateNormalizer.FORMAT_STRINGS).getTime();
+            newFormatStartDate = DateNormalizer.parseDate(startDate, DateNormalizer.FORMAT_STRINGS).getTime();
             log.info("Edge key version change date set to: " + startDate);
         } catch (IOException e) {
             log.error("IO Exception could not get edge key version cache, will not generate edges!");
@@ -579,7 +578,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         if (normalizedFields.containsKey(edgeDefConfigs.getActivityDateField())) {
             String actDate = normalizedFields.get(edgeDefConfigs.getActivityDateField()).iterator().next().getEventFieldValue();
             try {
-                activityDate = DateUtils.parseDate(actDate, DateNormalizer.FORMAT_STRINGS).getTime();
+                activityDate = DateNormalizer.parseDate(actDate, DateNormalizer.FORMAT_STRINGS).getTime();
                 validActivityDate = validateActivityDate(activityDate, event.getDate());
             } catch (ParseException e1) {
                 log.error("Parse exception when getting the activity date: " + actDate + " for edge creation " + e1.getMessage());
