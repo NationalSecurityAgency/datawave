@@ -1379,13 +1379,13 @@ public class JexlASTHelper {
             return data;
         }
     }
-
+    
     public static class HasUnfieldedTermVisitor extends BaseVisitor {
-
+        
         @Override
         public Object visit(ASTIdentifier node, Object data) {
             if (node.image != null && Constants.ANY_FIELD.equals(node.image)) {
-                AtomicBoolean state = (AtomicBoolean)data;
+                AtomicBoolean state = (AtomicBoolean) data;
                 state.set(true);
             }
             return data;

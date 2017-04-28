@@ -16,12 +16,11 @@ public class HasUnfieldedTermVisitorTest {
     private static final Logger log = ThreadConfigurableLogger.getLogger(HasUnfieldedTermVisitorTest.class);
     
     String[] originalQueries = { //
-
-            "_ANYFIELD_ == 'FOO'", //
+    
+    "_ANYFIELD_ == 'FOO'", //
             "AG.max() == 40", //
             "BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'", //
-            "FOO == 'bar'"
-    };
+            "FOO == 'bar'"};
     boolean[] expectedResults = {true, false, false, false};
     
     @Test
@@ -30,29 +29,30 @@ public class HasUnfieldedTermVisitorTest {
         for (int i = 0; i < originalQueries.length; i++) {
             String query = originalQueries[i];
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-
-            Assert.assertEquals("query:"+query, expectedResults[i], ((AtomicBoolean)new JexlASTHelper.HasUnfieldedTermVisitor().visit(script, new AtomicBoolean(false))).get());
+            
+            Assert.assertEquals("query:" + query, expectedResults[i],
+                            ((AtomicBoolean) new JexlASTHelper.HasUnfieldedTermVisitor().visit(script, new AtomicBoolean(false))).get());
         }
     }
-
+    
     @Test
     public void testLucene() throws Exception {
-
+        
         String[] originalQueries = { //
-
-                "FOO", //
+        
+        "FOO", //
                 "FOO || BAR || AG:40", //
                 "BIRTH_DATE:1920", //
-                "FOO:bar"
-        };
+                "FOO:bar"};
         boolean[] expectedResults = {true, true, false, false};
         for (int i = 0; i < originalQueries.length; i++) {
             String query = originalQueries[i];
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(new LuceneToJexlQueryParser().convertToJexlNode(query).toString());
-                    //JexlASTHelper.parseJexlQuery(query);
-
-            Assert.assertEquals("query:"+query, expectedResults[i], ((AtomicBoolean)new JexlASTHelper.HasUnfieldedTermVisitor().visit(script, new AtomicBoolean(false))).get());
+            // JexlASTHelper.parseJexlQuery(query);
+            
+            Assert.assertEquals("query:" + query, expectedResults[i],
+                            ((AtomicBoolean) new JexlASTHelper.HasUnfieldedTermVisitor().visit(script, new AtomicBoolean(false))).get());
         }
     }
-
+    
 }
