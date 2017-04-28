@@ -12,6 +12,7 @@ import nsa.datawave.data.normalizer.NormalizationException;
 import nsa.datawave.data.type.Type;
 import nsa.datawave.query.index.lookup.RangeStream;
 import nsa.datawave.query.index.stats.IndexStatsClient;
+import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
 import nsa.datawave.query.rewrite.exceptions.DatawaveFatalQueryException;
 import nsa.datawave.query.rewrite.jexl.functions.RefactoredJexlFunctionArgumentDescriptorFactory;
@@ -1377,7 +1378,18 @@ public class JexlASTHelper {
             state.set(true);
             return data;
         }
-        
+    }
+
+    public static class HasUnfieldedTermVisitor extends BaseVisitor {
+
+        @Override
+        public Object visit(ASTIdentifier node, Object data) {
+            if (node.image != null && Constants.ANY_FIELD.equals(node.image)) {
+                AtomicBoolean state = (AtomicBoolean)data;
+                state.set(true);
+            }
+            return data;
+        }
     }
     
     public static class InvertNodeVisitor extends RebuildingVisitor {
