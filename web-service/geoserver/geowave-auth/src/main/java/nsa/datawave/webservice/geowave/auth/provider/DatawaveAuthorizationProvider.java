@@ -1,6 +1,6 @@
 package nsa.datawave.webservice.geowave.auth.provider;
 
-import mil.nga.giat.geowave.adapter.vector.auth.AuthorizationSPI;
+import mil.nga.giat.geowave.adapter.auth.AuthorizationSPI;
 import nsa.datawave.security.authorization.DatawavePrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 

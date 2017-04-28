@@ -85,6 +85,10 @@
             <artifactId>vecmath</artifactId>
         </dependency>
         <dependency>
+            <groupId>mil.nga.giat</groupId>
+            <artifactId>geowave-core-geotime</artifactId>
+        </dependency>
+        <dependency>
             <groupId>nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
         </dependency>

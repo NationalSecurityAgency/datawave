@@ -1,0 +1,258 @@
+package nsa.datawave.query.rewrite.jexl.functions;
+
+import com.vividsolutions.jts.geom.Geometry;
+import nsa.datawave.data.normalizer.GeometryNormalizer;
+import nsa.datawave.data.type.GeometryType;
+import nsa.datawave.query.rewrite.attributes.ValueTuple;
+
+/**
+ * Provides functions for doing spatial queries, such as bounding boxes and circles of interest, as well as spatial relationships.
+ *
+ * Function names are all lower case and separated by underscores to play nice with case insensitive queries.
+ *
+ * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by GeoWaveFunctionsDescripter. This is kept as a separate class to reduce accumulo
+ * dependencies on other jars.
+ */
+@JexlFunctions(descriptorFactory = "nsa.datawave.query.rewrite.jexl.functions.GeoWaveFunctionsDescriptor")
+public class GeoWaveFunctions {
+    public static final String GEOWAVE_FUNCTION_NAMESPACE = "geowave";
+    
+    /**
+     * Test intersection of a set of geometry with a field value
+     */
+    private static boolean intersectsGeometries(Object fieldValue, Geometry[] geometries) {
+        Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
+        for (Geometry g : geometries) {
+            if (thisGeom.intersects(g)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private static boolean intersectsGeometries(Iterable<?> values, Geometry[] geometries) {
+        boolean successfullyParsedAValue = false;
+        Exception parseException = null;
+        for (Object fieldValue : values) {
+            try {
+                if (intersectsGeometries(fieldValue, geometries)) {
+                    return true;
+                }
+                successfullyParsedAValue = true;
+            } catch (Exception e) {
+                // this is most likely a field value from the index (i.e. an encoded string @see GeometryNormalizer.getEncodedStringsFromGeometry)
+                // ignore and continue down the list of values. This will be thrown if every value in the list threw an exception
+                parseException = e;
+            }
+        }
+        if (!successfullyParsedAValue) {
+            throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+        }
+        return false;
+    }
+    
+    private static Geometry getGeometryFromFieldValue(Object fieldValue) {
+        if (fieldValue instanceof Geometry) {
+            return (Geometry) fieldValue;
+        } else if (fieldValue instanceof String) {
+            return GeometryNormalizer.getGeometryFromWKT((String) fieldValue);
+        } else if (fieldValue instanceof ValueTuple) {
+            ValueTuple t = (ValueTuple) fieldValue;
+            Object o = t.second();
+            if (o instanceof GeometryType) {
+                GeometryType gt = (GeometryType) o;
+                return gt.getDelegate().getJTSGeometry();
+            }
+        }
+        throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a geometry");
+    }
+    
+    public static boolean contains(Object fieldValue, String geometryWellKnownText) {
+        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+        Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
+        return thisGeom.contains(otherGeom);
+    }
+    
+    public static boolean contains(Iterable<?> values, String geometryWellKnownText) {
+        boolean successfullyParsedAValue = false;
+        Exception parseException = null;
+        for (Object fieldValue : values) {
+            try {
+                if (contains(fieldValue, geometryWellKnownText)) {
+                    return true;
+                }
+                successfullyParsedAValue = true;
+            } catch (Exception e) {
+                // this is most likely a field value from the index (i.e. an encoded string @see GeometryNormalizer.getEncodedStringsFromGeometry)
+                // ignore and continue down the list of values. This will be thrown if every value in the list threw an exception
+                parseException = e;
+            }
+        }
+        if (!successfullyParsedAValue) {
+            throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+        }
+        return false;
+    }
+    
+    public static boolean covers(Object fieldValue, String geometryWellKnownText) {
+        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+        Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
+        return thisGeom.covers(otherGeom);
+    }
+    
+    public static boolean covers(Iterable<?> values, String geometryWellKnownText) {
+        boolean successfullyParsedAValue = false;
+        Exception parseException = null;
+        for (Object fieldValue : values) {
+            try {
+                if (covers(fieldValue, geometryWellKnownText)) {
+                    return true;
+                }
+                successfullyParsedAValue = true;
+            } catch (Exception e) {
+                // this is most likely a field value from the index (i.e. an encoded string @see GeometryNormalizer.getEncodedStringsFromGeometry)
+                // ignore and continue down the list of values. This will be thrown if every value in the list threw an exception
+                parseException = e;
+            }
+        }
+        if (!successfullyParsedAValue) {
+            throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+        }
+        return false;
+    }
+    
+    public static boolean covered_by(Object fieldValue, String geometryWellKnownText) {
+        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+        Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
+        return thisGeom.coveredBy(otherGeom);
+    }
+    
+    public static boolean covered_by(Iterable<?> values, String geometryWellKnownText) {
+        boolean successfullyParsedAValue = false;
+        Exception parseException = null;
+        for (Object fieldValue : values) {
+            try {
+                if (covered_by(fieldValue, geometryWellKnownText)) {
+                    return true;
+                }
+                successfullyParsedAValue = true;
+            } catch (Exception e) {
+                // this is most likely a field value from the index (i.e. an encoded string @see GeometryNormalizer.getEncodedStringsFromGeometry)
+                // ignore and continue down the list of values. This will be thrown if every value in the list threw an exception
+                parseException = e;
+            }
+        }
+        if (!successfullyParsedAValue) {
+            throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+        }
+        return false;
+    }
+    
+    public static boolean crosses(Object fieldValue, String geometryWellKnownText) {
+        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+        Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
+        return thisGeom.crosses(otherGeom);
+    }
+    
+    public static boolean crosses(Iterable<?> values, String geometryWellKnownText) {
+        boolean successfullyParsedAValue = false;
+        Exception parseException = null;
+        for (Object fieldValue : values) {
+            try {
+                if (crosses(fieldValue, geometryWellKnownText)) {
+                    return true;
+                }
+                successfullyParsedAValue = true;
+            } catch (Exception e) {
+                // this is most likely a field value from the index (i.e. an encoded string @see GeometryNormalizer.getEncodedStringsFromGeometry)
+                // ignore and continue down the list of values. This will be thrown if every value in the list threw an exception
+                parseException = e;
+            }
+        }
+        if (!successfullyParsedAValue) {
+            throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+        }
+        return false;
+    }
+    
+    public static boolean intersects(Object fieldValue, String geometryWellKnownText) {
+        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+        Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
+        return thisGeom.intersects(otherGeom);
+    }
+    
+    public static boolean intersects(Iterable<?> values, String geometryWellKnownText) {
+        boolean successfullyParsedAValue = false;
+        Exception parseException = null;
+        for (Object fieldValue : values) {
+            try {
+                if (intersects(fieldValue, geometryWellKnownText)) {
+                    return true;
+                }
+                successfullyParsedAValue = true;
+            } catch (Exception e) {
+                // this is most likely a field value from the index (i.e. an encoded string @see GeometryNormalizer.getEncodedStringsFromGeometry)
+                // ignore and continue down the list of values. This will be thrown if every value in the list threw an exception
+                parseException = e;
+            }
+        }
+        if (!successfullyParsedAValue) {
+            throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+        }
+        return false;
+    }
+    
+    public static boolean overlaps(Object fieldValue, String geometryWellKnownText) {
+        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+        Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
+        return thisGeom.overlaps(otherGeom);
+    }
+    
+    public static boolean overlaps(Iterable<?> values, String geometryWellKnownText) {
+        boolean successfullyParsedAValue = false;
+        Exception parseException = null;
+        for (Object fieldValue : values) {
+            try {
+                if (overlaps(fieldValue, geometryWellKnownText)) {
+                    return true;
+                }
+                successfullyParsedAValue = true;
+            } catch (Exception e) {
+                // this is most likely a field value from the index (i.e. an encoded string @see GeometryNormalizer.getEncodedStringsFromGeometry)
+                // ignore and continue down the list of values. This will be thrown if every value in the list threw an exception
+                parseException = e;
+            }
+        }
+        if (!successfullyParsedAValue) {
+            throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+        }
+        return false;
+    }
+    
+    public static boolean within(Object fieldValue, String geometryWellKnownText) {
+        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+        Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
+        return thisGeom.within(otherGeom);
+    }
+    
+    public static boolean within(Iterable<?> values, String geometryWellKnownText) {
+        boolean successfullyParsedAValue = false;
+        Exception parseException = null;
+        for (Object fieldValue : values) {
+            try {
+                if (within(fieldValue, geometryWellKnownText)) {
+                    return true;
+                }
+                successfullyParsedAValue = true;
+            } catch (Exception e) {
+                // this is most likely a field value from the index (i.e. an encoded string @see GeometryNormalizer.getEncodedStringsFromGeometry)
+                // ignore and continue down the list of values. This will be thrown if every value in the list threw an exception
+                parseException = e;
+            }
+        }
+        if (!successfullyParsedAValue) {
+            throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+        }
+        return false;
+    }
+}

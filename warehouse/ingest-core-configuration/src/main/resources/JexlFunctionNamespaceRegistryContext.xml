@@ -13,6 +13,7 @@
     <util:map id="jexlEngineFunctionMap" key-type="java.lang.String" value-type="java.lang.String">
         <entry key="f" value="nsa.datawave.query.rewrite.jexl.functions.QueryFunctions"/>
         <entry key="geo" value="nsa.datawave.query.rewrite.jexl.functions.GeoFunctions"/>
+        <entry key="geowave" value="nsa.datawave.query.rewrite.jexl.functions.GeoWaveFunctions"/>
         <entry key="content" value="nsa.datawave.query.rewrite.jexl.functions.ContentFunctions"/>
         <entry key="normalize" value="nsa.datawave.query.rewrite.jexl.functions.NormalizationFunctions"/>
         <entry key="filter" value="nsa.datawave.query.rewrite.jexl.functions.EvaluationPhaseFilterFunctions"/>
