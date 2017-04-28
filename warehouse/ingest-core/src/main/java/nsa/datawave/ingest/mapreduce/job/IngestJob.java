@@ -27,7 +27,7 @@ import nsa.datawave.ingest.metric.IngestInput;
 import nsa.datawave.ingest.metric.IngestProcess;
 import nsa.datawave.ingest.table.config.ShardTableConfigHelper;
 import nsa.datawave.ingest.table.config.TableConfigHelper;
-import nsa.datawave.iterators.TotalAggregatingIterator;
+import nsa.datawave.iterators.PropogatingIterator;
 import nsa.datawave.marking.MarkingFunctions;
 import nsa.datawave.util.StringUtils;
 import org.apache.accumulo.core.Constants;
@@ -1277,7 +1277,7 @@ public class IngestJob extends Configured implements Tool {
             // the options in the Hadoop config so that we can parse it back out in the reducer.
             for (IterInfo iter : iters) {
                 Class<?> klass = Class.forName(iter.getClassName());
-                if (TotalAggregatingIterator.class.isAssignableFrom(klass)) {
+                if (PropogatingIterator.class.isAssignableFrom(klass)) {
                     Map<String,String> options = allOptions.get(iter.getIterName());
                     if (null != options) {
                         for (Entry<String,String> option : options.entrySet()) {
