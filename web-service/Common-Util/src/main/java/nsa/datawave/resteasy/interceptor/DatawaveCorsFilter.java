@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 @PreMatching
 public class DatawaveCorsFilter extends CorsFilter {
     public static final String ALLOWED_METHODS = "HEAD, DELETE, GET, POST, PUT, OPTIONS";
-    public static final String ALLOWED_HEADERS = "X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain";
+    public static final String ALLOWED_HEADERS = "X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain, Accept, Accept-Encoding";
     public static final int MAX_AGE = (int) TimeUnit.DAYS.toSeconds(10);
     public static final boolean ALLOW_CREDENTIALS = true;
     
