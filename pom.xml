@@ -12,6 +12,7 @@
         <module>web-service</module>
         <module>warehouse</module>
         <module>type-metadata-hdfs</module>
+        <module>in-memory-accumulo</module>
     </modules>
     <properties>
         <assembly.basedir>${project.basedir}</assembly.basedir>
@@ -20,7 +21,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <version.accumulo>1.6.6</version.accumulo>
+        <version.accumulo>1.8.1</version.accumulo>
         <version.arquillian-weld-ee-embedded>1.0.0.CR8</version.arquillian-weld-ee-embedded>
         <version.avro>1.7.4</version.avro>
         <version.commons-beanutils>1.7.0</version.commons-beanutils>
@@ -307,6 +308,10 @@
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-vfs2</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -376,6 +381,10 @@
                 <version>${version.accumulo}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
@@ -398,22 +407,44 @@
                 <groupId>org.apache.accumulo</groupId>
                 <artifactId>accumulo-fate</artifactId>
                 <version>${version.accumulo}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.accumulo</groupId>
                 <artifactId>accumulo-minicluster</artifactId>
                 <version>${version.accumulo}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.accumulo</groupId>
                 <artifactId>accumulo-monitor</artifactId>
                 <version>${version.accumulo}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.accumulo</groupId>
                 <artifactId>accumulo-server-base</artifactId>
                 <version>${version.accumulo}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
@@ -424,6 +455,23 @@
                 <groupId>org.apache.accumulo</groupId>
                 <artifactId>accumulo-trace</artifactId>
                 <version>${version.accumulo}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-tracer</artifactId>
+                <version>${version.accumulo}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>

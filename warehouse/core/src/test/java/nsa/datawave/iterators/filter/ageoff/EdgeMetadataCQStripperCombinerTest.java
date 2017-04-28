@@ -8,7 +8,7 @@ import nsa.datawave.iterators.filter.EdgeMetadataCQStrippingIterator;
 import nsa.datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.*;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -34,7 +34,7 @@ public class EdgeMetadataCQStripperCombinerTest {
     @Before
     public void init() throws Exception {
         
-        MockInstance i = new MockInstance(EdgeMetadataCQStripperCombinerTest.class.toString());
+        InMemoryInstance i = new InMemoryInstance(EdgeMetadataCQStripperCombinerTest.class.toString());
         connector = i.getConnector("root", new PasswordToken());
         
         // Create a table

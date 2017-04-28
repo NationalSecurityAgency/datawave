@@ -30,6 +30,8 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import javax.ws.rs.core.MultivaluedMap;
+
 public class CSVRecordReader extends CSVReaderBase implements EventFixer {
     
     private static final Logger log = Logger.getLogger(CSVRecordReader.class);

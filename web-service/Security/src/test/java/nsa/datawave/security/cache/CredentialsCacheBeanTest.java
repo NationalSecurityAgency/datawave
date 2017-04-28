@@ -16,7 +16,7 @@ import nsa.datawave.security.authorization.DatawavePrincipal;
 import nsa.datawave.webservice.common.cache.SharedCacheCoordinator;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.curator.framework.CuratorFramework;
@@ -67,7 +67,7 @@ public class CredentialsCacheBeanTest extends EasyMockSupport {
         Logger.getLogger("org.apache.zookeeper").setLevel(Level.WARN);
         
         testZookeeper = new TestingServer();
-        MockInstance mockInstance = new MockInstance();
+        InMemoryInstance mockInstance = new InMemoryInstance();
         
         connector = mockInstance.getConnector("root", new PasswordToken(""));
         connector.securityOperations().changeUserAuthorizations("root", new Authorizations("Role1c", "Role2c", "Role3c"));

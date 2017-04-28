@@ -14,7 +14,7 @@ import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory.Prior
 import nsa.datawave.webservice.common.connection.config.ConnectionPoolConfiguration;
 import nsa.datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.easymock.EasyMock;
@@ -38,7 +38,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     @Mock(type = STRICT)
     private AccumuloTableCache cache;
     
-    private MockInstance instance = new MockInstance();
+    private InMemoryInstance instance = new InMemoryInstance();
     
     @Mock(type = STRICT)
     private WrappedConnector warehouseConnection;
@@ -116,7 +116,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     @Test
     public void testGetWarehouseConnection() throws Exception {
         resetAll();
-        EasyMock.expect(cache.getInstance()).andReturn(new MockInstance());
+        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
@@ -130,7 +130,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     public void testGetContextConnection() throws Exception {
         System.setProperty("dw.accumulo.classLoader.context", "alternateContext");
         resetAll();
-        EasyMock.expect(cache.getInstance()).andReturn(new MockInstance());
+        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
@@ -144,7 +144,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     @Test
     public void testGetMetricsConnection() throws Exception {
         resetAll();
-        EasyMock.expect(cache.getInstance()).andReturn(new MockInstance());
+        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();

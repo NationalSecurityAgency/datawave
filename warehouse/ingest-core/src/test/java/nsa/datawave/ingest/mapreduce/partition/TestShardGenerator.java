@@ -3,7 +3,7 @@ package nsa.datawave.ingest.mapreduce.partition;
 import com.google.common.io.Files;
 import nsa.datawave.ingest.mapreduce.job.ShardedTableMapFile;
 import nsa.datawave.util.time.DateHelper;
-import org.apache.accumulo.core.data.KeyExtent;
+import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -63,7 +63,7 @@ public class TestShardGenerator {
                 }
                 alreadyUsed.add(tserver);
                 for (String tableName : tableNames) {
-                    locations.put(new KeyExtent(new Text(tableName), new Text(today + "_" + currShard), prevEndRow), tserver);
+                    locations.put(new KeyExtent(tableName, new Text(today + "_" + currShard), prevEndRow), tserver);
                 }
             }
         }

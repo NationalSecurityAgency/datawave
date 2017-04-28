@@ -9,7 +9,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import nsa.datawave.common.test.integration.IntegrationTest;
 import nsa.datawave.ingest.table.balancer.GroupBalancer.Location;
-import org.apache.accumulo.core.data.KeyExtent;
+import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.master.thrift.TabletServerStatus;
 import org.apache.accumulo.core.util.MapCounter;
 import org.apache.accumulo.core.util.Pair;
@@ -236,15 +236,14 @@ public class ShardedTableTabletBalancerTest {
         
         // Balance first with pending migrations w/ our table name in them and make sure no balancing happens
         ArrayList<TabletMigration> migrationsOut = new ArrayList<>();
-        HashSet<KeyExtent> migrations = Sets.newHashSet(new KeyExtent(new Text("foo"), new Text("2"), new Text("1")), new KeyExtent(new Text("bar"), new Text(
-                        "2"), new Text("1")), new KeyExtent(new Text(TNAME), new Text("2"), new Text("1")));
+        HashSet<KeyExtent> migrations = Sets.newHashSet(new KeyExtent("foo", new Text("2"), new Text("1")), new KeyExtent("bar", new Text("2"), new Text("1")),
+                        new KeyExtent(TNAME, new Text("2"), new Text("1")));
         long balanceWaitTime = testBalancer.balance(testTServers.getCurrent(), migrations, migrationsOut);
         assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
         assertTrue("Generated migrations when we had pending migrations for our table! [" + migrationsOut + "]", migrationsOut.isEmpty());
         
         // Now balance with pending migrations w/o our table name and make sure everything balances.
-        migrations = Sets
-                        .newHashSet(new KeyExtent(new Text("foo"), new Text("2"), new Text("1")), new KeyExtent(new Text("bar"), new Text("2"), new Text("1")));
+        migrations = Sets.newHashSet(new KeyExtent("foo", new Text("2"), new Text("1")), new KeyExtent("bar", new Text("2"), new Text("1")));
         balanceWaitTime = testBalancer.balance(testTServers.getCurrent(), migrations, migrationsOut);
         assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
         ensureUniqueMigrations(migrationsOut);
@@ -540,7 +539,7 @@ public class ShardedTableTabletBalancerTest {
     }
     
     private static KeyExtent makeExtent(String table, String end, String prev) {
-        return new KeyExtent(new Text(table), toText(end), toText(prev));
+        return new KeyExtent(table, toText(end), toText(prev));
     }
     
     private static Text toText(String value) {

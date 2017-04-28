@@ -8,7 +8,7 @@ import java.util.concurrent.Callable;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -26,7 +26,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 /**
  * 
  */
-public class MockLoader extends CacheLoader<LoaderKey,MockInstance> {
+public class MockLoader extends CacheLoader<LoaderKey,InMemoryInstance> {
     
     public static final Logger log = Logger.getLogger(MockLoader.class);
     
@@ -47,14 +47,14 @@ public class MockLoader extends CacheLoader<LoaderKey,MockInstance> {
      * @see com.google.common.cache.CacheLoader#load(java.lang.Object)
      */
     @Override
-    public MockInstance load(LoaderKey key) throws Exception {
+    public InMemoryInstance load(LoaderKey key) throws Exception {
         TableCallable callable = new TableCallable(key);
         return callable.call();
     }
     
-    public ListenableFuture<MockInstance> reload(LoaderKey key, MockInstance oldValue) throws Exception {
+    public ListenableFuture<InMemoryInstance> reload(LoaderKey key, InMemoryInstance oldValue) throws Exception {
         
-        ListenableFutureTask<MockInstance> task = ListenableFutureTask.create(new TableCallable(key));
+        ListenableFutureTask<InMemoryInstance> task = ListenableFutureTask.create(new TableCallable(key));
         
         executorService.execute(task);
         
@@ -62,7 +62,7 @@ public class MockLoader extends CacheLoader<LoaderKey,MockInstance> {
         
     }
     
-    public static class TableCallable implements Callable<MockInstance> {
+    public static class TableCallable implements Callable<InMemoryInstance> {
         
         private LoaderKey key;
         
@@ -76,9 +76,9 @@ public class MockLoader extends CacheLoader<LoaderKey,MockInstance> {
          * @see java.util.concurrent.Callable#call()
          */
         @Override
-        public MockInstance call() throws Exception {
+        public InMemoryInstance call() throws Exception {
             
-            MockInstance instance = new MockInstance(UUID.randomUUID().toString() + key.table);
+            InMemoryInstance instance = new InMemoryInstance(UUID.randomUUID().toString() + key.table);
             Authorizations auths = key.connector.securityOperations().getUserAuthorizations(key.user);
             
             if (log.isTraceEnabled()) {

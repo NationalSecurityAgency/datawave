@@ -2,12 +2,15 @@ package nsa.datawave.mr.bulk;
 
 import java.io.IOException;
 
+import org.apache.accumulo.core.client.SampleNotPresentException;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.security.Authorizations;
 
 public class BulkIteratorEnvironment implements IteratorEnvironment {
     
@@ -39,6 +42,26 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     @Override
     public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
         throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public Authorizations getAuthorizations() {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public IteratorEnvironment cloneWithSamplingEnabled() {
+        throw new SampleNotPresentException();
+    }
+    
+    @Override
+    public boolean isSamplingEnabled() {
+        return false;
+    }
+    
+    @Override
+    public SamplerConfiguration getSamplerConfiguration() {
+        return null;
     }
     
     @Override

@@ -126,10 +126,9 @@ import nsa.datawave.webservice.result.TotalResultsAware;
 import nsa.datawave.webservice.result.VoidResponse;
 
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.trace.instrument.Span;
-import org.apache.accumulo.trace.instrument.Trace;
-import org.apache.accumulo.trace.instrument.Tracer;
-import org.apache.accumulo.trace.thrift.TInfo;
+import org.apache.accumulo.core.trace.Span;
+import org.apache.accumulo.core.trace.Trace;
+import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.collections.Transformer;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.jexl2.parser.TokenMgrError;
@@ -535,7 +534,7 @@ public class CachedResultsBean {
                     throw new QueryCanceledQueryException(DatawaveErrorCode.QUERY_CANCELED);
                 }
                 
-                Span nextSpan = (span == null) ? null : Trace.startThread(span, "cachedresults:next");
+                Span nextSpan = (span == null) ? null : Trace.start("cachedresults:next");
                 try {
                     if (nextSpan != null)
                         nextSpan.data("pageNumber", Long.toString(query.getLastPageNumber() + 1));
@@ -746,7 +745,8 @@ public class CachedResultsBean {
                     // ignore
                 }
                 span.stop();
-                Tracer.getInstance().flush();
+                // TODO: 1.8.1: no longer done?
+                // Tracer.getInstance().flush();
             }
             
             if (null != query) {

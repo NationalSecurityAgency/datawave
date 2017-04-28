@@ -153,10 +153,10 @@ import nsa.datawave.webservice.result.VoidResponse;
 
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.trace.instrument.Span;
-import org.apache.accumulo.trace.instrument.Trace;
-import org.apache.accumulo.trace.instrument.Tracer;
-import org.apache.accumulo.trace.thrift.TInfo;
+import org.apache.accumulo.core.trace.Span;
+import org.apache.accumulo.core.trace.Trace;
+import org.apache.accumulo.core.trace.Tracer;
+import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
@@ -513,11 +513,12 @@ public class QueryExecutorBean implements QueryExecutor {
                 
                 defineSpan.stop();
                 
-                if (null != defineSpan.parent()) {
-                    // Stop the main query span since we're done working with it on this thread.
-                    // We'll continue it later.
-                    defineSpan.parent().stop();
-                }
+                // TODO: not sure this makes any sense anymore in Accumulo 1.8.1
+                // if (null != defineSpan.parent()) {
+                // // Stop the main query span since we're done working with it on this thread.
+                // // We'll continue it later.
+                // defineSpan.parent().stop();
+                // }
             }
         }
     }
@@ -766,9 +767,10 @@ public class QueryExecutorBean implements QueryExecutor {
         } finally {
             if (createSpan != null) {
                 createSpan.stop();
+                // TODO: not sure this makes any sense anymore in Accumulo 1.8.1
                 // Stop the main query span since we're done working with it on this thread.
                 // We'll continue it later.
-                createSpan.parent().stop();
+                // createSpan.parent().stop();
             }
             if (null != q) {
                 // - Remove the logic from the cache
@@ -1747,7 +1749,8 @@ public class QueryExecutorBean implements QueryExecutor {
                 // ignore
             }
             span.stop();
-            Tracer.getInstance().flush();
+            // TODO: not sure this makes any sense anymore in Accumulo 1.8.1
+            // Tracer.getInstance().flush();
         }
     }
     

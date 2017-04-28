@@ -19,7 +19,7 @@ import nsa.datawave.webservice.common.audit.Auditor.AuditType;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -44,8 +44,8 @@ public class AccumuloAuditBeanTest extends EasyMockSupport {
     public void setup() throws Exception {
         
         conFactory = createStrictMock(AccumuloConnectionFactory.class);
-        MockInstance mockInstance = new MockInstance("testInstance");
-        mockConnector = mockInstance.getConnector("root", new PasswordToken(""));
+        InMemoryInstance InMemoryInstance = new InMemoryInstance("testInstance");
+        mockConnector = InMemoryInstance.getConnector("root", new PasswordToken(""));
         
         audit = new AccumuloAuditBean();
         field(AccumuloAuditBean.class, "connectionFactory").set(audit, conFactory);

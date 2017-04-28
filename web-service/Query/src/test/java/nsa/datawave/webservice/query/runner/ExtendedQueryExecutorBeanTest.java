@@ -88,10 +88,10 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.trace.instrument.Span;
-import org.apache.accumulo.trace.instrument.Trace;
-import org.apache.accumulo.trace.instrument.Tracer;
-import org.apache.accumulo.trace.thrift.TInfo;
+import org.apache.accumulo.core.trace.Span;
+import org.apache.accumulo.core.trace.Trace;
+import org.apache.accumulo.core.trace.Tracer;
+import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.collections.iterators.TransformIterator;
 import org.easymock.EasyMock;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -306,9 +306,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(Trace.trace(this.traceInfo, "query:close")).andReturn(this.span);
         this.span.data(eq("closedAt"), isA(String.class));
         this.span.stop();
-        PowerMock.mockStaticPartial(Tracer.class, "getInstance");
-        expect(Tracer.getInstance()).andReturn(this.tracer);
-        this.tracer.flush();
+        // TODO: 1.8.1: no longer done
+        // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
+        // expect(Tracer.getInstance()).andReturn(this.tracer);
+        // this.tracer.flush();
         
         // Run the test
         PowerMock.replayAll();
@@ -548,9 +549,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(Trace.trace(this.traceInfo, "query:close")).andReturn(this.span);
         this.span.data(eq("closedAt"), isA(String.class));
         this.span.stop();
-        PowerMock.mockStaticPartial(Tracer.class, "getInstance");
-        expect(Tracer.getInstance()).andReturn(this.tracer);
-        this.tracer.flush();
+        // TODO: 1.8.1: no longer done
+        // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
+        // expect(Tracer.getInstance()).andReturn(this.tracer);
+        // this.tracer.flush();
         
         // Run the test
         PowerMock.replayAll();
@@ -1601,9 +1603,9 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.mockStaticPartial(Trace.class, "start");
         expect(Trace.start("query:define")).andReturn(this.span);
         expect(this.queryLogic1.getConnectionPriority()).andThrow(ILLEGAL_STATE_EXCEPTION);
-        this.span.stop();
-        expect(this.span.parent()).andReturn(this.span);
-        expect(this.span.parent()).andReturn(this.span);
+        // TODO: 1.8.1: no longer done
+        // expect(this.span.parent()).andReturn(this.span);
+        // expect(this.span.parent()).andReturn(this.span);
         this.span.stop();
         
         // Run the test

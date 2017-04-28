@@ -22,7 +22,7 @@
 
     <bean id="vfs" class="org.apache.commons.vfs2.impl.DefaultFileSystemManager" />
 
-    <bean id="hdfsFileProvider" class="org.apache.accumulo.start.classloader.vfs.providers.HdfsFileProvider" />
+    <bean id="hdfsFileProvider" class="org.apache.commons.vfs2.provider.hdfs.HdfsFileProvider" />
     <bean id="defaultFileProvider" class="org.apache.commons.vfs2.provider.local.DefaultLocalFileProvider" />
 
     <!--

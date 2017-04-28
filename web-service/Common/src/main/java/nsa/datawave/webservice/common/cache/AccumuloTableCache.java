@@ -39,7 +39,7 @@ import nsa.datawave.webservice.common.exception.DatawaveWebApplicationException;
 import nsa.datawave.webservice.common.result.AccumuloTableCacheStatus;
 import nsa.datawave.webservice.query.exception.QueryException;
 import nsa.datawave.webservice.result.VoidResponse;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
@@ -93,7 +93,7 @@ public class AccumuloTableCache {
     public static final String MOCK_USERNAME = "";
     public static final PasswordToken MOCK_PASSWORD = new PasswordToken(new byte[0]);
     
-    private MockInstance instance;
+    private InMemoryInstance instance;
     private Map<String,TableCache> details;
     private List<SharedCacheCoordinator> cacheCoordinators;
     private boolean connectionFactoryProvided = false;
@@ -106,7 +106,7 @@ public class AccumuloTableCache {
     private void setup() {
         log.debug("accumuloTableCacheConfiguration was setup as: " + accumuloTableCacheConfiguration);
         
-        instance = new MockInstance();
+        instance = new InMemoryInstance();
         details = new HashMap<>();
         cacheCoordinators = new ArrayList<>();
         
@@ -177,7 +177,7 @@ public class AccumuloTableCache {
         connectionFactoryProvided = true;
     }
     
-    public MockInstance getInstance() {
+    public InMemoryInstance getInstance() {
         return this.instance;
     }
     

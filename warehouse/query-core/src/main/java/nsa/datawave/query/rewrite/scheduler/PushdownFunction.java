@@ -15,14 +15,16 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
+import org.apache.accumulo.core.client.impl.ClientContext;
 import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.impl.TabletLocator;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.data.KeyExtent;
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.master.state.tables.TableState;
-import org.apache.accumulo.core.security.Credentials;
+import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -178,7 +180,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
             binnedRanges.clear();
             AuthenticationToken authToken = new PasswordToken(config.getAccumuloPassword());
             Credentials creds = new Credentials(config.getConnector().whoami(), authToken);
-            List<Range> failures = tl.binRanges(creds, ranges, binnedRanges);
+            List<Range> failures = tl.binRanges(new ClientContext(instance, creds, AccumuloConfiguration.getDefaultConfiguration()), ranges, binnedRanges);
             
             if (failures.size() > 0) {
                 // tried to only do table state checks when failures.size()

@@ -5,10 +5,12 @@ import nsa.datawave.ingest.data.config.ingest.AccumuloHelper;
 import nsa.datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import nsa.datawave.util.StringUtils;
 import org.apache.accumulo.core.client.*;
-import org.apache.accumulo.core.data.KeyExtent;
+import org.apache.accumulo.core.client.impl.ClientContext;
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.metadata.MetadataServicer;
-import org.apache.accumulo.core.security.Credentials;
-import org.apache.accumulo.core.util.UtilWaitThread;
+import org.apache.accumulo.core.client.impl.Credentials;
+import org.apache.accumulo.fate.util.UtilWaitThread;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.io.*;
@@ -206,7 +208,8 @@ public class ShardedTableMapFile {
             try {
                 // re-create the locations so that we don't re-use stale metadata information.
                 locations.clear();
-                MetadataServicer servicer = MetadataServicer.forTableName(instance, credentials, shardedTableName);
+                MetadataServicer servicer = MetadataServicer.forTableName(
+                                new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration()), shardedTableName);
                 servicer.getTabletLocations(locations);
                 break;
             } catch (Exception e) {

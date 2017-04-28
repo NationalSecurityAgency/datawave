@@ -39,14 +39,16 @@ import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
+import org.apache.accumulo.core.client.impl.ClientContext;
 import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.impl.TabletLocator;
 import org.apache.accumulo.core.client.mapreduce.InputFormatBase;
-import org.apache.accumulo.core.client.mock.MockInstance;
-import org.apache.accumulo.core.client.mock.MockTabletLocator;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
+import nsa.datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.KeyExtent;
+import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -58,10 +60,10 @@ import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.TablePermission;
-import org.apache.accumulo.core.util.ArgumentChecker;
+import nsa.datawave.common.util.ArgumentChecker;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.TextUtil;
-import org.apache.accumulo.core.util.UtilWaitThread;
+import org.apache.accumulo.fate.util.UtilWaitThread;
 import org.apache.accumulo.core.util.format.DefaultFormatter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
@@ -102,7 +104,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static final String ZOOKEEPERS = PREFIX + ".zooKeepers";
     protected static final String RACKSTRATEGY = PREFIX + ".rack.strategy.class";
     protected static final String RANGESPLITSTRATEGY = PREFIX + ".split.strategy.class";
-    protected static final String MOCK = ".useMockInstance";
+    protected static final String MOCK = ".useInMemoryInstance";
     
     protected static final String RANGES = PREFIX + ".ranges";
     protected static final String AUTO_ADJUST_RANGES = PREFIX + ".ranges.autoAdjust";
@@ -258,14 +260,14 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
     
     /**
-     * Configure a {@link MockInstance} for this configuration object.
+     * Configure a {@link InMemoryInstance} for this configuration object.
      * 
      * @param conf
      *            the Hadoop configuration object
      * @param instanceName
      *            the accumulo instance name
      */
-    public static void setMockInstance(Configuration conf, String instanceName) {
+    public static void setInMemoryInstance(Configuration conf, String instanceName) {
         conf.setBoolean(INSTANCE_HAS_BEEN_SET, true);
         conf.setBoolean(MOCK, true);
         conf.set(INSTANCE_NAME, instanceName);
@@ -512,11 +514,11 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      *            the Hadoop configuration object
      * @return an accumulo instance
      * @see #setZooKeeperInstance(Configuration, String, String)
-     * @see #setMockInstance(Configuration, String)
+     * @see #setInMemoryInstance(Configuration, String)
      */
     protected static Instance getInstance(Configuration conf) {
         if (conf.getBoolean(MOCK, false))
-            return new MockInstance(conf.get(INSTANCE_NAME));
+            return new InMemoryInstance(conf.get(INSTANCE_NAME));
         return new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(conf.get(INSTANCE_NAME)).withZkHosts(conf.get(ZOOKEEPERS)));
     }
     
@@ -957,7 +959,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             else
                 startRow = new Text();
             
-            Range metadataRange = new Range(new KeyExtent(new Text(tableId), startRow, null).getMetadataEntry(), true, null, false);
+            Range metadataRange = new Range(new KeyExtent(tableId, startRow, null).getMetadataEntry(), true, null, false);
             Scanner scanner = conn.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
             MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
             scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
@@ -997,7 +999,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 if (location != null)
                     return null;
                 
-                if (!extent.getTableId().toString().equals(tableId)) {
+                if (!extent.getTableId().equals(tableId)) {
                     throw new AccumuloException("Saw unexpected table Id " + tableId + " " + extent);
                 }
                 
@@ -1067,10 +1069,11 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      */
     protected static TabletLocator getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
         if (conf.getBoolean(MOCK, false))
-            return new MockTabletLocator();
+            return new InMemoryTabletLocator();
         Instance instance = getInstance(conf);
         String tableName = getTablename(conf);
-        return TabletLocator.getLocator(instance, new Text(Tables.getTableId(instance, tableName)));
+        return TabletLocator.getLocator(new ClientContext(instance, null, AccumuloConfiguration.getDefaultConfiguration()),
+                        Tables.getTableId(instance, tableName));
     }
     
     /**
@@ -1109,8 +1112,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 tl = getTabletLocator(job.getConfiguration());
                 // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
                 tl.invalidateCache();
-                while (!tl.binRanges(cbHelper.getCredentials(), ranges, binnedRanges).isEmpty()) {
-                    if (!(instance instanceof MockInstance)) {
+                while (!tl.binRanges(new ClientContext(instance, cbHelper.getCredentials(), AccumuloConfiguration.getDefaultConfiguration()), ranges,
+                                binnedRanges).isEmpty()) {
+                    if (!(instance instanceof InMemoryInstance)) {
                         if (tableId == null)
                             tableId = Tables.getTableId(instance, tableName);
                         if (!Tables.exists(instance, tableId))

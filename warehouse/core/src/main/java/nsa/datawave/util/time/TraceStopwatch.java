@@ -2,8 +2,8 @@ package nsa.datawave.util.time;
 
 import java.util.concurrent.TimeUnit;
 
-import org.apache.accumulo.trace.instrument.Span;
-import org.apache.accumulo.trace.instrument.Trace;
+import org.apache.accumulo.core.trace.Span;
+import org.apache.accumulo.core.trace.Trace;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.google.common.base.Preconditions;

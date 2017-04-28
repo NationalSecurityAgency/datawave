@@ -15,7 +15,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -51,7 +51,7 @@ public class DateIndexQueryExpansionVisitorTest {
     @BeforeClass
     public static void before() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        MockInstance i = new MockInstance(DateIndexQueryExpansionVisitorTest.class.getName());
+        InMemoryInstance i = new InMemoryInstance(DateIndexQueryExpansionVisitorTest.class.getName());
         connector = i.getConnector("root", new PasswordToken(""));
     }
     

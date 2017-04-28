@@ -1,7 +1,7 @@
 package nsa.datawave.query.tables.edge.contexts;
 
 import nsa.datawave.edge.model.EdgeModelAware;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 public class IdentityContext implements EdgeModelAware, EdgeContext {
     private String identity;

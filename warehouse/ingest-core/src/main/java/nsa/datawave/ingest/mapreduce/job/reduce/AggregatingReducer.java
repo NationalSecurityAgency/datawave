@@ -16,6 +16,8 @@ import java.util.regex.Pattern;
 
 import nsa.datawave.ingest.mapreduce.job.IngestJob;
 
+import org.apache.accumulo.core.client.SampleNotPresentException;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -25,6 +27,7 @@ import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.conf.ColumnToClassMapping;
 import org.apache.accumulo.core.iterators.conf.PerColumnIteratorConfig;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -436,6 +439,26 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                         @Override
                         public boolean isFullMajorCompaction() {
                             return false;
+                        }
+                        
+                        @Override
+                        public Authorizations getAuthorizations() {
+                            throw new UnsupportedOperationException();
+                        }
+                        
+                        @Override
+                        public IteratorEnvironment cloneWithSamplingEnabled() {
+                            throw new SampleNotPresentException();
+                        }
+                        
+                        @Override
+                        public boolean isSamplingEnabled() {
+                            return false;
+                        }
+                        
+                        @Override
+                        public SamplerConfiguration getSamplerConfiguration() {
+                            return null;
                         }
                         
                         @Override

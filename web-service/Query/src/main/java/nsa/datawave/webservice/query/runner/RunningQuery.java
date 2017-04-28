@@ -34,7 +34,7 @@ import nsa.datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.trace.thrift.TInfo;
+import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.collections.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;

@@ -25,7 +25,7 @@ import nsa.datawave.webservice.model.ModelList;
 
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -46,7 +46,7 @@ import org.powermock.reflect.Whitebox;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ModelBean.class, ModelKeyParser.class})
-@PowerMockIgnore({"org.apache.*", "com.sun.xml.*", "javax.xml.bind.*"})
+@PowerMockIgnore({"org.apache.*", "com.sun.xml.*", "javax.xml.bind.*", "com.google.*"})
 public class ModelBeanTest {
     
     private static final String userDN = "CN=Guy Some Other soguy, OU=ou1, OU=ou2, OU=ou3, O=o1, C=US";
@@ -58,7 +58,7 @@ public class ModelBeanTest {
     private EJBContext ctx;
     private AccumuloTableCache cache;
     
-    private MockInstance instance = null;
+    private InMemoryInstance instance = null;
     private Connector connector = null;
     private DatawavePrincipal principal = null;
     
@@ -80,7 +80,7 @@ public class ModelBeanTest {
         Whitebox.setInternalState(bean, AccumuloConnectionFactory.class, connectionFactory);
         Whitebox.setInternalState(bean, AccumuloTableCache.class, cache);
         
-        instance = new MockInstance("test");
+        instance = new InMemoryInstance("test");
         connector = instance.getConnector("root", new PasswordToken(""));
         
         principal = new DatawavePrincipal(userDN + "<" + issuerDN + ">");

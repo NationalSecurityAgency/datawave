@@ -3,7 +3,7 @@ package nsa.datawave.ingest.data.config.ingest;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 import nsa.datawave.ingest.data.Type;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 

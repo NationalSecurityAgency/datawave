@@ -7,7 +7,7 @@ package nsa.datawave.index.validation;
  */
 
 import org.apache.accumulo.core.client.*;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -56,8 +56,8 @@ public class AccumuloIndexAgeDisplayTest {
     public void setup() throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
         // set hadoop.home.dir so we don't get an IOException about it. Doesn't appear to be used though
         System.setProperty("hadoop.home.dir", "/tmp");
-        // May need to replace MockInstance with MiniCluster. Apparently MockInstance isn't kept up as well.
-        mockInstance = new MockInstance();
+        // May need to replace InMemoryInstance with MiniCluster. Apparently InMemoryInstance isn't kept up as well.
+        mockInstance = new InMemoryInstance();
         conn = mockInstance.getConnector(userName, password);
         conn.securityOperations().changeUserAuthorizations(userName, auths);
         conn.tableOperations().create(tableName);

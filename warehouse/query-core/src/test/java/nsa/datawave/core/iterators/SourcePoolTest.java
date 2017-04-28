@@ -7,7 +7,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
@@ -270,7 +270,7 @@ public class SourcePoolTest {
             public void run() {
                 try {
                     SortedKeyValueIterator<Key,Value> source = pool.checkOut(-1);
-                    waitingForCheckOut.setFalse();
+                    waitingForCheckOut.setValue(false);
                     Assert.assertNotNull(source);
                     Assert.assertFalse(sources.contains(source));
                     sources.add(source);

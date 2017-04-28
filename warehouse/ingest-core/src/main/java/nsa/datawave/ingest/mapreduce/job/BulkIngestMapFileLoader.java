@@ -35,18 +35,19 @@ import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.impl.ClientContext;
 import org.apache.accumulo.core.client.impl.MasterClient;
 import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.master.thrift.MasterClientService.Iface;
 import org.apache.accumulo.core.master.thrift.MasterMonitorInfo;
 import org.apache.accumulo.core.master.thrift.TableInfo;
-import org.apache.accumulo.core.security.Credentials;
+import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.io.NullWritable;
@@ -604,7 +605,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         
         Iface client = null;
         try {
-            client = MasterClient.getConnection(instance);
+            client = MasterClient.getConnection(new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration()));
             MasterMonitorInfo mmi = client.getMasterStats(null, credentials.toThrift(instance));
             Map<String,TableInfo> tableStats = mmi.getTableMap();
             

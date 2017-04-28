@@ -11,10 +11,7 @@ import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.admin.InstanceOperations;
-import org.apache.accumulo.core.client.admin.NamespaceOperations;
-import org.apache.accumulo.core.client.admin.SecurityOperations;
-import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.admin.*;
 import org.apache.accumulo.core.security.Authorizations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -144,6 +141,11 @@ public class WrappedConnector extends Connector {
     @Override
     public synchronized InstanceOperations instanceOperations() {
         return real.instanceOperations();
+    }
+    
+    @Override
+    public ReplicationOperations replicationOperations() {
+        return real.replicationOperations();
     }
     
     @Override

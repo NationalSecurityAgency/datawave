@@ -7,7 +7,7 @@ import java.util.concurrent.Future;
 
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 
 public interface TableCache extends Callable<Boolean>, Serializable {
     
@@ -23,7 +23,7 @@ public interface TableCache extends Callable<Boolean>, Serializable {
     
     public AccumuloConnectionFactory getConnectionFactory();
     
-    public MockInstance getInstance();
+    public InMemoryInstance getInstance();
     
     public SharedCacheCoordinator getWatcher();
     
@@ -43,7 +43,7 @@ public interface TableCache extends Callable<Boolean>, Serializable {
     
     public void setConnectionFactory(AccumuloConnectionFactory connectionFactory);
     
-    public void setInstance(MockInstance instance);
+    public void setInstance(InMemoryInstance instance);
     
     public void setWatcher(SharedCacheCoordinator watcher);
     

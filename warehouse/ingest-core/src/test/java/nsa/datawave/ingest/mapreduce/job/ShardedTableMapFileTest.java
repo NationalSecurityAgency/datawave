@@ -5,7 +5,7 @@ import nsa.datawave.ingest.data.config.ingest.AccumuloHelper;
 import nsa.datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import org.apache.accumulo.core.client.*;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.data.KeyExtent;
+import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
@@ -33,8 +33,8 @@ public class ShardedTableMapFileTest {
         conf.set(ShardedTableMapFile.TABLE_NAMES, StringUtils.join(",", tableNames));
         
         Map<KeyExtent,String> splits = new HashMap<>();
-        splits.put(new KeyExtent(new Text(TABLE_NAME), null, null), "location1:1234"); // won't be written to splits file
-        splits.put(new KeyExtent(new Text(TABLE_NAME), new Text("zEndRow"), new Text("prevEndRow")), "location2:1234");
+        splits.put(new KeyExtent(TABLE_NAME, null, null), "location1:1234"); // won't be written to splits file
+        splits.put(new KeyExtent(TABLE_NAME, new Text("zEndRow"), new Text("prevEndRow")), "location2:1234");
         
         Path file = createSplitsFile(splits, conf, 1);
         conf.set(ShardedTableMapFile.SHARDED_MAP_FILE_PATHS_RAW, TABLE_NAME + "=" + file.toString());
@@ -171,8 +171,8 @@ public class ShardedTableMapFileTest {
     @Test
     public void testWriteSplitsFileExistingPathMultipleKeyExtents() throws Exception {
         Map<KeyExtent,String> splits = new HashMap<>();
-        splits.put(new KeyExtent(new Text(TABLE_NAME), null, null), "location1:1234"); // won't be written to splits file
-        splits.put(new KeyExtent(new Text(TABLE_NAME), new Text("zEndRow"), new Text("prevEndRow")), "location2:1234");
+        splits.put(new KeyExtent(TABLE_NAME, null, null), "location1:1234"); // won't be written to splits file
+        splits.put(new KeyExtent(TABLE_NAME, new Text("zEndRow"), new Text("prevEndRow")), "location2:1234");
         Configuration conf = new Configuration();
         
         Path file = createSplitsFile(splits, conf, 1);

@@ -339,7 +339,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                     EXPIRATION_INTERVAL_MS = getLongProperty(EXPIRATION_INTERVAL_MS_PROP, DEFAULT_EXPIRATION_INTERVAL_MS); // 1 hour
                     ruleCache = CacheBuilder.newBuilder().refreshAfterWrite(UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS)
                                     .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new ReloadableCacheBuilder());
-                    SimpleTimer.getInstance().schedule(new Runnable() {
+                    SimpleTimer.getInstance(AccumuloConfiguration.getDefaultConfiguration()).schedule(new Runnable() {
                         @Override
                         public void run() {
                             try {
@@ -388,12 +388,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         if (this.myEnv != null && this.myEnv.getConfig() != null) {
             AccumuloConfiguration conf = this.myEnv.getConfig();
             Map<String,String> properties = new TreeMap<String,String>();
-            conf.getProperties(properties, new AccumuloConfiguration.PropertyFilter() {
-                @Override
-                public boolean accept(String key) {
-                    return (key.equals(prop));
-                }
-            });
+            conf.getProperties(properties, new AccumuloConfiguration.MatchFilter(prop));
             if (properties.containsKey(prop)) {
                 return Long.parseLong(properties.get(prop));
             }

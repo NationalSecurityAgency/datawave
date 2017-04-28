@@ -243,7 +243,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     
     protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) throws IOException {
         startWriteTime = System.currentTimeMillis();
-        return new SizeTrackingWriter(FileOperations.getInstance().openWriter(filename, fs, conf, tableConf));
+        return new SizeTrackingWriter(FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf).withTableConfiguration(tableConf).build());
     }
     
     /**
@@ -306,6 +306,11 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         
         public void close() throws IOException {
             delegate.close();
+        }
+        
+        @Override
+        public long getLength() throws IOException {
+            return getSize();
         }
         
         public SizeTrackingWriter(FileSKVWriter delegate) {
@@ -551,7 +556,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     Path path = entry.getValue();
                     String table = writerTableNames.get(entry.getKey());
                     try {
-                        FileSKVIterator openReader = fops.openReader(path.toString(), false, fs, conf, tableConfigs.get(table));
+                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf).withTableConfiguration(tableConfigs.get(table))
+                                        .build();
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();
                         openReader.close();

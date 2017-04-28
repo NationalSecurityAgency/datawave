@@ -12,15 +12,16 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.impl.ClientContext;
 import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.impl.TabletLocator;
-import org.apache.accumulo.core.client.mock.MockInstance;
-import org.apache.accumulo.core.client.mock.impl.MockTabletLocator;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
+import nsa.datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
@@ -137,12 +138,13 @@ public class PushdownScheduler extends Scheduler {
         
         TabletLocator tl = null;
         
-        if (config.getConnector().getInstance() instanceof MockInstance) {
-            tl = new MockTabletLocator();
+        if (config.getConnector().getInstance() instanceof InMemoryInstance) {
+            tl = new InMemoryTabletLocator();
             tableId = config.getTableName();
         } else {
             tableId = Tables.getTableId(config.getConnector().getInstance(), tableName);
-            tl = TabletLocator.getLocator(config.getConnector().getInstance(), new Text(tableId));
+            tl = TabletLocator.getLocator(new ClientContext(config.getConnector().getInstance(), null, AccumuloConfiguration.getDefaultConfiguration()),
+                            tableId);
         }
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tl, config, settings, tableId));
         

@@ -11,7 +11,7 @@ import java.util.regex.Matcher;
 import nsa.datawave.ingest.data.config.NormalizedContentInterface;
 import nsa.datawave.webservice.common.logging.ThreadConfigurableLogger;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 

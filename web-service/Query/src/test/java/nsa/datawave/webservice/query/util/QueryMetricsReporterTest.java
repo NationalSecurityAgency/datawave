@@ -20,19 +20,12 @@ import org.apache.accumulo.core.Constants;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.impl.ClientExec;
-import org.apache.accumulo.core.client.impl.Namespaces;
-import org.apache.accumulo.core.client.impl.ScannerOptions;
-import org.apache.accumulo.core.client.impl.ServerClient;
-import org.apache.accumulo.core.client.impl.Tables;
-import org.apache.accumulo.core.client.impl.TabletServerBatchReader;
-import org.apache.accumulo.core.client.impl.TabletServerBatchReaderIterator;
+import org.apache.accumulo.core.client.impl.*;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.master.state.tables.TableState;
 import org.apache.accumulo.core.metadata.RootTable;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.Credentials;
 import org.apache.accumulo.fate.zookeeper.ZooCache;
 import org.apache.accumulo.fate.zookeeper.ZooCacheFactory;
 import org.apache.commons.cli.Option;
@@ -103,7 +96,7 @@ public class QueryMetricsReporterTest {
         expect(this.zooCache.get(Constants.ZROOT + Constants.ZINSTANCES + '/' + instanceID)).andReturn(instanceID.getBytes()).anyTimes();
         expect(this.zooCache.get(Constants.ZROOT + '/' + instanceID)).andReturn(instanceID.getBytes()).anyTimes();
         PowerMock.mockStatic(ServerClient.class);
-        ServerClient.execute(isA(Instance.class), isA(ClientExec.class));
+        ServerClient.execute(isA(ClientContext.class), isA(ClientExec.class));
         expect(this.zooCache.getChildren(isA(String.class))).andReturn(Arrays.asList(Constants.ZROOT + '/' + instanceID + Constants.ZTABLES + '/' + tableName))
                         .anyTimes();
         expect(
@@ -116,7 +109,7 @@ public class QueryMetricsReporterTest {
                         this.zooCache.get(Constants.ZROOT + '/' + instanceID + Constants.ZTABLES + '/' + Constants.ZROOT + '/' + instanceID + Constants.ZTABLES
                                         + '/' + tableName + "/state")).andReturn(TableState.ONLINE.toString().getBytes()).anyTimes();
         expect(this.zooCache.get(Constants.ZROOT + '/' + instanceID + RootTable.ZROOT_TABLET_LOCATION)).andReturn(null).anyTimes();
-        PowerMock.expectNew(TabletServerBatchReaderIterator.class, isA(Instance.class), isA(Credentials.class), isA(String.class), isA(Authorizations.class),
+        PowerMock.expectNew(TabletServerBatchReaderIterator.class, isA(ClientContext.class), isA(String.class), isA(Authorizations.class),
                         isA(ArrayList.class), gt(-100), isA(ExecutorService.class), isA(ScannerOptions.class), gt(-2L)).andReturn(this.iterator);
         expect(this.iterator.hasNext()).andReturn(true).times(6); // 6 sets of metrics to report. First is a bad qualifier, so no value is retrieved.
         expect(this.iterator.next()).andReturn(this.iteratorEntry).times(6);

@@ -50,7 +50,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.commons.lang3.time.FastDateFormat;
+import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 

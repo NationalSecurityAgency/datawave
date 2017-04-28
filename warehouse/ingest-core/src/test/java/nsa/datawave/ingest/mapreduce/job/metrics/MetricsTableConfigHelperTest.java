@@ -3,7 +3,7 @@ package nsa.datawave.ingest.mapreduce.job.metrics;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -29,7 +29,7 @@ public class MetricsTableConfigHelperTest {
     
     @Before
     public void setUp() throws Exception {
-        tops = new MockInstance().getConnector("user", new PasswordToken("pass")).tableOperations();
+        tops = new InMemoryInstance().getConnector("user", new PasswordToken("pass")).tableOperations();
         
         String tableName = MetricsConfiguration.getTable(conf);
         

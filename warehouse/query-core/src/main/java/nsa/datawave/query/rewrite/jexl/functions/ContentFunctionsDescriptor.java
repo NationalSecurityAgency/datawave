@@ -19,8 +19,6 @@ import nsa.datawave.webservice.query.exception.NotFoundQueryException;
 import nsa.datawave.webservice.query.exception.PreConditionFailedQueryException;
 import nsa.datawave.webservice.query.exception.QueryException;
 
-import nsa.datawave.webservice.query.Query;
-import nsa.datawave.webservice.query.exception.*;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.*;
 
@@ -28,7 +26,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
-import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang.mutable.MutableBoolean;
 
 public class ContentFunctionsDescriptor implements RefactoredJexlFunctionArgumentDescriptorFactory {
     
@@ -195,7 +193,7 @@ public class ContentFunctionsDescriptor implements RefactoredJexlFunctionArgumen
             Iterator<String> itr = termFreqFields.iterator();
             // Can any one of the fields satisfy the query? Always true unless the zone is specified in an AND clause.
             if (oredFields != null) {
-                oredFields.setTrue();
+                oredFields.setValue(true);
             }
             while (itr.hasNext()) {
                 String field = itr.next();
@@ -220,7 +218,7 @@ public class ContentFunctionsDescriptor implements RefactoredJexlFunctionArgumen
                         // The zones may (more likely) be specified as an idenfifier
                         if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
                             if (oredFields != null && firstArg instanceof ASTAndNode) {
-                                oredFields.setFalse();
+                                oredFields.setValue(false);
                             }
                             
                             fields = JexlASTHelper.getIdentifierNames(firstArg);
@@ -242,7 +240,7 @@ public class ContentFunctionsDescriptor implements RefactoredJexlFunctionArgumen
                         // The zones may (more likely) be specified as an identifier
                         if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
                             if (oredFields != null && firstArg instanceof ASTAndNode) {
-                                oredFields.setFalse();
+                                oredFields.setValue(false);
                             }
                             
                             fields = JexlASTHelper.getIdentifierNames(firstArg);
@@ -260,7 +258,7 @@ public class ContentFunctionsDescriptor implements RefactoredJexlFunctionArgumen
                         arg = args.next();
                     } else if (!JexlASTHelper.getIdentifiers(arg).isEmpty()) {
                         if (oredFields != null && arg instanceof ASTAndNode) {
-                            oredFields.setFalse();
+                            oredFields.setValue(false);
                         }
                         
                         fields = JexlASTHelper.getIdentifierNames(arg);

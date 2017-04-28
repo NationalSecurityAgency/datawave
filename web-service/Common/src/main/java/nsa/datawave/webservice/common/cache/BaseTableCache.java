@@ -19,7 +19,7 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -47,7 +47,7 @@ public class BaseTableCache implements Serializable, TableCache {
     /** set programatically **/
     private Date lastRefresh = new Date(0);
     private AccumuloConnectionFactory connectionFactory = null;
-    private MockInstance instance = null;
+    private InMemoryInstance instance = null;
     private SharedCacheCoordinator watcher = null;
     private Future<Boolean> reference = null;
     
@@ -84,7 +84,7 @@ public class BaseTableCache implements Serializable, TableCache {
     }
     
     @Override
-    public MockInstance getInstance() {
+    public InMemoryInstance getInstance() {
         return instance;
     }
     
@@ -129,7 +129,7 @@ public class BaseTableCache implements Serializable, TableCache {
     }
     
     @Override
-    public void setInstance(MockInstance instance) {
+    public void setInstance(InMemoryInstance instance) {
         this.instance = instance;
     }
     

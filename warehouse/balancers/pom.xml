@@ -13,6 +13,11 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>nsa.datawave</groupId>
+            <artifactId>in-memory-accumulo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
         </dependency>

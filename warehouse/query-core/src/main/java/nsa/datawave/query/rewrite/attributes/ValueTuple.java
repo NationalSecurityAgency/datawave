@@ -3,7 +3,7 @@ package nsa.datawave.query.rewrite.attributes;
 import com.google.common.base.Objects;
 import nsa.datawave.data.type.Type;
 import nsa.datawave.query.util.Tuple3;
-import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang.builder.CompareToBuilder;
 
 import java.util.Collection;
 

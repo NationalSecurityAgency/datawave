@@ -19,17 +19,16 @@ import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.KeyExtent;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.core.util.ArgumentChecker;
+import nsa.datawave.common.util.ArgumentChecker;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Level;
@@ -58,7 +57,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     
     private static final String INSTANCE_NAME = PREFIX + ".instanceName";
     private static final String ZOOKEEPERS = PREFIX + ".zooKeepers";
-    private static final String MOCK = ".useMockInstance";
+    private static final String MOCK = ".useInMemoryInstance";
     
     private static final String CREATETABLES = PREFIX + ".createtables";
     private static final String LOGLEVEL = PREFIX + ".loglevel";
@@ -240,7 +239,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         conf.set(ZOOKEEPERS, zooKeepers);
     }
     
-    public static void setMockInstance(Configuration conf, String instanceName) {
+    public static void setInMemoryInstance(Configuration conf, String instanceName) {
         conf.setBoolean(INSTANCE_HAS_BEEN_SET, true);
         conf.setBoolean(MOCK, true);
         conf.set(INSTANCE_NAME, instanceName);
@@ -289,7 +288,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     
     protected static Instance getInstance(Configuration conf) {
         if (conf.getBoolean(MOCK, false))
-            return new MockInstance(conf.get(INSTANCE_NAME));
+            return new InMemoryInstance(conf.get(INSTANCE_NAME));
         return new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(conf.get(INSTANCE_NAME)).withZkHosts(conf.get(ZOOKEEPERS)));
     }
     

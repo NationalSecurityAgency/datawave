@@ -1,16 +1,10 @@
 package nsa.datawave.query.util;
 
-import com.google.common.collect.Sets;
 import nsa.datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
-import nsa.datawave.marking.MarkingFunctionsFactory;
 import nsa.datawave.query.MockAccumuloRecordWriter;
-import nsa.datawave.query.rewrite.planner.DefaultQueryPlanner;
-import nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic;
-import nsa.datawave.query.rewrite.tables.RefactoredTLDQueryLogic;
-import nsa.datawave.security.authorization.DatawavePrincipal;
 import org.apache.accumulo.core.client.*;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
@@ -18,18 +12,13 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.*;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -52,7 +41,7 @@ public class DateIndexHelperTest {
         System.setProperty("file.encoding", "UTF8");
         
         // create mock instance and connector
-        MockInstance i = new MockInstance(DateIndexHelperTest.class.getName());
+        InMemoryInstance i = new InMemoryInstance(DateIndexHelperTest.class.getName());
         connector = i.getConnector("root", new PasswordToken(""));
         recordWriter = new MockAccumuloRecordWriter();
         TableOperations tops = connector.tableOperations();

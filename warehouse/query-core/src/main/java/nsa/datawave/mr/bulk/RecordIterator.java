@@ -22,7 +22,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -164,7 +166,8 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
             Configuration conf = CachedConfiguration.getInstance();
             FileSystem fs = FileSystem.get(conf);
-            return RFileOperations.getInstance().openReader(mapFileName, false, fs, conf, AccumuloConfiguration.getDefaultConfiguration());
+            return RFileOperations.getInstance().newReaderBuilder().forFile(mapFileName, fs, conf)
+                            .withTableConfiguration(AccumuloConfiguration.getDefaultConfiguration()).build();
         }
         
         @Override
@@ -180,6 +183,26 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         @Override
         public boolean isFullMajorCompaction() {
             throw new UnsupportedOperationException();
+        }
+        
+        @Override
+        public Authorizations getAuthorizations() {
+            throw new UnsupportedOperationException();
+        }
+        
+        @Override
+        public IteratorEnvironment cloneWithSamplingEnabled() {
+            throw new SampleNotPresentException();
+        }
+        
+        @Override
+        public boolean isSamplingEnabled() {
+            return false;
+        }
+        
+        @Override
+        public SamplerConfiguration getSamplerConfiguration() {
+            return null;
         }
         
         @Override

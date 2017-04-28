@@ -444,6 +444,11 @@ public class MultiRFileOutputFormatterTest {
                     public void close() throws IOException {}
                     
                     @Override
+                    public long getLength() throws IOException {
+                        return 0;
+                    }
+                    
+                    @Override
                     public void append(Key key, Value value) throws IOException {}
                 });
                 

@@ -9,11 +9,14 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Lists;
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.IteratorSetting.Column;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.impl.ScannerOptions;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.data.thrift.IterInfo;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,6 +120,11 @@ public class ScannerBaseDelegate implements ScannerBase {
     }
     
     @Override
+    public void fetchColumn(Column column) {
+        delegate.fetchColumn(column);
+    }
+    
+    @Override
     public void clearColumns() {
         delegate.clearColumns();
     }
@@ -160,6 +168,51 @@ public class ScannerBaseDelegate implements ScannerBase {
     @Override
     public void close() {
         delegate.close();
+    }
+    
+    @Override
+    public Authorizations getAuthorizations() {
+        return delegate.getAuthorizations();
+    }
+    
+    @Override
+    public void setSamplerConfiguration(SamplerConfiguration samplerConfiguration) {
+        delegate.setSamplerConfiguration(samplerConfiguration);
+    }
+    
+    @Override
+    public SamplerConfiguration getSamplerConfiguration() {
+        return delegate.getSamplerConfiguration();
+    }
+    
+    @Override
+    public void clearSamplerConfiguration() {
+        delegate.clearSamplerConfiguration();
+    }
+    
+    @Override
+    public void setBatchTimeout(long l, TimeUnit timeUnit) {
+        delegate.setBatchTimeout(l, timeUnit);
+    }
+    
+    @Override
+    public long getBatchTimeout(TimeUnit timeUnit) {
+        return delegate.getBatchTimeout(timeUnit);
+    }
+    
+    @Override
+    public void setClassLoaderContext(String s) {
+        delegate.setClassLoaderContext(s);
+    }
+    
+    @Override
+    public void clearClassLoaderContext() {
+        delegate.clearClassLoaderContext();
+    }
+    
+    @Override
+    public String getClassLoaderContext() {
+        return delegate.getClassLoaderContext();
     }
     
     public void setContext(String context) {

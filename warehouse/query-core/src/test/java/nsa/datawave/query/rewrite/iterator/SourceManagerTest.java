@@ -13,6 +13,8 @@ import java.util.SortedMap;
 import java.util.TimeZone;
 import java.util.TreeMap;
 
+import org.apache.accumulo.core.client.SampleNotPresentException;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -23,6 +25,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.CachedConfiguration;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -210,7 +213,8 @@ public class SourceManagerTest {
         public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
             Configuration conf = CachedConfiguration.getInstance();
             FileSystem fs = FileSystem.get(conf);
-            return RFileOperations.getInstance().openReader(mapFileName, true, fs, conf, AccumuloConfiguration.getDefaultConfiguration());
+            return RFileOperations.getInstance().newReaderBuilder().forFile(mapFileName, fs, conf)
+                            .withTableConfiguration(AccumuloConfiguration.getDefaultConfiguration()).seekToBeginning().build();
         }
         
         @Override
@@ -226,6 +230,26 @@ public class SourceManagerTest {
         @Override
         public boolean isFullMajorCompaction() {
             throw new UnsupportedOperationException();
+        }
+        
+        @Override
+        public Authorizations getAuthorizations() {
+            throw new UnsupportedOperationException();
+        }
+        
+        @Override
+        public IteratorEnvironment cloneWithSamplingEnabled() {
+            throw new SampleNotPresentException();
+        }
+        
+        @Override
+        public boolean isSamplingEnabled() {
+            return false;
+        }
+        
+        @Override
+        public SamplerConfiguration getSamplerConfiguration() {
+            return null;
         }
         
         @Override

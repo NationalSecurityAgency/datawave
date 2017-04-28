@@ -1,6 +1,6 @@
 package nsa.datawave.ingest.table.balancer;
 
-import org.apache.accumulo.core.data.KeyExtent;
+import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.data.thrift.TKeyExtent;
 
 public interface ExtentParser {

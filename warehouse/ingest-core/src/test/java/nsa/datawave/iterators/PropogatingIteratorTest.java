@@ -15,6 +15,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import org.apache.accumulo.core.client.SampleNotPresentException;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -25,6 +27,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.conf.ColumnToClassMapping;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -136,9 +139,7 @@ public class PropogatingIteratorTest {
     
     /**
      * @param topValue
-     * @param string
-     * @param string2
-     * @param string3
+     * @param uids
      * @throws InvalidProtocolBufferException
      */
     private void validateUids(Value topValue, String... uids) throws InvalidProtocolBufferException {
@@ -153,9 +154,7 @@ public class PropogatingIteratorTest {
     
     /**
      * @param topValue
-     * @param string
-     * @param string2
-     * @param string3
+     * @param uids
      * @throws InvalidProtocolBufferException
      */
     private void validateRemoval(Value topValue, String... uids) throws InvalidProtocolBufferException {
@@ -203,6 +202,26 @@ public class PropogatingIteratorTest {
         @Override
         public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
             throw new UnsupportedOperationException();
+        }
+        
+        @Override
+        public Authorizations getAuthorizations() {
+            throw new UnsupportedOperationException();
+        }
+        
+        @Override
+        public IteratorEnvironment cloneWithSamplingEnabled() {
+            throw new SampleNotPresentException();
+        }
+        
+        @Override
+        public boolean isSamplingEnabled() {
+            return false;
+        }
+        
+        @Override
+        public SamplerConfiguration getSamplerConfiguration() {
+            return null;
         }
         
         /*

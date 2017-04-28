@@ -35,7 +35,8 @@ public class RFileRecordReader extends RecordReader<Key,Value> {
         FileOperations ops = RFileOperations.getInstance();
         String file = fileSplit.getPath().toString();
         FileSystem fs = fileSplit.getPath().getFileSystem(context.getConfiguration());
-        fileIterator = ops.openReader(file, true, fs, context.getConfiguration(), AccumuloConfiguration.getDefaultConfiguration());
+        fileIterator = ops.newReaderBuilder().forFile(file, fs, context.getConfiguration())
+                        .withTableConfiguration(AccumuloConfiguration.getDefaultConfiguration()).seekToBeginning().build();
     }
     
     @Override

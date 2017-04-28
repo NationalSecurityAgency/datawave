@@ -13,6 +13,7 @@ import org.apache.accumulo.core.conf.AccumuloConfiguration.PropertyFilter;
 import org.apache.accumulo.core.util.NamingThreadFactory;
 import org.apache.accumulo.server.client.HdfsZooInstance;
 import org.apache.accumulo.server.conf.ServerConfiguration;
+import org.apache.accumulo.server.conf.ServerConfigurationFactory;
 import org.apache.accumulo.server.util.time.SimpleTimer;
 import org.apache.log4j.Logger;
 
@@ -31,7 +32,7 @@ public class IteratorThreadPoolManager {
     
     private Map<String,ExecutorService> threadPools = new TreeMap<String,ExecutorService>();
     
-    private ServerConfiguration conf;
+    private ServerConfigurationFactory confFactory;
     
     private static final Object instanceSemaphore = new Object();
     private static final String instanceId = Integer.toHexString(instanceSemaphore.hashCode());
@@ -40,7 +41,7 @@ public class IteratorThreadPoolManager {
     private IteratorThreadPoolManager() {
         // create the thread pools\
         try {
-            this.conf = new ServerConfiguration(HdfsZooInstance.getInstance());
+            this.confFactory = new ServerConfigurationFactory(HdfsZooInstance.getInstance());
         } catch (Throwable e) {
             log.error("Unable to get the accumulo configuration, using default thread pool sizes (" + DEFAULT_THREAD_POOL_SIZE + " per pool)");
         }
@@ -51,7 +52,7 @@ public class IteratorThreadPoolManager {
     private ThreadPoolExecutor createExecutorService(final String prop, final String name) {
         final ThreadPoolExecutor service = createExecutorService(getMaxThreads(prop), name + " (" + instanceId + ')');
         threadPools.put(name, service);
-        SimpleTimer.getInstance().schedule(new Runnable() {
+        SimpleTimer.getInstance(AccumuloConfiguration.getDefaultConfiguration()).schedule(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -79,15 +80,10 @@ public class IteratorThreadPoolManager {
     }
     
     private int getMaxThreads(final String prop) {
-        if (this.conf != null) {
-            AccumuloConfiguration conf = this.conf.getConfiguration();
+        if (this.confFactory != null) {
+            AccumuloConfiguration conf = this.confFactory.getConfiguration();
             Map<String,String> properties = new TreeMap<String,String>();
-            conf.getProperties(properties, new PropertyFilter() {
-                @Override
-                public boolean accept(String key) {
-                    return (key.equals(prop));
-                }
-            });
+            conf.getProperties(properties, new AccumuloConfiguration.MatchFilter(prop));
             if (properties.containsKey(prop)) {
                 return Integer.parseInt(properties.get(prop));
             }

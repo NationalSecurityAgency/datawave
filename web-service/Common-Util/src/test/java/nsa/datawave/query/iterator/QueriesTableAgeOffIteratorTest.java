@@ -12,7 +12,7 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -26,7 +26,7 @@ public class QueriesTableAgeOffIteratorTest {
     
     @Test
     public void testAgeOffIterator() throws Exception {
-        MockInstance instance = new MockInstance();
+        InMemoryInstance instance = new InMemoryInstance();
         Connector connector = instance.getConnector("root", new PasswordToken(""));
         
         connector.tableOperations().create(TABLE_NAME);

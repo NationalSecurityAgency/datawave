@@ -8,9 +8,9 @@ import nsa.datawave.webservice.query.exception.QueryException;
 import nsa.datawave.webservice.query.metric.QueryMetric;
 import nsa.datawave.webservice.query.runner.RunningQuery;
 import nsa.datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import org.apache.accumulo.trace.instrument.Span;
-import org.apache.accumulo.trace.instrument.Trace;
-import org.apache.accumulo.trace.thrift.TInfo;
+import org.apache.accumulo.core.trace.Span;
+import org.apache.accumulo.core.trace.Trace;
+import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 

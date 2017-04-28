@@ -43,6 +43,11 @@
             <artifactId>metrics-cdi</artifactId>
         </dependency>
         <dependency>
+            <groupId>nsa.datawave</groupId>
+            <artifactId>in-memory-accumulo</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>nsa.datawave.webservice</groupId>
             <artifactId>Common-Util</artifactId>
             <version>${project.version}</version>
@@ -50,6 +55,10 @@
         <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-tracer</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -274,7 +283,7 @@
                         <configuration>
                             <outputDirectory>lib</outputDirectory>
                             <!-- just grab the non-provided runtime dependencies -->
-                            <includeArtifactIds>stream,accumulo-trace,zookeeper,commons-pool2,spring-core,spring-asm,spring-aop,spring-beans,spring-context,spring-context-support,spring-expression,commons-lang,accumulo-core,libthrift,guava,jul-to-slf4j-stub,hadoop-auth,hadoop-common,hadoop-hdfs,hadoop-mapreduce-client-core,hadoop-yarn-api,hadoop-yarn-common,hadoop-mapreduce-client-common,hadoop-mapreduce-client-shuffle,hadoop-mapreduce-client-jobclient,hadoop-yarn-client,httpcore,httpclient,avro,commons-compress,xz,commons-vfs2,accumulo-start,commons-configuration,accumulo-fate,json-simple,aopalliance,curator-client,curator-framework,curator-recipes</includeArtifactIds>
+                            <includeArtifactIds>stream,accumulo-trace,accumulo-tracer,zookeeper,commons-pool2,spring-core,spring-asm,spring-aop,spring-beans,spring-context,spring-context-support,spring-expression,commons-lang,accumulo-core,libthrift,guava,jul-to-slf4j-stub,hadoop-auth,hadoop-common,hadoop-hdfs,hadoop-mapreduce-client-core,hadoop-yarn-api,hadoop-yarn-common,hadoop-mapreduce-client-common,hadoop-mapreduce-client-shuffle,hadoop-mapreduce-client-jobclient,hadoop-yarn-client,httpcore,httpclient,avro,commons-compress,xz,commons-vfs2,accumulo-start,commons-configuration,accumulo-fate,json-simple,aopalliance,curator-client,curator-framework,curator-recipes</includeArtifactIds>
                             <excludeTransitive>true</excludeTransitive>
                         </configuration>
                     </execution>

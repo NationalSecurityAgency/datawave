@@ -14,7 +14,7 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -33,7 +33,7 @@ public class ScannerHelperTest {
     
     @Before
     public void setUp() throws Exception {
-        MockInstance instance = new MockInstance();
+        InMemoryInstance instance = new InMemoryInstance();
         mockConnector = instance.getConnector("root", new PasswordToken(""));
         mockConnector.securityOperations().changeUserAuthorizations("root", new Authorizations("A", "B", "C", "D", "E", "F", "G", "H", "I"));
         mockConnector.tableOperations().create(TABLE_NAME);

@@ -31,16 +31,16 @@ import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.IsolatedScanner;
 import org.apache.accumulo.core.client.RowIterator;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.KeyExtent;
+import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.master.thrift.TabletServerStatus;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.Credentials;
+import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.accumulo.core.util.ComparablePair;
 import org.apache.accumulo.core.util.MapCounter;
 import org.apache.accumulo.core.util.Pair;
@@ -112,7 +112,7 @@ public abstract class GroupBalancer extends TabletBalancer {
         }
         
         for (KeyExtent keyExtent : migrations) {
-            if (keyExtent.getTableId().equals(textTableId)) {
+            if (keyExtent.getTableId().equals(tableId)) {
                 return false;
             }
         }
@@ -783,7 +783,7 @@ public abstract class GroupBalancer extends TabletBalancer {
         private Connector getConnector(ServerConfiguration conf) throws AccumuloSecurityException, AccumuloException {
             Credentials credentials;
             Instance instance = conf.getInstance();
-            if (instance instanceof MockInstance) {
+            if (instance instanceof InMemoryInstance) {
                 credentials = new Credentials("mockSystemUser", new PasswordToken("mockSystemPassword"));
             } else {
                 credentials = SystemCredentials.get(instance);

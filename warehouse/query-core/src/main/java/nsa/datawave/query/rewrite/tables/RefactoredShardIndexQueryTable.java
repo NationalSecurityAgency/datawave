@@ -57,6 +57,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -412,7 +413,57 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
             public void close() {}
             
             @Override
+            public Authorizations getAuthorizations() {
+                return null;
+            }
+            
+            @Override
+            public void setSamplerConfiguration(SamplerConfiguration samplerConfiguration) {
+                
+            }
+            
+            @Override
+            public SamplerConfiguration getSamplerConfiguration() {
+                return null;
+            }
+            
+            @Override
+            public void clearSamplerConfiguration() {
+                
+            }
+            
+            @Override
+            public void setBatchTimeout(long l, TimeUnit timeUnit) {
+                
+            }
+            
+            @Override
+            public long getBatchTimeout(TimeUnit timeUnit) {
+                return 0;
+            }
+            
+            @Override
+            public void setClassLoaderContext(String s) {
+                
+            }
+            
+            @Override
+            public void clearClassLoaderContext() {
+                
+            }
+            
+            @Override
+            public String getClassLoaderContext() {
+                return null;
+            }
+            
+            @Override
             public void fetchColumn(Text colFam, Text colQual) {}
+            
+            @Override
+            public void fetchColumn(IteratorSetting.Column column) {
+                
+            }
             
             @Override
             public void fetchColumnFamily(Text col) {}

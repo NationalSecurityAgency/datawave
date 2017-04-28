@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 import nsa.datawave.ingest.data.config.NormalizedContentInterface;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 public final class MetricRuleUtil {
     

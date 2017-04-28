@@ -47,7 +47,7 @@ import org.apache.accumulo.trace.instrument.Span;
 import org.apache.accumulo.trace.instrument.Trace;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 

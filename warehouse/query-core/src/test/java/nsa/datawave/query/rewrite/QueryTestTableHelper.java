@@ -12,7 +12,7 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
@@ -54,7 +54,7 @@ public final class QueryTestTableHelper {
     public QueryTestTableHelper(String instanceName, Logger log) throws AccumuloSecurityException, AccumuloException, TableExistsException,
                     TableNotFoundException {
         // create mock instance and connector
-        MockInstance i = new MockInstance(instanceName);
+        InMemoryInstance i = new InMemoryInstance(instanceName);
         connector = i.getConnector("root", new PasswordToken(""));
         this.log = log;
         
@@ -148,8 +148,8 @@ public final class QueryTestTableHelper {
         for (IteratorUtil.IteratorScope scope : IteratorUtil.IteratorScope.values()) {
             String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scope.name(), "UIDAggregator");
             // Override the UidAggregator with a mock aggregator to lower the UID.List MAX uid limit.
-            connector.tableOperations().setProperty(SHARD_INDEX_TABLE_NAME, stem + ".opt.*", "nsa.datawave.query.util.MockGlobalIndexUidAggregator");
-            connector.tableOperations().setProperty(SHARD_RINDEX_TABLE_NAME, stem + ".opt.*", "nsa.datawave.query.util.MockGlobalIndexUidAggregator");
+            connector.tableOperations().setProperty(SHARD_INDEX_TABLE_NAME, stem + ".opt.*", "nsa.datawave.query.util.InMemoryGlobalIndexUidAggregator");
+            connector.tableOperations().setProperty(SHARD_RINDEX_TABLE_NAME, stem + ".opt.*", "nsa.datawave.query.util.InMemoryGlobalIndexUidAggregator");
         }
     }
     

@@ -2,7 +2,7 @@ package nsa.datawave.query.rewrite.jexl.nodes;
 
 import java.util.SortedSet;
 
-import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.google.common.collect.Sets;
 

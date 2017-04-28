@@ -19,7 +19,7 @@ package nsa.datawave.ingest.table.balancer;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
-import org.apache.accumulo.core.data.KeyExtent;
+import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.master.thrift.TabletServerStatus;
 import org.apache.accumulo.core.util.MapCounter;
 import org.apache.accumulo.core.util.Pair;
@@ -67,7 +67,7 @@ public class GroupBalancerTest {
         
         public void addTablet(String er, String location) {
             TServerInstance tsi = new TServerInstance(location, 6);
-            tabletLocs.put(new KeyExtent(new Text("b"), er == null ? null : new Text(er), null), new TServerInstance(location, 6));
+            tabletLocs.put(new KeyExtent("b", er == null ? null : new Text(er), null), new TServerInstance(location, 6));
             tservers.add(tsi);
         }
         

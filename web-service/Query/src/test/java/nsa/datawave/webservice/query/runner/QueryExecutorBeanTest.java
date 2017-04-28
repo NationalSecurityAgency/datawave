@@ -64,7 +64,7 @@ import nsa.datawave.webservice.query.metric.QueryMetric;
 import nsa.datawave.webservice.query.metric.QueryMetricsBean;
 
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
@@ -398,7 +398,7 @@ public class QueryExecutorBeanTest {
         Arrays.sort(dns);
         List<String> dnList = Arrays.asList(dns);
         
-        MockInstance instance = new MockInstance();
+        InMemoryInstance instance = new InMemoryInstance();
         Connector c = instance.getConnector("root", new PasswordToken(""));
         
         QueryParameters qp = new QueryParametersImpl();

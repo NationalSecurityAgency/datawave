@@ -23,7 +23,7 @@ import nsa.datawave.webservice.query.logic.BaseQueryLogic;
 
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -174,7 +174,7 @@ public abstract class BaseEdgeQueryTest {
         // Need to set SDFs after setting the timezone to GMT, else dates will be EST and converted to GMT
         simpleFormat = new SimpleDateFormat("yyyyMMdd");
         
-        MockInstance i = new MockInstance(BaseEdgeQueryTest.class.toString());
+        InMemoryInstance i = new InMemoryInstance(BaseEdgeQueryTest.class.toString());
         connector = i.getConnector("root", new PasswordToken(""));
         
         // Create the CB tables

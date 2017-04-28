@@ -37,7 +37,7 @@ import nsa.datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections.iterators.TransformIterator;
@@ -100,7 +100,7 @@ public class RunningQueryTest {
     @Test
     public void testConstructorSetsConnection() throws AccumuloException, AccumuloSecurityException, Exception {
         // setup mock connector
-        MockInstance instance = new MockInstance("test instance");
+        InMemoryInstance instance = new InMemoryInstance("test instance");
         Connector connector = instance.getConnector("root", new PasswordToken(""));
         
         // setup mock logic, handles the setConnection method
@@ -156,7 +156,7 @@ public class RunningQueryTest {
     @Test
     public void testWithCompositeQueryLogic() throws Exception {
         // setup
-        MockInstance instance = new MockInstance("test instance");
+        InMemoryInstance instance = new InMemoryInstance("test instance");
         Connector connector = instance.getConnector("root", new PasswordToken(""));
         
         // expected merged auths

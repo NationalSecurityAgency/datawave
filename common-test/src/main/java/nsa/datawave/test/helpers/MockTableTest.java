@@ -2,7 +2,7 @@ package nsa.datawave.test.helpers;
 
 import org.apache.accumulo.core.client.*;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.mock.MockInstance;
+import nsa.datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.*;
@@ -15,7 +15,7 @@ public abstract class MockTableTest {
     
     @Before
     public void setup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
-        MockInstance i = new MockInstance(this.getClass().toString());
+        InMemoryInstance i = new InMemoryInstance(this.getClass().toString());
         connector = i.getConnector("root", new PasswordToken(""));
         if (connector.tableOperations().exists(TABLE_NAME))
             connector.tableOperations().delete(TABLE_NAME);
