@@ -48,7 +48,6 @@ import nsa.datawave.webservice.common.audit.AuditBean;
 import nsa.datawave.webservice.common.audit.AuditParameters;
 import nsa.datawave.webservice.common.audit.Auditor.AuditType;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
-import nsa.datawave.webservice.exception.AccumuloExceptionType;
 import nsa.datawave.webservice.exception.AccumuloWebApplicationException;
 import nsa.datawave.webservice.exception.BadRequestException;
 import nsa.datawave.webservice.exception.NotFoundException;
@@ -299,7 +298,7 @@ public class LookupBean {
             }
         }
         
-        List<AccumuloExceptionType> exceptionList = response.getExceptions();
+        List<?> exceptionList = response.getExceptions();
         if (exceptionList != null && exceptionList.size() > 0) {
             throw new BadRequestException(null, response);
         }

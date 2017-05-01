@@ -11,6 +11,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import nsa.datawave.webservice.response.objects.TableProperty;
+import nsa.datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "TablePropertiesResponse")
 @XmlAccessorType(XmlAccessType.FIELD)

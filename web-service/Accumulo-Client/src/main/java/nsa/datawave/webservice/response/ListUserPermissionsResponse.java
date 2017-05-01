@@ -8,6 +8,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import nsa.datawave.webservice.response.objects.UserPermissions;
+import nsa.datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "ListUserPermissionsResponse")
 @XmlAccessorType(XmlAccessType.FIELD)

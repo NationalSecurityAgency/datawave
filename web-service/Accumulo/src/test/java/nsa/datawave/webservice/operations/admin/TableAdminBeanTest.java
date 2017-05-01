@@ -1,7 +1,7 @@
 package nsa.datawave.webservice.operations.admin;
 
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
-import nsa.datawave.webservice.response.VoidResponse;
+import nsa.datawave.webservice.result.VoidResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.easymock.EasyMock;

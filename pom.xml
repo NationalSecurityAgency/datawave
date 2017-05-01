@@ -1296,26 +1296,6 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>enforce-jdk7-home-set</id>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireEnvironmentVariable>
-                                            <variableName>JDK7_HOME</variableName>
-                                            <message>In order to build docs, you must have JDK7_HOME set to the root of a Java JDK 7 installation. This is necessary for now due to an outdated plugin that is necessary to build the JAX-RS and JAX-B docs.</message>
-                                        </requireEnvironmentVariable>
-                                    </rules>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <executions>
                             <!-- build javadoc jars per module for publishing to the repo -->
@@ -1339,99 +1319,6 @@
                                             <value>http://docs.oracle.com/javase/8/docs/api</value>
                                         </property>
                                     </javaApiLinks>
-                                </configuration>
-                            </execution>
-                            <!-- build jaxb javadoc jars per module, but don't publish to the repo by default -->
-                            <execution>
-                                <id>module-jaxbdocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                                <phase>package</phase>
-                                <configuration>
-                                    <doclet>com.lunatech.doclets.jax.jaxb.JAXBDoclet</doclet>
-                                    <docletArtifacts>
-                                        <docletArtifact>
-                                            <groupId>com.lunatech.jax-doclets</groupId>
-                                            <artifactId>doclets</artifactId>
-                                            <version>0.10.1</version>
-                                        </docletArtifact>
-                                    </docletArtifacts>
-                                    <classifier>jaxbdocs</classifier>
-                                    <destDir>${project.build.directory}/jaxbdocs</destDir>
-                                    <encoding>UTF-8</encoding>
-                                    <javadocExecutable>${env.JDK7_HOME}/bin/javadoc</javadocExecutable>
-                                    <javadocVersion>1.7</javadocVersion>
-                                    <additionalJOption>-J-Xmx768m</additionalJOption>
-                                    <show>private</show>
-                                    <quiet>true</quiet>
-                                    <javaApiLinks>
-                                        <property>
-                                            <name>api_1.7</name>
-                                            <value>http://docs.oracle.com/javase/7/docs/api</value>
-                                        </property>
-                                    </javaApiLinks>
-                                    <additionalDependencies>
-                                        <dependency>
-                                            <groupId>net.jcip</groupId>
-                                            <artifactId>jcip-annotations</artifactId>
-                                            <version>1.0</version>
-                                        </dependency>
-                                        <dependency>
-                                            <groupId>org.apache.hadoop</groupId>
-                                            <artifactId>hadoop-annotations</artifactId>
-                                            <version>${version.hadoop}</version>
-                                        </dependency>
-                                    </additionalDependencies>
-                                    <attach>false</attach>
-                                </configuration>
-                            </execution>
-                            <!-- build jax-rs javadoc jars per module, but don't publish to the repo by default -->
-                            <execution>
-                                <id>module-jaxrsdocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                                <phase>package</phase>
-                                <configuration>
-                                    <doclet>com.lunatech.doclets.jax.jaxrs.JAXRSDoclet</doclet>
-                                    <docletArtifacts>
-                                        <docletArtifact>
-                                            <groupId>com.lunatech.jax-doclets</groupId>
-                                            <artifactId>doclets</artifactId>
-                                            <version>0.10.1</version>
-                                        </docletArtifact>
-                                    </docletArtifacts>
-                                    <classifier>jaxrsdocs</classifier>
-                                    <destDir>${project.build.directory}/jaxrsdocs</destDir>
-                                    <links>
-                                        <link>../jaxbdocs/</link>
-                                    </links>
-                                    <encoding>UTF-8</encoding>
-                                    <javadocExecutable>${JDK7_HOME}/bin/javadoc</javadocExecutable>
-                                    <javadocVersion>1.7</javadocVersion>
-                                    <additionalJOption>-J-Xmx768m</additionalJOption>
-                                    <show>private</show>
-                                    <quiet>true</quiet>
-                                    <javaApiLinks>
-                                        <property>
-                                            <name>api_1.7</name>
-                                            <value>http://docs.oracle.com/javase/7/docs/api</value>
-                                        </property>
-                                    </javaApiLinks>
-                                    <additionalDependencies>
-                                        <dependency>
-                                            <groupId>net.jcip</groupId>
-                                            <artifactId>jcip-annotations</artifactId>
-                                            <version>1.0</version>
-                                        </dependency>
-                                        <dependency>
-                                            <groupId>org.apache.hadoop</groupId>
-                                            <artifactId>hadoop-annotations</artifactId>
-                                            <version>${version.hadoop}</version>
-                                        </dependency>
-                                    </additionalDependencies>
-                                    <attach>false</attach>
                                 </configuration>
                             </execution>
                         </executions>

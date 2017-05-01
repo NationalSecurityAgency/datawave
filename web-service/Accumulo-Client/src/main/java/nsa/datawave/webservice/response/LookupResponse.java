@@ -11,6 +11,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import nsa.datawave.webservice.response.objects.Entry;
+import nsa.datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "LookupResponse")
 @XmlAccessorType(XmlAccessType.FIELD)

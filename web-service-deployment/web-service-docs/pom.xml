@@ -52,7 +52,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>unpack-apidocs</id>
+                        <id>unpack-javadocs</id>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
@@ -66,11 +66,11 @@
                                     <classifier>javadoc</classifier>
                                 </artifactItem>
                             </artifactItems>
-                            <outputDirectory>${project.build.directory}/docs/apidocs</outputDirectory>
+                            <outputDirectory>${project.build.directory}/docs/javadocs</outputDirectory>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>unpack-jaxbdocs</id>
+                        <id>unpack-apidocs</id>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
@@ -81,28 +81,9 @@
                                     <groupId>nsa.datawave</groupId>
                                     <artifactId>datawave-docs</artifactId>
                                     <version>${project.version}</version>
-                                    <classifier>jaxbdocs</classifier>
                                 </artifactItem>
                             </artifactItems>
-                            <outputDirectory>${project.build.directory}/docs/apidocs/jaxbdocs</outputDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>unpack-jaxrsdocs</id>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>nsa.datawave</groupId>
-                                    <artifactId>datawave-docs</artifactId>
-                                    <version>${project.version}</version>
-                                    <classifier>jaxrsdocs</classifier>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>${project.build.directory}/docs/apidocs/jaxrsdocs</outputDirectory>
+                            <outputDirectory>${project.build.directory}/enunciate</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -131,6 +112,9 @@
                         </webResource>
                         <webResource>
                             <directory>${project.build.directory}/docs</directory>
+                        </webResource>
+                        <webResource>
+                            <directory>${project.build.directory}/enunciate/enunciate</directory>
                         </webResource>
                         <webResource>
                             <directory>${project.build.directory}/client-dist</directory>

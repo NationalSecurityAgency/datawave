@@ -11,6 +11,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import nsa.datawave.webservice.response.objects.Visibility;
+import nsa.datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "ValidateVisibilityResponse")
 @XmlAccessorType(XmlAccessType.FIELD)

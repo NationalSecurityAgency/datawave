@@ -95,7 +95,7 @@ public class UpdateBean {
      * @HTTP 200 Success
      * @HTTP 401 User does not have permission to write to one of the specified tables
      * @HTTP 500 AccumuloException or AccumuloSecurityException
-     * @returnWrapped nsa.datawave.webservice.response.UpdateResponseDocument
+     * @returnWrapped nsa.datawave.webservice.response.UpdateResponse
      */
     @Path("/Update")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})

@@ -40,8 +40,8 @@ public class GeometryNormalizer implements Normalizer<nsa.datawave.data.type.uti
      *
      * POINT ([number][space][number])
      *
-     * @throws NormalizationException
-     *             , if unable to parse
+     * @throws IllegalArgumentException
+     *             if unable to parse
      */
     @Override
     public String normalize(String wellKnownText) throws IllegalArgumentException {

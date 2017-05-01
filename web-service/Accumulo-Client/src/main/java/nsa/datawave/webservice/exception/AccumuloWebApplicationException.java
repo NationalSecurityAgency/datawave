@@ -4,7 +4,7 @@ import javax.ejb.ApplicationException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
-import nsa.datawave.webservice.response.BaseResponse;
+import nsa.datawave.webservice.result.BaseResponse;
 
 @ApplicationException(inherited = true, rollback = true)
 public class AccumuloWebApplicationException extends WebApplicationException {

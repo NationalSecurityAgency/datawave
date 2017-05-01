@@ -117,4 +117,24 @@ public abstract class BaseResponse implements Serializable {
         
         this.exceptions.push(qet);
     }
+    
+    public void addException(Exception e) {
+        if (e instanceof QueryException) {
+            addException((QueryException) e);
+        } else {
+            QueryExceptionType qet = new QueryExceptionType();
+            if (e.getMessage() != null) {
+                qet.setMessage(e.getMessage());
+            } else if (e.getCause() != null && e.getCause().getMessage() != null) {
+                qet.setMessage(e.getCause().getMessage());
+            } else {
+                qet.setMessage("Exception with no message or cause message caught");
+            }
+            if (e.getCause() != null) {
+                qet.setCause(e.getCause().toString());
+            } else {
+                qet.setCause("Exception with no cause caught");
+            }
+        }
+    }
 }

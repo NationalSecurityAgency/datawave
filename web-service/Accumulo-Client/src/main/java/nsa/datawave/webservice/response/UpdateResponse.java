@@ -12,6 +12,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import nsa.datawave.webservice.response.objects.AuthorizationFailure;
 import nsa.datawave.webservice.response.objects.ConstraintViolation;
+import nsa.datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "UpdateResponse")
 @XmlAccessorType(XmlAccessType.FIELD)

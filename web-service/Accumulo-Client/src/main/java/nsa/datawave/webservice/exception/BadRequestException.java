@@ -3,7 +3,7 @@ package nsa.datawave.webservice.exception;
 import javax.ejb.ApplicationException;
 import javax.ws.rs.core.Response;
 
-import nsa.datawave.webservice.response.BaseResponse;
+import nsa.datawave.webservice.result.BaseResponse;
 
 @ApplicationException(rollback = true)
 public class BadRequestException extends AccumuloWebApplicationException {

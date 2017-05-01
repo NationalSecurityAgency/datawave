@@ -13,6 +13,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import nsa.datawave.webservice.response.objects.Server;
 import nsa.datawave.webservice.response.objects.Table;
 import nsa.datawave.webservice.response.objects.Totals;
+import nsa.datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "stats")
 @XmlAccessorType(XmlAccessType.FIELD)

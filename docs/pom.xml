@@ -13,6 +13,13 @@
     <!-- Declare all datawave modules as dependencies in order to have the javadoc include all the datawave source. -->
     <dependencies>
         <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>1.9</version>
+            <scope>compile</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>nsa.datawave</groupId>
             <artifactId>datawave-balancers</artifactId>
             <version>${project.version}</version>
@@ -176,6 +183,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-jaxrs</artifactId>
+            <version>1.8.8</version>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <scope>provided</scope>
@@ -269,6 +281,30 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.webcohesion.enunciate</groupId>
+                <artifactId>enunciate-maven-plugin</artifactId>
+                <version>2.9.1</version>
+                <executions>
+                    <execution>
+                        <id>enunciate-docs</id>
+                        <goals>
+                            <goal>docs</goal>
+                        </goals>
+                        <configuration>
+                            <docsDir>${project.build.outputDirectory}/enunciate</docsDir>
+                            <sourcepath-includes>
+                                <include>
+                                    <groupId>nsa.datawave</groupId>
+                                </include>
+                                <include>
+                                    <groupId>nsa.datawave.webservice</groupId>
+                                </include>
+                            </sourcepath-includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <!--
                     Override the javadoc configuration to include source jars from our dependencies in order to build combined
                     documentation for the entire distribution.
@@ -288,40 +324,6 @@
                                 <dependencySourceInclude>nsa.datawave:*</dependencySourceInclude>
                                 <dependencySourceInclude>nsa.datawave.webservice:*</dependencySourceInclude>
                             </dependencySourceIncludes>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>module-jaxbdocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                        <phase>package</phase>
-                        <configuration combine.children="append">
-                            <includeDependencySources>true</includeDependencySources>
-                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
-                            <dependencySourceIncludes>
-                                <dependencySourceInclude>nsa.datawave:*</dependencySourceInclude>
-                                <dependencySourceInclude>nsa.datawave.webservice:*</dependencySourceInclude>
-                            </dependencySourceIncludes>
-                            <!-- JAX-B docs aren't attached by default. Override that here to include the combined JAX-B docs jar. -->
-                            <attach>true</attach>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>module-jaxrsdocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                        <phase>package</phase>
-                        <configuration combine.children="append">
-                            <includeDependencySources>true</includeDependencySources>
-                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
-                            <dependencySourceIncludes>
-                                <dependencySourceInclude>nsa.datawave:*</dependencySourceInclude>
-                                <dependencySourceInclude>nsa.datawave.webservice:*</dependencySourceInclude>
-                            </dependencySourceIncludes>
-                            <!-- JAX-RS docs aren't attached by default. Override that here to include the combined JAX-RS docs jar. -->
-                            <attach>true</attach>
                         </configuration>
                     </execution>
                 </executions>

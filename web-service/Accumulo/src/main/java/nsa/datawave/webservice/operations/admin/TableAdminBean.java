@@ -22,7 +22,7 @@ import nsa.datawave.webservice.exception.AccumuloWebApplicationException;
 import nsa.datawave.webservice.exception.ConflictException;
 import nsa.datawave.webservice.exception.UnauthorizedException;
 import nsa.datawave.webservice.query.exception.QueryException;
-import nsa.datawave.webservice.response.VoidResponse;
+import nsa.datawave.webservice.result.VoidResponse;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
@@ -55,7 +55,7 @@ public class TableAdminBean {
      * @HTTP 401 AccumuloSecurityException
      * @HTTP 409 Table already exists
      * @HTTP 500 AccumuloException
-     * @return nsa.datawave.webservice.respose.VoidResponse
+     * @return nsa.datawave.webservice.result.VoidResponse
      */
     @Path("/CreateTable/{tableName}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
@@ -100,7 +100,7 @@ public class TableAdminBean {
      * @HTTP 400 Missing required parameter(s) or invalid parameter(s)
      * @HTTP 401 AccumuloSecurityException
      * @HTTP 500 AccumuloException
-     * @returnWrapped nsa.datawave.webservice.respose.VoidResponse
+     * @returnWrapped nsa.datawave.webservice.result.VoidResponse
      */
     @Path("/FlushTable/{tableName}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
@@ -143,7 +143,7 @@ public class TableAdminBean {
      * @HTTP 200 Success
      * @HTTP 401 AccumuloSecurityException
      * @HTTP 500 AccumuloException
-     * @returnWrapped nsa.datawave.webservice.respose.VoidResponse
+     * @returnWrapped nsa.datawave.webservice.result.VoidResponse
      */
     @Path("/SetTableProperty/{tableName}/{propertyName}/{propertyValue}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
@@ -185,7 +185,7 @@ public class TableAdminBean {
      * @HTTP 200 Success
      * @HTTP 401 AccumuloSecurityException
      * @HTTP 500 AccumuloException
-     * @returnWrapped nsa.datawave.webservice.respose.VoidResponse
+     * @returnWrapped nsa.datawave.webservice.result.VoidResponse
      */
     @Path("/RemoveTableProperty/{tableName}/{propertyName}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})

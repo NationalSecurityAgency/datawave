@@ -5,7 +5,7 @@ import nsa.datawave.webservice.exception.AccumuloWebApplicationException;
 import nsa.datawave.webservice.exception.BadRequestException;
 import nsa.datawave.webservice.exception.UnauthorizedException;
 import nsa.datawave.webservice.query.exception.QueryException;
-import nsa.datawave.webservice.response.VoidResponse;
+import nsa.datawave.webservice.result.VoidResponse;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
@@ -55,7 +55,7 @@ public class PermissionsBean {
      * @HTTP 400 Missing required parameter(s) or invalid parameter(s)
      * @HTTP 401 AccumuloSecurityException
      * @HTTP 500 AccumuloException
-     * @return nsa.datawave.webservice.response.VoidResponse
+     * @return nsa.datawave.webservice.result.VoidResponse
      */
     @Path("/GrantSystemPermission/{userName}/{permission}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
@@ -106,7 +106,7 @@ public class PermissionsBean {
      * @HTTP 400 Missing required parameter(s) or invalid parameter(s)
      * @HTTP 401 AccumuloSecurityException
      * @HTTP 500 AccumuloException
-     * @return nsa.datawave.webservice.response.VoidResponse
+     * @return nsa.datawave.webservice.result.VoidResponse
      */
     @Path("/GrantTablePermission/{userName}/{tableName}/{permission}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
@@ -153,7 +153,7 @@ public class PermissionsBean {
      * @HTTP 400 Missing required parameter(s) or invalid parameter(s)
      * @HTTP 401 AccumuloSecurityException
      * @HTTP 500 AccumuloException
-     * @return nsa.datawave.webservice.response.VoidResponse
+     * @return nsa.datawave.webservice.result.VoidResponse
      */
     @Path("/RevokeSystemPermission/{userName}/{permission}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
@@ -201,7 +201,7 @@ public class PermissionsBean {
      * @HTTP 400 Missing required parameter(s) or invalid parameter(s)
      * @HTTP 401 AccumuloSecurityException
      * @HTTP 500 AccumuloException
-     * @return nsa.datawave.webservice.response.VoidResponse
+     * @return nsa.datawave.webservice.result.VoidResponse
      */
     @Path("/RevokeTablePermission/{userName}/{tableName}/{permission}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
