@@ -1,7 +1,7 @@
 package nsa.datawave.webservice.geowave.auth.factory;
 
-import mil.nga.giat.geowave.adapter.auth.AuthorizationFactorySPI;
-import mil.nga.giat.geowave.adapter.auth.AuthorizationSPI;
+import mil.nga.giat.geowave.adapter.vector.auth.AuthorizationFactorySPI;
+import mil.nga.giat.geowave.adapter.vector.auth.AuthorizationSPI;
 import nsa.datawave.webservice.geowave.auth.provider.DatawaveAuthorizationProvider;
 
 import java.net.URL;
