@@ -1,4 +1,4 @@
-package nsa.datawave.poller.manager.mapreduce;
+package nsa.datawave.ingest.mapreduce;
 
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Counters;

@@ -3,7 +3,7 @@ package nsa.datawave.data.hash;
 import static nsa.datawave.data.hash.UIDConstants.CONFIG_MACHINE_ID_KEY;
 import static nsa.datawave.data.hash.UIDConstants.CONFIG_UID_TYPE_KEY;
 import static nsa.datawave.data.hash.UIDConstants.HOST_INDEX_OPT;
-import static nsa.datawave.data.hash.UIDConstants.POLLER_INDEX_OPT;
+import static nsa.datawave.data.hash.UIDConstants.PROCESS_INDEX_OPT;
 import static nsa.datawave.data.hash.UIDConstants.THREAD_INDEX_OPT;
 import static nsa.datawave.data.hash.UIDConstants.UID_TYPE_OPT;
 import static org.junit.Assert.assertEquals;
@@ -72,7 +72,7 @@ public class UIDTest {
         assertNotNull(result7);
         
         // Test creation of a non-default, Snowflake-based builder based on a 20-bit machine ID
-        // defined as node 30, poller 20, and thread 10: (30 << 12) + (20 << 6) + 10). Such a
+        // defined as node 30, process 20, and thread 10: (30 << 12) + (20 << 6) + 10). Such a
         // machine ID translates into decimal value 124170 and hexadecimal value 1e50a.
         configuration = new Configuration();
         configuration.set(CONFIG_UID_TYPE_KEY, SnowflakeUID.class.getSimpleName());
@@ -148,7 +148,7 @@ public class UIDTest {
         builder.configure(configuration, hostIndexOption);
         assertEquals(HashUID.class.getSimpleName(), configuration.get(CONFIG_UID_TYPE_KEY));
         
-        // Test SnowflakeUID uidType option missing the other required options: host, poller, and thread indices
+        // Test SnowflakeUID uidType option missing the other required options: host, process, and thread indices
         configuration = new Configuration();
         uidTypeOption.getValuesList().clear();
         uidTypeOption.getValuesList().add(SnowflakeUID.class.getSimpleName());
@@ -157,49 +157,49 @@ public class UIDTest {
         
         // Test incomplete SnowflakeUID configuration due to excessive thread index value
         configuration = new Configuration();
-        Option pollerIndexOption = new Option(POLLER_INDEX_OPT, POLLER_INDEX_OPT, true, "Poller index");
-        pollerIndexOption.setRequired(false);
-        pollerIndexOption.setArgs(1);
-        pollerIndexOption.setType(String.class);
-        pollerIndexOption.getValuesList().add(Integer.toString(20));
+        Option processIndexOption = new Option(PROCESS_INDEX_OPT, PROCESS_INDEX_OPT, true, "Process index");
+        processIndexOption.setRequired(false);
+        processIndexOption.setArgs(1);
+        processIndexOption.setType(String.class);
+        processIndexOption.getValuesList().add(Integer.toString(20));
         Option threadIndexOption = new Option(THREAD_INDEX_OPT, THREAD_INDEX_OPT, true, "Thread index");
         threadIndexOption.setRequired(false);
         threadIndexOption.setArgs(1);
         threadIndexOption.setType(String.class);
         threadIndexOption.getValuesList().add(Integer.toString(64));
-        builder.configure(configuration, hostIndexOption, distractorOption, threadIndexOption, uidTypeOption, pollerIndexOption);
+        builder.configure(configuration, hostIndexOption, distractorOption, threadIndexOption, uidTypeOption, processIndexOption);
         assertEquals(HashUID.class.getSimpleName(), configuration.get(CONFIG_UID_TYPE_KEY));
         
         // Test complete SnowflakeUID configuration, including the ignored distractor option
         configuration = new Configuration();
         threadIndexOption.getValuesList().clear();
         threadIndexOption.getValuesList().add(Integer.toString(10));
-        builder.configure(configuration, hostIndexOption, distractorOption, threadIndexOption, uidTypeOption, pollerIndexOption);
+        builder.configure(configuration, hostIndexOption, distractorOption, threadIndexOption, uidTypeOption, processIndexOption);
         assertEquals(SnowflakeUID.class.getSimpleName(), configuration.get(CONFIG_UID_TYPE_KEY));
         
         // Test invalid SnowflakeUID configuration due to non-integer host index
         configuration = new Configuration();
         hostIndexOption.getValuesList().clear();
         hostIndexOption.getValuesList().add("bogus");
-        builder.configure(configuration, hostIndexOption, distractorOption, threadIndexOption, uidTypeOption, pollerIndexOption);
+        builder.configure(configuration, hostIndexOption, distractorOption, threadIndexOption, uidTypeOption, processIndexOption);
         assertEquals(HashUID.class.getSimpleName(), configuration.get(CONFIG_UID_TYPE_KEY));
         
-        // Test invalid SnowflakeUID configuration due to non-integer poller index
+        // Test invalid SnowflakeUID configuration due to non-integer process index
         configuration = new Configuration();
         hostIndexOption.getValuesList().clear();
         hostIndexOption.getValuesList().add(Integer.toString(30));
-        pollerIndexOption.getValuesList().clear();
-        pollerIndexOption.getValuesList().add("bogus");
-        builder.configure(configuration, hostIndexOption, distractorOption, threadIndexOption, uidTypeOption, pollerIndexOption);
+        processIndexOption.getValuesList().clear();
+        processIndexOption.getValuesList().add("bogus");
+        builder.configure(configuration, hostIndexOption, distractorOption, threadIndexOption, uidTypeOption, processIndexOption);
         assertEquals(HashUID.class.getSimpleName(), configuration.get(CONFIG_UID_TYPE_KEY));
         
         // Test invalid SnowflakeUID configuration due to non-integer thread index
         configuration = new Configuration();
-        pollerIndexOption.getValuesList().clear();
-        pollerIndexOption.getValuesList().add(Integer.toString(20));
+        processIndexOption.getValuesList().clear();
+        processIndexOption.getValuesList().add(Integer.toString(20));
         threadIndexOption.getValuesList().clear();
         threadIndexOption.getValuesList().add("bogus");
-        builder.configure(configuration, hostIndexOption, distractorOption, threadIndexOption, uidTypeOption, pollerIndexOption);
+        builder.configure(configuration, hostIndexOption, distractorOption, threadIndexOption, uidTypeOption, processIndexOption);
         assertEquals(HashUID.class.getSimpleName(), configuration.get(CONFIG_UID_TYPE_KEY));
     }
     
@@ -392,7 +392,7 @@ public class UIDTest {
         // Test creation of child from previous custom HashUID using a SnowflakeUID builder
         Configuration configuration = new Configuration();
         configuration.set(CONFIG_UID_TYPE_KEY, SnowflakeUID.class.getSimpleName());
-        configuration.setInt(CONFIG_MACHINE_ID_KEY, ((9 << 12) + (8 << 6) + 7)); // Machine ID: Node 9, Poller 8, Thread 7
+        configuration.setInt(CONFIG_MACHINE_ID_KEY, ((9 << 12) + (8 << 6) + 7)); // Machine ID: Node 9, Process 8, Thread 7
         builder = UID.builder(configuration);
         UID result8 = builder.newId(template, "3");
         assertTrue(result8 != template);

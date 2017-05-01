@@ -68,40 +68,6 @@
         </dependency>
         <dependency>
             <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-metrics-dashboard-web-core</artifactId>
-            <version>${project.version}</version>
-            <type>war</type>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-metrics-ingest-web-core</artifactId>
-            <version>${project.version}</version>
-            <type>war</type>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-metrics-query-web-core</artifactId>
-            <version>${project.version}</version>
-            <type>war</type>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-metrics-web-core</artifactId>
-            <version>${project.version}</version>
-            <type>war</type>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-poller</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>

@@ -58,11 +58,6 @@
 </property>
 
 <property>
-  <name>metrics.tables.poller</name>
-  <value>PollerMetrics</value>
-</property>
-
-<property>
   <name>metrics.tables.ingest</name>
   <value>IngestMetrics</value>
 </property>

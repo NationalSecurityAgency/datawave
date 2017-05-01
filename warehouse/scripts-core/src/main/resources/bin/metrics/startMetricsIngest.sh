@@ -28,11 +28,7 @@ fi
 
 TYPE=$1
 
-if [[ $TYPE == "poller" ]]; then
-
-    INPUT_FOLDERS=`find ${POLLER_OUTPUT_DIRECTORIES[@]} -maxdepth 1 -name metrics | tr '\n' ' '`
-
-elif [[ $TYPE == "flagmaker" ]]; then
+if [[ $TYPE == "flagmaker" ]]; then
 
     INPUT_FOLDER="${BASE_WORK_DIR}/FlagMakerMetrics"
     CLASS="nsa.datawave.metrics.mapreduce.FlagMakerMetricsIngester"
@@ -50,32 +46,16 @@ elif [[ $TYPE == "loader" ]]; then
     CLASS="nsa.datawave.metrics.mapreduce.LoaderMetricsIngester"
 
 else
-    echo "Supported types are: poller, ingest and loader"
+    echo "Supported types are: ingest and loader"
     exit 1
 fi 
 
-if [[ $TYPE == "poller" ]]; then
 
-    if ((`pgrep -f "\-Dapp=pollerMetricsIngest" | wc -l`==0))
-    then
-  
-        #nohup ./pollerMetricsIngest.sh $INPUT_FOLDERS >> $LOG_DIR/PollerMetricsIngest.log 2>&1 &
-        ./pollerMetricsIngest.sh $INPUT_FOLDERS >> $LOG_DIR/PollerMetricsIngest.log 2>&1 
-  
-    else
-        echo "PollerMetrics already being ingested" >> $LOG_DIR/PollerMetricsIngest.log
-    fi
-
-else
-
-    if ((`pgrep -f "\-Dapp=${TYPE}MetricsIngest" | wc -l`==0))
-    then
-
+if ((`pgrep -f "\-Dapp=${TYPE}MetricsIngest" | wc -l`==0))
+then
         #nohup ./metrics.sh $CLASS -type $TYPE -input $INPUT_FOLDER -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD >> $LOG_DIR/MetricsIngest-$TYPE.log 2>&1 &
-        ./metrics.sh $CLASS -type $TYPE -input $INPUT_FOLDER -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD >> $LOG_DIR/MetricsIngest-$TYPE.log 2>&1 
-
-    else
-        echo "$TYPE metrics already being ingested" >> $LOG_DIR/IngestMetricsIngest.log
-    fi
-
+    ./metrics.sh $CLASS -type $TYPE -input $INPUT_FOLDER -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD >> $LOG_DIR/MetricsIngest-$TYPE.log 2>&1 
+ else
+    echo "$TYPE metrics already being ingested" >> $LOG_DIR/IngestMetricsIngest.log
 fi
+

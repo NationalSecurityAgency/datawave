@@ -22,7 +22,5 @@ else
 
 fi
 
-echo "Starting pollers..."
-./start-poller.sh $CRON
 echo "Starting ingesters..."
 ./start-ingest.sh $CRON

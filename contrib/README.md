@@ -19,6 +19,3 @@ with support for overrides/layered properties files.
 The `assert-properties` directory contains a maven plugin to list required properties in a file, 
 along with an error message to display for each property if it is not defined.
 
-## JPoller Library
-
-This third party library can be found [here](http://jpoller.sourceforge.net). Since this library does not publish jars to the central maven repository, we include them here for the time being.

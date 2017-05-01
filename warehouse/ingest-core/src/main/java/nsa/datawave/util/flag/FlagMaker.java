@@ -28,8 +28,8 @@ import java.util.regex.Pattern;
 
 import nsa.datawave.util.StringUtils;
 import nsa.datawave.metrics.util.flag.FlagFile;
-import nsa.datawave.poller.manager.mapreduce.StandaloneStatusReporter;
-import nsa.datawave.poller.manager.mapreduce.StandaloneTaskAttemptContext;
+import nsa.datawave.ingest.mapreduce.StandaloneStatusReporter;
+import nsa.datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 import nsa.datawave.util.flag.config.ConfigUtil;
 import nsa.datawave.util.flag.config.FlagDataTypeConfig;
 import nsa.datawave.util.flag.config.FlagMakerConfig;

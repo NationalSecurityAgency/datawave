@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import nsa.datawave.ingest.data.TypeRegistry;
-import nsa.datawave.poller.manager.mapreduce.StandaloneStatusReporter;
+import nsa.datawave.ingest.mapreduce.StandaloneStatusReporter;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;

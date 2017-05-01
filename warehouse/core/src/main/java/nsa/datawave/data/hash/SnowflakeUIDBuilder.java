@@ -1,7 +1,7 @@
 package nsa.datawave.data.hash;
 
 import static nsa.datawave.data.hash.UIDConstants.HOST_INDEX_OPT;
-import static nsa.datawave.data.hash.UIDConstants.POLLER_INDEX_OPT;
+import static nsa.datawave.data.hash.UIDConstants.PROCESS_INDEX_OPT;
 import static nsa.datawave.data.hash.UIDConstants.THREAD_INDEX_OPT;
 
 import java.math.BigInteger;
@@ -12,7 +12,7 @@ import org.apache.commons.cli.Option;
 import org.apache.log4j.Logger;
 
 /**
- * Builds a sequence of SnowflakeUIDs for a particular "machine" instance, which is based on a unique combination of host, poller, and poller manager thread.
+ * Builds a sequence of SnowflakeUIDs for a particular "machine" instance, which is based on a unique combination of host, process, and process thread.
  */
 public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
     
@@ -52,13 +52,13 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
      * 
      * @param nodeId
      *            unique 8-bit node ID between 0 and 255, inclusively
-     * @param pollerId
-     *            unique 6-bit poller ID between 0 and 63, inclusively
+     * @param processId
+     *            unique 6-bit process ID between 0 and 63, inclusively
      * @param threadId
      *            unique 6-bit thread ID between 0 and 63, inclusively
      */
-    protected SnowflakeUIDBuilder(int nodeId, int pollerId, int threadId) {
-        this(-1, nodeId, pollerId, threadId, 0);
+    protected SnowflakeUIDBuilder(int nodeId, int processId, int threadId) {
+        this(-1, nodeId, processId, threadId, 0);
     }
     
     /*
@@ -124,13 +124,13 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
      *            based on the current milliseconds from the epoch
      * @param nodeId
      *            unique 8-bit node ID between 0 and 255, inclusively
-     * @param pollerId
-     *            unique 6-bit poller ID between 0 and 63, inclusively
+     * @param processId
+     *            unique 6-bit process ID between 0 and 63, inclusively
      * @param threadId
      *            unique 6-bit thread ID between 0 and 63, inclusively
      */
-    protected SnowflakeUIDBuilder(long timestamp, int nodeId, int pollerId, int threadId) {
-        this(timestamp, nodeId, pollerId, threadId, 0);
+    protected SnowflakeUIDBuilder(long timestamp, int nodeId, int processId, int threadId) {
+        this(timestamp, nodeId, processId, threadId, 0);
     }
     
     /**
@@ -141,16 +141,16 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
      *            based on the current milliseconds from the epoch
      * @param nodeId
      *            unique 8-bit node ID between 0 and 255, inclusively
-     * @param pollerId
-     *            unique 6-bit poller ID between 0 and 63, inclusively
+     * @param processId
+     *            unique 6-bit process ID between 0 and 63, inclusively
      * @param threadId
      *            unique 6-bit thread ID between 0 and 63, inclusively
      * @param sequenceId
      *            the initial seed value for a 24-bit, one-up counter (max value of 16777215), or a negative integer to allow the builder to specify the seed
      *            value
      */
-    protected SnowflakeUIDBuilder(long timestamp, int nodeId, int pollerId, int threadId, int sequenceId) {
-        this(timestamp, validateMachineIds(nodeId, pollerId, threadId), sequenceId);
+    protected SnowflakeUIDBuilder(long timestamp, int nodeId, int processId, int threadId, int sequenceId) {
+        this(timestamp, validateMachineIds(nodeId, processId, threadId), sequenceId);
     }
     
     @Override
@@ -250,7 +250,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
         int machineId = -1;
         
         int hostId = -1;
-        int pollerId = -1;
+        int processId = -1;
         int threadId = -1;
         
         Option option = options.get(HOST_INDEX_OPT);
@@ -265,20 +265,20 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
             }
         }
         
-        option = options.get(POLLER_INDEX_OPT);
+        option = options.get(PROCESS_INDEX_OPT);
         if ((hostId >= 0) && (null != option)) {
             try {
-                pollerId = Integer.parseInt(option.getValue());
+                processId = Integer.parseInt(option.getValue());
             } catch (final Exception e) {
                 if (LOGGER.isDebugEnabled()) {
-                    final String message = "Invalid " + POLLER_INDEX_OPT + ": " + option;
+                    final String message = "Invalid " + PROCESS_INDEX_OPT + ": " + option;
                     LOGGER.warn(message, e);
                 }
             }
         }
         
         option = options.get(THREAD_INDEX_OPT);
-        if ((pollerId >= 0) && (null != option)) {
+        if ((processId >= 0) && (null != option)) {
             try {
                 threadId = Integer.parseInt(option.getValue());
             } catch (final Exception e) {
@@ -290,7 +290,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
         }
         
         try {
-            machineId = validateMachineIds(hostId, pollerId, threadId).intValue();
+            machineId = validateMachineIds(hostId, processId, threadId).intValue();
         } catch (Exception e) {
             if (LOGGER.isDebugEnabled()) {
                 final String message = "Unable to generate Snowflake machine ID";
@@ -339,14 +339,15 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
         return BigInteger.valueOf(machineId);
     }
     
-    private static BigInteger validateMachineIds(int nodeId, int pollerId, int threadId) {
+    private static BigInteger validateMachineIds(int nodeId, int processId, int threadId) {
         // Validate each ID
         if ((nodeId < 0) || (nodeId > SnowflakeUID.MAX_NODE_ID)) {
             throw new IllegalArgumentException("Node ID must be a value between 0 and " + SnowflakeUID.MAX_NODE_ID + ", inclusively, but was " + nodeId);
         }
         
-        if ((pollerId < 0) || (pollerId > SnowflakeUID.MAX_POLLER_ID)) {
-            throw new IllegalArgumentException("Poller ID must be a value between 0 and " + SnowflakeUID.MAX_POLLER_ID + ", inclusively, but was " + pollerId);
+        if ((processId < 0) || (processId > SnowflakeUID.MAX_PROCESS_ID)) {
+            throw new IllegalArgumentException("Process ID must be a value between 0 and " + SnowflakeUID.MAX_PROCESS_ID + ", inclusively, but was "
+                            + processId);
         }
         
         if ((threadId < 0) || (threadId > SnowflakeUID.MAX_THREAD_ID)) {
@@ -354,7 +355,7 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
         }
         
         // Combine the smaller IDs to form a machine ID
-        int machineId = (nodeId << 12) + (pollerId << 6) + threadId;
+        int machineId = (nodeId << 12) + (processId << 6) + threadId;
         
         // Validate and instantiate a fixed machine ID
         return validateMachineId(machineId);

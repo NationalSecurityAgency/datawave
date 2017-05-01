@@ -11,4 +11,3 @@ cd $THIS_DIR
 FORCE=true
 
 $THIS_DIR/list-ingest.sh
-$THIS_DIR/list-poller.sh

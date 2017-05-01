@@ -4,7 +4,7 @@
 <!-- Used by ingest job to precreate tables and get split information. -->
 <property>
   <name>ingest.data.types</name>
-  <value>${ONE_HR_INGEST_DATA_TYPES},${FIFTEEN_MIN_INGEST_DATA_TYPES},${FIVE_MIN_INGEST_DATA_TYPES},${BULK_INGEST_DATA_TYPES},${LIVE_INGEST_DATA_TYPES},${POLLER_DATA_TYPES},${COMPOSITE_INGEST_DATA_TYPES},${DEPRECATED_INGEST_DATA_TYPES}</value>
+  <value>${ONE_HR_INGEST_DATA_TYPES},${FIFTEEN_MIN_INGEST_DATA_TYPES},${FIVE_MIN_INGEST_DATA_TYPES},${BULK_INGEST_DATA_TYPES},${LIVE_INGEST_DATA_TYPES},${COMPOSITE_INGEST_DATA_TYPES},${DEPRECATED_INGEST_DATA_TYPES}</value>
   <description>The list of datatypes to be processed by the system.</description>
 </property>
 

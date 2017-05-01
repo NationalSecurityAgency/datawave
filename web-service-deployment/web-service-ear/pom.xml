@@ -34,30 +34,6 @@
         </dependency>
         <dependency>
             <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-metrics-dashboard-web-core</artifactId>
-            <version>${project.version}</version>
-            <type>war</type>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-metrics-ingest-web-core</artifactId>
-            <version>${project.version}</version>
-            <type>war</type>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-metrics-query-web-core</artifactId>
-            <version>${project.version}</version>
-            <type>war</type>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-metrics-web-core</artifactId>
-            <version>${project.version}</version>
-            <type>war</type>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -356,21 +332,6 @@
                             <groupId>nsa.datawave.webservice</groupId>
                             <artifactId>Model</artifactId>
                         </ejbModule>
-                        <webModule>
-                            <groupId>nsa.datawave</groupId>
-                            <artifactId>datawave-metrics-dashboard-web-core</artifactId>
-                            <contextRoot>/dashboard</contextRoot>
-                        </webModule>
-                        <webModule>
-                            <groupId>nsa.datawave</groupId>
-                            <artifactId>datawave-metrics-ingest-web-core</artifactId>
-                            <contextRoot>/DataWave/Ingest/Metrics</contextRoot>
-                        </webModule>
-                        <webModule>
-                            <groupId>nsa.datawave</groupId>
-                            <artifactId>datawave-metrics-web-core</artifactId>
-                            <contextRoot>/DataWave/Metrics/web</contextRoot>
-                        </webModule>
                         <webModule>
                             <groupId>nsa.datawave.webservice</groupId>
                             <artifactId>Query-WebSocket</artifactId>

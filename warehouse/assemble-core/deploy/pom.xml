@@ -82,25 +82,6 @@
         </dependency>
         <dependency>
             <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-metrics-dashboard-web-core</artifactId>
-            <type>war</type>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-metrics-ingest-web-core</artifactId>
-            <type>war</type>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-metrics-query-web-core</artifactId>
-            <type>war</type>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-poller</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
         </dependency>
         <dependency>

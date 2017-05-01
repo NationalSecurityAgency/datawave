@@ -10,7 +10,7 @@ public interface UIDConstants {
     public char DEFAULT_SEPARATOR = '.';
     
     /**
-     * The index of the poller's host based on the STAGING_HOSTS property
+     * The index of the host
      */
     public String HOST_INDEX_OPT = "hostIndex";
     
@@ -20,12 +20,12 @@ public interface UIDConstants {
     public int MILLISECONDS_PER_DAY = (24 * 60 * 60 * 1000);
     
     /**
-     * The index of the poller based on the POLLER_DATA_TYPES property
+     * The index of the process/JVM
      */
-    public String POLLER_INDEX_OPT = "pollerIndex";
+    public String PROCESS_INDEX_OPT = "processIndex";
     
     /**
-     * The one-up index of the poller thread
+     * The one-up index of the thread
      */
     public String THREAD_INDEX_OPT = "threadIndex";
     

@@ -60,9 +60,9 @@ import java.util.concurrent.TimeUnit;
  * now we have 1 ingester that can work on all metrics. This is possible because type specific logic for metrics is centralized to the map task associated with
  * the metric type.
  * <p>
- * For example, to insert Poller metrics, this tool can be used by invoking the command:
+ * For example, to insert Loader metrics, this tool can be used by invoking the command:
  * <p>
- * MetricsIngester [Accumulo arguments] -inputDirectory /NewIngest/PollerMetrics -outputTable PollerMetrics
+ * MetricsIngester [Accumulo arguments] -inputDirectory /NewIngest/LoaderMetrics -outputTable LoaderMetrics
  * <p>
  * As of now, this utility only supports reading files from one directory and outputting to one table. In the future, it would be best to at least support
  * inputting from multiple directories because Hadoop's API already has support for that. Outputting to multiple tables is do-able, but I have not thought of a

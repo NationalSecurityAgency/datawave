@@ -36,10 +36,6 @@
         </dependency>
         <dependency>
             <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-poller</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
         </dependency>
         <dependency>

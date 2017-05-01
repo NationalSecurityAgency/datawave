@@ -41,22 +41,3 @@ else
 
 fi
 
-
-if [[ ${#STAGING_HOSTS[@]} == 1 && "${STAGING_HOSTS[0]}" == "localhost" ]]; then
-
-  $METRICS_BIN/metrics/startMetricsIngest.sh poller $FORCE
-
-else
-  
-  stagingHosts=`$MKTEMP`
-  trap 'rm -f "$stagingHosts"; exit $?' INT TERM EXIT
-  for host in ${STAGING_HOSTS[@]}; do
-      echo $host >> $stagingHosts
-  done
-
-  pssh -p 25 -o /tmp/stdout -e /tmp/stderr -h ${stagingHosts} "$METRICS_BIN/metrics/startMetricsIngest.sh poller $FORCE" < /dev/null
-
-  rm $stagingHosts
-  trap - INT TERM EXIT
-
-fi

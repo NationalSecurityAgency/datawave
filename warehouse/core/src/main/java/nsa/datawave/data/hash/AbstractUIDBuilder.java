@@ -37,7 +37,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
                             value = option.getValue(HashUID.class.getSimpleName());
                         } else if (UIDConstants.HOST_INDEX_OPT.equals(key)) {
                             value = option.getValue();
-                        } else if (UIDConstants.POLLER_INDEX_OPT.equals(key)) {
+                        } else if (UIDConstants.PROCESS_INDEX_OPT.equals(key)) {
                             value = option.getValue();
                         } else if (UIDConstants.THREAD_INDEX_OPT.equals(key)) {
                             value = option.getValue();
@@ -71,7 +71,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
     /*
      * Validate and configure UID properties
      * 
-     * @param config Hadoop configuration (probably passed by a poller)
+     * @param config Hadoop configuration
      * 
      * @param options the UID-specific configuration options
      */

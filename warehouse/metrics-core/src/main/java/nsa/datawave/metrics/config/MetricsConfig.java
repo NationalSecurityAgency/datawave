@@ -31,9 +31,6 @@ public class MetricsConfig {
     public static final String INGEST_TABLE = "metrics.tables.ingest";
     public static final String DEFAULT_INGEST_TABLE = "IngestMetrics";
     
-    public static final String POLLER_TABLE = "metrics.tables.poller";
-    public static final String DEFAULT_POLLER_TABLE = "PollerMetrics";
-    
     public static final String FLAGMAKER_TABLE = "metrics.tables.flagmaker";
     public static final String DEFAULT_FLAGMAKER_TABLE = "FlagMakerMetrics";
     
@@ -75,9 +72,6 @@ public class MetricsConfig {
     public static final String WAREHOUSE_USERNAME = "metrics.warehouse.username";
     public static final String WAREHOUSE_PASSWORD = "metrics.warehouse.password";
     public static final String WAREHOUSE_ZOOKEEPERS = "metrics.warehouse.zookeepers";
-    
-    public static final String IGNORE_POLLER_METRICS = MTX + "ignorePollerMetrics";
-    public static final String IGNORE_FLAGMAKER_METRICS = MTX + "ignoreFlagMakerMetrics";
     
     public static final String FILE_GRAPH_TABLE = MTX + "tables.filegraph";
     public static final String DEFAULT_FILE_GRAPH_TABLE = "FileLatencies";

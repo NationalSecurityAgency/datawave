@@ -32,10 +32,9 @@ for arg in $@; do
   fi
 done
 
-pkill $SIGNAL -f "\-Dapp=pollerMetricsIngest"
 pkill $SIGNAL -f "\-Dapp=ingestMetricsIngest"
 pkill $SIGNAL -f "\-Dapp=loaderMetricsIngest"
 
-# for those systems running the poller and ingest metrics ingest under a different user:
+# for those systems running metrics ingest under a different user:
 $MAP_FILE_LOADER_COMMAND_PREFIX pkill $SIGNAL -f "\-Dapp=ingestMetricsIngest"
 $MAP_FILE_LOADER_COMMAND_PREFIX pkill $SIGNAL -f "\-Dapp=loaderMetricsIngest"

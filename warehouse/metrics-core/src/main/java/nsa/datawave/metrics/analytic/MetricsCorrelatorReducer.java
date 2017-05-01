@@ -77,8 +77,8 @@ public class MetricsCorrelatorReducer extends Reducer<Text,LongArrayWritable,Tex
         
         {
             StringBuilder msg = new StringBuilder(256);
-            msg.append("\nFlows:\n").append("\tPoller Durations: ").append(pDurations.size()).append('\n').append("\tIngest Delays: ").append(iDelays.size())
-                            .append('\n').append("\tIngest Durations: ").append(iDurations.size()).append('\n');
+            msg.append("\nFlows:\n").append("\tRaw File Transform Durations: ").append(pDurations.size()).append('\n').append("\tIngest Delays: ")
+                            .append(iDelays.size()).append('\n').append("\tIngest Durations: ").append(iDurations.size()).append('\n');
             if (includesLoaderPhase) {
                 msg.append("\tLoader Delays: ").append(lDelays.size()).append('\n').append("\tLoader Durations: ").append(lDurations.size());
             }

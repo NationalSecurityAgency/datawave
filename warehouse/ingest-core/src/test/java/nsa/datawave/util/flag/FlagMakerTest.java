@@ -22,7 +22,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 import nsa.datawave.util.StringUtils;
-import nsa.datawave.poller.manager.mapreduce.StandaloneStatusReporter;
+import nsa.datawave.ingest.mapreduce.StandaloneStatusReporter;
 import nsa.datawave.util.flag.config.ConfigUtil;
 import nsa.datawave.util.flag.config.FlagDataTypeConfig;
 import nsa.datawave.util.flag.config.FlagMakerConfig;

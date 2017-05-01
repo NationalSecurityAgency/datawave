@@ -27,7 +27,6 @@ public class Connections {
         LinkedList<String> tables = new LinkedList<>();
         tables.add(conf.get(MetricsConfig.METRICS_TABLE, MetricsConfig.DEFAULT_METRICS_TABLE));
         tables.add(conf.get(MetricsConfig.INGEST_TABLE, MetricsConfig.DEFAULT_INGEST_TABLE));
-        tables.add(conf.get(MetricsConfig.POLLER_TABLE, MetricsConfig.DEFAULT_POLLER_TABLE));
         tables.add(conf.get(MetricsConfig.LOADER_TABLE, MetricsConfig.DEFAULT_LOADER_TABLE));
         tables.add(conf.get(MetricsConfig.FILE_GRAPH_TABLE, MetricsConfig.DEFAULT_FILE_GRAPH_TABLE));
         tables.add(conf.get(MetricsConfig.METRICS_SUMMARY_TABLE, MetricsConfig.DEFAULT_METRICS_SUMMARY_TABLE));
