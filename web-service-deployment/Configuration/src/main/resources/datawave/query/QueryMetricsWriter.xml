@@ -13,8 +13,8 @@
 
     <bean id="QueryMetricsWriterConfiguration" class="nsa.datawave.webservice.query.metric.QueryMetricsWriterConfiguration">
 
-        <property name="timelyHost" value="${query.metrics.timelyHost}" />
-        <property name="timelyPort" value="${query.metrics.timelyPort}" />
+        <property name="timelyHost" value="${timely.host}" />
+        <property name="timelyPort" value="${timely.port.udp}" />
         <property name="timelyMetricTags">
             ${query.metrics.timelyMetricTags}
         </property>
