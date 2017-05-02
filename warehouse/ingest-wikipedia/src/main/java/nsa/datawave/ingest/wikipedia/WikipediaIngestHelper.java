@@ -1,31 +1,26 @@
 package nsa.datawave.ingest.wikipedia;
 
-import java.io.StringReader;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import nsa.datawave.ingest.data.RawDataErrorNames;
 import nsa.datawave.ingest.data.RawRecordContainer;
 import nsa.datawave.ingest.data.config.NormalizedContentInterface;
-import nsa.datawave.ingest.wikipedia.WikipediaHelper;
 import nsa.datawave.ingest.data.config.ingest.BaseIngestHelper;
 import nsa.datawave.ingest.data.config.ingest.IndexOnlyIngestHelperInterface;
 import nsa.datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
-import nsa.datawave.ingest.data.RawDataErrorNames;
-import nsa.datawave.ingest.wikipedia.ISO_639_Codes;
-import nsa.datawave.ingest.wikipedia.WikipediaContentHandler;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
+import java.io.StringReader;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 
@@ -72,6 +67,9 @@ public class WikipediaIngestHelper extends BaseIngestHelper implements TermFrequ
         try {
             WikipediaContentHandler handler = new WikipediaContentHandler(fields, ignoreFields);
             XMLReader parser = XMLReaderFactory.createXMLReader();
+            parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
+            parser.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            parser.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             parser.setContentHandler(handler);
             parser.parse(source);
         } catch (Exception e) {

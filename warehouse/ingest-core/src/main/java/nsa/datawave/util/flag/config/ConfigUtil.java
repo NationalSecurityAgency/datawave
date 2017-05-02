@@ -4,16 +4,23 @@
  */
 package nsa.datawave.util.flag.config;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Arrays;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Source;
+import javax.xml.transform.sax.SAXSource;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Arrays;
 
 /**
  * Simple util to generate sample flag config file and has utility methods to serialize/deserialize <code>FlagMakerConfig</code> objects.
@@ -47,17 +54,27 @@ public class ConfigUtil {
     
     // Unmarshalling xml into java classes
     public static <T> T getXmlObject(Class<T> claz, String file) throws JAXBException, IOException {
-        // jaxb util unmarshall
-        JAXBContext jc = JAXBContext.newInstance(claz);
-        Unmarshaller um = jc.createUnmarshaller();
-        FileInputStream fis = null;
+        
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        Source xmlSource = null;
         try {
-            fis = new FileInputStream(file);
-            return (T) um.unmarshal(fis);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            xmlSource = new SAXSource(factory.newSAXParser().getXMLReader(), new InputSource(new FileReader(file)));
+            JAXBContext jc = JAXBContext.newInstance(Object.class);
+            Unmarshaller um = jc.createUnmarshaller();
+            return (T) um.unmarshal(xmlSource);
+            
+        } catch (SAXException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         } finally {
-            if (fis != null) {
-                fis.close();
-            }
+            if (xmlSource != null)
+                ((SAXSource) xmlSource).getInputSource().getCharacterStream().close();
         }
     }
     

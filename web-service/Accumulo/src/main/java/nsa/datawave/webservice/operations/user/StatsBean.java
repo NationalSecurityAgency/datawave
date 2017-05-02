@@ -1,6 +1,5 @@
 package nsa.datawave.webservice.operations.user;
 
-import javax.annotation.security.PermitAll;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import nsa.datawave.webservice.exception.AccumuloWebApplicationException;
 import nsa.datawave.webservice.exception.UnauthorizedException;
@@ -12,8 +11,10 @@ import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
+import org.xml.sax.InputSource;
 
 import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.EJB;
 import javax.ejb.LocalBean;
@@ -28,8 +29,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
-import java.io.ByteArrayInputStream;
-import java.nio.charset.Charset;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Source;
+import javax.xml.transform.sax.SAXSource;
+import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
 
@@ -95,11 +98,18 @@ public class StatsBean {
             if (httpStatusCode == 200) {
                 String entity = clientResponse.getEntity();
                 entity = entity.replaceFirst("<stats>", "<stats xmlns=\"" + StatsProperties.NAMESPACE + "\">");
-                ByteArrayInputStream istream = new ByteArrayInputStream(entity.getBytes(Charset.forName("UTF-8")));
+                // ByteArrayInputStream istream = new ByteArrayInputStream(entity.getBytes(Charset.forName("UTF-8")));
                 
-                JAXBContext ctx = JAXBContext.newInstance(new Class[] {StatsResponse.class});
+                SAXParserFactory spf = SAXParserFactory.newInstance();
+                spf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                spf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+                spf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+                
+                Source xmlSource = new SAXSource(spf.newSAXParser().getXMLReader(), new InputSource(new StringReader(entity)));
+                
+                JAXBContext ctx = JAXBContext.newInstance(Object.class);
                 Unmarshaller um = ctx.createUnmarshaller();
-                response = (StatsResponse) um.unmarshal(istream);
+                response = (StatsResponse) um.unmarshal(xmlSource);
                 
             } else {
                 log.error("Error returned requesting stats from the cloud: " + httpStatusCode);

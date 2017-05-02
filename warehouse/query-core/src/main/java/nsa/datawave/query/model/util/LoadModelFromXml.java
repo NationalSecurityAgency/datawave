@@ -1,16 +1,17 @@
 package nsa.datawave.query.model.util;
 
-import java.io.InputStream;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-
 import nsa.datawave.query.model.QueryModel;
 import nsa.datawave.webservice.model.FieldMapping;
 import nsa.datawave.webservice.model.Model;
-
 import org.apache.log4j.Logger;
+import org.xml.sax.InputSource;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Source;
+import javax.xml.transform.sax.SAXSource;
+import java.io.InputStream;
 
 /**
  * Utility class to load a model from XML using jaxb objects generated in web service
@@ -19,10 +20,20 @@ public class LoadModelFromXml {
     
     private static final Logger log = Logger.getLogger(LoadModelFromXml.class);
     
-    public static QueryModel loadModelFromXml(InputStream stream) throws JAXBException {
-        JAXBContext jaxbContext = JAXBContext.newInstance(Model.class);
-        Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-        Model xmlModel = (Model) jaxbUnmarshaller.unmarshal(stream);
+    public static QueryModel loadModelFromXml(InputStream stream) throws Exception {
+        
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        spf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        spf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        spf.setNamespaceAware(true);
+        
+        Source xmlSource = new SAXSource(spf.newSAXParser().getXMLReader(), new InputSource(stream));
+        
+        JAXBContext ctx = JAXBContext.newInstance(Model.class);
+        Unmarshaller um = ctx.createUnmarshaller();
+        Model xmlModel = (Model) um.unmarshal(xmlSource);
+        
         if (log.isDebugEnabled()) {
             log.debug(xmlModel.getName());
             for (FieldMapping fieldMapping : xmlModel.getFields()) {

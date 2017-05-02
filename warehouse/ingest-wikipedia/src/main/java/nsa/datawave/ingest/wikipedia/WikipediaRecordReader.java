@@ -1,25 +1,13 @@
 package nsa.datawave.ingest.wikipedia;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
+import com.google.common.collect.Maps;
+import nsa.datawave.data.hash.UID;
 import nsa.datawave.ingest.config.IngestConfigurationFactory;
 import nsa.datawave.ingest.config.RawRecordContainerImpl;
+import nsa.datawave.ingest.data.RawDataErrorNames;
 import nsa.datawave.ingest.data.RawRecordContainer;
 import nsa.datawave.ingest.data.Type;
-import nsa.datawave.ingest.wikipedia.WikipediaHelper;
-import nsa.datawave.data.hash.UID;
-import nsa.datawave.ingest.wikipedia.AggregatingRecordReader;
-import nsa.datawave.ingest.data.RawDataErrorNames;
 import nsa.datawave.util.time.DateHelper;
-
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -34,7 +22,14 @@ import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.analysis.wikipedia.WikipediaTokenizer;
 import org.xml.sax.InputSource;
 
-import com.google.common.collect.Maps;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 
 /**
  * 
@@ -50,7 +45,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
     protected static final String[] FILE_NAME_PREFIXES = new String[] {WIKI, WIKTIONARY};
     protected static final String DEFAULT_SECURITY_MARKING = "PUBLIC";
     
-    private static DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    private static DocumentBuilderFactory factory = configureFactory();
     
     protected WikipediaHelper wikiHelper = new WikipediaHelper();
     protected WikipediaTokenizer wikiTokenizer = null;
@@ -60,6 +55,23 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
     
     private RawRecordContainerImpl event = new RawRecordContainerImpl();
     private DocumentBuilder parser = null;
+    
+    private static DocumentBuilderFactory configureFactory() {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        try {
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            return factory;
+            
+        } catch (ParserConfigurationException ex) {
+            log.error("Unable to configure factory", ex);
+            return null;
+        }
+    }
     
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException {
