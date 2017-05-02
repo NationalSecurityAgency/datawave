@@ -1,6 +1,7 @@
 package nsa.datawave.webservice.common.audit;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -14,7 +15,7 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.jms.JMSContext;
 import javax.jms.JMSProducer;
-import javax.jms.Topic;
+import javax.jms.Queue;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -52,19 +53,23 @@ public class AuditBean implements Auditor {
     
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     @Inject
-    @ConfigProperty(name = "dw.audit.topics")
-    private List<String> auditTopics;
+    @ConfigProperty(name = "dw.audit.queues")
+    private List<String> auditQueues;
     
     protected void sendMessage(AuditParameters parameters) throws Exception {
-        try {
-            JMSProducer producer = jmsContext.createProducer();
-            for (String topicName : auditTopics) {
-                Topic topic = jmsContext.createTopic(topicName);
-                producer.send(topic, (Serializable) parameters.toMap());
+        ArrayList<Exception> exceptions = new ArrayList<>();
+        JMSProducer producer = jmsContext.createProducer();
+        for (String queueName : auditQueues) {
+            try {
+                Queue queue = jmsContext.createQueue(queueName);
+                producer.send(queue, (Serializable) parameters.toMap());
+            } catch (Exception e) {
+                log.error("Error sending audit message to " + queueName + ": " + parameters.toString(), e);
+                exceptions.add(e);
             }
-        } catch (Exception e) {
-            log.error("Error sending audit message: " + parameters.toString(), e);
-            throw e;
+        }
+        if (!exceptions.isEmpty()) {
+            throw exceptions.get(0);
         }
     }
     

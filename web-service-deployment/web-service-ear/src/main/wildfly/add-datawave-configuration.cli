@@ -38,7 +38,7 @@ embed-server --server-config=standalone-full.xml
 /system-property=dw.metrics.accumulo.password:add(value=${accumulo.user.password})
 /system-property=dw.hornetq.system.userName:add(value=${hornetq.system.username})
 /system-property=dw.hornetq.system.password:add(value=${hornetq.system.password})
-/system-property=dw.audit.topics:add(value="${audit.topics}")
+/system-property=dw.audit.queues:add(value="${audit.queues}")
 /system-property=dw.audit.log.mdb.pool.size:add(value=${audit.log.mdb.pool.size})
 /system-property=dw.audit.accumulo.mdb.pool.size:add(value=${audit.cb.mdb.pool.size})
 /system-property=dw.cache.coordinator.namespace:add(value=${accumulo.cache.table.name})
@@ -112,13 +112,13 @@ embed-server --server-config=standalone-full.xml
 #
 # Set up HornetQ, JMS topics/queues, and DLQs
 #
-jms-topic add --topic-address=AuditTopic --entries=topic/audit
-jms-topic add --topic-address=LogAuditTopic --entries=topic/Audit.Log
-jms-topic add --topic-address=AccumuloAuditTopic --entries=topic/Audit.Accumulo
 jms-topic add --topic-address=AccumuloTableCache --entries=topic/AccumuloTableCache
-jms-queue add --queue-address=AuditTopicDLQ --entries=queue/Audit.DLQ
-jms-queue add --queue-address=LogAuditTopicDLQ --entries=queue/Audit.Log.DLQ
-jms-queue add --queue-address=AccumuloAuditTopicDLQ --entries=queue/Audit.Accumulo.DLQ
+jms-queue add --queue-address=LogAuditQueue --entries=queue/Audit.Log
+jms-queue add --queue-address=ServerLogAuditQueue --entries=queue/Audit.ServerLog
+jms-queue add --queue-address=AccumuloAuditQueue --entries=queue/Audit.Accumulo
+jms-queue add --queue-address=LogAuditDLQ --entries=queue/Audit.Log.DLQ
+jms-queue add --queue-address=ServerLogAuditDLQ --entries=queue/Audit.ServerLog.DLQ
+jms-queue add --queue-address=AccumuloAuditDLQ --entries=queue/Audit.Accumulo.DLQ
 jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTableCache.DLQ
 jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 #/subsystem=messaging/hornetq-server=default/:write-attribute(name=security-domain,value=datawave)
@@ -129,9 +129,9 @@ jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 /subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=max-size-bytes,value=104857600)
 /subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=page-size-bytes,value=10485760)
 /subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=redistribution-delay,value=10000)
-/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.AuditTopic/:add(dead-letter-address=jms.queue.AuditTopicDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
-/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.LogAuditTopic/:add(dead-letter-address=jms.queue.LogAuditTopicDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
-/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.AccumuloAuditTopic/:add(dead-letter-address=jms.queue.AccumuloAuditTopicDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
+/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.LogAuditQueue/:add(dead-letter-address=jms.queue.LogAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
+/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.ServerLogAuditQueue/:add(dead-letter-address=jms.queue.ServerLogAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
+/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.AccumuloAuditQueue/:add(dead-letter-address=jms.queue.AccumuloAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
 /subsystem=messaging/hornetq-server=default/address-setting=jms.topic.AccumuloTableCache/:add(dead-letter-address=jms.queue.AccumuloTableCacheDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
 
 #

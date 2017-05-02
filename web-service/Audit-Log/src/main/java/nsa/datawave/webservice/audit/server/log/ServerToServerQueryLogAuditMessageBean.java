@@ -15,8 +15,8 @@ import nsa.datawave.webservice.common.audit.Auditor;
 
 @RunAs("InternalUser")
 @MessageDriven(name = "ServerToServerQueryLogAuditMessageBean", activationConfig = {
-        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
-        @ActivationConfigProperty(propertyName = "destination", propertyValue = "topic/Audit.Log"),
+        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/Audit.ServerLog"),
         @ActivationConfigProperty(propertyName = "useLocalTx", propertyValue = "true"),
         @ActivationConfigProperty(propertyName = "subscriptionDurability", propertyValue = "Durable"),
         @ActivationConfigProperty(propertyName = "subscriptionName", propertyValue = "ServerToServerQueryLogAuditMessageBean"),

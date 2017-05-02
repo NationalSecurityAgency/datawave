@@ -98,9 +98,9 @@ undeploy mysql-connector-java-${version.mysql-connector}.jar
 # Remove HornetQ configuration changes
 #
 /subsystem=messaging/hornetq-server=default/address-setting=jms.topic.AccumuloTableCache/:remove
-/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.AuditTopic/:remove
-/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.LogAuditTopic/:remove
-/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.AccumuloAuditTopic/:remove
+/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.ServerLogAuditQueue/:remove
+/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.LogAuditQueue/:remove
+/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.AccumuloAuditQueue/:remove
 /subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=redistribution-delay,value=-1L)
 /subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=page-size-bytes,value=2097152L)
 /subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=max-size-bytes,value=10485760L)
@@ -110,13 +110,13 @@ undeploy mysql-connector-java-${version.mysql-connector}.jar
 /subsystem=messaging/hornetq-server=default/pooled-connection-factory=hornetq-ra/:write-attribute(name=max-pool-size,value=-1)
 #/subsystem=messaging/hornetq-server=default/:write-attribute(name=security-domain,value=other)
 jms-topic remove --topic-address=AccumuloTableCache
-jms-topic remove --topic-address=AuditTopic
-jms-topic remove --topic-address=LogAuditTopic
-jms-topic remove --topic-address=AccumuloAuditTopic
 jms-queue remove --queue-address=AccumuloTableCacheDLQ
-jms-queue remove --queue-address=AuditTopicDLQ
-jms-queue remove --queue-address=LogAuditTopicDLQ
-jms-queue remove --queue-address=AccumuloAuditTopicDLQ
+jms-queue remove --queue-address=LogAuditQueue
+jms-queue remove --queue-address=LogAuditDLQ
+jms-queue remove --queue-address=ServerLogAuditQueue
+jms-queue remove --queue-address=ServerLogAuditDLQ
+jms-queue remove --queue-address=AccumuloAuditQueue
+jms-queue remove --queue-address=AccumuloAuditDLQ
 jms-queue remove --queue-address=QueryMetricsQueue
 
 # Remove HTTPS listener for undertow
@@ -146,7 +146,7 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.metrics.accumulo.password:remove
 /system-property=dw.hornetq.system.userName:remove
 /system-property=dw.hornetq.system.password:remove
-/system-property=dw.audit.topics:remove
+/system-property=dw.audit.queues:remove
 /system-property=dw.audit.log.mdb.pool.size:remove
 /system-property=dw.audit.accumulo.mdb.pool.size:remove
 /system-property=dw.cache.coordinator.namespace:remove

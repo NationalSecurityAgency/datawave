@@ -30,10 +30,10 @@ import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.security.Role;
 import org.hornetq.jms.server.config.ConnectionFactoryConfiguration;
 import org.hornetq.jms.server.config.JMSConfiguration;
-import org.hornetq.jms.server.config.TopicConfiguration;
+import org.hornetq.jms.server.config.JMSQueueConfiguration;
 import org.hornetq.jms.server.config.impl.ConnectionFactoryConfigurationImpl;
 import org.hornetq.jms.server.config.impl.JMSConfigurationImpl;
-import org.hornetq.jms.server.config.impl.TopicConfigurationImpl;
+import org.hornetq.jms.server.config.impl.JMSQueueConfigurationImpl;
 import org.hornetq.jms.server.embedded.EmbeddedJMS;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Assert;
@@ -130,14 +130,16 @@ public class AuditBeanTest {
                         q.length > cfConfig.getMinLargeMessageSize());
         jmsConfiguration.getConnectionFactoryConfigurations().add(cfConfig);
         
-        TopicConfiguration auditTopicConfiguration = new TopicConfigurationImpl("AuditTopic", "topic/audit");
-        TopicConfiguration auditLogTopicConfiguration = new TopicConfigurationImpl("LogAuditTopic", "topic/Audit.Log");
-        TopicConfiguration auditAccumuloTopicConfiguration = new TopicConfigurationImpl("AccumuloAuditTopic", "topic/Audit.Accumulo");
-        TopicConfiguration auditRemoteTopicConfiguration = new TopicConfigurationImpl("RemoteAuditTopic", "topic/Audit.Remote");
-        jmsConfiguration.getTopicConfigurations().add(auditTopicConfiguration);
-        jmsConfiguration.getTopicConfigurations().add(auditLogTopicConfiguration);
-        jmsConfiguration.getTopicConfigurations().add(auditAccumuloTopicConfiguration);
-        jmsConfiguration.getTopicConfigurations().add(auditRemoteTopicConfiguration);
+        JMSQueueConfiguration auditQueueConfiguration = new JMSQueueConfigurationImpl("AuditQueue", null, true, "queue/audit");
+        JMSQueueConfiguration auditLogQueueConfiguration = new JMSQueueConfigurationImpl("LogAuditQueue", null, true, "queue/Audit.Log");
+        JMSQueueConfiguration auditServerLogQueueConfiguration = new JMSQueueConfigurationImpl("ServerLogAuditQueue", null, true, "queue/Audit.ServerLog");
+        JMSQueueConfiguration auditAccumuloQueueConfiguration = new JMSQueueConfigurationImpl("AccumuloAuditQueue", null, true, "queue/Audit.Accumulo");
+        JMSQueueConfiguration auditRemoteQueueConfiguration = new JMSQueueConfigurationImpl("RemoteAuditQueue", null, true, "queue/Audit.Remote");
+        jmsConfiguration.getQueueConfigurations().add(auditQueueConfiguration);
+        jmsConfiguration.getQueueConfigurations().add(auditLogQueueConfiguration);
+        jmsConfiguration.getQueueConfigurations().add(auditServerLogQueueConfiguration);
+        jmsConfiguration.getQueueConfigurations().add(auditAccumuloQueueConfiguration);
+        jmsConfiguration.getQueueConfigurations().add(auditRemoteQueueConfiguration);
         
         EmbeddedJMS jmsServer = new EmbeddedJMS();
         jmsServer.setConfiguration(configuration);
@@ -146,21 +148,22 @@ public class AuditBeanTest {
         
         ConnectionFactory cf = (ConnectionFactory) jmsServer.lookup("/cf");
         try (JMSContext context = cf.createContext("test", "test");
-                        JMSConsumer logConsumer = context.createConsumer(context.createTopic("LogAuditTopic"));
-                        JMSConsumer accumuloConsumer = context.createConsumer(context.createTopic("AccumuloAuditTopic"));
-                        JMSConsumer remoteConsumer = context.createConsumer(context.createTopic("RemoteAuditTopic"))) {
+                        JMSConsumer logConsumer = context.createConsumer(context.createQueue("LogAuditQueue"));
+                        JMSConsumer serverLogConsumer = context.createConsumer(context.createQueue("ServerLogAuditQueue"));
+                        JMSConsumer accumuloConsumer = context.createConsumer(context.createQueue("AccumuloAuditQueue"));
+                        JMSConsumer remoteConsumer = context.createConsumer(context.createQueue("RemoteAuditQueue"))) {
             
             Whitebox.setInternalState(audit, JMSContext.class, context);
             authorizationsSet.add("AUTH1");
             authorizationsSet.add("AUTH2");
             
             PowerMock.resetAll();
-            List<String> auditTopics = new ArrayList<>();
-            auditTopics.add("AuditTopic");
-            auditTopics.add("LogAuditTopic");
-            auditTopics.add("AccumuloAuditTopic");
-            auditTopics.add("RemoteAuditTopic");
-            Whitebox.setInternalState(audit, "auditTopics", auditTopics);
+            List<String> auditQueues = new ArrayList<>();
+            auditQueues.add("LogAuditQueue");
+            auditQueues.add("ServerLogAuditQueue");
+            auditQueues.add("AccumuloAuditQueue");
+            auditQueues.add("RemoteAuditQueue");
+            Whitebox.setInternalState(audit, "auditQueues", auditQueues);
             PowerMock.replayAll();
             audit.audit(p);
             PowerMock.verifyAll();
@@ -169,21 +172,28 @@ public class AuditBeanTest {
             AuditParameters original = new AuditParameters();
             original.validate(p);
             
-            // Check Log AuditTopic, should receive message
+            // Check LogAuditQueue, should receive message
             messageReceived = logConsumer.receive(1000);
             AuditParameters received = original.fromMap(messageReceived.getBody(Map.class));
             original.setQueryDate(received.getQueryDate());
             Assert.assertNotNull(messageReceived);
             Assert.assertEquals(original, received);
             
-            // Check Accumulo AuditTopic, should receive message
+            // Check ServerLogAuditQueue, should receive message
+            messageReceived = serverLogConsumer.receive(1000);
+            received = original.fromMap(messageReceived.getBody(Map.class));
+            original.setQueryDate(received.getQueryDate());
+            Assert.assertNotNull(messageReceived);
+            Assert.assertEquals(original, received);
+
+            // Check AccumuloAuditQueue, should receive message
             messageReceived = accumuloConsumer.receive(1000);
             received = original.fromMap(messageReceived.getBody(Map.class));
             original.setQueryDate(received.getQueryDate());
             Assert.assertNotNull(messageReceived);
             Assert.assertEquals(original, received);
             
-            // Check Remote AuditTopic, should receive message
+            // Check RemoteAuditQueue, should receive message
             messageReceived = remoteConsumer.receive(1000);
             received = original.fromMap(messageReceived.getBody(Map.class));
             original.setQueryDate(received.getQueryDate());
