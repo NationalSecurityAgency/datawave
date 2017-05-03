@@ -185,7 +185,7 @@ public class AuditBeanTest {
             original.setQueryDate(received.getQueryDate());
             Assert.assertNotNull(messageReceived);
             Assert.assertEquals(original, received);
-
+            
             // Check AccumuloAuditQueue, should receive message
             messageReceived = accumuloConsumer.receive(1000);
             received = original.fromMap(messageReceived.getBody(Map.class));

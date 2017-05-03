@@ -11,7 +11,10 @@ import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.client.ClientRequest;
 import org.jboss.resteasy.client.ClientResponse;
+import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.XMLFilterImpl;
 
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.PermitAll;
@@ -26,12 +29,13 @@ import javax.ejb.TransactionManagementType;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.UnmarshallerHandler;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.Source;
-import javax.xml.transform.sax.SAXSource;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
@@ -89,36 +93,33 @@ public class StatsBean {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             connection = connectionFactory.getConnection(priority, trackingMap);
             
-            ClientRequest request = new ClientRequest(this.accumuloStatsURL);
-            ClientResponse<String> clientResponse = null;
+            Client client = ClientBuilder.newClient();
+            WebTarget target = client.target(this.accumuloStatsURL);
             
-            clientResponse = request.get(String.class);
-            Response.Status status = clientResponse.getResponseStatus();
-            int httpStatusCode = status.getStatusCode();
-            if (httpStatusCode == 200) {
-                String entity = clientResponse.getEntity();
-                entity = entity.replaceFirst("<stats>", "<stats xmlns=\"" + StatsProperties.NAMESPACE + "\">");
-                // ByteArrayInputStream istream = new ByteArrayInputStream(entity.getBytes(Charset.forName("UTF-8")));
-                
-                SAXParserFactory spf = SAXParserFactory.newInstance();
-                spf.setFeature("http://xml.org/sax/features/external-general-entities", false);
-                spf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-                spf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-                
-                Source xmlSource = new SAXSource(spf.newSAXParser().getXMLReader(), new InputSource(new StringReader(entity)));
-                
-                JAXBContext ctx = JAXBContext.newInstance(Object.class);
-                Unmarshaller um = ctx.createUnmarshaller();
-                response = (StatsResponse) um.unmarshal(xmlSource);
-                
-            } else {
-                log.error("Error returned requesting stats from the cloud: " + httpStatusCode);
-                response.addException(new RuntimeException("Error returned requesting stats from the cloud: " + httpStatusCode));
-                
-                // maybe the monitor has moved, re-resolve the stats location
-                this.accumuloStatsURL = null;
+            Response clientResponse = target.request().get();
+            try {
+                int httpStatusCode = clientResponse.getStatus();
+                if (httpStatusCode == 200) {
+                    NamespaceFilter nsFilter = new NamespaceFilter();
+                    SAXParserFactory spf = SAXParserFactory.newInstance();
+                    nsFilter.setParent(spf.newSAXParser().getXMLReader());
+                    
+                    JAXBContext ctx = JAXBContext.newInstance(StatsResponse.class);
+                    UnmarshallerHandler umHandler = ctx.createUnmarshaller().getUnmarshallerHandler();
+                    nsFilter.setContentHandler(umHandler);
+                    nsFilter.parse(new InputSource(new StringReader(clientResponse.readEntity(String.class))));
+                    response = (StatsResponse) umHandler.getResult();
+                } else {
+                    log.error("Error returned requesting stats from the cloud: " + httpStatusCode);
+                    response.addException(new RuntimeException("Error returned requesting stats from the cloud: " + httpStatusCode));
+                    
+                    // maybe the monitor has moved, re-resolve the stats location
+                    this.accumuloStatsURL = null;
+                }
+                return response;
+            } finally {
+                clientResponse.close();
             }
-            return response;
             
         } catch (AccumuloSecurityException e) {
             log.error(e.getMessage(), e);
@@ -192,5 +193,17 @@ public class StatsBean {
             }
         }
         return statsURL;
+    }
+    
+    private static class NamespaceFilter extends XMLFilterImpl {
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+            super.startElement(StatsProperties.NAMESPACE, localName, qName, atts);
+        }
+        
+        @Override
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+            super.endElement(StatsProperties.NAMESPACE, localName, qName);
+        }
     }
 }
