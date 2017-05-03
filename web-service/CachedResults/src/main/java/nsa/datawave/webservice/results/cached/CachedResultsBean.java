@@ -2483,6 +2483,8 @@ public class CachedResultsBean {
     }
     
     protected boolean createView(String tableName, String viewName, Connection con, boolean viewCreated, Map<String,Integer> fieldMap) throws SQLException {
+        CachedResultsParameters.validate(tableName);
+        CachedResultsParameters.validate(viewName);
         StringBuilder viewCols = new StringBuilder();
         StringBuilder tableCols = new StringBuilder();
         viewCols.append(BASE_COLUMNS);
