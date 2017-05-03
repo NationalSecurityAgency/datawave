@@ -2,6 +2,7 @@ package nsa.datawave.webservice.results.cached;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -20,6 +21,7 @@ public class CachedResultsParameters implements ParameterValidator {
     public static final String GROUPING = "grouping";
     public static final String ORDER = "order";
     public static final String FIXED_FIELDS_IN_EVENT = "fixedFields";
+    public static final Pattern VALID_NAME_PATTERN = Pattern.compile("[\\w]+");
     
     private static final List<String> KNOWN_PARAMS = Arrays.asList(new String[] {QUERY_ID, ALIAS, VIEW, FIELDS, CONDITIONS, GROUPING, ORDER,
             FIXED_FIELDS_IN_EVENT, QueryParameters.QUERY_PAGESIZE});
@@ -69,6 +71,13 @@ public class CachedResultsParameters implements ParameterValidator {
         Preconditions.checkNotNull(this.queryId, "Query id string cannot be null");
         Preconditions.checkNotNull(this.view, "View cannot be null");
         Preconditions.checkNotNull(this.fields, "Fields cannot be null");
+    }
+    
+    public static String validate(String value) {
+        if (!VALID_NAME_PATTERN.matcher(value).matches()) {
+            throw new RuntimeException("Attempt to set invalid table/view name detected and thwarted:" + value);
+        }
+        return value; // for convenience
     }
     
     public String getQueryId() {

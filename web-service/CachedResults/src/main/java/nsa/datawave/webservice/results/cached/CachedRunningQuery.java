@@ -393,6 +393,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     
     public String generateSql(String view, String fields, String conditions, String grouping, String order, String user, Connection connection)
                     throws SQLException {
+        CachedResultsParameters.validate(view);
         StringBuilder buf = new StringBuilder();
         if (StringUtils.isEmpty(StringUtils.trimToNull(fields)))
             fields = "*";
@@ -552,6 +553,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     }
     
     private List<String> getViewColumnNames(Connection connection, String view) throws SQLException {
+        CachedResultsParameters.validate(view);
         List<String> columns = new ArrayList<>();
         Statement s = connection.createStatement();
         ResultSet rs = s.executeQuery("show columns from " + view);
@@ -1102,11 +1104,16 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         
         CachedRunningQuery crq = null;
         
-        try (Connection localConnection = datasource.getConnection(); Statement statement = localConnection.createStatement()) {
+        String sql = "SELECT * FROM cachedResultsQuery WHERE alias=? OR queryId=? OR view=?";
+        
+        try (Connection localConnection = datasource.getConnection(); PreparedStatement statement = localConnection.prepareStatement(sql)) {
             
-            String sql = "SELECT * FROM cachedResultsQuery WHERE alias='" + id + "' OR queryId='" + id + "' OR view='" + id + "'";
+            statement.setString(1, id);
+            statement.setString(2, id);
+            statement.setString(3, id);
+            // String sql = "SELECT * FROM cachedResultsQuery WHERE alias='" + id + "' OR queryId='" + id + "' OR view='" + id + "'";
             
-            try (ResultSet resultSet = statement.executeQuery(sql)) {
+            try (ResultSet resultSet = statement.executeQuery()) {
                 
                 resultSet.last();
                 int numRows = resultSet.getRow();
@@ -1122,7 +1129,9 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                     resultSet.getTimestamp(x++);
                     crq.pagesize = resultSet.getInt(x++);
                     crq.user = resultSet.getString(x++);
-                    crq.view = resultSet.getString(x++);
+                    crq.view = CachedResultsParameters.validate(resultSet.getString(x++));
+                    ;
+                    // crq.view = resultSet.getString(x++);
                     crq.tableName = resultSet.getString(x++);
                     
                     crq.getMetric().setQueryType(CachedRunningQuery.class);
@@ -1237,7 +1246,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     }
     
     public void setView(String view) {
-        this.view = view;
+        this.view = CachedResultsParameters.validate(view);
     }
     
     public String getTableName() {
