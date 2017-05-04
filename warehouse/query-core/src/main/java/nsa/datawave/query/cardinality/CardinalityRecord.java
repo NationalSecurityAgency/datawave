@@ -10,15 +10,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 public class CardinalityRecord implements Serializable {
@@ -99,29 +96,42 @@ public class CardinalityRecord implements Serializable {
                 if (log.isTraceEnabled()) {
                     log.trace("Cardinalty field " + s + " of configured field " + field + " not found");
                 }
+                return values;
             }
             numSplits++;
         }
         
         if (numSplits == 1) {
-            values.addAll(valueLists.get(0));
-        } else if (numSplits == 2) {
-            List<String> list1 = valueLists.get(0);
-            List<String> list2 = valueLists.get(1);
-            if (!list1.isEmpty() && !list2.isEmpty()) {
-                for (String s1 : list1) {
-                    for (String s2 : list2) {
-                        values.add(s1 + "\0" + s2);
-                    }
-                }
-            } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("did not find values for all fields in " + field);
+            for (String s : valueLists.get(0)) {
+                values.add(s);
+            }
+        } else {
+            List<List<String>> cartesianProduct = cartesianProduct(valueLists);
+            for (List<String> l : cartesianProduct) {
+                values.add(StringUtils.join(l, "\0"));
+            }
+        }
+        return values;
+    }
+    
+    protected <T> List<List<T>> cartesianProduct(List<List<T>> lists) {
+        List<List<T>> resultLists = new ArrayList<List<T>>();
+        if (lists.size() == 0) {
+            resultLists.add(new ArrayList<T>());
+            return resultLists;
+        } else {
+            List<T> firstList = lists.get(0);
+            List<List<T>> remainingLists = cartesianProduct(lists.subList(1, lists.size()));
+            for (T condition : firstList) {
+                for (List<T> remainingList : remainingLists) {
+                    ArrayList<T> resultList = new ArrayList<T>();
+                    resultList.add(condition);
+                    resultList.addAll(remainingList);
+                    resultLists.add(resultList);
                 }
             }
         }
-        
-        return values;
+        return resultLists;
     }
     
     protected void addRecord(DateFieldValueCardinalityRecord record) {
