@@ -102,8 +102,11 @@ public class StatsBean {
                 if (httpStatusCode == 200) {
                     NamespaceFilter nsFilter = new NamespaceFilter();
                     SAXParserFactory spf = SAXParserFactory.newInstance();
+                    spf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                    spf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+                    spf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
                     nsFilter.setParent(spf.newSAXParser().getXMLReader());
-                    
+
                     JAXBContext ctx = JAXBContext.newInstance(StatsResponse.class);
                     UnmarshallerHandler umHandler = ctx.createUnmarshaller().getUnmarshallerHandler();
                     nsFilter.setContentHandler(umHandler);
