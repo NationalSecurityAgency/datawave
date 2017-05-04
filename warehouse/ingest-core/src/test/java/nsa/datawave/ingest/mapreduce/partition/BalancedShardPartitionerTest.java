@@ -48,7 +48,6 @@ public class BalancedShardPartitionerTest {
     }
     
     @Test
-    @Ignore
     public void testTwoTablesAreOffsetted() throws Exception {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
         new TestShardGenerator(conf, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard", "errorShard");
@@ -57,10 +56,10 @@ public class BalancedShardPartitionerTest {
         // For a shard from today, we can assume that they're well balanced.
         // If offsetting is working, they will not go to the same partitions
         Key shardFromToday = new Key(formatDay(0) + "_1");
-        // error shard should be in the second group of partitions
-        verifyOffsetGroup(1, partitioner.getPartition(new BulkIngestKey(new Text("errorShard"), shardFromToday), new Value(), 1000));
-        // shard should be in the first group of partitions
-        verifyOffsetGroup(0, partitioner.getPartition(new BulkIngestKey(new Text("shard"), shardFromToday), new Value(), 1000));
+        // error shard should be in the first group of partitions
+        verifyOffsetGroup(0, partitioner.getPartition(new BulkIngestKey(new Text("errorShard"), shardFromToday), new Value(), 1000));
+        // shard should be in the second group of partitions
+        verifyOffsetGroup(1, partitioner.getPartition(new BulkIngestKey(new Text("shard"), shardFromToday), new Value(), 1000));
     }
     
     private void verifyOffsetGroup(int group, int partitionId) {
