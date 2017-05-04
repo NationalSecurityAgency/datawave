@@ -162,7 +162,6 @@ public class ExtendedQueryExecutorBeanTest {
     @Mock
     QueryLogic<?> queryLogic1;
     
-    @Mock
     QuerySyntaxParserQueryLogic<?> queryLogic2;
     
     @Mock
@@ -217,6 +216,9 @@ public class ExtendedQueryExecutorBeanTest {
     
     @Before
     public void setupBefore() throws Exception {
+        
+        queryLogic2 = PowerMock.createMock(QuerySyntaxParserQueryLogic.class);
+        
         queryExpirationConf = new QueryExpirationConfiguration();
         queryExpirationConf.setPageSizeShortCircuitCheckTime(45);
         queryExpirationConf.setPageShortCircuitTimeout(58);

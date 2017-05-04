@@ -95,7 +95,6 @@ public class QueryMetricsEnrichmentInterceptorTest {
     @Mock
     private QueryMetricsBean queryMetrics;
     
-    @Mock
     private MultivaluedMap<String,String> requestHeaders;
     
     @Mock
@@ -105,9 +104,8 @@ public class QueryMetricsEnrichmentInterceptorTest {
     private ResteasyUriInfo uriInfo;
     
     @Mock
-    BaseQueryLogic queryLogic;
+    private BaseQueryLogic queryLogic;
     
-    @Mock
     private MultivaluedMap<String,Object> writeHeaders;
     
     @Mock
@@ -120,6 +118,11 @@ public class QueryMetricsEnrichmentInterceptorTest {
     public void setup() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        
+        // noinspection unchecked
+        requestHeaders = PowerMock.createStrictMock(MultivaluedMap.class);
+        // noinspection unchecked
+        writeHeaders = PowerMock.createStrictMock(MultivaluedMap.class);
     }
     
     @Test

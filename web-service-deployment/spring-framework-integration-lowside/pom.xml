@@ -14,6 +14,10 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>org.easymock</groupId>
+            <artifactId>easymock</artifactId>
+        </dependency>
+        <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <scope>provided</scope>
@@ -97,11 +101,6 @@
             <groupId>nsa.datawave.webservice</groupId>
             <artifactId>Security</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
