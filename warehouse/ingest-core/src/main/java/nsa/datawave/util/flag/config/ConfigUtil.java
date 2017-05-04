@@ -65,7 +65,7 @@ public class ConfigUtil {
             JAXBContext jc = JAXBContext.newInstance(claz);
             Unmarshaller um = jc.createUnmarshaller();
             return um.unmarshal(xmlSource, claz).getValue();
-
+            
         } catch (SAXException | ParserConfigurationException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
