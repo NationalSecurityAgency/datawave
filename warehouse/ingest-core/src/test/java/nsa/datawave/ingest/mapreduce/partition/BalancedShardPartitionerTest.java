@@ -48,6 +48,7 @@ public class BalancedShardPartitionerTest {
     }
     
     @Test
+    @Ignore
     public void testTwoTablesAreOffsetted() throws Exception {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
         new TestShardGenerator(conf, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard", "errorShard");
@@ -63,8 +64,8 @@ public class BalancedShardPartitionerTest {
     }
     
     private void verifyOffsetGroup(int group, int partitionId) {
-        Assert.assertTrue("partitionId " + partitionId, partitionId >= numShards * group);
-        Assert.assertTrue("partitionId " + partitionId, partitionId < numShards * (group + 1));
+        Assert.assertTrue("partitionId " + partitionId + " is not >= " + (numShards * group), partitionId >= numShards * group);
+        Assert.assertTrue("partitionId " + partitionId + " is not < " + (numShards * (group + 1)), partitionId < numShards * (group + 1));
     }
     
     @Test

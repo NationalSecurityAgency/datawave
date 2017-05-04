@@ -5,14 +5,11 @@
 package nsa.datawave.util.flag.config;
 
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
 import java.io.File;
@@ -55,23 +52,12 @@ public class ConfigUtil {
     // Unmarshalling xml into java classes
     public static <T> T getXmlObject(Class<T> claz, String file) throws JAXBException, IOException {
         
-        SAXParserFactory factory = SAXParserFactory.newInstance();
         Source xmlSource = null;
         try {
-            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            xmlSource = new SAXSource(factory.newSAXParser().getXMLReader(), new InputSource(new FileReader(file)));
-            JAXBContext jc = JAXBContext.newInstance(Object.class);
+            xmlSource = new SAXSource(new InputSource(new FileReader(file)));
+            JAXBContext jc = JAXBContext.newInstance(claz);
             Unmarshaller um = jc.createUnmarshaller();
-            return (T) um.unmarshal(xmlSource);
-            
-        } catch (SAXException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            return um.unmarshal(xmlSource, claz).getValue();
         } finally {
             if (xmlSource != null)
                 ((SAXSource) xmlSource).getInputSource().getCharacterStream().close();

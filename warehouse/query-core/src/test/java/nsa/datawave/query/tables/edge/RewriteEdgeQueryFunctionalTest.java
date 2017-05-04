@@ -7,6 +7,7 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import nsa.datawave.configuration.spring.SpringBean;
+import nsa.datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import nsa.datawave.webservice.query.QueryImpl;
 import nsa.datawave.webservice.query.configuration.GenericQueryConfiguration;
 
@@ -44,6 +45,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "nsa.datawave.query",
                                         "nsa.datawave.webservice.query.result.event")
+                        .addClass(TestDatawaveEdgeDictionaryImpl.class)
                         .deleteClass(nsa.datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(nsa.datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(

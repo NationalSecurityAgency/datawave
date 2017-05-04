@@ -31,6 +31,7 @@ import nsa.datawave.query.rewrite.attributes.TypeAttribute;
 import nsa.datawave.query.rewrite.function.deserializer.KryoDocumentDeserializer;
 import nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic;
 import nsa.datawave.query.rewrite.util.WiseGuysIngest;
+import nsa.datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import nsa.datawave.webservice.query.QueryImpl;
 import nsa.datawave.webservice.query.configuration.GenericQueryConfiguration;
 
@@ -123,6 +124,7 @@ public abstract class FunctionalSetTest {
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "nsa.datawave.query", "org.jboss.logging",
                                         "nsa.datawave.webservice.query.result.event")
+                        .addClass(TestDatawaveEdgeDictionaryImpl.class)
                         .deleteClass(nsa.datawave.query.metrics.QueryMetricQueryLogic.class)
                         .deleteClass(nsa.datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(
