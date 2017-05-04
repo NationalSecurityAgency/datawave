@@ -41,7 +41,8 @@ public class RESTExceptionMapperTest {
         Assert.assertEquals(5, responseMap.size());
         Assert.assertEquals("[true]", responseMap.get(keyArray[0]).toString());
         Assert.assertEquals(1, responseMap.get(keyArray[0]).size());
-        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain]", responseMap.get(keyArray[1]).toString());
+        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain, Accept, Accept-Encoding]", responseMap.get(keyArray[1])
+                        .toString());
         Assert.assertEquals("[*]", responseMap.get(keyArray[2]).toString());
         Assert.assertEquals("[864000]", responseMap.get(keyArray[3]).toString());
         Assert.assertEquals("[null/null]", responseMap.get(keyArray[4]).toString());
@@ -66,7 +67,8 @@ public class RESTExceptionMapperTest {
         Assert.assertEquals(5, responseMap.size());
         Assert.assertEquals("[true]", responseMap.get(keyArray[0]).toString());
         Assert.assertEquals(1, responseMap.get(keyArray[1]).size());
-        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain]", responseMap.get(keyArray[1]).toString());
+        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain, Accept, Accept-Encoding]", responseMap.get(keyArray[1])
+                        .toString());
         Assert.assertEquals("[*]", responseMap.get(keyArray[2]).toString());
         Assert.assertEquals("[864000]", responseMap.get(keyArray[3]).toString());
         Assert.assertEquals("[null/null]", responseMap.get(keyArray[4]).toString());
@@ -91,7 +93,8 @@ public class RESTExceptionMapperTest {
         Assert.assertEquals(5, responseMap.size());
         Assert.assertEquals("[true]", responseMap.get(keyArray[0]).toString());
         Assert.assertEquals(1, responseMap.get(keyArray[1]).size());
-        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain]", responseMap.get(keyArray[1]).toString());
+        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain, Accept, Accept-Encoding]", responseMap.get(keyArray[1])
+                        .toString());
         Assert.assertEquals("[*]", responseMap.get(keyArray[2]).toString());
         Assert.assertEquals("[864000]", responseMap.get(keyArray[3]).toString());
         Assert.assertEquals("[null/null]", responseMap.get(keyArray[4]).toString());
@@ -116,7 +119,8 @@ public class RESTExceptionMapperTest {
         Assert.assertEquals(5, responseMap.size());
         Assert.assertEquals("[true]", responseMap.get(keyArray[0]).toString());
         Assert.assertEquals(1, responseMap.get(keyArray[1]).size());
-        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain]", responseMap.get(keyArray[1]).toString());
+        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain, Accept, Accept-Encoding]", responseMap.get(keyArray[1])
+                        .toString());
         Assert.assertEquals("[*]", responseMap.get(keyArray[2]).toString());
         Assert.assertEquals("[864000]", responseMap.get(keyArray[3]).toString());
         Assert.assertEquals("[null/null]", responseMap.get(keyArray[4]).toString());
@@ -140,7 +144,8 @@ public class RESTExceptionMapperTest {
         Assert.assertEquals(5, responseMap.size());
         Assert.assertEquals("[true]", responseMap.get(keyArray[0]).toString());
         Assert.assertEquals(1, responseMap.get(keyArray[1]).size());
-        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain]", responseMap.get(keyArray[1]).toString());
+        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain, Accept, Accept-Encoding]", responseMap.get(keyArray[1])
+                        .toString());
         Assert.assertEquals("[*]", responseMap.get(keyArray[2]).toString());
         Assert.assertEquals("[864000]", responseMap.get(keyArray[3]).toString());
         Assert.assertEquals("[null/null]", responseMap.get(keyArray[4]).toString());
@@ -164,7 +169,8 @@ public class RESTExceptionMapperTest {
         Assert.assertEquals(5, responseMap.size());
         Assert.assertEquals("[true]", responseMap.get(keyArray[0]).toString());
         Assert.assertEquals(1, responseMap.get(keyArray[1]).size());
-        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain]", responseMap.get(keyArray[1]).toString());
+        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain, Accept, Accept-Encoding]", responseMap.get(keyArray[1])
+                        .toString());
         Assert.assertEquals("[*]", responseMap.get(keyArray[2]).toString());
         Assert.assertEquals("[864000]", responseMap.get(keyArray[3]).toString());
         Assert.assertEquals("[null/null]", responseMap.get(keyArray[4]).toString());
@@ -188,7 +194,8 @@ public class RESTExceptionMapperTest {
         Assert.assertEquals(5, responseMap.size());
         Assert.assertEquals("[true]", responseMap.get(keyArray[0]).toString());
         Assert.assertEquals(1, responseMap.get(keyArray[1]).size());
-        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain]", responseMap.get(keyArray[1]).toString());
+        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain, Accept, Accept-Encoding]", responseMap.get(keyArray[1])
+                        .toString());
         Assert.assertEquals("[*]", responseMap.get(keyArray[2]).toString());
         Assert.assertEquals("[864000]", responseMap.get(keyArray[3]).toString());
         Assert.assertEquals("[null/null]", responseMap.get(keyArray[4]).toString());
@@ -212,7 +219,8 @@ public class RESTExceptionMapperTest {
         Assert.assertEquals(5, responseMap.size());
         Assert.assertEquals("[true]", responseMap.get(keyArray[0]).toString());
         Assert.assertEquals(1, responseMap.get(keyArray[1]).size());
-        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain]", responseMap.get(keyArray[1]).toString());
+        Assert.assertEquals("[X-SSL-ClientCert-Subject, X-ProxiedEntitiesChain, X-ProxiedIssuersChain, Accept, Accept-Encoding]", responseMap.get(keyArray[1])
+                        .toString());
         Assert.assertEquals("[*]", responseMap.get(keyArray[2]).toString());
         Assert.assertEquals("[864000]", responseMap.get(keyArray[3]).toString());
         Assert.assertEquals("[null/null]", responseMap.get(keyArray[4]).toString());
