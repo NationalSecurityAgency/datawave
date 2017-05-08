@@ -185,7 +185,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             
             while (docAttrKey != null) {
                 if (equality.partOf(documentStartKey, docAttrKey.get())) {
-                    docKeys.add(getDocKey(docAttrKey.get()));
+                    if (filter == null || filter.keep(docAttrKey.get())) {
+                        docKeys.add(getDocKey(docAttrKey.get()));
+                    }
                     
                     if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
                         documentAttributes.add(Maps.immutableEntry(docAttrKey.get(), source.getTopValue()));
