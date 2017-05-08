@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+import nsa.datawave.query.rewrite.predicate.Filter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -139,7 +140,10 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
         
         // now add the dockeys as attributes
-        this.put(DOCKEY_FIELD_NAME, toDocKeyAttributes(docKeys, this.isToKeep()));
+        Attribute<?> docKeyAttributes = toDocKeyAttributes(docKeys, this.isToKeep(), attrFilter);
+        if (docKeyAttributes != null) {
+            this.put(DOCKEY_FIELD_NAME, docKeyAttributes);
+        }
         
         // a little debugging here to track large documents
         debugDocumentSize(docKey);
@@ -147,15 +151,19 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return this;
     }
     
-    public Attribute<?> toDocKeyAttributes(Set<Key> docKeys, boolean isToKeep) {
-        if (docKeys.size() == 1) {
-            Key docKey = docKeys.iterator().next();
-            return new DocumentKey(docKey, isToKeep());
-        } else {
-            Attributes attributes = new Attributes(isToKeep);
-            for (Key docKey : docKeys) {
+    public Attribute<?> toDocKeyAttributes(Set<Key> docKeys, boolean isToKeep, Filter attrFilter) {
+        Attributes attributes = new Attributes(isToKeep);
+        for (Key docKey : docKeys) {
+            // if the attribute filter says not to keep it, then don't even create it.
+            if (attrFilter == null || attrFilter.keep(docKey)) {
                 attributes.add(new DocumentKey(docKey, isToKeep()));
             }
+        }
+        if (attributes.size() == 0) {
+            return null;
+        } else if (attributes.size() == 1) {
+            return attributes.getAttributes().iterator().next();
+        } else {
             return attributes;
         }
     }
