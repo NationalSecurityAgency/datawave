@@ -27,7 +27,8 @@ public class DateNormalizerTest {
     DateNormalizer normalizer = new DateNormalizer();
     
     String[] inputDateStrings = {"2014-10-20T00:00:00.000Z", "20141020000000", "2014-10-20 00:00:00GMT", "2014-10-20 00:00:00Z", "2014-10-20 00:00:00",
-            "2014-10-20", "2014-10-20T00|00", "Mon Oct 20 00:00:00 GMT 2014", "2014-10-20T00:00:00Z", "2014-10-20t00:00:00z", "2014-10-20T00:00:00+00:00"};
+            "2014-10-20", "2014-10-20T00|00", "Mon Oct 20 00:00:00 GMT 2014", "2014-10-20T00:00:00Z", "2014-10-20t00:00:00z", "2014-10-20T00:00:00+00:00",
+            "Mon Oct 20 00:00:00 +00:00 2014"};
     
     @Test
     public void testAllFormats() throws Exception {
