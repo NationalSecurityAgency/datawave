@@ -23,6 +23,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
     
     public static final String[] FORMAT_STRINGS = {
             "EEE MMM dd HH:mm:ss zzz yyyy", // at the top just because
+            "EEE MMM dd HH:mm:ss XXX yyyy", // for ISO 8601
             ISO_8601_FORMAT_STRING, "yyyyMMddHHmmss", "yyyy-MM-dd HH:mm:ssz", "yyyy-MM-dd HH:mm:ss'Z'", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd",
             "yyyy-MM-dd'T'HH'|'mm", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd't'HH:mm:ss'z'", "yyyy-MM-dd'T'HH:mm:ssXXX"};
     
