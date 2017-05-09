@@ -93,12 +93,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-common-test</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>nsa.datawave.webservice</groupId>
             <artifactId>Common</artifactId>
             <version>${project.version}</version>

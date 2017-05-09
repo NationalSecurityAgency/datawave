@@ -551,6 +551,12 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>nsa.datawave</groupId>
+            <artifactId>datawave-common-test</artifactId>
+        </dependency>
+    </dependencies>
     <build>
         <pluginManagement>
             <plugins>
@@ -562,6 +568,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${version.surefire.plugin}</version>
                     <configuration>
                         <reuseForks>false</reuseForks>
                         <forkCount>1C</forkCount>

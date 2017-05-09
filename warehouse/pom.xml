@@ -11,7 +11,6 @@
     <name>datawave-warehouse</name>
     <modules>
         <module>balancers</module>
-        <module>common-test</module>
         <module>common</module>
         <module>configuration-core</module>
         <module>core</module>
@@ -124,16 +123,6 @@
                 <version>2.1</version>
             </dependency>
             <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>apache-log4j-extras</artifactId>
-                <version>1.0</version>
-            </dependency>
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>1.2.16</version>
-            </dependency>
-            <dependency>
                 <groupId>net.sf.json-lib</groupId>
                 <artifactId>json-lib</artifactId>
                 <version>2.2.2</version>
@@ -151,11 +140,6 @@
             <dependency>
                 <groupId>nsa.datawave</groupId>
                 <artifactId>datawave-common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-common-test</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -248,17 +232,6 @@
                 <groupId>nsa.datawave.webservice</groupId>
                 <artifactId>Query</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.accumulo</groupId>
-                <artifactId>accumulo-server-base</artifactId>
-                <version>${version.accumulo}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -523,13 +496,19 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-    <dependencies />
+    <dependencies>
+        <dependency>
+            <groupId>nsa.datawave</groupId>
+            <artifactId>datawave-common-test</artifactId>
+        </dependency>
+    </dependencies>
     <build>
         <pluginManagement>
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${version.surefire.plugin}</version>
                     <configuration>
                         <reuseForks>false</reuseForks>
                         <forkCount>1C</forkCount>

@@ -212,12 +212,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-common-test</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.hornetq</groupId>
             <artifactId>hornetq-jms-server</artifactId>
             <version>${version.hornetq}</version>

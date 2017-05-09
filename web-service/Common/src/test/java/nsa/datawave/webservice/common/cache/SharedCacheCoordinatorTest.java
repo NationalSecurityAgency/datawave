@@ -14,7 +14,6 @@ import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.BoundedExponentialBackoffRetry;
 import org.apache.curator.test.InstanceSpec;
 import org.apache.curator.test.QuorumConfigBuilder;
-import org.apache.curator.test.TestingServer;
 import org.apache.curator.test.TestingZooKeeperServer;
 import org.junit.After;
 import org.junit.Before;

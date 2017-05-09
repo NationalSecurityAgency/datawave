@@ -35,11 +35,6 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-common-test</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
     <build>
         <resources>

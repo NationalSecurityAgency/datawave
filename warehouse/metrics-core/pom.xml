@@ -72,11 +72,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-common-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-minicluster</artifactId>
             <version>${version.accumulo}</version>
