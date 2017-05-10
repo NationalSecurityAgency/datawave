@@ -402,14 +402,24 @@ public class NGramTokenizationStrategyTest {
         // Verify results
         assertTrue("Should have created a non-null filter", null != result1);
         
-        assertTrue("Should have applied approximately " + expectedNGramCount + " n-grams to the bloom filter", (result2 > expectedNGramCount - 3)
-                        && (result2 < idealFilterSize));
+        /*
+         * Debugging note: Recent changes to Java package names in this project mysteriously and unfortunately had the side effect of breaking the original
+         * lower-bound assertion below, ie "(result2 > expectedNGramCount - 3)"
+         * 
+         * Turns out, the value of 'expectedNGramCount' depends on BloomFilter object serialization within BloomFilterUtil. The purpose of that serialization is
+         * to calculate BloomFilterUtil.EMPTY_FILTER_SIZE (in bytes), thus, EMPTY_FILTER_SIZE and 'expectedNGramCount' are directly affected by the length of
+         * BloomFilter's fully-qualified name. In this case, a 4-character difference in the length of the new name was enough to break the test. Hopefully, the
+         * revision here will make debugging this issue easier in the future.
+         */
+        final int result2LowerBound = expectedNGramCount - 5;
+        final int result2UpperBound = idealFilterSize;
+        assertTrue("result2 (" + result2 + ") should have been greater than " + result2LowerBound, result2 > result2LowerBound);
+        assertTrue("result2 (" + result2 + ") should have been less than " + result2UpperBound, result2 < result2UpperBound);
         
         String fieldName = ncis.lastElement().getIndexedFieldName();
         int expectedCount = BloomFilterUtil.predictNGramCount(ncis.lastElement().getIndexedFieldValue());
         assertTrue("Should have pruned the n-grams tokenized for field " + fieldName + " but got " + result3.get(fieldName), (null != result3.get(fieldName))
                         && (result3.get(fieldName) < expectedCount));
-        
     }
     
     @Test

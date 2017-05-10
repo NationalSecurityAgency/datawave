@@ -54,10 +54,10 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     private boolean markingsSetupIteratorEnabled = false;
     private String markingsSetupIteratorConfig;
     
-    boolean enableBloomFilters = false;
+    protected boolean enableBloomFilters = false;
     
     public static final String LOCALITY_GROUPS = "shard.table.locality.groups";
-    HashMap<String,Set<Text>> localityGroups = new HashMap<>();
+    protected HashMap<String,Set<Text>> localityGroups = new HashMap<>();
     
     @Override
     public void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException {

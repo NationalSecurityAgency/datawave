@@ -83,7 +83,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
     /**
      * Inner class to enable extension and code sharing independent of parent class hierarchy
      */
-    static class HandlerDelegate {
+    public static class HandlerDelegate {
         
         // internal state configured during setup
         private Text metricsSummaryTableName = null;
@@ -92,54 +92,54 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
         private List<Matcher> colQualFieldsRegexList;
         private MetricsSummaryFormatter metricsSummaryFormatter;
         
-        Text getMetricsSummaryTableName() {
+        public Text getMetricsSummaryTableName() {
             return metricsSummaryTableName;
         }
         
-        void setup(TaskAttemptContext context) {
+        public void setup(TaskAttemptContext context) {
             Configuration conf = context.getConfiguration();
             setMetricsSummaryFormatter(new MetricsSummaryFormatter());
             setTableName(conf);
             setKeyComponentDefinitions(conf);
         }
         
-        void setMetricsSummaryTableName(Text metricsSummaryTableName) {
+        public void setMetricsSummaryTableName(Text metricsSummaryTableName) {
             this.metricsSummaryTableName = metricsSummaryTableName;
         }
         
-        List<String> getRowIdFields() {
+        public List<String> getRowIdFields() {
             return rowIdFields;
         }
         
-        void setRowIdFields(List<String> rowIdFields) {
+        public void setRowIdFields(List<String> rowIdFields) {
             this.rowIdFields = rowIdFields;
         }
         
-        List<String> getColFamFields() {
+        public List<String> getColFamFields() {
             return colFamFields;
         }
         
-        void setColFamFields(List<String> colFamFields) {
+        public void setColFamFields(List<String> colFamFields) {
             this.colFamFields = colFamFields;
         }
         
-        List<Matcher> getColQualFieldsRegexList() {
+        public List<Matcher> getColQualFieldsRegexList() {
             return colQualFieldsRegexList;
         }
         
-        void setColQualFieldsRegexList(List<Matcher> colQualFieldsRegexList) {
+        public void setColQualFieldsRegexList(List<Matcher> colQualFieldsRegexList) {
             this.colQualFieldsRegexList = colQualFieldsRegexList;
         }
         
-        MetricsSummaryFormatter getMetricsSummaryFormatter() {
+        public MetricsSummaryFormatter getMetricsSummaryFormatter() {
             return metricsSummaryFormatter;
         }
         
-        void setMetricsSummaryFormatter(MetricsSummaryFormatter metricsSummaryFormatter) {
+        public void setMetricsSummaryFormatter(MetricsSummaryFormatter metricsSummaryFormatter) {
             this.metricsSummaryFormatter = metricsSummaryFormatter;
         }
         
-        void setTableName(Configuration conf) {
+        public void setTableName(Configuration conf) {
             String tableName = conf.get(METRICS_SUMMARY_TABLE_NAME);
             if (tableName == null) {
                 log.warn(METRICS_SUMMARY_TABLE_NAME + " not specified, no summary data will be created.");
@@ -148,7 +148,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
             }
         }
         
-        void setKeyComponentDefinitions(Configuration conf) {
+        public void setKeyComponentDefinitions(Configuration conf) {
             rowIdFields = Arrays.asList(StringUtils.split(conf.get(METRICS_SUMMARY_ROWID_FIELDS), SUMMARY_FIELDS_SEPARATOR, true));
             colFamFields = Arrays.asList(StringUtils.split(conf.get(METRICS_SUMMARY_COLF_FIELDS), SUMMARY_FIELDS_SEPARATOR, true));
             
@@ -163,7 +163,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
             colQualFieldsRegexList = Lists.newArrayList(mColQualFieldsRegex);
         }
         
-        String[] getTableNames(Configuration conf) {
+        public String[] getTableNames(Configuration conf) {
             List<String> tableNames = new ArrayList<>(4);
             String tableName = conf.get(METRICS_SUMMARY_TABLE_NAME);
             if (tableName != null) {
@@ -172,7 +172,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
             return tableNames.toArray(new String[tableNames.size()]);
         }
         
-        int[] getTableLoaderPriorities(Configuration conf) {
+        public int[] getTableLoaderPriorities(Configuration conf) {
             int[] loaderPriorities = new int[1];
             int index = 0;
             
@@ -187,8 +187,8 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
             return loaderPriorities;
         }
         
-        Multimap<BulkIngestKey,Value> createEntries(RawRecordContainer record, Multimap<String,NormalizedContentInterface> fields, ColumnVisibility origVis,
-                        long timestamp, IngestHelperInterface iHelper) {
+        public Multimap<BulkIngestKey,Value> createEntries(RawRecordContainer record, Multimap<String,NormalizedContentInterface> fields,
+                        ColumnVisibility origVis, long timestamp, IngestHelperInterface iHelper) {
             String hour = getHour(fields);
             if (hour == null) {
                 return HashMultimap.create();

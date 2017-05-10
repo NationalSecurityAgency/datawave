@@ -95,7 +95,7 @@ public class LongLineEventRecordReader extends AbstractEventRecordReader<Text> i
      * @param context
      * @throws IOException
      */
-    protected void initializeLineReader(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
+    public void initializeLineReader(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
         FileSplit split = (FileSplit) genericSplit;
         Configuration job = context.getConfiguration();
         
