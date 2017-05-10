@@ -9,7 +9,7 @@
      http://www.springframework.org/schema/util
      http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
-    <bean id="bridge" class="nsa.datawave.query.util.TypeMetadataBridge" >
+    <bean id="bridge" class="datawave.query.util.TypeMetadataBridge" >
         <property name="metadataTableNames" >
             <util:list>
                 ${metadata.table.names}
@@ -66,7 +66,7 @@
     set the vfs FileSystemManager as a static member of the TypeMetadataBridge class
     -->
     <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean" >
-        <property name="staticMethod" value="nsa.datawave.query.util.TypeMetadataBridge.setFileSystemManager" />
+        <property name="staticMethod" value="datawave.query.util.TypeMetadataBridge.setFileSystemManager" />
         <property name="arguments">
             <list>
                 <ref bean="vfs"/>

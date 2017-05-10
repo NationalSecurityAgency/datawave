@@ -18,6 +18,6 @@
 
 	<!-- only properties that you want re-mapped or excluded need to be included in the map -->
 	<!-- mapping to empty string will exclude that property from the markingFunctions results -->
-    <bean id="markingFunctions" class="nsa.datawave.marking.MarkingFunctions.NoOp" />
+    <bean id="markingFunctions" class="datawave.marking.MarkingFunctions.NoOp" />
 
 </beans>

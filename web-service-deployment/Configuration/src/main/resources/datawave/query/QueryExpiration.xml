@@ -11,7 +11,7 @@
         http://www.springframework.org/schema/util 
         http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
-	<bean id="QueryExpirationConfiguration" class="nsa.datawave.webservice.query.cache.QueryExpirationConfiguration">
+	<bean id="QueryExpirationConfiguration" class="datawave.webservice.query.cache.QueryExpirationConfiguration">
 		<!-- minutes that a running query can be idle before it is closed and the connection returned to the pool -->		
 		<property name="idleTime" value="${query.expiration.minutes}" />
         <!-- minutes that a call to create or next can sit before the query is canceled and evicted from the cache -->

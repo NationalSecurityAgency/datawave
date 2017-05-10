@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>nsa.datawave.webservice</groupId>
+        <groupId>datawave.webservice</groupId>
         <artifactId>web-service-deployment</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>spring-framework-integration-lowside</artifactId>
     <name>spring-framework-integration-lowside</name>
@@ -28,6 +28,61 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>datawave</groupId>
+            <artifactId>datawave-edge-dictionary-core</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>datawave</groupId>
+            <artifactId>datawave-query-core</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>datawave.webservice</groupId>
+            <artifactId>Accumulo</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>datawave.webservice</groupId>
+            <artifactId>Atom</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>datawave.webservice</groupId>
+            <artifactId>CachedResults</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>datawave.webservice</groupId>
+            <artifactId>Configuration</artifactId>
+            <version>${project.version}</version>
+            <classifier>${build.env}</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>datawave.webservice</groupId>
+            <artifactId>MapReduce</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>datawave.webservice</groupId>
+            <artifactId>Query</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>datawave.webservice</groupId>
+            <artifactId>Security</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
             <scope>test</scope>
@@ -40,61 +95,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-edge-dictionary-core</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-query-core</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
-            <artifactId>Accumulo</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
-            <artifactId>Atom</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
-            <artifactId>CachedResults</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
-            <artifactId>Configuration</artifactId>
-            <version>${project.version}</version>
-            <classifier>${build.env}</classifier>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
-            <artifactId>MapReduce</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
-            <artifactId>Query</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
-            <artifactId>Security</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

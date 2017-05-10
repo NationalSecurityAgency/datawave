@@ -14,7 +14,7 @@
          protobuf's static parser instance via generic abstract base class wrapper 
     -->
     <util:list id="protobufValidators">
-        <bean class="nsa.datawave.ingest.validation.protobuf.TermWeightInfoParser" />
+        <bean class="datawave.ingest.validation.protobuf.TermWeightInfoParser" />
     </util:list>
     
 </beans>

@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>nsa.datawave.webservice</groupId>
+        <groupId>datawave.webservice</groupId>
         <artifactId>WebService</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>Client</artifactId>
     <packaging>jar</packaging>
@@ -53,6 +53,10 @@
             <version>3.1</version>
         </dependency>
         <dependency>
+            <groupId>datawave</groupId>
+            <artifactId>datawave-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-api</artifactId>
         </dependency>
@@ -83,10 +87,6 @@
         <dependency>
             <groupId>java3d</groupId>
             <artifactId>vecmath</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
@@ -302,7 +302,7 @@
                                 </transformSchema>
                             </transformSchemas>
                             <includes>
-                                <include>nsa/datawave/**/*.java</include>
+                                <include>datawave/**/*.java</include>
                             </includes>
                             <excludes>
                                 <exclude>**/ShutdownException.java</exclude>
@@ -316,7 +316,7 @@
                                 <exclude>**/CachedresultMessages.java</exclude>
                                 <exclude>**/UserMessages.java</exclude>
                                 <exclude>**/ObjectSizeOf.java</exclude>
-                                <exclude>nsa/datawave/data/**/*.java</exclude>
+                                <exclude>datawave/data/**/*.java</exclude>
                             </excludes>
                             <outputDirectory>target/xsd</outputDirectory>
                         </configuration>

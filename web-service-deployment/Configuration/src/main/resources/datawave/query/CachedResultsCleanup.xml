@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
                             http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
-	<bean id="CachedResultsCleanupConfiguration" class="nsa.datawave.webservice.query.database.CachedResultsCleanupConfiguration">
+	<bean id="CachedResultsCleanupConfiguration" class="datawave.webservice.query.database.CachedResultsCleanupConfiguration">
 		<!-- days that the cached results table should remain available for query in the cached results store -->		
 		<property name="daysToLive" value="${cached_results.daysToLive}" />
 	</bean>

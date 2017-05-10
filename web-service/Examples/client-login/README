@@ -3,12 +3,12 @@ client-login example
 This project contains two examples, both dealing with an unsecured client 
 calling a secured EJB.
 
-1. nsa.datawave.webservice.examples.ClientLoginExampleBean is a timer bean that 
+1. datawave.webservice.examples.ClientLoginExampleBean is a timer bean that 
    calls a secured EJB once a minute and prints the effective authorizations
    of the user running JBoss (assuming it is a valid sid).  To run this
    example, simply drop client-login.jar into your jboss deploy directory.
 
-2. nsa.datawave.webservice.examples.RemoteClientLoginExample is a standalone EJB
+2. datawave.webservice.examples.RemoteClientLoginExample is a standalone EJB
    client that calls a secured EJB and prints effective authorizations.  To
    run this example, execute the run.sh script in the same directory as this
    README.

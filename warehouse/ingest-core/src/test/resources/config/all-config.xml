@@ -27,8 +27,8 @@
 
 <property>
 	<name>all.handler.classes</name>
-	<!-- ALL_HANDLER_CLASSES defaults to nsa.datawave.ingest.mapreduce.handler.edge.EdgeDataTypeHandler -->
-	<value>nsa.datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler,nsa.datawave.ingest.mapreduce.handler.dateindex.DateIndexDataTypeHandler</value>
+	<!-- ALL_HANDLER_CLASSES defaults to datawave.ingest.mapreduce.handler.edge.EdgeDataTypeHandler -->
+	<value>datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler,datawave.ingest.mapreduce.handler.dateindex.DateIndexDataTypeHandler</value>
 </property>
 
 <property>
@@ -53,7 +53,7 @@
 <!-- This can be overridden on a type by type basis in each individual datatype's config file-->
 <property>
     <name>all.ingest.policy.enforcer.class</name>
-    <value>nsa.datawave.policy.IngestPolicyEnforcer$NoOpIngestPolicyEnforcer</value>
+    <value>datawave.policy.IngestPolicyEnforcer$NoOpIngestPolicyEnforcer</value>
     <description>Name of the class to use for policy enforcement</description>
 </property>
 

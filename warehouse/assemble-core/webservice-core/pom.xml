@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>nsa.datawave</groupId>
+        <groupId>datawave</groupId>
         <artifactId>assemble-core</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>deploy-webservice-core</artifactId>
     <name>webservice-core</name>
@@ -17,11 +17,11 @@
             <artifactId>commons-configuration</artifactId>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
+            <groupId>datawave</groupId>
             <artifactId>datawave-ingest-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
+            <groupId>datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
         </dependency>
         <dependency>
@@ -37,27 +37,27 @@
             <artifactId>powermock-module-junit4</artifactId>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Client</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Common</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Common-Util</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>MapReduce</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Query</artifactId>
             <scope>provided</scope>
         </dependency>

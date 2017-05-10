@@ -10,23 +10,23 @@ http://www.springframework.org/schema/context/spring-context-4.0.xsd
 http://www.springframework.org/schema/util
 http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
-    <bean id="wikipedia" class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper" scope="prototype">
+    <bean id="wikipedia" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper" scope="prototype">
         <property name="edgeAttribute2" value="REVISION_MODEL"/>
         <property name="edgeAttribute3" value="REVISION_TEXT_SPACE"/>
         <property name="activityDateField" value ="null"/>
         <property name="edges">
             <list>
-                <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
                     <property name="edgeType" value="REDIRECT"/>
                     <property name="direction" value="bi"/>
                     <property name="AllPairs">
                         <list>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="PAGE_TITLE"/>
                                 <property name="relationship" value="PAGE"/>
                                 <property name="collection" value="PAGE_METADATA"/>
                             </bean>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="PAGE_REDIRECT_TITLE"/>
                                 <property name="relationship" value="REDIRECT"/>
                                 <property name="collection" value="PAGE_METADATA"/>
@@ -34,17 +34,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                         </list>
                     </property>
                 </bean>
-                <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
                     <property name="edgeType" value="REVISION"/>
                     <property name="direction" value="bi"/>
                     <property name="AllPairs">
                         <list>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="REVISION_ID"/>
                                 <property name="relationship" value="REVISIONID"/>
                                 <property name="collection" value="PAGE_METADATA"/>
                             </bean>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="PAGE_ID"/>
                                 <property name="relationship" value="PAGEID"/>
                                 <property name="collection" value="PAGE_METADATA"/>
@@ -52,17 +52,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                         </list>
                     </property>
                 </bean>
-                <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
                     <property name="edgeType" value="ASSOCIATION"/>
                     <property name="direction" value="bi"/>
                     <property name="AllPairs">
                         <list>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="PAGE_TITLE"/>
                                 <property name="relationship" value="PAGE"/>
                                 <property name="collection" value="PAGE_METADATA"/>
                             </bean>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="PAGE_ID"/>
                                 <property name="relationship" value="PAGEID"/>
                                 <property name="collection" value="PAGE_METADATA"/>
@@ -70,17 +70,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                         </list>
                     </property>
                 </bean>
-                <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
                     <property name="edgeType" value="CONTRIBUTION"/>
                     <property name="direction" value="bi"/>
                     <property name="AllPairs">
                         <list>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="CONTRIBUTOR_ID"/>
                                 <property name="relationship" value="CONTRIBUTORID"/>
                                 <property name="collection" value="PAGE_METADATA"/>
                             </bean>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="PAGE_ID"/>
                                 <property name="relationship" value="PAGEID"/>
                                 <property name="collection" value="PAGE_METADATA"/>
@@ -88,17 +88,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                         </list>
                     </property>
                 </bean>
-                <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
                     <property name="edgeType" value="REVISION"/>
                     <property name="direction" value="bi"/>
                     <property name="AllPairs">
                         <list>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="REVISION_ID"/>
                                 <property name="relationship" value="REVISIONID"/>
                                 <property name="collection" value="PAGE_METADATA"/>
                             </bean>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="PAGE_ID"/>
                                 <property name="relationship" value="PAGEID"/>
                                 <property name="collection" value="PAGE_METADATA"/>
@@ -106,17 +106,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                         </list>
                     </property>
                 </bean>
-                <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
                     <property name="edgeType" value="REVISION"/>
                     <property name="direction" value="bi"/>
                     <property name="AllPairs">
                         <list>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="REVISION_ID"/>
                                 <property name="relationship" value="REVISIONID"/>
                                 <property name="collection" value="PAGE_METADATA"/>
                             </bean>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="CONTRIBUTOR_ID"/>
                                 <property name="relationship" value="CONTRIBUTORID"/>
                                 <property name="collection" value="PAGE_METADATA"/>
@@ -124,17 +124,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                         </list>
                     </property>
                 </bean>
-                <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
                     <property name="edgeType" value="ASSOCIATION"/>
                     <property name="direction" value="bi"/>
                     <property name="AllPairs">
                         <list>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="CONTRIBUTOR_USERNAME"/>
                                 <property name="relationship" value="CONTRIBUTOR"/>
                                 <property name="collection" value="PAGE_METADATA"/>
                             </bean>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <property name="selector" value="CONTRIBUTOR_ID"/>
                                 <property name="relationship" value="CONTRIBUTORID"/>
                                 <property name="collection" value="PAGE_METADATA"/>

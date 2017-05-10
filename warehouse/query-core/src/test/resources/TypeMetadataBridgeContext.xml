@@ -11,7 +11,7 @@
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer" />
 
-    <bean id="bridge" class="nsa.datawave.query.util.TypeMetadataBridge" >
+    <bean id="bridge" class="datawave.query.util.TypeMetadataBridge" >
         <property name="metadataTableNames" >
             <util:list>
                <value>DatawaveMetadata</value>
@@ -68,7 +68,7 @@
     set the vfs FileSystemManager as a static member of the TypeMetadataBridge class
     -->
     <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean" >
-        <property name="staticMethod" value="nsa.datawave.query.util.TypeMetadataBridge.setFileSystemManager" />
+        <property name="staticMethod" value="datawave.query.util.TypeMetadataBridge.setFileSystemManager" />
         <property name="arguments">
             <list>
                 <ref bean="vfs"/>

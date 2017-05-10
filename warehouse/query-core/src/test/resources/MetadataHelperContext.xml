@@ -15,26 +15,26 @@
      <!--  cacheManager is in CacheContext.xml. You must also include CacheContext.xml in any spring context that includes this file -->
     <cache:annotation-driven cache-manager="cacheManager"/>
     
-    <bean id="metadataHelper" scope="prototype" class="nsa.datawave.query.util.MetadataHelperWithDescriptions" >
+    <bean id="metadataHelper" scope="prototype" class="datawave.query.util.MetadataHelperWithDescriptions" >
         <property name="allFieldMetadataHelper" ref="allFieldMetadataHelper"/>
         <property name="allMetadataAuths" ref="allMetadataAuths"/>
     </bean>
     
-    <bean id="metadataHelperFactory" class="nsa.datawave.query.util.MetadataHelperFactory" >
+    <bean id="metadataHelperFactory" class="datawave.query.util.MetadataHelperFactory" >
         <lookup-method name="createMetadataHelper" bean="metadataHelper" />
     </bean>
 
-    <bean id="allFieldMetadataHelper" scope="prototype" class="nsa.datawave.query.util.AllFieldMetadataHelper" >
+    <bean id="allFieldMetadataHelper" scope="prototype" class="datawave.query.util.AllFieldMetadataHelper" >
         <property name="typeMetadataHelper" ref="typeMetadataHelper"/>
         <property name="compositeMetadataHelper" ref="compositeMetadataHelper"/>
     </bean>
 
-    <bean id="typeMetadataHelper" scope="prototype" class="nsa.datawave.query.util.TypeMetadataHelper" >
+    <bean id="typeMetadataHelper" scope="prototype" class="datawave.query.util.TypeMetadataHelper" >
         <property name="typeSubstitutions" ref="typeSubstitutions" />
         <property name="allMetadataAuths" ref="allMetadataAuths" />
     </bean>
 
-    <bean id="compositeMetadataHelper" scope="prototype" class="nsa.datawave.query.util.CompositeMetadataHelper" />
+    <bean id="compositeMetadataHelper" scope="prototype" class="datawave.query.util.CompositeMetadataHelper" />
 
     <util:set id="allMetadataAuths" scope="prototype" value-type="org.apache.accumulo.core.security.Authorizations" >
         <bean class="org.apache.accumulo.core.security.Authorizations" >
@@ -46,14 +46,14 @@
         </bean>
     </util:set>
 
-    <bean id="dateIndexHelperFactory" class="nsa.datawave.query.util.DateIndexHelperFactory" >
+    <bean id="dateIndexHelperFactory" class="datawave.query.util.DateIndexHelperFactory" >
         <lookup-method name="createDateIndexHelper" bean="dateIndexHelper" />
     </bean>
 
-    <bean id="dateIndexHelper" scope="prototype" class="nsa.datawave.query.util.DateIndexHelper" />
+    <bean id="dateIndexHelper" scope="prototype" class="datawave.query.util.DateIndexHelper" />
 
     <util:map id="typeSubstitutions" >
-        <entry key="nsa.datawave.data.type.DateType" value="nsa.datawave.data.type.RawDateType" />
+        <entry key="datawave.data.type.DateType" value="datawave.data.type.RawDateType" />
     </util:map>
 
 </beans>

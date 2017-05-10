@@ -7,7 +7,7 @@
     <!--context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" /-->
     <context:property-placeholder location="classpath*:/datawave/query/CachedResults.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="100"/>
 	
-	<bean id="CachedResultsConfiguration" class="nsa.datawave.webservice.results.cached.CachedResultsConfiguration">
+	<bean id="CachedResultsConfiguration" class="datawave.webservice.results.cached.CachedResultsConfiguration">
         <!-- The default pagesize (must be smaller than the max page records) -->
         <property name="defaultPageSize" value="${query.default.page.size}" />
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<ns2:UpdateRequest xmlns:ns2="http://nsa.datawave.webservice/v1">
+<ns2:UpdateRequest xmlns:ns2="http://datawave.webservice/v1">
 	<ns2:tableUpdate table="some_user">
 		<ns2:mutation>
 			<ns2:mutationEntry visibility="(admin)">

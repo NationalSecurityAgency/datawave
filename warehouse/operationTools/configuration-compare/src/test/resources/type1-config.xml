@@ -11,17 +11,17 @@
 
     <property>
         <name>type1.ingest.helper.class</name>
-        <value>nsa.datawave.configuration.test.Type1IngestHelper</value>
+        <value>datawave.configuration.test.Type1IngestHelper</value>
     </property>
 
     <property>
         <name>file.input.format</name>
-        <value>nsa.datawave.configuration.test.TestInputFormat</value>
+        <value>datawave.configuration.test.TestInputFormat</value>
     </property>
 
     <property>
         <name>type1.handler.classes</name>
-        <value>nsa.datawave.configuration.test.DataHandler</value>
+        <value>datawave.configuration.test.DataHandler</value>
     </property>
 
     <property>

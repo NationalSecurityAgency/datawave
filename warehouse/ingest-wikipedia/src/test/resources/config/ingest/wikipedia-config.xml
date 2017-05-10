@@ -5,7 +5,7 @@
 
 <property>
   <name>file.input.format</name>
-  <value>nsa.datawave.ingest.wikipedia.WikipediaInputFormat</value>
+  <value>datawave.ingest.wikipedia.WikipediaInputFormat</value>
 </property>
 
 <property>
@@ -17,17 +17,17 @@
 
 <property>
 	<name>wikipedia.ingest.helper.class</name>
-	<value>nsa.datawave.ingest.wikipedia.WikipediaIngestHelper</value>
+	<value>datawave.ingest.wikipedia.WikipediaIngestHelper</value>
 </property>
 
 <property>
 	<name>wikipedia.reader.class</name>
-	<value>nsa.datawave.ingest.wikipedia.WikipediaRecordReader</value>
+	<value>datawave.ingest.wikipedia.WikipediaRecordReader</value>
 </property>
 
 <property>
 	<name>wikipedia.handler.classes</name>
-    <value>nsa.datawave.ingest.wikipedia.WikipediaDataTypeHandler</value>
+    <value>datawave.ingest.wikipedia.WikipediaDataTypeHandler</value>
 </property>
 
 <property>
@@ -104,32 +104,32 @@
 
 <property>
   <name>wikipedia.data.default.type.class</name>
-  <value>nsa.datawave.data.type.LcNoDiacriticsType</value>
+  <value>datawave.data.type.LcNoDiacriticsType</value>
 </property>
 
 <property>
   <name>wikipedia.PAGE_NAMESPACE.data.field.type.class</name>
-  <value>nsa.datawave.data.type.NumberType</value>
+  <value>datawave.data.type.NumberType</value>
 </property>
 <property>
   <name>wikipedia.PAGE_ID.data.field.type.class</name>
-  <value>nsa.datawave.data.type.NumberType</value>
+  <value>datawave.data.type.NumberType</value>
 </property>
 <property>
   <name>wikipedia.REVISION_ID.data.field.type.class</name>
-  <value>nsa.datawave.data.type.NumberType</value>
+  <value>datawave.data.type.NumberType</value>
 </property>
 <property>
   <name>wikipedia.REVISION_PARENTID.data.field.type.class</name>
-  <value>nsa.datawave.data.type.NumberType</value>
+  <value>datawave.data.type.NumberType</value>
 </property>
 <property>
   <name>wikipedia.CONTRIBUTOR_ID.data.field.type.class</name>
-  <value>nsa.datawave.data.type.NumberType</value>
+  <value>datawave.data.type.NumberType</value>
 </property>
 <property>
   <name>wikipedia.*_TERM_COUNT.data.field.type.class</name>
-  <value>nsa.datawave.data.type.NumberType</value>
+  <value>datawave.data.type.NumberType</value>
 </property>
 
 

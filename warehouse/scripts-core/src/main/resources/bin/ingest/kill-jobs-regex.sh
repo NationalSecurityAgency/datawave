@@ -28,7 +28,7 @@ else
 fi
 
 
-$ACC_HOME/bin/accumulo -add $DATAWAVE_INGEST_JAR nsa.datawave.ingest.util.KillJobByRegex $REGEX
+$ACC_HOME/bin/accumulo -add $DATAWAVE_INGEST_JAR datawave.ingest.util.KillJobByRegex $REGEX
 RETURN_CODE=$?
 
 exit $RETURN_CODE

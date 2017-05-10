@@ -6,7 +6,7 @@
      http://www.springframework.org/schema/beans 
      http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
 
-    <bean id="typeMetadataWriter" class="nsa.datawave.query.util.TypeMetadataWriter" >
+    <bean id="typeMetadataWriter" class="datawave.query.util.TypeMetadataWriter" >
         <property name="bridge" ref="bridge" />
     </bean>
 

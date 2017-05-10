@@ -2,11 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>nsa.datawave</groupId>
+        <groupId>datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <groupId>nsa.datawave.webservice</groupId>
+    <groupId>datawave.webservice</groupId>
     <artifactId>WebService</artifactId>
     <packaging>pom</packaging>
     <name>WebService Parent</name>
@@ -130,6 +130,22 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-core</artifactId>
+                <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>joda-time</groupId>
+                        <artifactId>joda-time</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- we already get commons-beanutils-core -->
+                        <groupId>commons-beanutils</groupId>
+                        <artifactId>commons-beanutils</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>io.protostuff</groupId>
                 <artifactId>protostuff-core</artifactId>
                 <version>${version.protostuff}</version>
@@ -181,22 +197,6 @@
                     <exclusion>
                         <groupId>*</groupId>
                         <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-core</artifactId>
-                <version>${project.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>joda-time</groupId>
-                        <artifactId>joda-time</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <!-- we already get commons-beanutils-core -->
-                        <groupId>commons-beanutils</groupId>
-                        <artifactId>commons-beanutils</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -553,7 +553,7 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>nsa.datawave</groupId>
+            <groupId>datawave</groupId>
             <artifactId>datawave-common-test</artifactId>
         </dependency>
     </dependencies>
@@ -648,7 +648,7 @@
                 <configuration combine.children="append">
                     <reuseForks>false</reuseForks>
                     <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
-                    <groups>nsa.datawave.common.test.integration.IntegrationTest</groups>
+                    <groups>datawave.common.test.integration.IntegrationTest</groups>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>${runOrder}</runOrder>
                     <environmentVariables>
@@ -724,7 +724,7 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>nsa.datawave</groupId>
+                        <groupId>datawave</groupId>
                         <artifactId>assert-properties</artifactId>
                         <version>2.0</version>
                         <inherited>true</inherited>

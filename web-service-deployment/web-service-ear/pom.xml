@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>nsa.datawave.webservice</groupId>
+        <groupId>datawave.webservice</groupId>
         <artifactId>web-service-deployment</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-web-service</artifactId>
     <packaging>ear</packaging>
@@ -18,38 +18,38 @@
         </dependency>
         <dependency>
             <!-- In mine, but not in upstream...leaving here for now. -->
-            <groupId>nsa.datawave</groupId>
+            <groupId>datawave</groupId>
             <artifactId>datawave-data-dictionary-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
+            <groupId>datawave</groupId>
             <artifactId>datawave-edge-dictionary-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
+            <groupId>datawave</groupId>
             <artifactId>datawave-metrics-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
+            <groupId>datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
+            <groupId>datawave</groupId>
             <artifactId>type-metadata-hdfs</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Accumulo</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Atom</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
@@ -65,101 +65,101 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Audit-Accumulo</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Audit-Log</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>CachedResults</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Common</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Common-Util</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>DataDictionary</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>EdgeDictionary</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>MapReduce</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>MapReduceStatus</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Model</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Modification</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Query</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Query-WebSocket</artifactId>
             <version>${project.version}</version>
             <type>war</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Rest-API</artifactId>
             <version>${project.version}</version>
             <type>war</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Security</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>WebRoot</artifactId>
             <version>${project.version}</version>
             <type>war</type>
@@ -281,69 +281,69 @@
                     <classifier>${build.env}</classifier>
                     <modules combine.children="append">
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>Common</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>Security</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>Audit-Accumulo</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>Audit-Log</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>Accumulo</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>Query</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>CachedResults</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>DataDictionary</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>EdgeDictionary</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>Atom</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>MapReduce</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>MapReduceStatus</artifactId>
                         </ejbModule>
                         <ejbModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>Model</artifactId>
                         </ejbModule>
                         <webModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>Query-WebSocket</artifactId>
                             <contextRoot>/DataWave/Query/websocket</contextRoot>
                         </webModule>
                         <webModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>Rest-API</artifactId>
                             <contextRoot>/DataWave</contextRoot>
                         </webModule>
                         <webModule>
-                            <groupId>nsa.datawave.webservice</groupId>
+                            <groupId>datawave.webservice</groupId>
                             <artifactId>WebRoot</artifactId>
                             <contextRoot>/</contextRoot>
                         </webModule>
@@ -371,7 +371,7 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>nsa.datawave.webservice</groupId>
+                    <groupId>datawave.webservice</groupId>
                     <artifactId>web-service-docs</artifactId>
                     <version>${project.version}</version>
                     <type>war</type>
@@ -384,7 +384,7 @@
                         <configuration>
                             <modules>
                                 <webModule>
-                                    <groupId>nsa.datawave.webservice</groupId>
+                                    <groupId>datawave.webservice</groupId>
                                     <artifactId>web-service-docs</artifactId>
                                     <contextRoot>/DataWave/doc</contextRoot>
                                 </webModule>
@@ -407,7 +407,7 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>nsa.datawave.webservice</groupId>
+                    <groupId>datawave.webservice</groupId>
                     <artifactId>gs-web-app</artifactId>
                     <version>${project.version}</version>
                     <type>war</type>
@@ -420,7 +420,7 @@
                         <configuration>
                             <modules>
                                 <webModule>
-                                    <groupId>nsa.datawave.webservice</groupId>
+                                    <groupId>datawave.webservice</groupId>
                                     <artifactId>gs-web-app</artifactId>
                                     <contextRoot>/geoserver</contextRoot>
                                 </webModule>
@@ -445,7 +445,7 @@
                 <plugins>
                     <plugin>
                         <!-- Activate the assert-properties plugin to ensure all configuration we require is set. -->
-                        <groupId>nsa.datawave</groupId>
+                        <groupId>datawave</groupId>
                         <artifactId>assert-properties</artifactId>
                         <executions>
                             <execution>
@@ -609,7 +609,7 @@
                                             <artifactId>xercesImpl</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>nsa.datawave.webservice</groupId>
+                                            <groupId>datawave.webservice</groupId>
                                             <artifactId>MapReduce-Embedded</artifactId>
                                             <version>${project.version}</version>
                                         </artifactItem>
@@ -628,14 +628,14 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>nsa.datawave.webservice</groupId>
+                                            <groupId>datawave.webservice</groupId>
                                             <artifactId>Configuration</artifactId>
                                             <version>${project.version}</version>
                                             <classifier>${build.env}</classifier>
                                         </artifactItem>
                                     </artifactItems>
                                     <excludes>META-INF/**</excludes>
-                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/nsa/datawave/webservice/configuration/main/conf</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/datawave/webservice/configuration/main/conf</outputDirectory>
                                 </configuration>
                             </execution>
                             <!--
@@ -650,7 +650,7 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>nsa.datawave.webservice</groupId>
+                                            <groupId>datawave.webservice</groupId>
                                             <artifactId>CachedResults</artifactId>
                                             <version>${project.version}</version>
                                         </artifactItem>

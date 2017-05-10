@@ -1,0 +1,148 @@
+package datawave.query.rewrite.iterator.builder;
+
+import java.util.Set;
+
+import datawave.query.rewrite.iterator.NestedIterator;
+import datawave.query.rewrite.iterator.logic.IndexIteratorBridge;
+import datawave.query.rewrite.iterator.logic.TermFrequencyIndexIterator;
+import datawave.query.rewrite.jexl.functions.TermFrequencyAggregator;
+import datawave.query.rewrite.predicate.EventDataQueryFilter;
+import datawave.query.rewrite.predicate.TimeFilter;
+import datawave.query.util.TypeMetadata;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+
+/**
+ * A convenience class that aggregates a field, value, source iterator, normalizer mappings, index only fields, data type filter and key transformer when
+ * traversing a subtree in a query. This allows arbitrary ordering of the arguments.
+ * 
+ */
+public class TermFrequencyIndexBuilder implements IteratorBuilder {
+    protected String field;
+    protected Range range;
+    protected SortedKeyValueIterator<Key,Value> source;
+    protected TypeMetadata typeMetadata;
+    protected Set<String> indexOnlyFields;
+    protected Set<String> compositeFields;
+    protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
+    protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
+    protected Set<String> fieldsToAggregate;
+    
+    protected EventDataQueryFilter attrFilter;
+    
+    public void setSource(final SortedKeyValueIterator<Key,Value> source) {
+        this.source = source;
+    }
+    
+    public String getField() {
+        return this.field;
+    }
+    
+    public void setField(String field) {
+        this.field = field;
+    }
+    
+    public void setRange(Range range) {
+        this.range = range;
+    }
+    
+    public Set<String> getIndexOnlyFields() {
+        return indexOnlyFields;
+    }
+    
+    public TypeMetadata getTypeMetadata() {
+        return typeMetadata;
+    }
+    
+    public void setTypeMetadata(TypeMetadata typeMetadata) {
+        this.typeMetadata = typeMetadata;
+    }
+    
+    public Set<String> gsetFieldsToAggregate() {
+        return fieldsToAggregate;
+    }
+    
+    public void setFieldsToAggregate(Set<String> fields) {
+        fieldsToAggregate = fields;
+    }
+    
+    public Set<String> getCompositeFields() {
+        return compositeFields;
+    }
+    
+    public void setCompositeFields(Set<String> compositeFields) {
+        this.compositeFields = compositeFields;
+    }
+    
+    public void setIndexOnlyFields(Set<String> indexOnlyFields) {
+        this.indexOnlyFields = indexOnlyFields;
+    }
+    
+    public Predicate<Key> getDatatypeFilter() {
+        return datatypeFilter;
+    }
+    
+    public void setDatatypeFilter(Predicate<Key> datatypeFilter) {
+        this.datatypeFilter = datatypeFilter;
+    }
+    
+    public TimeFilter getTimeFilter() {
+        return timeFilter;
+    }
+    
+    public void setTimeFilter(TimeFilter timeFilter) {
+        this.timeFilter = timeFilter;
+    }
+    
+    public EventDataQueryFilter getAttrFilter() {
+        return attrFilter;
+    }
+    
+    public void setAttrFilter(EventDataQueryFilter attrFilter) {
+        this.attrFilter = attrFilter;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public NestedIterator<Key> build() {
+        if (notNull(field, range, source, datatypeFilter, timeFilter)) {
+            IndexIteratorBridge itr = new IndexIteratorBridge(new TermFrequencyIndexIterator(range.getStartKey(), range.getEndKey(), source, this.timeFilter,
+                            this.typeMetadata, this.indexOnlyFields == null ? false : this.indexOnlyFields.contains(field), this.datatypeFilter,
+                            new TermFrequencyAggregator(indexOnlyFields, attrFilter)));
+            field = null;
+            range = null;
+            source = null;
+            timeFilter = null;
+            datatypeFilter = null;
+            return itr;
+        } else {
+            StringBuilder msg = new StringBuilder(256);
+            msg.append("Cannot build iterator-- a field was null!\n");
+            if (field == null) {
+                msg.append("\tField was null!\n");
+            }
+            if (range == null) {
+                msg.append("\tValue was null!\n");
+            }
+            if (source == null) {
+                msg.append("\tSource was null!\n");
+            }
+            msg.setLength(msg.length() - 1);
+            throw new IllegalStateException(msg.toString());
+        }
+    }
+    
+    public static boolean notNull(Object... os) {
+        for (Object o : os) {
+            if (o == null) {
+                return false;
+            }
+        }
+        return true;
+    }
+}

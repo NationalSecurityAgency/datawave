@@ -32,7 +32,7 @@
             table=shard,
             table=shardIndex,
             dataType=flow1,
-            handler=nsa.datawave.ingest.mapreduce.job.metrics.DummyDataTypeHandler
+            handler=datawave.ingest.mapreduce.job.metrics.DummyDataTypeHandler
         </value>
     </property>
 
@@ -47,7 +47,7 @@
         <description>A comma seperated list of MetricsReceiver implementations to use for processing metrics.
         </description>
         <value>
-            nsa.datawave.ingest.mapreduce.job.metrics.TestKeyValueCountMetricsReceiver
+            datawave.ingest.mapreduce.job.metrics.TestKeyValueCountMetricsReceiver
         </value>
     </property>
 

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>nsa.datawave</groupId>
+    <groupId>datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>4.4.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>datawave-parent</name>
     <url>http://datawave.example.com</url>
@@ -902,6 +902,12 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-common-test</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>javax.validation</groupId>
                 <artifactId>validation-api</artifactId>
                 <version>${version.javax-validation}</version>
@@ -911,12 +917,6 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${version.junit}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-common-test</artifactId>
-                <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1037,32 +1037,12 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>net.revelc.code</groupId>
-                    <artifactId>formatter-maven-plugin</artifactId>
-                    <version>0.5.2</version>
-                    <configuration>
-                        <configFile>${eclipseFormatterStyle}</configFile>
-                        <lineEnding>LF</lineEnding>
-                        <overrideConfigCompilerVersion>true</overrideConfigCompilerVersion>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
-                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>format</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>nsa.datawave</groupId>
+                    <groupId>datawave</groupId>
                     <artifactId>assert-properties</artifactId>
                     <version>2.0</version>
                 </plugin>
                 <plugin>
-                    <groupId>nsa.datawave</groupId>
+                    <groupId>datawave</groupId>
                     <artifactId>read-properties</artifactId>
                     <version>2.0.1</version>
                     <configuration>
@@ -1082,6 +1062,26 @@
                                 <goal>read-properties</goal>
                             </goals>
                             <phase>validate</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>net.revelc.code</groupId>
+                    <artifactId>formatter-maven-plugin</artifactId>
+                    <version>0.5.2</version>
+                    <configuration>
+                        <configFile>${eclipseFormatterStyle}</configFile>
+                        <lineEnding>LF</lineEnding>
+                        <overrideConfigCompilerVersion>true</overrideConfigCompilerVersion>
+                        <compilerSource>${maven.compiler.source}</compilerSource>
+                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
+                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>format</goal>
+                            </goals>
                         </execution>
                     </executions>
                 </plugin>
@@ -1158,7 +1158,7 @@
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <groups>nsa.datawave.common.test.integration.IntegrationTest</groups>
+                        <groups>datawave.common.test.integration.IntegrationTest</groups>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -1308,12 +1308,12 @@
         </pluginManagement>
         <plugins>
             <plugin>
-                <groupId>nsa.datawave</groupId>
+                <groupId>datawave</groupId>
                 <artifactId>assert-properties</artifactId>
                 <version>2.0</version>
             </plugin>
             <plugin>
-                <groupId>nsa.datawave</groupId>
+                <groupId>datawave</groupId>
                 <artifactId>read-properties</artifactId>
             </plugin>
             <plugin>
@@ -1442,7 +1442,7 @@
                 <pluginManagement>
                     <plugins>
                         <plugin>
-                            <groupId>nsa.datawave</groupId>
+                            <groupId>datawave</groupId>
                             <artifactId>read-properties</artifactId>
                             <configuration>
                                 <files>
@@ -1479,7 +1479,7 @@
                 <pluginManagement>
                     <plugins>
                         <plugin>
-                            <groupId>nsa.datawave</groupId>
+                            <groupId>datawave</groupId>
                             <artifactId>read-properties</artifactId>
                             <configuration>
                                 <files>
@@ -1503,7 +1503,7 @@
                 <pluginManagement>
                     <plugins>
                         <plugin>
-                            <groupId>nsa.datawave</groupId>
+                            <groupId>datawave</groupId>
                             <artifactId>read-properties</artifactId>
                             <configuration>
                                 <files>
@@ -1558,7 +1558,7 @@
                                         </pluginExecution>
                                         <pluginExecution>
                                             <pluginExecutionFilter>
-                                                <groupId>nsa.datawave</groupId>
+                                                <groupId>datawave</groupId>
                                                 <artifactId>read-properties</artifactId>
                                                 <versionRange>[1.0.0,)</versionRange>
                                                 <goals>

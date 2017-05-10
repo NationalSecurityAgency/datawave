@@ -25,7 +25,7 @@ start() {
       if pgrep -f "Dapp=FlagMaker -DappConfig=$config" 2>&1 >/dev/null ; then
         echo "FlagMaker for $config already running"
       else
-        $JAVA_HOME/bin/java -Dapp=FlagMaker -DappConfig=$config $JAVA_OPTS -cp $CLASSPATH nsa.datawave.util.flag.FlagMaker -flagConfig $config $1>> ${LOG_DIR}/flag_maker_${config_base}.log 2>&1 < /dev/null &
+        $JAVA_HOME/bin/java -Dapp=FlagMaker -DappConfig=$config $JAVA_OPTS -cp $CLASSPATH datawave.util.flag.FlagMaker -flagConfig $config $1>> ${LOG_DIR}/flag_maker_${config_base}.log 2>&1 < /dev/null &
       fi
     fi
   done
@@ -39,7 +39,7 @@ stop() {
       if ! pgrep -f "Dapp=FlagMaker -DappConfig=$config" 2>&1 >/dev/null ; then
         echo "FlagMaker for $config not running"
       else
-        $JAVA_HOME/bin/java $JAVA_OPTS -cp $CLASSPATH nsa.datawave.util.flag.FlagMaker -flagConfig $config -shutdown >> ${LOG_DIR}/flag_maker_${config_base}.log 2>&1 < /dev/null &
+        $JAVA_HOME/bin/java $JAVA_OPTS -cp $CLASSPATH datawave.util.flag.FlagMaker -flagConfig $config -shutdown >> ${LOG_DIR}/flag_maker_${config_base}.log 2>&1 < /dev/null &
       fi
     fi
   done

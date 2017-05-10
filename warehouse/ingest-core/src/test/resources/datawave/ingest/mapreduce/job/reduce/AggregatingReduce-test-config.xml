@@ -5,7 +5,7 @@
 
 <property>
   <name>file.input.format</name>
-  <value>nsa.datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestRecordReader</value>
+  <value>datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestRecordReader</value>
 </property>
 
 <property>
@@ -17,17 +17,17 @@
 
 <property>
 	<name>test.ingest.helper.class</name>
-	<value>nsa.datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestIngestHelper</value>
+	<value>datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestIngestHelper</value>
 </property>
 
 <property>
 	<name>test.reader.class</name>
-	<value>nsa.datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestReader</value>
+	<value>datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestReader</value>
 </property>
 
 <property>
 	<name>test.handler.classes</name>
-	<value>nsa.datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestAbstractColumnBasedHandler</value>
+	<value>datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$TestAbstractColumnBasedHandler</value>
 </property>
 
 </configuration>

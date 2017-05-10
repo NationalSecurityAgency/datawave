@@ -10,7 +10,7 @@
     	<property name="cacheBuilder" ref="cacheBuilder" />
     </bean>
 
-    <bean id="collectionSafeKeyGenerator" class="nsa.datawave.cache.CollectionSafeKeyGenerator">
+    <bean id="collectionSafeKeyGenerator" class="datawave.cache.CollectionSafeKeyGenerator">
     </bean>
     
     <bean id="cacheBuilder" class="com.google.common.cache.CacheBuilder" factory-method="from">

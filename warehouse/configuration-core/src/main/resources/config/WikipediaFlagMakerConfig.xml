@@ -5,7 +5,7 @@
         <distributionArgs>none</distributionArgs>
         <extraIngestArgs></extraIngestArgs>
         <folder>wikipedia</folder>
-        <inputFormat>nsa.datawave.ingest.wikipedia.WikipediaEventInputFormat</inputFormat>
+        <inputFormat>datawave.ingest.wikipedia.WikipediaEventInputFormat</inputFormat>
         <!-- If we want to use bulkingest -->
         <!--ingestPool>onehr</ingestPool-->
         <ingestPool>fivemin</ingestPool>

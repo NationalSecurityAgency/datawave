@@ -29,22 +29,22 @@
 
 	<property>
 	    <name>QueryMetrics_e.table.config.class</name>
-	    <value>nsa.datawave.ingest.table.config.ShardTableConfigHelper</value>
+	    <value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 	</property>
 	
 	<property>
 	    <name>QueryMetrics_i.table.config.class</name>
-	    <value>nsa.datawave.ingest.table.config.ShardTableConfigHelper</value>
+	    <value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 	</property>
 
 	<property>
 	    <name>QueryMetrics_r.table.config.class</name>
-	    <value>nsa.datawave.ingest.table.config.ShardTableConfigHelper</value>
+	    <value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 	</property>
 
 	<property>
 	    <name>QueryMetrics_m.table.config.class</name>
-	    <value>nsa.datawave.ingest.table.config.MetadataTableConfigHelper</value>
+	    <value>datawave.ingest.table.config.MetadataTableConfigHelper</value>
 	</property>
 
     <property>
@@ -107,7 +107,7 @@
 
 	<property>
 		<name>querymetrics.ingest.helper.class</name>
-		<value>nsa.datawave.query.metrics.ContentQueryMetricsIngestHelper</value>
+		<value>datawave.query.metrics.ContentQueryMetricsIngestHelper</value>
 	</property>
 
 	<property>
@@ -160,37 +160,37 @@
 
 	<property>
 		<name>querymetrics.data.default.type.class</name>
-		<value>nsa.datawave.data.type.LcNoDiacriticsType</value>
+		<value>datawave.data.type.LcNoDiacriticsType</value>
 	</property>
 
 	<property>
 		<name>querymetrics.CREATE_CALL_TIME.data.field.type.class</name>
-		<value>nsa.datawave.data.type.NumberType</value>
+		<value>datawave.data.type.NumberType</value>
 	</property>
 	
 	<property>
 		<name>querymetrics.SETUP_TIME.data.field.type.class</name>
-		<value>nsa.datawave.data.type.NumberType</value>
+		<value>datawave.data.type.NumberType</value>
 	</property>	
 
 	<property>
 		<name>querymetrics.ELAPSED_TIME.data.field.type.class</name>
-		<value>nsa.datawave.data.type.NumberType</value>
+		<value>datawave.data.type.NumberType</value>
 	</property>	
 	
 	<property>
 		<name>querymetrics.NUM_RESULTS.data.field.type.class</name>
-		<value>nsa.datawave.data.type.NumberType</value>
+		<value>datawave.data.type.NumberType</value>
 	</property>	
 	
 	<property>
 		<name>querymetrics.NUM_PAGES.data.field.type.class</name>
-		<value>nsa.datawave.data.type.NumberType</value>
+		<value>datawave.data.type.NumberType</value>
 	</property>	
 
 	<property>
 		<name>querymetrics.NUM_UPDATES.data.field.type.class</name>
-		<value>nsa.datawave.data.type.NumberType</value>
+		<value>datawave.data.type.NumberType</value>
 	</property>	
 
     <property>

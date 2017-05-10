@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>nsa.datawave</groupId>
+        <groupId>datawave</groupId>
         <artifactId>datawave-warehouse</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ingest-core</artifactId>
     <packaging>jar</packaging>
@@ -19,6 +19,16 @@
             <artifactId>java-statsd-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>datawave</groupId>
+            <artifactId>datawave-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>datawave.webservice</groupId>
+            <artifactId>Common-Util</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>mil.nga.giat</groupId>
             <artifactId>geowave-adapter-vector</artifactId>
             <exclusions>
@@ -31,16 +41,6 @@
         <dependency>
             <groupId>mil.nga.giat</groupId>
             <artifactId>geowave-datastore-accumulo</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
-            <artifactId>Common-Util</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
@@ -114,6 +114,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>datawave</groupId>
+            <artifactId>in-memory-accumulo</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>javax.mail-api</artifactId>
             <version>1.5.4</version>
@@ -122,12 +128,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>in-memory-accumulo</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

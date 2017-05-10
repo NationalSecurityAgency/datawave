@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>nsa.datawave.webservice</groupId>
+        <groupId>datawave.webservice</groupId>
         <artifactId>WebService</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>Audit-Log</artifactId>
     <packaging>ejb</packaging>
@@ -14,16 +14,16 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Common-Util</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>

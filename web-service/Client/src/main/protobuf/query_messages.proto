@@ -1,7 +1,7 @@
-package nsa.datawave.webservice.query;
+package datawave.webservice.query;
 
 option optimize_for = LITE_RUNTIME;
-option java_package = "nsa.datawave.webservice.query";
+option java_package = "datawave.webservice.query";
 
 message QueryImpl {
 	required string query_logic_name = 1;

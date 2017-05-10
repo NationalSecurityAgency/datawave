@@ -7,7 +7,7 @@
         <distributionArgs>day</distributionArgs>
         <!-- only relative paths for testing -->
         <folder>foo,bar</folder>
-        <inputFormat>nsa.datawave.ingest.input.reader.event.EventSequenceFileInputFormat</inputFormat>
+        <inputFormat>datawave.ingest.input.reader.event.EventSequenceFileInputFormat</inputFormat>
         <ingestPool>onehr</ingestPool>
         <lifo>false</lifo>
     </flagCfg>

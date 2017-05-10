@@ -54,22 +54,22 @@
 
     <property>
         <name>atom.handler.classes</name>
-        <value>nsa.datawave.ingest.mapreduce.handler.atom.AtomDataTypeHandler</value>
+        <value>datawave.ingest.mapreduce.handler.atom.AtomDataTypeHandler</value>
     </property>
 
     <property>
         <name>atom.ingest.helper.class</name>
-        <value>nsa.datawave.ingest.data.config.ingest.AtomIngestHelper</value>
+        <value>datawave.ingest.data.config.ingest.AtomIngestHelper</value>
     </property>
 
     <property>
         <name>Atom.table.config.class</name>
-        <value>nsa.datawave.ingest.table.config.AtomTableConfigHelper</value>
+        <value>datawave.ingest.table.config.AtomTableConfigHelper</value>
     </property>
 
     <property>
         <name>AtomCategories.table.config.class</name>
-        <value>nsa.datawave.ingest.table.config.AtomTableConfigHelper</value>
+        <value>datawave.ingest.table.config.AtomTableConfigHelper</value>
     </property>
 
     <property>

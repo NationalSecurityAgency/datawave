@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>nsa.datawave</groupId>
+        <groupId>datawave</groupId>
         <artifactId>datawave-warehouse</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-edge-dictionary-core</artifactId>
     <packaging>jar</packaging>
@@ -14,22 +14,22 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>nsa.datawave</groupId>
+            <groupId>datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
+            <groupId>datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>EdgeDictionary</artifactId>
             <version>${project.version}</version>
         </dependency>

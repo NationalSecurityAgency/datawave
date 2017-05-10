@@ -13,12 +13,12 @@
 
     <property>
         <name>protobufedge.table.config.class</name>
-        <value>nsa.datawave.ingest.table.config.ProtobufEdgeTableConfigHelper</value>
+        <value>datawave.ingest.table.config.ProtobufEdgeTableConfigHelper</value>
     </property>
 
     <property>
         <name>protobufedge.id.table.config.class</name>
-        <value>nsa.datawave.ingest.table.config.ProtobufEdgeIdTableConfigHelper</value>
+        <value>datawave.ingest.table.config.ProtobufEdgeIdTableConfigHelper</value>
     </property>
 
     <property>

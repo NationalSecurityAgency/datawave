@@ -1,0 +1,106 @@
+package datawave.query.jexl;
+
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.TreeSet;
+
+import datawave.query.rewrite.collections.FunctionalSet;
+import org.apache.commons.jexl2.MapContext;
+
+public class DatawaveJexlContext extends MapContext {
+    
+    private final Comparator<?> valueComparator;
+    
+    public DatawaveJexlContext() {
+        this.valueComparator = null;
+    }
+    
+    public DatawaveJexlContext(Comparator<?> comparator) {
+        this.valueComparator = comparator;
+    }
+    
+    /**
+     * Clears the map
+     */
+    public void clear() {
+        this.map.clear();
+    }
+    
+    public int size() {
+        return this.map.size();
+    }
+    
+    @Override
+    public void set(String name, Object value) {
+        if (valueComparator != null) {
+            if (value instanceof FunctionalSet) {
+                value = new FunctionalSet((FunctionalSet) value, valueComparator);
+            } else if (value instanceof Collection) {
+                TreeSet set = new TreeSet(valueComparator);
+                set.addAll((Collection) value);
+                value = set;
+            }
+        }
+        super.set(name, value);
+    }
+    
+    @Override
+    // why is this not implemented in MapContext
+    public boolean equals(Object o) {
+        if (!(o instanceof DatawaveJexlContext)) {
+            return false;
+        }
+        
+        DatawaveJexlContext other = (DatawaveJexlContext) o;
+        
+        if (this.size() != other.size()) {
+            return false;
+        }
+        // why not compare the maps?
+        Iterator<String> keys = this.map.keySet().iterator();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            if (!other.has(key)) {
+                return false;
+            }
+            
+            if (!this.get(key).equals(other.get(key))) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    @Override
+    public int hashCode() {
+        return map.hashCode();
+    }
+    
+    @Override
+    public String toString() {
+        return this.map.toString();
+    }
+    
+    public Object get(String name) {
+        Object got = map.get(name);
+        // So the question is whether a mapping to nothing should return 'null' or an empty collection...
+        // If we return an empty collection, then our tests that expect 'null' will need to change
+        // If we return a 'null', then our tests that invoke a method on the result of the context lookup will cause a NPE
+        // For now, leave it returning 'null', with the below fix in RefactoredDatawaveInterpreter's visit(ASTMethodNode):
+        //
+        // public Object visit(ASTMethodNode node, Object data) {
+        // if(data == null) {
+        // data = new FunctionalSet(); // an empty set
+        // }
+        // return super.visit(node, data);
+        // }
+        // -- end---
+        
+        // if(got == null) {
+        // return FunctionalSet.empty();
+        // }
+        return got;
+    }
+}

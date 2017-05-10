@@ -73,4 +73,4 @@ JVM_OPTS="-Djava.security.auth.login.config=$DIRNAME/auth.conf"
 JVM_OPTS="$JVM_OPTS -Djavax.net.ssl.trustStore=$TRUSTSTORE -Djavax.net.ssl.trustStorePassword=$TRUSTSTORE_PASS" 
 JVM_OPTS="$JVM_OPTS -Dlog4j.configuration=$DIRNAME/log4j.properties"
 
-java -classpath $CLASSPATH $JVM_OPTS -Djava.security.auth.login.config=auth.conf nsa.datawave.webservice.examples.RemoteClientLoginExample $JBOSS_HOST $JBOSS_PORT $KEYSTORE $KEYSTORE_TYPE "$KEYSTORE_PASS" "$USER_DN"
+java -classpath $CLASSPATH $JVM_OPTS -Djava.security.auth.login.config=auth.conf datawave.webservice.examples.RemoteClientLoginExample $JBOSS_HOST $JBOSS_PORT $KEYSTORE $KEYSTORE_TYPE "$KEYSTORE_PASS" "$USER_DN"
