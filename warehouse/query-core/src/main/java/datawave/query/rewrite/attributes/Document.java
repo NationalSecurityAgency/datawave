@@ -13,7 +13,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import datawave.query.rewrite.predicate.Filter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -33,6 +32,7 @@ import datawave.query.rewrite.collections.FunctionalSet;
 import datawave.query.rewrite.function.KeyToFieldName;
 import datawave.query.rewrite.jexl.JexlASTHelper;
 import datawave.query.rewrite.predicate.EventDataQueryFilter;
+import datawave.query.rewrite.predicate.Filter;
 import datawave.query.rewrite.predicate.ValueToAttributes;
 import datawave.query.util.CompositeMetadata;
 import datawave.query.util.TypeMetadata;
