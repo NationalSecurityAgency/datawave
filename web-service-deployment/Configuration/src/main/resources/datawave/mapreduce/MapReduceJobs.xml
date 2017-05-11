@@ -8,7 +8,7 @@
 
 	<context:property-placeholder system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="100"/>
 
-	<bean id="MapReduceConfiguration" class="nsa.datawave.webservice.mr.configuration.MapReduceConfiguration">
+	<bean id="MapReduceConfiguration" class="datawave.webservice.mr.configuration.MapReduceConfiguration">
 	
 		<property name="callbackServletURL" value="${mapReduce.http.port}/DataWave/MapReduceStatus/updateState"/>
 		<property name="mapReduceBaseDirectory" value="${mapReduce.hdfs.base.dir}"/>
@@ -16,14 +16,14 @@
 		<property name="validInputFormats">
 			<list value-type="java.lang.Class">
 				<value>org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat</value>
-				<value>nsa.datawave.mr.bulk.BulkInputFormat</value>
+				<value>datawave.mr.bulk.BulkInputFormat</value>
 			</list>
 		</property>
 		
 		<property name="jobConfiguration">
-			<map key-type="java.lang.String" value-type="nsa.datawave.webservice.mr.configuration.MapReduceJobConfiguration">
+			<map key-type="java.lang.String" value-type="datawave.webservice.mr.configuration.MapReduceJobConfiguration">
 				<entry key="BulkResultsJob">
-					<bean class="nsa.datawave.webservice.mr.configuration.BulkResultsJobConfiguration">
+					<bean class="datawave.webservice.mr.configuration.BulkResultsJobConfiguration">
 						<property name="description" value="MapReduce job that runs a query and either puts the results into a table or files in HDFS" />
 						<property name="hdfsUri" value="${mapReduce.hdfs.uri}"/>
 						<property name="jobTracker" value="${mapReduce.job.tracker}"/>
@@ -41,14 +41,14 @@
 								<!-- Add every jar in the EAR's lib folder. -->
 								<value>vfs:/content/datawave-web-service-${project.version}-${build.env}.ear!lib/.*\.jar/</value>
 								<!-- Now package up the config module's conf files and include them. -->
-								<value>archive:${jboss.modules.dir}/nsa/datawave/webservice/configuration/main/conf/!.*</value>
+								<value>archive:${jboss.modules.dir}/datawave/webservice/configuration/main/conf/!.*</value>
 								<!-- Note that all jar files in ${jboss.home.dir}/client/lib and ${jboss.home.dir}/tools/mapreduce/lib are added to the classpath too. -->
 							</list>
 						</property>
 						<property name="requiredRuntimeParameters">
 							<map key-type="java.lang.String" value-type="java.lang.Class">
 								<entry key="queryId" value="java.lang.String" />
-								<entry key="format" value="nsa.datawave.webservice.mr.bulkresults.map.SerializationFormat" />
+								<entry key="format" value="datawave.webservice.mr.bulkresults.map.SerializationFormat" />
 							</map>
 						</property>
 						<property name="optionalRuntimeParameters">

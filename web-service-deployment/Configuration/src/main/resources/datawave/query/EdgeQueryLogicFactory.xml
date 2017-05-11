@@ -11,11 +11,11 @@
         Provides a fall-back model in the event that the named query model 'modelName'
         isn't defined in DatawaveMetadata for whatever reason...
     -->
-    <bean id="edgeQueryModel" class="nsa.datawave.query.model.edge.EdgeQueryModel" factory-method="loadModel">
+    <bean id="edgeQueryModel" class="datawave.query.model.edge.EdgeQueryModel" factory-method="loadModel">
         <constructor-arg value="/DATAWAVE_EDGE.xml" />
     </bean> 
     
-    <bean id="EdgeQuery" scope="prototype" parent="baseQueryLogic" class="nsa.datawave.query.edge.DefaultExtendedEdgeQueryLogic">
+    <bean id="EdgeQuery" scope="prototype" parent="baseQueryLogic" class="datawave.query.edge.DefaultExtendedEdgeQueryLogic">
         <property name="tableName" value="${edge.table.name}" />
         <property name="edgeQueryModel" ref="edgeQueryModel" />
         <property name="modelTableName" value="DatawaveMetadata" />
@@ -27,21 +27,21 @@
             </util:set>
         </property>
         <property name="dataTypes">
-            <list value-type="nsa.datawave.data.type.Type">
-                <bean class="nsa.datawave.data.type.GeoLatType" />
-                <bean class="nsa.datawave.data.type.GeoLonType" />
-                <bean class="nsa.datawave.data.type.GeoType" />
-                <bean class="nsa.datawave.data.type.NumberType" />
-                <bean class="nsa.datawave.data.type.LcNoDiacriticsType" />
+            <list value-type="datawave.data.type.Type">
+                <bean class="datawave.data.type.GeoLatType" />
+                <bean class="datawave.data.type.GeoLonType" />
+                <bean class="datawave.data.type.GeoType" />
+                <bean class="datawave.data.type.NumberType" />
+                <bean class="datawave.data.type.LcNoDiacriticsType" />
             </list>
         </property>
         <property name="regexDataTypes">
-            <list value-type="nsa.datawave.data.type.Type">
-                <bean class="nsa.datawave.data.type.GeoLatType" />
-                <bean class="nsa.datawave.data.type.GeoLonType" />
-                <bean class="nsa.datawave.data.type.GeoType" />
-                <bean class="nsa.datawave.data.type.NumberType" />
-                <bean class="nsa.datawave.data.type.LcNoDiacriticsType" />
+            <list value-type="datawave.data.type.Type">
+                <bean class="datawave.data.type.GeoLatType" />
+                <bean class="datawave.data.type.GeoLonType" />
+                <bean class="datawave.data.type.GeoType" />
+                <bean class="datawave.data.type.NumberType" />
+                <bean class="datawave.data.type.LcNoDiacriticsType" />
             </list>
         </property>
         <property name="queryThreads" value="16" />

@@ -80,7 +80,7 @@ embed-server --server-config=standalone-full.xml
 # Disable SASL client authentication in zookeeper
 /system-property=zookeeper.sasl.client:add(value=false)
 
-/system-property=jexl.function.namespace.registry:add(value="nsa.datawave.query.rewrite.jexl.functions.JexlFunctionNamespaceRegistry.class")
+/system-property=jexl.function.namespace.registry:add(value="datawave.query.rewrite.jexl.functions.JexlFunctionNamespaceRegistry.class")
 
 #
 # Add security realm and domain
@@ -94,7 +94,7 @@ embed-server --server-config=standalone-full.xml
 /subsystem=security/security-domain=datawave/authentication=classic:add
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=Remoting:add(code=Remoting,flag=optional,module-options={password-stacking=useFirstPass})
 /subsystem=security/security-domain=datawave/authentication=classic/login-module=RunAs:add(code=RunAs,flag=required,module-options={roleName=InternalUser})
-/subsystem=security/security-domain=datawave/authentication=classic/login-module=Datawave:add(code=nsa.datawave.security.login.DatawavePrincipalLoginModule,flag=required,module-options={principalClass=nsa.datawave.security.authorization.DatawavePrincipal,verifier=nsa.datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"})
+/subsystem=security/security-domain=datawave/authentication=classic/login-module=Datawave:add(code=datawave.security.login.DatawavePrincipalLoginModule,flag=required,module-options={principalClass=datawave.security.authorization.DatawavePrincipal,verifier=datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"})
 /subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="PKCS12",password="secret",url="file://${jboss.server.config.dir}/certificates/testServer.p12"},truststore={type="JKS",password="secret",url="file://${jboss.server.config.dir}/certificates/ca.jks"})
 /subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
 /subsystem=security/security-domain=JmsXARealm/authentication=classic:add
@@ -102,7 +102,7 @@ embed-server --server-config=standalone-full.xml
 
 /subsystem=security/security-domain=datawave-client:add(cache-type=none)
 /subsystem=security/security-domain=datawave-client/authentication=classic:add
-/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=ClientCert:add(code=nsa.datawave.security.login.ClientCertLoginModule,flag=required,module-options={password-stacking=useFirstPass})
+/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=ClientCert:add(code=datawave.security.login.ClientCertLoginModule,flag=required,module-options={password-stacking=useFirstPass})
 /subsystem=security/security-domain=datawave-client/authentication=classic/login-module=Client:add(code=Client,flag=required,module-options={password-stacking=useFirstPass,restore-login-identity=true})
 
 # Add an HTTPS listener for undertow
@@ -172,44 +172,44 @@ deploy mysql/mysql-connector-java-${version.mysql-connector}.jar
 /subsystem=logging/periodic-rotating-file-handler=RESTEASY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"RestEasy.log"})
 /subsystem=logging/periodic-rotating-file-handler=SERVER_AUDIT_LOG/:add(level=INFO,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"server_to_server_query_audit.log"})
 
-/subsystem=logging/logger=nsa.datawave.query:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
-/subsystem=logging/logger=nsa.datawave.webservice.query.factory:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
-/subsystem=logging/logger=nsa.datawave.webservice.query.iterator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
-/subsystem=logging/logger=nsa.datawave.webservice.query.logic:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
-/subsystem=logging/logger=nsa.datawave.webservice.query.metric:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
-/subsystem=logging/logger=nsa.datawave.webservice.query.runner:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
-/subsystem=logging/logger=nsa.datawave.webservice.query.util:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
-/subsystem=logging/logger=nsa.datawave.webservice.query.cache.QueryExpirationBean:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
-/subsystem=logging/logger=nsa.datawave.query.tables:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
-/subsystem=logging/logger=nsa.datawave.query.parser:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
-/subsystem=logging/logger=nsa.datawave.query.metrics.AccumuloRecordWriter:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
-/subsystem=logging/logger=nsa.datawave.webservice.query.interceptor:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
-/subsystem=logging/logger=nsa.datawave.webservice.query.database.CachedResultsCleanupBean:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
-/subsystem=logging/logger=nsa.datawave.webservice.query.cache.CachedResultsExpirationBean:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
-/subsystem=logging/logger=nsa.datawave.webservice.results.cached:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
-/subsystem=logging/logger=nsa.datawave.webservice.query.cachedresults:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
-/subsystem=logging/logger=nsa.datawave.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+/subsystem=logging/logger=datawave.query:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.query.factory:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.query.iterator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.query.logic:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.query.metric:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.query.runner:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.query.util:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.webservice.query.cache.QueryExpirationBean:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
+/subsystem=logging/logger=datawave.query.tables:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.query.parser:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.query.metrics.AccumuloRecordWriter:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.webservice.query.interceptor:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.webservice.query.database.CachedResultsCleanupBean:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.webservice.query.cache.CachedResultsExpirationBean:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.webservice.results.cached:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.webservice.query.cachedresults:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.auth:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.authorization.modules.ejb.EJBPolicyModuleDelegate:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
-/subsystem=logging/logger=nsa.datawave.webservice.audit.log:add(use-parent-handlers=false,handlers=["AUDIT_LOG"],level=INFO)
-/subsystem=logging/logger=nsa.datawave.webservice.common.audit:add(use-parent-handlers=false,handlers=["AUDIT_LOG"],level=INFO)
-/subsystem=logging/logger=nsa.datawave.webservice.mr:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
+/subsystem=logging/logger=datawave.webservice.audit.log:add(use-parent-handlers=false,handlers=["AUDIT_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.webservice.common.audit:add(use-parent-handlers=false,handlers=["AUDIT_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.webservice.mr:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
 /subsystem=logging/logger=org.apache.hadoop.mapred:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
 /subsystem=logging/logger=org.apache.hadoop.mapreduce:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
 /subsystem=logging/logger=org.apache.hadoop.yarn.client:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
 /subsystem=logging/logger=org.apache.accumulo.core.client.mapreduce:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
-/subsystem=logging/logger=nsa.datawave.webservice.modification:add(use-parent-handlers=false,handlers=["MODIFICATION_LOG"])
-/subsystem=logging/logger=nsa.datawave.webservice.query.distributed:add(use-parent-handlers=false,handlers=["DISTRIBUTED_QUERY_LOG"])
+/subsystem=logging/logger=datawave.webservice.modification:add(use-parent-handlers=false,handlers=["MODIFICATION_LOG"])
+/subsystem=logging/logger=datawave.webservice.query.distributed:add(use-parent-handlers=false,handlers=["DISTRIBUTED_QUERY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.core:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.plugins.providers:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.plugins.server:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.specimpl:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
-/subsystem=logging/logger=nsa.datawave.resteasy.interceptor:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
-/subsystem=logging/logger=nsa.datawave.webservice.audit.server.log:add(use-parent-handlers=false,handlers=["SERVER_AUDIT_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.resteasy.interceptor:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
+/subsystem=logging/logger=datawave.webservice.audit.server.log:add(use-parent-handlers=false,handlers=["SERVER_AUDIT_LOG"],level=INFO)
 
 # Custom log levels
 /subsystem=logging/logger=httpclient.wire:add(level=TRACE)
-/subsystem=logging/logger=nsa.datawave.security.util.DnUtils:add(level=DEBUG)
+/subsystem=logging/logger=datawave.security.util.DnUtils:add(level=DEBUG)
 
 # Turn off messages telling us we returned unknown connections (since we acquire a connection in one method and return it from another in cached results code)
 /subsystem=logging/logger=org.jboss.jca.core.connectionmanager.listener.TxConnectionListener:add(level=WARN)

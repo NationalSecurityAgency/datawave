@@ -8,7 +8,7 @@
 
 	<context:property-placeholder system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="100"/>
 
-	<bean id="MapReduceConfiguration" class="nsa.datawave.webservice.mr.configuration.MapReduceConfiguration">
+	<bean id="MapReduceConfiguration" class="datawave.webservice.mr.configuration.MapReduceConfiguration">
 	
 		<property name="callbackServletURL" value="http://localhost:8080/DataWave/MapReduceStatus/updateState"/>
 		<property name="mapReduceBaseDirectory" value="/MapReduceService"/>
@@ -20,9 +20,9 @@
 		</property>
 		
 		<property name="jobConfiguration">
-			<map key-type="java.lang.String" value-type="nsa.datawave.webservice.mr.configuration.MapReduceJobConfiguration">
+			<map key-type="java.lang.String" value-type="datawave.webservice.mr.configuration.MapReduceJobConfiguration">
 				<entry key="TestJob">
-					<bean class="nsa.datawave.webservice.mr.configuration.MapReduceJobConfiguration">
+					<bean class="datawave.webservice.mr.configuration.MapReduceJobConfiguration">
 						<property name="description" value="MapReduce job that runs a query and either puts the results into a table or files in HDFS" />
 						<property name="hdfsUri" value="hdfs://localhost/"/>
 						<property name="jobTracker" value="hdfs://localhost:8021"/>

@@ -4,7 +4,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd">
 
-    <bean id="principalFactory" class="nsa.datawave.security.authorization.BasePrincipalFactoryConfiguration">
+    <bean id="principalFactory" class="datawave.security.authorization.BasePrincipalFactoryConfiguration">
         <!-- Configure the auth translator to insert a UserDN role if the DN is a user DN
              and a ServerDN role if the DN is a server DN.
         -->

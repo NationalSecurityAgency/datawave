@@ -84,6 +84,6 @@
 
 <property>
   <name>partitioner.default.delegate</name>
-  <value>nsa.datawave.ingest.mapreduce.partition.MultiTableRRRangePartitioner</value>
+  <value>datawave.ingest.mapreduce.partition.MultiTableRRRangePartitioner</value>
 </property>
 </configuration>

@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>nsa.datawave</groupId>
+        <groupId>datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-warehouse</artifactId>
     <packaging>pom</packaging>
@@ -113,6 +113,107 @@
                 <version>1.5.7</version>
             </dependency>
             <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-balancers</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-config-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-edge-dictionary-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-ingest-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-ingest-core-configuration</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-ingest-csv</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-metrics-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-query-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-regression-testing-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-scripts-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>deploy-geowave</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave.webservice</groupId>
+                <artifactId>Client</artifactId>
+                <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.collections</groupId>
+                        <artifactId>google-collections</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>datawave.webservice</groupId>
+                <artifactId>Common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave.webservice</groupId>
+                <artifactId>Common-Util</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave.webservice</groupId>
+                <artifactId>MapReduce</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave.webservice</groupId>
+                <artifactId>Modification</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave.webservice</groupId>
+                <artifactId>Query</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>dom4j</groupId>
                 <artifactId>dom4j</artifactId>
                 <version>1.6.1</version>
@@ -131,107 +232,6 @@
                 <groupId>net.sourceforge.javacsv</groupId>
                 <artifactId>javacsv</artifactId>
                 <version>2.0</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-balancers</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-config-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-edge-dictionary-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-ingest-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-ingest-core-configuration</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-ingest-csv</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-metrics-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-query-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-regression-testing-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>datawave-scripts-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave</groupId>
-                <artifactId>deploy-geowave</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave.webservice</groupId>
-                <artifactId>Client</artifactId>
-                <version>${project.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.collections</groupId>
-                        <artifactId>google-collections</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave.webservice</groupId>
-                <artifactId>Common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave.webservice</groupId>
-                <artifactId>Common-Util</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave.webservice</groupId>
-                <artifactId>MapReduce</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave.webservice</groupId>
-                <artifactId>Modification</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>nsa.datawave.webservice</groupId>
-                <artifactId>Query</artifactId>
-                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -498,7 +498,7 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>nsa.datawave</groupId>
+            <groupId>datawave</groupId>
             <artifactId>datawave-common-test</artifactId>
         </dependency>
     </dependencies>
@@ -543,7 +543,7 @@
                                 <excludes>
                                     <exclude>${tests.to.skip}</exclude>
                                 </excludes>
-                                <excludedGroups>nsa.datawave.common.test.integration.IntegrationTest</excludedGroups>
+                                <excludedGroups>datawave.common.test.integration.IntegrationTest</excludedGroups>
                             </configuration>
                         </execution>
                     </executions>
@@ -582,7 +582,7 @@
                 <configuration combine.children="append">
                     <reuseForks>false</reuseForks>
                     <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
-                    <groups>nsa.datawave.common.test.integration.IntegrationTest</groups>
+                    <groups>datawave.common.test.integration.IntegrationTest</groups>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>${runOrder}</runOrder>
                     <environmentVariables>

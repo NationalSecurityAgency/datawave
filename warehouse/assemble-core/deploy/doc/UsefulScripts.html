@@ -295,9 +295,9 @@ pre.logevent {
             <h3>Ingest-Base</h3>
             <table>
                 <tr><th>Class Name</th><th>Accompanying Script</th><th>Description</th></tr>
-                <tr class="highlight"><td>nsa.datawave.ingest.util.GenerateShardSplits</td><td>bin/ingest/create_shards_since.sh</td><td>Pre-splits a DATAWAVE "sharded" table since yyyyMMdd</td></tr>
+                <tr class="highlight"><td>datawave.ingest.util.GenerateShardSplits</td><td>bin/ingest/create_shards_since.sh</td><td>Pre-splits a DATAWAVE "sharded" table since yyyyMMdd</td></tr>
                 <tr><td></td><td>/bin/ingest/create_tomorrows_shards.sh</td><td>Pre-splits a DATAWAVE "sharded" table for "tomorrow"</td></tr>
-                <tr class="highlight"><td>nsa.datawave.ingest.util.KillJobByRegex</td><td>bin/ingest/kill-jobs-regex.sh</td><td>Kills Hadoop jobs based off of a regular expression</td></tr>
+                <tr class="highlight"><td>datawave.ingest.util.KillJobByRegex</td><td>bin/ingest/kill-jobs-regex.sh</td><td>Kills Hadoop jobs based off of a regular expression</td></tr>
             </table>
 
             <br />
@@ -305,7 +305,7 @@ pre.logevent {
             <h3>Metrics</h3>
             <table>
                 <tr><th>Class Name</th><th>Accompanying Script</th><th>Description</th></tr>
-                <tr class="highlight"><td>nsa.datawave.metrics.util.FileLatencySummary</td><td>bin/metrics/FileLatencySummary.sh</td><td>Prints a summary of the latency counts for all files in the metrics tables</td></tr>
+                <tr class="highlight"><td>datawave.metrics.util.FileLatencySummary</td><td>bin/metrics/FileLatencySummary.sh</td><td>Prints a summary of the latency counts for all files in the metrics tables</td></tr>
             </table>
 
         </div>

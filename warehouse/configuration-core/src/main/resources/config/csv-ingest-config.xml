@@ -5,7 +5,7 @@
 
     <property>
         <name>file.input.format</name>
-        <value>nsa.datawave.ingest.input.reader.raw.RawInputFormat</value>
+        <value>datawave.ingest.input.reader.raw.RawInputFormat</value>
     </property>
 
     <property>
@@ -22,17 +22,17 @@
 
     <property>
         <name>mycsv.ingest.helper.class</name>
-        <value>nsa.datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper</value>
+        <value>datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper</value>
     </property>
 
     <property>
         <name>mycsv.reader.class</name>
-        <value>nsa.datawave.ingest.csv.mr.input.CSVRecordReader</value>
+        <value>datawave.ingest.csv.mr.input.CSVRecordReader</value>
     </property>
 
     <property>
         <name>mycsv.handler.classes</name>
-        <value>nsa.datawave.ingest.csv.mr.handler.ContentCSVColumnBasedHandler</value>
+        <value>datawave.ingest.csv.mr.handler.ContentCSVColumnBasedHandler</value>
         <description>List of classes that should process this event</description>
     </property>
 
@@ -52,7 +52,7 @@
 
     <property>
         <name>mycsv.ingest.ignorable.error.helpers</name>
-        <value>nsa.datawave.ingest.data.config.ingest.IgnorableFatalErrorHelper</value>
+        <value>datawave.ingest.data.config.ingest.IgnorableFatalErrorHelper</value>
     </property>
 
     <property>
@@ -280,13 +280,13 @@
 
     <property>
         <name>mycsv.data.default.type.class</name>
-        <value>nsa.datawave.data.type.LcNoDiacriticsType</value>
+        <value>datawave.data.type.LcNoDiacriticsType</value>
         <description>Default type</description>
     </property>
 
    <property>
         <name>mycsv.data.default.type.class</name>
-        <value>nsa.datawave.data.type.LcNoDiacriticsType</value>
+        <value>datawave.data.type.LcNoDiacriticsType</value>
         <description>Default type</description>
     </property>
     
@@ -302,7 +302,7 @@
 
     <property>
         <name>mycsv.data.id.parser.EVENT_ID.1</name>
-        <value>nsa.datawave.ingest.metadata.id.DateIdParser("....\\.[a-zA-Z]([0-9]{7}).*", "yyyyDDD")</value>
+        <value>datawave.ingest.metadata.id.DateIdParser("....\\.[a-zA-Z]([0-9]{7}).*", "yyyyDDD")</value>
     </property>
     
     <property>
@@ -313,7 +313,7 @@
     
     <property>
         <name>mycsv.MY_DATE.data.field.type.class</name>
-        <value>nsa.datawave.data.type.DateType</value>
+        <value>datawave.data.type.DateType</value>
     </property>
     
     <property>

@@ -15,7 +15,7 @@ in both config files but with different values), or only in one of the files.
 This can most easily be run with the maven-exec-plugin. Use the following command:
 
 > mvn clean install
-> mvn exec:java -Dexec.mainClass=nsa.datawave.configuration.RunCompare -Dexec.args="CONFIG1 CONFIG2"
+> mvn exec:java -Dexec.mainClass=datawave.configuration.RunCompare -Dexec.args="CONFIG1 CONFIG2"
 
 Where CONFIG1 and CONFIG2 are two local files.
 

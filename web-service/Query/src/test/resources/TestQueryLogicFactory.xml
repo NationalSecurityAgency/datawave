@@ -22,9 +22,9 @@
 	</bean>
 
 
-	<bean id="QueryLogicFactoryConfiguration" class="nsa.datawave.webservice.query.logic.QueryLogicFactoryConfiguration" />
+	<bean id="QueryLogicFactoryConfiguration" class="datawave.webservice.query.logic.QueryLogicFactoryConfiguration" />
 
-	<bean id="TestQuery" class="nsa.datawave.webservice.query.logic.TestQueryLogic">
+	<bean id="TestQuery" class="datawave.webservice.query.logic.TestQueryLogic">
 		<property name="tableName" value="${metadata.table.name}" />
 		<property name="maxResults" value="12345" />
 		<property name="maxRowsToScan" value="98765" />
@@ -35,15 +35,15 @@
 	
 
 
-	<bean id="TestQuery2" class="nsa.datawave.webservice.query.logic.TestQueryLogic">
+	<bean id="TestQuery2" class="datawave.webservice.query.logic.TestQueryLogic">
 		<property name="tableName" value="${metadata.table.name}" />
 		<property name="maxResults" value="12345" />
 		<property name="maxRowsToScan" value="98765" />
 	</bean>
 
-    <bean id="datawaveRoleManager" class="nsa.datawave.webservice.query.logic.DatawaveRoleManager" />
+    <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
     
-    <bean id="easyRoleManager" class="nsa.datawave.webservice.query.logic.EasyRoleManager" />
+    <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
     
 
 

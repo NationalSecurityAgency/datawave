@@ -15,7 +15,7 @@
 
 <property>
 	<name>${DATE_INDEX_TABLE_NAME}.table.config.class</name>
-	<value>nsa.datawave.ingest.table.config.DateIndexTableConfigHelper</value>
+	<value>datawave.ingest.table.config.DateIndexTableConfigHelper</value>
 </property>
 
 <property>
@@ -26,7 +26,7 @@
 
 <property>
     <name>partitioner.dedicated.dateIndex</name>
-    <value>nsa.datawave.ingest.mapreduce.partition.LimitedKeyPartitioner</value>
+    <value>datawave.ingest.mapreduce.partition.LimitedKeyPartitioner</value>
 </property>
 
 <property>

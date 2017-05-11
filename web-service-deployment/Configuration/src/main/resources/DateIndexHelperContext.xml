@@ -12,9 +12,9 @@
      <!--  cacheManager is in CacheContext.xml. You must also include CacheContext.xml in any spring context that includes this file -->
     <cache:annotation-driven cache-manager="cacheManager"/>
     
-    <bean id="dateIndexHelper" scope="prototype" class="nsa.datawave.query.util.DateIndexHelper" />
+    <bean id="dateIndexHelper" scope="prototype" class="datawave.query.util.DateIndexHelper" />
 
-    <bean id="dateIndexHelperFactory" class="nsa.datawave.query.util.DateIndexHelperFactory" >
+    <bean id="dateIndexHelperFactory" class="datawave.query.util.DateIndexHelperFactory" >
         <lookup-method name="createDateIndexHelper" bean="dateIndexHelper" />
     </bean>
 

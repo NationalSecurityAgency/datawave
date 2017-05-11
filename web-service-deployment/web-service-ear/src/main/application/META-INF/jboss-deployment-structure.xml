@@ -5,7 +5,7 @@
 
     <deployment>
         <dependencies>
-            <module name="nsa.datawave.webservice.configuration" export="true" />
+            <module name="datawave.webservice.configuration" export="true" />
             <module name="org.apache.hadoop.common" export="true" />
 
             <!--

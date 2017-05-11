@@ -26,7 +26,7 @@
 
 <property>
 	<name>${SHARD_TABLE_NAME}.table.config.class</name>
-	<value>nsa.datawave.ingest.table.config.ShardTableConfigHelper</value>
+	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 </property>
 
 <property>
@@ -47,12 +47,12 @@
 
 <property>
 	<name>${SHARD_INDEX_TABLE_NAME}.table.config.class</name>
-	<value>nsa.datawave.ingest.table.config.ShardTableConfigHelper</value>
+	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 </property>
 
 <property>
 	<name>${SHARD_INDEX_TABLE_NAME}.table.config.class</name>
-	<value>nsa.datawave.ingest.table.config.ShardTableConfigHelper</value>
+	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 </property>
 
 <property>
@@ -67,7 +67,7 @@
 
 <property>
 	<name>${SHARD_REVERSE_INDEX_TABLE_NAME}.table.config.class</name>
-	<value>nsa.datawave.ingest.table.config.ShardTableConfigHelper</value>
+	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 </property>
 
 <property>
@@ -88,7 +88,7 @@
 <!-- This category is referenced in the other sharded table's -ingest-config.xml files -->
 <property>
     <name>partitioner.category.shardedTables</name>
-    <value>nsa.datawave.ingest.mapreduce.partition.BalancedShardPartitioner</value>
+    <value>datawave.ingest.mapreduce.partition.BalancedShardPartitioner</value>
 </property>
 <property>
     <name>partitioner.category.member.${SHARD_TABLE_NAME}</name>

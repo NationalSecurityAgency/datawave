@@ -16,4 +16,4 @@
 #
 #
 
-java -classpath target/datawave-index-validation-4.2.0-SNAPSHOT-jar-with-dependencies.jar nsa.datawave.index.validation.AccumuloIndexAgeDisplay "$@"
+java -classpath target/datawave-index-validation-4.2.0-SNAPSHOT-jar-with-dependencies.jar datawave.index.validation.AccumuloIndexAgeDisplay "$@"

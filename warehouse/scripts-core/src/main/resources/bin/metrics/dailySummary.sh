@@ -50,7 +50,7 @@ export HADOOP_CLASSPATH=${CLASSPATH}
 RETURN_CODE_1=255
 if ((`pgrep -f "\-Dapp=IngestMetricsSummaryLoader" | wc -l`==0))
 then
-	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar nsa.datawave.metrics.analytic.IngestMetricsSummaryLoader -Dapp=IngestMetricsSummaryLoader $SCHEDULER_OPTIONS \
+	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar datawave.metrics.analytic.IngestMetricsSummaryLoader -Dapp=IngestMetricsSummaryLoader $SCHEDULER_OPTIONS \
 	-libjars $LIBJARS -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD $@
 	RETURN_CODE_1=$?
 fi
@@ -60,7 +60,7 @@ RETURN_CODE_2=255
 RETURN_CODE_3=255
 if ((`pgrep -f "\-Dapp=QueryMetricsSummaryLoader" | wc -l`==0))
 then
-	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar nsa.datawave.metrics.analytic.QueryMetricsSummaryLoader -Dapp=QueryMetricsSummaryLoader $SCHEDULER_OPTIONS \
+	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar datawave.metrics.analytic.QueryMetricsSummaryLoader -Dapp=QueryMetricsSummaryLoader $SCHEDULER_OPTIONS \
 	-libjars $LIBJARS -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD $@
 	RETURN_CODE_3=$?
 fi
@@ -68,7 +68,7 @@ fi
 RETURN_CODE_4=255
 if ((`pgrep -f "\-Dapp=FileByteSummaryLoader" | wc -l`==0))
 then
-	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar nsa.datawave.metrics.analytic.FileByteSummaryLoader -Dapp=FileByteSummaryLoader $SCHEDULER_OPTIONS \
+	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar datawave.metrics.analytic.FileByteSummaryLoader -Dapp=FileByteSummaryLoader $SCHEDULER_OPTIONS \
 	-libjars $LIBJARS -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD $@
 	RETURN_CODE_4=$?
 fi
@@ -76,7 +76,7 @@ fi
 RETURN_CODE_5=255
 if ((`pgrep -f "\-Dapp=HourlyQueryMetricsSummaryLoader" | wc -l`==0))
 then
-	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar nsa.datawave.metrics.analytic.QueryMetricsSummaryLoader -Dapp=HourlyQueryMetricsSummaryLoader $SCHEDULER_OPTIONS \
+	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar datawave.metrics.analytic.QueryMetricsSummaryLoader -Dapp=HourlyQueryMetricsSummaryLoader $SCHEDULER_OPTIONS \
 	-D metrics.use.hourly.precision=true \
 	-libjars $LIBJARS -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD $@
 	RETURN_CODE_5=$?
@@ -85,7 +85,7 @@ fi
 RETURN_CODE_6=255
 if ((`pgrep -f "\-Dapp=HourlyIngestMetricsSummaryLoader" | wc -l`==0))
 then
-	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar nsa.datawave.metrics.analytic.IngestMetricsSummaryLoader -Dapp=HourlyIngestMetricsSummaryLoader $SCHEDULER_OPTIONS \
+	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar datawave.metrics.analytic.IngestMetricsSummaryLoader -Dapp=HourlyIngestMetricsSummaryLoader $SCHEDULER_OPTIONS \
 	-D metrics.use.hourly.precision=true \
 	-libjars $LIBJARS -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD $@
 	RETURN_CODE_6=$?

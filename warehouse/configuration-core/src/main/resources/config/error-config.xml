@@ -70,22 +70,22 @@
 
     <property>
         <name>${ERROR_SHARD_TABLE_NAME}.table.config.class</name>
-        <value>nsa.datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
+        <value>datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
     </property>
 
     <property>
         <name>${ERROR_SHARD_INDEX_TABLE_NAME}.table.config.class</name>
-        <value>nsa.datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
+        <value>datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
     </property>
 
     <property>
         <name>${ERROR_SHARD_REVERSE_INDEX_TABLE_NAME}.table.config.class</name>
-        <value>nsa.datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
+        <value>datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
     </property>
 
     <property>
         <name>${ERROR_METADATA_TABLE_NAME}.table.config.class</name>
-        <value>nsa.datawave.ingest.table.config.ErrorMetadataTableConfigHelper</value>
+        <value>datawave.ingest.table.config.ErrorMetadataTableConfigHelper</value>
     </property>
 
     <!-- Marker property to indicate that we've supplied configuration for 
@@ -99,7 +99,7 @@
 
     <property>
         <name>error.data.default.type.class</name>
-        <value>nsa.datawave.data.type.LcNoDiacriticsType</value>
+        <value>datawave.data.type.LcNoDiacriticsType</value>
     </property>
 
     <property>
@@ -115,7 +115,7 @@
 
     <property>
         <name>error.ingest.helper.class</name>
-        <value>nsa.datawave.ingest.data.config.ingest.ErrorShardedIngestHelper</value>
+        <value>datawave.ingest.data.config.ingest.ErrorShardedIngestHelper</value>
     </property>
 
     <property>
@@ -125,7 +125,7 @@
 
     <property>
         <name>error.handler.classes</name>
-        <value>nsa.datawave.ingest.mapreduce.handler.error.ErrorShardedDataTypeHandler,${ADDITIONAL_ERROR_HANDLER_CLASSES}</value>
+        <value>datawave.ingest.mapreduce.handler.error.ErrorShardedDataTypeHandler,${ADDITIONAL_ERROR_HANDLER_CLASSES}</value>
     </property>
     
     <property>

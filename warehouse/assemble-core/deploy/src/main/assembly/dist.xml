@@ -98,10 +98,10 @@
                 <include>${groupId}:datawave-query-core</include>
                 <include>${groupId}:datawave-edge-dictionary-core</include>
                 <include>${groupId}:datawave-ingest-wikipedia</include>
-                <include>nsa.datawave.webservice:Common</include>
-                <include>nsa.datawave.webservice:Common-Util</include>
-                <include>nsa.datawave.webservice:Client</include>
-                <include>nsa.datawave.webservice:Query</include>
+                <include>datawave.webservice:Common</include>
+                <include>datawave.webservice:Common-Util</include>
+                <include>datawave.webservice:Client</include>
+                <include>datawave.webservice:Query</include>
                 <include>org.javatuples:javatuples</include>
                 <include>com.google.code.gson:gson</include>
                 <include>org.apache.lucene:lucene-core</include>
@@ -133,8 +133,8 @@
                   <include>${groupId}:datawave-ingest-core-configuration</include>
                   
                   <include>${groupId}:datawave-query-core</include>
-                  <include>nsa.datawave.webservice:Common</include>
-                  <include>nsa.datawave.webservice:Common-Util</include>
+                  <include>datawave.webservice:Common</include>
+                  <include>datawave.webservice:Common-Util</include>
                   <include>com.google.code.gson:gson</include>
                   <!-- for dependency injection -->
                   <include>org.springframework:spring-aop</include>

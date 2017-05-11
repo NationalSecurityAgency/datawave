@@ -12,6 +12,6 @@ cd $THIS_DIR
 
 export ACCUMULO_OTHER_OPTS="${ACCUMULO_OTHER_OPTS} $HADOOP_INGEST_OPTS"
 
-$WAREHOUSE_ACCUMULO_HOME/bin/accumulo jar $WAREHOUSE_ACCUMULO_HOME/lib/ext/datawave-ingest-core-4.2.0-SNAPSHOT.jar nsa.datawave.ingest.util.GenerateSplitsFile -u $USERNAME -p $PASSWORD -i $WAREHOUSE_INSTANCE_NAME -zk $WAREHOUSE_ZOOKEEPERS \
+$WAREHOUSE_ACCUMULO_HOME/bin/accumulo jar $WAREHOUSE_ACCUMULO_HOME/lib/ext/datawave-ingest-core-4.2.0-SNAPSHOT.jar datawave.ingest.util.GenerateSplitsFile -u $USERNAME -p $PASSWORD -i $WAREHOUSE_INSTANCE_NAME -zk $WAREHOUSE_ZOOKEEPERS \
 -cd `readlink -f $CONF_DIR`
 		

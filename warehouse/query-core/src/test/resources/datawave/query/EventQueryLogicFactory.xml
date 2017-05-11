@@ -14,19 +14,19 @@
     -->
 
     <!-- A list of lucene to jexl query functions -->
-    <util:list id="allowedQueryFunctions" value-type="nsa.datawave.query.language.functions.jexl.JexlQueryFunction">
-        <bean class="nsa.datawave.query.language.functions.jexl.IsNull"/>
-        <bean class="nsa.datawave.query.language.functions.jexl.IsNotNull"/>
-        <bean class="nsa.datawave.query.language.functions.jexl.Include"/>
-        <bean class="nsa.datawave.query.language.functions.jexl.Exclude"/>
-        <bean class="nsa.datawave.query.language.functions.jexl.Loaded"/>
-        <bean class="nsa.datawave.query.language.functions.jexl.DateFunction"/>
-        <bean class="nsa.datawave.query.language.functions.jexl.OccurrenceFunction"/>
-        <bean class="nsa.datawave.query.language.functions.jexl.MatchesInGroupFunction"/>
-        <bean class="nsa.datawave.query.language.functions.jexl.MatchesInGroupLeft"/>
-        <bean class="nsa.datawave.query.language.functions.jexl.GetAllMatches"/>
-        <bean class="nsa.datawave.query.language.functions.jexl.MatchesAtLeastCountOf"/>
-        <bean class="nsa.datawave.query.language.functions.jexl.TimeFunction"/>
+    <util:list id="allowedQueryFunctions" value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
+        <bean class="datawave.query.language.functions.jexl.IsNull"/>
+        <bean class="datawave.query.language.functions.jexl.IsNotNull"/>
+        <bean class="datawave.query.language.functions.jexl.Include"/>
+        <bean class="datawave.query.language.functions.jexl.Exclude"/>
+        <bean class="datawave.query.language.functions.jexl.Loaded"/>
+        <bean class="datawave.query.language.functions.jexl.DateFunction"/>
+        <bean class="datawave.query.language.functions.jexl.OccurrenceFunction"/>
+        <bean class="datawave.query.language.functions.jexl.MatchesInGroupFunction"/>
+        <bean class="datawave.query.language.functions.jexl.MatchesInGroupLeft"/>
+        <bean class="datawave.query.language.functions.jexl.GetAllMatches"/>
+        <bean class="datawave.query.language.functions.jexl.MatchesAtLeastCountOf"/>
+        <bean class="datawave.query.language.functions.jexl.TimeFunction"/>
     </util:list>
 
 
@@ -34,12 +34,12 @@
         <property name="logicDescription" value="Event query" />
     </bean>
     
-    <bean id="baseQueryLogic" class="nsa.datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
+    <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
         <property name="roleManager" ref="easyRoleManager" />
         <property name="markingFunctions" ref="markingFunctions" />
     </bean>
     
-    <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic" abstract="true">
+    <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.rewrite.tables.RefactoredShardQueryLogic" abstract="true">
         <property name="tableName" value="shard" />
         <property name="dateIndexTableName" value="dateIndex" />
         <property name="metadataTableName" value="DatawaveMetadata" />
@@ -68,7 +68,7 @@
         <property name="minimumSelectivity" value=".2" />
         <property name="enricherClassNames">
             <list value-type="java.lang.String">
-                <value>nsa.datawave.query.enrich.DatawaveTermFrequencyEnricher</value>
+                <value>datawave.query.enrich.DatawaveTermFrequencyEnricher</value>
             </list>
         </property>
         <property name="useFilters" value="false" />
@@ -102,7 +102,7 @@
         <property name="modelTableName" value="DatawaveMetadata" />
         <property name="modelName" value="DATAWAVE" />
         <property name="querySyntaxParsers">
-            <map key-type="java.lang.String" value-type="nsa.datawave.query.language.parser.QueryParser">
+            <map key-type="java.lang.String" value-type="datawave.query.language.parser.QueryParser">
                 <entry key="JEXL">
                     <null/>
                 </entry>
@@ -117,33 +117,33 @@
         <property name="markingFunctions" ref="markingFunctions" />
     </bean>
 
-     <bean id="LuceneToJexlQueryParser" scope="prototype" class="nsa.datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
+     <bean id="LuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
     </bean>
     
-    <bean id="LuceneToJexlUUIDQueryParser" scope="prototype" class="nsa.datawave.query.language.parser.jexl.LuceneToJexlUUIDQueryParser">
+    <bean id="LuceneToJexlUUIDQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlUUIDQueryParser">
         <property name="uuidTypes" ref="UUIDTypeList" />
         <property name="allowedFunctions" ref="allowedQueryFunctions"/>
     </bean>
-    <util:list id="UUIDTypeList" value-type="nsa.datawave.query.data.UUIDType">
+    <util:list id="UUIDTypeList" value-type="datawave.query.data.UUIDType">
 
     </util:list>
 
-    <!--<bean id="TokenizedLuceneToJexlQueryParser" scope="prototype" class="nsa.datawave.query.language.parser.jexl.LuceneToJexlQueryParser">-->
+    <!--<bean id="TokenizedLuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">-->
         <!--<property name="tokenizeUnfieldedQueries" value="true" />-->
         <!--<property name="skipTokenizeUnfieldedFields" ref="skipTokenizeFields"/>-->
         <!--<property name="tokenizedFields" ref="tokenizeFields"/>-->
         <!--<property name="allowedFunctions" ref="allowedQueryFunctions"/>-->
     <!--</bean>-->
     
-    <bean id="DefaultQueryPlanner" scope="prototype" class="nsa.datawave.query.rewrite.planner.DefaultQueryPlanner" >
+    <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.rewrite.planner.DefaultQueryPlanner" >
 
     </bean>
     
-    <bean id="datawaveRoleManager" class="nsa.datawave.webservice.query.logic.DatawaveRoleManager" />
+    <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
     
-    <bean id="easyRoleManager" class="nsa.datawave.webservice.query.logic.EasyRoleManager" />
+    <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
 
-    <!--<bean id="responseObjectFactory" class="nsa.datawave.query.DefaultResponseObjectFactory" />-->
+    <!--<bean id="responseObjectFactory" class="datawave.query.DefaultResponseObjectFactory" />-->
 
 
 </beans>

@@ -5,7 +5,7 @@
 
     <property>
         <name>file.input.format</name>
-        <value>nsa.datawave.ingest.input.reader.raw.RawInputFormat</value>
+        <value>datawave.ingest.input.reader.raw.RawInputFormat</value>
     </property>
 
     <property>
@@ -16,22 +16,22 @@
 
     <property>
         <name>fake.ingest.helper.class</name>
-        <value>nsa.datawave.ingest.data.config.ingest.FakeIngestHelper</value>
+        <value>datawave.ingest.data.config.ingest.FakeIngestHelper</value>
     </property>
 
     <property>
         <name>fake.reader.class</name>
-        <value>nsa.datawave.ingest.input.reader.raw.FakeReader</value>
+        <value>datawave.ingest.input.reader.raw.FakeReader</value>
     </property>
 
     <property>
         <name>fake.handler.classes</name>
-        <value>nsa.datawave.ingest.mapreduce.handler.FakeDataTypeHandler</value>
+        <value>datawave.ingest.mapreduce.handler.FakeDataTypeHandler</value>
     </property>
 
     <property>
         <name>fake.data.default.type.class</name>
-        <value>nsa.datawave.data.type.LcNoDiacriticsType</value>
+        <value>datawave.data.type.LcNoDiacriticsType</value>
     </property>
 
     <property>

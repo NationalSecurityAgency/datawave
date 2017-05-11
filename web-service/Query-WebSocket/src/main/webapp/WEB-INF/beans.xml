@@ -8,7 +8,7 @@
        bean-discovery-mode="all">
        <!--
        <alternatives>
-           <class>nsa.datawave.query.metrics.ShardTableQueryMetricHandler</class>
+           <class>datawave.query.metrics.ShardTableQueryMetricHandler</class>
        </alternatives>
        -->
 </beans>

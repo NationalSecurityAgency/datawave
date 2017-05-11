@@ -13,6 +13,6 @@
 
     <bean id="markings-cache-manager" class="org.springframework.cache.guava.GuavaCacheManager" />
 
-    <bean id="markingFunctions" class="nsa.datawave.marking.MarkingFunctions.NoOp" />
+    <bean id="markingFunctions" class="datawave.marking.MarkingFunctions.NoOp" />
 
 </beans>

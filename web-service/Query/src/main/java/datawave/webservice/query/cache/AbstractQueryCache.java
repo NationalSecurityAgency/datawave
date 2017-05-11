@@ -1,0 +1,63 @@
+package datawave.webservice.query.cache;
+
+import com.google.common.cache.Cache;
+
+import javax.annotation.PostConstruct;
+import java.util.Iterator;
+
+/**
+ * A Guava-based cache for storing objects in the {@link AbstractRunningQuery} hierarchy.
+ */
+public abstract class AbstractQueryCache<T extends AbstractRunningQuery> implements Iterable<T> {
+    private Cache<String,T> cache;
+    
+    @PostConstruct
+    public void init() {
+        cache = buildCache();
+    }
+    
+    abstract protected Cache<String,T> buildCache();
+    
+    /**
+     * Indicates whether or not this cache contains a {@link AbstractRunningQuery} associated with the query {@code id}.
+     */
+    public boolean containsKey(String id) {
+        return cache.asMap().containsKey(id);
+    }
+    
+    /**
+     * Gets the {@link AbstractRunningQuery} whose query id is {@code id}, or {@code null} if there is no query cached under {@code id}.
+     */
+    public T get(String id) {
+        return cache.getIfPresent(id);
+    }
+    
+    /**
+     * Caches {@code query} under the identifier {@code id}.
+     */
+    public void put(String id, T query) {
+        cache.put(id, query);
+    }
+    
+    /**
+     * Removes the query identified by {@code id} from the cache.
+     */
+    public void remove(String id) {
+        cache.invalidate(id);
+    }
+    
+    /**
+     * Removes all entries from the cache.
+     */
+    public void clear() {
+        cache.asMap().clear();
+    }
+    
+    /**
+     * Retrieve an {@link java.util.Iterator} to iterate over all stored {@link AbstractRunningQuery}s stored in the cache.
+     */
+    @Override
+    public Iterator<T> iterator() {
+        return cache.asMap().values().iterator();
+    }
+}

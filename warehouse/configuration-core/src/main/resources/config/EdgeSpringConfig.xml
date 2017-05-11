@@ -11,7 +11,7 @@ http://www.springframework.org/schema/util
 http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
     <!-- Note that the bean id here must match a known/registered 'data.name' within the DataWave ingest type registry  -->
-    <bean id="mycsv" class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper"
+    <bean id="mycsv" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper"
           scope="prototype">
     <!-- (data-driven key component) for a given CSV record, use its FOO_FIELD value for this component of the DataWave edge key  -->
 	<property name="edgeAttribute2" value="FOO_FIELD"/>
@@ -21,14 +21,14 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
         <property name="activityDateField" value = "EVENT_DATE"/>
         <property name="edges">
             <list>
-                <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
                     <!-- (config-driven key component) for a given CSV record, use this literal value for the "edge type" component of the DataWave edge key -->
                     <property name="edgeType" value="MY_EDGE_TYPE"/>
                     <!-- for a given CSV record, create a "bi-directional" edge (i.e., generate both the "FROM-TO" edge and its reverse "TO-FROM" edge) -->
                     <property name="direction" value="bi"/>
                     <property name="AllPairs">
                         <list>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="EDGE_VERTEX_FROM"/>
                                 <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex, 
@@ -38,7 +38,7 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                                      defined by 'protobufedge.table.collections' bean below-->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
-                            <bean class="nsa.datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="EDGE_VERTEX_TO"/>
                                 <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex, 

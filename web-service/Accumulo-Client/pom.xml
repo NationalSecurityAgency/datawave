@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>nsa.datawave.webservice</groupId>
+        <groupId>datawave.webservice</groupId>
         <artifactId>WebService</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>Accumulo-Client</artifactId>
     <name>Accumulo-Client</name>
@@ -18,6 +18,10 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>datawave</groupId>
+            <artifactId>datawave-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.protostuff</groupId>
@@ -48,10 +52,6 @@
             <artifactId>protostuff-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>nsa.datawave</groupId>
-            <artifactId>datawave-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
         </dependency>
@@ -68,12 +68,7 @@
             <artifactId>xercesImpl</artifactId>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>nsa.datawave.webservice</groupId>
+            <groupId>datawave.webservice</groupId>
             <artifactId>Client</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
@@ -83,6 +78,11 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
@@ -240,10 +240,10 @@
                                 </transformSchema>
                             </transformSchemas>
                             <includes>
-                                <include>nsa/datawave/**/*.java</include>
+                                <include>datawave/**/*.java</include>
                             </includes>
                             <excludes>
-                                <exclude>nsa/datawave/webservice/exception/**/*.java</exclude>
+                                <exclude>datawave/webservice/exception/**/*.java</exclude>
                             </excludes>
                             <outputDirectory>target/xsd</outputDirectory>
                         </configuration>

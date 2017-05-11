@@ -1,1 +1,1 @@
-nsa.datawave.webservice.geowave.auth.factory.DatawaveAuthorizationFactory
+datawave.webservice.geowave.auth.factory.DatawaveAuthorizationFactory

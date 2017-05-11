@@ -52,7 +52,7 @@
 <!-- This can be overridden on a type by type basis in each individual datatype's config file-->
 <property>
     <name>all.ingest.policy.enforcer.class</name>
-    <value>nsa.datawave.policy.ExampleIngestPolicyEnforcer</value>
+    <value>datawave.policy.ExampleIngestPolicyEnforcer</value>
     <description>Name of the class to use for policy enforcement</description>
 </property>
 

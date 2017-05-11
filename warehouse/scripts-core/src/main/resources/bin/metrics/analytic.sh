@@ -45,7 +45,7 @@ then
 
 
 	export HADOOP_CLASSPATH=${CLASSPATH}
-	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar nsa.datawave.metrics.analytic.MetricsCorrelator -Dapp=MetricsCorrelator -D mapreduce.job.queuename=oneHrIngest -libjars $LIBJARS -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD  $@
+	$MAP_FILE_LOADER_COMMAND_PREFIX $INGEST_HADOOP_HOME/bin/hadoop jar datawave-metrics-core-${METRICS_VERSION}.jar datawave.metrics.analytic.MetricsCorrelator -Dapp=MetricsCorrelator -D mapreduce.job.queuename=oneHrIngest -libjars $LIBJARS -instance $INGEST_INSTANCE_NAME -zookeepers $INGEST_ZOOKEEPERS -user $USERNAME -password $PASSWORD  $@
 	RETURN_CODE=$?
 
 else

@@ -19,23 +19,23 @@
 	</bean>
 	-->
 
-	<bean id="DataDictionaryConfiguration" class="nsa.datawave.webservice.datadictionary.DataDictionaryConfiguration">
+	<bean id="DataDictionaryConfiguration" class="datawave.webservice.datadictionary.DataDictionaryConfiguration">
         <property name="modelName" value="DATAWAVE" />
 		<property name="modelTableName" value="${metadata.table.name}" />
 		<property name="metadataTableName" value="${metadata.table.name}" />
         <property name="numThreads" value="8" />
         <property name="normalizerMap">
             <map key-type="java.lang.String" value-type="java.lang.String">
-                <entry key="nsa.datawave.data.type.GeoLatType" value="Latitude" />
-                <entry key="nsa.datawave.data.type.GeoLonType" value="Longitude" />
-                <entry key="nsa.datawave.data.type.GeoType" value="Combined latitude, longitude" />
-                <entry key="nsa.datawave.data.type.IpAddressType" value="IP address" />
-                <entry key="nsa.datawave.data.type.MacAddressType" value="MAC address" />
-                <entry key="nsa.datawave.data.type.LcNoDiacriticsType" value="Text" />
-                <entry key="nsa.datawave.data.type.LcType" value="Text" />
-                <entry key="nsa.datawave.data.type.NoOpType" value="Unnormalized Text" />
-                <entry key="nsa.datawave.data.type.NumberType" value="Number" />
-                <entry key="nsa.datawave.data.type.TrimLeadingZerosType" value="Text" />
+                <entry key="datawave.data.type.GeoLatType" value="Latitude" />
+                <entry key="datawave.data.type.GeoLonType" value="Longitude" />
+                <entry key="datawave.data.type.GeoType" value="Combined latitude, longitude" />
+                <entry key="datawave.data.type.IpAddressType" value="IP address" />
+                <entry key="datawave.data.type.MacAddressType" value="MAC address" />
+                <entry key="datawave.data.type.LcNoDiacriticsType" value="Text" />
+                <entry key="datawave.data.type.LcType" value="Text" />
+                <entry key="datawave.data.type.NoOpType" value="Unnormalized Text" />
+                <entry key="datawave.data.type.NumberType" value="Number" />
+                <entry key="datawave.data.type.TrimLeadingZerosType" value="Text" />
             </map>
         </property>
 	</bean>

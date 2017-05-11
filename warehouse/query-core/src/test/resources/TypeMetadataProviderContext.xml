@@ -9,7 +9,7 @@
      http://www.springframework.org/schema/util
      http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
-    <bean id="typeMetadataProvider" class="nsa.datawave.query.util.TypeMetadataProvider" >
+    <bean id="typeMetadataProvider" class="datawave.query.util.TypeMetadataProvider" >
         <property name="metadataTableNames" >
             <util:list>
                 <value>DatawaveMetadata</value>

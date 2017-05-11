@@ -15,7 +15,7 @@
      Unit tests will not load this file, so they will not have a zookeeper watcher listener
       -->
     <!-- a singleton -->
-    <bean id="metadataHelperCacheManagementListener" class="nsa.datawave.query.util.MetadataHelperCacheManagementListener" destroy-method="shutdown" >
+    <bean id="metadataHelperCacheManagementListener" class="datawave.query.util.MetadataHelperCacheManagementListener" destroy-method="shutdown" >
         <property name="zookeepers" value="${zookeeper.hosts}" />
     	<property name="metadataHelper" ref="metadataHelper" />
     	<property name="metadataTableNames" >
@@ -25,7 +25,7 @@
     	</property>
     </bean>
 
-	<bean id="metadataHelperUpdateHdfsListener" class="nsa.datawave.query.util.MetadataHelperUpdateHdfsListener" >
+	<bean id="metadataHelperUpdateHdfsListener" class="datawave.query.util.MetadataHelperUpdateHdfsListener" >
 		<property name="zookeepers" value="${zookeeper.hosts}" />
 		<property name="metadataHelper" ref="metadataHelper" />
 		<property name="instance" value="${accumulo.instance.name}" />

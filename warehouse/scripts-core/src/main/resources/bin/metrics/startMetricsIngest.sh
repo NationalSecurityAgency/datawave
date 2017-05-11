@@ -31,19 +31,19 @@ TYPE=$1
 if [[ $TYPE == "flagmaker" ]]; then
 
     INPUT_FOLDER="${BASE_WORK_DIR}/FlagMakerMetrics"
-    CLASS="nsa.datawave.metrics.mapreduce.FlagMakerMetricsIngester"
+    CLASS="datawave.metrics.mapreduce.FlagMakerMetricsIngester"
     TYPE="flagmaker"
 
 elif [[ $TYPE == "ingest" ]]; then
 
     INPUT_FOLDER="${BASE_WORK_DIR}/IngestMetrics"
-    CLASS="nsa.datawave.metrics.mapreduce.IngestMetricsIngester"
+    CLASS="datawave.metrics.mapreduce.IngestMetricsIngester"
     TYPE="ingest"
 
 elif [[ $TYPE == "loader" ]]; then
 
     INPUT_FOLDER="${BASE_WORK_DIR}/MapFileLoaderMetrics"
-    CLASS="nsa.datawave.metrics.mapreduce.LoaderMetricsIngester"
+    CLASS="datawave.metrics.mapreduce.LoaderMetricsIngester"
 
 else
     echo "Supported types are: ingest and loader"

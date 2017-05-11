@@ -6,6 +6,6 @@
      http://www.springframework.org/schema/beans 
      http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
      
-    <bean id="maskedValueFilter" class="nsa.datawave.query.rewrite.function.MaskedValueFilterInterface$NoOp" />
+    <bean id="maskedValueFilter" class="datawave.query.rewrite.function.MaskedValueFilterInterface$NoOp" />
 
 </beans>

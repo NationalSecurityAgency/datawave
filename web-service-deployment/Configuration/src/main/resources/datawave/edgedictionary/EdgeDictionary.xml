@@ -19,7 +19,7 @@
 	</bean>
 	-->
 
-	<bean id="EdgeDictionaryConfiguration" class="nsa.datawave.webservice.edgedictionary.EdgeDictionaryConfiguration">
+	<bean id="EdgeDictionaryConfiguration" class="datawave.webservice.edgedictionary.EdgeDictionaryConfiguration">
 		<property name="metadataTableName" value="${metadata.table.name}" />
         <property name="numThreads" value="8" />
 	</bean>

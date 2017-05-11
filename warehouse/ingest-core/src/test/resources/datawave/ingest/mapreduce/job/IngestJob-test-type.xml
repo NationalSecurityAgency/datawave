@@ -5,7 +5,7 @@
 
 <property>
   <name>file.input.format</name>
-  <value>nsa.datawave.ingest.mapreduce.job.IngestJobTest$TestRecordReader</value>
+  <value>datawave.ingest.mapreduce.job.IngestJobTest$TestRecordReader</value>
 </property>
 
 <property>
@@ -22,22 +22,22 @@
 
 <property>
 	<name>ingest-test.ingest.helper.class</name>
-	<value>nsa.datawave.ingest.mapreduce.job.IngestJobTest$TestIngestHelper</value>
+	<value>datawave.ingest.mapreduce.job.IngestJobTest$TestIngestHelper</value>
 </property>
 
 <property>
 	<name>ingest-test.reader.class</name>
-	<value>nsa.datawave.ingest.mapreduce.job.IngestJobTest$TestReader</value>
+	<value>datawave.ingest.mapreduce.job.IngestJobTest$TestReader</value>
 </property>
 
 <property>
 	<name>ingest-test.handler.classes</name>
-	<value>nsa.datawave.ingest.mapreduce.job.IngestJobTest$TestAbstractColumnBasedHandler</value>
+	<value>datawave.ingest.mapreduce.job.IngestJobTest$TestAbstractColumnBasedHandler</value>
 </property>
 
 <property>
   <name>ingest-test.data.default.type.class</name>
-  <value>nsa.datawave.data.type.LcNoDiacriticsType</value>
+  <value>datawave.data.type.LcNoDiacriticsType</value>
 </property>
 
 </configuration>

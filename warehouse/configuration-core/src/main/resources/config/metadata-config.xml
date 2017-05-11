@@ -3,7 +3,7 @@
 
 <property>
 	<name>metadata.ingest.helper.class</name>
-	<value>nsa.datawave.ingest.data.config.ingest.MetaDataIngestHelper</value>
+	<value>datawave.ingest.data.config.ingest.MetaDataIngestHelper</value>
 </property>
 
 <property>
@@ -28,7 +28,7 @@
 
 <property>
   <name>${METADATA_TABLE_NAME}.table.config.class</name>
-  <value>nsa.datawave.ingest.table.config.MetadataTableConfigHelper</value>
+  <value>datawave.ingest.table.config.MetadataTableConfigHelper</value>
 </property>
 
 <property>
@@ -54,7 +54,7 @@
 
 <property>
   <name>LoadDates.table.config.class</name>
-  <value>nsa.datawave.ingest.table.config.LoadDateTableConfigHelper</value>
+  <value>datawave.ingest.table.config.LoadDateTableConfigHelper</value>
 </property>
 
 <property>

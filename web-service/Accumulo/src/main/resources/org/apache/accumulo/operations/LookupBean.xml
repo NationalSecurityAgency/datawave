@@ -9,22 +9,22 @@
 	<!-- this file has no properties to filter
     <context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" />
 -->
-	<bean id="LookupBeanConfiguration" class="nsa.datawave.webservice.operations.configuration.LookupBeanConfiguration">
+	<bean id="LookupBeanConfiguration" class="datawave.webservice.operations.configuration.LookupBeanConfiguration">
 		<property name="defaultAuditType" value="ACTIVE"/>
 		<property name="lookupAuditConfiguration">
-			<list value-type="nsa.datawave.webservice.operations.configuration.LookupAuditConfiguration">
-				<bean class="nsa.datawave.webservice.operations.configuration.LookupAuditConfiguration" init-method="validate">
+			<list value-type="datawave.webservice.operations.configuration.LookupAuditConfiguration">
+				<bean class="datawave.webservice.operations.configuration.LookupAuditConfiguration" init-method="validate">
 					<property name="tableRegex" value="userQueryData" />
 					<property name="auditType" value="NONE" />
 				</bean>
-				<bean class="nsa.datawave.webservice.operations.configuration.LookupAuditConfiguration" init-method="validate">
+				<bean class="datawave.webservice.operations.configuration.LookupAuditConfiguration" init-method="validate">
 					<property name="tableRegex" value="shard" />
 					<property name="rowRegex" value="[0-9]{8}_[0-9]+" />
 					<property name="colFamRegex" value="d" />
 					<property name="colQualRegex" value=".*CONTENT" />
 					<property name="auditType" value="NONE" />
 				</bean>
-				<bean class="nsa.datawave.webservice.operations.configuration.LookupAuditConfiguration" init-method="validate">
+				<bean class="datawave.webservice.operations.configuration.LookupAuditConfiguration" init-method="validate">
 					<property name="tableRegex" value=".*" />
 					<property name="rowRegex" value=".*" />
 					<property name="colFamRegex" value=".*" />

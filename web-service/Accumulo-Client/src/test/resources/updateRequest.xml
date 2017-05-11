@@ -1,4 +1,4 @@
-<v2:UpdateRequest xmlns:v2="http://nsa.datawave.webservice/v1">
+<v2:UpdateRequest xmlns:v2="http://datawave.webservice/v1">
   <v2:tableUpdate table="some_user">
     <v2:mutation>
       <v2:row>CN=Last First Middle username, OU=Company, O=Acme, C=US</v2:row>
