@@ -258,7 +258,7 @@ public class SnowflakeUIDTest {
         // Test parsing similar to the HashUID test
         UID a = builder.newId();
         UID b = UID.parse(a.toString());
-
+        
         assertTrue(a.equals(b));
         assertTrue(b.equals(a));
         assertTrue(a.compareTo(b) == 0);
