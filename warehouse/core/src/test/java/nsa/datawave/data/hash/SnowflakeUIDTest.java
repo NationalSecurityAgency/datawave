@@ -14,7 +14,6 @@ import java.util.Date;
 
 import org.apache.curator.test.TestingServer;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -25,21 +24,13 @@ public class SnowflakeUIDTest {
     private String data = "20100901: the quick brown fox jumped over the lazy dog";
     private String data2 = "20100831: the quick brown fox jumped over the lazy dog";
     private Configuration conf = new Configuration();
-    TestingServer zkTestServer;
     
     @Before
     public void setup() throws Exception {
         conf.set(UIDConstants.CONFIG_UID_TYPE_KEY, SnowflakeUID.class.getSimpleName());
         conf.set(UIDConstants.CONFIG_MACHINE_ID_KEY, "" + SnowflakeUID.MAX_MACHINE_ID);
-        zkTestServer = new TestingServer(2888);
-        conf.set("snowflake.zookeepers", zkTestServer.getConnectString());
-        conf.set("snowdlake.zookeeper.enabled", "true");
+        
         builder = UID.builder(conf);
-    }
-    
-    @After
-    public void cleanup() throws IOException {
-        zkTestServer.stop();
     }
     
     @Test
@@ -69,6 +60,7 @@ public class SnowflakeUIDTest {
         assertNotEquals(false, uid.hashCode());
         assertEquals(SnowflakeUID.DEFAULT_RADIX, uid.getRadix());
         assertEquals("null", uid.getShardedPortion());
+        
     }
     
     @SuppressWarnings("rawtypes")
@@ -266,6 +258,7 @@ public class SnowflakeUIDTest {
         // Test parsing similar to the HashUID test
         UID a = builder.newId();
         UID b = UID.parse(a.toString());
+
         assertTrue(a.equals(b));
         assertTrue(b.equals(a));
         assertTrue(a.compareTo(b) == 0);
@@ -445,31 +438,124 @@ public class SnowflakeUIDTest {
         
         long startingTimestamp = 12345678;
         int myMachineId = 41610;
-        
-        ZkSnowflakeCache.init(conf.get("snowflake.zookeepers"), 5, 1000);
-        ZkSnowflakeCache.store(BigInteger.valueOf(myMachineId), startingTimestamp);// stash the timestamp
-        
         int startingSequence = SnowflakeUID.MAX_SEQUENCE_ID - 1;
-        SnowflakeUIDBuilder builder = SnowflakeUID.builder(startingTimestamp, 10, 10, 10, startingSequence);
-        
-        SnowflakeUID uid = builder.newId();
-        
-        assertEquals(myMachineId, uid.getMachineId());
-        
-        assertEquals(startingTimestamp + 1, uid.getTimestamp());
-        assertEquals(startingSequence, uid.getSequenceId()); // Initial sequence ID
-        assertEquals(startingTimestamp + 1, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId())))); // cached timestamp
-        
-        uid = builder.newId();
-        assertEquals(startingTimestamp + 1, uid.getTimestamp()); // Same timestamp
-        assertEquals(startingSequence + 1, uid.getSequenceId()); // Incremented sequence ID
-        assertEquals(startingTimestamp + 2, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId())))); // cached ts also incremented
-        
-        uid = builder.newId();
-        assertEquals(startingTimestamp + 2, uid.getTimestamp()); // Incremented timestamp to next millisecond
-        assertEquals(0, uid.getSequenceId()); // Rolled over sequence ID to zero
-        assertEquals(startingTimestamp + 2, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId())))); // cached ts also incremented
-        ZkSnowflakeCache.stop();
+        TestingServer zkTestServer = new TestingServer(2888);
+        try {
+            ZkSnowflakeCache.init(zkTestServer.getConnectString(), 5, 1000);
+            ZkSnowflakeCache.store(BigInteger.valueOf(myMachineId), startingTimestamp);// stash the timestamp
+            
+            long expectedTimestamp;
+            long storedTimestamp;
+            int expectedSequence;
+            
+            // timestamp should be incremented by 1 because this startingTimestamp was stored above
+            SnowflakeUIDBuilder builder = SnowflakeUID.builder(startingTimestamp, 10, 10, 10, startingSequence);
+            storedTimestamp = startingTimestamp + 1;
+            assertEquals(storedTimestamp, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(myMachineId))));
+            
+            SnowflakeUID uid = builder.newId();
+            // using the started sequence id
+            expectedSequence = startingSequence;
+            // expected timestamp should be the one previously stored
+            expectedTimestamp = storedTimestamp;
+            // stored timestamp should not have changed
+            // storedTimestamp = storedTimestamp;
+            
+            assertEquals(myMachineId, uid.getMachineId());
+            assertEquals(expectedTimestamp, uid.getTimestamp());
+            assertEquals(expectedSequence, uid.getSequenceId());
+            assertEquals(storedTimestamp, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId()))));
+            
+            uid = builder.newId();
+            // new sequence id
+            expectedSequence++;
+            // expected timestamp should be the one previously stored
+            expectedTimestamp = storedTimestamp;
+            // stored timestamp however should have incremented because maxed out the sequence id
+            storedTimestamp++;
+            
+            assertEquals(expectedTimestamp, uid.getTimestamp());
+            assertEquals(expectedSequence, uid.getSequenceId());
+            assertEquals(storedTimestamp, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId()))));
+            
+            uid = builder.newId();
+            // sequence id should have rolled
+            expectedSequence = 0;
+            // expected timestamp should be the one previously stored
+            expectedTimestamp = storedTimestamp;
+            // stored timestamp should not have changed
+            // storedTimestamp = storedTimestamp;
+            
+            assertEquals(expectedTimestamp, uid.getTimestamp());
+            assertEquals(expectedSequence, uid.getSequenceId());
+            assertEquals(storedTimestamp, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId()))));
+        } finally {
+            ZkSnowflakeCache.stop();
+            zkTestServer.close();
+        }
         
     }
+    
+    @Test
+    public void testZkCacheInitProps() throws Exception {
+        
+        int myMachineId = 41610;
+        int startingSequence = 0;
+        TestingServer zkTestServer = new TestingServer(2888);
+        try {
+            Configuration conf = new Configuration(this.conf);
+            conf.set("snowflake.zookeepers", zkTestServer.getConnectString());
+            conf.set("snowflake.zookeeper.enabled", "true");
+            conf.set(UIDConstants.CONFIG_MACHINE_ID_KEY, Integer.toString(myMachineId));
+            
+            UIDBuilder<UID> builder = UID.builder(conf);
+            
+            long expectedTimestamp;
+            long storedTimestamp;
+            int expectedSequence;
+            
+            SnowflakeUID uid = (SnowflakeUID) (builder.newId());
+            // sequence id should be what we initialized with
+            expectedSequence = startingSequence;
+            // expected timestamp should be what ever we got
+            expectedTimestamp = uid.getTimestamp();
+            // stored timestamp should be this timestamp
+            storedTimestamp = expectedTimestamp;
+            
+            assertEquals(myMachineId, uid.getMachineId());
+            assertTrue("Not initialized", ZkSnowflakeCache.isInitialized());
+            assertEquals(expectedTimestamp, uid.getTimestamp());
+            assertEquals(expectedSequence, uid.getSequenceId());
+            assertEquals(storedTimestamp, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId()))));
+            
+            uid = (SnowflakeUID) (builder.newId());
+            // sequence id should be incremented
+            expectedSequence++;
+            // expected timestamp should be the one previously stored
+            expectedTimestamp = storedTimestamp;
+            // stored timestamp should be unchanged
+            // storedTimestamp = storedTimestamp;
+            
+            assertEquals(expectedTimestamp, uid.getTimestamp());
+            assertEquals(expectedSequence, uid.getSequenceId());
+            assertEquals(storedTimestamp, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId()))));
+            
+            uid = (SnowflakeUID) (builder.newId());
+            // sequence id should be incremented
+            expectedSequence++;
+            // expected timestamp should be the one previously stored
+            expectedTimestamp = storedTimestamp;
+            // stored timestamp should not have changed
+            // storedTimestamp = storedTimestamp;
+            
+            assertEquals(expectedTimestamp, uid.getTimestamp());
+            assertEquals(expectedSequence, uid.getSequenceId());
+            assertEquals(storedTimestamp, ZkSnowflakeCache.getLastCachedTid((BigInteger.valueOf(uid.getMachineId()))));
+        } finally {
+            ZkSnowflakeCache.stop();
+            zkTestServer.close();
+        }
+        
+    }
+    
 }
