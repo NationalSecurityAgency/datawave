@@ -13,9 +13,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.springframework.cache.annotation.CacheEvict;
@@ -24,12 +21,9 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -51,10 +45,7 @@ public class TypeMetadataHelper {
     protected Instance instance;
     protected String metadataTableName;
     protected Set<Authorizations> auths;
-    protected String hdfsURI;
-    protected String hdfsDir;
     protected String typeMetadataFileName;
-    protected DefaultFileSystemManager vfs;
     protected boolean useTypeSubstitution = false;
     protected Map<String,String> typeSubstitutions = Maps.newHashMap();
     protected Set<Authorizations> allMetadataAuths = Collections.emptySet();
@@ -108,36 +99,12 @@ public class TypeMetadataHelper {
         return metadataTableName;
     }
     
-    public String getHdfsURI() {
-        return hdfsURI;
-    }
-    
-    public void setHdfsURI(String hdfsURI) {
-        this.hdfsURI = hdfsURI;
-    }
-    
-    public String getHdfsDir() {
-        return hdfsDir;
-    }
-    
-    public void setHdfsDir(String hdfsDir) {
-        this.hdfsDir = hdfsDir;
-    }
-    
     public String getTypeMetadataFileName() {
         return typeMetadataFileName;
     }
     
     public void setTypeMetadataFileName(String typeMetadataFileName) {
         this.typeMetadataFileName = typeMetadataFileName;
-    }
-    
-    public DefaultFileSystemManager getVfs() {
-        return vfs;
-    }
-    
-    public void setVfs(DefaultFileSystemManager vfs) {
-        this.vfs = vfs;
     }
     
     @Cacheable(value = "getTypeMetadata", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
@@ -266,28 +233,6 @@ public class TypeMetadataHelper {
      */
     @CacheEvict(value = {"getTypeMetadata"}, allEntries = true, cacheManager = "metadataHelperCacheManager")
     public void evictCaches() {
-        if (this.vfs != null) {
-            try {
-                this.populateTypeMetadata();
-            } catch (TableNotFoundException | IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
         log.debug("evictCaches");
-    }
-    
-    private void populateTypeMetadata() throws TableNotFoundException, IOException, ClassNotFoundException {
-        
-        HashMap<String,TypeMetadata> map = Maps.newHashMap();
-        for (Map.Entry<Set<String>,TypeMetadata> entry : getTypeMetadataMap(allMetadataAuths).entrySet()) {
-            String key = StringUtils.join(entry.getKey(), "&");
-            map.put(key, entry.getValue());
-        }
-        
-        String markingsFileLocation = this.getHdfsURI() + "/" + this.getHdfsDir();
-        
-        FileObject typeMetadataFile = vfs.resolveFile(markingsFileLocation);
-        ObjectOutputStream oos = new ObjectOutputStream(typeMetadataFile.getContent().getOutputStream());
-        oos.writeObject(map);
     }
 }
