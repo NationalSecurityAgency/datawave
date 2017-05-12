@@ -44,6 +44,11 @@ public class IdentityDataType implements nsa.datawave.data.type.Type {
     }
     
     @Override
+    public String getDelegateAsString() {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
     public void setDelegateFromString(String str) {
         throw new UnsupportedOperationException();
     }
