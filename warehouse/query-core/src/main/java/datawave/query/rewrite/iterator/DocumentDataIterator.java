@@ -176,7 +176,7 @@ public class DocumentDataIterator implements Iterator<DocumentData> {
         }
     }
     
-    boolean isEventKey(Key k) {
+    protected boolean isEventKey(Key k) {
         Text cf = k.getColumnFamily();
         return cf.getLength() > 0
                         && cf.find("\u0000") != -1

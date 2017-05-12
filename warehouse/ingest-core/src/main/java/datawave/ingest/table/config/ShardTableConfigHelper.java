@@ -27,7 +27,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     
     protected Logger log;
     
-    protected static enum ShardTableType {
+    public enum ShardTableType {
         SHARD, GIDX, GRIDX, DINDX
     }
     

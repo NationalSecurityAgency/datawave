@@ -61,7 +61,7 @@ public class FieldIndexCountQueryLogic extends RefactoredShardQueryLogic {
     protected Long maxUniqueValues = 20000L;
     protected Collection<Range> ranges;
     
-    FieldIndexCountQueryLogic() {}
+    public FieldIndexCountQueryLogic() {}
     
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {

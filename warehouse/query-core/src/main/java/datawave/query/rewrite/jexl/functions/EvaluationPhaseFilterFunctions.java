@@ -1193,7 +1193,7 @@ public class EvaluationPhaseFilterFunctions {
      * The list of formats attempted At a mimumum the following are found in existing data: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd HH:mm:ssz",
      * "yyyy-MM-dd", "yyyy-MM-dd'T'HH'|'mm", "EEE MMM dd HH:mm:ss zzz yyyy"}; "yyyyMMddhhmmss" "yyyyMMddHHmm", "yyyyMMddHH", "yyyyMMdd",
      */
-    static final String[] DATE_FORMAT_STRINGS = {"yyyyMMdd:HH:mm:ss:SSSZ", "yyyyMMdd:HH:mm:ss:SSS", "EEE MMM dd HH:mm:ss zzz yyyy",
+    protected static final String[] DATE_FORMAT_STRINGS = {"yyyyMMdd:HH:mm:ss:SSSZ", "yyyyMMdd:HH:mm:ss:SSS", "EEE MMM dd HH:mm:ss zzz yyyy",
             "d MMM yyyy HH:mm:ss 'GMT'", "yyyy-MM-dd HH:mm:ss.SSS Z", "yyyy-MM-dd HH:mm:ss.SSS",
             "yyyy-MM-dd HH:mm:ss.S Z",
             "yyyy-MM-dd HH:mm:ss.S",
@@ -1218,7 +1218,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param format
      * @return the DateFormat
      */
-    static DateFormat newSimpleDateFormat(String format) {
+    protected static DateFormat newSimpleDateFormat(String format) {
         DateFormat newFormat;
         if (format.equals(TIME_SINCE_EPOCH_FORMAT)) {
             newFormat = new SimpleDateFormat() {
@@ -1245,7 +1245,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param dateFormat
      * @return the calendar granularity
      */
-    static int getGranularity(String dateFormat) {
+    protected static int getGranularity(String dateFormat) {
         // check for out special format
         if (dateFormat.equals(TIME_SINCE_EPOCH_FORMAT)) {
             return Calendar.MILLISECOND;
@@ -1389,7 +1389,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed using the suppied format
      */
-    static long getTime(Object value, DateFormat format) throws ParseException {
+    protected static long getTime(Object value, DateFormat format) throws ParseException {
         synchronized (format) {
             return format.parse(ValueTuple.getStringValue(value)).getTime();
         }
@@ -1422,7 +1422,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed using any of the known formats
      */
-    static long getTime(Object value) throws ParseException {
+    protected static long getTime(Object value) throws ParseException {
         return getTime(value, false);
     }
     
@@ -1437,7 +1437,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed using any of the known formats
      */
-    static long getTime(Object value, boolean nextTime) throws ParseException {
+    protected static long getTime(Object value, boolean nextTime) throws ParseException {
         // determine if a number first
         for (int i = 0; i < dateFormatList.size(); i++) {
             DateFormat format = dateFormatList.get(i);

@@ -962,12 +962,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected abstract boolean matches(Key k) throws IOException;
     
     /**
-     * A package private method to force persistence of the set. This can be used by test cases to verify tear down and rebuilding with reuse of the previous
-     * results.
+     * A protected method to force persistence of the set. This can be used by test cases to verify tear down and rebuilding with reuse of the previous results.
      * 
      * @throws IOException
      */
-    void forcePersistence() throws IOException {
+    protected void forcePersistence() throws IOException {
         if (this.set != null && !this.set.isPersisted()) {
             this.set.persist();
             // declare the persisted set complete

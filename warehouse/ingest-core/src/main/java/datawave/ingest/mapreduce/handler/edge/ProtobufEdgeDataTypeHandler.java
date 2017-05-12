@@ -408,6 +408,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          */
         private static final long serialVersionUID = 3536725437637012624L;
         
+        public KeyFunnel() {}
+        
         @Override
         public void funnel(Key from, PrimitiveSink into) {
             into.putInt(from.hashCode());
