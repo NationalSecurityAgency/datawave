@@ -139,6 +139,11 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
     }
     
     @Override
+    public String getDelegateAsString() {
+        return toString();
+    }
+    
+    @Override
     public String toString() {
         return delegate == null ? super.toString() : delegate.toString();
     }

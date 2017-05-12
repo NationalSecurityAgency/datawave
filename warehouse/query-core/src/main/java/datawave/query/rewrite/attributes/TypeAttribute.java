@@ -66,7 +66,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeString(out, datawaveType.getClass().toString());
         writeMetadata(out, reducedResponse);
-        WritableUtils.writeString(out, datawaveType.getDelegate().toString());
+        WritableUtils.writeString(out, datawaveType.getDelegateAsString());
     }
     
     @Override
@@ -111,7 +111,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
-        hcb.append(datawaveType.getDelegate().toString()).append(super.hashCode());
+        hcb.append(datawaveType.getDelegateAsString()).append(super.hashCode());
         return hcb.toHashCode();
     }
     
@@ -137,7 +137,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         output.writeString(datawaveType.getClass().getName());
         super.writeMetadata(kryo, output, reducedResponse);
         
-        output.writeString(this.datawaveType.getDelegate().toString());
+        output.writeString(this.datawaveType.getDelegateAsString());
     }
     
     @Override
@@ -179,7 +179,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     @Override
     public String toString() {
         if (datawaveType.getDelegate() != null) {
-            return datawaveType.getDelegate().toString();
+            return datawaveType.getDelegateAsString();
         } else {
             return this.getClass() + " with null delegate";
         }

@@ -16,4 +16,10 @@ public class DateType extends BaseType<Date> {
         super(Normalizer.DATE_NORMALIZER);
         super.setDelegate(normalizer.denormalize(dateString));
     }
+    
+    @Override
+    public String getDelegateAsString() {
+        // the normalized form of the date preserves milliseconds
+        return normalizer.normalizeDelegateType(getDelegate());
+    }
 }
