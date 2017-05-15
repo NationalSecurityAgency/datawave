@@ -129,7 +129,7 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
      * @param fullSeekOnApply If true, seek all applicable records when apply is called. Otherwise, initialize the instance for incremental seeks via the
      * Iterator methods.
      */
-    IndexOnlyKeyToDocumentData(final Range range, final String fieldName, final SortedKeyValueIterator<Key,Value> source, final Equality equality,
+    protected IndexOnlyKeyToDocumentData(final Range range, final String fieldName, final SortedKeyValueIterator<Key,Value> source, final Equality equality,
                     final String delimiter, boolean fullSeekOnApply) {
         super(source, equality, false, false);
         checkNotNull(range, this.getClass().getSimpleName() + " cannot be initialized with a null parent Range");
