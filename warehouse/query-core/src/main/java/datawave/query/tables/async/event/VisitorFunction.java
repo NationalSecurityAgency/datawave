@@ -190,9 +190,6 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                     for (String debugStatement : debug) {
                                         log.trace(debugStatement);
                                     }
-                                    PreConditionFailedQueryException qe = new PreConditionFailedQueryException(
-                                                    DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
-                                    throw new DatawaveFatalQueryException(qe);
                                 }
                                 script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, config, indexedFields, indexOnlyFields,
                                                 metadataHelper);
