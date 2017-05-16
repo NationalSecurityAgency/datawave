@@ -40,6 +40,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.impl.ClientContext;
+import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.impl.TabletLocator;
 import org.apache.accumulo.core.client.mapreduce.InputFormatBase;
@@ -1072,7 +1073,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             return new InMemoryTabletLocator();
         Instance instance = getInstance(conf);
         String tableName = getTablename(conf);
-        return TabletLocator.getLocator(new ClientContext(instance, null, AccumuloConfiguration.getDefaultConfiguration()),
+        Credentials credentials = new Credentials(getUsername(conf), new PasswordToken(getPassword(conf)));
+        return TabletLocator.getLocator(new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration()),
                         Tables.getTableId(instance, tableName));
     }
     

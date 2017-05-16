@@ -21,6 +21,9 @@ public class LoggingInterceptor extends BaseMethodStatsInterceptor {
     
     @Override
     public void aroundWriteTo(WriterInterceptorContext context) throws IOException, WebApplicationException {
+        if (!log.isTraceEnabled())
+            return;
+        
         ResponseMethodStats stats = doWrite(context);
         StringBuilder message = new StringBuilder();
         message.append(" Post Process: StatusCode: ").append(stats.getStatusCode());

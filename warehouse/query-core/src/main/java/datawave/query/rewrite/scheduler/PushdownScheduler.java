@@ -10,13 +10,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.impl.ClientContext;
+import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.impl.TabletLocator;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -136,15 +139,16 @@ public class PushdownScheduler extends Scheduler {
         
         Set<Authorizations> auths = config.getAuthorizations();
         
-        TabletLocator tl = null;
+        TabletLocator tl;
         
-        if (config.getConnector().getInstance() instanceof InMemoryInstance) {
+        Instance instance = config.getConnector().getInstance();
+        if (instance instanceof InMemoryInstance) {
             tl = new InMemoryTabletLocator();
             tableId = config.getTableName();
         } else {
-            tableId = Tables.getTableId(config.getConnector().getInstance(), tableName);
-            tl = TabletLocator.getLocator(new ClientContext(config.getConnector().getInstance(), null, AccumuloConfiguration.getDefaultConfiguration()),
-                            tableId);
+            tableId = Tables.getTableId(instance, tableName);
+            Credentials credentials = new Credentials(config.getConnector().whoami(), new PasswordToken(config.getAccumuloPassword()));
+            tl = TabletLocator.getLocator(new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration()), tableId);
         }
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tl, config, settings, tableId));
         
