@@ -92,7 +92,7 @@ public class GeoFunctionsDescriptor implements RefactoredJexlFunctionArgumentDes
                 try {
                     c = GeoPoint.decodeZRef(center);
                 } catch (OutOfRangeException e) {
-                    throw new IllegalArgumentException("Out of range center value" + center, e);
+                    throw new IllegalArgumentException("Out of range center value " + center, e);
                 } catch (ParseException e) {
                     throw new IllegalArgumentException("Unparseable range center value " + center, e);
                 }

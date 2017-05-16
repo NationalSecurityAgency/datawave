@@ -14,7 +14,6 @@ import datawave.query.rewrite.jexl.functions.QueryFunctions;
 import datawave.query.rewrite.jexl.functions.RefactoredJexlFunctionArgumentDescriptorFactory;
 import datawave.query.rewrite.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
 import datawave.query.util.DateIndexHelper;
-import datawave.query.util.Metadata;
 import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -47,7 +46,7 @@ public class QueryFunctionsDescriptor implements RefactoredJexlFunctionArgumentD
             // return the true node if unable to parse arguments.
             JexlNode returnNode = TRUE_NODE;
             
-            if (name.equals("between:")) {
+            if (name.equals("between")) {
                 
                 JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), args.get(1).image);
                 JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), args.get(2).image);
@@ -59,7 +58,7 @@ public class QueryFunctionsDescriptor implements RefactoredJexlFunctionArgumentD
             } else if (name.equals("length")) {
                 // create a regex node with the appropriate number of matching characters
                 JexlNode reNode = JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0),
-                                ",{" + args.get(1).image + ',' + args.get(2).image + '}');
+                                ".{" + args.get(1).image + ',' + args.get(2).image + '}');
                 
                 returnNode = reNode;
             }
@@ -106,7 +105,7 @@ public class QueryFunctionsDescriptor implements RefactoredJexlFunctionArgumentD
         if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image))
             throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of "
                             + node.jjtGetChild(0).image);
-        if (!functionClass.equals(GeoFunctions.class))
+        if (!functionClass.equals(QueryFunctions.class))
             throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in "
                             + functionClass);
         
