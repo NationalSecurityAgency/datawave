@@ -14,6 +14,7 @@ import datawave.query.rewrite.jexl.JexlASTHelper;
 import datawave.query.rewrite.jexl.functions.FieldIndexAggregator;
 import datawave.query.rewrite.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.rewrite.predicate.TimeFilter;
+import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.rewrite.tld.TLD;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.*;
@@ -31,6 +32,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(AncestorIndexBuildingVisitor.class);
     
     private Map<String,Collection<String>> familyTreeMap;
+    private Map<String,Long> timestampMap;
     
     public AncestorIndexBuildingVisitor(SourceFactory<Key,Value> sourceFactory,
                     IteratorEnvironment env,
@@ -49,6 +51,25 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
                         termFrequencyFields, isQueryFullySatisfied, sortedUIDs);
         setIteratorBuilder(AncestorIndexIteratorBuilder.class);
         familyTreeMap = new HashMap<>();
+        timestampMap = new HashMap<>();
+    }
+    
+    protected SortedKeyValueIterator<Key,Value> getSourceIterator(final ASTEQNode node, boolean negation) {
+        
+        SortedKeyValueIterator<Key,Value> kvIter = null;
+        try {
+            if (limitLookup && !negation) {
+                kvIter = new IteratorToSortedKeyValueIterator(getNodeEntry(node).iterator());
+            } else {
+                kvIter = source.deepCopy(env);
+                seekIndexOnlyDocument(kvIter, node);
+            }
+            
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        
+        return kvIter;
     }
     
     /**
@@ -59,12 +80,6 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
      */
     @Override
     protected Collection<Map.Entry<Key,Value>> getNodeEntry(ASTEQNode node) {
-        // only do this if the query isn't already fully satisfied
-        if (this.isQueryFullySatisfied()) {
-            Key key = getKey(node);
-            return Collections.singleton(Maps.immutableEntry(key, Constants.NULL_VALUE));
-        }
-        
         final List<Map.Entry<Key,Value>> keys = new ArrayList<>();
         Range wholeDocRange = getWholeDocRange(rangeLimiter);
         final String tld = getTLDId(wholeDocRange.getStartKey());
@@ -81,8 +96,11 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
         
         for (String uid : members) {
-            keys.add(Maps.immutableEntry(getKey(node, rangeLimiter.getStartKey().getRow(), dataType, uid, rangeLimiter.getStartKey().getTimestamp()),
-                            Constants.NULL_VALUE));
+            Long timestamp = timestampMap.get(uid);
+            if (timestamp == null) {
+                timestamp = rangeLimiter.getStartKey().getTimestamp();
+            }
+            keys.add(Maps.immutableEntry(getKey(node, rangeLimiter.getStartKey().getRow(), dataType, uid, timestamp), Constants.NULL_VALUE));
         }
         
         return keys;
@@ -111,7 +129,9 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
                 Key nextKey = iterator.getTopKey();
                 String keyTld = getTLDId(nextKey);
                 if (keyTld.equals(tldUid)) {
-                    members.add(getUid(nextKey));
+                    String uid = getUid(nextKey);
+                    members.add(uid);
+                    timestampMap.put(uid, nextKey.getTimestamp());
                 } else {
                     break;
                 }

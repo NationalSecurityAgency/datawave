@@ -68,14 +68,14 @@ public class AncestorIndexStream implements IndexStream {
         IndexInfo info = tuple.second();
         Set<IndexMatch> matches = info.uids();
         
-        Map<JexlNode,Set<IndexMatch>> nodeMap = new HashMap<>();
+        Map<MatchGroup,Set<IndexMatch>> nodeMap = new HashMap<>();
         for (IndexMatch match : matches) {
-            JexlNode current = match.getNode();
+            MatchGroup matchGroup = new MatchGroup(match);
             
-            Set<IndexMatch> existing = nodeMap.get(current);
+            Set<IndexMatch> existing = nodeMap.get(matchGroup);
             if (existing == null) {
                 existing = new TreeSet<>();
-                nodeMap.put(current, existing);
+                nodeMap.put(matchGroup, existing);
             }
             
             boolean add = true;
@@ -101,5 +101,32 @@ public class AncestorIndexStream implements IndexStream {
         newInfo.myNode = info.myNode;
         
         return new Tuple2<>(tuple.first(), newInfo);
+    }
+    
+    private static class MatchGroup {
+        Collection<String> nodeStrings;
+        
+        public MatchGroup(IndexMatch match) {
+            nodeStrings = match.nodeStrings;
+        }
+        
+        @Override
+        public int hashCode() {
+            int hashCode = 0;
+            for (String nodeString : nodeStrings) {
+                hashCode += nodeString.hashCode();
+            }
+            return hashCode;
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof MatchGroup)) {
+                return false;
+            }
+            
+            MatchGroup matchGroup = (MatchGroup) obj;
+            return new HashSet(nodeStrings).equals(new HashSet(nodeStrings));
+        }
     }
 }

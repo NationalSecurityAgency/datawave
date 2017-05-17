@@ -59,7 +59,8 @@ public class AncestorUidIntersector implements UidIntersector {
                             nodes.add(uid2.getNode());
                             nodes.addAll(delayedNodes);
                             IndexMatch currentMatch = new IndexMatch(nodes, uid1.getUid(), IndexMatchType.AND);
-                            matches.add(currentMatch);
+                            matches = reduce(matches, currentMatch);
+                            // matches.add(currentMatch);
                         }
                         // if uid2 starts with uid1, then uid2 is a descendent of uid1
                         else if (uid2.getUid().startsWith(uid1.getUid())) {
@@ -68,7 +69,8 @@ public class AncestorUidIntersector implements UidIntersector {
                             nodes.add(uid2.getNode());
                             nodes.addAll(delayedNodes);
                             IndexMatch currentMatch = new IndexMatch(nodes, uid2.getUid(), IndexMatchType.AND);
-                            matches.add(currentMatch);
+                            matches = reduce(matches, currentMatch);
+                            // matches.add(currentMatch);
                         }
                     }
                 }
@@ -78,4 +80,23 @@ public class AncestorUidIntersector implements UidIntersector {
         return matches;
     }
     
+    private Set<IndexMatch> reduce(Set<IndexMatch> matches, IndexMatch currentMatch) {
+        Set<IndexMatch> result = Sets.newHashSet();
+        boolean hasParent = false;
+        for (IndexMatch match : matches) {
+            if (!match.getUid().startsWith(currentMatch.getUid()) || match.getUid().equals(currentMatch.getUid())) {
+                result.add(match);
+            }
+            
+            if (currentMatch.getUid().startsWith(match.getUid())) {
+                hasParent = true;
+            }
+        }
+        
+        if (!hasParent) {
+            result.add(currentMatch);
+        }
+        
+        return result;
+    }
 }
