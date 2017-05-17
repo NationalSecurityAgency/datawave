@@ -1129,9 +1129,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                     resultSet.getTimestamp(x++);
                     crq.pagesize = resultSet.getInt(x++);
                     crq.user = resultSet.getString(x++);
-                    crq.view = CachedResultsParameters.validate(resultSet.getString(x++));
-                    ;
-                    // crq.view = resultSet.getString(x++);
+                    crq.view = CachedResultsParameters.validate(resultSet.getString(x++), true);
                     crq.tableName = resultSet.getString(x++);
                     
                     crq.getMetric().setQueryType(CachedRunningQuery.class);
