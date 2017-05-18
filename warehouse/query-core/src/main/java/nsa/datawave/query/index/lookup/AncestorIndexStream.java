@@ -126,7 +126,7 @@ public class AncestorIndexStream implements IndexStream {
             }
             
             MatchGroup matchGroup = (MatchGroup) obj;
-            return new HashSet(nodeStrings).equals(new HashSet(nodeStrings));
+            return new HashSet(nodeStrings).equals(new HashSet(matchGroup.nodeStrings));
         }
     }
 }
