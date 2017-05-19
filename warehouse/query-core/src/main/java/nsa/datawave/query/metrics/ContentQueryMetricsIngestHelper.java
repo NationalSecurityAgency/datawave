@@ -128,7 +128,9 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 }
             }
             
-            fields.put("AUTHORIZATIONS", updatedQueryMetric.getQueryAuthorizations());
+            if (updatedQueryMetric.getQueryAuthorizations() != null) {
+                fields.put("AUTHORIZATIONS", updatedQueryMetric.getQueryAuthorizations());
+            }
             if (updatedQueryMetric.getBeginDate() != null) {
                 fields.put("BEGIN_DATE", sdf_date_time1.format(updatedQueryMetric.getBeginDate()));
             }
@@ -137,28 +139,50 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (updatedQueryMetric.getEndDate() != null) {
                 fields.put("END_DATE", sdf_date_time1.format(updatedQueryMetric.getEndDate()));
             }
-            fields.put("HOST", updatedQueryMetric.getHost());
+            if (updatedQueryMetric.getHost() != null) {
+                fields.put("HOST", updatedQueryMetric.getHost());
+            }
             if (updatedQueryMetric.getProxyServers() != null) {
                 fields.put("PROXY_SERVERS", StringUtils.join(updatedQueryMetric.getProxyServers(), ","));
             }
-            fields.put("QUERY", updatedQueryMetric.getQuery());
-            fields.put("PLAN", updatedQueryMetric.getPlan());
-            fields.put("QUERY_ID", updatedQueryMetric.getQueryId());
-            fields.put("QUERY_LOGIC", updatedQueryMetric.getQueryLogic());
-            fields.put("QUERY_TYPE", updatedQueryMetric.getQueryType());
-            fields.put("QUERY_NAME", updatedQueryMetric.getQueryName());
+            if (updatedQueryMetric.getQuery() != null) {
+                fields.put("QUERY", updatedQueryMetric.getQuery());
+            }
+            if (updatedQueryMetric.getPlan() != null) {
+                fields.put("PLAN", updatedQueryMetric.getPlan());
+            }
+            if (updatedQueryMetric.getQueryId() != null) {
+                fields.put("QUERY_ID", updatedQueryMetric.getQueryId());
+            }
+            if (updatedQueryMetric.getQueryLogic() != null) {
+                fields.put("QUERY_LOGIC", updatedQueryMetric.getQueryLogic());
+            }
+            if (updatedQueryMetric.getQueryType() != null) {
+                fields.put("QUERY_TYPE", updatedQueryMetric.getQueryType());
+            }
+            if (updatedQueryMetric.getQueryName() != null) {
+                fields.put("QUERY_NAME", updatedQueryMetric.getQueryName());
+            }
             
             Set<Parameter> parameters = updatedQueryMetric.getParameters();
             if (parameters != null && parameters.isEmpty() == false) {
                 fields.put("PARAMETERS", QueryUtil.toParametersString(parameters));
             }
-            fields.put("USER", updatedQueryMetric.getUser());
-            fields.put("USER_DN", updatedQueryMetric.getUserDN());
+            if (updatedQueryMetric.getUser() != null) {
+                fields.put("USER", updatedQueryMetric.getUser());
+            }
+            if (updatedQueryMetric.getUserDN() != null) {
+                fields.put("USER_DN", updatedQueryMetric.getUserDN());
+            }
             if (updatedQueryMetric.getCreateDate() != null) {
                 fields.put("CREATE_DATE", sdf_date_time2.format(updatedQueryMetric.getCreateDate()));
             }
-            fields.put("ERROR_CODE", updatedQueryMetric.getErrorCode());
-            fields.put("ERROR_MESSAGE", updatedQueryMetric.getErrorMessage());
+            if (updatedQueryMetric.getErrorCode() != null) {
+                fields.put("ERROR_CODE", updatedQueryMetric.getErrorCode());
+            }
+            if (updatedQueryMetric.getErrorMessage() != null) {
+                fields.put("ERROR_MESSAGE", updatedQueryMetric.getErrorMessage());
+            }
             
             fields.put("SETUP_TIME", Long.toString(updatedQueryMetric.getSetupTime()));
             fields.put("NUM_RESULTS", Long.toString(updatedQueryMetric.getNumResults()));
