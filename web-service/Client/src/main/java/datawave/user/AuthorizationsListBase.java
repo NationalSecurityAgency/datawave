@@ -13,8 +13,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -28,6 +31,8 @@ import datawave.webservice.HtmlProvider;
 /**
  * 
  */
+@XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(DefaultAuthorizationsList.class)
 public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvider {
     protected static final String TITLE = "Effective Authorizations", EMPTY = "";
     

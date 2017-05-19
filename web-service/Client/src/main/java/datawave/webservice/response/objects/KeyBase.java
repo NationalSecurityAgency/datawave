@@ -4,6 +4,7 @@ import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 
 /**
  * 
@@ -14,6 +15,7 @@ import datawave.webservice.query.result.event.HasMarkings;
  * 
  */
 @XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(DefaultKey.class)
 public abstract class KeyBase implements HasMarkings {
     
     protected Map<String,String> markings;

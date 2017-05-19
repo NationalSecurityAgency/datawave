@@ -13,8 +13,6 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import datawave.webservice.query.result.event.FieldCardinalityBase;
-
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
@@ -30,7 +28,7 @@ import io.protostuff.Schema;
  */
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-public class FieldCardinality extends FieldCardinalityBase implements Serializable, Message<FieldCardinality> {
+public class DefaultFieldCardinality extends FieldCardinalityBase implements Serializable, Message<DefaultFieldCardinality> {
     
     private static final long serialVersionUID = 1L;
     
@@ -43,9 +41,9 @@ public class FieldCardinality extends FieldCardinalityBase implements Serializab
     @XmlElement(name = "cardinality")
     private Long cardinality;
     
-    public FieldCardinality() {}
+    public DefaultFieldCardinality() {}
     
-    public FieldCardinality(String columnVisibility, String lower, String upper, Long cardinality) {
+    public DefaultFieldCardinality(String columnVisibility, String lower, String upper, Long cardinality) {
         super();
         this.columnVisibility = columnVisibility;
         this.lower = lower;
@@ -93,8 +91,8 @@ public class FieldCardinality extends FieldCardinalityBase implements Serializab
     
     @Override
     public boolean equals(Object o) {
-        if (o instanceof FieldCardinality) {
-            FieldCardinality v = (FieldCardinality) o;
+        if (o instanceof DefaultFieldCardinality) {
+            DefaultFieldCardinality v = (DefaultFieldCardinality) o;
             
             EqualsBuilder eb = new EqualsBuilder();
             
@@ -124,45 +122,45 @@ public class FieldCardinality extends FieldCardinalityBase implements Serializab
         this.upper = upper;
     }
     
-    public static Schema<FieldCardinality> getSchema() {
+    public static Schema<DefaultFieldCardinality> getSchema() {
         return SCHEMA;
     }
     
     @Override
-    public Schema<FieldCardinality> cachedSchema() {
+    public Schema<DefaultFieldCardinality> cachedSchema() {
         return SCHEMA;
     }
     
     @XmlTransient
-    private static final Schema<FieldCardinality> SCHEMA = new Schema<FieldCardinality>() {
+    private static final Schema<DefaultFieldCardinality> SCHEMA = new Schema<DefaultFieldCardinality>() {
         
         @Override
-        public FieldCardinality newMessage() {
-            return new FieldCardinality();
+        public DefaultFieldCardinality newMessage() {
+            return new DefaultFieldCardinality();
         }
         
         @Override
-        public Class<? super FieldCardinality> typeClass() {
-            return FieldCardinality.class;
+        public Class<? super DefaultFieldCardinality> typeClass() {
+            return DefaultFieldCardinality.class;
         }
         
         @Override
         public String messageName() {
-            return FieldCardinality.class.getSimpleName();
+            return DefaultFieldCardinality.class.getSimpleName();
         }
         
         @Override
         public String messageFullName() {
-            return FieldCardinality.class.getName();
+            return DefaultFieldCardinality.class.getName();
         }
         
         @Override
-        public boolean isInitialized(FieldCardinality message) {
+        public boolean isInitialized(DefaultFieldCardinality message) {
             return true;
         }
         
         @Override
-        public void writeTo(Output output, FieldCardinality message) throws IOException {
+        public void writeTo(Output output, DefaultFieldCardinality message) throws IOException {
             if (message.columnVisibility != null)
                 output.writeString(1, message.columnVisibility, false);
             output.writeUInt64(2, message.cardinality, false);
@@ -171,7 +169,7 @@ public class FieldCardinality extends FieldCardinalityBase implements Serializab
         }
         
         @Override
-        public void mergeFrom(Input input, FieldCardinality message) throws IOException {
+        public void mergeFrom(Input input, DefaultFieldCardinality message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
                 switch (number) {

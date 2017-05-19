@@ -63,12 +63,12 @@ public class DefaultResponseObjectFactory extends ResponseObjectFactory {
     
     @Override
     public FacetsBase getFacets() {
-        return new Facets();
+        return new DefaultFacets();
     }
     
     @Override
     public FieldCardinalityBase getFieldCardinality() {
-        return new FieldCardinality();
+        return new DefaultFieldCardinality();
     }
     
     @Override

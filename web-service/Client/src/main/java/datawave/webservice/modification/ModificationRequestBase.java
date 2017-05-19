@@ -19,7 +19,7 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-@XmlSeeAlso({ModificationRequest.class, UUIDModificationRequest.class})
+@XmlSeeAlso({DefaultModificationRequest.class, DefaultUUIDModificationRequest.class})
 public class ModificationRequestBase implements Serializable {
     
     private static String COLUMN_VISIBILITY = "columnVisibility";

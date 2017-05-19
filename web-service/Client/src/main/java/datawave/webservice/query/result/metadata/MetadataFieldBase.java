@@ -3,6 +3,9 @@ package datawave.webservice.query.result.metadata;
 import io.protostuff.Message;
 import datawave.webservice.results.datadictionary.DescriptionBase;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -10,6 +13,8 @@ import java.util.Set;
 
 /**
   */
+@XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(DefaultMetadataField.class)
 public abstract class MetadataFieldBase<T,D extends DescriptionBase> implements Serializable, Message<T> {
     
     public abstract String getFieldName();

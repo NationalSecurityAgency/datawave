@@ -7,11 +7,13 @@ import io.protostuff.Message;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlTransient;
 
 import com.google.common.collect.Maps;
 
 @XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(DefaultEvent.class)
 public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings, Message<T> {
     
     protected transient Map<String,String> markings;

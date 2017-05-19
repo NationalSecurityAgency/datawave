@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
 import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.query.result.event.Facets;
+import datawave.webservice.query.result.event.DefaultFacets;
 import datawave.webservice.query.result.event.FacetsBase;
 
 import io.protostuff.Input;
@@ -39,12 +39,12 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
     
     @XmlElementWrapper(name = "facets")
     @XmlElement(name = "facets")
-    private List<Facets> facets = null;
+    private List<DefaultFacets> facets = null;
     
     public FacetQueryResponse() {}
     
-    public FacetQueryResponse(List<Facets> facets) {
-        this.facets = new ArrayList<Facets>(facets);
+    public FacetQueryResponse(List<DefaultFacets> facets) {
+        this.facets = new ArrayList<DefaultFacets>(facets);
     }
     
     public void setMarkings(Map<String,String> markings) {
@@ -56,9 +56,9 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
     }
     
     public void addFacet(FacetsBase facetInterface) {
-        Facets facet = (Facets) facetInterface;
+        DefaultFacets facet = (DefaultFacets) facetInterface;
         if (facets == null)
-            facets = new ArrayList<Facets>();
+            facets = new ArrayList<DefaultFacets>();
         facets.add(facet);
     }
     
@@ -133,9 +133,9 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
             }
             
             if (message.facets != null) {
-                for (Facets facet : message.facets) {
+                for (DefaultFacets facet : message.facets) {
                     if (facet != null)
-                        output.writeObject(6, facet, Facets.getSchema(), true);
+                        output.writeObject(6, facet, DefaultFacets.getSchema(), true);
                 }
             }
         }
@@ -164,8 +164,8 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
                         break;
                     case 6:
                         if (message.facets == null)
-                            message.facets = new ArrayList<Facets>();
-                        message.facets.add(input.mergeObject(null, Facets.getSchema()));
+                            message.facets = new ArrayList<DefaultFacets>();
+                        message.facets.add(input.mergeObject(null, DefaultFacets.getSchema()));
                         break;
                     default:
                         input.handleUnknownField(number, this);

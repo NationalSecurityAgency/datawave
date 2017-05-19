@@ -26,7 +26,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
 /**
- * Class that handles requests for modification requests (INSERT, UPDATE, DELETE, REPLACE) for metadata. From a UUIDModificationRequest it performs <br>
+ * Class that handles requests for modification requests (INSERT, UPDATE, DELETE, REPLACE) for metadata. From a DefaultUUIDModificationRequest it performs <br>
  * a UUIDLookupQuery in order to get the event to modify. The lookup based on the UUID <b>must return a single event</b>. In order to UPDATE or DELETE,<br>
  * there must either be exactly one value for the specified field or oldFieldValue must be specified indicating which current value to modify.<br>
  * INSERT adds the specified value to the specified field <br>
@@ -38,7 +38,7 @@ import org.apache.log4j.Logger;
  * INSERT Example:
  * 
  * <pre>
- * &lt;UUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -54,14 +54,14 @@ import org.apache.log4j.Logger;
  *         &lt;user&gt;joeuser&lt;/user&gt;
  *     &lt;/Event&gt;
  *   &lt;/Events&gt;
- * &lt;/UUIDModificationRequest&gt;
+ * &lt;/DefaultUUIDModificationRequest&gt;
  * </pre>
  * 
  * <br>
  * DELETE Example:
  * 
  * <pre>
- * &lt;UUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -77,14 +77,14 @@ import org.apache.log4j.Logger;
  *         &lt;user&gt;joeuser&lt;/user&gt;
  *     &lt;/Event&gt;
  *   &lt;/Events&gt;
- * &lt;/UUIDModificationRequest&gt;
+ * &lt;/DefaultUUIDModificationRequest&gt;
  * </pre>
  * 
  * <br>
  * UPDATE Example:
  * 
  * <pre>
- * &lt;UUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -101,14 +101,14 @@ import org.apache.log4j.Logger;
  *         &lt;user&gt;joeuser&lt;/user&gt;
  *     &lt;/Event&gt;
  *   &lt;/Events&gt;
- * &lt;/UUIDModificationRequest&gt;
+ * &lt;/DefaultUUIDModificationRequest&gt;
  * </pre>
  * 
  * <br>
  * REPLACE Example:
  * 
  * <pre>
- * &lt;UUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -124,14 +124,14 @@ import org.apache.log4j.Logger;
  *         &lt;user&gt;joeuser&lt;/user&gt;
  *     &lt;/Event&gt;
  *   &lt;/Events&gt;
- * &lt;/UUIDModificationRequest&gt;
+ * &lt;/DefaultUUIDModificationRequest&gt;
  * </pre>
  * 
  * <br>
  * Example of bulk request:
  * 
  * <pre>
- * &lt;UUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -167,7 +167,7 @@ import org.apache.log4j.Logger;
  *         &lt;user&gt;bobuser&lt;/user&gt;
  *     &lt;/Event&gt;
  *   &lt;/Events&gt;
- * &lt;/UUIDModificationRequest&gt;
+ * &lt;/DefaultUUIDModificationRequest&gt;
  * </pre>
  * */
 
@@ -185,7 +185,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
     
     @Override
     public Class<? extends ModificationRequestBase> getRequestClass() {
-        return UUIDModificationRequest.class;
+        return DefaultUUIDModificationRequest.class;
     }
     
     @Override
@@ -212,8 +212,8 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
         ArrayList<Exception> exceptions = new ArrayList<>();
         MetadataHelper mHelper = getMetadataHelper(con);
         
-        // Receive UUIDModificationRequest
-        UUIDModificationRequest uuidModReq = UUIDModificationRequest.class.cast(request);
+        // Receive DefaultUUIDModificationRequest
+        DefaultUUIDModificationRequest uuidModReq = DefaultUUIDModificationRequest.class.cast(request);
         List<ModificationEvent> events = uuidModReq.getEvents();
         
         for (ModificationEvent event : events) {
@@ -283,7 +283,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                             }
                         }
                         
-                        List<ModificationRequest> modificationRequests = new ArrayList<>();
+                        List<DefaultModificationRequest> modificationRequests = new ArrayList<>();
                         
                         if (OPERATIONMODE.INSERT.equals(mode) || OPERATIONMODE.UPDATE.equals(mode) || OPERATIONMODE.DELETE.equals(mode)) {
                             modificationRequests
@@ -306,7 +306,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                         
                         if (log != null)
                             log.trace("modificationRequests= " + modificationRequests.toString());
-                        for (ModificationRequest modReq : modificationRequests) {
+                        for (DefaultModificationRequest modReq : modificationRequests) {
                             try {
                                 if (fieldCount > 1 && (oldFieldValue == null && modReq.getMode() != MODE.INSERT) && !mode.equals(OPERATIONMODE.REPLACE)) {
                                     throw new IllegalStateException("Unable to perform modification. More than one value exists for " + modReq.getFieldName()
@@ -315,7 +315,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                     throw new IllegalStateException("Unable to perform modification. No values exist for " + modReq.getFieldName() + ".");
                                 } else if (columnVisibility == null && !securityMarkingExempt) {
                                     throw new IllegalStateException("Must provide columnVisibility");
-                                } else // submit ModificationRequest
+                                } else // submit DefaultModificationRequest
                                 {
                                     log.info("eventUser = " + eventUser + ", event.getUser() = " + event.getUser());
                                     if (log != null)
@@ -362,9 +362,9 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
         }
     }
     
-    // transforms a ModificationOperation and event information into a ModificationRequest that can be used by the MutableMetadataHandler
-    public ModificationRequest createModificationRequest(EventBase<?,? extends FieldBase<?>> idEvent, ModificationOperation operation, String columnVisibility,
-                    String oldColumnVisibility, boolean securityMarkingExempt) throws Exception {
+    // transforms a ModificationOperation and event information into a DefaultModificationRequest that can be used by the MutableMetadataHandler
+    public DefaultModificationRequest createModificationRequest(EventBase<?,? extends FieldBase<?>> idEvent, ModificationOperation operation,
+                    String columnVisibility, String oldColumnVisibility, boolean securityMarkingExempt) throws Exception {
         // make event identifier for modification request
         EventIdentifier ei = new EventIdentifier();
         ei.setDatatype(idEvent.getMetadata().getDataType());
@@ -375,7 +375,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
             log.trace("operation=" + operation.toString());
         
         // set values for modification request
-        ModificationRequest modReq = new ModificationRequest();
+        DefaultModificationRequest modReq = new DefaultModificationRequest();
         modReq.setEvents(thisEvent);
         
         if (OPERATIONMODE.INSERT.equals(operation.getOperationMode())) {

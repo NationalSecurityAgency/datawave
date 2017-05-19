@@ -1,12 +1,14 @@
 package datawave.webservice.query.result.edge;
 
-import java.util.List;
+import datawave.webservice.query.result.event.HasMarkings;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import datawave.webservice.query.result.event.HasMarkings;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import java.util.List;
 
 @XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(DefaultEdge.class)
 public interface EdgeBase extends HasMarkings {
     String getSource();
     

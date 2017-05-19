@@ -72,18 +72,18 @@ public class CachedResultsParameters implements ParameterValidator {
         Preconditions.checkNotNull(this.view, "View cannot be null");
         Preconditions.checkNotNull(this.fields, "Fields cannot be null");
     }
-
+    
     public static String validate(String value) {
         return validate(value, false);
     }
-
+    
     public static String validate(String value, boolean skipNull) {
         if ((!skipNull || value != null) && !VALID_NAME_PATTERN.matcher(value).matches()) {
             throw new RuntimeException("Attempt to set invalid table/view name detected and thwarted:" + value);
         }
         return value; // for convenience
     }
-
+    
     public String getQueryId() {
         return queryId;
     }

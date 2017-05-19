@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 
+@XmlAccessorType(XmlAccessType.NONE)
 public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     @XmlAccessorType(XmlAccessType.NONE)

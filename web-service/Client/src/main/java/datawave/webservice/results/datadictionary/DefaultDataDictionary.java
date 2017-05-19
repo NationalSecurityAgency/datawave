@@ -32,7 +32,7 @@ import io.protostuff.Schema;
 /**
  * 
  */
-@XmlRootElement(name = "DataDictionary")
+@XmlRootElement(name = "DefaultDataDictionary")
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultDataDictionary extends DataDictionaryBase<DefaultDataDictionary,DefaultMetadataField> implements TotalResultsAware,

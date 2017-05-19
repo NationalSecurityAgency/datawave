@@ -6,6 +6,7 @@ import com.google.common.base.Charsets;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 
 import datawave.webservice.query.util.TypedValue;
 
@@ -13,6 +14,7 @@ import io.protostuff.Message;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
 @XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(DefaultField.class)
 public abstract class FieldBase<T> implements HasMarkings, Message<T> {
     
     protected transient Map<String,String> markings;

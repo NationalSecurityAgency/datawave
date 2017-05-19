@@ -26,7 +26,6 @@ import datawave.util.time.DateHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.ModificationRequestBase.MODE;
 import datawave.webservice.modification.configuration.ModificationServiceConfiguration;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -63,7 +62,7 @@ import org.apache.log4j.Logger;
  * <pre>
  * {@code
  * 
- * <ModificationRequest>
+ * <DefaultModificationRequest>
  *   <Events>
  *     <Event>
  *       <shardId>20120731_9</shardId>
@@ -75,7 +74,7 @@ import org.apache.log4j.Logger;
  *   <fieldName>TEST</fieldName>
  *   <fieldValue>ABC</fieldValue>
  *   <columnVisibility>PUBLIC</columnVisibility>
- * </ModificationRequest>
+ * </DefaultModificationRequest>
  * }
  * </pre>
  * 
@@ -85,7 +84,7 @@ import org.apache.log4j.Logger;
  * <pre>
  * {@code
  * 
- * <ModificationRequest>
+ * <DefaultModificationRequest>
  *   <Events>
  *     <Event>
  *       <shardId>20120731_9</shardId>
@@ -97,7 +96,7 @@ import org.apache.log4j.Logger;
  *   <fieldName>TEST</fieldName>
  *   <fieldValue>ABC</fieldValue>
  *   <columnVisibility>PRIVATE</columnVisibility>
- * </ModificationRequest>
+ * </DefaultModificationRequest>
  * }
  * </pre>
  * 
@@ -106,8 +105,7 @@ import org.apache.log4j.Logger;
  * 
  * <pre>
  * {@code
- * 
- * <ModificationRequest>
+ * <DefaultModificationRequest>
  *   <Events>
  *     <Event>
  *       <shardId>20120731_9</shardId>
@@ -118,7 +116,7 @@ import org.apache.log4j.Logger;
  *   <mode>DELETE</mode>
  *   <fieldName>TEST</fieldName>
  *   <fieldValue>ABC</fieldValue>
- * </ModificationRequest>
+ * </DefaultModificationRequest>
  * }
  * </pre>
  *
@@ -127,7 +125,7 @@ import org.apache.log4j.Logger;
  * 
  * <pre>
  * {@code
- * <ModificationRequest>
+ * <DefaultModificationRequest>
  *   <Events>
  *     <Event>
  *       <shardId>20120731_9</shardId>
@@ -141,7 +139,7 @@ import org.apache.log4j.Logger;
  *   <columnVisibility>PRIVATE|PUBLIC</columnVisibility>
  *   <oldFieldValue>ABC</oldFieldValue>
  *   <oldColumnVisibility>PRIVATE</oldColumnVisibility>
- * </ModificationRequest>
+ * </DefaultModificationRequest>
  * }
  * </pre>
  * 
@@ -151,7 +149,7 @@ import org.apache.log4j.Logger;
  * <pre>
  * {@code
  * 
- * <ModificationRequest>
+ * <DefaultModificationRequest>
  *   <Events>
  *     <Event>
  *       <shardId>20120731_9</shardId>
@@ -164,7 +162,7 @@ import org.apache.log4j.Logger;
  *   <fieldValue>XYZ</fieldValue>
  *   <oldFieldValue>ABC</oldFieldValue>
  *   <columnVisibility>PRIVATE|PUBLIC</columnVisibility>
- * </ModificationRequest>
+ * </DefaultModificationRequest>
  * }
  * </pre>
  * 
@@ -242,7 +240,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     
     @Override
     public Class<? extends ModificationRequestBase> getRequestClass() {
-        return ModificationRequest.class;
+        return DefaultModificationRequest.class;
     }
     
     // Default the insert history option to true so that the call remains backwards compatible.
@@ -255,7 +253,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths, String user,
                     boolean insertHistory) throws Exception {
         
-        ModificationRequest mr = ModificationRequest.class.cast(request);
+        DefaultModificationRequest mr = DefaultModificationRequest.class.cast(request);
         
         if (null == mr.getEvents() || mr.getEvents().size() == 0) {
             throw new IllegalArgumentException("No events specified for modification");

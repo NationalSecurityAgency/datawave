@@ -19,7 +19,7 @@ import java.util.Map;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-public class Facets extends FacetsBase implements Serializable, Message<Facets>, ObjectSizeOf {
+public class DefaultFacets extends FacetsBase implements Serializable, Message<DefaultFacets>, ObjectSizeOf {
     
     private static final long serialVersionUID = 1L;
     
@@ -36,54 +36,54 @@ public class Facets extends FacetsBase implements Serializable, Message<Facets>,
         return this.fields.toString();
     }
     
-    public static Schema<Facets> getSchema() {
+    public static Schema<DefaultFacets> getSchema() {
         return SCHEMA;
     }
     
     @Override
-    public Schema<Facets> cachedSchema() {
+    public Schema<DefaultFacets> cachedSchema() {
         return SCHEMA;
     }
     
     @XmlTransient
-    private static final Schema<Facets> SCHEMA = new Schema<Facets>() {
-        public Facets newMessage() {
-            return new Facets();
+    private static final Schema<DefaultFacets> SCHEMA = new Schema<DefaultFacets>() {
+        public DefaultFacets newMessage() {
+            return new DefaultFacets();
         }
         
-        public Class<Facets> typeClass() {
-            return Facets.class;
+        public Class<DefaultFacets> typeClass() {
+            return DefaultFacets.class;
         }
         
         public String messageName() {
-            return Facets.class.getSimpleName();
+            return DefaultFacets.class.getSimpleName();
         }
         
         public String messageFullName() {
-            return Facets.class.getName();
+            return DefaultFacets.class.getName();
         }
         
-        public boolean isInitialized(Facets message) {
+        public boolean isInitialized(DefaultFacets message) {
             return true;
         }
         
-        public void writeTo(Output output, Facets message) throws IOException {
+        public void writeTo(Output output, DefaultFacets message) throws IOException {
             if (message.fields != null) {
-                for (FieldCardinality field : message.fields) {
+                for (FieldCardinalityBase field : message.fields) {
                     if (field != null)
-                        output.writeObject(1, field, FieldCardinality.getSchema(), true);
+                        output.writeObject(1, (DefaultFieldCardinality) field, DefaultFieldCardinality.getSchema(), true);
                 }
             }
         }
         
-        public void mergeFrom(Input input, Facets message) throws IOException {
+        public void mergeFrom(Input input, DefaultFacets message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
                 switch (number) {
                     case 1:
                         if (message.fields == null)
-                            message.fields = new ArrayList<FieldCardinality>();
-                        FieldCardinality f = input.mergeObject(null, FieldCardinality.getSchema());
+                            message.fields = new ArrayList<FieldCardinalityBase>();
+                        DefaultFieldCardinality f = input.mergeObject(null, DefaultFieldCardinality.getSchema());
                         message.fields.add(f);
                         break;
                     default:

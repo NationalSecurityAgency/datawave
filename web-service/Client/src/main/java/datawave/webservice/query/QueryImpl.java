@@ -41,7 +41,7 @@ import io.protostuff.Output;
 import io.protostuff.Schema;
 import io.protostuff.UninitializedMessageException;
 
-@XmlRootElement(name = "Query")
+@XmlRootElement(name = "QueryImpl")
 @XmlAccessorType(XmlAccessType.NONE)
 public class QueryImpl extends Query implements Serializable, Message<QueryImpl> {
     

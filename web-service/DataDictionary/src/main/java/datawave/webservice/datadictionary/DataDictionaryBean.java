@@ -67,7 +67,6 @@ import java.util.Set;
 @LocalBean
 @Stateless
 @PermitAll
-@XmlSeeAlso(DefaultFields.class)
 public class DataDictionaryBean {
     
     private static final Logger log = Logger.getLogger(DataDictionaryBean.class);
