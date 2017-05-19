@@ -9,6 +9,7 @@ import java.util.UUID;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 
 import nsa.datawave.webservice.query.QueryImpl.Parameter;
 import nsa.datawave.webservice.query.metric.BaseQueryMetric;
@@ -16,6 +17,7 @@ import nsa.datawave.webservice.query.metric.QueryMetric;
 import nsa.datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 @XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(QueryImpl.class)
 public abstract class Query {
     
     public abstract void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp,

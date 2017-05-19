@@ -7,11 +7,13 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 
 /**
  *
  */
 @XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(DefaultFieldCardinality.class)
 public abstract class FieldCardinalityBase implements HasMarkings {
     
     protected Map<String,String> markings;

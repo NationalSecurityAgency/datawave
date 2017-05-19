@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-@XmlRootElement(name = "Event")
+@XmlRootElement(name = "ModificationEvent")
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class ModificationEvent extends ModificationEventBase<ModificationOperation> implements Serializable {

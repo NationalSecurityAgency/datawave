@@ -26,10 +26,10 @@ import com.google.common.collect.Maps;
  * to INSERT, UPDATE, or DELETE entries from the sharded event table. See the MutableMetadataHandler javadoc for examples on what information to provide for
  * each type of request.
  */
-@XmlRootElement(name = "ModificationRequest")
+@XmlRootElement(name = "DefaultModificationRequest")
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-public class ModificationRequest extends ModificationRequestBase implements Serializable {
+public class DefaultModificationRequest extends ModificationRequestBase implements Serializable {
     
     private static final long serialVersionUID = 2L;
     

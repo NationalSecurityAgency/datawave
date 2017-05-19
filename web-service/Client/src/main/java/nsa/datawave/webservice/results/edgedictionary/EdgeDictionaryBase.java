@@ -4,11 +4,13 @@ import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 
 import io.protostuff.Message;
 import nsa.datawave.webservice.result.BaseResponse;
 
 @XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(DefaultEdgeDictionary.class)
 public abstract class EdgeDictionaryBase<T,F extends MetadataBase<F>> extends BaseResponse implements Message<T> {
     
     private static final long serialVersionUID = 1L;

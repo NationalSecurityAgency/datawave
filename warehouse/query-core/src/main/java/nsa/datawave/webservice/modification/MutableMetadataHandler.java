@@ -26,7 +26,6 @@ import nsa.datawave.util.time.DateHelper;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import nsa.datawave.webservice.modification.ModificationRequestBase.MODE;
 import nsa.datawave.webservice.modification.configuration.ModificationServiceConfiguration;
-import nsa.datawave.webservice.query.QueryParameters;
 import nsa.datawave.webservice.query.QueryParametersImpl;
 import nsa.datawave.webservice.query.QueryPersistence;
 import nsa.datawave.webservice.query.result.event.DefaultEvent;
@@ -61,7 +60,7 @@ import org.apache.log4j.Logger;
  * INSERT Example using Column Visibility: <br>
  * 
  * <pre>
- * &lt;ModificationRequest&gt;
+ * &lt;DefaultModificationRequest&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;shardId&gt;20120731_9&lt;/shardId&gt;
@@ -73,14 +72,14 @@ import org.apache.log4j.Logger;
  *   &lt;fieldName&gt;TEST&lt;/fieldName&gt;
  *   &lt;fieldValue&gt;ABC&lt;/fieldValue&gt;
  *   &lt;columnVisibility&gt;PUBLIC&lt;/columnVisibility&gt;
- * &lt;/ModificationRequest&gt;
+ * &lt;/DefaultModificationRequest&gt;
  * </pre>
  * 
  * <br>
  * DELETE Example when removing a single value using Column Visibility: <br>
  * 
  * <pre>
- * &lt;ModificationRequest&gt;
+ * &lt;DefaultModificationRequest&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;shardId&gt;20120731_9&lt;/shardId&gt;
@@ -92,14 +91,14 @@ import org.apache.log4j.Logger;
  *   &lt;fieldName&gt;TEST&lt;/fieldName&gt;
  *   &lt;fieldValue&gt;ABC&lt;/fieldValue&gt;
  *   &lt;columnVisibility&gt;PRIVATE&lt;/columnVisibility&gt;
- * &lt;/ModificationRequest&gt;
+ * &lt;/DefaultModificationRequest&gt;
  * </pre>
  * 
  * <br>
  * DELETE Example when removing all entries for a field with a specific value (different column visibilities): <br>
  * 
  * <pre>
- * &lt;ModificationRequest&gt;
+ * &lt;DefaultModificationRequest&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;shardId&gt;20120731_9&lt;/shardId&gt;
@@ -110,14 +109,14 @@ import org.apache.log4j.Logger;
  *   &lt;mode&gt;DELETE&lt;/mode&gt;
  *   &lt;fieldName&gt;TEST&lt;/fieldName&gt;
  *   &lt;fieldValue&gt;ABC&lt;/fieldValue&gt;
- * &lt;/ModificationRequest&gt;
+ * &lt;/DefaultModificationRequest&gt;
  * </pre>
  * 
  * <br>
  * UPDATE Example when removing a single value and replacing it with a new one using ColumnVisibilities:<br>
  * 
  * <pre>
- * &lt;ModificationRequest&gt;
+ * &lt;DefaultModificationRequest&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;shardId&gt;20120731_9&lt;/shardId&gt;
@@ -131,14 +130,14 @@ import org.apache.log4j.Logger;
  *   &lt;columnVisibility&gt;PRIVATE|PUBLIC&lt;/columnVisibility&gt;
  *   &lt;oldFieldValue&gt;ABC&lt;/oldFieldValue&gt;
  *   &lt;oldColumnVisibility&gt;PRIVATE&lt;/oldColumnVisibility&gt;
- * &lt;/ModificationRequest&gt;
+ * &lt;/DefaultModificationRequest&gt;
  * </pre>
  * 
  * <br>
  * * UPDATE Example removing all entries for a field with a specific value (different column visibilities) and replacing it with a new one:<br>
  * 
  * <pre>
- * &lt;ModificationRequest&gt;
+ * &lt;DefaultModificationRequest&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;shardId&gt;20120731_9&lt;/shardId&gt;
@@ -151,7 +150,7 @@ import org.apache.log4j.Logger;
  *   &lt;fieldValue&gt;XYZ&lt;/fieldValue&gt;
  *   &lt;oldFieldValue&gt;ABC&lt;/oldFieldValue&gt;
  *   &lt;columnVisibility&gt;PRIVATE|PUBLIC&lt;/columnVisibility&gt;
- * &lt;/ModificationRequest&gt;
+ * &lt;/DefaultModificationRequest&gt;
  * </pre>
  * 
  */
@@ -228,7 +227,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     
     @Override
     public Class<? extends ModificationRequestBase> getRequestClass() {
-        return ModificationRequest.class;
+        return DefaultModificationRequest.class;
     }
     
     // Default the insert history option to true so that the call remains backwards compatible.
@@ -241,7 +240,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths, String user,
                     boolean insertHistory) throws Exception {
         
-        ModificationRequest mr = ModificationRequest.class.cast(request);
+        DefaultModificationRequest mr = DefaultModificationRequest.class.cast(request);
         
         if (null == mr.getEvents() || mr.getEvents().size() == 0) {
             throw new IllegalArgumentException("No events specified for modification");

@@ -4,9 +4,12 @@ import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
+
 import nsa.datawave.webservice.query.result.event.HasMarkings;
 
 @XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(DefaultEdge.class)
 public interface EdgeBase extends HasMarkings {
     String getSource();
     

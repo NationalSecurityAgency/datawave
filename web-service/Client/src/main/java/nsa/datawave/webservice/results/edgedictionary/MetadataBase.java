@@ -5,12 +5,14 @@ import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
 
 import com.google.common.collect.Maps;
 import io.protostuff.Message;
 import nsa.datawave.webservice.query.result.event.HasMarkings;
 
 @XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(DefaultMetadata.class)
 public abstract class MetadataBase<T> implements HasMarkings, Message<T> {
     
     protected transient Map<String,String> markings;

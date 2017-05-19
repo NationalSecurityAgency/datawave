@@ -15,10 +15,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
-@XmlRootElement(name = "UUIDModificationRequest")
+@XmlRootElement(name = "DefaultUUIDModificationRequest")
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-public class UUIDModificationRequest extends ModificationRequestBase implements Serializable {
+public class DefaultUUIDModificationRequest extends ModificationRequestBase implements Serializable {
     
     private static final long serialVersionUID = 3L;
     

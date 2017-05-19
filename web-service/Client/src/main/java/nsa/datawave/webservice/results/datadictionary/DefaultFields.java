@@ -22,7 +22,7 @@ import java.util.Map.Entry;
 /**
  * 
  */
-@XmlRootElement(name = "FieldsResponse")
+@XmlRootElement(name = "DefaultFieldsResponse")
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultFields extends FieldsBase<DefaultFields,DefaultDictionaryField,DefaultDescription> implements TotalResultsAware, Message<DefaultFields>,
                 HtmlProvider {

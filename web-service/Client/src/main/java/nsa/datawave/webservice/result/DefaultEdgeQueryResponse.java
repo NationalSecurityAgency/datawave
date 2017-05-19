@@ -30,7 +30,7 @@ import io.protostuff.Schema;
 /**
  * A response object for holding data returned from edge table queries.
  */
-@XmlRootElement(name = "EdgeQueryResponse")
+@XmlRootElement(name = "DefaultEdgeQueryResponse")
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements Serializable, TotalResultsAware, Message<DefaultEdgeQueryResponse> {
     private static final long serialVersionUID = -8080688956850811620L;
