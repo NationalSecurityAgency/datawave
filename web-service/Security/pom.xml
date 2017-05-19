@@ -195,6 +195,25 @@
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>
+        <resources>
+            <resource>
+                <targetPath>${project.build.directory}/generated-sources/templated-sources</targetPath>
+                <filtering>true</filtering>
+                <directory>src/main/resources/source-templates</directory>
+            </resource>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>source-templates/**</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <targetPath>test-classes</targetPath>
+                <filtering>true</filtering>
+                <directory>src/test/resources</directory>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -232,6 +251,24 @@
                         </manifestEntries>
                     </archive>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <sources>
+                                <source>target/generated-sources/templated-sources</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
