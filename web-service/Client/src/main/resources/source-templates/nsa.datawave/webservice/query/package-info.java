@@ -1,4 +1,4 @@
-@XmlSchema(namespace="${datawave.webservice.namespace}", elementFormDefault=XmlNsForm.QUALIFIED, xmlns = {@XmlNs(prefix="xs", namespaceURI="http://www.w3.org/2001/XMLSchema")})
+@XmlSchema(namespace="${datawave.webservice.namespace}", elementFormDefault=XmlNsForm.QUALIFIED, xmlns={@XmlNs(prefix = "", namespaceURI = "${datawave.webservice.namespace}")})
 package nsa.datawave.webservice.query;
 
 import javax.xml.bind.annotation.XmlNs;
