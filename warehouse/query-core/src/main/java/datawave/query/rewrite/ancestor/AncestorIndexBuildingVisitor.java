@@ -96,11 +96,15 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
         
         for (String uid : members) {
-            Long timestamp = timestampMap.get(uid);
-            if (timestamp == null) {
-                timestamp = rangeLimiter.getStartKey().getTimestamp();
+            // only generate index keys beyond the current uid in the tree
+            Key rangeCheckKey = new Key(rangeLimiter.getStartKey().getRow().toString(), dataType + Constants.NULL_BYTE_STRING + uid);
+            if (!rangeLimiter.beforeStartKey(rangeCheckKey) && !rangeLimiter.afterEndKey(rangeCheckKey)) {
+                Long timestamp = timestampMap.get(uid);
+                if (timestamp == null) {
+                    timestamp = rangeLimiter.getStartKey().getTimestamp();
+                }
+                keys.add(Maps.immutableEntry(getKey(node, rangeLimiter.getStartKey().getRow(), dataType, uid, timestamp), Constants.NULL_VALUE));
             }
-            keys.add(Maps.immutableEntry(getKey(node, rangeLimiter.getStartKey().getRow(), dataType, uid, timestamp), Constants.NULL_VALUE));
         }
         
         return keys;
