@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.util.*;
 
 import nsa.datawave.query.jexl.DatawaveJexlContext;
+import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.rewrite.attributes.Attribute;
 import nsa.datawave.query.rewrite.attributes.Document;
 import nsa.datawave.query.rewrite.attributes.ValueTuple;
@@ -22,9 +23,7 @@ import nsa.datawave.query.rewrite.jexl.visitors.IteratorBuildingVisitor;
 import nsa.datawave.query.rewrite.predicate.AncestorEventDataFilter;
 import nsa.datawave.query.rewrite.predicate.ConfiguredPredicate;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.data.*;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang.builder.CompareToBuilder;
@@ -83,6 +82,30 @@ public class AncestorQueryIterator extends QueryIterator {
         fieldIndexKeyDataTypeFilter = parseIndexFilteringChain(new SourcedOptions<String,String>(source, env, options));
         
         disableIndexOnlyDocuments = false;
+    }
+    
+    @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        // when we are town down and rebuilt, ensure the range is okay even for the middle of a tree shifting to the next
+        // child and making the range inclusive if it's exclusive to avoid hitting the defeat inside QueryIterator for a
+        // document specific range but not being inclusive start
+        if (!range.isStartKeyInclusive()) {
+            Key oldStartKey = range.getStartKey();
+            Key startKey = new Key(oldStartKey.getRow().toString(), oldStartKey.getColumnFamily().toString() + Constants.NULL_BYTE_STRING, oldStartKey
+                            .getColumnQualifier().toString());
+            if (!startKey.equals(range.getStartKey())) {
+                Key endKey = range.getEndKey();
+                boolean endKeyInclusive = range.isEndKeyInclusive();
+                // if the start key is outside of the range, then reset the end key to the next key
+                if (range.afterEndKey(startKey)) {
+                    endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
+                    endKeyInclusive = false;
+                }
+                range = new Range(startKey, true, endKey, endKeyInclusive);
+            }
+        }
+        
+        super.seek(range, columnFamilies, inclusive);
     }
     
     @Override
