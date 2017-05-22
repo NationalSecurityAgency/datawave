@@ -1,6 +1,6 @@
 package datawave.webservice.query.cache;
 
-import nsa.datawave.configuration.RefreshableScope;
+import datawave.configuration.RefreshableScope;
 
 /**
  * Configuration file is located at: datawave/query/CachedResultsExpiration.xml
