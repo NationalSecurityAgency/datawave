@@ -4,6 +4,8 @@ import com.google.common.cache.Cache;
 
 import javax.annotation.PostConstruct;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A Guava-based cache for storing objects in the {@link AbstractRunningQuery} hierarchy.
@@ -59,5 +61,12 @@ public abstract class AbstractQueryCache<T extends AbstractRunningQuery> impleme
     @Override
     public Iterator<T> iterator() {
         return cache.asMap().values().iterator();
+    }
+    
+    /**
+     * Retrieve a {@link java.util.Set} of String vs {@link AbstractRunningQuery} entries stored in the cache.
+     */
+    public Set<Map.Entry<String,T>> entrySet() {
+        return cache.asMap().entrySet();
     }
 }

@@ -4,17 +4,15 @@ import javax.annotation.PreDestroy;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Schedule;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
+import javax.ejb.*;
 import javax.inject.Inject;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.webservice.results.cached.CachedResultsBean;
 import datawave.webservice.results.cached.CachedRunningQuery;
 import org.apache.log4j.Logger;
+
+import java.util.Map;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
@@ -25,6 +23,8 @@ import org.apache.log4j.Logger;
 // this is a singleton bean in the container
 @Lock(LockType.WRITE)
 // by default all methods are blocking
+@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+@TransactionManagement(TransactionManagementType.BEAN)
 public class CachedResultsExpirationBean {
     
     private Logger log = Logger.getLogger(this.getClass());
@@ -46,9 +46,20 @@ public class CachedResultsExpirationBean {
         // instances of it are created and destroyed by the container, whereas
         // this is a singleton.
         log.debug("in shutdown method");
-        for (CachedRunningQuery crq : cachedRunningQueryCache) {
+        for (Map.Entry<String,CachedRunningQuery> entry : cachedRunningQueryCache.entrySet()) {
+            CachedRunningQuery crq = entry.getValue();
+            String cacheId = entry.getKey();
             CachedResultsBean.closeCrqConnection(crq);
-            cachedRunningQueryCache.remove(crq.getQueryId());
+            cachedRunningQueryCache.remove(cacheId);
+            // cancel any concurrent load
+            String originalQuery = crq.getOriginalQueryId();
+            if (crb.isQueryLoading(originalQuery)) {
+                try {
+                    crb.cancelLoadByAdmin(originalQuery);
+                } catch (Exception e) {
+                    // Do nothing
+                }
+            }
         }
         log.debug("Shutdown method completed.");
     }
@@ -62,24 +73,32 @@ public class CachedResultsExpirationBean {
         // Using an interceptor is not working either.
         // This method will be invoked every minute by the timer service and will
         // evict entries that are idle or expired.
-        for (CachedRunningQuery srq : cachedRunningQueryCache) {
-            String cachedQueryId = srq.getQueryId();
-            long difference = now - srq.getLastUsed();
+        for (Map.Entry<String,CachedRunningQuery> entry : cachedRunningQueryCache.entrySet()) {
+            CachedRunningQuery crq = entry.getValue();
+            String cacheId = entry.getKey();
+            long difference = now - crq.getLastUsed();
             if (log.isTraceEnabled()) {
-                log.trace("key: " + cachedQueryId + ", now: " + now + ", last used: " + srq.getLastUsed() + " difference: " + difference);
+                log.trace("key: " + cacheId + ", now: " + now + ", last used: " + crq.getLastUsed() + " difference: " + difference);
             }
             if ((difference > cachedResultsExpirationConfiguration.getEvictionTimeMs())) {
-                CachedResultsBean.closeCrqConnection(srq);
+                CachedResultsBean.closeCrqConnection(crq);
                 closeCount++;
                 evictionCount++;
-                cachedRunningQueryCache.remove(cachedQueryId);
+                cachedRunningQueryCache.remove(cacheId);
                 // cancel any concurrent load
-                crb.cancelLoad(cachedQueryId);
-                log.debug("CachedRunningQuery " + cachedQueryId + " connections returned and removed from cache");
+                String originalQueryId = crq.getOriginalQueryId();
+                if (crb.isQueryLoading(originalQueryId)) {
+                    try {
+                        crb.cancelLoadByAdmin(originalQueryId);
+                    } catch (Exception e) {
+                        // Do nothing
+                    }
+                }
+                log.debug("CachedRunningQuery " + cacheId + " connections returned and removed from cache");
             } else if ((difference > cachedResultsExpirationConfiguration.getCloseConnectionsTimeMs())) {
-                CachedResultsBean.closeCrqConnection(srq);
+                CachedResultsBean.closeCrqConnection(crq);
                 closeCount++;
-                log.debug("CachedRunningQuery " + cachedQueryId + " connections returned");
+                log.debug("CachedRunningQuery " + cacheId + " connections returned");
             }
             
         }

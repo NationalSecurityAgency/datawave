@@ -1992,17 +1992,15 @@ public class CachedResultsBean {
         VoidResponse response = new VoidResponse();
         
         try {
-            boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(originalQueryId);
+            // check if query is even loading
             RunningQuery query = CachedResultsBean.loadingQueryMap.get(originalQueryId);
             
             if (query == null) {
-                if (connectionRequestCanceled) {
-                    response.addMessage("CachedResults load canceled.");
-                } else {
-                    throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
-                }
+                NotFoundQueryException e = new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
+                throw new NotFoundException(e, response);
             } else {
                 if (query.getSettings().getOwner().equals(owner)) {
+                    accumuloConnectionRequestBean.cancelConnectionRequest(originalQueryId);
                     query.cancel();
                     response.addMessage("CachedResults load canceled.");
                 } else {
@@ -2042,24 +2040,23 @@ public class CachedResultsBean {
             "application/x-protostuff"})
     @javax.ws.rs.Path("/Admin/{queryId}/cancel")
     @GZIP
-    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @RolesAllowed({"InternalUser", "Administrator", "JBossAdministrator"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public VoidResponse cancelLoadByAdmin(@PathParam("queryId") @Required("queryId") String originalQueryId) {
         
         VoidResponse response = new VoidResponse();
         
         try {
-            boolean connectionRequestCanceled = accumuloConnectionRequestBean.adminCancelConnectionRequest(originalQueryId);
+            // check if query is even loading
             RunningQuery query = CachedResultsBean.loadingQueryMap.get(originalQueryId);
             
             if (query == null) {
-                if (connectionRequestCanceled) {
-                    response.addMessage("CachedResults load canceled.");
-                } else {
-                    throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
-                }
+                NotFoundQueryException e = new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
+                throw new NotFoundException(e, response);
             } else {
+                accumuloConnectionRequestBean.adminCancelConnectionRequest(originalQueryId);
                 query.cancel();
+                response.addMessage("CachedResults load canceled.");
             }
             return response;
         } catch (DatawaveWebApplicationException e) {
@@ -2071,6 +2068,11 @@ public class CachedResultsBean {
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
         }
+    }
+    
+    @RolesAllowed({"InternalUser"})
+    public boolean isQueryLoading(String originalQueryId) {
+        return CachedResultsBean.loadingQueryMap.containsKey(originalQueryId);
     }
     
     /**
@@ -2104,6 +2106,18 @@ public class CachedResultsBean {
         CachedRunningQuery crq;
         try {
             crq = retrieve(queryId, owner);
+            if (null != crq) {
+                for (Map.Entry<String,CachedRunningQuery> entry : cachedRunningQueryCache.entrySet()) {
+                    CachedRunningQuery currentCrq = entry.getValue();
+                    String currentQueryId = currentCrq.getQueryId();
+                    String currentAlias = currentCrq.getAlias();
+                    String currentView = currentCrq.getView();
+                    if ((currentQueryId != null && currentQueryId.equals(queryId)) || (currentAlias != null && currentAlias.equals(queryId))
+                                    || (currentView != null && currentView.equals(queryId))) {
+                        cachedRunningQueryCache.remove(entry.getKey());
+                    }
+                }
+            }
         } catch (IOException e) {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.CACHED_RUNNING_QUERY_ERROR, e);
             log.error(qe);
@@ -2112,7 +2126,16 @@ public class CachedResultsBean {
         }
         
         if (null != crq) {
-            
+            // CachedRunningQueries may be stored under multiple keys
+            if (crq.getQueryId() != null) {
+                cachedRunningQueryCache.remove(owner + "-" + crq.getQueryId());
+            }
+            if (crq.getAlias() != null) {
+                cachedRunningQueryCache.remove(owner + "-" + crq.getAlias());
+            }
+            if (crq.getView() != null) {
+                cachedRunningQueryCache.remove(owner + "-" + crq.getView());
+            }
             if (crq.isActivated()) {
                 synchronized (crq) {
                     closeCrqConnection(crq);

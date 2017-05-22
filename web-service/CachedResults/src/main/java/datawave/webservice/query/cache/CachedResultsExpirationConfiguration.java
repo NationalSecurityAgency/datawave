@@ -1,5 +1,11 @@
 package datawave.webservice.query.cache;
 
+import nsa.datawave.configuration.RefreshableScope;
+
+/**
+ * Configuration file is located at: datawave/query/CachedResultsExpiration.xml
+ */
+@RefreshableScope
 public class CachedResultsExpirationConfiguration {
     
     private static final long DEFAULT_CLOSE_CONNECTIONS_TIME_MINS = 15;
