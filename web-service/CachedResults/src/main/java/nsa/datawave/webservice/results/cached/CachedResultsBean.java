@@ -2108,18 +2108,6 @@ public class CachedResultsBean {
         CachedRunningQuery crq;
         try {
             crq = retrieve(queryId, owner);
-            if (null != crq) {
-                for (Map.Entry<String,CachedRunningQuery> entry : cachedRunningQueryCache.entrySet()) {
-                    CachedRunningQuery currentCrq = entry.getValue();
-                    String currentQueryId = currentCrq.getQueryId();
-                    String currentAlias = currentCrq.getAlias();
-                    String currentView = currentCrq.getView();
-                    if ((currentQueryId != null && currentQueryId.equals(queryId)) || (currentAlias != null && currentAlias.equals(queryId))
-                                    || (currentView != null && currentView.equals(queryId))) {
-                        cachedRunningQueryCache.remove(entry.getKey());
-                    }
-                }
-            }
         } catch (IOException e) {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.CACHED_RUNNING_QUERY_ERROR, e);
             log.error(qe);
