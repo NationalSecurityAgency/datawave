@@ -1,5 +1,7 @@
 package nsa.datawave.webservice.response.objects;
 
+import nsa.datawave.webservice.query.util.StringMapAdapter;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,6 +11,7 @@ import javax.xml.bind.annotation.XmlAccessorOrder;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
@@ -18,6 +21,7 @@ public class Visibility {
     private Boolean valid;
     
     @XmlElement(name = "markings")
+    @XmlJavaTypeAdapter(StringMapAdapter.class)
     private HashMap<String,String> markings;
     
     @XmlAttribute(name = "visibility")

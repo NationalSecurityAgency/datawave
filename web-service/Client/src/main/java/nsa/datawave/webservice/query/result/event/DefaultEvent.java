@@ -14,6 +14,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -22,6 +23,7 @@ import io.protostuff.Schema;
 
 import nsa.datawave.webservice.query.data.ObjectSizeOf;
 
+import nsa.datawave.webservice.query.util.StringMapAdapter;
 import org.apache.commons.lang.builder.EqualsBuilder;
 
 @XmlAccessorType(XmlAccessType.NONE)
@@ -31,6 +33,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
     private static final long serialVersionUID = 1L;
     
     @XmlElement(name = "Markings")
+    @XmlJavaTypeAdapter(StringMapAdapter.class)
     private HashMap<String,String> markings = null;
     
     @XmlElement(name = "Metadata")
