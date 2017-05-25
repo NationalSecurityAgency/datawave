@@ -1,5 +1,6 @@
 package datawave.query.rewrite.function;
 
+import datawave.data.hash.UIDConstants;
 import org.apache.accumulo.core.data.Key;
 
 /**
@@ -13,7 +14,8 @@ public class AncestorEquality implements Equality {
     
     @Override
     public boolean partOf(Key docKey, Key test) {
-        return docKey.getColumnFamily().toString().startsWith(test.getColumnFamily().toString());
+        return docKey.getColumnFamily().toString().startsWith(test.getColumnFamily().toString() + UIDConstants.DEFAULT_SEPARATOR)
+                        || docKey.getColumnFamily().toString().equals(test.getColumnFamily().toString());
     }
     
 }

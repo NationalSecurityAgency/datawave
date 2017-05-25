@@ -1,6 +1,7 @@
 package datawave.query.rewrite.ancestor;
 
 import com.google.common.collect.Sets;
+import datawave.data.hash.UIDConstants;
 import datawave.query.index.lookup.IndexMatch;
 import datawave.query.index.lookup.IndexMatchType;
 import datawave.query.index.lookup.UidIntersector;
@@ -60,7 +61,6 @@ public class AncestorUidIntersector implements UidIntersector {
                             nodes.addAll(delayedNodes);
                             IndexMatch currentMatch = new IndexMatch(nodes, uid1.getUid(), IndexMatchType.AND);
                             matches = reduce(matches, currentMatch);
-                            // matches.add(currentMatch);
                         }
                         // if uid2 starts with uid1, then uid2 is a descendent of uid1
                         else if (uid2.getUid().startsWith(uid1.getUid())) {
@@ -70,7 +70,6 @@ public class AncestorUidIntersector implements UidIntersector {
                             nodes.addAll(delayedNodes);
                             IndexMatch currentMatch = new IndexMatch(nodes, uid2.getUid(), IndexMatchType.AND);
                             matches = reduce(matches, currentMatch);
-                            // matches.add(currentMatch);
                         }
                     }
                 }
@@ -84,11 +83,11 @@ public class AncestorUidIntersector implements UidIntersector {
         Set<IndexMatch> result = Sets.newHashSet();
         boolean hasParent = false;
         for (IndexMatch match : matches) {
-            if (!match.getUid().startsWith(currentMatch.getUid()) || match.getUid().equals(currentMatch.getUid())) {
+            if (!match.getUid().startsWith(currentMatch.getUid() + UIDConstants.DEFAULT_SEPARATOR) || match.getUid().equals(currentMatch.getUid())) {
                 result.add(match);
             }
             
-            if (currentMatch.getUid().startsWith(match.getUid())) {
+            if (currentMatch.getUid().startsWith(match.getUid() + UIDConstants.DEFAULT_SEPARATOR)) {
                 hasParent = true;
             }
         }

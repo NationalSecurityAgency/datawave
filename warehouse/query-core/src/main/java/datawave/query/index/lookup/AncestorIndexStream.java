@@ -1,5 +1,6 @@
 package datawave.query.index.lookup;
 
+import datawave.data.hash.UIDConstants;
 import datawave.query.util.Tuple2;
 import org.apache.commons.jexl2.parser.JexlNode;
 
@@ -68,6 +69,11 @@ public class AncestorIndexStream implements IndexStream {
         IndexInfo info = tuple.second();
         Set<IndexMatch> matches = info.uids();
         
+        // test if there are no specific uids for this tuple, if there are no uids, don't attempt to reduce it
+        if (matches.size() == 0) {
+            return tuple;
+        }
+        
         Map<MatchGroup,Set<IndexMatch>> nodeMap = new HashMap<>();
         for (IndexMatch match : matches) {
             MatchGroup matchGroup = new MatchGroup(match);
@@ -82,7 +88,7 @@ public class AncestorIndexStream implements IndexStream {
             Iterator<IndexMatch> existingIterator = existing.iterator();
             while (existingIterator.hasNext() && add) {
                 IndexMatch indexMatch = existingIterator.next();
-                if (match.getUid().indexOf(indexMatch.getUid()) > -1) {
+                if (match.getUid().indexOf(indexMatch.getUid() + UIDConstants.DEFAULT_SEPARATOR) > -1) {
                     add = false;
                 }
             }
