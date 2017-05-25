@@ -12,6 +12,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -19,6 +20,7 @@ import io.protostuff.Output;
 import io.protostuff.Schema;
 
 import datawave.data.type.Type;
+import datawave.webservice.query.util.StringMapAdapter;
 import datawave.webservice.query.util.TypedValue;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -36,6 +38,7 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
     private static final long serialVersionUID = 1L;
     
     @XmlElement(name = "Markings")
+    @XmlJavaTypeAdapter(StringMapAdapter.class)
     private HashMap<String,String> markings;
     @XmlAttribute(name = "columnVisibility")
     private String columnVisibility;
