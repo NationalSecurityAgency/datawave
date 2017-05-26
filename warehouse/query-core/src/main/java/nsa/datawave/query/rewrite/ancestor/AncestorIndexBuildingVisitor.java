@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
 public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(AncestorIndexBuildingVisitor.class);
     
-    private Map<String,Collection<String>> familyTreeMap;
+    private Map<String,List<String>> familyTreeMap;
     private Map<String,Long> timestampMap;
     private Equality equality;
     
@@ -65,10 +65,9 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
             if (limitLookup && !negation) {
                 final String identifier = JexlASTHelper.getIdentifier(node);
                 if (!disableFiEval && indexOnlyFields.contains(identifier)) {
-                    kvIter = source.deepCopy(env);
-                    // restrict the ranges across this document and go look these up, kvIter now will return valid fi ranges
+                    final SortedKeyValueIterator<Key,Value> baseIterator = source.deepCopy(env);
+                    kvIter = new AncestorChildExpansionIterator(baseIterator, getMembers(), equality);
                     seekIndexOnlyDocument(kvIter, node);
-                    kvIter = new IteratorToSortedKeyValueIterator(expandChildren(node, kvIter).iterator());
                 } else {
                     kvIter = new IteratorToSortedKeyValueIterator(getNodeEntry(node).iterator());
                 }
@@ -113,11 +112,11 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         return new Key(endKey.getRow(), cf, cq, endKey.getTimestamp());
     }
     
-    private Collection<String> getMembers() {
+    private List<String> getMembers() {
         Range wholeDocRange = getWholeDocRange(rangeLimiter);
         final String tld = getTLDId(wholeDocRange.getStartKey());
         final String dataType = getDataType(wholeDocRange.getStartKey());
-        Collection<String> members = familyTreeMap.get(tld);
+        List<String> members = familyTreeMap.get(tld);
         
         // use the cached tree if available
         if (members == null) {
@@ -129,34 +128,6 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
         
         return members;
-    }
-    
-    protected Collection<Map.Entry<Key,Value>> expandChildren(ASTEQNode node, SortedKeyValueIterator<Key,Value> hits) throws IOException {
-        final List<Map.Entry<Key,Value>> keys = new ArrayList<>();
-        
-        final Range wholeDocRange = getWholeDocRange(rangeLimiter);
-        final String dataType = getDataType(wholeDocRange.getStartKey());
-        final Collection<String> members = getMembers();
-        
-        final Text row = rangeLimiter.getStartKey().getRow();
-        while (hits.hasTop()) {
-            Key top = hits.getTopKey();
-            String cq = top.getColumnQualifier().toString();
-            int uidIndex = cq.lastIndexOf(Constants.NULL_BYTE_STRING);
-            String uidHit = cq.substring(uidIndex + 1);
-            for (String child : members) {
-                if (equality.partOf(new Key("", child), new Key("", uidHit))) {
-                    Long timestamp = timestampMap.get(child);
-                    if (timestamp == null) {
-                        timestamp = rangeLimiter.getStartKey().getTimestamp();
-                    }
-                    keys.add(Maps.immutableEntry(getKey(node, row, dataType, child, timestamp), Constants.NULL_VALUE));
-                }
-            }
-            hits.next();
-        }
-        
-        return keys;
     }
     
     /**
@@ -171,7 +142,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         Range wholeDocRange = getWholeDocRange(rangeLimiter);
         final String tld = getTLDId(wholeDocRange.getStartKey());
         final String dataType = getDataType(wholeDocRange.getStartKey());
-        Collection<String> members = familyTreeMap.get(tld);
+        List<String> members = familyTreeMap.get(tld);
         
         // use the cached tree if available
         if (members == null) {
