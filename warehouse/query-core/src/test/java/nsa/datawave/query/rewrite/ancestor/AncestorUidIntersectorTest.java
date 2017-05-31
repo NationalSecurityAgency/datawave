@@ -196,7 +196,7 @@ public class AncestorUidIntersectorTest {
         expected.add(new IndexMatch("a.b.c.2.1", null));
         Assert.assertTrue(CollectionUtils.isEqualCollection(expected, resultList));
     }
-
+    
     @Test
     public void testMultipleBranchesCommonAncestor() {
         uids2.add(new IndexMatch("a.b.c", node1));
@@ -205,30 +205,30 @@ public class AncestorUidIntersectorTest {
         uids1.add(new IndexMatch("a.b.c.1", node2));
         uids1.add(new IndexMatch("a.b.c.2.1", node2));
         uids1.add(new IndexMatch("a.b.c", node2));
-
+        
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
-
+        
         Assert.assertNotNull(result);
         Assert.assertTrue("expected size 1, got " + result.size(), result.size() == 1);
         Assert.assertTrue(result.iterator().next().getUid().equals("a.b.c"));
     }
-
+    
     @Test
     public void testEmptyUids1() {
         uids2.add(new IndexMatch("a.b.c", node1));
-
+        
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
-
+        
         Assert.assertNotNull(result);
         Assert.assertTrue("expected size 0, got " + result.size(), result.size() == 0);
     }
-
+    
     @Test
     public void testEmptyUids2() {
         uids1.add(new IndexMatch("a.b.c", node1));
-
+        
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
-
+        
         Assert.assertNotNull(result);
         Assert.assertTrue("expected size 0, got " + result.size(), result.size() == 0);
     }
