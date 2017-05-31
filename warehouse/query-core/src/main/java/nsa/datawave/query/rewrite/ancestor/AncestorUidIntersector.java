@@ -50,11 +50,10 @@ public class AncestorUidIntersector implements UidIntersector {
         Set<IndexMatch> matches = new HashSet<>();
         for (Tuple2<ArrayList<IndexMatch>,ArrayList<IndexMatch>> indexMatchLists : correlatedUids.values()) {
             if (!indexMatchLists.first().isEmpty() && !indexMatchLists.second().isEmpty()) {
-                Tuple2<ArrayList<IndexMatch>,ArrayList<IndexMatch>> newIndexMatchLists = new Tuple2<>(new ArrayList<IndexMatch>(), new ArrayList<IndexMatch>());
                 for (IndexMatch uid1 : indexMatchLists.first()) {
                     for (IndexMatch uid2 : indexMatchLists.second()) {
                         // if uid1 starts with uid2, then uid1 is a descendent of uid2
-                        if (uid1.getUid().startsWith(uid2.getUid())) {
+                        if (uid1.getUid().startsWith(uid2.getUid() + UIDConstants.DEFAULT_SEPARATOR) || uid1.getUid().equals(uid2.getUid())) {
                             Set<JexlNode> nodes = Sets.newHashSet();
                             nodes.add(uid1.getNode());
                             nodes.add(uid2.getNode());
@@ -63,7 +62,7 @@ public class AncestorUidIntersector implements UidIntersector {
                             matches = reduce(matches, currentMatch);
                         }
                         // if uid2 starts with uid1, then uid2 is a descendent of uid1
-                        else if (uid2.getUid().startsWith(uid1.getUid())) {
+                        else if (uid2.getUid().startsWith(uid1.getUid() + UIDConstants.DEFAULT_SEPARATOR)) {
                             Set<JexlNode> nodes = Sets.newHashSet();
                             nodes.add(uid1.getNode());
                             nodes.add(uid2.getNode());
@@ -81,18 +80,18 @@ public class AncestorUidIntersector implements UidIntersector {
     
     private Set<IndexMatch> reduce(Set<IndexMatch> matches, IndexMatch currentMatch) {
         Set<IndexMatch> result = Sets.newHashSet();
-        boolean hasParent = false;
+        boolean conflict = false;
         for (IndexMatch match : matches) {
             if (!match.getUid().startsWith(currentMatch.getUid() + UIDConstants.DEFAULT_SEPARATOR) || match.getUid().equals(currentMatch.getUid())) {
                 result.add(match);
             }
             
-            if (currentMatch.getUid().startsWith(match.getUid() + UIDConstants.DEFAULT_SEPARATOR)) {
-                hasParent = true;
+            if (currentMatch.getUid().startsWith(match.getUid() + UIDConstants.DEFAULT_SEPARATOR) || match.getUid().equals(currentMatch.getUid())) {
+                conflict = true;
             }
         }
         
-        if (!hasParent) {
+        if (!conflict) {
             result.add(currentMatch);
         }
         
