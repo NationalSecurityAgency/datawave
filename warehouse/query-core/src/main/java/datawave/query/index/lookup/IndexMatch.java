@@ -90,10 +90,12 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
         
     }
     
-    public int HashCode() {
+    @Override
+    public int hashCode() {
         return uid.hashCode();
     }
     
+    @Override
     public boolean equals(Object obj) {
         if (null == obj)
             return false;
