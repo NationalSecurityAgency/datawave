@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import nsa.datawave.ingest.data.config.NormalizedContentInterface;
+import nsa.datawave.ingest.data.config.NormalizedFieldAndValue;
 import nsa.datawave.ingest.data.config.ingest.CSVIngestHelper;
 import nsa.datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import nsa.datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
@@ -53,6 +54,29 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
     
     public Multimap<String,NormalizedContentInterface> getEventFieldsToDelete(BaseQueryMetric updatedQueryMetric, BaseQueryMetric storedQueryMetric) {
         return normalize(delegate.getEventFieldsToDelete(updatedQueryMetric, storedQueryMetric));
+    }
+    
+    @Override
+    public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields) {
+        Multimap<String,NormalizedContentInterface> results = HashMultimap.create();
+        
+        for (Map.Entry<String,String> e : fields.entries()) {
+            if (e.getValue() != null) {
+                String field = e.getKey();
+                NormalizedFieldAndValue nfv = null;
+                int x = field.indexOf('.');
+                if (x > -1) {
+                    String baseFieldName = field.substring(0, x);
+                    String group = field.substring(x + 1);
+                    nfv = new NormalizedFieldAndValue(baseFieldName, e.getValue(), group, null);
+                } else {
+                    nfv = new NormalizedFieldAndValue(field, e.getValue());
+                }
+                applyNormalizationAndAddToResults(results, nfv);
+            } else
+                log.warn(this.getType().typeName() + " has key " + e.getKey() + " with a null value.");
+        }
+        return results;
     }
     
     public Multimap<String,NormalizedContentInterface> getEventFieldsToWrite(BaseQueryMetric updatedQueryMetric) {
