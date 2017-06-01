@@ -7,7 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
@@ -18,14 +27,6 @@ import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
 import datawave.webservice.query.util.QueryUtil;
-
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements TermFrequencyIngestHelperInterface {
     
@@ -53,6 +54,29 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
     
     public Multimap<String,NormalizedContentInterface> getEventFieldsToDelete(BaseQueryMetric updatedQueryMetric, BaseQueryMetric storedQueryMetric) {
         return normalize(delegate.getEventFieldsToDelete(updatedQueryMetric, storedQueryMetric));
+    }
+    
+    @Override
+    public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields) {
+        Multimap<String,NormalizedContentInterface> results = HashMultimap.create();
+        
+        for (Map.Entry<String,String> e : fields.entries()) {
+            if (e.getValue() != null) {
+                String field = e.getKey();
+                NormalizedFieldAndValue nfv = null;
+                int x = field.indexOf('.');
+                if (x > -1) {
+                    String baseFieldName = field.substring(0, x);
+                    String group = field.substring(x + 1);
+                    nfv = new NormalizedFieldAndValue(baseFieldName, e.getValue(), group, null);
+                } else {
+                    nfv = new NormalizedFieldAndValue(field, e.getValue());
+                }
+                applyNormalizationAndAddToResults(results, nfv);
+            } else
+                log.warn(this.getType().typeName() + " has key " + e.getKey() + " with a null value.");
+        }
+        return results;
     }
     
     public Multimap<String,NormalizedContentInterface> getEventFieldsToWrite(BaseQueryMetric updatedQueryMetric) {

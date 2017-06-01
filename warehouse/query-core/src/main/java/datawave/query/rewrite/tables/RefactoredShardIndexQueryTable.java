@@ -43,7 +43,6 @@ import datawave.query.rewrite.jexl.visitors.PatternNodeVisitor;
 import datawave.query.rewrite.jexl.visitors.QueryModelVisitor;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
-import datawave.query.util.MetadataHelperFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -487,17 +486,6 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
             @Override
             public void updateScanIteratorOption(String iteratorName, String key, String value) {}
             
-            public void setContext(String ctx) {
-                // noOp
-            }
-            
-            public String getContext() {
-                return null;
-            }
-            
-            public void clearContext() {
-                // noOp
-            }
         };
     }
     

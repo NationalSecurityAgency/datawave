@@ -1,5 +1,7 @@
 package datawave.webservice.common.connection;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.BatchDeleter;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -23,6 +25,7 @@ public class WrappedConnector extends Connector {
     private Connector mock = null;
     private Connector real = null;
     private String scannerClassLoaderContext = null;
+    private long scanBatchTimeoutSeconds = Long.MAX_VALUE;
     
     public WrappedConnector(Connector real, Connector mock) {
         this.real = real;
@@ -48,6 +51,7 @@ public class WrappedConnector extends Connector {
                 log.trace("Setting " + scannerClassLoaderContext + " classpath context on a new batch scanner.");
                 delegate.setContext(scannerClassLoaderContext);
             }
+            delegate.setBatchTimeout(scanBatchTimeoutSeconds, TimeUnit.SECONDS);
         }
         return delegate;
     }
@@ -164,4 +168,13 @@ public class WrappedConnector extends Connector {
     public void clearScannerClassLoaderContext() {
         this.scannerClassLoaderContext = null;
     }
+    
+    public long getScanBatchTimeoutSeconds() {
+        return scanBatchTimeoutSeconds;
+    }
+    
+    public void setScanBatchTimeoutSeconds(long scanBatchTimeoutSeconds) {
+        this.scanBatchTimeoutSeconds = scanBatchTimeoutSeconds;
+    }
+    
 }
