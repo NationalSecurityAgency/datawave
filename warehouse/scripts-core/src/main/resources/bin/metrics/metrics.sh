@@ -63,8 +63,8 @@ CHILD_OPTS="-Xmx2048m"
 
 export HADOOP_CLASSPATH=$CLASSPATH
 
-export HADOOP_OPTS=" -Dapp=${type}MetricsIngest -Dmapred.job.pool.name=oneHrIngest $HADOOP_OPTS"
-$INGEST_HADOOP_HOME/bin/hadoop jar ./datawave-metrics-core-${METRICS_VERSION}.jar $class $HADOOP_OPTS -Dmapreduce.job.queuename=oneHrIngest -Dmapred.child.java.opts="$CHILD_OPTS" -Dmapred.max.split.size=800000 -libjars $LIBJARS -jt $INGEST_JOBTRACKER_NODE -fs $INGEST_HDFS_NAME_NODE $opts
+export HADOOP_OPTS=" -Dapp=${type}MetricsIngest -Dmapred.job.pool.name=bulkIngestQueue $HADOOP_OPTS"
+$INGEST_HADOOP_HOME/bin/hadoop jar ./datawave-metrics-core-${METRICS_VERSION}.jar $class $HADOOP_OPTS -Dmapreduce.job.queuename=bulkIngestQueue -Dmapred.child.java.opts="$CHILD_OPTS" -Dmapred.max.split.size=800000 -libjars $LIBJARS -jt $INGEST_JOBTRACKER_NODE -fs $INGEST_HDFS_NAME_NODE $opts
 RETURN_CODE=$?
 
 exit $RETURN_CODE

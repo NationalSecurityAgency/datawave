@@ -3,19 +3,17 @@ function usage
 {
     echo -e "usage: start-ingest-servers.sh [options] where options include:\n
     \t-force\tstart servers ignoring presence of ${LOCK_FILE_DIR}/INGEST_STARTUP.LCK
-    \t-type\tWhich ingesters to start (all,onehr,fivemin,fifteenmin) eg -type all
+    \t-type\tWhich ingesters to start (all,bulk,live) eg -type all
     \t-help\tprint this message\n"
 }
 
-ONEHR_SCRIPT="one-hr-ingest-server.sh"
-ONEHR_TEXT="one hour"
-ONEHR_LOG="one-hr-ingest.log"
-FIFTEENMIN_SCRIPT="fifteen-min-ingest-server.sh"
-FIFTEENMIN_TEXT="fifteen minute"
-FIFTEENMIN_LOG="fifteen-min-ingest.log"
-FIVEMIN_SCRIPT="five-min-ingest-server.sh"
-FIVEMIN_TEXT="five minute"
-FIVEMIN_LOG="five-min-ingest.log"
+BULK_SCRIPT="bulk-ingest-server.sh"
+BULK_TEXT="bulk"
+BULK_LOG="bulk-ingest.log"
+
+LIVE_SCRIPT="live-ingest-server.sh"
+LIVE_TEXT="live"
+LIVE_LOG="live-ingest.log"
 
 TYPE=""
 
@@ -47,19 +45,16 @@ TYPES_TO_RUN=""
 
 case $TYPE in
     all)
-        TYPES_TO_RUN="ONEHR FIFTEENMIN FIVEMIN"
+        TYPES_TO_RUN="BULK LIVE"
     ;;
-    onehr)
-        TYPES_TO_RUN="ONEHR"
+    bulk)
+        TYPES_TO_RUN="BULK"
     ;;
-    fifteenmin)
-        TYPES_TO_RUN="FIFTEENMIN"
-    ;;
-    fivemin)
-        TYPES_TO_RUN="FIVEMIN"
+    live)
+        TYPES_TO_RUN="LIVE"
     ;;
     *)
-        echo "UNKNOWN TYPE -- Was $TYPE but expected all, onehr, fifteenmin, or fivemin"
+        echo "UNKNOWN TYPE -- Was $TYPE but expected all, bulk, or live"
         exit
     ;;
 esac

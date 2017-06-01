@@ -2,29 +2,31 @@
 <!-- test configuration -->
 <flagMakerConfig>
     <flagCfg>
-        <dataName>live</dataName>
-        <folder>${FIVE_MIN_INGEST_DATA_TYPES}</folder>
-        <ingestPool>fivemin</ingestPool>
+        <dataName>bulk</dataName>
+        <folder>${BULK_INGEST_DATA_TYPES}</folder>
+        <ingestPool>bulk</ingestPool>
         <distributionArgs>none</distributionArgs>
         <extraIngestArgs></extraIngestArgs>
         <lifo>false</lifo>
     </flagCfg>
     <defaultCfg>
         <!-- currently only require a few of the params for the default config -->
-        <maxFlags>${INGEST_MAX_FIVE_MIN_BLOCKS_PER_JOB}</maxFlags>
-        <reducers>1</reducers>
-        <script>bin/ingest/five-min-ingest.sh</script>
+        <maxFlags>${INGEST_MAX_BULK_BLOCKS_PER_JOB}</maxFlags>
+        <reducers>${BULK_INGEST_REDUCERS}</reducers>
+        <script>bin/ingest/bulk-ingest.sh</script>
+        <fileListMarker>***FILE_LIST***</fileListMarker>
     </defaultCfg>
-    <sleepMilliSecs>3000</sleepMilliSecs>
-    <timeoutMilliSecs>${FIVE_MIN_FLAG_TIMEOUT_MS}</timeoutMilliSecs>
+    <sleepMilliSecs>5000</sleepMilliSecs>
+    <timeoutMilliSecs>${BULK_FLAG_TIMEOUT_MS}</timeoutMilliSecs>
     <baseHDFSDir>${HDFS_BASE_DIR}</baseHDFSDir>
     <distributorType>simple</distributorType>
-    <!-- No dot "." files -->
-    <filePattern>2*/*/*/[0-9a-zA-Z]*.seq</filePattern>
+    <!-- No dot "." files, and no files ending with punctuation (such as _COPYING_).  Removed .seq in pattern as some files may not be sequence files. -->
+    <filePattern>2*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>
     <hdfs>${INGEST_HDFS_NAME_NODE}</hdfs>
-    <socketPort>24221</socketPort>
+    <socketPort>24222</socketPort>
     <datawaveHome>${DATAWAVE_INGEST_HOME}</datawaveHome>
     <flagFileDirectory>${FLAG_DIR}</flagFileDirectory>
     <setFlagFileTimestamp>true</setFlagFileTimestamp>
     <useFolderTimestamp>false</useFolderTimestamp>
 </flagMakerConfig>
+
