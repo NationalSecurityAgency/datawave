@@ -276,7 +276,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         
         ingestHelper.setup(conf);
         
-        RawRecordContainer event = new RawRecordContainerImpl();
+        RawRecordContainerImpl event = new RawRecordContainerImpl();
+        event.setConf(this.conf);
         event.setDataType(type);
         event.setDate(storedQueryMetric.getCreateDate().getTime());
         // get security marking set in the config, otherwise default to PUBLIC
