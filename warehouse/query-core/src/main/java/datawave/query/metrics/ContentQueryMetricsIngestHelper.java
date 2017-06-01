@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
