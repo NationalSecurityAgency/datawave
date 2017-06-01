@@ -43,7 +43,6 @@ import nsa.datawave.query.rewrite.jexl.visitors.PatternNodeVisitor;
 import nsa.datawave.query.rewrite.jexl.visitors.QueryModelVisitor;
 import nsa.datawave.query.tables.ScannerFactory;
 import nsa.datawave.query.util.MetadataHelper;
-import nsa.datawave.query.util.MetadataHelperFactory;
 import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import nsa.datawave.webservice.query.Query;
 import nsa.datawave.webservice.query.QueryImpl;
@@ -446,6 +445,14 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
             
             public void clearContext() {
                 // noOp
+            }
+            
+            public void setBatchTimeout(long timeOut, TimeUnit timeUnit) {
+                // noop
+            }
+            
+            public long getBatchTimeout(TimeUnit timeUnit) {
+                return 0;
             }
         };
     }

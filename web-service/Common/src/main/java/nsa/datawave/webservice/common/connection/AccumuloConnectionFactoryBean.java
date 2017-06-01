@@ -274,6 +274,10 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         if (classLoaderContext != null) {
             wrappedConnector.setScannerClassLoaderContext(classLoaderContext);
         }
+        String timeout = System.getProperty("dw.accumulo.scan.batch.timeout.seconds");
+        if (timeout != null) {
+            wrappedConnector.setScanBatchTimeoutSeconds(Long.parseLong(timeout));
+        }
         return wrappedConnector;
     }
     

@@ -3,11 +3,11 @@ package nsa.datawave.webservice.common.connection;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.Lists;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.impl.ScannerOptions;
@@ -18,6 +18,8 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
+
 /**
  * A simple wrapper around a {@link ScannerBase} that overrides the methods that configure iterators.
  * 
@@ -26,6 +28,9 @@ import org.slf4j.LoggerFactory;
 public class ScannerBaseDelegate implements ScannerBase {
     private static final Logger log = LoggerFactory.getLogger(ScannerBaseDelegate.class);
     private static final String SYSTEM_ITERATOR_NAME_PREFIX = "sys_";
+    
+    private static final Map<Class<?>,Method> BATCH_SET_TIMEOUT_METHOD_REFS = new HashMap<>();
+    private static final Map<Class<?>,Method> BATCH_GET_TIMEOUT_METHOD_REFS = new HashMap<>();
     
     protected final ScannerBase delegate;
     
@@ -292,5 +297,37 @@ public class ScannerBaseDelegate implements ScannerBase {
                 throw new RuntimeException("Unable to invoke clearClassLoaderContext method: " + e.getMessage(), e);
             }
         }
+    }
+    
+    public void setBatchTimeout(long timeOut, TimeUnit timeUnit) {
+        try {
+            Method m = BATCH_SET_TIMEOUT_METHOD_REFS.get(delegate.getClass());
+            if (null == m) {
+                m = delegate.getClass().getMethod("setBatchTimeout", Long.class, TimeUnit.class);
+                BATCH_SET_TIMEOUT_METHOD_REFS.put(delegate.getClass(), m);
+            }
+            m.invoke(delegate, timeOut, timeUnit);
+        } catch (NoSuchMethodException e) {
+            log.trace("setBatchTimeout called, but there is no underlying implementation");
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            log.error("Error invoking setBatchTimeout", e);
+        }
+    }
+    
+    public long getBatchTimeout(TimeUnit timeUnit) {
+        try {
+            Method m = BATCH_GET_TIMEOUT_METHOD_REFS.get(delegate.getClass());
+            if (null == m) {
+                m = delegate.getClass().getMethod("getBatchTimeout", Long.class, TimeUnit.class);
+                BATCH_GET_TIMEOUT_METHOD_REFS.put(delegate.getClass(), m);
+            }
+            return (long) m.invoke(delegate, timeUnit);
+        } catch (NoSuchMethodException e) {
+            log.trace("setBatchTimeout called, but there is no underlying implementation");
+            return 0;
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            log.error("Error invoking setBatchTimeout", e);
+        }
+        return 0;
     }
 }
