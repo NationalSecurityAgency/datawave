@@ -55,6 +55,29 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
         return normalize(delegate.getEventFieldsToDelete(updatedQueryMetric, storedQueryMetric));
     }
     
+    @Override
+    public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields) {
+        Multimap<String,NormalizedContentInterface> results = HashMultimap.create();
+        
+        for (Map.Entry<String,String> e : fields.entries()) {
+            if (e.getValue() != null) {
+                String field = e.getKey();
+                NormalizedFieldAndValue nfv = null;
+                int x = field.indexOf('.');
+                if (x > -1) {
+                    String baseFieldName = field.substring(0, x);
+                    String group = field.substring(x + 1);
+                    nfv = new NormalizedFieldAndValue(baseFieldName, e.getValue(), group, null);
+                } else {
+                    nfv = new NormalizedFieldAndValue(field, e.getValue());
+                }
+                applyNormalizationAndAddToResults(results, nfv);
+            } else
+                log.warn(this.getType().typeName() + " has key " + e.getKey() + " with a null value.");
+        }
+        return results;
+    }
+    
     public Multimap<String,NormalizedContentInterface> getEventFieldsToWrite(BaseQueryMetric updatedQueryMetric) {
         return normalize(delegate.getEventFieldsToWrite(updatedQueryMetric));
     }
