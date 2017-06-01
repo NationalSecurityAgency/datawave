@@ -28,10 +28,8 @@ import org.apache.log4j.Logger;
         @ActivationConfigProperty(propertyName = "useLocalTx", propertyValue = "true"),
         @ActivationConfigProperty(propertyName = "subscriptionDurability", propertyValue = "Durable"),
         @ActivationConfigProperty(propertyName = "subscriptionName", propertyValue = "ModificationCacheMessageBean"),
-        @ActivationConfigProperty(propertyName = "clientId", propertyValue = "ID:ModificationCacheMessageBean"),
         @ActivationConfigProperty(propertyName = "user", propertyValue = "${dw.hornetq.system.userName}"),
         @ActivationConfigProperty(propertyName = "password", propertyValue = "${dw.hornetq.system.password}"),
-        @ActivationConfigProperty(propertyName = "clientId", propertyValue = "ID:ModificationCacheMessageBean"),
         @ActivationConfigProperty(propertyName = "maxSession", propertyValue = "${dw.audit.accumulo.mdb.pool.size}")})
 @TransactionManagement(value = TransactionManagementType.CONTAINER)
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)

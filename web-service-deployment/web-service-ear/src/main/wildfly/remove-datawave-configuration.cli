@@ -88,27 +88,29 @@ undeploy mysql-connector-java-${version.mysql-connector}.jar
 /subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:write-attribute(name=timeout-unit,value=MINUTES)
 /subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:write-attribute(name=timeout,value=5)
 /subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:write-attribute(name=max-pool-size,value=20)
+/subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:write-attribute(name=derive-size,value=from-cpu-count)
 /subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=timeout-unit,value=MINUTES)
 /subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=timeout,value=5)
 /subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=max-pool-size,value=20)
+/subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=derive-size,value=from-cpu-count)
 /subsystem=ejb3/thread-pool=default/:write-attribute(name=max-threads,value=10)
 /subsystem=ejb3/:undefine-attribute(name=in-vm-remote-interface-invocation-pass-by-value)
 
 #
-# Remove HornetQ configuration changes
+# Remove ActiveMQ configuration changes, JMS Topics/Queues/DLQs
 #
-/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.AccumuloTableCache/:remove
-/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.ServerLogAuditQueue/:remove
-/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.LogAuditQueue/:remove
-/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.AccumuloAuditQueue/:remove
-/subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=redistribution-delay,value=-1L)
-/subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=page-size-bytes,value=2097152L)
-/subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=max-size-bytes,value=10485760L)
-/subsystem=messaging/hornetq-server=default/security-setting=#/role=admin/:remove
-/subsystem=messaging/hornetq-server=default/:write-attribute(name=cluster-user,value="HORNETQ.CLUSTER.ADMIN.USER")
-/subsystem=messaging/hornetq-server=default/:write-attribute(name=cluster-password,value="CHANGE ME!!")
-/subsystem=messaging/hornetq-server=default/pooled-connection-factory=hornetq-ra/:write-attribute(name=max-pool-size,value=-1)
-#/subsystem=messaging/hornetq-server=default/:write-attribute(name=security-domain,value=other)
+/subsystem=messaging-activemq/server=default/address-setting=jms.topic.AccumuloTableCache/:remove
+/subsystem=messaging-activemq/server=default/address-setting=jms.queue.ServerLogAuditQueue/:remove
+/subsystem=messaging-activemq/server=default/address-setting=jms.queue.LogAuditQueue/:remove
+/subsystem=messaging-activemq/server=default/address-setting=jms.queue.AccumuloAuditQueue/:remove
+/subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=redistribution-delay,value=-1L)
+/subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=page-size-bytes,value=2097152L)
+/subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=max-size-bytes,value=10485760L)
+/subsystem=messaging-activemq/server=default/security-setting=#/role=admin/:remove
+/subsystem=messaging-activemq/server=default/:write-attribute(name=cluster-user,value="HORNETQ.CLUSTER.ADMIN.USER")
+/subsystem=messaging-activemq/server=default/:write-attribute(name=cluster-password,value="CHANGE ME!!")
+/subsystem=messaging-activemq/server=default/pooled-connection-factory=activemq-ra/:write-attribute(name=max-pool-size,value=-1)
+#/subsystem=messaging-activemq/server=default/:write-attribute(name=security-domain,value=other)
 jms-topic remove --topic-address=AccumuloTableCache
 jms-queue remove --queue-address=AccumuloTableCacheDLQ
 jms-queue remove --queue-address=LogAuditQueue
@@ -119,8 +121,11 @@ jms-queue remove --queue-address=AccumuloAuditQueue
 jms-queue remove --queue-address=AccumuloAuditDLQ
 jms-queue remove --queue-address=QueryMetricsQueue
 
-# Remove HTTPS listener for undertow
-/subsystem=undertow/server=default-server/https-listener=https-default:remove
+# Reset HTTP/HTTPS listener configuration for undertow
+/subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=record-request-start-time,value=false)
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=record-request-start-time,value=false)
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=security-realm,value=ApplicationRealm)
+/subsystem=undertow/server=default-server/https-listener=https/:undefine-attribute(name=verify-client,value=NOT_REQUESTED)
 
 #
 # Remove security realm and domain

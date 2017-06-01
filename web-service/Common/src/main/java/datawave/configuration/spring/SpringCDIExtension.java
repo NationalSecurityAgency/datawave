@@ -212,7 +212,8 @@ public class SpringCDIExtension implements Extension {
         
         @Override
         public Class<?> getBeanClass() {
-            return rawType;
+            // Work around WFLY-7025. This should really be rawType.
+            return SpringCDIBean.class;
         }
         
         @Override
