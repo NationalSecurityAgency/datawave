@@ -14,7 +14,7 @@ FLAG_DIR=$2
 LOG_DIR=$3
 MAP_LOADER_INDEX=0
 
-declare -i PIPELINE_COUNT=$((INGEST_ONE_HR_JOBS))
+declare -i PIPELINE_COUNT=$((INGEST_BULK_JOBS))
 
 echo "Starting loop to run ingest."
 
@@ -22,10 +22,10 @@ shopt -s extglob
 while [ 1 == 1 ]; do
 
   # first lets startup any markers we have within the pipeline count that we have
-  declare -i MARKER_COUNT=`shopt -s extglob; find ${FLAG_DIR} -regextype posix-egrep -regex ".*_(bulk|onehr)_.*\.flag\..*\.marker" 2>/dev/null | wc -l`
+  declare -i MARKER_COUNT=`shopt -s extglob; find ${FLAG_DIR} -regextype posix-egrep -regex ".*_(bulk)_.*\.flag\..*\.marker" 2>/dev/null | wc -l`
   echo "Found $MARKER_COUNT marker files"
   if [[ $((MARKER_COUNT)) -gt 0 ]]; then
-    for f in `shopt -s extglob; find ${FLAG_DIR} -regextype posix-egrep -regex ".*_(bulk|onehr)_.*\.flag\..*\.marker" 2>/dev/null`; do
+    for f in `shopt -s extglob; find ${FLAG_DIR} -regextype posix-egrep -regex ".*_(bulk)_.*\.flag\..*\.marker" 2>/dev/null`; do
       # extract the pipline id
       declare -i PIPELINE=$(flagPipeline $f)
       if [[ $((PIPELINE)) -gt 0 && $((PIPELINE)) -le $((PIPELINE_COUNT)) ]]; then
@@ -38,7 +38,7 @@ while [ 1 == 1 ]; do
             MAP_LOADER_INDEX=0
         fi
         EXTRA_ARGS="-destHdfs ${MAP_LOADER_HDFS_NAME_NODES[$MAP_LOADER_INDEX]}"
-        $BIN_DIR/one-hr-execute.sh $BIN_DIR $inprogress_file $LOG_DIR $FLAG_DIR -pipelineId $PIPELINE $EXTRA_ARGS &
+        $BIN_DIR/bulk-execute.sh $BIN_DIR $inprogress_file $LOG_DIR $FLAG_DIR -pipelineId $PIPELINE $EXTRA_ARGS &
       else
         echo "`date` Resetting marker file for ingest pipeline $PIPELINE"
         mv $f $(flagBasename $f).flag
@@ -48,15 +48,15 @@ while [ 1 == 1 ]; do
 
   # now make sure we have a flag started for every pipeline
   for (( pipeline=1; pipeline <= $((PIPELINE_COUNT)); pipeline=$((pipeline+1)) )); do
-    declare -i PIPELINE_JOB_COUNT=`ps -ef | grep one-hr-execute.sh | grep " -pipelineId ${pipeline} " | wc -l`
-    declare -i PIPELINE_MARKER_COUNT=`shopt -s extglob; find ${FLAG_DIR}/ -regextype posix-egrep -regex ".*_(bulk|onehr)_.*\.flag\.${pipeline}\.marker" 2>/dev/null | wc -l`
+    declare -i PIPELINE_JOB_COUNT=`ps -ef | grep bulk-execute.sh | grep " -pipelineId ${pipeline} " | wc -l`
+    declare -i PIPELINE_MARKER_COUNT=`shopt -s extglob; find ${FLAG_DIR}/ -regextype posix-egrep -regex ".*_(bulk)_.*\.flag\.${pipeline}\.marker" 2>/dev/null | wc -l`
     declare -i PIPELINE_TOTAL_COUNT=$((PIPELINE_JOB_COUNT + PIPELINE_MARKER_COUNT))
     echo "Found $PIPELINE_TOTAL_COUNT jobs for pipeline $pipeline"
     if [[ $((PIPELINE_TOTAL_COUNT)) == 0 ]]; then
       if [[ "$MAPRED_INGEST_OPTS" =~ "-markerFileLIFO" ]]; then
-        flag_files=`find ${FLAG_DIR}/ -regextype posix-egrep -regex ".*_(bulk|onehr)_.*\.flag" -printf "%AY%Aj%AT %p\n" | sort -r | head -1 | awk '{print $2}'`
+        flag_files=`find ${FLAG_DIR}/ -regextype posix-egrep -regex ".*_(bulk)_.*\.flag" -printf "%AY%Aj%AT %p\n" | sort -r | head -1 | awk '{print $2}'`
       else
-        flag_files=`find ${FLAG_DIR}/ -regextype posix-egrep -regex ".*_(bulk|onehr)_.*\.flag" -printf "%AY%Aj%AT %p\n" | sort | head -1 | awk '{print $2}'`
+        flag_files=`find ${FLAG_DIR}/ -regextype posix-egrep -regex ".*_(bulk)_.*\.flag" -printf "%AY%Aj%AT %p\n" | sort | head -1 | awk '{print $2}'`
       fi
       for first_flag_file in $flag_files; do
         if [[ -a $first_flag_file ]]; then
@@ -67,7 +67,7 @@ while [ 1 == 1 ]; do
                 MAP_LOADER_INDEX=0
             fi
             EXTRA_ARGS="-destHdfs ${MAP_LOADER_HDFS_NAME_NODES[$MAP_LOADER_INDEX]}"
-            $BIN_DIR/one-hr-execute.sh $BIN_DIR ${first_flag_file}.inprogress $LOG_DIR $FLAG_DIR -pipelineId $pipeline $EXTRA_ARGS &
+            $BIN_DIR/bulk-execute.sh $BIN_DIR ${first_flag_file}.inprogress $LOG_DIR $FLAG_DIR -pipelineId $pipeline $EXTRA_ARGS &
         fi
       done
     fi

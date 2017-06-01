@@ -43,7 +43,7 @@ CLASSPATH=$(findJar Common-Util):${CLASSPATH}
 #
 LIBJARS=`echo $CLASSPATH | sed 's/:/,/g'`
 
-SCHEDULER_OPTIONS="-D mapreduce.job.queuename=oneHrIngest"
+SCHEDULER_OPTIONS="-D mapreduce.job.queuename=bulkIngestQueue"
 
 export HADOOP_CLASSPATH=${CLASSPATH}
 

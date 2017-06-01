@@ -60,6 +60,7 @@ AC_SERVER_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-server-base.jar
 AC_FATE_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-fate.jar
 AC_START_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-start.jar
 AC_TRACE_JAR=$WAREHOUSE_ACCUMULO_LIB/accumulo-trace.jar
+AC_HTRACE_JAR=$(findJar htrace-core)
 VFS_JAR=`ls -1 $WAREHOUSE_ACCUMULO_LIB/commons-vfs*.jar | sort | head -1`
 ASM_JAR=$(findJar asm)
 KRYO_JAR=$(findJar kryo)
@@ -111,7 +112,6 @@ GT_SHAPE_JAR=$(findJar gt-shapefile)
 JAXB_IMPL_JAR=$(findJar resteasy-jaxb-provider)
 
 # extra jars
-UTIL_JARS=$(findAllJars util)
 COMMONS_CLI_JAR=$(findJar commons-cli)
 COMMONS_LOGGING_JAR=$(findJar commons-logging)
 COMMONS_CODEC_JAR=$(findJar commons-codec)
@@ -163,6 +163,7 @@ CLASSPATH=${CLASSPATH}:${AC_SERVER_JAR}
 CLASSPATH=${CLASSPATH}:${AC_FATE_JAR}
 CLASSPATH=${CLASSPATH}:${AC_START_JAR}
 CLASSPATH=${CLASSPATH}:${AC_TRACE_JAR}
+CLASSPATH=${CLASSPATH}:${AC_HTRACE_JAR}
 CLASSPATH=${CLASSPATH}:${VFS_JAR}
 CLASSPATH=${CLASSPATH}:${ASM_JAR}
 CLASSPATH=${CLASSPATH}:${KRYO_JAR}
@@ -199,8 +200,6 @@ CLASSPATH=${CLASSPATH}:${GT_REF_JAR}
 CLASSPATH=${CLASSPATH}:${GT_SHAPE_JAR}
 
 CLASSPATH=${CLASSPATH}:${JAXB_IMPL_JAR}
-
-CLASSPATH=${CLASSPATH}:${UTIL_JARS}
 
 #for json
 CLASSPATH=${CLASSPATH}:$(findJar json-simple)

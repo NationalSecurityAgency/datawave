@@ -13,7 +13,7 @@ Ingesting MediaWiki dumps (wikipedia) into Accumulo with DATAWAVE
 3. In your properties file configure the following parameters
 
     1. Add the wikipedia data type to one of the ingest data types properties (*INGEST_DATA_TYPES)
-    	For example: FIVE_MIN_INGEST_DATA_TYPES=wikipedia
+    	For example: LIVE_INGEST_DATA_TYPES=wikipedia
     	
     2. Set the flag maker property:
     	FLAG_MAKER_CONFIG=${DATAWAVE_INGEST_HOME}/config/WikipediaFlagMakerConfig.xml

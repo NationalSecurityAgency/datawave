@@ -14,7 +14,7 @@ FLAG_DIR=$2
 LOG_DIR=$3
 MAP_LOADER_INDEX=0
 
-declare -i PIPELINE_COUNT=$((INGEST_FIFTEEN_MIN_JOBS))
+declare -i PIPELINE_COUNT=$((INGEST_LIVE_JOBS))
 
 echo "Starting loop to run ingest."
 
@@ -23,20 +23,20 @@ while [ 1 == 1 ]; do
 
   # now make sure we have a flag started for every pipeline
   for (( pipeline=1; pipeline <= $((PIPELINE_COUNT)); pipeline=$((pipeline+1)) )); do
-    declare -i PIPELINE_JOB_COUNT=`ps -ef | grep fifteen-min-execute.sh | grep " -pipelineId ${pipeline} " | wc -l`
+    declare -i PIPELINE_JOB_COUNT=`ps -ef | grep live-execute.sh | grep " -pipelineId ${pipeline} " | wc -l`
     declare -i PIPELINE_TOTAL_COUNT=$((PIPELINE_JOB_COUNT))
     echo "Found $PIPELINE_TOTAL_COUNT jobs for pipeline $pipeline"
     if [[ $((PIPELINE_TOTAL_COUNT)) == 0 ]]; then
       if [[ "$MAPRED_INGEST_OPTS" =~ "-markerFileLIFO" ]]; then
-        flag_files=`find ${FLAG_DIR}/ -regextype posix-egrep -regex ".*_(fifteenmin)_.*\.flag" -printf "%AY%Aj%AT %p\n" | sort -r | head -1 | awk '{print $2}'`
+        flag_files=`find ${FLAG_DIR}/ -regextype posix-egrep -regex ".*_(live)_.*\.flag" -printf "%AY%Aj%AT %p\n" | sort -r | head -1 | awk '{print $2}'`
       else
-        flag_files=`find ${FLAG_DIR}/ -regextype posix-egrep -regex ".*_(fifteenmin)_.*\.flag" -printf "%AY%Aj%AT %p\n" | sort | head -1 | awk '{print $2}'`
+        flag_files=`find ${FLAG_DIR}/ -regextype posix-egrep -regex ".*_(live)_.*\.flag" -printf "%AY%Aj%AT %p\n" | sort | head -1 | awk '{print $2}'`
       fi
       for first_flag_file in $flag_files; do
         if [[ -a $first_flag_file ]]; then
             echo "`date` Executing job for $first_flag_file in pipeline $pipeline"
             mv $first_flag_file ${first_flag_file}.inprogress
-            $BIN_DIR/fifteen-min-execute.sh $BIN_DIR ${first_flag_file}.inprogress $LOG_DIR $FLAG_DIR -pipelineId $pipeline $EXTRA_ARGS &
+            $BIN_DIR/live-execute.sh $BIN_DIR ${first_flag_file}.inprogress $LOG_DIR $FLAG_DIR -pipelineId $pipeline $EXTRA_ARGS &
         fi
       done
     fi
