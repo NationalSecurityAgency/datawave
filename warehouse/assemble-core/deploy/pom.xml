@@ -98,7 +98,6 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.0.15.Final</version>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
@@ -115,7 +114,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.3.2</version>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
@@ -124,7 +122,6 @@
         <dependency>
             <groupId>org.jgroups</groupId>
             <artifactId>jgroups</artifactId>
-            <version>3.6.3.Final</version>
         </dependency>
         <dependency>
             <groupId>org.hornetq</groupId>

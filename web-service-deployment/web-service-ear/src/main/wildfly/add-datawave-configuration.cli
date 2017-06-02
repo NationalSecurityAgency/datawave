@@ -105,12 +105,14 @@ embed-server --server-config=standalone-full.xml
 /subsystem=security/security-domain=datawave-client/authentication=classic/login-module=ClientCert:add(code=datawave.security.login.ClientCertLoginModule,flag=required,module-options={password-stacking=useFirstPass})
 /subsystem=security/security-domain=datawave-client/authentication=classic/login-module=Client:add(code=Client,flag=required,module-options={password-stacking=useFirstPass,restore-login-identity=true})
 
-# Add an HTTPS listener for undertow
+# Configure the HTTP/HTTPS listener for undertow
 /subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=record-request-start-time,value=true)
-/subsystem=undertow/server=default-server/https-listener=https-default/:add(socket-binding=https,security-realm=SSLRealm,verify-client=REQUESTED,record-request-start-time=true)
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=record-request-start-time,value=true)
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=security-realm,value=SSLRealm)
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=verify-client,value=REQUESTED)
 
 #
-# Set up HornetQ, JMS topics/queues, and DLQs
+# Set up ActiveMQ, JMS Topics/Queues/DLQs
 #
 jms-topic add --topic-address=AccumuloTableCache --entries=topic/AccumuloTableCache
 jms-queue add --queue-address=LogAuditQueue --entries=queue/Audit.Log
@@ -121,27 +123,29 @@ jms-queue add --queue-address=ServerLogAuditDLQ --entries=queue/Audit.ServerLog.
 jms-queue add --queue-address=AccumuloAuditDLQ --entries=queue/Audit.Accumulo.DLQ
 jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTableCache.DLQ
 jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
-#/subsystem=messaging/hornetq-server=default/:write-attribute(name=security-domain,value=datawave)
-/subsystem=messaging/hornetq-server=default/pooled-connection-factory=hornetq-ra/:write-attribute(name=max-pool-size,value=${hornetq.datasource.max.pool.size})
-/subsystem=messaging/hornetq-server=default/:write-attribute(name=cluster-user,value="${hornetq.cluster.username}")
-/subsystem=messaging/hornetq-server=default/:write-attribute(name=cluster-password,value="${hornetq.cluster.password}")
-/subsystem=messaging/hornetq-server=default/security-setting=#/role=admin/:add(manage=true,consume=true,send=true,create-durable-queue=true,delete-durable-queue=true,create-non-durable-queue=true,delete-non-durable-queue=true)
-/subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=max-size-bytes,value=104857600)
-/subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=page-size-bytes,value=10485760)
-/subsystem=messaging/hornetq-server=default/address-setting=#:write-attribute(name=redistribution-delay,value=10000)
-/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.LogAuditQueue/:add(dead-letter-address=jms.queue.LogAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
-/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.ServerLogAuditQueue/:add(dead-letter-address=jms.queue.ServerLogAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
-/subsystem=messaging/hornetq-server=default/address-setting=jms.queue.AccumuloAuditQueue/:add(dead-letter-address=jms.queue.AccumuloAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
-/subsystem=messaging/hornetq-server=default/address-setting=jms.topic.AccumuloTableCache/:add(dead-letter-address=jms.queue.AccumuloTableCacheDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
+#/subsystem=messaging-activemq/server=default/:write-attribute(name=security-domain,value=datawave)
+/subsystem=messaging-activemq/server=default/pooled-connection-factory=activemq-ra/:write-attribute(name=max-pool-size,value=${hornetq.datasource.max.pool.size})
+/subsystem=messaging-activemq/server=default/:write-attribute(name=cluster-user,value="${hornetq.cluster.username}")
+/subsystem=messaging-activemq/server=default/:write-attribute(name=cluster-password,value="${hornetq.cluster.password}")
+/subsystem=messaging-activemq/server=default/security-setting=#/role=admin/:add(manage=true,consume=true,send=true,create-durable-queue=true,delete-durable-queue=true,create-non-durable-queue=true,delete-non-durable-queue=true)
+/subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=max-size-bytes,value=104857600)
+/subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=page-size-bytes,value=10485760)
+/subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=redistribution-delay,value=10000)
+/subsystem=messaging-activemq/server=default/address-setting=jms.queue.LogAuditQueue/:add(dead-letter-address=jms.queue.LogAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
+/subsystem=messaging-activemq/server=default/address-setting=jms.queue.ServerLogAuditQueue/:add(dead-letter-address=jms.queue.ServerLogAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
+/subsystem=messaging-activemq/server=default/address-setting=jms.queue.AccumuloAuditQueue/:add(dead-letter-address=jms.queue.AccumuloAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
+/subsystem=messaging-activemq/server=default/address-setting=jms.topic.AccumuloTableCache/:add(dead-letter-address=jms.queue.AccumuloTableCacheDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
 
 #
 # EJB subsystem configuration
 #
 /subsystem=ejb3/:write-attribute(name=in-vm-remote-interface-invocation-pass-by-value,value=false)
 /subsystem=ejb3/thread-pool=default/:write-attribute(name=max-threads,value=${jboss.ejb3.async.threads})
+/subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:undefine-attribute(name=derive-size)
 /subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:write-attribute(name=max-pool-size,value=${jboss.mdb.pool.max.size})
 /subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:write-attribute(name=timeout,value=${jboss.mdb.pool.timeout})
 /subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:write-attribute(name=timeout-unit,value=MILLISECONDS)
+/subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:undefine-attribute(name=derive-size)
 /subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=max-pool-size,value=${jboss.slsb.pool.max.size})
 /subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=timeout,value=${jboss.slsb.pool.timeout})
 /subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=timeout-unit,value=MILLISECONDS)

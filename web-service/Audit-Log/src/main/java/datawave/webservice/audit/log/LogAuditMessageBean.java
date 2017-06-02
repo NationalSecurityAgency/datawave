@@ -22,7 +22,6 @@ import datawave.webservice.common.audit.Auditor;
         @ActivationConfigProperty(propertyName = "subscriptionName", propertyValue = "LogAuditMessageBean"),
         @ActivationConfigProperty(propertyName = "user", propertyValue = "${dw.hornetq.system.userName}"),
         @ActivationConfigProperty(propertyName = "password", propertyValue = "${dw.hornetq.system.password}"),
-        @ActivationConfigProperty(propertyName = "clientId", propertyValue = "ID:LogAuditMessageBean"),
         @ActivationConfigProperty(propertyName = "maxSession", propertyValue = "${dw.audit.log.mdb.pool.size}")
 
 })
