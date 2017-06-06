@@ -1,4 +1,4 @@
-package nsa.datawave.ingest.mapreduce.partition;
+package datawave.ingest.mapreduce.partition;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,10 +10,10 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.google.common.collect.Maps;
-import nsa.datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import nsa.datawave.ingest.mapreduce.job.BulkIngestKey;
-import nsa.datawave.ingest.mapreduce.job.ShardedTableMapFile;
-import nsa.datawave.util.time.DateHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configurable;
@@ -43,7 +43,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private Map<Text,Integer> offsetsByTable;
     int missingShardIdCount = 0;
     
-    public static final String MISSING_SHARD_STRATEGY_PROP = "nsa.datawave.ingest.mapreduce.partition.BalancedShardPartitioner.missing.shard.strategy";
+    public static final String MISSING_SHARD_STRATEGY_PROP = "datawave.ingest.mapreduce.partition.BalancedShardPartitioner.missing.shard.strategy";
     
     @Override
     public synchronized int getPartition(BulkIngestKey key, Value value, int numReduceTasks) {

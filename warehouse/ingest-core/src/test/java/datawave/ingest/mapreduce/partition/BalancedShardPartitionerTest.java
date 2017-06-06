@@ -1,4 +1,4 @@
-package nsa.datawave.ingest.mapreduce.partition;
+package datawave.ingest.mapreduce.partition;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,13 +9,13 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import nsa.datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import nsa.datawave.ingest.mapreduce.job.BulkIngestKey;
-import nsa.datawave.ingest.mapreduce.job.ShardedTableMapFile;
-import nsa.datawave.util.time.DateHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.KeyExtent;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -71,20 +71,19 @@ public class BalancedShardPartitionerTest {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
         new TestShardGenerator(conf, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard", "errorShard");
         partitioner.setConf(conf);
-        assertEquals("shard,errorShard", conf.get(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES));
         
         // For a shard from today, we can assume that they're well balanced.
         // If offsetting is working, they will not go to the same partitions
         Key shardFromToday = new Key(formatDay(0) + "_1");
-        // shard should be in the first group of partitions
-        verifyOffsetGroup(0, partitioner.getPartition(new BulkIngestKey(new Text("shard"), shardFromToday), new Value(), 1000));
-        // error shard should be in the second group of partitions
-        verifyOffsetGroup(1, partitioner.getPartition(new BulkIngestKey(new Text("errorShard"), shardFromToday), new Value(), 1000));
+        // error shard should be in the first group of partitions
+        verifyOffsetGroup(0, partitioner.getPartition(new BulkIngestKey(new Text("errorShard"), shardFromToday), new Value(), 1000));
+        // shard should be in the second group of partitions
+        verifyOffsetGroup(1, partitioner.getPartition(new BulkIngestKey(new Text("shard"), shardFromToday), new Value(), 1000));
     }
     
     private void verifyOffsetGroup(int group, int partitionId) {
-        Assert.assertTrue("partitionId " + partitionId, partitionId >= numShards * group);
-        Assert.assertTrue("partitionId " + partitionId, partitionId < numShards * (group + 1));
+        Assert.assertTrue("partitionId " + partitionId + " is not >= " + (numShards * group), partitionId >= numShards * group);
+        Assert.assertTrue("partitionId " + partitionId + " is not < " + (numShards * (group + 1)), partitionId < numShards * (group + 1));
     }
     
     @Test
@@ -196,13 +195,13 @@ public class BalancedShardPartitionerTest {
         for (int daysAgo = 0; daysAgo <= 2; daysAgo++) {
             String day = DateHelper.format(now - (daysAgo * DateUtils.MILLIS_PER_DAY));
             for (int currShard = 0; currShard < SHARDS_PER_DAY; currShard++) {
-                locations.put(new KeyExtent(new Text(tableName), new Text(day + "_" + currShard), prevEndRow), Integer.toString(tserverId++));
+                locations.put(new KeyExtent(tableName, new Text(day + "_" + currShard), prevEndRow), Integer.toString(tserverId++));
             }
         }
         for (int daysAgo = 3; daysAgo <= 4; daysAgo++) {
             String day = DateHelper.format(now - (daysAgo * DateUtils.MILLIS_PER_DAY));
             for (int currShard : Arrays.asList(1, 4)) {
-                locations.put(new KeyExtent(new Text(tableName), new Text(day + "_" + currShard), prevEndRow), Integer.toString(tserverId++));
+                locations.put(new KeyExtent(tableName, new Text(day + "_" + currShard), prevEndRow), Integer.toString(tserverId++));
             }
         }
         new TestShardGenerator(conf, locations, tableName);
