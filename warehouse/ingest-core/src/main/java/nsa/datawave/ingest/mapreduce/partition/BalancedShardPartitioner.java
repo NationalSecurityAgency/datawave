@@ -1,18 +1,27 @@
 package nsa.datawave.ingest.mapreduce.partition;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeMap;
+
 import com.google.common.collect.Maps;
-import nsa.datawave.ingest.mapreduce.handler.shard.*;
-import nsa.datawave.ingest.mapreduce.job.*;
+import nsa.datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import nsa.datawave.ingest.mapreduce.job.BulkIngestKey;
+import nsa.datawave.ingest.mapreduce.job.ShardedTableMapFile;
 import nsa.datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.hadoop.conf.*;
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.util.*;
 
 /**
  * The BalancedShardPartitioner takes advantage of the way that shards are balanced. See ShardedTableTabletBalancer. * The partitioner is designed to have no
@@ -34,6 +43,8 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private Map<Text,Integer> offsetsByTable;
     int missingShardIdCount = 0;
     
+    public static final String MISSING_SHARD_STRATEGY_PROP = "nsa.datawave.ingest.mapreduce.partition.BalancedShardPartitioner.missing.shard.strategy";
+    
     @Override
     public synchronized int getPartition(BulkIngestKey key, Value value, int numReduceTasks) {
         try {
@@ -52,17 +63,38 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     /**
      */
     private int getAssignedPartition(String tableName, Text shardId) throws IOException {
-        Integer partitionId = lazilyCreateAssignments(tableName).get(shardId);
+        Map<Text,Integer> assignments = lazilyCreateAssignments(tableName);
+        
+        Integer partitionId = assignments.get(shardId);
         if (partitionId != null) {
             return partitionId;
-        } else {
-            // this can happen if the shards weren't created for that day...
-            // only warn a few times per partitioner to avoid flooding the logs
-            if (missingShardIdCount < 10) {
-                log.warn("shardId didn't have a partition assigned to it: " + shardId);
-                missingShardIdCount++;
-            }
-            return (shardId.hashCode() & Integer.MAX_VALUE);
+        }
+        // if the partitionId is not there, either shards were not created for the day
+        // or not all shards were created for the day
+        
+        String missingShardStrategy = conf.get(MISSING_SHARD_STRATEGY_PROP, "hash");
+        switch (missingShardStrategy) {
+            case "hash":
+                // only warn a few times per partitioner to avoid flooding the logs
+                if (missingShardIdCount < 10) {
+                    log.warn("shardId didn't have a partition assigned to it: " + shardId);
+                    missingShardIdCount++;
+                }
+                return (shardId.hashCode() & Integer.MAX_VALUE);
+            case "collapse":
+                ArrayList<Text> keys = new ArrayList<Text>(assignments.keySet());
+                Collections.sort(keys);
+                int closestAssignment = Collections.binarySearch(keys, shardId);
+                if (closestAssignment >= 0) {
+                    // Should have found it earlier, but just in case go ahead and return it
+                    log.warn("Something is screwy, found " + shardId + " on the second try");
+                    return assignments.get(shardId);
+                }
+                // <tt>(-(<i>insertion point</i>) - 1)</tt> // insertion point in the index of the key greater
+                Text shardString = keys.get(Math.abs(closestAssignment + 1));
+                return assignments.get(shardString);
+            default:
+                throw new RuntimeException("Unsupported missing shard strategy " + MISSING_SHARD_STRATEGY_PROP + "=" + missingShardStrategy);
         }
     }
     

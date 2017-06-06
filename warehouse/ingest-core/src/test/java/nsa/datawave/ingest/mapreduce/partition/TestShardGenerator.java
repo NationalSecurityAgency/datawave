@@ -1,5 +1,14 @@
 package nsa.datawave.ingest.mapreduce.partition;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
 import com.google.common.io.Files;
 import nsa.datawave.ingest.mapreduce.job.ShardedTableMapFile;
 import nsa.datawave.util.time.DateHelper;
@@ -8,22 +17,21 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-
-import java.io.IOException;
-import java.util.*;
 
 /**
  * Creates a splits file for the shard table that's relatively balanced
  */
 public class TestShardGenerator {
-    private final int numDays;
-    private final int shardsPerDay;
-    private final int totalTservers;
-    private final int daysWithoutCollisions;
+    private int numDays;
+    private int shardsPerDay;
+    private int totalTservers;
+    private int daysWithoutCollisions;
     private Configuration conf;
     private Random randomishGenerator = new Random(System.currentTimeMillis());
     ArrayList<String> availableTServers;
+    
+    private static final String TMPDIR = Files.createTempDir().toString() + "/";
+    private static final String BALANCEDISH_SHARDS_LST = "balancedish_shards.lst";
     
     public TestShardGenerator(Configuration conf, int numDays, int shardsPerDay, int totalTservers, String... tableNames) throws IOException {
         this.conf = conf;
@@ -33,10 +41,15 @@ public class TestShardGenerator {
         this.daysWithoutCollisions = totalTservers / shardsPerDay;
         registerSomeTServers();
         SortedMap<KeyExtent,String> locations = simulateTabletAssignments(tableNames);
-        String directory = Files.createTempDir().toString() + "/";
-        String fileName = "balancedish_shards.lst";
-        writeSplits(locations, directory, fileName);
-        registerSplitsFileForShardTable(directory, fileName, tableNames);
+        writeSplits(locations, TMPDIR, BALANCEDISH_SHARDS_LST);
+        registerSplitsFileForShardTable(TMPDIR, BALANCEDISH_SHARDS_LST, tableNames);
+    }
+    
+    public TestShardGenerator(Configuration conf, SortedMap<KeyExtent,String> locations, String... tableNames) throws IOException {
+        this.conf = conf;
+        // constructor that takes a created list of locations
+        writeSplits(locations, TMPDIR, BALANCEDISH_SHARDS_LST);
+        registerSplitsFileForShardTable(TMPDIR, BALANCEDISH_SHARDS_LST, tableNames);
     }
     
     // create splits for all the shards from today back NUM_DAYS,

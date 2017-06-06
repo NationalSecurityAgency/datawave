@@ -42,10 +42,10 @@
         <version.google-guava>15.0</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
+        <!-- Can download cdh binary from https://www.cloudera.com/documentation/enterprise/release-notes/topics/cdh_vd_cdh_package_tarball_59.html#tarball_59x -->
         <version.hadoop>2.6.0-cdh5.9.1</version.hadoop>
         <version.hornetq>2.4.7.Final</version.hornetq>
         <version.htrace>4.0.1-incubating</version.htrace>
-        <!-- CDH 5.7.0 dependency -->
         <version.httpcomponents-httpclient>4.2.1</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.2.1</version.httpcomponents-httpcore>
         <version.infinispan>7.2.3.Final</version.infinispan>
