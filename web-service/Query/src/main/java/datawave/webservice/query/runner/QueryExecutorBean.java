@@ -161,6 +161,7 @@ import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.util.StringUtils;
 
 @Path("/Query")
@@ -1199,7 +1200,9 @@ public class QueryExecutorBean implements QueryExecutor {
     @Timed(name = "dw.query.lookupContentUUID", absolute = true)
     public <T> T lookupContentByUUID(@Required("uuidType") @PathParam("uuidType") String uuidType, @Required("uuid") @PathParam("uuid") String uuid,
                     @Context UriInfo uriInfo, @Required("httpHeaders") @Context HttpHeaders httpHeaders) {
-        return this.lookupContentByUUID(uuidType, uuid, uriInfo.getQueryParameters(), httpHeaders);
+        MultivaluedMapImpl<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putAll(uriInfo.getQueryParameters());
+        return this.lookupContentByUUID(uuidType, uuid, queryParameters, httpHeaders);
     }
     
     private <T> T lookupContentByUUID(String uuidType, String uuid, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
@@ -1303,7 +1306,9 @@ public class QueryExecutorBean implements QueryExecutor {
     @Timed(name = "dw.query.lookupUUID", absolute = true)
     public <T> T lookupUUID(@Required("uuidType") @PathParam("uuidType") String uuidType, @Required("uuid") @PathParam("uuid") String uuid,
                     @Context UriInfo uriInfo, @Required("httpHeaders") @Context HttpHeaders httpHeaders) {
-        return this.lookupUUID(uuidType, uuid, uriInfo.getQueryParameters(), httpHeaders);
+        MultivaluedMapImpl<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putAll(uriInfo.getQueryParameters());
+        return this.lookupUUID(uuidType, uuid, queryParameters, httpHeaders);
     }
     
     <T> T lookupUUID(String uuidType, String uuid, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
