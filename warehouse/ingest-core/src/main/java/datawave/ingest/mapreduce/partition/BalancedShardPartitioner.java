@@ -1,18 +1,27 @@
-package datawave.ingest.mapreduce.partition;
-
-import com.google.common.collect.Maps;
-import datawave.ingest.mapreduce.handler.shard.*;
-import datawave.ingest.mapreduce.job.*;
-import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.hadoop.conf.*;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
-import org.apache.log4j.Logger;
+package nsa.datawave.ingest.mapreduce.partition;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeMap;
+
+import com.google.common.collect.Maps;
+import nsa.datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import nsa.datawave.ingest.mapreduce.job.BulkIngestKey;
+import nsa.datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import nsa.datawave.util.time.DateHelper;
+import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Partitioner;
+import org.apache.log4j.Logger;
 
 /**
  * The BalancedShardPartitioner takes advantage of the way that shards are balanced. See ShardedTableTabletBalancer. * The partitioner is designed to have no
@@ -34,6 +43,8 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private Map<Text,Integer> offsetsByTable;
     int missingShardIdCount = 0;
     
+    public static final String MISSING_SHARD_STRATEGY_PROP = "nsa.datawave.ingest.mapreduce.partition.BalancedShardPartitioner.missing.shard.strategy";
+    
     @Override
     public synchronized int getPartition(BulkIngestKey key, Value value, int numReduceTasks) {
         try {
@@ -52,22 +63,43 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     /**
      */
     private int getAssignedPartition(String tableName, Text shardId) throws IOException {
-        Integer partitionId = lazilyCreateAssignments(tableName).get(shardId);
+        Map<Text,Integer> assignments = lazilyCreateAssignments(tableName);
+        
+        Integer partitionId = assignments.get(shardId);
         if (partitionId != null) {
             return partitionId;
-        } else {
-            // this can happen if the shards weren't created for that day...
-            // only warn a few times per partitioner to avoid flooding the logs
-            if (missingShardIdCount < 10) {
-                log.warn("shardId didn't have a partition assigned to it: " + shardId);
-                missingShardIdCount++;
-            }
-            return (shardId.hashCode() & Integer.MAX_VALUE);
+        }
+        // if the partitionId is not there, either shards were not created for the day
+        // or not all shards were created for the day
+        
+        String missingShardStrategy = conf.get(MISSING_SHARD_STRATEGY_PROP, "hash");
+        switch (missingShardStrategy) {
+            case "hash":
+                // only warn a few times per partitioner to avoid flooding the logs
+                if (missingShardIdCount < 10) {
+                    log.warn("shardId didn't have a partition assigned to it: " + shardId);
+                    missingShardIdCount++;
+                }
+                return (shardId.hashCode() & Integer.MAX_VALUE);
+            case "collapse":
+                ArrayList<Text> keys = new ArrayList<Text>(assignments.keySet());
+                Collections.sort(keys);
+                int closestAssignment = Collections.binarySearch(keys, shardId);
+                if (closestAssignment >= 0) {
+                    // Should have found it earlier, but just in case go ahead and return it
+                    log.warn("Something is screwy, found " + shardId + " on the second try");
+                    return assignments.get(shardId);
+                }
+                // <tt>(-(<i>insertion point</i>) - 1)</tt> // insertion point in the index of the key greater
+                Text shardString = keys.get(Math.abs(closestAssignment + 1));
+                return assignments.get(shardString);
+            default:
+                throw new RuntimeException("Unsupported missing shard strategy " + MISSING_SHARD_STRATEGY_PROP + "=" + missingShardStrategy);
         }
     }
     
     /**
-     * For a given tablename, provides the mapping from shard {@code id -> partition}
+     * For a given tablename, provides the mapping from shard id -> partition
      */
     private Map<Text,Integer> lazilyCreateAssignments(String tableName) throws IOException {
         if (this.shardPartitionsByTable == null) {
@@ -97,16 +129,10 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     }
     
     /**
-     * 1. sorts the the tablet assignments by shard id, starting with the most recent going backwards<br>
-     * 2. assigns partitions to each tservers, starting from the beginning, but skipping future dates<br>
-     * 3. assigns partitions to each shardid by looking up its tserver's assignments<br>
-     * 4. returns the {@code shard id -> partition} map
-     * <p>
-     * e.g.,<br>
-     * 1. sorted assignments<br>
-     * 2. tserver map<br>
-     * 3. shard map: {@code future->tserver7 *no change* future->2 shard4->tserver2 tserver2->0 shard4->0
-     * shard3->tserver3 tserver3->1 shard3->1 shard2->tserver2 *no change* shard2->0 shard1->tserver7 tserver7->2 shard1->2}
+     * 1. sorts the the tablet assignments by shard id, starting with the most recent going backwards 2. assigns partitions to each tservers, starting from the
+     * beginning, but skipping future dates 3. assigns partitions to each shardid by looking up its tserver's assignments 4. returns the shard id -> partition
+     * map * * e.g. 1. sorted assignments 2. tserver map 3. shard map: future->tserver7 *no change* future->2 shard4->tserver2 tserver2->0 shard4->0
+     * shard3->tserver3 tserver3->1 shard3->1 shard2->tserver2 *no change* shard2->0 shard1->tserver7 tserver7->2 shard1->2
      *
      * @param shardIdToLocations
      * @return shardId to
@@ -208,7 +234,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     }
     
     private void defineOffsetsForTables(Configuration conf) {
-        offsetsByTable = new TreeMap<>();
+        offsetsByTable = new HashMap<>();
         int offset = 0;
         numShards = ShardIdFactory.getNumShards(conf);
         for (String tableName : conf.getStrings(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES)) {
