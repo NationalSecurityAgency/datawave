@@ -323,10 +323,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             int fieldnameIndex = cq.indexOf('\0');
             if (fieldnameIndex >= 0) {
                 String cf = startKey.getColumnFamily().toString();
-                // pull off the counter
-                int datatypeIndex = cf.indexOf('\0');
-                lastFiKey = new Key(startKey.getRow().toString(), "fi\0" + cq.substring(0, fieldnameIndex), cq.substring(fieldnameIndex + 1) + '\0'
-                                + cf.substring(datatypeIndex + 1), startKey.getColumnVisibility().toString(), startKey.getTimestamp());
+                lastFiKey = new Key(startKey.getRow().toString(), "fi\0" + cq.substring(0, fieldnameIndex), cq.substring(fieldnameIndex + 1) + '\0' + cf,
+                                startKey.getColumnVisibility().toString(), startKey.getTimestamp());
             }
         }
         
@@ -366,13 +364,25 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 // if we are not sorting uids and we have a starting value, then pop off the ranges until we have the one
                 // containing the last value returned. Then modify that range appropriately.
                 if (lastFiKey != null) {
-                    while (!boundingFiRanges.isEmpty() && boundingFiRanges.get(0).contains(lastFiKey)) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Reseeking fi to lastFiKey: " + lastFiKey);
+                    }
+                    while (!boundingFiRanges.isEmpty() && !boundingFiRanges.get(0).contains(lastFiKey)) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Skipping range: " + boundingFiRanges.get(0));
+                        }
                         boundingFiRanges.remove(0);
                     }
                     if (!boundingFiRanges.isEmpty()) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Starting in range: " + boundingFiRanges.get(0));
+                        }
                         Range boundingFiRange = boundingFiRanges.get(0);
                         boundingFiRange = new Range(lastFiKey, false, boundingFiRange.getEndKey(), boundingFiRange.isEndKeyInclusive());
                         boundingFiRanges.set(0, boundingFiRange);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Reset range to: " + boundingFiRanges.get(0));
+                        }
                     }
                 }
                 
@@ -514,7 +524,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 // this is required to handle cases where we start at a specific UID
                 while (this.keyValues.hasNext()) {
                     KeyValueSerializable kv = this.keyValues.next();
-                    if (this.lastRangeSeeked.contains(kv.getKey())) {
+                    if (sortedUIDs && log.isTraceEnabled()) {
+                        log.trace("Is " + kv.getKey() + " contained in " + this.lastRangeSeeked);
+                    }
+                    // no need to check containership if not returning sorted uids
+                    if (!sortedUIDs || this.lastRangeSeeked.contains(kv.getKey())) {
                         this.topKey = kv.getKey();
                         this.topValue = kv.getValue();
                         if (log.isDebugEnabled()) {
@@ -645,6 +659,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         if (this.fiSource == null) {
             this.fiSource = getSourceCopy(true);
             if (!this.boundingFiRanges.isEmpty()) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Seeking fisource to " + this.boundingFiRanges.get(0));
+                }
                 this.fiSource.seek(this.boundingFiRanges.get(0), EMPTY_CFS, false);
             }
         }
@@ -657,6 +674,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     moveToNextRow();
                 }
                 if (!this.boundingFiRanges.isEmpty()) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Seeking fisource to " + this.boundingFiRanges.get(0));
+                    }
                     this.fiSource.seek(this.boundingFiRanges.get(0), EMPTY_CFS, false);
                 }
             }
@@ -722,12 +742,25 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      * @throws IOException
      */
     protected boolean addKey(Key topFiKey, Value value) throws IOException {
+        if (log.isTraceEnabled()) {
+            log.trace("addKey evaluating " + topFiKey);
+        }
         if ((timeFilter == null || timeFilter.apply(topFiKey)) && (datatypeFilter == null || datatypeFilter.apply(topFiKey)) && (matches(topFiKey) != negated)) {
+            if (log.isTraceEnabled()) {
+                log.trace("addKey matched " + topFiKey);
+            }
             Key topEventKey = buildEventKey(topFiKey, returnKeyType);
             // final check to ensure all keys are contained by initial seek
-            if (lastRangeSeeked.contains(topEventKey)) {
+            if (sortedUIDs && log.isTraceEnabled()) {
+                log.trace("testing " + topEventKey + " against " + lastRangeSeeked);
+            }
+            // no need to check containership if not returning sorted uids
+            if (!sortedUIDs || lastRangeSeeked.contains(topEventKey)) {
                 // avoid writing to set if cancelled
                 if (!DatawaveFieldIndexCachingIteratorJexl.this.setControl.isCancelledQuery()) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Adding result: " + topEventKey);
+                    }
                     DatawaveFieldIndexCachingIteratorJexl.this.threadSafeSet.add(new KeyValueSerializable(topEventKey, new Value(value).get()));
                     return true;
                 }
