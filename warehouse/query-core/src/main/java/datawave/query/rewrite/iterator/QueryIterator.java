@@ -331,6 +331,9 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             // Cannot do this on document specific ranges as the count would place the keys outside the initial range
             if (!sortedUIDs && documentRange == null) {
                 this.serializedDocuments = new ResultCountingIterator(serializedDocuments, resultCount, yield);
+            } else if (this.sortedUIDs) {
+                // we have sorted UIDs, so we can mask out the cq
+                this.serializedDocuments = new KeyAdjudicator<Value>(serializedDocuments, yield);
             }
             
             // only add the final document tracking iterator which sends stats back to the client if collectTimingDetails is true
@@ -696,19 +699,10 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         if (gatherTimingDetails()) {
             documents = statelessFilter(documents, new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan,
                             new EmptyDocumentFilter()));
-            // if the UIDs are sorted, then we can mask out the CQ using the KeyAdjudicator
-            if (this.sortedUIDs) {
-                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.KeyAdjudicator, trackingSpan,
-                                new KeyAdjudicator<Document>()));
-            }
             documents = Iterators
                             .transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentMetadata, trackingSpan, new DocumentMetadata()));
         } else {
             documents = statelessFilter(documents, new EmptyDocumentFilter());
-            // if the UIDs are sorted, then we can mask out the CQ using the KeyAdjudicator
-            if (this.sortedUIDs) {
-                documents = Iterators.transform(documents, new KeyAdjudicator<Document>());
-            }
             documents = Iterators.transform(documents, new DocumentMetadata());
         }
         
