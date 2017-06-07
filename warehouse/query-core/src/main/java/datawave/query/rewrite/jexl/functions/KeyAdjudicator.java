@@ -2,7 +2,7 @@ package datawave.query.rewrite.jexl.functions;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
-import nsa.datawave.query.rewrite.iterator.YieldCallbackWrapper;
+import datawave.query.rewrite.iterator.YieldCallbackWrapper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 

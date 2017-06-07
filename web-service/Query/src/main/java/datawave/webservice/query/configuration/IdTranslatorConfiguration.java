@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import datawave.query.data.UUIDType;
 
-import nsa.datawave.webservice.query.QueryParameters;
+import datawave.webservice.query.QueryParameters;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.stereotype.Component;
 
