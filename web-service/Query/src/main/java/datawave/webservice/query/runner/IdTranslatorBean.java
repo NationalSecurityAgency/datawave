@@ -228,6 +228,7 @@ public class IdTranslatorBean {
         String auths = AuthorizationsUtil.buildUserAuthorizationString(ctx.getCallerPrincipal());
         
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
+        p.putAll(idTranslatorConfiguration.optionalParamsToMap());
         p.putSingle(QueryParameters.QUERY_LOGIC_NAME, logicName);
         p.putSingle(QueryParameters.QUERY_STRING, query);
         p.putSingle(QueryParameters.QUERY_NAME, queryName);
