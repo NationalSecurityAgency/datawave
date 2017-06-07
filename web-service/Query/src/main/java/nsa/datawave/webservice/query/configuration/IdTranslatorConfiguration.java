@@ -5,7 +5,11 @@ import java.util.ArrayList;
 
 import nsa.datawave.query.data.UUIDType;
 
+import nsa.datawave.webservice.query.QueryParameters;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.stereotype.Component;
+
+import javax.ws.rs.core.MultivaluedMap;
 
 @Component("idTranslatorConfiguration")
 public class IdTranslatorConfiguration {
@@ -44,5 +48,13 @@ public class IdTranslatorConfiguration {
             }
         }
         this.uuidTypes = goodTypes;
+    }
+    
+    public MultivaluedMap<String,String> optionalParamsToMap() {
+        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+        if (this.columnVisibility != null) {
+            p.putSingle(QueryParameters.QUERY_VISIBILITY, this.columnVisibility);
+        }
+        return p;
     }
 }
