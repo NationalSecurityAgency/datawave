@@ -6,6 +6,8 @@ import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -20,6 +22,7 @@ import datawave.query.rewrite.iterator.NestedIterator;
 import datawave.query.rewrite.iterator.NestedQuery;
 import datawave.query.rewrite.iterator.NestedQueryIterator;
 import datawave.query.rewrite.iterator.QueryIterator;
+import datawave.query.rewrite.iterator.YieldCallbackWrapper;
 import datawave.query.rewrite.iterator.profile.QuerySpan;
 import datawave.query.rewrite.iterator.profile.QuerySpanCollector;
 import datawave.query.util.Tuple2;
@@ -31,9 +34,12 @@ import datawave.query.util.Tuple2;
 public class PipelineIterator implements Iterator<Entry<Key,Value>> {
     
     private static final Logger log = Logger.getLogger(PipelineIterator.class);
+    final protected YieldCallbackWrapper<Key> yield;
+    final protected long yieldThresholdMs;
     final protected NestedIterator<Key> docSource;
     final protected PipelinePool pipelines;
     final protected Queue<Tuple2<Future<?>,Pipeline>> evaluationQueue;
+    protected Key lastKeyEvaluated = null;
     final protected Queue<Entry<Key,Value>> results;
     final protected int maxResults;
     final protected QuerySpanCollector querySpanCollector;
@@ -42,7 +48,8 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
     protected IteratorEnvironment env;
     
     public PipelineIterator(NestedIterator<Key> documents, int maxPipelines, int maxCachedResults, QuerySpanCollector querySpanCollector, QuerySpan querySpan,
-                    QueryIterator sourceIterator, SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env) {
+                    QueryIterator sourceIterator, SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env,
+                    YieldCallbackWrapper<Key> yieldCallback, long yieldThresholdMs) {
         this.docSource = documents;
         this.pipelines = new PipelinePool(maxPipelines, querySpanCollector, sourceIterator, sourceForDeepCopy, env);
         this.evaluationQueue = new LinkedList<>();
@@ -51,7 +58,8 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
         this.querySpanCollector = querySpanCollector;
         this.querySpan = querySpan;
         this.env = env;
-        
+        this.yield = yieldCallback;
+        this.yieldThresholdMs = yieldThresholdMs;
     }
     
     public void setCollectTimingDetails(boolean collectTimingDetails) {
@@ -151,8 +159,29 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
     private void cacheNextResult() throws InterruptedException, ExecutionException {
         Entry<Key,Value> result = null;
         
+        long startMs = System.currentTimeMillis();
         while (!evaluationQueue.isEmpty() && result == null) {
-            result = poll();
+            // we must have at least evaluated one thing in order to yield, otherwise we will have not progressed at all
+            if (yield != null && lastKeyEvaluated != null) {
+                long delta = System.currentTimeMillis() - startMs;
+                if (delta > yieldThresholdMs) {
+                    yield.yield(lastKeyEvaluated);
+                    throw new IterationInterruptedException("Yielding at " + lastKeyEvaluated);
+                }
+                try {
+                    result = poll(yieldThresholdMs - delta);
+                } catch (TimeoutException e) {
+                    yield.yield(lastKeyEvaluated);
+                    throw new IterationInterruptedException("Yielding at " + lastKeyEvaluated);
+                }
+            } else {
+                try {
+                    result = poll(Long.MAX_VALUE);
+                } catch (TimeoutException e) {
+                    // should be impossible with a Long.MAX_VALUE, but we can wait another 292 million years
+                    log.error("We have been waiting for 292 million years, trying again");
+                }
+            }
         }
     }
     
@@ -164,7 +193,12 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      */
     private void flushCompletedResults() throws InterruptedException, ExecutionException {
         while (!evaluationQueue.isEmpty() && evaluationQueue.peek().first().isDone() && results.size() < this.maxResults) {
-            poll();
+            try {
+                poll(Long.MAX_VALUE);
+            } catch (TimeoutException e) {
+                // should be impossible with a Long.MAX_VALUE, but we can wait another 292 million years
+                log.error("We have been waiting for 292 million years, trying again");
+            }
         }
     }
     
@@ -175,7 +209,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      * @throws InterruptedException
      * @throws ExecutionException
      */
-    private Entry<Key,Value> poll() throws InterruptedException, ExecutionException {
+    private Entry<Key,Value> poll(long waitMs) throws InterruptedException, ExecutionException, TimeoutException {
         // get the next evaluated result
         Tuple2<Future<?>,Pipeline> nextFuture = evaluationQueue.poll();
         
@@ -183,7 +217,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
         if (!nextFuture.first().isDone()) {
             long start = System.currentTimeMillis();
             
-            nextFuture.first().get();
+            nextFuture.first().get(waitMs, TimeUnit.MILLISECONDS);
             
             if (log.isDebugEnabled()) {
                 long wait = System.currentTimeMillis() - start;
@@ -193,6 +227,9 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
         
         // pull the result
         Entry<Key,Value> result = nextFuture.second().getResult();
+        
+        // record the last evaluated key
+        lastKeyEvaluated = nextFuture.second().getSource().getKey();
         
         // return the pipeline for reuse
         pipelines.checkIn(nextFuture.second());

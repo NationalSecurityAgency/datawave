@@ -51,6 +51,10 @@ public class Pipeline implements Runnable {
         this.documentSpecificSource.setDocumentKey(documentKey);
     }
     
+    public Map.Entry<Key,Document> getSource() {
+        return this.documentSpecificSource.getDocumentKey();
+    }
+    
     public void clear() {
         this.result = null;
         this.documentSpecificSource.setDocumentKey(null);

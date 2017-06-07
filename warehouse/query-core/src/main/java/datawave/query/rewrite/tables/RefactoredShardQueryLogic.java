@@ -278,6 +278,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     private int maxOrExpansionThreshold = 500;
     private int maxOrExpansionFstThreshold = 750;
     
+    private long yieldThresholdMs = Long.MAX_VALUE;
+    
     protected int maxScannerBatchSize = 1000;
     
     protected int maxIndexBatchSize = 1000;
@@ -449,6 +451,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.setMaxOrExpansionFstThreshold(other.getMaxOrExpansionFstThreshold());
         this.setMaxScannerBatchSize(other.getMaxScannerBatchSize());
         this.setMaxIndexBatchSize(other.getMaxIndexBatchSize());
+        
+        this.setYieldThresholdMs(other.getYieldThresholdMs());
         
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
@@ -2313,4 +2317,13 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     public void setFailOutsideValidDateRange(boolean failOutsideValidDateRange) {
         this.failOutsideValidDateRange = failOutsideValidDateRange;
     }
+    
+    public long getYieldThresholdMs() {
+        return yieldThresholdMs;
+    }
+    
+    public void setYieldThresholdMs(long yieldThresholdMs) {
+        this.yieldThresholdMs = yieldThresholdMs;
+    }
+    
 }

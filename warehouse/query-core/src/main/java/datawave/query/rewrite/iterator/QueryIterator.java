@@ -112,6 +112,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     
     protected Key key;
     protected Value value;
+    protected YieldCallbackWrapper<Key> yield;
     
     protected IteratorEnvironment myEnvironment;
     
@@ -205,6 +206,10 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         if (log.isTraceEnabled())
             log.trace("hasTop() " + result);
         return result;
+    }
+    
+    public void enableYielding(Object yieldCallback) {
+        this.yield = new YieldCallbackWrapper(yieldCallback);
     }
     
     @Override
@@ -312,7 +317,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             // Create the pipeline iterator for document aggregation and
             // evaluation within a thread pool
             PipelineIterator pipelineIter = PipelineFactory.createIterator(this.seekKeySource, getMaxEvaluationPipelines(), getMaxPipelineCachedResults(),
-                            getSerialPipelineRequest(), querySpanCollector, trackingSpan, this, sourceForDeepCopies.deepCopy(myEnvironment), myEnvironment);
+                            getSerialPipelineRequest(), querySpanCollector, trackingSpan, this, sourceForDeepCopies.deepCopy(myEnvironment), myEnvironment,
+                            yield, yieldThresholdMs);
             
             pipelineIter.setCollectTimingDetails(collectTimingDetails);
             // TODO pipelineIter.setStatsdHostAndPort(statsdHostAndPort);
@@ -324,7 +330,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             // now add the result count to the keys (required when not sorting UIDs)
             // Cannot do this on document specific ranges as the count would place the keys outside the initial range
             if (!sortedUIDs && documentRange == null) {
-                this.serializedDocuments = new ResultCountingIterator(serializedDocuments, resultCount);
+                this.serializedDocuments = new ResultCountingIterator(serializedDocuments, resultCount, yield);
             }
             
             // only add the final document tracking iterator which sends stats back to the client if collectTimingDetails is true
@@ -1052,7 +1058,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         if (!this.isFullTableScanOnly()) {
             
             boolean isQueryFullySatisfiedInitialState = batchedQueries <= 0 ? true : false;
-            String hitListOptionString = documentOptions.get("hit.list");
+            String hitListOptionString = documentOptions.get(QueryOptions.HIT_LIST);
             
             if (hitListOptionString != null) {
                 boolean hitListOption = Boolean.parseBoolean(hitListOptionString);

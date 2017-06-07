@@ -191,6 +191,8 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     private int maxOrExpansionThreshold = 500;
     private int maxOrExpansionFstThreshold = 750;
     
+    private long yieldThresholdMs = Long.MAX_VALUE;
+    
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
     
@@ -1391,6 +1393,8 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.setMaxEvaluationPipelines(copy.getMaxEvaluationPipelines());
         this.setMaxPipelineCachedResults(copy.getMaxPipelineCachedResults());
         
+        this.setYieldThresholdMs(copy.getYieldThresholdMs());
+        
         this.setReducedResponse(copy.isReducedResponse());
         this.setDisableEvaluation(copy.isDisableEvaluation());
         this.setDisableIndexOnlyDocuments(copy.disableIndexOnlyDocuments());
@@ -1602,4 +1606,13 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     public void setSortedUIDs(boolean sortedUIDs) {
         this.sortedUIDs = sortedUIDs;
     }
+    
+    public long getYieldThresholdMs() {
+        return yieldThresholdMs;
+    }
+    
+    public void setYieldThresholdMs(long yieldThresholdMs) {
+        this.yieldThresholdMs = yieldThresholdMs;
+    }
+    
 }
