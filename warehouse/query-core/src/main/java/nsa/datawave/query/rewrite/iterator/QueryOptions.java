@@ -115,6 +115,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String HIT_LIST = "hit.list";
     public static final String START_TIME = "start.time";
     public static final String END_TIME = "end.time";
+    public static final String YIELD_THRESHOLD_MS = "yield.threshold.ms";
     
     public static final String FILTER_MASKED_VALUES = "filter.masked.values";
     public static final String INCLUDE_DATATYPE = "include.datatype";
@@ -279,6 +280,8 @@ public class QueryOptions implements OptionDescriber {
     
     protected int maxIvaratorSources = 33;
     
+    protected long yieldThresholdMs = Long.MAX_VALUE;
+    
     protected Predicate<Key> fieldIndexKeyDataTypeFilter = KeyIdentity.Function;
     protected Predicate<Key> eventEntryKeyDataTypeFilter = KeyIdentity.Function;
     
@@ -384,6 +387,8 @@ public class QueryOptions implements OptionDescriber {
         this.maxIndexRangeSplit = other.maxIndexRangeSplit;
         this.ivaratorMaxOpenFiles = other.ivaratorMaxOpenFiles;
         this.maxIvaratorSources = other.maxIvaratorSources;
+        
+        this.yieldThresholdMs = other.yieldThresholdMs;
         
         this.compressResults = other.compressResults;
         this.limitFieldsMap = other.limitFieldsMap;
@@ -826,6 +831,8 @@ public class QueryOptions implements OptionDescriber {
                         "The maximum number of files that can be opened at one time during a merge sort.  If more that this number of files are created, then compactions will occur");
         options.put(MAX_IVARATOR_SOURCES,
                         " The maximum number of sources to use for ivarators across all ivarated terms within the query.  Note the thread pool size is controlled via an accumulo property.");
+        options.put(YIELD_THRESHOLD_MS,
+                        "The threshold in milliseconds that the query iterator will evaluate consecutive documents to false before yielding the scan.");
         options.put(COMPRESS_SERVER_SIDE_RESULTS, "GZIP compress the serialized Documents before returning to the webserver");
         options.put(MAX_EVALUATION_PIPELINES, "The max number of evaluation pipelines");
         options.put(SERIAL_EVALUATION_PIPELINE, "Forces us to use the serial pipeline. Allows us to still have a single thread for evaluation");
@@ -1155,6 +1162,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(MAX_IVARATOR_SOURCES)) {
             this.setMaxIvaratorSources(Integer.parseInt(options.get(MAX_IVARATOR_SOURCES)));
+        }
+        
+        if (options.containsKey(YIELD_THRESHOLD_MS)) {
+            this.setYieldThresholdMs(Long.parseLong(options.get(YIELD_THRESHOLD_MS)));
         }
         
         if (options.containsKey(COMPRESS_SERVER_SIDE_RESULTS)) {
@@ -1625,6 +1636,14 @@ public class QueryOptions implements OptionDescriber {
     
     public void setStatsdKeepAliveMs(long statsdKeepAliveMs) {
         this.statsdKeepAliveMs = statsdKeepAliveMs;
+    }
+    
+    public long getYieldThresholdMs() {
+        return yieldThresholdMs;
+    }
+    
+    public void setYieldThresholdMs(long yieldThresholdMs) {
+        this.yieldThresholdMs = yieldThresholdMs;
     }
     
 }

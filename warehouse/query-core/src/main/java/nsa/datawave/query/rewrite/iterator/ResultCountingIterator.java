@@ -14,28 +14,36 @@ import org.apache.hadoop.io.Text;
 public class ResultCountingIterator implements Iterator<Entry<Key,Value>> {
     volatile private long resultCount = 0;
     private Iterator<Entry<Key,Value>> serializedDocuments = null;
+    private YieldCallbackWrapper<Key> yield;
     
-    public ResultCountingIterator(Iterator<Entry<Key,Value>> serializedDocuments, long resultCount) {
+    public ResultCountingIterator(Iterator<Entry<Key,Value>> serializedDocuments, long resultCount, YieldCallbackWrapper<Key> yieldCallback) {
         this.serializedDocuments = serializedDocuments;
         this.resultCount = resultCount;
+        this.yield = yieldCallback;
     }
     
     @Override
     public boolean hasNext() {
-        return serializedDocuments.hasNext();
+        boolean hasNext = serializedDocuments.hasNext();
+        if (yield != null && yield.hasYielded()) {
+            yield.yield(addKeyCount(yield.getPositionAndReset()));
+        }
+        return hasNext;
     }
     
     @Override
     public Entry<Key,Value> next() {
         Entry<Key,Value> next = serializedDocuments.next();
         if (next != null) {
-            Key key = next.getKey();
-            resultCount++;
-            Key resultKey = new Key(key.getRow(), new Text(NumericalEncoder.encode(Long.toString(resultCount)) + '\0' + key.getColumnFamily().toString()),
-                            key.getColumnQualifier(), key.getColumnVisibility(), key.getTimestamp());
-            next = Maps.immutableEntry(resultKey, next.getValue());
+            next = Maps.immutableEntry(addKeyCount(next.getKey()), next.getValue());
         }
         return next;
+    }
+    
+    private Key addKeyCount(Key key) {
+        resultCount++;
+        return new Key(key.getRow(), new Text(NumericalEncoder.encode(Long.toString(resultCount)) + '\0' + key.getColumnFamily().toString()),
+                        key.getColumnQualifier(), key.getColumnVisibility(), key.getTimestamp());
     }
     
     @Override

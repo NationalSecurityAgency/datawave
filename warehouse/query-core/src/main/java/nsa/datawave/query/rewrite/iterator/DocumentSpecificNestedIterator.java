@@ -24,6 +24,10 @@ public class DocumentSpecificNestedIterator extends NestedQueryIterator<Key> {
         this.next = documentKey;
     }
     
+    public Map.Entry<Key,Document> getDocumentKey() {
+        return documentKey;
+    }
+    
     @Override
     public void initialize() {}
     

@@ -96,6 +96,8 @@ public class RefactoredShardQueryConfigurationFactory {
         config.setMaxOrExpansionThreshold(configuredLogic.getMaxOrExpansionThreshold());
         config.setMaxOrExpansionFstThreshold(configuredLogic.getMaxOrExpansionFstThreshold());
         
+        config.setYieldThresholdMs(configuredLogic.getYieldThresholdMs());
+        
         config.setExpandAllTerms(configuredLogic.isExpandAllTerms());
         
         config.setHdfsSiteConfigURLs(configuredLogic.getHdfsSiteConfigURLs());
