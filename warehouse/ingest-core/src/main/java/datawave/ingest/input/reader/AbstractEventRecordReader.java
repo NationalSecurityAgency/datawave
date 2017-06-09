@@ -9,6 +9,7 @@ import java.util.TreeMap;
 
 import datawave.data.hash.UIDBuilder;
 import datawave.data.hash.UID;
+import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.data.RawDataErrorNames;
@@ -229,7 +230,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
         } else if (formatters != null) {
             for (SimpleDateFormat format : formatters) {
                 try {
-                    event.setDate(format.parse(fieldValue).getTime());
+                    event.setDate(format.parse(DateNormalizer.convertMicroseconds(fieldValue, format.toPattern())).getTime());
                     if (logger.isDebugEnabled()) {
                         logger.debug("Parsed date from '" + fieldName + "' using formatter " + format.toPattern());
                     }
@@ -249,7 +250,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
             }
         } else if (formatter != null) {
             try {
-                event.setDate(formatter.parse(fieldValue).getTime());
+                event.setDate(formatter.parse(DateNormalizer.convertMicroseconds(fieldValue, formatter.toPattern())).getTime());
             } catch (java.text.ParseException e) {
                 logger.error("Error parsing date from hash record", e);
             }
