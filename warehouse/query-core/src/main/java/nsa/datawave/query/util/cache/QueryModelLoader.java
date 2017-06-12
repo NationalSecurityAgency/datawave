@@ -30,6 +30,17 @@ public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<
     protected Set<String> allFields = null;
     
     /**
+     * Fetch a query model loader without a known set of fields
+     *
+     * @param connector
+     * @param tableName
+     * @param auths
+     */
+    public QueryModelLoader(Connector connector, String tableName, Set<Authorizations> auths) {
+        this(connector, tableName, auths, null);
+    }
+    
+    /**
      * @param connector
      * @param tableName
      * @param auths
@@ -122,7 +133,7 @@ public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<
                     if ("forward".equalsIgnoreCase(part)) {
                         // Do *not* add a forward mapping entry
                         // when the replacement does not exist in the database
-                        if (allFields.contains(replacement)) {
+                        if (allFields == null || allFields.contains(replacement)) {
                             queryModel.addTermToModel(original, replacement);
                         } else if (log.isTraceEnabled()) {
                             log.trace("Ignoring forward mapping of " + replacement + " for " + original + " because the metadata table has no reference to it");
