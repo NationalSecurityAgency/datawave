@@ -114,7 +114,9 @@ public class MetadataHelperUpdateHdfsListener {
                 }
             });
             // The first time we register a cachelistener, tell it to update the type metadata. This happens when the webserver is (re)started
-            watcher.setTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE);
+            if (!watcher.checkTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE)) {
+                watcher.setTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE);
+            }
             
         } catch (Exception e) {
             e.printStackTrace();
