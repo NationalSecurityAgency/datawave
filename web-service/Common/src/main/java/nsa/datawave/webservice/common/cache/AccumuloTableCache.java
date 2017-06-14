@@ -273,11 +273,15 @@ public class AccumuloTableCache {
     }
     
     private void handleReloadTypeMetadata(String tableName) {
+        String triStateName = tableName + ":needsUpdate";
         try {
-            log.debug("table:" + tableName + " handleReloadTypeMetadata(" + tableName + ")");
-            details.get(tableName).getWatcher().setTriState(tableName + ":needsUpdate", SharedTriState.STATE.NEEDS_UPDATE);
+            log.debug(triStateName + " handleReloadTypeMetadata(" + tableName + ")");
+            SharedCacheCoordinator watcher = details.get(tableName).getWatcher();
+            if (!watcher.checkTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE)) {
+                watcher.setTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE);
+            }
         } catch (Throwable e) {
-            log.debug("table:" + tableName + " could not update the triState '" + tableName + ":needsUpdate' on watcher for table " + tableName, e);
+            log.debug("table:" + tableName + " could not update the triState '" + triStateName + " on watcher for table " + tableName, e);
         }
         
     }
