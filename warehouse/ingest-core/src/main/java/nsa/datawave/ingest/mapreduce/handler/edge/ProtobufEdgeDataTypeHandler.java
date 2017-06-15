@@ -848,11 +848,15 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         Key fwdMetaKey = EdgeKey.getMetadataKey(baseKey);
         Key revMetaKey = EdgeKey.getMetadataKey(EdgeKey.swapSourceSink(EdgeKey.decode(baseKey)).encode());
         
-        if (null == eventMetadataRegistry.get(fwdMetaKey)) {
-            eventMetadataRegistry.put(fwdMetaKey, new HashSet<Metadata>());
+        Set<Metadata> fwdMetaSet = eventMetadataRegistry.get(fwdMetaKey);
+        if (null == fwdMetaSet) {
+            fwdMetaSet = new HashSet<Metadata>();
+            eventMetadataRegistry.put(fwdMetaKey, fwdMetaSet);
         }
-        if (null == eventMetadataRegistry.get(revMetaKey)) {
-            eventMetadataRegistry.put(revMetaKey, new HashSet<Metadata>());
+        Set<Metadata> revMetaSet = eventMetadataRegistry.get(revMetaKey);
+        if (null == revMetaSet) {
+            revMetaSet = new HashSet<Metadata>();
+            eventMetadataRegistry.put(revMetaKey, revMetaSet);
         }
         
         // Build the Protobuf for the value
@@ -870,8 +874,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             reverseBuilder.setJexlPrecondition(jexlPrecondition);
         }
         
-        eventMetadataRegistry.get(fwdMetaKey).add(forwardBuilder.build());
-        eventMetadataRegistry.get(revMetaKey).add(reverseBuilder.build());
+        fwdMetaSet.add(forwardBuilder.build());
+        revMetaSet.add(reverseBuilder.build());
     }
     
     private String getEnrichmentFieldName(EdgeDefinition edgeDef) {

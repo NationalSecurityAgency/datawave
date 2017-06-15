@@ -72,6 +72,9 @@ public class SnowflakeUID extends UID {
     private final int radix;
     private BigInteger snowflake;
     
+    // cached toString
+    private transient String toString = null;
+    
     /**
      * Empty constructor needed if using readFields
      */
@@ -457,7 +460,10 @@ public class SnowflakeUID extends UID {
     
     @Override
     public String toString() {
-        return toString(radix);
+        if (toString == null) {
+            toString = toString(radix);
+        }
+        return toString;
     }
     
     /**

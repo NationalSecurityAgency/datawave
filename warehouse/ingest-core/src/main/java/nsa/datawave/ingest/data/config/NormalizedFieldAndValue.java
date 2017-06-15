@@ -26,6 +26,9 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
     private String eventFieldName = null;
     private static MimeDecoder mimeDecoder = null;
     
+    // cached defaultEventFieldName. This must be reset to null if anything changes that would affect its contents.
+    private transient String defaultEventFieldName = null;
+    
     public NormalizedFieldAndValue() {
         super();
     }
@@ -107,6 +110,8 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
     }
     
     public void setGrouped(boolean grouped) {
+        hashCode = null;
+        defaultEventFieldName = null;
         this.grouped = grouped;
     }
     
@@ -118,6 +123,8 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
     }
     
     public void setSubGroup(String group) {
+        hashCode = null;
+        defaultEventFieldName = null;
         this.subGroup = group;
     }
     
@@ -133,6 +140,8 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
     }
     
     public void setIndexedFieldName(String name) {
+        hashCode = null;
+        defaultEventFieldName = null;
         // if setting the indexed field name explicitly, save off the current field name as the event field name
         if (this.eventFieldName == null) {
             this.eventFieldName = this._fieldName;
@@ -140,7 +149,14 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
         this._fieldName = name;
     }
     
+    @Override
+    public void setFieldName(String name) {
+        defaultEventFieldName = null;
+        super.setFieldName(name);
+    }
+    
     public void setEventFieldName(String name) {
+        hashCode = null;
         this.eventFieldName = name;
     }
     
@@ -153,33 +169,38 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
     }
     
     protected String getDefaultEventFieldName() {
-        if (isGrouped()) {
-            StringBuilder builder = new StringBuilder();
-            builder.append(getIndexedFieldName());
-            if (getGroup() != null) {
-                builder.append('.');
-                builder.append(getGroup().toUpperCase());
+        if (defaultEventFieldName == null) {
+            if (isGrouped()) {
+                StringBuilder builder = new StringBuilder();
+                builder.append(getIndexedFieldName());
+                if (getGroup() != null) {
+                    builder.append('.');
+                    builder.append(getGroup().toUpperCase());
+                }
+                if (getSubGroup() != null) {
+                    builder.append('.');
+                    builder.append(getSubGroup().toUpperCase());
+                }
+                defaultEventFieldName = builder.toString();
+            } else {
+                defaultEventFieldName = _fieldName;
             }
-            if (getSubGroup() != null) {
-                builder.append('.');
-                builder.append(getSubGroup().toUpperCase());
-            }
-            return builder.toString();
-        } else {
-            return _fieldName;
         }
+        return defaultEventFieldName;
     }
     
     public int hashCode() {
-        int hashCode = super.hashCode();
-        // if we are not grouped and the event field name is null,
-        // then we are logically equal to the super instance, so return its hashCode
-        if ((!grouped) && (eventFieldName == null)) {
-            return hashCode;
+        if (hashCode == null) {
+            hashCode = super.hashCode();
+            // if we are not grouped and the event field name is null,
+            // then we are logically equal to the super instance, so return its hashCode
+            if (grouped || eventFieldName != null) {
+                HashCodeBuilder b = new HashCodeBuilder();
+                b.append(hashCode).append(eventFieldName).append(grouped).append(subGroup).append(group);
+                hashCode = b.toHashCode();
+            }
         }
-        HashCodeBuilder b = new HashCodeBuilder();
-        b.append(hashCode).append(eventFieldName).append(grouped).append(subGroup).append(group);
-        return b.toHashCode();
+        return hashCode;
     }
     
     public boolean equals(Object o) {
