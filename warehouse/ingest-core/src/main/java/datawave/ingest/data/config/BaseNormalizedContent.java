@@ -27,6 +27,9 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
     /** The field processing error if any. */
     protected Throwable error = null;
     
+    // a cached hash code. This must be reset to null if anything changes that would affect its contents
+    protected transient Integer hashCode = null;
+    
     public BaseNormalizedContent() {
         
     }
@@ -57,6 +60,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
      *            the value to set
      */
     public void setFieldName(String fieldName) {
+        hashCode = null;
         _fieldName = fieldName;
     }
     
@@ -94,6 +98,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
      *            the value to set
      */
     public void setIndexedFieldValue(String normalizedFieldValue) {
+        hashCode = null;
         _indexedFieldValue = normalizedFieldValue;
     }
     
@@ -107,6 +112,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
     }
     
     public void setEventFieldValue(String originalFieldValue) {
+        hashCode = null;
         _eventFieldValue = originalFieldValue;
     }
     
@@ -117,6 +123,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
     
     @Override
     public void setMarkings(Map<String,String> markings) {
+        hashCode = null;
         this._markings = markings;
     }
     
@@ -127,6 +134,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
      *            The processing error
      */
     public void setError(Throwable error) {
+        hashCode = null;
         this.error = error;
     }
     
@@ -140,13 +148,16 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
     }
     
     public int hashCode() {
-        HashCodeBuilder b = new HashCodeBuilder();
-        b.append(_fieldName).append(_indexedFieldValue).append(_eventFieldValue);
-        b.append(_markings);
-        if (error != null) {
-            b.append(error); // we want error in the hashCode only when it is non-null
+        if (hashCode == null) {
+            HashCodeBuilder b = new HashCodeBuilder();
+            b.append(_fieldName).append(_indexedFieldValue).append(_eventFieldValue);
+            b.append(_markings);
+            if (error != null) {
+                b.append(error); // we want error in the hashCode only when it is non-null
+            }
+            hashCode = b.toHashCode();
         }
-        return b.toHashCode();
+        return hashCode;
     }
     
     public boolean equals(Object o) {

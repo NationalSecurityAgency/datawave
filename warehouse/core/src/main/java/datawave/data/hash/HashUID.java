@@ -47,6 +47,9 @@ public class HashUID extends UID {
     
     private int time = -1;
     
+    // cached toString
+    private transient String toString = null;
+    
     /**
      * Empty constructor needed if using readFields
      */
@@ -310,20 +313,23 @@ public class HashUID extends UID {
     
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder();
-        buf.append(optionalPrefix);
-        buf.append(DEFAULT_SEPARATOR);
-        buf.append(Integer.toString(h1, RADIX));
-        buf.append(DEFAULT_SEPARATOR);
-        buf.append(Integer.toString(h2, RADIX));
-        if (time >= 0) {
-            buf.append(TIME_SEPARATOR);
-            buf.append(Integer.toString(time, RADIX));
-        }
-        if (extra != null) {
+        if (toString == null) {
+            StringBuilder buf = new StringBuilder();
+            buf.append(optionalPrefix);
             buf.append(DEFAULT_SEPARATOR);
-            buf.append(extra);
+            buf.append(Integer.toString(h1, RADIX));
+            buf.append(DEFAULT_SEPARATOR);
+            buf.append(Integer.toString(h2, RADIX));
+            if (time >= 0) {
+                buf.append(TIME_SEPARATOR);
+                buf.append(Integer.toString(time, RADIX));
+            }
+            if (extra != null) {
+                buf.append(DEFAULT_SEPARATOR);
+                buf.append(extra);
+            }
+            toString = buf.toString();
         }
-        return buf.toString();
+        return toString;
     }
 }
