@@ -135,6 +135,8 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
     }
     
     public void setGroup(String group) {
+        hashCode = null;
+        defaultEventFieldName = null;
         this.group = group;
     }
     
