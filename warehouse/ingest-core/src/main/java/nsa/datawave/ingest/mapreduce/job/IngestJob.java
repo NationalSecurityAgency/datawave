@@ -282,13 +282,22 @@ public class IngestJob extends Configured implements Tool {
             return -1;
         }
         
-        if (!configureTables(cbHelper, conf)) {
+        if (!registerTableNames(conf)) {
             return -1;
-        } else if (createTablesOnly) {
-            // Exit early if we are only creating tables
-            log.info("Created tables: " + getTables(conf) + " successfully!");
-            return 0;
         }
+        
+        if (createTablesOnly) {
+            boolean wasConfigureTablesSuccessful = configureTables(cbHelper, conf);
+            if (!wasConfigureTablesSuccessful) {
+                return -1;
+            } else {
+                // Exit early if we are only creating tables
+                log.info("Created tables: " + getTables(conf) + " successfully!");
+                return 0;
+            }
+        }
+        
+        serializeAggregatorConfiguration(cbHelper, conf, log);
         
         // get the source and output hadoop file systems
         FileSystem inputFs = getFileSystem(conf, srcHdfs);
@@ -712,8 +721,22 @@ public class IngestJob extends Configured implements Tool {
      * @throws TableNotFoundException
      * @throws ClassNotFoundException
      */
-    protected boolean configureTables(AccumuloHelper cbHelper, Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException,
-                    ClassNotFoundException {
+    private boolean configureTables(AccumuloHelper cbHelper, Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException,
+                    ClassNotFoundException {        
+        // Check to see if the tables exist
+        TableOperations tops = cbHelper.getConnector().tableOperations();
+        NamespaceOperations namespaceOperations = cbHelper.getConnector().namespaceOperations();
+        createAndConfigureTablesIfNecessary(tableNames, tops, namespaceOperations, conf, log, enableBloomFilters);
+        
+        return true;
+    }
+    
+    /**
+     * @param conf
+     *            configuration file that contains data handler types and other information necessary for determining the set of tables required
+     * @return true if a non-empty comma separated list of table names was properly set to conf's job table.names property
+     */
+    private boolean registerTableNames(Configuration conf) {
         Set<String> tables = getTables(conf);
         
         if (tables.isEmpty()) {
@@ -722,13 +745,6 @@ public class IngestJob extends Configured implements Tool {
         }
         tableNames = tables.toArray(new String[tables.size()]);
         conf.set("job.table.names", org.apache.hadoop.util.StringUtils.join(",", tableNames));
-        
-        // Check to see if the tables exist
-        TableOperations tops = cbHelper.getConnector().tableOperations();
-        NamespaceOperations namespaceOperations = cbHelper.getConnector().namespaceOperations();
-        createAndConfigureTablesIfNecessary(tableNames, tops, namespaceOperations, conf, log, enableBloomFilters);
-        serializeAggregatorConfiguration(tableNames, tops, conf, log);
-        
         return true;
     }
     
@@ -1208,10 +1224,8 @@ public class IngestJob extends Configured implements Tool {
      * for retrieval and use in mappers or reducers. Currently, this is used in {@link AggregatingReducer} and its subclasses to aggregate output key/value
      * pairs rather than making accumulo do it at scan or major compaction time on the resulting rfile.
      *
-     * @param tableNames
-     *            the names of tables from which to retrieve aggregator config
-     * @param tops
-     *            a {@link TableOperations} for accessing table configuration
+     * @param accumuloHelper
+     *            for accessing tableOperations
      * @param conf
      *            the Hadoop configuration into which serialized aggregator configuration is placed
      * @param log
@@ -1221,9 +1235,10 @@ public class IngestJob extends Configured implements Tool {
      * @throws TableNotFoundException
      * @throws ClassNotFoundException
      */
-    public static void serializeAggregatorConfiguration(String[] tableNames, TableOperations tops, Configuration conf, Logger log)
-                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException, ClassNotFoundException {
-        
+    void serializeAggregatorConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloSecurityException, AccumuloException,
+                    TableNotFoundException, ClassNotFoundException {
+        TableOperations tops = accumuloHelper.getConnector().tableOperations();
+
         // We're arbitrarily choosing the scan scope for gathering aggregator information.
         // For the aggregators configured in this job, that's ok since they are added to all
         // scopes. If someone manually added another aggregator and didn't apply it to scan
