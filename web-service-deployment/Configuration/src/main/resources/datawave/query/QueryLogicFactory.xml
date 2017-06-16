@@ -205,7 +205,7 @@
         <!-- the list of comma delimited hdfs configuration files something like file:///opt/datawave/hadoop-warehouse/conf/core-site.xml,file:///opt/datawave/hadoop-warehouse/conf/hdfs-site.xml-->
         <property name="hdfsSiteConfigURLs" value="${hdfs.site.config.urls}" />
         <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
-        <property name="zookeeperConfig" value="${zookeeper.hosts}" />
+        <property name="zookeeperConfig" value="${ivarator.zookeeper.hosts}" />
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
         <property name="ivaratorCacheBaseURIs" value="${ivarator.cache.base.uris}" />
         <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
@@ -570,7 +570,7 @@
         <!-- the list of comma delimited hdfs configuration files something like file:///opt/datawave/hadoop-warehouse/conf/core-site.xml,file:///opt/datawave/hadoop-warehouse/conf/hdfs-site.xml-->
         <property name="hdfsSiteConfigURLs" value="${hdfs.site.config.urls}" />
         <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
-        <property name="zookeeperConfig" value="${zookeeper.hosts}" />
+        <property name="zookeeperConfig" value="${ivarator.zookeeper.hosts}" />
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
         <property name="ivaratorCacheBaseURIs" value="${ivarator.cache.base.uris}" />
         <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
