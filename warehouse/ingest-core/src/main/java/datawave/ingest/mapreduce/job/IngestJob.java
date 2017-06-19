@@ -724,7 +724,7 @@ public class IngestJob implements Tool {
      * @throws ClassNotFoundException
      */
     private boolean configureTables(AccumuloHelper cbHelper, Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException,
-                    ClassNotFoundException {        
+                    ClassNotFoundException {
         // Check to see if the tables exist
         TableOperations tops = cbHelper.getConnector().tableOperations();
         NamespaceOperations namespaceOperations = cbHelper.getConnector().namespaceOperations();
@@ -1240,7 +1240,7 @@ public class IngestJob implements Tool {
     void serializeAggregatorConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloSecurityException, AccumuloException,
                     TableNotFoundException, ClassNotFoundException {
         TableOperations tops = accumuloHelper.getConnector().tableOperations();
-
+        
         // We're arbitrarily choosing the scan scope for gathering aggregator information.
         // For the aggregators configured in this job, that's ok since they are added to all
         // scopes. If someone manually added another aggregator and didn't apply it to scan
