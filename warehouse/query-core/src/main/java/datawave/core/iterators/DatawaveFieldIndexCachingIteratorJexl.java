@@ -331,65 +331,72 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         QuerySpan querySpan = null;
         
         try {
-            
+            this.fiRow = null;
             SortedKeyValueIterator<Key,Value> source = getSource();
             
-            if (collectTimingDetails && source instanceof SourceTrackingIterator) {
-                querySpan = ((SourceTrackingIterator) source).getQuerySpan();
-            }
-            
-            // seek our underlying source to the start of the incoming range
-            // expand the range as the underlying table may not actually contain the keys in this range as we are only returning keys
-            // as specified by the returnKeyType
-            Range seekRange = new Range(lastRangeSeeked.getStartKey(), lastRangeSeeked.isStartKeyInclusive(), (lastRangeSeeked.getEndKey() == null ? null
-                            : new Key(lastRangeSeeked.getEndKey().getRow()).followingKey(PartialKey.ROW)), false);
-            source.seek(seekRange, EMPTY_CFS, false);
-            scannedKeys.incrementAndGet();
-            if (log.isTraceEnabled()) {
-                try {
-                    log.trace("lastRangeSeeked: " + lastRangeSeeked + "  source.getTopKey(): " + source != null ? source.getTopKey() : null);
-                } catch (Exception ex) {
-                    log.trace("Ignoring this while logging a trace message:", ex);
-                    // let's not ruin everything when trace is on...
-                }
-            }
-            
-            // Determine the bounding FI ranges for the field index for this row
-            this.boundingFiRanges.clear();
-            if (source.hasTop()) {
-                this.fiRow = source.getTopKey().getRow();
-                this.boundingFiRanges.addAll(buildBoundingFiRanges(fiRow, fiName, fieldValue));
+            try {
                 
-                // if we are not sorting uids and we have a starting value, then pop off the ranges until we have the one
-                // containing the last value returned. Then modify that range appropriately.
-                if (lastFiKey != null) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Reseeking fi to lastFiKey: " + lastFiKey);
-                    }
-                    while (!boundingFiRanges.isEmpty() && !boundingFiRanges.get(0).contains(lastFiKey)) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("Skipping range: " + boundingFiRanges.get(0));
-                        }
-                        boundingFiRanges.remove(0);
-                    }
-                    if (!boundingFiRanges.isEmpty()) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("Starting in range: " + boundingFiRanges.get(0));
-                        }
-                        Range boundingFiRange = boundingFiRanges.get(0);
-                        boundingFiRange = new Range(lastFiKey, false, boundingFiRange.getEndKey(), boundingFiRange.isEndKeyInclusive());
-                        boundingFiRanges.set(0, boundingFiRange);
-                        if (log.isTraceEnabled()) {
-                            log.trace("Reset range to: " + boundingFiRanges.get(0));
-                        }
+                if (collectTimingDetails && source instanceof SourceTrackingIterator) {
+                    querySpan = ((SourceTrackingIterator) source).getQuerySpan();
+                }
+                
+                // seek our underlying source to the start of the incoming range
+                // expand the range as the underlying table may not actually contain the keys in this range as we are only returning keys
+                // as specified by the returnKeyType
+                Range seekRange = new Range(lastRangeSeeked.getStartKey(), lastRangeSeeked.isStartKeyInclusive(), (lastRangeSeeked.getEndKey() == null ? null
+                                : new Key(lastRangeSeeked.getEndKey().getRow()).followingKey(PartialKey.ROW)), false);
+                source.seek(seekRange, EMPTY_CFS, false);
+                scannedKeys.incrementAndGet();
+                if (log.isTraceEnabled()) {
+                    try {
+                        log.trace("lastRangeSeeked: " + lastRangeSeeked + "  source.getTopKey(): " + source != null ? source.getTopKey() : null);
+                    } catch (Exception ex) {
+                        log.trace("Ignoring this while logging a trace message:", ex);
+                        // let's not ruin everything when trace is on...
                     }
                 }
                 
-                // now lets find the top key
+                // Determine the bounding FI ranges for the field index for this row
+                this.boundingFiRanges.clear();
+                if (source.hasTop()) {
+                    this.fiRow = source.getTopKey().getRow();
+                    this.boundingFiRanges.addAll(buildBoundingFiRanges(fiRow, fiName, fieldValue));
+                    
+                    // if we are not sorting uids and we have a starting value, then pop off the ranges until we have the one
+                    // containing the last value returned. Then modify that range appropriately.
+                    if (lastFiKey != null) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Reseeking fi to lastFiKey: " + lastFiKey);
+                        }
+                        while (!boundingFiRanges.isEmpty() && !boundingFiRanges.get(0).contains(lastFiKey)) {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Skipping range: " + boundingFiRanges.get(0));
+                            }
+                            boundingFiRanges.remove(0);
+                        }
+                        if (!boundingFiRanges.isEmpty()) {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Starting in range: " + boundingFiRanges.get(0));
+                            }
+                            Range boundingFiRange = boundingFiRanges.get(0);
+                            boundingFiRange = new Range(lastFiKey, false, boundingFiRange.getEndKey(), boundingFiRange.isEndKeyInclusive());
+                            boundingFiRanges.set(0, boundingFiRange);
+                            if (log.isTraceEnabled()) {
+                                log.trace("Reset range to: " + boundingFiRanges.get(0));
+                            }
+                        }
+                    }
+                } else {
+                    this.topKey = null;
+                    this.topValue = null;
+                }
+            } finally {
+                releaseSource(source);
+            }
+            
+            // now lets find the top key
+            if (this.fiRow != null) {
                 findTop();
-            } else {
-                this.topKey = null;
-                this.topValue = null;
             }
             
             if (log.isTraceEnabled()) {
@@ -800,18 +807,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     log.error("Failed to complete fillSet(" + boundingFiRange + ")", e);
                     throw new RuntimeException(e);
                 } finally {
+                    releaseSource(source);
                     if (log.isDebugEnabled()) {
                         StringBuilder builder = new StringBuilder();
                         builder.append("Matched ").append(matched).append(" out of ").append(scanned).append(" for ").append(boundingFiRange).append(": ")
                                         .append(DatawaveFieldIndexCachingIteratorJexl.this);
                         log.debug(builder.toString());
-                    }
-                    try {
-                        if (source instanceof AutoCloseable) {
-                            ((AutoCloseable) source).close();
-                        }
-                    } catch (Exception e) {
-                        log.error("Error closing source", e);
                     }
                     if (collectTimingDetails && querySpanCollector != null && querySpan != null) {
                         querySpanCollector.addQuerySpan(querySpan);
@@ -822,6 +823,16 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this.toString() + " in " + boundingFiRange.toString());
         
+    }
+    
+    private static void releaseSource(SortedKeyValueIterator source) {
+        try {
+            if (source != null && source instanceof AutoCloseable) {
+                ((AutoCloseable) source).close();
+            }
+        } catch (Exception e) {
+            log.error("Error closing source", e);
+        }
     }
     
     /**
@@ -940,29 +951,35 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         try {
             SortedKeyValueIterator<Key,Value> source = getSource();
             
-            if (collectTimingDetails && source instanceof SourceTrackingIterator) {
-                querySpan = ((SourceTrackingIterator) source).getQuerySpan();
-            }
-            
-            // Make sure the source iterator's key didn't seek past the end
-            // of our starting row and get into the next row. It can happen if your
-            // fi keys are on a row boundary.
-            if (lastRangeSeeked.getEndKey() != null && !lastRangeSeeked.contains(new Key(this.fiRow).followingKey(PartialKey.ROW))) {
-                fiRow = null;
-            } else {
-                Range followingRowRange = new Range(new Key(this.fiRow).followingKey(PartialKey.ROW), true, lastRangeSeeked.getEndKey(),
-                                lastRangeSeeked.isEndKeyInclusive());
-                if (log.isTraceEnabled()) {
-                    log.trace("moveToNextRow(Key k), followingRowRange: " + followingRowRange);
+            try {
+                
+                if (collectTimingDetails && source instanceof SourceTrackingIterator) {
+                    querySpan = ((SourceTrackingIterator) source).getQuerySpan();
                 }
-                // do an initial seek to determine the next row (needed to calculate bounding FI ranges below)
-                source.seek(followingRowRange, EMPTY_CFS, false);
-                scannedKeys.incrementAndGet();
-                if (source.hasTop()) {
-                    fiRow = source.getTopKey().getRow();
-                } else {
+                
+                // Make sure the source iterator's key didn't seek past the end
+                // of our starting row and get into the next row. It can happen if your
+                // fi keys are on a row boundary.
+                if (lastRangeSeeked.getEndKey() != null && !lastRangeSeeked.contains(new Key(this.fiRow).followingKey(PartialKey.ROW))) {
                     fiRow = null;
+                } else {
+                    Range followingRowRange = new Range(new Key(this.fiRow).followingKey(PartialKey.ROW), true, lastRangeSeeked.getEndKey(),
+                                    lastRangeSeeked.isEndKeyInclusive());
+                    if (log.isTraceEnabled()) {
+                        log.trace("moveToNextRow(Key k), followingRowRange: " + followingRowRange);
+                    }
+                    // do an initial seek to determine the next row (needed to calculate bounding FI ranges below)
+                    source.seek(followingRowRange, EMPTY_CFS, false);
+                    scannedKeys.incrementAndGet();
+                    if (source.hasTop()) {
+                        fiRow = source.getTopKey().getRow();
+                    } else {
+                        fiRow = null;
+                    }
                 }
+                
+            } finally {
+                releaseSource(source);
             }
             
             if (log.isTraceEnabled()) {
