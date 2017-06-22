@@ -5,6 +5,7 @@ import java.util.Map.Entry;
 import datawave.query.rewrite.planner.DefaultQueryPlanner;
 import datawave.query.rewrite.planner.QueryPlanner;
 import datawave.query.rewrite.tables.RefactoredShardQueryLogic;
+import datawave.query.rewrite.tld.CreateTLDUidsIterator;
 import datawave.query.rewrite.tld.TLDQueryIterator;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.BaseQueryLogic;
@@ -28,7 +29,9 @@ public class LookupUUIDTune implements Profile {
             rsq.setBypassAccumulo(bypassAccumulo);
             rsq.setSpeculativeScanning(speculativeScanning);
             rsq.setCacheModel(enableCaching);
-            
+            if (reduceResponse) {
+                rsq.setCreateUidsIteratorClass(CreateTLDUidsIterator.class);
+            }
         }
         
     }
