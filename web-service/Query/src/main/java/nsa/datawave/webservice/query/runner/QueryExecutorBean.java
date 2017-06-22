@@ -1201,27 +1201,40 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private <T> T lookupContentByUUID(String uuidType, String uuid, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
-        String streaming = queryParameters.getFirst("streaming");
-        boolean streamingOutput = false;
-        if (!StringUtils.isEmpty(streaming)) {
-            streamingOutput = Boolean.parseBoolean(streaming);
+        T response = null;
+        String queryId = null;
+        try {
+            String streaming = queryParameters.getFirst("streaming");
+            boolean streamingOutput = false;
+            if (!StringUtils.isEmpty(streaming)) {
+                streamingOutput = Boolean.parseBoolean(streaming);
+            }
+            // Create the criteria for looking up the respective events, which we need to get the shard IDs and column families
+            // required for the content lookup
+            final UUIDType matchingType = this.lookupUUIDUtil.getUUIDType(uuidType.toUpperCase());
+            final GetUUIDCriteria criteria;
+            final String view = (null != matchingType) ? matchingType.getDefinedView() : null;
+            if ((LookupUUIDUtil.UID_QUERY.equals(view) || LookupUUIDUtil.LOOKUP_UID_QUERY.equals(view))) {
+                criteria = new UIDQueryCriteria(uuid, uuidType, queryParameters);
+            } else {
+                criteria = new GetUUIDCriteria(uuid, uuidType, queryParameters);
+            }
+            
+            // Set the HTTP headers if a streamed response is required
+            if (streamingOutput) {
+                criteria.setStreamingOutputHeaders(httpHeaders);
+            }
+            
+            response = this.lookupUUIDUtil.lookupContentByUUIDs(criteria);
+            if (response instanceof BaseQueryResponse) {
+                queryId = ((BaseQueryResponse) response).getQueryId();
+            }
+            return response;
+        } finally {
+            if (null != queryId) {
+                close(queryId);
+            }
         }
-        // Create the criteria for looking up the respective events, which we need to get the shard IDs and column families
-        // required for the content lookup
-        final UUIDType matchingType = this.lookupUUIDUtil.getUUIDType(uuidType.toUpperCase());
-        final GetUUIDCriteria criteria;
-        final String view = (null != matchingType) ? matchingType.getDefinedView() : null;
-        if ((LookupUUIDUtil.UID_QUERY.equals(view) || LookupUUIDUtil.LOOKUP_UID_QUERY.equals(view))) {
-            criteria = new UIDQueryCriteria(uuid, uuidType, queryParameters);
-        } else {
-            criteria = new GetUUIDCriteria(uuid, uuidType, queryParameters);
-        }
-        
-        // Set the HTTP headers if a streamed response is required
-        if (streamingOutput) {
-            criteria.setStreamingOutputHeaders(httpHeaders);
-        }
-        return this.lookupUUIDUtil.lookupContentByUUIDs(criteria);
     }
     
     /**
@@ -1254,22 +1267,34 @@ public class QueryExecutorBean implements QueryExecutor {
         if (!queryParameters.containsKey("uuidPairs")) {
             throw new BadRequestException(new IllegalArgumentException("uuidPairs missing from query parameters"), new VoidResponse());
         }
-        String uuidPairs = queryParameters.getFirst("uuidPairs");
-        String streaming = queryParameters.getFirst("streaming");
-        boolean streamingOutput = false;
-        if (!StringUtils.isEmpty(streaming)) {
-            streamingOutput = Boolean.parseBoolean(streaming);
+        T response = null;
+        String queryId = null;
+        try {
+            String uuidPairs = queryParameters.getFirst("uuidPairs");
+            String streaming = queryParameters.getFirst("streaming");
+            boolean streamingOutput = false;
+            if (!StringUtils.isEmpty(streaming)) {
+                streamingOutput = Boolean.parseBoolean(streaming);
+            }
+            // Create the criteria for looking up the respective events, which we need to get the shard IDs and column families
+            // required for the content lookup
+            final PostUUIDCriteria criteria = new PostUUIDCriteria(uuidPairs, queryParameters);
+            
+            // Set the HTTP headers if a streamed response is required
+            if (streamingOutput) {
+                criteria.setStreamingOutputHeaders(httpHeaders);
+            }
+            
+            response = this.lookupUUIDUtil.lookupContentByUUIDs(criteria);
+            if (response instanceof BaseQueryResponse) {
+                queryId = ((BaseQueryResponse) response).getQueryId();
+            }
+            return response;
+        } finally {
+            if (null != queryId) {
+                close(queryId);
+            }
         }
-        // Create the criteria for looking up the respective events, which we need to get the shard IDs and column families
-        // required for the content lookup
-        final PostUUIDCriteria criteria = new PostUUIDCriteria(uuidPairs, queryParameters);
-        
-        // Set the HTTP headers if a streamed response is required
-        if (streamingOutput) {
-            criteria.setStreamingOutputHeaders(httpHeaders);
-        }
-        
-        return this.lookupUUIDUtil.lookupContentByUUIDs(criteria);
     }
     
     /**
@@ -1371,17 +1396,29 @@ public class QueryExecutorBean implements QueryExecutor {
         if (!queryParameters.containsKey("uuidPairs")) {
             throw new BadRequestException(new IllegalArgumentException("uuidPairs missing from query parameters"), new VoidResponse());
         }
-        String uuidPairs = queryParameters.getFirst("uuidPairs");
-        String streaming = queryParameters.getFirst("streaming");
-        boolean streamingOutput = false;
-        if (!StringUtils.isEmpty(streaming)) {
-            streamingOutput = Boolean.parseBoolean(streaming);
+        T response;
+        String queryId = null;
+        try {
+            String uuidPairs = queryParameters.getFirst("uuidPairs");
+            String streaming = queryParameters.getFirst("streaming");
+            boolean streamingOutput = false;
+            if (!StringUtils.isEmpty(streaming)) {
+                streamingOutput = Boolean.parseBoolean(streaming);
+            }
+            final PostUUIDCriteria criteria = new PostUUIDCriteria(uuidPairs, queryParameters);
+            if (streamingOutput) {
+                criteria.setStreamingOutputHeaders(httpHeaders);
+            }
+            response = this.lookupUUIDUtil.createUUIDQueryAndNext(criteria);
+            if (response instanceof BaseQueryResponse) {
+                queryId = ((BaseQueryResponse) response).getQueryId();
+            }
+            return response;
+        } finally {
+            if (null != queryId) {
+                close(queryId);
+            }
         }
-        final PostUUIDCriteria criteria = new PostUUIDCriteria(uuidPairs, queryParameters);
-        if (streamingOutput) {
-            criteria.setStreamingOutputHeaders(httpHeaders);
-        }
-        return this.lookupUUIDUtil.createUUIDQueryAndNext(criteria);
         
     }
     
