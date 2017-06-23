@@ -374,6 +374,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                                 log.trace("Skipping range: " + boundingFiRanges.get(0));
                             }
                             boundingFiRanges.remove(0);
+                            if (this.boundingFiRanges.isEmpty()) {
+                                moveToNextRow();
+                            }
                         }
                         if (!boundingFiRanges.isEmpty()) {
                             if (log.isTraceEnabled()) {
@@ -654,6 +657,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     
     private void getNextUnsortedKey() throws IOException {
         this.keyValues = null;
+        
+        // if we are in a row but bounding ranges is empty, then something has gone awry
+        if (fiRow != null && boundingFiRanges.isEmpty()) {
+            throw new IvaratorException("Ivarator found to be in an illegal state with empty bounding FiRanges: fiRow = " + fiRow + " and lastRangeSeeked = "
+                            + lastRangeSeeked);
+        }
         
         // create a set if needed (does not actually need to be thread safe as we are only using one thread in this case)
         if (this.threadSafeSet == null) {
