@@ -4,7 +4,7 @@
     <parent>
         <groupId>nsa.datawave.webservice</groupId>
         <artifactId>WebService</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1-SNAPSHOT</version>
     </parent>
     <artifactId>Audit-Accumulo</artifactId>
     <packaging>ejb</packaging>
