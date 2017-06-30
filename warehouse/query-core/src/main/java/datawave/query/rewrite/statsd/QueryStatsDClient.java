@@ -62,9 +62,11 @@ public class QueryStatsDClient {
      * Get the client, creating it if needed. This should only be called when the clientMonitor has been acquired.
      */
     private StatsDClient client() {
-        this.client = new NonBlockingStatsDClient(queryId + ".dwquery", host, port);
-        if (log.isDebugEnabled()) {
-            log.debug("Created STATSD client with host = " + host + "; port = " + port + "; prefix = " + queryId + ".dwquery");
+        if (this.client == null) {
+            this.client = new NonBlockingStatsDClient(queryId + ".dwquery", host, port);
+            if (log.isDebugEnabled()) {
+                log.debug("Created STATSD client with host = " + host + "; port = " + port + "; prefix = " + queryId + ".dwquery");
+            }
         }
         return this.client;
     }
