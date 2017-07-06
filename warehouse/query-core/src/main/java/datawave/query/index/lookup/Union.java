@@ -8,15 +8,12 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import datawave.query.rewrite.jexl.JexlNodeFactory;
-import datawave.query.rewrite.jexl.visitors.DepthVisitor;
-import datawave.query.rewrite.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.rewrite.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 
 import datawave.util.StringUtils;
-import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 

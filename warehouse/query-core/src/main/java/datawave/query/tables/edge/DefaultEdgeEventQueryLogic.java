@@ -2,10 +2,10 @@ package datawave.query.tables.edge;
 
 import datawave.query.QueryParameters;
 import datawave.query.model.edge.EdgeQueryModel;
-import datawave.query.rewrite.jexl.JexlASTHelper;
-import datawave.query.rewrite.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.rewrite.jexl.visitors.QueryModelVisitor;
-import datawave.query.rewrite.tables.RefactoredShardQueryLogic;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryModelVisitor;
+import datawave.query.tables.RefactoredShardQueryLogic;
 import datawave.webservice.edgedictionary.DatawaveEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

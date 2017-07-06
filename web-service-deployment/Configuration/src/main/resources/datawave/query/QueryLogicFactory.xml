@@ -74,15 +74,15 @@
     </bean>
     
         <!-- Edge table query -->
-    <bean id="FacetedQueryPlanner" scope="prototype" class="datawave.query.rewrite.planner.FacetedQueryPlanner" />
+    <bean id="FacetedQueryPlanner" scope="prototype" class="datawave.query.planner.FacetedQueryPlanner" />
         
-    <bean id="FacetedQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.rewrite.tables.facets.FacetedQueryLogic">
+    <bean id="FacetedQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.facets.FacetedQueryLogic">
         <property name="modelTableName" value="DatawaveMetadata" />
         <property name="modelName" value="DATAWAVE" />
         <property name="queryPlanner" ref="FacetedQueryPlanner" />
     </bean>
 
-    <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.rewrite.planner.DefaultQueryPlanner" >
+    <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="compressOptionMappings" value="true" />
         <property name="queryModelProviderFactory" ref="queryModelProviderFactory" />
         <!-- the first integer arg is to define the number of ranges per batch -->
@@ -96,11 +96,11 @@
         <!--<lookup-method name="getQueryModelProvider" bean="metadataHelperQueryModelProvider" />-->
     </bean>
 
-    <bean id="queryModelProviderFactory" class="datawave.query.rewrite.planner.QueryModelProvider.Factory" >
+    <bean id="queryModelProviderFactory" class="datawave.query.planner.QueryModelProvider.Factory" >
         <lookup-method name="createQueryModelProvider" bean="metadataHelperQueryModelProvider" />
     </bean>
 
-    <bean id="wiredQueryModelProvider" scope="prototype" class="datawave.query.rewrite.planner.WiredQueryModelProvider" >
+    <bean id="wiredQueryModelProvider" scope="prototype" class="datawave.query.planner.WiredQueryModelProvider" >
         <property name="queryModel">
             <util:map>
                 ${lookup.uuid.mappings}
@@ -109,9 +109,9 @@
 
     </bean>
 
-    <bean id="metadataHelperQueryModelProvider" scope="prototype" class="datawave.query.rewrite.planner.MetadataHelperQueryModelProvider" />
+    <bean id="metadataHelperQueryModelProvider" scope="prototype" class="datawave.query.planner.MetadataHelperQueryModelProvider" />
 
-    <bean id="BooleanChunkingQueryPlanner" scope="prototype" class="datawave.query.rewrite.planner.BooleanChunkingQueryPlanner" />
+    <bean id="BooleanChunkingQueryPlanner" scope="prototype" class="datawave.query.planner.BooleanChunkingQueryPlanner" />
 
     <!-- Begin SelectorExtractors for injection into query logics -->
 
@@ -124,7 +124,7 @@
         <property name="markingFunctions" ref="markingFunctions" />
     </bean>
 
-    <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.rewrite.tables.RefactoredShardQueryLogic" abstract="true">
+    <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.RefactoredShardQueryLogic" abstract="true">
         <property name="accumuloPassword" value="${accumulo.user.password}" />
         <property name="tableName" value="${shard.table.name}" />
         <property name="dateIndexTableName" value="${date.index.table.name}" />
@@ -247,7 +247,7 @@
         ${hierarchy.field.options}
     </util:map>
 
-    <bean id="BaseCountQuery" parent="BaseEventQuery" class="datawave.query.rewrite.tables.RefactoredCountingShardQueryLogic" abstract="true" />
+    <bean id="BaseCountQuery" parent="BaseEventQuery" class="datawave.query.tables.RefactoredCountingShardQueryLogic" abstract="true" />
 
     <bean id="BaseModelEventQuery" parent="BaseEventQuery" abstract="true">
         <property name="modelTableName" value="DatawaveMetadata" />
@@ -255,7 +255,7 @@
     </bean>
 
     <!-- Query logic not referenced in map
-    <bean id="BooleanPartitionedQueryTable" scope="prototype"  class="datawave.query.rewrite.tables.RefactoredPartitionedQueryTable" parent="BaseModelEventQuery">
+    <bean id="BooleanPartitionedQueryTable" scope="prototype"  class="datawave.query.tables.RefactoredPartitionedQueryTable" parent="BaseModelEventQuery">
         <property name="chunker">
             <bean class="datawave.query.tables.chunk.BooleanChunker" />
         </property>
@@ -458,7 +458,7 @@
         <property name="logicDescription" value="Event query" />
     </bean>
 
-    <bean id="TLDEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.rewrite.tables.RefactoredTLDQueryLogic">
+    <bean id="TLDEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.RefactoredTLDQueryLogic">
         <property name="collapseUids" value="${query.tld.collapse.uids}" />
         <property name="indexFilteringClassNames">
             <list value-type="java.lang.String">
@@ -467,15 +467,15 @@
         </property>
     </bean>
 
-    <bean id="ParentEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.rewrite.tables.ParentQueryLogic">
+    <bean id="ParentEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.ParentQueryLogic">
     </bean>
 
-    <bean id="CountQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.rewrite.tables.RefactoredCountingShardQueryLogic">
+    <bean id="CountQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.RefactoredCountingShardQueryLogic">
         <property name="logicDescription" value="Count Query"/>
     </bean>
 
     <!-- Query Logic that implements a discovery type query over the index -->
-    <bean id="DiscoveryQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.rewrite.discovery.DiscoveryLogic">
+    <bean id="DiscoveryQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.discovery.DiscoveryLogic">
         <property name="tableName" value="${index.table.name}" />
         <property name="indexTableName" value="${index.table.name}" />
         <property name="reverseIndexTableName" value="${rindex.table.name}" />
@@ -497,7 +497,7 @@
 
 
     <!-- Query Logic that implements a discovery type query over the index -->
-    <bean id="ErrorDiscoveryQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.rewrite.discovery.DiscoveryLogic">
+    <bean id="ErrorDiscoveryQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.discovery.DiscoveryLogic">
         <property name="tableName" value="${error.index.table.name}" />
         <property name="indexTableName" value="${error.index.table.name}" />
         <property name="reverseIndexTableName" value="${error.rindex.table.name}" />
@@ -525,7 +525,7 @@
         <property name="reverseIndexTableName" value="${error.rindex.table.name}" />
     </bean>
 
-    <bean id="HitHighlights" parent="baseQueryLogic" scope="prototype"  class="datawave.query.rewrite.tables.IndexQueryLogic">
+    <bean id="HitHighlights" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.IndexQueryLogic">
         <property name="tableName" value="${shard.table.name}" />
         <property name="metadataTableName" value="${metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />

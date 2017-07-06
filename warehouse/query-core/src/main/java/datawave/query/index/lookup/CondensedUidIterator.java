@@ -28,7 +28,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.ingest.protobuf.Uid;
-import datawave.query.rewrite.tld.TLD;
+import datawave.query.tld.TLD;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
 

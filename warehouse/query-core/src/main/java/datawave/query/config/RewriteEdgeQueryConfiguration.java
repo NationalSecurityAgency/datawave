@@ -1,17 +1,10 @@
 package datawave.query.config;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import datawave.data.type.Type;
 import datawave.query.model.edge.EdgeQueryModel;
-import datawave.query.rewrite.Constants;
-import datawave.query.rewrite.iterator.PowerSet;
 import datawave.query.tables.edge.RewriteEdgeQueryLogic;
-import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

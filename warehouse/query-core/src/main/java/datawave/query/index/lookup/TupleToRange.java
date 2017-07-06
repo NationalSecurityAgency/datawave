@@ -4,9 +4,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
-import datawave.query.rewrite.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.rewrite.planner.QueryPlan;
+import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.planner.QueryPlan;
 import datawave.query.util.Tuple2;
 
 import org.apache.accumulo.core.data.Key;

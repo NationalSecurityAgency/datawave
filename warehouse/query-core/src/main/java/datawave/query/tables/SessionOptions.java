@@ -2,7 +2,7 @@ package datawave.query.tables;
 
 import java.util.Collection;
 
-import datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.RefactoredShardQueryConfiguration;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.impl.ScannerOptions;

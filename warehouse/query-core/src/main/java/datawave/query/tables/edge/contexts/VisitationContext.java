@@ -7,7 +7,7 @@ import java.util.Set;
 
 import datawave.edge.model.EdgeModelAware;
 import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;

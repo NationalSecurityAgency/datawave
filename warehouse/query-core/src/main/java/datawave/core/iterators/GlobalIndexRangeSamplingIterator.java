@@ -7,7 +7,6 @@ import java.util.Map;
 
 import datawave.ingest.protobuf.Uid;
 
-import datawave.query.rewrite.Constants;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;

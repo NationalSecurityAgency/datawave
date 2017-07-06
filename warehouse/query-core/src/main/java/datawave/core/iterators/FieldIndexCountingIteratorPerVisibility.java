@@ -15,8 +15,7 @@ import java.util.TreeSet;
 
 import datawave.iterators.IteratorSettingHelper;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import datawave.util.TextUtil;
 
 import org.apache.accumulo.core.client.IteratorSetting;

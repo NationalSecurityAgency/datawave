@@ -3,7 +3,7 @@ package datawave.query.util;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import datawave.query.rewrite.QueryTestTableHelper;
+import datawave.query.QueryTestTableHelper;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;

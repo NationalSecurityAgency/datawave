@@ -1,6 +1,6 @@
 package datawave.query.iterators;
 
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import org.apache.accumulo.core.data.*;
 import org.apache.accumulo.core.iterators.*;
 import org.apache.commons.lang.StringUtils;

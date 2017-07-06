@@ -80,7 +80,7 @@ embed-server --server-config=standalone-full.xml
 # Disable SASL client authentication in zookeeper
 /system-property=zookeeper.sasl.client:add(value=false)
 
-/system-property=jexl.function.namespace.registry:add(value="datawave.query.rewrite.jexl.functions.JexlFunctionNamespaceRegistry.class")
+/system-property=jexl.function.namespace.registry:add(value="datawave.query.jexl.functions.JexlFunctionNamespaceRegistry.class")
 
 #
 # Add security realm and domain

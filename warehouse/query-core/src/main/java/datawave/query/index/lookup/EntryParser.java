@@ -14,14 +14,13 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
-import com.google.common.collect.Sets;
 
-import datawave.query.rewrite.jexl.JexlNodeFactory;
-import datawave.query.rewrite.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.rewrite.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.rewrite.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.rewrite.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.rewrite.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 

@@ -13,7 +13,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.query.config.EdgeExtendedSummaryConfiguration;
 import datawave.query.config.RewriteEdgeQueryConfiguration;
-import datawave.query.rewrite.iterator.filter.EdgeFilterIterator;
+import datawave.query.iterator.filter.EdgeFilterIterator;
 import datawave.query.tables.edge.RewriteEdgeQueryLogic;
 import datawave.query.tables.edge.contexts.VisitationContext;
 import datawave.query.transformer.EdgeQueryTransformer;

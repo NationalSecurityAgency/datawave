@@ -1,6 +1,6 @@
 package org.apache.commons.jexl2.parser;
 
-import datawave.query.rewrite.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * Represents a delayed predicate. If this reference expression exists, we should not perform any processing that may affect the indexed query.

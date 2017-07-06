@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.google.common.collect.Sets;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import org.apache.commons.jexl2.parser.*;
 
 import com.google.common.collect.Lists;

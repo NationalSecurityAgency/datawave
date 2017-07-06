@@ -2,7 +2,6 @@ package datawave.query.language.functions.jexl;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,9 +17,9 @@ import datawave.query.language.parser.jexl.JexlBooleanNode;
 import datawave.query.language.parser.jexl.JexlNode;
 import datawave.query.language.parser.jexl.JexlSelectorNode;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.rewrite.attributes.Attribute;
-import datawave.query.rewrite.attributes.Attributes;
-import datawave.query.rewrite.attributes.Document;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Document;
 import datawave.webservice.query.QueryImpl.Parameter;
 
 import datawave.webservice.query.exception.BadRequestQueryException;

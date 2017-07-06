@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.query.QueryParameters;
 import datawave.query.config.ContentQueryConfiguration;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.ContentQueryTransformer;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;

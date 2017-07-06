@@ -39,7 +39,7 @@
         <property name="markingFunctions" ref="markingFunctions" />
     </bean>
     
-    <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.rewrite.tables.RefactoredShardQueryLogic" abstract="true">
+    <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.RefactoredShardQueryLogic" abstract="true">
         <property name="tableName" value="shard" />
         <property name="dateIndexTableName" value="dateIndex" />
         <property name="metadataTableName" value="DatawaveMetadata" />
@@ -135,7 +135,7 @@
         <!--<property name="allowedFunctions" ref="allowedQueryFunctions"/>-->
     <!--</bean>-->
     
-    <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.rewrite.planner.DefaultQueryPlanner" >
+    <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
 
     </bean>
     

@@ -22,8 +22,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import datawave.mr.bulk.RfileScanner;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.IndexMatch;
-import datawave.query.rewrite.exceptions.DatawaveFatalQueryException;
-import datawave.query.tables.AccumuloResource.ResourceFactory;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 import datawave.webservice.query.Query;
 

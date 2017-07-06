@@ -9,7 +9,7 @@ import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.mr.bulk.RfileScanner;
-import datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.QueryScannerHelper;
 import datawave.webservice.common.connection.WrappedConnector;

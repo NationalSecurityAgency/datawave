@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 
 public class JexlSelectorNode extends JexlNode {
     public enum Type {

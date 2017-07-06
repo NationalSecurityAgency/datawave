@@ -1,6 +1,6 @@
 package datawave.query.dashboard;
 
-import datawave.query.rewrite.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.RefactoredShardQueryLogic;
 import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
