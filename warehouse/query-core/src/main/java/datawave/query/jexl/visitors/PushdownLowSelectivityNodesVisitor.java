@@ -1,9 +1,9 @@
 package datawave.query.jexl.visitors;
 
 import datawave.data.MetadataCardinalityCounts;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.*;
 import org.apache.log4j.Logger;
@@ -17,16 +17,16 @@ import java.util.NoSuchElementException;
 public class PushdownLowSelectivityNodesVisitor extends BaseVisitor {
     
     protected MetadataHelper helper;
-    protected RefactoredShardQueryConfiguration config;
+    protected ShardQueryConfiguration config;
     
-    public PushdownLowSelectivityNodesVisitor(RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    public PushdownLowSelectivityNodesVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
         this.helper = helper;
         this.config = config;
     }
     
     private static final Logger log = Logger.getLogger(PushdownLowSelectivityNodesVisitor.class);
     
-    public static <T extends JexlNode> T pushdownLowSelectiveTerms(T queryTree, RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    public static <T extends JexlNode> T pushdownLowSelectiveTerms(T queryTree, ShardQueryConfiguration config, MetadataHelper helper) {
         PushdownLowSelectivityNodesVisitor visitor = new PushdownLowSelectivityNodesVisitor(config, helper);
         queryTree.jjtAccept(visitor, null);
         return queryTree;

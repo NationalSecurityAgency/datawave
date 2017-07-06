@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Map.Entry;
 
 import datawave.query.CloseableIterable;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.webservice.query.configuration.QueryData;
@@ -24,8 +24,7 @@ public abstract class Scheduler implements CloseableIterable<Entry<Key,Value>> {
     
     protected Collection<IteratorSetting> settings = Lists.newArrayList();
     
-    public abstract BatchScanner createBatchScanner(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd)
-                    throws TableNotFoundException;
+    public abstract BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException;
     
     /**
      * Returns the scan session stats provided by this scheduler

@@ -11,7 +11,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.WiseGuysIngest;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
@@ -118,7 +118,7 @@ public abstract class CompositeFunctionsTest {
     
     @Inject
     @SpringBean(name = "EventQuery")
-    protected RefactoredShardQueryLogic logic;
+    protected ShardQueryLogic logic;
     
     protected KryoDocumentDeserializer deserializer;
     

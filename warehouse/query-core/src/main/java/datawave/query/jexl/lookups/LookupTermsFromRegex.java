@@ -15,7 +15,7 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchResource;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
@@ -80,7 +80,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
     }
     
     @Override
-    public IndexLookupMap lookup(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, long maxLookupConfigured) {
+    public IndexLookupMap lookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, long maxLookupConfigured) {
         IndexLookupMap fieldsToValues = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
         fieldsToValues.setPatterns(patterns);
         
@@ -114,10 +114,9 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                 throw new DoNotPerformOptimizedQueryException(qe);
             }
             
-            RefactoredShardIndexQueryTableStaticMethods.RefactoredRangeDescription rangeDescription = null;
+            ShardIndexQueryTableStaticMethods.RefactoredRangeDescription rangeDescription = null;
             try {
-                rangeDescription = RefactoredShardIndexQueryTableStaticMethods
-                                .getRegexRange(null, pattern, config.getFullTableScanEnabled(), helperRef, config);
+                rangeDescription = ShardIndexQueryTableStaticMethods.getRegexRange(null, pattern, config.getFullTableScanEnabled(), helperRef, config);
             } catch (IllegalArgumentException e) {
                 log.debug("Ignoring pattern that was not capable of being looked up in the index: " + pattern, e);
                 continue;
@@ -145,7 +144,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
         for (String key : forwardMap.keySet()) {
             Collection<Range> ranges = forwardMap.get(key);
             try {
-                bs = RefactoredShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
+                bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
                                 Collections.<String> emptySet(), Collections.singleton(key), false, true);
                 
                 bs.setResourceClass(BatchResource.class);
@@ -185,8 +184,8 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                 log.trace("adding " + ranges + " for reverse");
                 try {
                     
-                    bs = RefactoredShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getReverseIndexTableName(),
-                                    ranges, Collections.<String> emptySet(), Collections.singleton(key), true, true);
+                    bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getReverseIndexTableName(), ranges,
+                                    Collections.<String> emptySet(), Collections.singleton(key), true, true);
                     
                     bs.setResourceClass(BatchResource.class);
                 } catch (Exception e) {
@@ -222,8 +221,8 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
     }
     
     @Override
-    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues,
-                    RefactoredShardQueryConfiguration config, Set<String> datatypeFilter, final Set<Text> fields, final boolean isReverse, long timeout) {
+    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
+                    Set<String> datatypeFilter, final Set<Text> fields, final boolean isReverse, long timeout) {
         final Set<String> myDatatypeFilter = datatypeFilter;
         return new Callable<Boolean>() {
             public Boolean call() {
@@ -315,7 +314,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
      * @param config
      * @return
      */
-    private boolean buildReverseFields(RefactoredShardQueryConfiguration config) {
+    private boolean buildReverseFields(ShardQueryConfiguration config) {
         
         for (Text field : fields) {
             try {

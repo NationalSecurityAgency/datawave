@@ -7,8 +7,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.RefactoredJexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -139,7 +139,7 @@ public class FieldMissingFromSchemaVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        RefactoredJexlArgumentDescriptor desc = RefactoredJexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
+        JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         @SuppressWarnings("unchecked")
         Set<String> nonExistentFieldNames = (null == data) ? new HashSet<String>() : (Set<String>) data;
         

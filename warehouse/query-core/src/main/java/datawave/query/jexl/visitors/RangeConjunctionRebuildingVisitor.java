@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.index.stats.IndexStatsClient;
@@ -17,12 +18,11 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
-import datawave.query.jexl.lookups.RefactoredShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.planner.pushdown.Cost;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
@@ -59,7 +59,7 @@ import com.google.common.collect.Sets;
 public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(RangeConjunctionRebuildingVisitor.class);
     
-    private final RefactoredShardQueryConfiguration config;
+    private final ShardQueryConfiguration config;
     private final ScannerFactory scannerFactory;
     private final IndexStatsClient stats;
     protected CostEstimator costAnalysis;
@@ -67,7 +67,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
     protected Set<String> allFields;
     protected MetadataHelper helper;
     
-    public RangeConjunctionRebuildingVisitor(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
+    public RangeConjunctionRebuildingVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
                     throws TableNotFoundException, ExecutionException {
         this.config = config;
         this.helper = helper;
@@ -90,7 +90,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
      * @throws ExecutionException
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandRanges(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
+    public static <T extends JexlNode> T expandRanges(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
                     throws TableNotFoundException, ExecutionException {
         RangeConjunctionRebuildingVisitor visitor = new RangeConjunctionRebuildingVisitor(config, scannerFactory, helper);
         
@@ -182,7 +182,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
         }
         
         for (Map.Entry<LiteralRange<?>,List<JexlNode>> range : ranges.entrySet()) {
-            IndexLookup lookup = RefactoredShardIndexQueryTableStaticMethods.expandRange(range.getKey());
+            IndexLookup lookup = ShardIndexQueryTableStaticMethods.expandRange(range.getKey());
             
             IndexLookupMap fieldsToTerms = null;
             

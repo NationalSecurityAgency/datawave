@@ -2,9 +2,9 @@ package datawave.query.discovery;
 
 import static com.google.common.collect.Iterators.concat;
 import static com.google.common.collect.Iterators.transform;
-import static datawave.query.jexl.lookups.RefactoredShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter;
-import static datawave.query.jexl.lookups.RefactoredShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter;
-import static datawave.query.jexl.lookups.RefactoredShardIndexQueryTableStaticMethods.getLiteralRange;
+import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter;
+import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter;
+import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.getLiteralRange;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ import datawave.data.type.Type;
 import datawave.query.QueryParameters;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.lookups.RefactoredShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.language.tree.QueryNode;
@@ -33,7 +33,7 @@ import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.Constants;
 import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.tables.RefactoredShardIndexQueryTable;
+import datawave.query.tables.ShardIndexQueryTable;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.Query;
@@ -69,7 +69,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-public class DiscoveryLogic extends RefactoredShardIndexQueryTable {
+public class DiscoveryLogic extends ShardIndexQueryTable {
     
     private static final Logger log = Logger.getLogger(DiscoveryLogic.class);
     
@@ -84,7 +84,7 @@ public class DiscoveryLogic extends RefactoredShardIndexQueryTable {
         super();
     }
     
-    public DiscoveryLogic(RefactoredShardIndexQueryTable other) {
+    public DiscoveryLogic(ShardIndexQueryTable other) {
         super(other);
     }
     
@@ -277,8 +277,8 @@ public class DiscoveryLogic extends RefactoredShardIndexQueryTable {
         
         LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
         
-        RefactoredShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
-        RefactoredShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
         
         configureIndexMatchingIterator(config, bs, literals, patterns, ranges, reverseIndex);
         
@@ -348,7 +348,7 @@ public class DiscoveryLogic extends RefactoredShardIndexQueryTable {
     }
     
     @Override
-    public RefactoredShardIndexQueryTable clone() {
+    public ShardIndexQueryTable clone() {
         return new DiscoveryLogic(this);
     }
     
@@ -401,7 +401,7 @@ public class DiscoveryLogic extends RefactoredShardIndexQueryTable {
             String literal = literalAndField.getKey(), field = literalAndField.getValue();
             // if we're _ANYFIELD_, then use null when making the literal range
             field = Constants.ANY_FIELD.equals(field) ? null : field;
-            forwardRanges.add(RefactoredShardIndexQueryTableStaticMethods.getLiteralRange(field, literal));
+            forwardRanges.add(ShardIndexQueryTableStaticMethods.getLiteralRange(field, literal));
         }
         for (Entry<String,LiteralRange<String>> rangeEntry : config.getRanges().entries()) {
             LiteralRange<String> range = rangeEntry.getValue();
@@ -412,7 +412,7 @@ public class DiscoveryLogic extends RefactoredShardIndexQueryTable {
                 familiesToSeek.add(new Text(field));
             }
             try {
-                forwardRanges.add(RefactoredShardIndexQueryTableStaticMethods.getBoundedRangeRange(field, range));
+                forwardRanges.add(ShardIndexQueryTableStaticMethods.getBoundedRangeRange(field, range));
             } catch (IllegalRangeArgumentException e) {
                 log.error("Error using range [" + range + "]", e);
                 continue;
@@ -423,12 +423,12 @@ public class DiscoveryLogic extends RefactoredShardIndexQueryTable {
             String pattern = patternAndField.getKey(), field = patternAndField.getValue();
             // if we're _ANYFIELD_, then use null when making the literal range
             field = Constants.ANY_FIELD.equals(field) ? null : field;
-            RefactoredShardIndexQueryTableStaticMethods.RefactoredRangeDescription description;
+            ShardIndexQueryTableStaticMethods.RefactoredRangeDescription description;
             try {
                 if (field != null) {
                     familiesToSeek.add(new Text(field));
                 }
-                description = RefactoredShardIndexQueryTableStaticMethods.getRegexRange(field, pattern, false, metadataHelper, config);
+                description = ShardIndexQueryTableStaticMethods.getRegexRange(field, pattern, false, metadataHelper, config);
             } catch (JavaRegexParseException e) {
                 log.error("Error parsing pattern [" + pattern + "]", e);
                 continue;

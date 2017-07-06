@@ -1,7 +1,7 @@
 package datawave.query.planner;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.model.QueryModel;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -11,7 +11,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.log4j.Logger;
 
 /**
- * Uses the RefactoredShardQueryConfiguration or the MetadataHelper to fetch a QueryModel
+ * Uses the ShardQueryConfiguration or the MetadataHelper to fetch a QueryModel
  */
 public class MetadataHelperQueryModelProvider implements QueryModelProvider {
     
@@ -19,7 +19,7 @@ public class MetadataHelperQueryModelProvider implements QueryModelProvider {
     
     // this must be the correct, initialized metadatahalper.Don't inject it, set it before calling getQueryModel
     protected MetadataHelper metadataHelper;
-    protected RefactoredShardQueryConfiguration config;
+    protected ShardQueryConfiguration config;
     
     @Override
     public QueryModel getQueryModel() {
@@ -55,11 +55,11 @@ public class MetadataHelperQueryModelProvider implements QueryModelProvider {
         this.metadataHelper = metadataHelper;
     }
     
-    public RefactoredShardQueryConfiguration getConfig() {
+    public ShardQueryConfiguration getConfig() {
         return config;
     }
     
-    public void setConfig(RefactoredShardQueryConfiguration config) {
+    public void setConfig(ShardQueryConfiguration config) {
         this.config = config;
     }
     

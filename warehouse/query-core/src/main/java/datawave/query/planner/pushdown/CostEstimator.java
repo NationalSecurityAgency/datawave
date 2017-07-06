@@ -5,7 +5,7 @@ import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
 import java.util.NoSuchElementException;
 
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.RegexIndexLookup;
 import datawave.query.parser.JavaRegexAnalyzer;
@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 public class CostEstimator {
     
     private static final Logger log = Logger.getLogger(CostEstimator.class);
-    protected RefactoredShardQueryConfiguration config;
+    protected ShardQueryConfiguration config;
     protected MetadataHelper helper;
     protected ScannerFactory scannerFactory;
     
@@ -35,7 +35,7 @@ public class CostEstimator {
         this.scannerFactory = visitor.getScannerFactory();
     }
     
-    public CostEstimator(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
+    public CostEstimator(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
         this.config = config;
         this.helper = helper;
         this.scannerFactory = scannerFactory;

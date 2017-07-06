@@ -1,7 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import java.util.Set;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.util.MetadataHelper;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -69,12 +69,11 @@ import org.apache.log4j.Logger;
 public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     
     protected MetadataHelper helper;
-    protected RefactoredShardQueryConfiguration config;
+    protected ShardQueryConfiguration config;
     protected Set<String> indexOnlyFields;
     protected Set<String> indexedFields;
     
-    public PullupUnexecutableNodesVisitor(RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
-                    MetadataHelper helper) {
+    public PullupUnexecutableNodesVisitor(ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields, MetadataHelper helper) {
         this.helper = helper;
         this.config = config;
         this.indexedFields = indexedFields;
@@ -103,8 +102,8 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     
     private static final Logger log = Logger.getLogger(PullupUnexecutableNodesVisitor.class);
     
-    public static JexlNode pullupDelayedPredicates(JexlNode queryTree, RefactoredShardQueryConfiguration config, Set<String> indexedFields,
-                    Set<String> indexOnlyFields, MetadataHelper helper) {
+    public static JexlNode pullupDelayedPredicates(JexlNode queryTree, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+                    MetadataHelper helper) {
         PullupUnexecutableNodesVisitor visitor = new PullupUnexecutableNodesVisitor(config, indexedFields, indexOnlyFields, helper);
         return (JexlNode) queryTree.jjtAccept(visitor, null);
     }

@@ -1,8 +1,8 @@
 package datawave.query.discovery;
 
-import datawave.query.config.RefactoredShardIndexQueryConfiguration;
+import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.tables.RefactoredShardIndexQueryTable;
+import datawave.query.tables.ShardIndexQueryTable;
 import datawave.webservice.query.Query;
 
 import com.google.common.collect.Multimap;
@@ -10,13 +10,13 @@ import com.google.common.collect.Multimap;
 /**
  * Adds the ability to hold on to two multimaps. They map literals and patterns to the fields they were associated with in the query.
  */
-public class DiscoveryQueryConfiguration extends RefactoredShardIndexQueryConfiguration {
+public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration {
     private Multimap<String,String> literals, patterns;
     private Multimap<String,LiteralRange<String>> ranges;
     private Boolean separateCountsByColVis = false;
     private Boolean showReferenceCount = false;
     
-    public DiscoveryQueryConfiguration(RefactoredShardIndexQueryTable logic, Query query) {
+    public DiscoveryQueryConfiguration(ShardIndexQueryTable logic, Query query) {
         super(logic, query);
     }
     

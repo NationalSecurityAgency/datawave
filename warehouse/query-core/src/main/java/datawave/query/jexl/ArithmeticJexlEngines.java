@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ArithmeticJexlEngines {
     private static final Logger log = LoggerFactory.getLogger(ArithmeticJexlEngines.class);
-    private static final Map<Class<? extends JexlArithmetic>,RefactoredDatawaveJexlEngine> engineCache = new ConcurrentHashMap<>();
+    private static final Map<Class<? extends JexlArithmetic>,DatawaveJexlEngine> engineCache = new ConcurrentHashMap<>();
     private static final Map<String,Object> registeredFunctions = JexlFunctionNamespaceRegistry.getConfiguredFunctions();
     
     private ArithmeticJexlEngines() {}
@@ -27,10 +27,10 @@ public class ArithmeticJexlEngines {
      * @return true if we matched, false otherwise.
      */
     public static boolean isMatched(Object scriptExecuteResult) {
-        return RefactoredDatawaveInterpreter.isMatched(scriptExecuteResult);
+        return DatawaveInterpreter.isMatched(scriptExecuteResult);
     }
     
-    public static RefactoredDatawaveJexlEngine getEngine(JexlArithmetic arithmetic) {
+    public static DatawaveJexlEngine getEngine(JexlArithmetic arithmetic) {
         if (null == arithmetic) {
             return null;
         }
@@ -38,7 +38,7 @@ public class ArithmeticJexlEngines {
         Class<? extends JexlArithmetic> arithmeticClass = arithmetic.getClass();
         
         if (!engineCache.containsKey(arithmeticClass)) {
-            RefactoredDatawaveJexlEngine engine = createEngine(arithmetic);
+            DatawaveJexlEngine engine = createEngine(arithmetic);
             
             if (arithmetic instanceof StatefulArithmetic == false) {
                 // do not cache an Arithmetic that has state
@@ -51,8 +51,8 @@ public class ArithmeticJexlEngines {
         return engineCache.get(arithmeticClass);
     }
     
-    private static RefactoredDatawaveJexlEngine createEngine(JexlArithmetic arithmetic) {
-        RefactoredDatawaveJexlEngine engine = new RefactoredDatawaveJexlEngine(null, arithmetic, registeredFunctions, null);
+    private static DatawaveJexlEngine createEngine(JexlArithmetic arithmetic) {
+        DatawaveJexlEngine engine = new DatawaveJexlEngine(null, arithmetic, registeredFunctions, null);
         engine.setCache(1024);
         engine.setSilent(false);
         

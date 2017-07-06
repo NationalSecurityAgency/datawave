@@ -2,10 +2,10 @@ package datawave.query.jexl.visitors;
 
 import java.util.Arrays;
 
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.functions.RefactoredJexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -29,11 +29,11 @@ import org.apache.log4j.Logger;
 public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(FunctionIndexQueryExpansionVisitor.class);
     
-    protected RefactoredShardQueryConfiguration config;
+    protected ShardQueryConfiguration config;
     protected MetadataHelper metadataHelper;
     protected DateIndexHelper dateIndexHelper;
     
-    public FunctionIndexQueryExpansionVisitor(RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper) {
+    public FunctionIndexQueryExpansionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper) {
         this.config = config;
         this.metadataHelper = metadataHelper;
         this.dateIndexHelper = dateIndexHelper;
@@ -46,8 +46,8 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
      * @return The tree with additional index query portions
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandFunctions(RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper,
-                    DateIndexHelper dateIndexHelper, T script) {
+    public static <T extends JexlNode> T expandFunctions(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
+                    T script) {
         FunctionIndexQueryExpansionVisitor visitor = new FunctionIndexQueryExpansionVisitor(config, metadataHelper, dateIndexHelper);
         
         return (T) script.jjtAccept(visitor, null);
@@ -85,7 +85,7 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        RefactoredJexlArgumentDescriptor desc = RefactoredJexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
+        JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         
         JexlNode indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
         if (indexQuery != null && !(indexQuery instanceof ASTTrueNode)) {

@@ -5,7 +5,7 @@ import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.edgedictionary.DatawaveEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -21,12 +21,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * This Logic highjacks the Query string, and transforms it into a RefactoredShardQueryLogic query The query string is of the form:
+ * This Logic highjacks the Query string, and transforms it into a ShardQueryLogic query The query string is of the form:
  * 
  * SOURCE == xxx AND SINK == yyy AND TYPE == zzz AND RELATIONSHIP == www AND EDGE_ATTRIBUTE1 == vvv
  * 
  */
-public class DefaultEdgeEventQueryLogic extends RefactoredShardQueryLogic {
+public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     
     private static final Logger log = Logger.getLogger(DefaultEdgeEventQueryLogic.class);
     

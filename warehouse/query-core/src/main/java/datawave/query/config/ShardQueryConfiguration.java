@@ -39,10 +39,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * This class can be initialized with an instance of a ShardQueryLogic or ShardQueryTable which will grab the already configured parameters from the Accumulo
  * Webservice QueryTable and apply them to this configuration object
  */
-public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration {
+public class ShardQueryConfiguration extends GenericQueryConfiguration {
     @SuppressWarnings("unused")
     private static final long serialVersionUID = -4354990715046146110L;
-    private static final Logger log = Logger.getLogger(RefactoredShardQueryConfiguration.class);
+    private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
     
     public static final String PARAM_VALUE_SEP_STR = new String(new char[] {Constants.PARAM_VALUE_SEP});
     
@@ -298,7 +298,7 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
      */
     protected boolean debugMultithreadedSources = false;
     
-    public RefactoredShardQueryConfiguration() {
+    public ShardQueryConfiguration() {
         query = new QueryImpl();
     }
     
@@ -1329,7 +1329,7 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     }
     
     // copy constructor
-    public RefactoredShardQueryConfiguration(RefactoredShardQueryConfiguration copy) {
+    public ShardQueryConfiguration(ShardQueryConfiguration copy) {
         
         // normally set via super constructor
         this.setTableName(copy.getTableName());

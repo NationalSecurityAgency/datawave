@@ -5,12 +5,12 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.jexl.lookups.FieldNameLookup;
 import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.lookups.RefactoredShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.Query;
@@ -50,7 +50,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     protected JexlNode currentNode;
     
-    public FixUnfieldedTermsVisitor(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields)
+    public FixUnfieldedTermsVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields)
                     throws InstantiationException, IllegalAccessException, TableNotFoundException {
         super(config, scannerFactory, helper, expansionFields, "Datawave Unfielded Lookup");
     }
@@ -79,13 +79,13 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
         
     }
     
-    public static ASTJexlScript fixUnfieldedTree(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                    ASTJexlScript script) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+    public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script)
+                    throws InstantiationException, IllegalAccessException, TableNotFoundException {
         return fixUnfieldedTree(config, scannerFactory, helper, script, null);
     }
     
-    public static ASTJexlScript fixUnfieldedTree(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                    ASTJexlScript script, Set<String> expansionFields) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+    public static ASTJexlScript fixUnfieldedTree(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, ASTJexlScript script,
+                    Set<String> expansionFields) throws InstantiationException, IllegalAccessException, TableNotFoundException {
         FixUnfieldedTermsVisitor visitor = new FixUnfieldedTermsVisitor(config, scannerFactory, helper, expansionFields);
         
         return (ASTJexlScript) script.jjtAccept(visitor, null);
@@ -374,7 +374,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
                     IllegalAccessException {
         // Using the datatype filter when expanding this term isn't really
         // necessary
-        IndexLookup lookup = RefactoredShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, this.expansionFields, this.allTypes, helper);
+        IndexLookup lookup = ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, this.expansionFields, this.allTypes, helper);
         
         if (lookup instanceof FieldNameLookup && config.getLimitAnyFieldLookups()) {
             lookup.setLimitToTerms(true);

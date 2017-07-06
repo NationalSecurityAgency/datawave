@@ -20,9 +20,9 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.QueryParameters;
 import datawave.query.iterators.FieldIndexCountingIterator;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
-import datawave.query.config.RefactoredShardQueryConfigurationFactory;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfigurationFactory;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.FieldIndexCountQueryTransformer;
 import datawave.query.util.MetadataHelper;
@@ -50,7 +50,7 @@ import org.apache.log4j.Logger;
  * Given a date range, FieldName(s), FieldValue(s), DataType(s) pull keys directly using FieldIndexIterator and count them as specified.
  * 
  */
-public class FieldIndexCountQueryLogic extends RefactoredShardQueryLogic {
+public class FieldIndexCountQueryLogic extends ShardQueryLogic {
     
     private static final Logger logger = Logger.getLogger(FieldIndexCountQueryLogic.class);
     private static final String DATA_FORMAT = "yyyyMMdd";
@@ -94,8 +94,7 @@ public class FieldIndexCountQueryLogic extends RefactoredShardQueryLogic {
         }
         
         // I'm using this config object in a pinch, we should probably create a custom one.
-        RefactoredShardQueryConfiguration config = RefactoredShardQueryConfigurationFactory.createRefactoredShardQueryConfigurationFromConfiguredLogic(this,
-                        settings);
+        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createRefactoredShardQueryConfigurationFromConfiguredLogic(this, settings);
         config.setConnector(connection);
         config.setAuthorizations(auths);
         
@@ -210,11 +209,11 @@ public class FieldIndexCountQueryLogic extends RefactoredShardQueryLogic {
         if (logger.isTraceEnabled()) {
             logger.trace("setupQuery");
         }
-        if (!RefactoredShardQueryConfiguration.class.isAssignableFrom(genericConfig.getClass())) {
+        if (!ShardQueryConfiguration.class.isAssignableFrom(genericConfig.getClass())) {
             throw new QueryException("Did not receive a ShardQueryConfiguration instance!!");
         }
         
-        RefactoredShardQueryConfiguration config = (RefactoredShardQueryConfiguration) genericConfig;
+        ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
         
         // Ensure we have all of the information needed to run a query
         if (!config.canRunQuery()) {
@@ -286,7 +285,7 @@ public class FieldIndexCountQueryLogic extends RefactoredShardQueryLogic {
         return new SimpleDateFormat(DATA_FORMAT);
     }
     
-    private void parseQuery(RefactoredShardQueryConfiguration config, Query settings) {
+    private void parseQuery(ShardQueryConfiguration config, Query settings) {
         if (logger.isTraceEnabled()) {
             logger.trace("parseQuery");
         }
@@ -330,7 +329,7 @@ public class FieldIndexCountQueryLogic extends RefactoredShardQueryLogic {
         }
     }
     
-    private void configDate(RefactoredShardQueryConfiguration config, Query settings) {
+    private void configDate(ShardQueryConfiguration config, Query settings) {
         final Date beginDate = settings.getBeginDate();
         if (null == beginDate) {
             throw new IllegalArgumentException("Begin date cannot be null");
@@ -350,7 +349,7 @@ public class FieldIndexCountQueryLogic extends RefactoredShardQueryLogic {
         }
     }
     
-    private void configTypeFilter(RefactoredShardQueryConfiguration config, Query settings) {
+    private void configTypeFilter(ShardQueryConfiguration config, Query settings) {
         // Get the datatype set if specified
         if (null == settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)) {
             config.setDatatypeFilter(new HashSet<String>());
@@ -373,7 +372,7 @@ public class FieldIndexCountQueryLogic extends RefactoredShardQueryLogic {
         }
     }
     
-    public Collection<Range> generateRanges(RefactoredShardQueryConfiguration config) {
+    public Collection<Range> generateRanges(ShardQueryConfiguration config) {
         Calendar beginCal = Calendar.getInstance();
         Calendar endCal = Calendar.getInstance();
         beginCal.setTime(config.getBeginDate());

@@ -5,9 +5,9 @@ import java.util.Map.Entry;
 
 import com.google.common.collect.*;
 import datawave.data.type.NoOpType;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.util.Composite;
 import datawave.query.util.CompositeNameAndIndex;
@@ -37,7 +37,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandCompositeTerms.class);
     
-    private final RefactoredShardQueryConfiguration config;
+    private final ShardQueryConfiguration config;
     protected MetadataHelper helper;
     
     private static class ExpandData {
@@ -67,7 +67,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         }
     }
     
-    private ExpandCompositeTerms(RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    private ExpandCompositeTerms(ShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(config);
         this.config = config;
         this.helper = helper;
@@ -81,7 +81,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandTerms(RefactoredShardQueryConfiguration config, MetadataHelper helper, T script) {
+    public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, MetadataHelper helper, T script) {
         
         ExpandCompositeTerms visitor = new ExpandCompositeTerms(config, helper);
         

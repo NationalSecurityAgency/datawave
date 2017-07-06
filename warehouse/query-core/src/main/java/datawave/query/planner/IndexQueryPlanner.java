@@ -2,13 +2,13 @@ package datawave.query.planner;
 
 import java.util.concurrent.ExecutionException;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.iterator.FieldIndexOnlyQueryIterator;
 import datawave.query.jexl.visitors.AllTermsIndexedVisitor;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
@@ -33,7 +33,7 @@ public class IndexQueryPlanner extends DefaultQueryPlanner {
     }
     
     @Override
-    public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, RefactoredShardQueryConfiguration config, Query settings, String queryString,
+    public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
                     Boolean isFullTable) throws DatawaveQueryException {
         if (isFullTable) {
             QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_DISALLOWED);
@@ -56,7 +56,7 @@ public class IndexQueryPlanner extends DefaultQueryPlanner {
     
     @Override
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    RefactoredShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
         // we want all terms expanded (except when max terms is reached)
         config.setExpandAllTerms(true);
         
@@ -66,7 +66,7 @@ public class IndexQueryPlanner extends DefaultQueryPlanner {
         return limitQueryTree(script, config);
     }
     
-    protected ASTJexlScript limitQueryTree(ASTJexlScript script, RefactoredShardQueryConfiguration config) throws NoResultsException {
+    protected ASTJexlScript limitQueryTree(ASTJexlScript script, ShardQueryConfiguration config) throws NoResultsException {
         // Assert that all of the terms in the query are indexed (so we can
         // completely use the field index)
         // Also removes any spurious _ANYFIELD_ nodes left in from upstream

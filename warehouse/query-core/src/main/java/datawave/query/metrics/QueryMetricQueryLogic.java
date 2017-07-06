@@ -7,7 +7,7 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import datawave.query.language.parser.ParseException;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawavePrincipalLookup;
 import datawave.webservice.query.Query;
@@ -42,7 +42,7 @@ import org.apache.accumulo.core.security.Authorizations;
  * 
  * <br>
  */
-public class QueryMetricQueryLogic extends RefactoredShardQueryLogic {
+public class QueryMetricQueryLogic extends ShardQueryLogic {
     
     @Inject
     private DatawavePrincipalLookup datawavePrincipalLookup;

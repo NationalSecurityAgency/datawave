@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import datawave.query.CloseableIterable;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.jexl.visitors.BooleanOptimizationRebuildingVisitor;
@@ -36,7 +36,7 @@ public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
     
     @Override
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    RefactoredShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
         ASTJexlScript queryTree = super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
         
         if (queryTree == null) {
@@ -90,7 +90,7 @@ public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
     
     @Override
     protected CloseableIterable<QueryData> process(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    RefactoredShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
         final QueryData queryData = new QueryData();
         final ArrayList<QueryData> data = Lists.newArrayList();
         

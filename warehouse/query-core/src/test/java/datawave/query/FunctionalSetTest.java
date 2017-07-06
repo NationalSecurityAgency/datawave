@@ -29,7 +29,7 @@ import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.WiseGuysIngest;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
@@ -112,7 +112,7 @@ public abstract class FunctionalSetTest {
     
     @Inject
     @SpringBean(name = "EventQuery")
-    protected RefactoredShardQueryLogic logic;
+    protected ShardQueryLogic logic;
     
     protected KryoDocumentDeserializer deserializer;
     

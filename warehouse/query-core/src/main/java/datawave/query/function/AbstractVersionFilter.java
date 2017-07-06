@@ -47,11 +47,10 @@ import com.google.gson.Gson;
  * other things, they may stand to get purged at different times under different conditions than sibling events.
  * <p>
  * The {@link AbstractVersionFilter} helps to discriminate between normal and versioned child events by being injected into the framework as one of the
- * "filterClassNames" specified by a RefactoredShardQueryLogic bean. Once instantiated and properly configured, each call to the <i>apply(..)</i> method checks
- * the Key for a column family value prefixed with a matching data type. If a match is not made, the method ignores and quickly returns the original Key. If a
- * match is made, however, the same column family is checked for a "versionized" UID pattern appended to the data type, such as
- * "datatype\x00kir5i4.tf9ozi.-ji6i29.1", which is an example of the default case that assumes versions are simply the first-level children of a given data
- * type's top-level events.
+ * "filterClassNames" specified by a ShardQueryLogic bean. Once instantiated and properly configured, each call to the <i>apply(..)</i> method checks the Key
+ * for a column family value prefixed with a matching data type. If a match is not made, the method ignores and quickly returns the original Key. If a match is
+ * made, however, the same column family is checked for a "versionized" UID pattern appended to the data type, such as "datatype\x00kir5i4.tf9ozi.-ji6i29.1",
+ * which is an example of the default case that assumes versions are simply the first-level children of a given data type's top-level events.
  * <p>
  * More complex and deeper level UID patterns can be configured, but any pattern is expected to correlate with a number-normalized field in the field-index (fi)
  * section of the shard. For each matching UID pattern, the filter will attempt to scan the shard in order to fully validate the Key. The default and most basic

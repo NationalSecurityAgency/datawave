@@ -12,9 +12,9 @@ import datawave.audit.SelectorExtractor;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.query.config.EdgeExtendedSummaryConfiguration;
-import datawave.query.config.RewriteEdgeQueryConfiguration;
+import datawave.query.config.EdgeQueryConfiguration;
 import datawave.query.iterator.filter.EdgeFilterIterator;
-import datawave.query.tables.edge.RewriteEdgeQueryLogic;
+import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.query.tables.edge.contexts.VisitationContext;
 import datawave.query.transformer.EdgeQueryTransformer;
 import datawave.query.util.MetadataHelper;
@@ -32,7 +32,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-public class DefaultExtendedEdgeQueryLogic extends RewriteEdgeQueryLogic {
+public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
     
     private static final Logger log = Logger.getLogger(DefaultExtendedEdgeQueryLogic.class);
     
@@ -59,7 +59,7 @@ public class DefaultExtendedEdgeQueryLogic extends RewriteEdgeQueryLogic {
     }
     
     @Override
-    protected RewriteEdgeQueryConfiguration setUpConfig(Query settings) {
+    protected EdgeQueryConfiguration setUpConfig(Query settings) {
         return new EdgeExtendedSummaryConfiguration(this, settings).parseParameters(settings);
     }
     

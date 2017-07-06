@@ -4,13 +4,13 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
-import datawave.query.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
@@ -28,12 +28,12 @@ import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.mutable.MutableBoolean;
 
-public class ContentFunctionsDescriptor implements RefactoredJexlFunctionArgumentDescriptorFactory {
+public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
     
     /**
      * This is the JexlNode descriptor which can be used to normalize and optimize function node queries
      */
-    public static class ContentJexlArgumentDescriptor implements RefactoredJexlArgumentDescriptor {
+    public static class ContentJexlArgumentDescriptor implements JexlArgumentDescriptor {
         
         private final ASTFunctionNode node;
         private final String namespace, name;
@@ -47,8 +47,7 @@ public class ContentFunctionsDescriptor implements RefactoredJexlFunctionArgumen
         }
         
         @Override
-        public JexlNode getIndexQuery(RefactoredShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper,
-                        Set<String> datatypeFilter) {
+        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             try {
                 return getIndexQuery(helper.getTermFrequencyFields(datatypeFilter), helper.getIndexedFields(datatypeFilter),
                                 helper.getContentFields(datatypeFilter));

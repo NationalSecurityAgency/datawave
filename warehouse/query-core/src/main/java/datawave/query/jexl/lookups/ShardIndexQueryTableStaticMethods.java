@@ -16,9 +16,9 @@ import datawave.core.iterators.filter.GlobalIndexDataTypeFilter;
 import datawave.core.iterators.filter.GlobalIndexDateRangeFilter;
 import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
 import datawave.data.type.Type;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
@@ -57,12 +57,12 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Sets;
 
 /**
- * Temporary location for static methods in RefactoredShardIndexQueryTable
+ * Temporary location for static methods in ShardIndexQueryTable
  *
  */
-public class RefactoredShardIndexQueryTableStaticMethods {
+public class ShardIndexQueryTableStaticMethods {
     
-    private static final Logger log = Logger.getLogger(RefactoredShardIndexQueryTableStaticMethods.class);
+    private static final Logger log = Logger.getLogger(ShardIndexQueryTableStaticMethods.class);
     
     private static FastDateFormat formatter = FastDateFormat.getInstance("yyyyMMdd");
     
@@ -301,7 +301,7 @@ public class RefactoredShardIndexQueryTableStaticMethods {
      * @return
      * @throws Exception
      */
-    public static ScannerSession configureTermMatchOnly(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
+    public static ScannerSession configureTermMatchOnly(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
                     throws Exception {
         
@@ -329,7 +329,7 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         return bs;
     }
     
-    public static ScannerSession configureLimitedDiscovery(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
+    public static ScannerSession configureLimitedDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
                     throws Exception {
         
@@ -366,7 +366,7 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         return bs;
     }
     
-    public static final void configureGlobalIndexDateRangeFilter(RefactoredShardQueryConfiguration config, ScannerBase bs, LongRange dateRange) {
+    public static final void configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, ScannerBase bs, LongRange dateRange) {
         // Setup the GlobalIndexDateRangeFilter
         
         if (log.isTraceEnabled()) {
@@ -376,7 +376,7 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         bs.addScanIterator(cfg);
     }
     
-    public static final IteratorSetting configureGlobalIndexDateRangeFilter(RefactoredShardQueryConfiguration config, LongRange dateRange) {
+    public static final IteratorSetting configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, LongRange dateRange) {
         // Setup the GlobalIndexDateRangeFilter
         if (log.isTraceEnabled()) {
             log.trace("Configuring GlobalIndexDateRangeFilter with " + dateRange);
@@ -387,7 +387,7 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         return cfg;
     }
     
-    public static final IteratorSetting configureDateRangeIterator(RefactoredShardQueryConfiguration config) throws IOException {
+    public static final IteratorSetting configureDateRangeIterator(ShardQueryConfiguration config) throws IOException {
         // Setup the GlobalIndexDateRangeFilter
         if (log.isTraceEnabled()) {
             log.trace("Configuring configureDateRangeIterator ");
@@ -399,7 +399,7 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         return cfg;
     }
     
-    public static final void configureGlobalIndexDataTypeFilter(RefactoredShardQueryConfiguration config, ScannerBase bs, Collection<String> dataTypes) {
+    public static final void configureGlobalIndexDataTypeFilter(ShardQueryConfiguration config, ScannerBase bs, Collection<String> dataTypes) {
         if (dataTypes == null || dataTypes.isEmpty()) {
             return;
         }
@@ -415,7 +415,7 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         bs.addScanIterator(cfg);
     }
     
-    public static IteratorSetting configureGlobalIndexDataTypeFilter(RefactoredShardQueryConfiguration config, Collection<String> dataTypes) {
+    public static IteratorSetting configureGlobalIndexDataTypeFilter(ShardQueryConfiguration config, Collection<String> dataTypes) {
         
         if (log.isTraceEnabled()) {
             log.trace("Configuring GlobalIndexDataTypeFilter with " + dataTypes);
@@ -430,7 +430,7 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         return cfg;
     }
     
-    public static final void configureGlobalIndexTermMatchingIterator(RefactoredShardQueryConfiguration config, ScannerBase bs, Collection<String> literals,
+    public static final void configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, ScannerBase bs, Collection<String> literals,
                     Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms) {
         if ((literals == null || literals.isEmpty()) && (patterns == null || patterns.isEmpty())) {
             return;
@@ -445,7 +445,7 @@ public class RefactoredShardIndexQueryTableStaticMethods {
         
     }
     
-    public static final IteratorSetting configureGlobalIndexTermMatchingIterator(RefactoredShardQueryConfiguration config, Collection<String> literals,
+    public static final IteratorSetting configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, Collection<String> literals,
                     Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms) {
         if ((literals == null || literals.isEmpty()) && (patterns == null || patterns.isEmpty())) {
             return null;
@@ -492,8 +492,8 @@ public class RefactoredShardIndexQueryTableStaticMethods {
      * @throws java.util.concurrent.ExecutionException
      */
     public static RefactoredRangeDescription getRegexRange(String fieldName, String normalizedQueryTerm, boolean fullTableScanEnabled,
-                    MetadataHelper metadataHelper, RefactoredShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException,
-                    TableNotFoundException, ExecutionException {
+                    MetadataHelper metadataHelper, ShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException,
+                    ExecutionException {
         if (log.isDebugEnabled()) {
             log.debug("getRegexRange: " + normalizedQueryTerm);
         }
@@ -584,12 +584,12 @@ public class RefactoredShardIndexQueryTableStaticMethods {
     }
     
     public static RefactoredRangeDescription getRegexRange(Map.Entry<String,String> entry, boolean fullTableScanEnabled, MetadataHelper metadataHelper,
-                    RefactoredShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException, ExecutionException {
+                    ShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException, ExecutionException {
         return getRegexRange(entry.getKey(), entry.getValue(), fullTableScanEnabled, metadataHelper, config);
     }
     
-    public static boolean shouldUseReverseIndex(JavaRegexAnalyzer analyzer, String fieldName, MetadataHelper metadataHelper,
-                    RefactoredShardQueryConfiguration config) throws TableNotFoundException, ExecutionException {
+    public static boolean shouldUseReverseIndex(JavaRegexAnalyzer analyzer, String fieldName, MetadataHelper metadataHelper, ShardQueryConfiguration config)
+                    throws TableNotFoundException, ExecutionException {
         
         String leadingLiteral = analyzer.getLeadingLiteral(), trailingLiteral = analyzer.getTrailingLiteral();
         
@@ -672,7 +672,7 @@ public class RefactoredShardIndexQueryTableStaticMethods {
      *            The literal to trim.
      * @return A literal with the realm information removed.
      */
-    private static String trimRealmFromLiteral(String literal, RefactoredShardQueryConfiguration config) {
+    private static String trimRealmFromLiteral(String literal, ShardQueryConfiguration config) {
         String retVal = null;
         
         List<String> exclusions = config.getRealmSuffixExclusionPatterns();

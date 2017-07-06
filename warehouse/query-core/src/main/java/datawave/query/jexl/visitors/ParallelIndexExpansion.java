@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadFactory;
 import datawave.data.type.Type;
 import datawave.query.model.QueryModel;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -28,7 +28,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
-import datawave.query.jexl.lookups.RefactoredShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
@@ -62,7 +62,7 @@ import com.google.common.collect.Sets;
 
 public class ParallelIndexExpansion extends RebuildingVisitor {
     
-    protected RefactoredShardQueryConfiguration config;
+    protected ShardQueryConfiguration config;
     protected ScannerFactory scannerFactory;
     protected ExecutorService executor;
     protected Collection<IndexLookupCallable> todo;
@@ -78,12 +78,12 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     protected String threadName;
     private static final Logger log = Logger.getLogger(ParallelIndexExpansion.class);
     
-    public ParallelIndexExpansion(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields)
+    public ParallelIndexExpansion(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields)
                     throws InstantiationException, IllegalAccessException, TableNotFoundException {
         this(config, scannerFactory, helper, expansionFields, "Datawave Fielded Regex");
     }
     
-    public ParallelIndexExpansion(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
+    public ParallelIndexExpansion(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Set<String> expansionFields,
                     String threadName) throws InstantiationException, IllegalAccessException, TableNotFoundException {
         this.allFields = helper.getAllFields(config.getDatatypeFilter());
         this.config = config;
@@ -221,7 +221,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         if (null == task) {
             
-            task = RefactoredShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, fieldName, config.getQueryFieldsDatatypes().get(fieldName),
+            task = ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, fieldName, config.getQueryFieldsDatatypes().get(fieldName),
                             config.getDatatypeFilter(), helper);
             
             if (task.supportReference())

@@ -1,8 +1,8 @@
 package datawave.query.jexl.visitors;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.stats.IndexStatsClient;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
@@ -13,10 +13,10 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
 public class PruneLessSelectiveFieldsVisitor extends RebuildingVisitor {
     
-    private final RefactoredShardQueryConfiguration config;
+    private final ShardQueryConfiguration config;
     private final IndexStatsClient stats;
     
-    public PruneLessSelectiveFieldsVisitor(RefactoredShardQueryConfiguration config) {
+    public PruneLessSelectiveFieldsVisitor(ShardQueryConfiguration config) {
         this.config = config;
         stats = new IndexStatsClient(this.config.getConnector(), this.config.getIndexStatsTableName());
     }
@@ -30,7 +30,7 @@ public class PruneLessSelectiveFieldsVisitor extends RebuildingVisitor {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T prune(RefactoredShardQueryConfiguration config, T script) {
+    public static <T extends JexlNode> T prune(ShardQueryConfiguration config, T script) {
         PruneLessSelectiveFieldsVisitor visitor = new PruneLessSelectiveFieldsVisitor(config);
         return (T) script.jjtAccept(visitor, null);
     }

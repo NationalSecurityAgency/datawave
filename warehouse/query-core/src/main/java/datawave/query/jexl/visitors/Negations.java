@@ -14,10 +14,10 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 /**
  * Rewrites subtrees of the form "A != B" into "!(A == B)". This is destructive on the tree.
  */
-public class RewriteNegations extends BaseVisitor {
+public class Negations extends BaseVisitor {
     
     public static <T extends JexlNode> T rewrite(T node) {
-        node.jjtAccept(new RewriteNegations(), null);
+        node.jjtAccept(new Negations(), null);
         return node;
     }
     

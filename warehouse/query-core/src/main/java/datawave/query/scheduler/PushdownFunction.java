@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.planner.QueryPlan;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -37,7 +38,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
@@ -53,7 +53,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
     /**
      * Configuration object
      */
-    private RefactoredShardQueryConfiguration config;
+    private ShardQueryConfiguration config;
     
     /**
      * Tablet locator
@@ -68,7 +68,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
     
     protected String tableId = "0";
     
-    public PushdownFunction(TabletLocator tl, RefactoredShardQueryConfiguration config, Collection<IteratorSetting> settings, String tableId) {
+    public PushdownFunction(TabletLocator tl, ShardQueryConfiguration config, Collection<IteratorSetting> settings, String tableId) {
         this.tl = tl;
         this.config = config;
         queryPlanSet = Sets.newHashSet();

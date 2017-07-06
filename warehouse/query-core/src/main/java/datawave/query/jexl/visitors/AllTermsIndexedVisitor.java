@@ -3,11 +3,11 @@ package datawave.query.jexl.visitors;
 import java.text.MessageFormat;
 import java.util.NoSuchElementException;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.util.MetadataHelper;
 
@@ -43,10 +43,10 @@ import com.google.common.base.Preconditions;
 public class AllTermsIndexedVisitor extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(AllTermsIndexedVisitor.class);
     
-    protected final RefactoredShardQueryConfiguration config;
+    protected final ShardQueryConfiguration config;
     protected final MetadataHelper helper;
     
-    public AllTermsIndexedVisitor(RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    public AllTermsIndexedVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(config);
         Preconditions.checkNotNull(helper);
         
@@ -55,7 +55,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
     }
     
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T isIndexed(T script, RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    public static <T extends JexlNode> T isIndexed(T script, ShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(script);
         
         AllTermsIndexedVisitor visitor = new AllTermsIndexedVisitor(config, helper);

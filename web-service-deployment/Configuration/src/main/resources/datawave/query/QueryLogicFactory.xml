@@ -124,7 +124,7 @@
         <property name="markingFunctions" ref="markingFunctions" />
     </bean>
 
-    <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.RefactoredShardQueryLogic" abstract="true">
+    <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true">
         <property name="accumuloPassword" value="${accumulo.user.password}" />
         <property name="tableName" value="${shard.table.name}" />
         <property name="dateIndexTableName" value="${date.index.table.name}" />
@@ -247,7 +247,7 @@
         ${hierarchy.field.options}
     </util:map>
 
-    <bean id="BaseCountQuery" parent="BaseEventQuery" class="datawave.query.tables.RefactoredCountingShardQueryLogic" abstract="true" />
+    <bean id="BaseCountQuery" parent="BaseEventQuery" class="datawave.query.tables.CountingShardQueryLogic" abstract="true" />
 
     <bean id="BaseModelEventQuery" parent="BaseEventQuery" abstract="true">
         <property name="modelTableName" value="DatawaveMetadata" />
@@ -255,7 +255,7 @@
     </bean>
 
     <!-- Query logic not referenced in map
-    <bean id="BooleanPartitionedQueryTable" scope="prototype"  class="datawave.query.tables.RefactoredPartitionedQueryTable" parent="BaseModelEventQuery">
+    <bean id="BooleanPartitionedQueryTable" scope="prototype"  cladatawave.query.tables.PartitionedQueryTableable" parent="BaseModelEventQuery">
         <property name="chunker">
             <bean class="datawave.query.tables.chunk.BooleanChunker" />
         </property>
@@ -458,7 +458,7 @@
         <property name="logicDescription" value="Event query" />
     </bean>
 
-    <bean id="TLDEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.RefactoredTLDQueryLogic">
+    <bean id="TLDEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
         <property name="collapseUids" value="${query.tld.collapse.uids}" />
         <property name="indexFilteringClassNames">
             <list value-type="java.lang.String">
@@ -470,7 +470,7 @@
     <bean id="ParentEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.ParentQueryLogic">
     </bean>
 
-    <bean id="CountQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.RefactoredCountingShardQueryLogic">
+    <bean id="CountQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.CountingShardQueryLogic">
         <property name="logicDescription" value="Count Query"/>
     </bean>
 

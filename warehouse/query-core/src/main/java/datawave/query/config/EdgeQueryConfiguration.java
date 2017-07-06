@@ -4,7 +4,7 @@ import java.util.List;
 
 import datawave.data.type.Type;
 import datawave.query.model.edge.EdgeQueryModel;
-import datawave.query.tables.edge.RewriteEdgeQueryLogic;
+import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -12,7 +12,7 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 /**
  * Created with IntelliJ IDEA. To change this template use File | Settings | File Templates.
  */
-public class RewriteEdgeQueryConfiguration extends GenericQueryConfiguration {
+public class EdgeQueryConfiguration extends GenericQueryConfiguration {
     private static final long serialVersionUID = -2795330785878662313L;
     
     // We originally had the two choices:
@@ -57,7 +57,7 @@ public class RewriteEdgeQueryConfiguration extends GenericQueryConfiguration {
     // Use to aggregate results will be false by default
     private boolean aggregateResults = false;
     
-    public RewriteEdgeQueryConfiguration(RewriteEdgeQueryLogic configuredLogic, Query query) {
+    public EdgeQueryConfiguration(EdgeQueryLogic configuredLogic, Query query) {
         super(configuredLogic);
         setDataTypes(configuredLogic.getDataTypes());
         setNumQueryThreads(configuredLogic.getQueryThreads());
@@ -107,7 +107,7 @@ public class RewriteEdgeQueryConfiguration extends GenericQueryConfiguration {
     /**
      * Fluent interface for parsing the parameters out of the Parameter set provided by the Query.
      */
-    public RewriteEdgeQueryConfiguration parseParameters(Query settings) {
+    public EdgeQueryConfiguration parseParameters(Query settings) {
         if (settings.getParameters() != null) {
             QueryImpl.Parameter p = settings.findParameter(INCLUDE_STATS);
             if (p != null && !p.getParameterValue().isEmpty()) {

@@ -1,7 +1,7 @@
 package datawave.query.jexl.functions;
 
 import datawave.query.jexl.ArithmeticJexlEngines;
-import datawave.query.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.BaseVisitor;
 
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -16,7 +16,7 @@ import com.google.common.collect.ImmutableList;
  * This interface can be implemented by a class supplying JEXL functions to provide additionally information about the arguments. The initial purpose of this is
  * to allow the DatawaveQueryAnalyzer and RangeCalculator to determine ranges from the global index for a given function.
  */
-public interface RefactoredJexlFunctionArgumentDescriptorFactory {
+public interface JexlFunctionArgumentDescriptorFactory {
     /**
      * Return an argument descriptor for a given tree node.
      * 
@@ -24,7 +24,7 @@ public interface RefactoredJexlFunctionArgumentDescriptorFactory {
      *            A node that must be for a JEXL function in the implementing class.
      * @return The argument descriptor.
      */
-    public RefactoredJexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node);
+    public JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node);
     
     public static final JexlNode TRUE_NODE = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
     
@@ -33,9 +33,9 @@ public interface RefactoredJexlFunctionArgumentDescriptorFactory {
         /**
          * A convenience method to get the argument descriptor from a node
          */
-        public static RefactoredJexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node) {
+        public static JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node) {
             if (node == null)
-                throw new IllegalArgumentException("Calling " + RefactoredJexlFunctionArgumentDescriptorFactory.class.getSimpleName()
+                throw new IllegalArgumentException("Calling " + JexlFunctionArgumentDescriptorFactory.class.getSimpleName()
                                 + ".getArgumentDescriptor with a null tree node");
             
             Class<?> funcClass = extractFunctionClass(node);
@@ -47,10 +47,10 @@ public interface RefactoredJexlFunctionArgumentDescriptorFactory {
                 if (factoryClassName != null) {
                     try {
                         @SuppressWarnings("unchecked")
-                        Class<? extends RefactoredJexlFunctionArgumentDescriptorFactory> factoryClass = (Class<? extends RefactoredJexlFunctionArgumentDescriptorFactory>) (funcClass
+                        Class<? extends JexlFunctionArgumentDescriptorFactory> factoryClass = (Class<? extends JexlFunctionArgumentDescriptorFactory>) (funcClass
                                         .getClassLoader().loadClass(factoryClassName));
                         // get the factory
-                        RefactoredJexlFunctionArgumentDescriptorFactory factory = factoryClass.newInstance();
+                        JexlFunctionArgumentDescriptorFactory factory = factoryClass.newInstance();
                         // get the descriptor
                         return factory.getArgumentDescriptor(node);
                     } catch (Exception e) {

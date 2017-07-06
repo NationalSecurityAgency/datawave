@@ -7,7 +7,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.tables.ShardQueryLogic;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -34,7 +35,6 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
 import datawave.mr.bulk.RfileResource;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.async.ScannerChunk;
@@ -56,7 +56,7 @@ public class PushdownScheduler extends Scheduler {
     /**
      * Configuration reference.
      */
-    protected final RefactoredShardQueryConfiguration config;
+    protected final ShardQueryConfiguration config;
     /**
      * Scanner factory reference.
      */
@@ -81,7 +81,7 @@ public class PushdownScheduler extends Scheduler {
     
     protected MetadataHelper metadataHelper;
     
-    protected PushdownScheduler(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory) {
+    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
         this.config = config;
         this.scannerFactory = scannerFactory;
         customizedFunctionList = Lists.newArrayList();
@@ -89,11 +89,11 @@ public class PushdownScheduler extends Scheduler {
         Preconditions.checkNotNull(config.getConnector());
     }
     
-    public PushdownScheduler(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
+    public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
         this(config, scannerFactory, metaFactory.createMetadataHelper());
     }
     
-    protected PushdownScheduler(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
+    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
         this.config = config;
         this.metadataHelper = helper.initialize(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations());
         this.scannerFactory = scannerFactory;
@@ -203,12 +203,11 @@ public class PushdownScheduler extends Scheduler {
     /*
      * (non-Javadoc)
      * 
-     * @see Scheduler#createBatchScanner(RefactoredShardQueryConfiguration, datawave.query.tables.ScannerFactory,
-     * datawave.webservice.query.configuration.QueryData)
+     * @see Scheduler#createBatchScanner(ShardQueryConfiguration, datawave.query.tables.ScannerFactory, datawave.webservice.query.configuration.QueryData)
      */
     @Override
-    public BatchScanner createBatchScanner(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        return RefactoredShardQueryLogic.createBatchScanner(config, scannerFactory, qd);
+    public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
+        return ShardQueryLogic.createBatchScanner(config, scannerFactory, qd);
     }
     
     @Override

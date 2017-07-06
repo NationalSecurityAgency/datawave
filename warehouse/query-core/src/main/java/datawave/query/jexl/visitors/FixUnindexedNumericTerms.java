@@ -3,7 +3,7 @@ package datawave.query.jexl.visitors;
 import java.util.Collection;
 
 import datawave.data.type.Type;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
@@ -33,9 +33,9 @@ import com.google.common.base.Preconditions;
 public class FixUnindexedNumericTerms extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(FixUnindexedNumericTerms.class);
     
-    private final RefactoredShardQueryConfiguration config;
+    private final ShardQueryConfiguration config;
     
-    public FixUnindexedNumericTerms(RefactoredShardQueryConfiguration config) {
+    public FixUnindexedNumericTerms(ShardQueryConfiguration config) {
         Preconditions.checkNotNull(config);
         
         this.config = config;
@@ -49,7 +49,7 @@ public class FixUnindexedNumericTerms extends RebuildingVisitor {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T fixNumerics(RefactoredShardQueryConfiguration config, T script) {
+    public static <T extends JexlNode> T fixNumerics(ShardQueryConfiguration config, T script) {
         FixUnindexedNumericTerms visitor = new FixUnindexedNumericTerms(config);
         
         if (null == visitor.config.getQueryFieldsDatatypes()) {

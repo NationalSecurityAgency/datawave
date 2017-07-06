@@ -14,14 +14,14 @@ import org.apache.commons.logging.Log;
  * Extension of the JexlEngine.
  * 
  */
-public class RefactoredDatawaveJexlEngine extends JexlEngine {
+public class DatawaveJexlEngine extends JexlEngine {
     
-    public RefactoredDatawaveJexlEngine() {
+    public DatawaveJexlEngine() {
         super();
         registerFunctions();
     }
     
-    public RefactoredDatawaveJexlEngine(Uberspect anUberspect, JexlArithmetic anArithmetic, Map<String,Object> theFunctions, Log log) {
+    public DatawaveJexlEngine(Uberspect anUberspect, JexlArithmetic anArithmetic, Map<String,Object> theFunctions, Log log) {
         super(anUberspect, anArithmetic, theFunctions, log);
     }
     
@@ -31,7 +31,7 @@ public class RefactoredDatawaveJexlEngine extends JexlEngine {
     
     @Override
     protected Interpreter createInterpreter(JexlContext context, boolean strictFlag, boolean silentFlag) {
-        return new RefactoredDatawaveInterpreter(this, context, strictFlag, silentFlag);
+        return new DatawaveInterpreter(this, context, strictFlag, silentFlag);
     }
     
     public ASTJexlScript parse(CharSequence expression) {

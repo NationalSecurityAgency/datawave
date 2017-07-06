@@ -2,11 +2,11 @@ package datawave.query.tables.shard;
 
 import datawave.core.iterators.filter.CsvKeyFilter;
 import datawave.query.QueryParameters;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.stats.IndexStatsRecord;
 import datawave.query.index.stats.IndexStatsSummingIterator;
 import datawave.query.index.stats.MinMaxIterator;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.security.util.ScannerHelper;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -73,7 +73,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
     public GenericQueryConfiguration initialize(Connector connector, Query query, Set<Authorizations> auths) throws Exception {
         this.connector = connector;
         
-        RefactoredShardQueryConfiguration config = new RefactoredShardQueryConfiguration();
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
         
         // Get the datatype set if specified
         String typeList = query.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue();
@@ -102,7 +102,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
     
     @Override
     public void setupQuery(GenericQueryConfiguration config) throws Exception {
-        RefactoredShardQueryConfiguration qConf = (RefactoredShardQueryConfiguration) config;
+        ShardQueryConfiguration qConf = (ShardQueryConfiguration) config;
         
         HashSet<String> fields = new HashSet<>();
         Collections.addAll(fields, config.getQueryString().split(" "));

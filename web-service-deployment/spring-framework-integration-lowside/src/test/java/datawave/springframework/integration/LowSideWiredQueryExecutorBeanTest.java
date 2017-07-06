@@ -13,9 +13,9 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.FacetedQueryPlanner;
 import datawave.query.tables.IndexQueryLogic;
 import datawave.query.tables.ParentQueryLogic;
-import datawave.query.tables.RefactoredCountingShardQueryLogic;
-import datawave.query.tables.RefactoredShardQueryLogic;
-import datawave.query.tables.RefactoredTLDQueryLogic;
+import datawave.query.tables.CountingShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.TLDQueryLogic;
 import datawave.query.tables.facets.FacetedQueryLogic;
 import datawave.query.tables.shard.FieldIndexCountQueryLogic;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
@@ -73,8 +73,8 @@ public class LowSideWiredQueryExecutorBeanTest {
                                         "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration")
                         .addClasses(DefaultResponseObjectFactory.class, BasePrincipalFactoryConfiguration.class, QueryExpirationConfiguration.class,
                                         FacetedQueryPlanner.class, FacetedQueryLogic.class, DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class,
-                                        RefactoredShardQueryLogic.class, RefactoredCountingShardQueryLogic.class, EventQueryDataDecoratorTransformer.class,
-                                        FieldIndexCountQueryLogic.class, CompositeQueryLogic.class, QueryMetricQueryLogic.class, RefactoredTLDQueryLogic.class,
+                                        ShardQueryLogic.class, CountingShardQueryLogic.class, EventQueryDataDecoratorTransformer.class,
+                                        FieldIndexCountQueryLogic.class, CompositeQueryLogic.class, QueryMetricQueryLogic.class, TLDQueryLogic.class,
                                         ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class, QueryLogicFactoryImpl.class,
                                         NoOpQueryMetricHandler.class, DatawaveRoleManager.class, EasyRoleManager.class, CachedResultsConfiguration.class,
                                         LookupBeanConfiguration.class, DateIndexHelperFactory.class, DefaultDatawaveEdgeDictionaryImpl.class)

@@ -25,6 +25,10 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.Constants;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.parser.JavaRegexAnalyzer;
+import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
+import datawave.query.Constants;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
@@ -58,6 +62,8 @@ import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.Filter;
 import datawave.query.predicate.TimeFilter;
+import datawave.query.iterator.SourceManager;
+import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -1160,7 +1166,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             
             // Get a JexlEngine initialized with the correct JexlArithmetic for
             // this Document
-            RefactoredDatawaveJexlEngine engine = ArithmeticJexlEngines.getEngine(arithmetic);
+            DatawaveJexlEngine engine = ArithmeticJexlEngines.getEngine(arithmetic);
             
             // Evaluate the JexlContext against the Script
             this.script = engine.createScript(query);

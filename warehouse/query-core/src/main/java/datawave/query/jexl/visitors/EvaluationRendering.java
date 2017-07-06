@@ -2,7 +2,7 @@ package datawave.query.jexl.visitors;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
@@ -23,12 +23,12 @@ import com.google.common.base.Preconditions;
 public class EvaluationRendering extends BaseVisitor {
     private static final Logger log = Logger.getLogger(EvaluationRendering.class);
     
-    protected final RefactoredShardQueryConfiguration config;
+    protected final ShardQueryConfiguration config;
     protected final MetadataHelper helper;
     
     protected boolean allowRange;
     
-    public EvaluationRendering(RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    public EvaluationRendering(ShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(config);
         Preconditions.checkNotNull(helper);
         
@@ -36,11 +36,11 @@ public class EvaluationRendering extends BaseVisitor {
         this.helper = helper;
     }
     
-    public static boolean canDisableEvaluation(JexlNode script, RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    public static boolean canDisableEvaluation(JexlNode script, ShardQueryConfiguration config, MetadataHelper helper) {
         return canDisableEvaluation(script, config, helper, false);
     }
     
-    public static boolean canDisableEvaluation(JexlNode script, RefactoredShardQueryConfiguration config, MetadataHelper helper, boolean allowRange) {
+    public static boolean canDisableEvaluation(JexlNode script, ShardQueryConfiguration config, MetadataHelper helper, boolean allowRange) {
         Preconditions.checkNotNull(script);
         
         AtomicBoolean res = new AtomicBoolean(true);

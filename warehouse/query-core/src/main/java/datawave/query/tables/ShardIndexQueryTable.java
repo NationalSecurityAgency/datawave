@@ -2,7 +2,7 @@ package datawave.query.tables;
 
 import static com.google.common.collect.Iterators.concat;
 import static com.google.common.collect.Iterators.transform;
-import static datawave.query.config.RefactoredShardQueryConfiguration.PARAM_VALUE_SEP_STR;
+import static datawave.query.config.ShardQueryConfiguration.PARAM_VALUE_SEP_STR;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,19 +23,19 @@ import java.util.concurrent.TimeUnit;
 
 import datawave.data.type.Type;
 import datawave.query.QueryParameters;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.discovery.DiscoveredThing;
 import datawave.query.discovery.DiscoveryIterator;
 import datawave.query.discovery.DiscoveryTransformer;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.lookups.RefactoredShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
-import datawave.query.config.RefactoredShardIndexQueryConfiguration;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.discovery.VisibilityPruningIterator;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
 import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
@@ -84,9 +84,9 @@ import com.google.common.collect.Sets;
  * Query Table implementation that accepts a single term and returns information from the global index for that term. The response includes the number of
  * occurrences of the term by type by day.
  */
-public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
+public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     
-    private static final Logger log = Logger.getLogger(RefactoredShardIndexQueryTable.class);
+    private static final Logger log = Logger.getLogger(ShardIndexQueryTable.class);
     private String indexTableName;
     private String reverseIndexTableName;
     private boolean fullTableScanEnabled = true;
@@ -98,9 +98,9 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
     protected ScannerFactory scannerFactory;
     protected QueryModel queryModel;
     
-    public RefactoredShardIndexQueryTable() {}
+    public ShardIndexQueryTable() {}
     
-    public RefactoredShardIndexQueryTable(RefactoredShardIndexQueryTable other) {
+    public ShardIndexQueryTable(ShardIndexQueryTable other) {
         super(other);
         this.indexTableName = other.getIndexTableName();
         this.reverseIndexTableName = other.getReverseIndexTableName();
@@ -114,8 +114,8 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
     }
     
     @Override
-    public RefactoredShardIndexQueryTable clone() {
-        return new RefactoredShardIndexQueryTable(this);
+    public ShardIndexQueryTable clone() {
+        return new ShardIndexQueryTable(this);
     }
     
     @Override
@@ -182,7 +182,7 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
     
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
-        RefactoredShardIndexQueryConfiguration config = new RefactoredShardIndexQueryConfiguration(this, settings);
+        ShardIndexQueryConfiguration config = new ShardIndexQueryConfiguration(this, settings);
         this.scannerFactory = new ScannerFactory(connection);
         initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
         
@@ -308,12 +308,12 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
         }
         
         for (Entry<String,String> entry : literals.entries()) {
-            rangesForTerms.put(entry, RefactoredShardIndexQueryTableStaticMethods.getLiteralRange(entry));
+            rangesForTerms.put(entry, ShardIndexQueryTableStaticMethods.getLiteralRange(entry));
             
         }
         for (Entry<String,String> entry : patterns.entries()) {
-            RefactoredShardIndexQueryTableStaticMethods.RefactoredRangeDescription r = RefactoredShardIndexQueryTableStaticMethods.getRegexRange(entry,
-                            isFullTableScanEnabled(), metadataHelper, config);
+            ShardIndexQueryTableStaticMethods.RefactoredRangeDescription r = ShardIndexQueryTableStaticMethods.getRegexRange(entry, isFullTableScanEnabled(),
+                            metadataHelper, config);
             
             rangesForPatterns.put(entry, Maps.immutableEntry(r.range, r.isForReverseIndex));
         }
@@ -342,11 +342,11 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
     
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws QueryException, TableNotFoundException, IOException, ExecutionException {
-        if (!genericConfig.getClass().getName().equals(RefactoredShardIndexQueryConfiguration.class.getName())) {
+        if (!genericConfig.getClass().getName().equals(ShardIndexQueryConfiguration.class.getName())) {
             throw new QueryException("Did not receive a ShardIndexQueryConfiguration instance!!");
         }
         
-        RefactoredShardIndexQueryConfiguration config = (RefactoredShardIndexQueryConfiguration) genericConfig;
+        ShardIndexQueryConfiguration config = (ShardIndexQueryConfiguration) genericConfig;
         final List<Entry<BatchScanner,Boolean>> batchscanners = Lists.newLinkedList();
         
         for (Entry<String,String> termEntry : config.getNormalizedTerms().entries()) {
@@ -503,8 +503,8 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
      * @return The scanner used
      * @throws TableNotFoundException
      */
-    public static BatchScanner configureBatchScanner(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
-                    Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex) throws TableNotFoundException {
+    public static BatchScanner configureBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName, Collection<Range> ranges,
+                    Collection<String> literals, Collection<String> patterns, boolean reverseIndex) throws TableNotFoundException {
         
         // if we have no ranges, then nothing to scan
         if (ranges.isEmpty()) {
@@ -527,15 +527,15 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
         
         LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
         
-        RefactoredShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
-        RefactoredShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
         
-        RefactoredShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, true);
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, true);
         
         return bs;
     }
     
-    public static BatchScanner configureBatchScannerForDiscovery(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
+    public static BatchScanner configureBatchScannerForDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean uniqueTermsOnly)
                     throws TableNotFoundException {
         
@@ -556,10 +556,10 @@ public class RefactoredShardIndexQueryTable extends BaseQueryLogic<DiscoveredThi
         
         LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
         
-        RefactoredShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
-        RefactoredShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
         
-        RefactoredShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, uniqueTermsOnly);
+        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, uniqueTermsOnly);
         
         bs.addScanIterator(configureVisibilityPruning(config.getBaseIteratorPriority() + 49, config.getAuthorizations(), config.getUndisplayedVisibilities()));
         bs.addScanIterator(new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class));

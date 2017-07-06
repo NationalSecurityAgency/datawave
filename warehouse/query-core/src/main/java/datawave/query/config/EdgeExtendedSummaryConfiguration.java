@@ -1,10 +1,10 @@
 package datawave.query.config;
 
-import datawave.query.tables.edge.RewriteEdgeQueryLogic;
+import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 
-public class EdgeExtendedSummaryConfiguration extends RewriteEdgeQueryConfiguration {
+public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration {
     
     public static final String SUMMARIZE = "summarize";
     public static final String LIMITED_JEXL = "LIMITED_JEXL";
@@ -32,12 +32,12 @@ public class EdgeExtendedSummaryConfiguration extends RewriteEdgeQueryConfigurat
     private boolean overRideInput = false;
     private boolean overRideOutput = false;
     
-    public EdgeExtendedSummaryConfiguration(RewriteEdgeQueryLogic configuredLogic, Query query) {
+    public EdgeExtendedSummaryConfiguration(EdgeQueryLogic configuredLogic, Query query) {
         super(configuredLogic, query);
     }
     
     @Override
-    public RewriteEdgeQueryConfiguration parseParameters(Query settings) {
+    public EdgeQueryConfiguration parseParameters(Query settings) {
         super.parseParameters(settings);
         if (settings.getParameters() != null) {
             

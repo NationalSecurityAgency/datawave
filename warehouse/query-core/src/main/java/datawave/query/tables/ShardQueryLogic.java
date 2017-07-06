@@ -25,6 +25,7 @@ import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.enrich.DataEnricher;
 import datawave.query.enrich.EnrichingMaster;
 import datawave.query.index.lookup.CreateUidsIterator;
@@ -36,8 +37,7 @@ import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
-import datawave.query.config.RefactoredShardQueryConfigurationFactory;
+import datawave.query.config.ShardQueryConfigurationFactory;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
@@ -157,9 +157,9 @@ import com.google.common.util.concurrent.MoreExecutors;
  * 
  * @see datawave.query.enrich
  */
-public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
+public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
-    protected static final Logger log = ThreadConfigurableLogger.getLogger(RefactoredShardQueryLogic.class);
+    protected static final Logger log = ThreadConfigurableLogger.getLogger(ShardQueryLogic.class);
     
     /**
      * Set of datatypes to limit the query to.
@@ -317,12 +317,12 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     protected Scheduler scheduler = null;
     
-    public final static Class<? extends RefactoredShardQueryConfiguration> tableConfigurationType = RefactoredShardQueryConfiguration.class;
+    public final static Class<? extends ShardQueryConfiguration> tableConfigurationType = ShardQueryConfiguration.class;
     
     private List<String> contentFieldNames = Collections.emptyList();
     protected EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer = null;
     
-    protected RefactoredShardQueryConfiguration config = null;
+    protected ShardQueryConfiguration config = null;
     private Query settings = null;
     
     protected List<PushDownRule> pushDownRules = Collections.emptyList();
@@ -375,18 +375,18 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     protected boolean debugMultithreadedSources = false;
     
-    public RefactoredShardQueryLogic() {
+    public ShardQueryLogic() {
         super();
         setBaseIteratorPriority(100);
         if (log.isTraceEnabled())
-            log.trace("Creating RefactoredShardQueryLogic: " + System.identityHashCode(this));
+            log.trace("Creating ShardQueryLogic: " + System.identityHashCode(this));
     }
     
-    public RefactoredShardQueryLogic(RefactoredShardQueryLogic other) {
+    public ShardQueryLogic(ShardQueryLogic other) {
         super(other);
         
         if (log.isTraceEnabled())
-            log.trace("Creating Cloned RefactoredShardQueryLogic: " + System.identityHashCode(this) + " from " + System.identityHashCode(other));
+            log.trace("Creating Cloned ShardQueryLogic: " + System.identityHashCode(this) + " from " + System.identityHashCode(other));
         
         this.setMetadataTableName(other.getMetadataTableName());
         log.trace("copy CTOR setting metadataHelperFactory to " + other.getMetadataHelperFactory());
@@ -506,14 +506,12 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
-        RefactoredShardQueryConfiguration config = RefactoredShardQueryConfigurationFactory.createRefactoredShardQueryConfigurationFromConfiguredLogic(this,
-                        settings);
+        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createRefactoredShardQueryConfigurationFromConfiguredLogic(this, settings);
         
         this.config = config;
         this.settings = settings;
         if (log.isTraceEnabled())
-            log.trace("Initializing RefactoredShardQueryLogic: " + System.identityHashCode(this) + '('
-                            + (this.settings == null ? "empty" : this.settings.getId()) + ')');
+            log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '(' + (this.settings == null ? "empty" : this.settings.getId()) + ')');
         initialize(config, connection, settings, auths);
         return config;
     }
@@ -608,7 +606,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         return queryString;
     }
     
-    public void initialize(RefactoredShardQueryConfiguration config, Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public void initialize(ShardQueryConfiguration config, Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         // Set the connector and the authorizations into the config object
         config.setConnector(connection);
         config.setAuthorizations(auths);
@@ -697,7 +695,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.scannerFactory);
         }
         
-        TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("RefactoredShardQueryLogic - Get iterator of queries");
+        TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
         
         config.setQueries(this.queries.iterator());
         
@@ -754,14 +752,14 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws Exception {
-        if (!RefactoredShardQueryConfiguration.class.isAssignableFrom(genericConfig.getClass())) {
-            throw new QueryException("Did not receive a RefactoredShardQueryConfiguration instance!!");
+        if (!ShardQueryConfiguration.class.isAssignableFrom(genericConfig.getClass())) {
+            throw new QueryException("Did not receive a ShardQueryConfiguration instance!!");
         }
         
-        RefactoredShardQueryConfiguration config = (RefactoredShardQueryConfiguration) genericConfig;
+        ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
         
         final QueryStopwatch timers = config.getTimers();
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("RefactoredShardQueryLogic - Setup Query");
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("ShardQueryLogic - Setup Query");
         
         // Ensure we have all of the information needed to run a query
         if (!config.canRunQuery()) {
@@ -817,8 +815,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         }
     }
     
-    protected String getStopwatchHeader(RefactoredShardQueryConfiguration config) {
-        return "RefactoredShardQueryLogic: " + config.getQueryString() + ", [" + config.getBeginDate() + ", " + config.getEndDate() + "]";
+    protected String getStopwatchHeader(ShardQueryConfiguration config) {
+        return "ShardQueryLogic: " + config.getQueryString() + ", [" + config.getBeginDate() + ", " + config.getEndDate() + "]";
     }
     
     @Override
@@ -851,8 +849,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         return transformer;
     }
     
-    protected void loadQueryParameters(RefactoredShardQueryConfiguration config, Query settings) throws QueryException {
-        TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("RefactoredShardQueryLogic - Parse query parameters");
+    protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {
+        TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Parse query parameters");
         
         boolean rawDataOnly = false;
         String rawDataOnlyStr = settings.findParameter(QueryParameters.RAW_DATA_ONLY).getParameterValue().trim();
@@ -1217,9 +1215,9 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
      * @throws TableNotFoundException
      * @throws ExecutionException
      */
-    protected void loadQueryModel(MetadataHelper helper, RefactoredShardQueryConfiguration config) throws InstantiationException, IllegalAccessException,
+    protected void loadQueryModel(MetadataHelper helper, ShardQueryConfiguration config) throws InstantiationException, IllegalAccessException,
                     TableNotFoundException, ExecutionException {
-        TraceStopwatch modelWatch = config.getTimers().newStartedStopwatch("RefactoredShardQueryLogic - Loading the query model");
+        TraceStopwatch modelWatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Loading the query model");
         
         int cacheKeyCode = new HashCodeBuilder().append(config.getDatatypeFilter()).append(config.getModelName()).hashCode();
         
@@ -1242,7 +1240,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         
     }
     
-    protected Scheduler getScheduler(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory) {
+    protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
         if (config.getSequentialScheduler()) {
             return new SequentialScheduler(config, scannerFactory);
         } else {
@@ -1259,8 +1257,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     }
     
     @Override
-    public RefactoredShardQueryLogic clone() {
-        return new RefactoredShardQueryLogic(this);
+    public ShardQueryLogic clone() {
+        return new ShardQueryLogic(this);
     }
     
     @Override
@@ -1268,12 +1266,12 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         
         super.close();
         
-        log.debug("Closing RefactoredShardQueryLogic: " + System.identityHashCode(this));
+        log.debug("Closing ShardQueryLogic: " + System.identityHashCode(this));
         
         if (null == scannerFactory) {
             log.debug("ScannerFactory was never initialized because, therefore there are no connections to close: " + System.identityHashCode(this));
         } else {
-            log.debug("Closing RefactoredShardQueryLogic scannerFactory: " + System.identityHashCode(this));
+            log.debug("Closing ShardQueryLogic scannerFactory: " + System.identityHashCode(this));
             try {
                 int nClosed = 0;
                 scannerFactory.lockdown();
@@ -1304,8 +1302,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         
         if (null != this.planner) {
             try {
-                log.debug("Closing RefactoredShardQueryLogic planner: " + System.identityHashCode(this) + '('
-                                + (this.settings == null ? "empty" : this.settings.getId()) + ')');
+                log.debug("Closing ShardQueryLogic planner: " + System.identityHashCode(this) + '(' + (this.settings == null ? "empty" : this.settings.getId())
+                                + ')');
                 this.planner.close(this.config, this.settings);
             } catch (Exception e) {
                 log.error("Caught exception trying to close QueryPlanner", e);
@@ -1314,7 +1312,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         
         if (null != this.queries) {
             try {
-                log.debug("Closing RefactoredShardQueryLogic queries: " + System.identityHashCode(this));
+                log.debug("Closing ShardQueryLogic queries: " + System.identityHashCode(this));
                 this.queries.close();
             } catch (IOException e) {
                 log.error("Caught exception trying to close CloseableIterable of queries", e);
@@ -1323,7 +1321,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         
         if (null != this.scheduler) {
             try {
-                log.debug("Closing RefactoredShardQueryLogic scheduler: " + System.identityHashCode(this));
+                log.debug("Closing ShardQueryLogic scheduler: " + System.identityHashCode(this));
                 this.scheduler.close();
                 
                 ScanSessionStats stats = this.scheduler.getSchedulerStats();
@@ -1339,8 +1337,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         
     }
     
-    public static BatchScanner createBatchScanner(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd)
-                    throws TableNotFoundException {
+    public static BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
         final BatchScanner bs = scannerFactory.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(),
                         config.getQuery());
         
@@ -1739,7 +1736,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     }
     
     public void setUnevaluatedFields(String unevaluatedFieldList) {
-        this.unevaluatedFields = Arrays.asList(unevaluatedFieldList.split(RefactoredShardQueryConfiguration.PARAM_VALUE_SEP_STR));
+        this.unevaluatedFields = Arrays.asList(unevaluatedFieldList.split(ShardQueryConfiguration.PARAM_VALUE_SEP_STR));
     }
     
     public Class<? extends Type<?>> getDefaultType() {
@@ -1977,7 +1974,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     }
     
     public void setScannerFactory(ScannerFactory scannerFactory) {
-        log.debug("Setting scanner factory on RefactoredShardQueryLogic: " + System.identityHashCode(this) + ".setScannerFactory("
+        log.debug("Setting scanner factory on ShardQueryLogic: " + System.identityHashCode(this) + ".setScannerFactory("
                         + System.identityHashCode(scannerFactory) + ')');
         this.scannerFactory = scannerFactory;
     }

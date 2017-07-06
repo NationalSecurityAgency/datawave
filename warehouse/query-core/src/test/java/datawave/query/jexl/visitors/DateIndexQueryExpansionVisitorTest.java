@@ -1,9 +1,9 @@
 package datawave.query.jexl.visitors;
 
 import datawave.helpers.PrintUtility;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.config.RefactoredShardQueryConfiguration;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexTestIngest;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
@@ -44,7 +44,7 @@ public class DateIndexQueryExpansionVisitorTest {
     
     public static final String DATE_INDEX_TABLE_NAME = "dateIndex";
     
-    protected RefactoredShardQueryLogic logic = null;
+    protected ShardQueryLogic logic = null;
     
     private MetadataHelper helper = MetadataHelper.getInstance();
     
@@ -73,7 +73,7 @@ public class DateIndexQueryExpansionVisitorTest {
         Date startDate = DateHelper.parse("20100701");
         Date endDate = DateHelper.parse("20100710");
         
-        RefactoredShardQueryConfiguration config = new RefactoredShardQueryConfiguration();
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
         DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
@@ -94,7 +94,7 @@ public class DateIndexQueryExpansionVisitorTest {
         Date startDate = DateHelper.parse("20100701");
         Date endDate = DateHelper.parse("20100710");
         
-        RefactoredShardQueryConfiguration config = new RefactoredShardQueryConfiguration();
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
         
@@ -118,7 +118,7 @@ public class DateIndexQueryExpansionVisitorTest {
         Date startDate = DateHelper.parse("20100101");
         Date endDate = DateHelper.parse("20100102");
         
-        RefactoredShardQueryConfiguration config = new RefactoredShardQueryConfiguration();
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
         DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,
@@ -139,7 +139,7 @@ public class DateIndexQueryExpansionVisitorTest {
         Date startDate = DateHelper.parse("20100101_200000");
         Date endDate = DateHelper.parse("20100102_210000");
         
-        RefactoredShardQueryConfiguration config = new RefactoredShardQueryConfiguration();
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
         DateIndexHelper helper2 = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, DATE_INDEX_TABLE_NAME,

@@ -2,9 +2,9 @@ package datawave.query.planner.pushdown;
 
 import java.util.Collection;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.planner.pushdown.rules.DelayedPredicatePushDown;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
@@ -21,12 +21,11 @@ public class PushDownVisitor extends RebuildingVisitor {
     
     private static final Logger log = Logger.getLogger(PushDownVisitor.class);
     private final Collection<PushDownRule> pushDownRules;
-    private final RefactoredShardQueryConfiguration config;
+    private final ShardQueryConfiguration config;
     private final ScannerFactory scannerFactory;
     private final MetadataHelper helper;
     
-    public PushDownVisitor(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                    Collection<PushDownRule> pushDownRules) {
+    public PushDownVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Collection<PushDownRule> pushDownRules) {
         this.config = config;
         this.scannerFactory = scannerFactory;
         this.helper = helper;
@@ -41,7 +40,7 @@ public class PushDownVisitor extends RebuildingVisitor {
         return scannerFactory;
     }
     
-    public RefactoredShardQueryConfiguration getConfiguration() {
+    public ShardQueryConfiguration getConfiguration() {
         return config;
     }
     

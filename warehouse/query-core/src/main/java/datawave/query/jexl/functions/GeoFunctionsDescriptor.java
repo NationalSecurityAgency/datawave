@@ -13,9 +13,9 @@ import datawave.data.normalizer.GeoNormalizer.ParseException;
 import datawave.data.type.GeoType;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.ArithmeticJexlEngines;
-import datawave.query.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -24,12 +24,12 @@ import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
-public class GeoFunctionsDescriptor implements RefactoredJexlFunctionArgumentDescriptorFactory {
+public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
      *
      */
-    public static class GeoJexlArgumentDescriptor implements RefactoredJexlArgumentDescriptor {
+    public static class GeoJexlArgumentDescriptor implements JexlArgumentDescriptor {
         
         private final ASTFunctionNode node;
         private final String namespace, name;
@@ -43,8 +43,7 @@ public class GeoFunctionsDescriptor implements RefactoredJexlFunctionArgumentDes
         }
         
         @Override
-        public JexlNode getIndexQuery(RefactoredShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper,
-                        Set<String> datatypeFilter) {
+        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             // return the true node if unable to parse arguments
             JexlNode returnNode = TRUE_NODE;
             
@@ -153,9 +152,9 @@ public class GeoFunctionsDescriptor implements RefactoredJexlFunctionArgumentDes
         public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
             if (name.equals("within_bounding_box") && args.size() == 6) {
                 // if we have an or node anywhere, then we need to produce a cartesion product
-                return RefactoredJexlArgumentDescriptor.Fields.product(args.get(0), args.get(1));
+                return JexlArgumentDescriptor.Fields.product(args.get(0), args.get(1));
             } else {
-                return RefactoredJexlArgumentDescriptor.Fields.product(args.get(0));
+                return JexlArgumentDescriptor.Fields.product(args.get(0));
             }
         }
         
@@ -171,7 +170,7 @@ public class GeoFunctionsDescriptor implements RefactoredJexlFunctionArgumentDes
     }
     
     @Override
-    public RefactoredJexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node) {
+    public JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node) {
         FunctionJexlNodeVisitor fvis = new FunctionJexlNodeVisitor();
         fvis.visit(node, null);
         

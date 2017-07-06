@@ -3,12 +3,12 @@ package datawave.query.jexl.visitors;
 import java.util.List;
 import java.util.Set;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
@@ -20,15 +20,14 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
     protected Set<String> indexOnlyFields;
     protected Set<String> termFrequencyFields;
     
-    public RegexFunctionVisitor(RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields,
-                    Set<String> termFrequencyFields) {
+    public RegexFunctionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields, Set<String> termFrequencyFields) {
         super(config, metadataHelper, null);
         this.indexOnlyFields = indexOnlyFields;
         this.termFrequencyFields = termFrequencyFields;
     }
     
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandRegex(RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields,
+    public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields,
                     Set<String> termFrequencyFields, T script) {
         RegexFunctionVisitor visitor = new RegexFunctionVisitor(config, metadataHelper, indexOnlyFields, termFrequencyFields);
         

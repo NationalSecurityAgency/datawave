@@ -1,11 +1,11 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.config.IndexHole;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.util.MetadataHelper;
@@ -41,7 +41,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
      * @param helper
      *            the metadata helper
      */
-    public PushdownMissingIndexRangeNodesVisitor(RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    public PushdownMissingIndexRangeNodesVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
         this.helper = helper;
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
         this.beginDate = format.format(config.getBeginDate());
@@ -53,7 +53,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     /**
      * helper method that constructs and applies the visitor.
      */
-    public static <T extends JexlNode> T pushdownPredicates(T queryTree, RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    public static <T extends JexlNode> T pushdownPredicates(T queryTree, ShardQueryConfiguration config, MetadataHelper helper) {
         PushdownMissingIndexRangeNodesVisitor visitor = new PushdownMissingIndexRangeNodesVisitor(config, helper);
         return (T) (queryTree.jjtAccept(visitor, null));
     }

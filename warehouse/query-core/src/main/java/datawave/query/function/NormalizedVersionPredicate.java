@@ -1,18 +1,18 @@
 package datawave.query.function;
 
 import datawave.query.predicate.ConfiguredPredicate;
-import datawave.query.tables.RefactoredShardQueryLogic;
-import datawave.query.tables.RefactoredTLDQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.TLDQueryLogic;
 
 /**
- * Predicate implementation of the AbstractVersionFilter configured for use as filters by the "BaseEventQuery" RefactoredShardQueryLogic and "TLDEventQuery"
- * RefactoredTLDQueryLogic.
+ * Predicate implementation of the AbstractVersionFilter configured for use as filters by the "BaseEventQuery" ShardQueryLogic and "TLDEventQuery"
+ * TLDQueryLogic.
  *
  * @param <A>
  * 
  * @see AbstractVersionFilter
- * @see RefactoredShardQueryLogic
- * @see RefactoredTLDQueryLogic
+ * @see ShardQueryLogic
+ * @see TLDQueryLogic
  */
 public class NormalizedVersionPredicate<A> extends AbstractVersionFilter<A> implements ConfiguredPredicate<A> {
     @Override

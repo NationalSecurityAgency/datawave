@@ -7,8 +7,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 import datawave.query.CloseableIterable;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.util.MetadataHelper;
@@ -25,11 +25,11 @@ import com.google.common.collect.Multimap;
 public class FacetQueryPlanVisitor extends BaseVisitor implements CloseableIterable<QueryPlan> {
     
     protected Multimap<String,String> facetMultimap;
-    protected RefactoredShardQueryConfiguration config;
+    protected ShardQueryConfiguration config;
     protected Set<QueryPlan> queryPlans;
     protected Set<String> facetedFields;
     
-    public FacetQueryPlanVisitor(RefactoredShardQueryConfiguration config, MetadataHelper helper, Set<String> facetedFields) {
+    public FacetQueryPlanVisitor(ShardQueryConfiguration config, MetadataHelper helper, Set<String> facetedFields) {
         
         this.config = config;
         queryPlans = Sets.newHashSet();

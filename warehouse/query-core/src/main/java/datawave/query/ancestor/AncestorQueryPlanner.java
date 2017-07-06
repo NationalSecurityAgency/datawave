@@ -1,9 +1,9 @@
 package datawave.query.ancestor;
 
 import datawave.query.CloseableIterable;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.InvalidQueryException;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.jexl.visitors.RootNegationCheckVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlan;
@@ -44,7 +44,7 @@ public class AncestorQueryPlanner extends DefaultQueryPlanner {
      */
     @Override
     public Tuple2<CloseableIterable<QueryPlan>,Boolean> getQueryRanges(ScannerFactory scannerFactory, MetadataHelper metadataHelper,
-                    RefactoredShardQueryConfiguration config, JexlNode queryTree) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, JexlNode queryTree) throws DatawaveQueryException {
         if (RootNegationCheckVisitor.hasTopLevelNegation(queryTree)) {
             throw new InvalidQueryException();
         }

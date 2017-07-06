@@ -73,8 +73,8 @@ import java.util.regex.PatternSyntaxException;
  * {@code (SOURCE == 's1' && SINK == 's2') || (SOURCE == 's2 && SINK == 's2) || ...}<br>
  * <br>
  */
-public class RewriteEdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeModelAware {
-    private static final Logger log = Logger.getLogger(RewriteEdgeTableRangeBuildingVisitor.class);
+public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeModelAware {
+    private static final Logger log = Logger.getLogger(EdgeTableRangeBuildingVisitor.class);
     protected boolean includeStats;
     protected List<? extends Type<?>> regexDataTypes;
     protected List<? extends Type<?>> dataTypes;
@@ -87,7 +87,7 @@ public class RewriteEdgeTableRangeBuildingVisitor extends BaseVisitor implements
     private boolean sawEquivalenceRegexSource = false;
     private boolean sawEquivalenceRegexSink = false;
     
-    public RewriteEdgeTableRangeBuildingVisitor(boolean stats, List<? extends Type<?>> types, long maxTerms, List<? extends Type<?>> rTypes) {
+    public EdgeTableRangeBuildingVisitor(boolean stats, List<? extends Type<?>> types, long maxTerms, List<? extends Type<?>> rTypes) {
         this.includeStats = stats;
         this.dataTypes = types;
         this.maxTerms = maxTerms;

@@ -2,7 +2,7 @@ package datawave.query.config;
 
 import datawave.query.QueryParameters;
 import datawave.query.Constants;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 
@@ -10,16 +10,15 @@ import java.util.Arrays;
 import java.util.Set;
 
 /**
- * Temporary replacement of RefactoredShardQueryConfiguration(RefactoredShardQueryLogic configuredLogic, Query query) constructor to break circular dependency
- * of config &amp; logic.
+ * Temporary replacement of ShardQueryConfiguration(ShardQueryLogic configuredLogic, Query query) constructor to break circular dependency of config &amp;
+ * logic.
  *
  */
-public class RefactoredShardQueryConfigurationFactory {
+public class ShardQueryConfigurationFactory {
     
-    public static RefactoredShardQueryConfiguration createRefactoredShardQueryConfigurationFromConfiguredLogic(RefactoredShardQueryLogic configuredLogic,
-                    Query query) {
+    public static ShardQueryConfiguration createRefactoredShardQueryConfigurationFromConfiguredLogic(ShardQueryLogic configuredLogic, Query query) {
         
-        RefactoredShardQueryConfiguration config = new RefactoredShardQueryConfiguration();
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
         
         // normally set via super constructor
         config.setTableName(configuredLogic.getTableName());

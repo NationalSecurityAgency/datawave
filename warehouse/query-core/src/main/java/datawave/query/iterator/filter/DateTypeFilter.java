@@ -1,5 +1,6 @@
 package datawave.query.iterator.filter;
 
+import datawave.query.config.EdgeQueryConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
@@ -9,13 +10,12 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import java.io.IOException;
 import java.util.Map;
 import datawave.edge.util.EdgeKey;
-import datawave.query.config.RewriteEdgeQueryConfiguration;
 
 /**
  *
  */
 public class DateTypeFilter extends Filter {
-    protected RewriteEdgeQueryConfiguration.dateType dateType = RewriteEdgeQueryConfiguration.dateType.ACQUISITION;
+    protected EdgeQueryConfiguration.dateType dateType = EdgeQueryConfiguration.dateType.ACQUISITION;
     
     protected boolean[] state;
     
@@ -35,13 +35,13 @@ public class DateTypeFilter extends Filter {
      */
     private void initOptions(Map<String,String> options) throws IOException {
         
-        String e = options.get(RewriteEdgeQueryConfiguration.DATE_RANGE_TYPE);
-        if (RewriteEdgeQueryConfiguration.dateType.ACTIVITY.name().equals(e) || RewriteEdgeQueryConfiguration.dateType.ACTIVITY_LOAD.name().equals(e)) {
-            dateType = RewriteEdgeQueryConfiguration.dateType.ACTIVITY;
-        } else if (RewriteEdgeQueryConfiguration.dateType.ANY.name().equals(e) || RewriteEdgeQueryConfiguration.dateType.ANY_LOAD.name().equals(e)) {
-            dateType = RewriteEdgeQueryConfiguration.dateType.ANY;
+        String e = options.get(EdgeQueryConfiguration.DATE_RANGE_TYPE);
+        if (EdgeQueryConfiguration.dateType.ACTIVITY.name().equals(e) || EdgeQueryConfiguration.dateType.ACTIVITY_LOAD.name().equals(e)) {
+            dateType = EdgeQueryConfiguration.dateType.ACTIVITY;
+        } else if (EdgeQueryConfiguration.dateType.ANY.name().equals(e) || EdgeQueryConfiguration.dateType.ANY_LOAD.name().equals(e)) {
+            dateType = EdgeQueryConfiguration.dateType.ANY;
         } else { // we default to acquisition
-            dateType = RewriteEdgeQueryConfiguration.dateType.ACQUISITION;
+            dateType = EdgeQueryConfiguration.dateType.ACQUISITION;
         }
     }
     
@@ -57,9 +57,9 @@ public class DateTypeFilter extends Filter {
             state[i] = true;
         }
         
-        if (dateType == RewriteEdgeQueryConfiguration.dateType.ACQUISITION) {
+        if (dateType == EdgeQueryConfiguration.dateType.ACQUISITION) {
             state[EdgeKey.DATE_TYPE.ACTIVITY_ONLY.ordinal()] = false;
-        } else if (dateType == RewriteEdgeQueryConfiguration.dateType.ACTIVITY) {
+        } else if (dateType == EdgeQueryConfiguration.dateType.ACTIVITY) {
             state[EdgeKey.DATE_TYPE.ACQUISITION_ONLY.ordinal()] = false;
             state[EdgeKey.DATE_TYPE.OLD_ACQUISITION.ordinal()] = false;
         }

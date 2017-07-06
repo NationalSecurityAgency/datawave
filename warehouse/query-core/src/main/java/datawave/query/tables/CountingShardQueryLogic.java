@@ -1,7 +1,7 @@
 package datawave.query.tables;
 
 import datawave.core.iterators.ResultCountingIterator;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.shard.CountAggregatingIterator;
@@ -19,20 +19,20 @@ import org.apache.log4j.Logger;
  * 
  * 
  */
-public class RefactoredCountingShardQueryLogic extends RefactoredShardQueryLogic {
-    private static final Logger log = Logger.getLogger(RefactoredCountingShardQueryLogic.class);
+public class CountingShardQueryLogic extends ShardQueryLogic {
+    private static final Logger log = Logger.getLogger(CountingShardQueryLogic.class);
     
-    public RefactoredCountingShardQueryLogic() {
+    public CountingShardQueryLogic() {
         super();
     }
     
-    public RefactoredCountingShardQueryLogic(RefactoredCountingShardQueryLogic other) {
+    public CountingShardQueryLogic(CountingShardQueryLogic other) {
         super(other);
     }
     
     @Override
-    public RefactoredCountingShardQueryLogic clone() {
-        return new RefactoredCountingShardQueryLogic(this);
+    public CountingShardQueryLogic clone() {
+        return new CountingShardQueryLogic(this);
     }
     
     @Override
@@ -46,7 +46,7 @@ public class RefactoredCountingShardQueryLogic extends RefactoredShardQueryLogic
     }
     
     @Override
-    public Scheduler getScheduler(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory) {
+    public Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
         PushdownScheduler scheduler = new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
         scheduler.addSetting(new IteratorSetting(config.getBaseIteratorPriority() + 50, "counter", ResultCountingIterator.class.getName()));
         return scheduler;

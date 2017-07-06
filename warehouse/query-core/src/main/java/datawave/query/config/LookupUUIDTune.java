@@ -4,7 +4,7 @@ import java.util.Map.Entry;
 
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.CreateTLDUidsIterator;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -24,8 +24,8 @@ public class LookupUUIDTune implements Profile {
     
     @Override
     public void configure(BaseQueryLogic<Entry<Key,Value>> logic) {
-        if (logic instanceof RefactoredShardQueryLogic) {
-            RefactoredShardQueryLogic rsq = RefactoredShardQueryLogic.class.cast(logic);
+        if (logic instanceof ShardQueryLogic) {
+            ShardQueryLogic rsq = ShardQueryLogic.class.cast(logic);
             rsq.setBypassAccumulo(bypassAccumulo);
             rsq.setSpeculativeScanning(speculativeScanning);
             rsq.setCacheModel(enableCaching);
@@ -61,8 +61,8 @@ public class LookupUUIDTune implements Profile {
     
     @Override
     public void configure(GenericQueryConfiguration configuration) {
-        if (configuration instanceof RefactoredShardQueryConfiguration) {
-            RefactoredShardQueryConfiguration rsqc = RefactoredShardQueryConfiguration.class.cast(configuration);
+        if (configuration instanceof ShardQueryConfiguration) {
+            ShardQueryConfiguration rsqc = ShardQueryConfiguration.class.cast(configuration);
             rsqc.setTldQuery(reduceResponse);
             rsqc.setBypassAccumulo(bypassAccumulo);
             rsqc.setSerializeQueryIterator(true);

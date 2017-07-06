@@ -18,8 +18,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
-public class RefactoredPartitionedQueryTable extends RefactoredShardQueryLogic {
-    protected static final Logger log = Logger.getLogger(RefactoredPartitionedQueryTable.class);
+public class PartitionedQueryTable extends ShardQueryLogic {
+    protected static final Logger log = Logger.getLogger(PartitionedQueryTable.class);
     
     private Connector connector;
     private Query settings;
@@ -29,11 +29,11 @@ public class RefactoredPartitionedQueryTable extends RefactoredShardQueryLogic {
     
     private QueryPlanner delegatePlanner = null;
     
-    public RefactoredPartitionedQueryTable() {
+    public PartitionedQueryTable() {
         super();
     }
     
-    public RefactoredPartitionedQueryTable(RefactoredPartitionedQueryTable other) {
+    public PartitionedQueryTable(PartitionedQueryTable other) {
         super(other);
         this.setChunker(other.chunker.clone());
         this.setDelegateQueryPlanner(other.getDelegateQueryPlanner());
@@ -164,8 +164,8 @@ public class RefactoredPartitionedQueryTable extends RefactoredShardQueryLogic {
     }
     
     @Override
-    public RefactoredPartitionedQueryTable clone() {
-        return new RefactoredPartitionedQueryTable(this);
+    public PartitionedQueryTable clone() {
+        return new PartitionedQueryTable(this);
     }
     
     public Chunker getChunker() {

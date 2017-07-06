@@ -9,7 +9,7 @@ import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.mr.bulk.RfileScanner;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.QueryScannerHelper;
 import datawave.webservice.common.connection.WrappedConnector;
@@ -41,7 +41,7 @@ public class ScannerFactory {
     protected boolean accrueStats = false;
     protected Query settings;
     protected ResourceQueue scanQueue = null;
-    RefactoredShardQueryConfiguration config = null;
+    ShardQueryConfiguration config = null;
     
     private static final Logger log = Logger.getLogger(ScannerFactory.class);
     
@@ -49,18 +49,18 @@ public class ScannerFactory {
         
         this.cxn = queryConfiguration.getConnector();
         
-        if (queryConfiguration instanceof RefactoredShardQueryConfiguration) {
-            this.settings = ((RefactoredShardQueryConfiguration) queryConfiguration).getQuery();
-            this.accrueStats = ((RefactoredShardQueryConfiguration) queryConfiguration).getAccrueStats();
+        if (queryConfiguration instanceof ShardQueryConfiguration) {
+            this.settings = ((ShardQueryConfiguration) queryConfiguration).getQuery();
+            this.accrueStats = ((ShardQueryConfiguration) queryConfiguration).getAccrueStats();
         }
         log.debug("Created scanner factory " + System.identityHashCode(this) + " is wrapped ? " + (cxn instanceof WrappedConnector));
         
-        if (queryConfiguration instanceof RefactoredShardQueryConfiguration) {
-            config = ((RefactoredShardQueryConfiguration) queryConfiguration);
-            maxQueue = ((RefactoredShardQueryConfiguration) queryConfiguration).getMaxScannerBatchSize();
-            this.settings = ((RefactoredShardQueryConfiguration) queryConfiguration).getQuery();
+        if (queryConfiguration instanceof ShardQueryConfiguration) {
+            config = ((ShardQueryConfiguration) queryConfiguration);
+            maxQueue = ((ShardQueryConfiguration) queryConfiguration).getMaxScannerBatchSize();
+            this.settings = ((ShardQueryConfiguration) queryConfiguration).getQuery();
             try {
-                scanQueue = new ResourceQueue(((RefactoredShardQueryConfiguration) queryConfiguration).getNumQueryThreads(), this.cxn);
+                scanQueue = new ResourceQueue(((ShardQueryConfiguration) queryConfiguration).getNumQueryThreads(), this.cxn);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

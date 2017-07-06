@@ -16,7 +16,7 @@ import org.apache.accumulo.core.data.Value;
 
 import com.google.common.collect.Iterators;
 
-public class ParentQueryLogic extends RefactoredShardQueryLogic {
+public class ParentQueryLogic extends ShardQueryLogic {
     public ParentQueryLogic() {}
     
     public ParentQueryLogic(ParentQueryLogic other) {

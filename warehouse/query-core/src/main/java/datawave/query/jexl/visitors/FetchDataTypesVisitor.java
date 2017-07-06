@@ -9,8 +9,8 @@ import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.RefactoredJexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.Tuple2;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -182,7 +182,7 @@ public class FetchDataTypesVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        RefactoredJexlArgumentDescriptor desc = RefactoredJexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
+        JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         Multimap<String,Type<?>> mm = (Multimap<String,Type<?>>) data;
         for (String field : desc.fields(this.helper, this.datatypeFilter)) {
             final String fieldName = JexlASTHelper.deconstructIdentifier(field);

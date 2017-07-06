@@ -2,9 +2,9 @@ package datawave.query.jexl.visitors;
 
 import java.util.Set;
 
-import datawave.query.jexl.functions.RefactoredJexlFunctionArgumentDescriptorFactory;
-import datawave.query.config.RefactoredShardQueryConfiguration;
-import datawave.query.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
 
 import org.apache.commons.jexl2.parser.ASTAssignment;
@@ -21,10 +21,10 @@ import org.apache.commons.jexl2.parser.JexlNode;
  */
 public class CaseSensitivityVisitor extends BaseVisitor {
     
-    private RefactoredShardQueryConfiguration config;
+    private ShardQueryConfiguration config;
     private MetadataHelper helper;
     
-    public CaseSensitivityVisitor(RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    public CaseSensitivityVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
         this.config = config;
         this.helper = helper;
     }
@@ -36,7 +36,7 @@ public class CaseSensitivityVisitor extends BaseVisitor {
      *            An ASTJexlScript
      * @return
      */
-    public static <T extends JexlNode> T upperCaseIdentifiers(RefactoredShardQueryConfiguration config, MetadataHelper helper, T script) {
+    public static <T extends JexlNode> T upperCaseIdentifiers(ShardQueryConfiguration config, MetadataHelper helper, T script) {
         CaseSensitivityVisitor visitor = new CaseSensitivityVisitor(config, helper);
         
         script.jjtAccept(visitor, null);
@@ -47,7 +47,7 @@ public class CaseSensitivityVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         // lets determine which of the arguments are actually field name identifiers (e.g. termFrequencyMap is not)
-        RefactoredJexlArgumentDescriptor desc = RefactoredJexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
+        JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         
         Set<String> fields = desc.fields(helper, config.getDatatypeFilter());
         

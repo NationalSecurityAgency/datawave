@@ -3,7 +3,7 @@ package datawave.query.config;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import datawave.query.tables.RefactoredShardIndexQueryTable;
+import datawave.query.tables.ShardIndexQueryTable;
 import datawave.webservice.query.Query;
 
 import org.apache.accumulo.core.data.Range;
@@ -12,7 +12,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
-public class RefactoredShardIndexQueryConfiguration extends RefactoredShardQueryConfiguration {
+public class ShardIndexQueryConfiguration extends ShardQueryConfiguration {
     private static final long serialVersionUID = 7616552164239289739L;
     
     private Multimap<String,String> normalizedTerms = HashMultimap.create();
@@ -21,7 +21,7 @@ public class RefactoredShardIndexQueryConfiguration extends RefactoredShardQuery
     private Map<Entry<String,String>,Range> rangesForTerms = Maps.newHashMap();
     private Map<Entry<String,String>,Entry<Range,Boolean>> rangesForPatterns = Maps.newHashMap();
     
-    public RefactoredShardIndexQueryConfiguration(RefactoredShardIndexQueryTable logic, Query query) {
+    public ShardIndexQueryConfiguration(ShardIndexQueryTable logic, Query query) {
         this.setIndexTableName(logic.getIndexTableName());
         this.setFullTableScanEnabled(logic.isFullTableScanEnabled());
         this.setQuery(query);

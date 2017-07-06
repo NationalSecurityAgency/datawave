@@ -10,15 +10,15 @@ import datawave.query.tld.TLDQueryIterator;
  * 
  *
  */
-public class RefactoredTLDQueryLogic extends RefactoredShardQueryLogic {
+public class TLDQueryLogic extends ShardQueryLogic {
     
-    public RefactoredTLDQueryLogic() {
+    public TLDQueryLogic() {
         super();
         setCreateUidsIteratorClass(CreateTLDUidsIterator.class);
         setIter();
     }
     
-    public RefactoredTLDQueryLogic(RefactoredTLDQueryLogic other) {
+    public TLDQueryLogic(TLDQueryLogic other) {
         super(other);
         setIter();
     }
@@ -34,7 +34,7 @@ public class RefactoredTLDQueryLogic extends RefactoredShardQueryLogic {
     }
     
     @Override
-    public RefactoredTLDQueryLogic clone() {
-        return new RefactoredTLDQueryLogic(this);
+    public TLDQueryLogic clone() {
+        return new TLDQueryLogic(this);
     }
 }

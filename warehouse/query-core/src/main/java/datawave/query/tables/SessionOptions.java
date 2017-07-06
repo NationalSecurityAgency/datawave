@@ -2,7 +2,7 @@ package datawave.query.tables;
 
 import java.util.Collection;
 
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.impl.ScannerOptions;
@@ -17,7 +17,7 @@ import com.google.common.collect.Lists;
  */
 public class SessionOptions extends ScannerOptions {
     
-    protected RefactoredShardQueryConfiguration config;
+    protected ShardQueryConfiguration config;
     
     public SessionOptions() {
         super();
@@ -28,11 +28,11 @@ public class SessionOptions extends ScannerOptions {
         this.config = other.config;
     }
     
-    public void setQueryConfig(RefactoredShardQueryConfiguration config) {
+    public void setQueryConfig(ShardQueryConfiguration config) {
         this.config = config;
     }
     
-    public RefactoredShardQueryConfiguration getConfiguration() {
+    public ShardQueryConfiguration getConfiguration() {
         return config;
     }
     

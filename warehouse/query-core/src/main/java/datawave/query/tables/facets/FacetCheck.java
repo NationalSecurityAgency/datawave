@@ -6,7 +6,7 @@ import java.util.NoSuchElementException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException;
 import datawave.query.jexl.visitors.AllTermsIndexedVisitor;
 import datawave.query.util.MetadataHelper;
@@ -22,7 +22,7 @@ public class FacetCheck extends AllTermsIndexedVisitor {
     
     Multimap<String,String> facetMultimap;
     
-    public FacetCheck(RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    public FacetCheck(ShardQueryConfiguration config, MetadataHelper helper) {
         super(config, helper);
         try {
             facetMultimap = helper.getFacets("FacetsNatingMetadata");

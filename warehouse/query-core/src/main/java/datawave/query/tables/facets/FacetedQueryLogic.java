@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import datawave.query.DocumentSerialization;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.function.FacetedGrouping;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.serializer.DocumentSerializer;
@@ -133,7 +133,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         /**
          * A few required components for document serialization and deserialization to be used later
          */
-        final Query myQuery = ((RefactoredShardQueryConfiguration) configuration).getQuery();
+        final Query myQuery = ((ShardQueryConfiguration) configuration).getQuery();
         
         final DocumentDeserializer deserializer = DocumentSerialization.getDocumentDeserializer(myQuery);
         

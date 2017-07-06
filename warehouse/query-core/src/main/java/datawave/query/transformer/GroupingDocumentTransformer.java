@@ -6,7 +6,7 @@ import java.util.Map.Entry;
 import com.google.common.collect.*;
 import datawave.marking.MarkingFunctions;
 import datawave.query.model.QueryModel;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.result.event.EventBase;
@@ -49,7 +49,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
     
     public void createGroupFieldsList(Collection<String> groupFieldsSet) {
         this.groupFieldsList = Lists.newArrayList(groupFieldsSet);
-        QueryModel model = ((RefactoredShardQueryLogic) logic).getQueryModel();
+        QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
         for (String groupField : groupFieldsSet) {
             String f = model.getReverseAliasForField(groupField);
             if (f != null && f.length() > 0) {

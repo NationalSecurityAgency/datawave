@@ -5,9 +5,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.CloseableIterable;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.iterator.FieldIndexOnlyQueryIterator;
 import datawave.query.iterator.QueryOptions;
@@ -34,7 +34,7 @@ import com.google.common.collect.Iterators;
 
 public class ShardRangeStream extends RangeStream {
     
-    public ShardRangeStream(RefactoredShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper helper) {
+    public ShardRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper helper) {
         super(config, scanners, helper);
     }
     

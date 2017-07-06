@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -118,7 +118,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
     
     protected Set<Authorizations> authSet = Collections.singleton(auths);
     
-    protected RefactoredShardQueryLogic logic = null;
+    protected ShardQueryLogic logic = null;
     
     protected KryoDocumentDeserializer deserializer;
     
@@ -144,7 +144,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
     public void setup() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
-        logic = new RefactoredShardQueryLogic();
+        logic = new ShardQueryLogic();
         logic.setMetadataTableName(QueryTestTableHelper.METADATA_TABLE_NAME);
         logic.setTableName(QueryTestTableHelper.SHARD_TABLE_NAME);
         logic.setIndexTableName(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);

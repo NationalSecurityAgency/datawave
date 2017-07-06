@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.util.Tuple2;
@@ -26,13 +26,13 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     private static final Logger log = Logger.getLogger(TupleToRange.class);
     protected JexlNode currentScript = null;
     protected JexlNode tree = null;
-    protected RefactoredShardQueryConfiguration config = null;
+    protected ShardQueryConfiguration config = null;
     
     /**
      * @param currentNode
      * @param config
      */
-    public TupleToRange(JexlNode currentNode, RefactoredShardQueryConfiguration config) {
+    public TupleToRange(JexlNode currentNode, ShardQueryConfiguration config) {
         this.currentScript = currentNode;
         this.config = config;
         

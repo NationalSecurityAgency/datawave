@@ -7,7 +7,7 @@ import com.google.common.base.Preconditions;
 /**
  * 
  */
-public class IndexQueryLogic extends RefactoredShardQueryLogic {
+public class IndexQueryLogic extends ShardQueryLogic {
     
     public IndexQueryLogic() {
         super();

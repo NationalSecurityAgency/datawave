@@ -38,12 +38,12 @@ import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.QueryParameters;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.model.QueryModel;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
@@ -84,7 +84,7 @@ import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.RangeCoalescingVisitor;
 import datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
-import datawave.query.jexl.visitors.RewriteNegations;
+import datawave.query.jexl.visitors.Negations;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
@@ -297,7 +297,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         return (metadataHelper);
     }
     
-    private MetadataHelper getMetadataHelper(final RefactoredShardQueryConfiguration config) {
+    private MetadataHelper getMetadataHelper(final ShardQueryConfiguration config) {
         if (null == metadataHelper) {
             throw new RuntimeException("metadataHelper was not set. fix this");
         }
@@ -313,7 +313,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         return dateIndexHelper;
     }
     
-    private DateIndexHelper getDateIndexHelper(final RefactoredShardQueryConfiguration config) {
+    private DateIndexHelper getDateIndexHelper(final ShardQueryConfiguration config) {
         if (null == dateIndexHelper && config.getDateIndexTableName() != null && !(config.getDateIndexTableName().isEmpty())) {
             throw new RuntimeException("dateIndexHelper was not set. fix this");
         }
@@ -324,13 +324,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
-        if (!(genericConfig instanceof RefactoredShardQueryConfiguration)) {
-            throw new ClassCastException("Config object must be an instance of RefactoredShardQueryConfiguration");
+        if (!(genericConfig instanceof ShardQueryConfiguration)) {
+            throw new ClassCastException("Config object must be an instance of ShardQueryConfiguration");
         }
         
         builderThread = Executors.newSingleThreadExecutor();
         
-        RefactoredShardQueryConfiguration config = (RefactoredShardQueryConfiguration) genericConfig;
+        ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
         
         // lets mark the query as started (used by ivarators at a minimum)
         try {
@@ -343,7 +343,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     }
     
     protected CloseableIterable<QueryData> process(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    RefactoredShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, String query, Query settings) throws DatawaveQueryException {
         final QueryData queryData = new QueryData();
         
         settingFuture = null;
@@ -420,7 +420,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                         docSpecificOverride, maxRangeWaitMillis);
     }
     
-    private void configureIterator(RefactoredShardQueryConfiguration config, IteratorSetting cfg, String newQueryString, boolean isFullTable)
+    private void configureIterator(ShardQueryConfiguration config, IteratorSetting cfg, String newQueryString, boolean isFullTable)
                     throws DatawaveQueryException {
         
         // Load enrichers, filters, unevaluatedExpressions, and projection
@@ -447,9 +447,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
      */
     @Override
     public void close(GenericQueryConfiguration genericConfig, Query settings) {
-        if (!(genericConfig instanceof RefactoredShardQueryConfiguration)) {
+        if (!(genericConfig instanceof ShardQueryConfiguration)) {
             if (genericConfig != null) {
-                log.warn("Config object must be an instance of RefactoredShardQueryConfiguration to properly close the DefaultQueryPlanner. You gave me a "
+                log.warn("Config object must be an instance of ShardQueryConfiguration to properly close the DefaultQueryPlanner. You gave me a "
                                 + genericConfig);
             }
             if (null != builderThread) {
@@ -458,7 +458,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             return;
         }
         
-        RefactoredShardQueryConfiguration config = (RefactoredShardQueryConfiguration) genericConfig;
+        ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
         
         // lets mark the query as closed (used by ivarators at a minimum)
         try {
@@ -471,13 +471,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
             builderThread.shutdown();
     }
     
-    private QueryLock getQueryLock(RefactoredShardQueryConfiguration config, Query settings) throws Exception {
+    private QueryLock getQueryLock(ShardQueryConfiguration config, Query settings) throws Exception {
         return new QueryLock.Builder().forQueryId(settings.getId() == null ? null : settings.getId().toString()).forZookeeper(config.getZookeeperConfig(), 0)
                         .forHdfs(config.getHdfsSiteConfigURLs()).forIvaratorDirs(config.getIvaratorCacheBaseURIs())
                         .forFstDirs(config.getIvaratorFstHdfsBaseURIs()).build();
     }
     
-    private void markQueryStopped(RefactoredShardQueryConfiguration config, Query settings) throws Exception {
+    private void markQueryStopped(ShardQueryConfiguration config, Query settings) throws Exception {
         QueryLock lock = getQueryLock(config, settings);
         if (lock != null) {
             try {
@@ -488,7 +488,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
     }
     
-    private void markQueryStarted(RefactoredShardQueryConfiguration config, Query settings) throws Exception {
+    private void markQueryStarted(ShardQueryConfiguration config, Query settings) throws Exception {
         QueryLock lock = getQueryLock(config, settings);
         if (lock != null) {
             try {
@@ -499,7 +499,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
     }
     
-    public static void validateQuerySize(String lastOperation, JexlNode queryTree, RefactoredShardQueryConfiguration config) {
+    public static void validateQuerySize(String lastOperation, JexlNode queryTree, ShardQueryConfiguration config) {
         final QueryStopwatch timers = config.getTimers();
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Validate against term and depth thresholds");
         
@@ -522,7 +522,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     }
     
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    RefactoredShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
         final QueryStopwatch timers = config.getTimers();
         
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - get composites");
@@ -635,7 +635,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rewrite negated equality operators.");
         
-        RewriteNegations.rewrite(queryTree);
+        Negations.rewrite(queryTree);
         if (log.isDebugEnabled()) {
             logQuery(queryTree, "Query after rewriting negated equality operators:");
         }
@@ -789,9 +789,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
         return queryTree;
     }
     
-    protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, RefactoredShardQueryConfiguration config, Query settings,
-                    MetadataHelper metadataHelper, ScannerFactory scannerFactory, QueryData queryData, QueryStopwatch timers, QueryModel queryModel)
-                    throws DatawaveQueryException {
+    protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, ShardQueryConfiguration config, Query settings, MetadataHelper metadataHelper,
+                    ScannerFactory scannerFactory, QueryData queryData, QueryStopwatch timers, QueryModel queryModel) throws DatawaveQueryException {
         ASTJexlScript queryTree = originalQueryTree;
         // Find unfielded terms, and fully qualify them with an OR of all fields
         // found in the index
@@ -1110,7 +1109,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * @throws IllegalAccessException
      */
     private void loadDataTypeMetadata(Multimap<String,Type<?>> fieldToDatatypeMap, Set<String> indexedFields, Set<String> normalizedFields,
-                    RefactoredShardQueryConfiguration config, boolean reload) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
+                    ShardQueryConfiguration config, boolean reload) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
                     ExecutionException, InstantiationException, IllegalAccessException {
         synchronized (dataTypeMap) {
             if (!reload && (null != cachedIndexedFields && null != indexedFields) && (null != cachedNormalizedFields && null != normalizedFields)) {
@@ -1127,8 +1126,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     // Overwrite projection and blacklist properties if the query model is
     // being used
-    protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, RefactoredShardQueryConfiguration config, TraceStopwatch stopwatch,
-                    ASTJexlScript queryTree, QueryModel queryModel) {
+    protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, ShardQueryConfiguration config, TraceStopwatch stopwatch, ASTJexlScript queryTree,
+                    QueryModel queryModel) {
         // generate the inverse of the reverse mapping; {display field name
         // => db field name}
         // a reverse mapping is always many to one, therefore the inverted
@@ -1283,7 +1282,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * @throws TableNotFoundException
      */
     public ASTJexlScript addDateFilters(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    RefactoredShardQueryConfiguration config, Query settings) throws TableNotFoundException, DatawaveQueryException {
+                    ShardQueryConfiguration config, Query settings) throws TableNotFoundException, DatawaveQueryException {
         String dateType = DateIndexUtil.ACQUISITION_DATE_TYPE;
         Parameter dateTypeParameter = settings.findParameter(QueryParameters.DATE_RANGE_TYPE);
         if (dateTypeParameter != null && dateTypeParameter.getParameterValue() != null) {
@@ -1346,7 +1345,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * 
      * @param config
      */
-    protected void capDateRange(RefactoredShardQueryConfiguration config) throws DatawaveQueryException {
+    protected void capDateRange(ShardQueryConfiguration config) throws DatawaveQueryException {
         if (config.getBeginDateCap() > 0) {
             long minStartTime = System.currentTimeMillis() - config.getBeginDateCap();
             if (config.getBeginDate().getTime() < minStartTime) {
@@ -1388,8 +1387,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * @see PushDownPlanner#rewriteQuery( org.apache .commons.jexl2.parser.ASTJexlScript)
      */
     @Override
-    public ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper,
-                    RefactoredShardQueryConfiguration config) {
+    public ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config) {
         
         // The PushDownVisitor will decide what nodes are "delayed" in that they
         // do NOT
@@ -1403,7 +1401,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     /**
      * Get the list of alternatives, randomizing the order so that the tserver spread out the disk usage.
      */
-    protected String getIvaratorQueryCacheBaseUriAlternatives(RefactoredShardQueryConfiguration config) {
+    protected String getIvaratorQueryCacheBaseUriAlternatives(ShardQueryConfiguration config) {
         StringBuilder baseUriAlternatives = new StringBuilder();
         List<String> alternatives = new LinkedList<>(config.getIvaratorCacheBaseURIsAsList());
         Random random = new Random();
@@ -1417,8 +1415,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
         return baseUriAlternatives.toString();
     }
     
-    protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final RefactoredShardQueryConfiguration config,
-                    final Query settings, final String queryString, final Boolean isFullTable) throws DatawaveQueryException {
+    protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Query settings,
+                    final String queryString, final Boolean isFullTable) throws DatawaveQueryException {
         
         return builderThread.submit(new Callable<IteratorSetting>() {
             
@@ -1513,7 +1511,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         });
     }
     
-    protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, RefactoredShardQueryConfiguration config, Query settings, String queryString,
+    protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
                     Boolean isFullTable) throws DatawaveQueryException {
         if (null == settingFuture)
             settingFuture = loadQueryIterator(metadataHelper, config, settings, queryString, isFullTable);
@@ -1527,8 +1525,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
             return null;
     }
     
-    public static void configureTypeMappings(RefactoredShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper,
-                    boolean compressMappings) throws DatawaveQueryException {
+    public static void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings)
+                    throws DatawaveQueryException {
         try {
             addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.valueOf(compressMappings).toString(), false);
             
@@ -1581,7 +1579,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * @param cfg
      * @throws DatawaveQueryException
      */
-    protected void setCommonIteratorOptions(RefactoredShardQueryConfiguration config, IteratorSetting cfg) throws DatawaveQueryException {
+    protected void setCommonIteratorOptions(ShardQueryConfiguration config, IteratorSetting cfg) throws DatawaveQueryException {
         // Applying filtering options, including classnames, whether applied to
         // post-processing or field index
         if (config.getUseFilters()) {
@@ -1691,7 +1689,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * @param queryTree
      * @return range calculator
      */
-    protected CloseableIterable<QueryPlan> getFullScanRange(RefactoredShardQueryConfiguration config, JexlNode queryTree) {
+    protected CloseableIterable<QueryPlan> getFullScanRange(ShardQueryConfiguration config, JexlNode queryTree) {
         if (log.isTraceEnabled()) {
             log.trace("Building full scan range ");
             PrintingVisitor.printQuery(queryTree);
@@ -1726,7 +1724,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * @throws DatawaveQueryException
      */
     public Tuple2<CloseableIterable<QueryPlan>,Boolean> getQueryRanges(ScannerFactory scannerFactory, MetadataHelper metadataHelper,
-                    RefactoredShardQueryConfiguration config, JexlNode queryTree) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, JexlNode queryTree) throws DatawaveQueryException {
         Preconditions.checkNotNull(queryTree);
         
         boolean needsFullTable = false;
@@ -1825,13 +1823,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * @param metadataHelper
      * @return
      */
-    private RangeStream initializeRangeStream(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+    private RangeStream initializeRangeStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
         Class<? extends RangeStream> rstream;
         try {
             rstream = Class.forName(rangeStreamClass).asSubclass(RangeStream.class);
             
-            RangeStream stream = rstream.getConstructor(RefactoredShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(
-                            config, scannerFactory, metadataHelper);
+            RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,
+                            scannerFactory, metadataHelper);
             
             return stream.setUidIntersector(uidIntersector).setLimitScanners(limitScanners).setCreateUidsIteratorClass(createUidsIteratorClass);
             
@@ -1909,7 +1907,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         };
     }
     
-    protected boolean areSortedUIDsRequired(ASTJexlScript script, RefactoredShardQueryConfiguration config) {
+    protected boolean areSortedUIDsRequired(ASTJexlScript script, ShardQueryConfiguration config) {
         boolean sortedUIDs = true;
         if (config.getUnsortedUIDsEnabled()) {
             // Note: this visitor is not taking delayed predicates into account as the VisitorFunction may end up moving them around.
@@ -1968,7 +1966,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         return plannedScript;
     }
     
-    protected Multimap<String,Type<?>> configureIndexedAndNormalizedFields(MetadataHelper metadataHelper, RefactoredShardQueryConfiguration config,
+    protected Multimap<String,Type<?>> configureIndexedAndNormalizedFields(MetadataHelper metadataHelper, ShardQueryConfiguration config,
                     ASTJexlScript queryTree) throws DatawaveQueryException {
         // Fetch the mapping of fields to Types from the DatawaveMetadata table
         
@@ -1984,14 +1982,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
     }
     
     protected void setCachedFields(final Set<String> indexedFields, Multimap<String,Type<?>> queryFieldMap, Multimap<String,Type<?>> normalizedFieldMap,
-                    RefactoredShardQueryConfiguration config) {
+                    ShardQueryConfiguration config) {
         config.setIndexedFields(indexedFields);
         config.setQueryFieldsDatatypes(queryFieldMap);
         config.setNormalizedFieldsDatatypes(normalizedFieldMap);
     }
     
     protected Multimap<String,Type<?>> configureIndexedAndNormalizedFields(Multimap<String,Type<?>> fieldToDatatypeMap, final Set<String> indexedFields,
-                    final Set<String> normalizedFields, RefactoredShardQueryConfiguration config, ASTJexlScript queryTree) throws DatawaveQueryException,
+                    final Set<String> normalizedFields, ShardQueryConfiguration config, ASTJexlScript queryTree) throws DatawaveQueryException,
                     TableNotFoundException, InstantiationException, IllegalAccessException {
         log.debug("config.getDatatypeFilter() = " + config.getDatatypeFilter());
         log.debug("fieldToDatatypeMap.keySet() is " + fieldToDatatypeMap.keySet());

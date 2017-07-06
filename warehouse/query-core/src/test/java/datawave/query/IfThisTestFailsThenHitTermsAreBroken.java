@@ -19,7 +19,7 @@ import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.TypeMetadata;
@@ -99,7 +99,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
     
     protected Set<Authorizations> authSet = Collections.singleton(auths);
     
-    protected RefactoredShardQueryLogic logic = null;
+    protected ShardQueryLogic logic = null;
     
     protected KryoDocumentDeserializer deserializer;
     
@@ -163,7 +163,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         System.setProperty("type.metadata.dir", val);
         log.info("using tempFolder " + tempFolder.getRoot());
         
-        logic = new RefactoredShardQueryLogic();
+        logic = new ShardQueryLogic();
         logic.setMetadataTableName(MODEL_TABLE_NAME);
         logic.setTableName(SHARD_TABLE_NAME);
         logic.setIndexTableName(SHARD_INDEX_TABLE_NAME);

@@ -19,8 +19,8 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.functions.RefactoredJexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
 
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -42,13 +42,13 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
     private static final NoOpType NO_OP = new NoOpType();
     
     protected final List<Type<?>> normalizers;
-    protected final RefactoredJexlArgumentDescriptor descriptor;
+    protected final JexlArgumentDescriptor descriptor;
     protected final MetadataHelper helper;
     protected final Set<String> datatypeFilter;
     
     protected Boolean normalizationFailed = false;
     
-    public FunctionNormalizationRebuildingVisitor(List<Type<?>> normalizers, RefactoredJexlArgumentDescriptor descriptor, MetadataHelper helper,
+    public FunctionNormalizationRebuildingVisitor(List<Type<?>> normalizers, JexlArgumentDescriptor descriptor, MetadataHelper helper,
                     Set<String> datatypeFilter) {
         Preconditions.checkNotNull(normalizers);
         Preconditions.checkNotNull(descriptor);
@@ -66,7 +66,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         Preconditions.checkNotNull(allNormalizers);
         Preconditions.checkNotNull(helper);
         
-        RefactoredJexlArgumentDescriptor descriptor = RefactoredJexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
+        JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
         
         List<ASTFunctionNode> functions = Lists.newArrayList();
         
@@ -102,7 +102,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         } else if (1 == functions.size()) {
             return functions.iterator().next();
         } else {
-            RefactoredJexlArgumentDescriptor desc = RefactoredJexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
+            JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
             
             if (desc.useOrForExpansion()) {
                 return JexlNodeFactory.createOrNode(functions);
@@ -167,7 +167,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
      * @return the list of normalizer lists
      */
     private static List<List<Type<?>>> getNormalizerListsForArgs(ASTFunctionNode function, Multimap<String,Type<?>> allNormalizers,
-                    RefactoredJexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) {
+                    JexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) {
         List<List<Type<?>>> lists = new ArrayList<>();
         
         lists.add(new ArrayList<Type<?>>(Arrays.asList(new Type<?>[function.jjtGetNumChildren()])));

@@ -10,16 +10,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.Type;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.index.stats.IndexStatsClient;
-import datawave.query.jexl.functions.RefactoredJexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
@@ -448,13 +448,13 @@ public class JexlASTHelper {
     }
     
     public static Set<String> getFieldNames(ASTFunctionNode function, MetadataHelper metadata, Set<String> datatypeFilter) {
-        RefactoredJexlArgumentDescriptor desc = RefactoredJexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
+        JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
         
         return desc.fields(metadata, datatypeFilter);
     }
     
     public static Set<Set<String>> getFieldNameSets(ASTFunctionNode function, MetadataHelper metadata, Set<String> datatypeFilter) {
-        RefactoredJexlArgumentDescriptor desc = RefactoredJexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
+        JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
         
         return desc.fieldSets(metadata, datatypeFilter);
     }
@@ -1276,7 +1276,7 @@ public class JexlASTHelper {
      * @param config
      * @return
      */
-    public static boolean isIndexed(JexlNode node, RefactoredShardQueryConfiguration config) {
+    public static boolean isIndexed(JexlNode node, ShardQueryConfiguration config) {
         Preconditions.checkNotNull(config);
         
         final Multimap<String,Type<?>> indexedFieldsDatatypes = config.getQueryFieldsDatatypes();
@@ -1304,7 +1304,7 @@ public class JexlASTHelper {
      * @param stats
      * @return
      */
-    public static Double getNodeSelectivity(JexlNode node, RefactoredShardQueryConfiguration config, IndexStatsClient stats) {
+    public static Double getNodeSelectivity(JexlNode node, ShardQueryConfiguration config, IndexStatsClient stats) {
         List<ASTIdentifier> idents = getIdentifiers(node);
         
         // If there isn't one identifier you don't need to check the selectivity
@@ -1323,7 +1323,7 @@ public class JexlASTHelper {
      * @param stats
      * @return
      */
-    public static Double getNodeSelectivity(Set<String> fieldNames, RefactoredShardQueryConfiguration config, IndexStatsClient stats) {
+    public static Double getNodeSelectivity(Set<String> fieldNames, ShardQueryConfiguration config, IndexStatsClient stats) {
         
         boolean foundSelectivity = false;
         

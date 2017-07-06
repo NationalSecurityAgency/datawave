@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
@@ -19,7 +19,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
  * 
  *
  */
-public interface RefactoredJexlArgumentDescriptor {
+public interface JexlArgumentDescriptor {
     /**
      * Get the nodes that can be used to determine ranges from the global index.
      *
@@ -28,8 +28,7 @@ public interface RefactoredJexlArgumentDescriptor {
      * @param datatypeFilter
      * @return The query which will be used against the global index
      */
-    JexlNode getIndexQuery(RefactoredShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    Set<String> datatypeFilter);
+    JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter);
     
     /**
      * Get the entire set of fields that are referenced by this function. If you need subsets of fields required to satisfy the function, then use fieldSets()

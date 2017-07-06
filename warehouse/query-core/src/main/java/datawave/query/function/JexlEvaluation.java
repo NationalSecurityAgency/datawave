@@ -16,7 +16,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.HitListArithmetic;
-import datawave.query.jexl.RefactoredDatawaveJexlEngine;
+import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.util.Tuple3;
 
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {
@@ -24,7 +24,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     
     private String query;
     private JexlArithmetic arithmetic;
-    private RefactoredDatawaveJexlEngine engine;
+    private DatawaveJexlEngine engine;
     
     /**
      * Compiled jexl script
@@ -50,7 +50,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         return arithmetic;
     }
     
-    public RefactoredDatawaveJexlEngine getEngine() {
+    public DatawaveJexlEngine getEngine() {
         return engine;
     }
     

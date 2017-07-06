@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 
@@ -63,7 +63,7 @@ public class FieldNameLookup extends IndexLookup {
     }
     
     @Override
-    public IndexLookupMap lookup(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, long lookupTimer) {
+    public IndexLookupMap lookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, long lookupTimer) {
         try {
             sem.acquire();
         } catch (InterruptedException e1) {
@@ -89,14 +89,14 @@ public class FieldNameLookup extends IndexLookup {
                 
                 Set<Range> ranges = Sets.newHashSet();
                 
-                ranges.add(RefactoredShardIndexQueryTableStaticMethods.getLiteralRange(term));
+                ranges.add(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
                 if (limitToTerms) {
                     log.trace("Creating configureTermMatchOnly");
-                    bs = RefactoredShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
+                    bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
                                     Collections.singleton(term), Collections.<String> emptySet(), false, true);
                 } else {
                     log.trace("Creating configureLimitedDiscovery");
-                    bs = RefactoredShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
+                    bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
                                     Collections.singleton(term), Collections.<String> emptySet(), false, true);
                 }
                 /**

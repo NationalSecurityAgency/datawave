@@ -4,12 +4,12 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.function.IndexOnlyContextCreator;
 import datawave.query.jexl.IndexOnlyJexlContext;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.RefactoredJexlFunctionArgumentDescriptorFactory;
-import datawave.query.config.RefactoredShardQueryConfiguration;
-import datawave.query.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
@@ -47,7 +47,7 @@ public class SetMembershipVisitor extends BaseVisitor {
     protected final Set<String> expectedFields;
     protected final MetadataHelper metadataHelper;
     protected final DateIndexHelper dateIndexHelper;
-    protected final RefactoredShardQueryConfiguration config;
+    protected final ShardQueryConfiguration config;
     protected final Set<String> discoveredFields;
     protected final boolean fullTraversal;
     
@@ -60,8 +60,8 @@ public class SetMembershipVisitor extends BaseVisitor {
      * @param dateIndexHelper
      * @param fullTraversal
      */
-    public SetMembershipVisitor(Set<String> expectedFields, RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper,
-                    DateIndexHelper dateIndexHelper, boolean fullTraversal) {
+    public SetMembershipVisitor(Set<String> expectedFields, ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
+                    boolean fullTraversal) {
         this.config = config;
         this.expectedFields = expectedFields;
         this.metadataHelper = metadataHelper;
@@ -80,8 +80,8 @@ public class SetMembershipVisitor extends BaseVisitor {
      * @return true if the query contains fields that are present in the expectedFields set for the specified datatypes
      */
     
-    public static Boolean contains(Set<String> expectedFields, RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper,
-                    DateIndexHelper dateIndexHelper, JexlNode tree) {
+    public static Boolean contains(Set<String> expectedFields, ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
+                    JexlNode tree) {
         SetMembershipVisitor visitor = new SetMembershipVisitor(expectedFields, config, metadataHelper, dateIndexHelper, false);
         return (Boolean) tree.jjtAccept(visitor, false);
     }
@@ -96,7 +96,7 @@ public class SetMembershipVisitor extends BaseVisitor {
      * @param tree
      * @return a set of field names that are present in the expectedFields set for the specified datatypes
      */
-    public static Set<String> getMembers(Set<String> expectedFields, RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper,
+    public static Set<String> getMembers(Set<String> expectedFields, ShardQueryConfiguration config, MetadataHelper metadataHelper,
                     DateIndexHelper dateIndexHelper, JexlNode tree) {
         return getMembers(expectedFields, config, metadataHelper, dateIndexHelper, tree, false);
     }
@@ -113,7 +113,7 @@ public class SetMembershipVisitor extends BaseVisitor {
      *            If true, allow tagging to occur for index-only fields
      * @return a set of field names that are present in the expectedFields set for the specified datatypes
      */
-    public static Set<String> getMembers(Set<String> expectedFields, RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper,
+    public static Set<String> getMembers(Set<String> expectedFields, ShardQueryConfiguration config, MetadataHelper metadataHelper,
                     DateIndexHelper dateIndexHelper, JexlNode tree, boolean indexOnlyFieldTaggingEnabled) {
         final SetMembershipVisitor visitor = new SetMembershipVisitor(expectedFields, config, metadataHelper, dateIndexHelper, true);
         final Boolean contains = (Boolean) tree.jjtAccept(visitor, false);
@@ -372,7 +372,7 @@ public class SetMembershipVisitor extends BaseVisitor {
     public Object visit(ASTFunctionNode node, Object data) {
         if (traverse(data, fullTraversal)) {
             // apply it to the index query first
-            RefactoredJexlArgumentDescriptor d = RefactoredJexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
+            JexlArgumentDescriptor d = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
             JexlNode tree = d.getIndexQuery(this.config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
             data = tree.jjtAccept(this, data);
             

@@ -865,7 +865,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             ThreadLocalLogLevel.setLevel("datawave.query.planner.DefaultQueryPlanner", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.planner.ThreadedRangeBundlerIterator", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.scheduler.SequentialScheduler", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.tables.RefactoredShardQueryLogic", Level.ERROR);
+            ThreadLocalLogLevel.setLevel("datawave.query.tables.ShardQueryLogic", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.VisibilityHelper", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.jexl.visitors.QueryModelVisitor", Level.ERROR);

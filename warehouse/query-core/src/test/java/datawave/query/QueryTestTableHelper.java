@@ -2,7 +2,7 @@ package datawave.query;
 
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.table.config.ShardTableConfigHelper;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -152,7 +152,7 @@ public final class QueryTestTableHelper {
         }
     }
     
-    public static void configureLogicToScanTables(RefactoredShardQueryLogic logic) {
+    public static void configureLogicToScanTables(ShardQueryLogic logic) {
         logic.setMetadataTableName(METADATA_TABLE_NAME);
         logic.setDateIndexTableName(DATE_INDEX_TABLE_NAME);
         logic.setTableName(SHARD_TABLE_NAME);

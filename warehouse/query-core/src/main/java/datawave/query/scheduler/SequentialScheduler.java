@@ -5,8 +5,8 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import datawave.query.config.RefactoredShardQueryConfiguration;
-import datawave.query.tables.RefactoredShardQueryLogic;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 public class SequentialScheduler extends Scheduler {
     private static final Logger log = ThreadConfigurableLogger.getLogger(SequentialScheduler.class);
     
-    protected final RefactoredShardQueryConfiguration config;
+    protected final ShardQueryConfiguration config;
     protected final ScannerFactory scannerFactory;
     protected final AtomicInteger count = new AtomicInteger(0);
     
@@ -35,7 +35,7 @@ public class SequentialScheduler extends Scheduler {
      */
     protected int rangesSeen = 0;
     
-    public SequentialScheduler(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory) {
+    public SequentialScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
         this.config = config;
         this.scannerFactory = scannerFactory;
     }
@@ -73,17 +73,16 @@ public class SequentialScheduler extends Scheduler {
     /*
      * (non-Javadoc)
      * 
-     * @see Scheduler#createBatchScanner(RefactoredShardQueryConfiguration, datawave.query.tables.ScannerFactory,
-     * datawave.webservice.query.configuration.QueryData)
+     * @see Scheduler#createBatchScanner(ShardQueryConfiguration, datawave.query.tables.ScannerFactory, datawave.webservice.query.configuration.QueryData)
      */
     @Override
-    public BatchScanner createBatchScanner(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        return RefactoredShardQueryLogic.createBatchScanner(config, scannerFactory, qd);
+    public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
+        return ShardQueryLogic.createBatchScanner(config, scannerFactory, qd);
     }
     
     public class SequentialSchedulerIterator implements Iterator<Entry<Key,Value>> {
         
-        protected final RefactoredShardQueryConfiguration config;
+        protected final ShardQueryConfiguration config;
         protected final ScannerFactory scannerFactory;
         
         protected Iterator<QueryData> queries = null;
@@ -93,7 +92,7 @@ public class SequentialScheduler extends Scheduler {
         
         protected volatile boolean closed = false;
         
-        public SequentialSchedulerIterator(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory) {
+        public SequentialSchedulerIterator(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
             this.config = config;
             this.scannerFactory = scannerFactory;
             this.queries = config.getQueries();

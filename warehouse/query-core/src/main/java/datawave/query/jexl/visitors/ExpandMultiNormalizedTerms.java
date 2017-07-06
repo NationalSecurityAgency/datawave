@@ -18,7 +18,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
@@ -64,11 +64,11 @@ import org.apache.log4j.Logger;
 public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandMultiNormalizedTerms.class);
     
-    private final RefactoredShardQueryConfiguration config;
+    private final ShardQueryConfiguration config;
     private final HashSet<ASTAndNode> expandedNodes;
     private final MetadataHelper helper;
     
-    public ExpandMultiNormalizedTerms(RefactoredShardQueryConfiguration config, MetadataHelper helper) {
+    public ExpandMultiNormalizedTerms(ShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(config);
         Preconditions.checkNotNull(helper);
         
@@ -85,7 +85,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandTerms(RefactoredShardQueryConfiguration config, MetadataHelper helper, T script) {
+    public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, MetadataHelper helper, T script) {
         ExpandMultiNormalizedTerms visitor = new ExpandMultiNormalizedTerms(config, helper);
         
         if (null == visitor.config.getQueryFieldsDatatypes()) {

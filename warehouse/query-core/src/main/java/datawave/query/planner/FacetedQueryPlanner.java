@@ -1,6 +1,7 @@
 package datawave.query.planner;
 
 import datawave.query.CloseableIterable;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
@@ -8,7 +9,6 @@ import datawave.query.exceptions.NoResultsException;
 import datawave.query.iterator.facets.DynamicFacetIterator;
 import datawave.query.iterator.facets.FacetedTableIterator;
 import datawave.query.jexl.visitors.AllTermsIndexedVisitor;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.tables.facets.FacetCheck;
 import datawave.query.tables.facets.FacetQueryPlanVisitor;
 import datawave.query.tables.facets.FacetedConfiguration;
@@ -57,7 +57,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
     }
     
     @Override
-    public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, RefactoredShardQueryConfiguration config, Query settings, String queryString,
+    public IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
                     Boolean isFullTable) throws DatawaveQueryException {
         if (isFullTable) {
             QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_DISALLOWED);
@@ -84,7 +84,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
     
     @Override
     public Tuple2<CloseableIterable<QueryPlan>,Boolean> getQueryRanges(ScannerFactory scannerFactory, MetadataHelper metadataHelper,
-                    RefactoredShardQueryConfiguration config, JexlNode queryTree) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, JexlNode queryTree) throws DatawaveQueryException {
         if (usePrecomputedFacets) {
             config.setBypassExecutabilityCheck();
             FacetQueryPlanVisitor visitor = new FacetQueryPlanVisitor(config, metadataHelper, facetedConfig.getFacetedFields());
@@ -99,7 +99,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
     
     @Override
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    RefactoredShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
+                    ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
         // we want all terms expanded (except when max terms is reached)
         config.setExpandAllTerms(true);
         
@@ -110,7 +110,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
     }
     
     @Override
-    protected ASTJexlScript limitQueryTree(ASTJexlScript script, RefactoredShardQueryConfiguration config) throws NoResultsException {
+    protected ASTJexlScript limitQueryTree(ASTJexlScript script, ShardQueryConfiguration config) throws NoResultsException {
         // Assert that all of the terms in the query are indexed (so we can completely use the field index)
         // Also removes any spurious _ANYFIELD_ nodes left in from upstream
         try {
@@ -131,7 +131,7 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
         }
     }
     
-    protected boolean isPrecomputedFacet(ASTJexlScript script, RefactoredShardQueryConfiguration config) throws NoResultsException {
+    protected boolean isPrecomputedFacet(ASTJexlScript script, ShardQueryConfiguration config) throws NoResultsException {
         // Assert that all of the terms in the query are indexed (so we can completely use the field index)
         // Also removes any spurious _ANYFIELD_ nodes left in from upstream
         try {

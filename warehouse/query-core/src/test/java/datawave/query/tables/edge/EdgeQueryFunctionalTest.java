@@ -22,12 +22,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(Arquillian.class)
-public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
-    private static final Logger log = Logger.getLogger(RewriteEdgeQueryFunctionalTest.class);
+public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
+    private static final Logger log = Logger.getLogger(EdgeQueryFunctionalTest.class);
     
     @Inject
     @SpringBean(name = "RewriteEdgeQuery")
-    RewriteEdgeQueryLogic logic;
+    EdgeQueryLogic logic;
     
     /*
      * NOTE: If you're trying to debug within your IDE's debugger and you're getting Spring errors related to EdgeModelContext.xml or NoClassDefFound related to
@@ -52,7 +52,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    public RewriteEdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths) throws Exception {
+    public EdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths) throws Exception {
         GenericQueryConfiguration config = logic.initialize(connector, q, auths);
         logic.setupQuery(config);
         return logic;
@@ -61,7 +61,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testSingleQuery() throws Exception {
         QueryImpl q = configQuery("(SOURCE == 'PLUTO')", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("pluto%00;charon AdjacentCelestialBodies/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
@@ -75,7 +75,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testSingleQueryMixedCase() throws Exception {
         QueryImpl q = configQuery("(SOURCE == 'pLUTO')", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("pluto%00;charon AdjacentCelestialBodies/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
@@ -89,7 +89,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testSingleQueryLowerCase() throws Exception {
         QueryImpl q = configQuery("(SOURCE == 'pluto')", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("pluto%00;charon AdjacentCelestialBodies/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
@@ -103,7 +103,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testSinglePatternQuery() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'E.*')", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("earth%00;moon AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -119,7 +119,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testANDQuery() throws Exception {
         QueryImpl q = configQuery("(SOURCE == 'EARTH') && (SINK == 'MOON')", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("earth%00;moon AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -130,7 +130,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testANDQueryWithPatterns() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'E.*') && (SINK =~ '.*S' )", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -143,7 +143,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testORQuery() throws Exception {
         QueryImpl q = configQuery("(SOURCE == 'EARTH' || SOURCE == 'PLUTO')", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -162,7 +162,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testORQueryWithPattern() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'E.*' || SOURCE == 'PLUTO')", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -182,7 +182,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testCombinationQuery() throws Exception {
         QueryImpl q = configQuery("(SOURCE == 'EARTH' || SOURCE == 'ASTEROID_BELT') && (SINK == 'MARS')", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -195,7 +195,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testCombinationQueryWithPattern() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'E.*' || SOURCE == 'ASTEROID_BELT') && (SINK == 'MARS')", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -211,7 +211,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery(
                         "(SOURCE == 'EARTH' || SOURCE == 'PLUTO' || SOURCE == 'MARS' || SOURCE == 'CERES' || SOURCE == 'ASTEROID_BELT') && RELATION == 'FROM-TO' && TYPE == 'AdjacentCelestialBodies'",
                         auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("earth%00;moon AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -232,7 +232,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery(
                         "(SOURCE =~ 'E.*' || SOURCE == 'PLUTO' || SOURCE =~ 'M.*' || SOURCE == 'CERES' || SOURCE == 'ASTEROID_BELT') && RELATION == 'FROM-TO' && TYPE =~ 'Adjacent.*'",
                         auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -256,7 +256,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testSourceAndSinkPatterns() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'E.*' || SOURCE =~ 'P.*') && (SINK =~ 'M.*' || SINK =~ 'C.*')", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         expected.add("earth%00;mars AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -272,7 +272,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testTypeQuery() throws Exception {
         QueryImpl q = configQuery("SOURCE == 'JUPITER' && TYPE == 'AdjacentDwarfPlanets'", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         expected.add("jupiter%00;ceres AdjacentDwarfPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [B]");
@@ -283,7 +283,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testPatternWithType() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'M.*') && TYPE == 'AdjacentPlanets' ", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("mars%00;earth AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -295,7 +295,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testPatternWithTypeAndRelation() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'M.*') && TYPE == 'AdjacentPlanets' && RELATION ==  'TO-FROM' ", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         expected.add("mars%00;earth AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -306,7 +306,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testPatternWithRelation() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'M.*') && RELATION ==  'TO-FROM' ", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         expected.add("mars%00;earth AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -322,7 +322,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testPatternWithLeadingWildcard() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'M.*') && SINK =~ '.*S' && (RELATION ==  'FROM-TO' || RELATION == 'TO-FROM')", auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         expected.add("mars%00;ceres AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [B]");
@@ -338,7 +338,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery(
                         "(( SOURCE == 'CERES') && ( SINK =~ 'JUP.*' ) && ( RELATION ==  'FROM-TO' || RELATION == 'TO-FROM') ) || ( (SOURCE =~ 'E.*') && (SINK == 'MARS' ) ) ",
                         auths);
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("ceres%00;jupiter AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -354,7 +354,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     public void testNOT() throws Exception {
         QueryImpl q = configQuery("SOURCE == 'MARS' && SINK != 'CERES'", auths);
         
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -368,7 +368,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     public void testPatternWithNot() throws Exception {
         QueryImpl q = configQuery("SOURCE =~ 'M.*' && SINK != 'CERES'", auths);
         
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -386,7 +386,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     public void testRegExQueryStatsOn() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'M.*')", auths);
         q.addParameter("stats", "true");
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -406,7 +406,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     public void testRegExQueryStatsOff() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'M.*')", auths);
         q.addParameter("stats", "false");
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -424,7 +424,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     public void testRelationStatsOn() throws Exception {
         QueryImpl q = configQuery("(SOURCE =~ 'M.*') && (SINK == 'VENUS') && (RELATION == 'FROM-TO' || RELATION == 'TO-FROM')", auths);
         q.addParameter("stats", "true");
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<String>();
         expected.add("mercury%00;venus AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -439,7 +439,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         
         QueryImpl q = configQuery("SOURCE == 'SUN' && (filter:includeregex(SINK, 'earth|mars'))", auths);
         
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         
@@ -452,7 +452,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE == 'EARTH' || SOURCE == 'SUN' || SOURCE == 'ASTEROID_BELT') &&"
                         + " (SINK == 'MARS' || SINK == 'MOON' || SINK == 'JUPITER')", auths);
         
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         expected.add("earth%00;moon AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -470,7 +470,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         QueryImpl q = configQuery("(SOURCE == 'MARS' && SINK == 'JUPITER') || (SOURCE == 'ASTEROID_BELT' && SINK == 'MARS') "
                         + "|| (SOURCE == 'ASTEROID_BELT' && SINK == 'JUPITER')", auths);
         
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -486,7 +486,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
                         "(SOURCE == 'MARS' && SINK == 'JUPITER' && ATTRIBUTE1 == 'COSMOS_DATA-COSMOS_DATA' && ((TYPE == 'AdjacentPlanets' && RELATION == 'FROM-TO') || "
                                         + "(TYPE == 'AdjacentPlanets' && RELATION == 'TO-FROM' )))", auths);
         
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
@@ -497,7 +497,7 @@ public class RewriteEdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     public void testAttribute1() throws Exception {
         QueryImpl q = configQuery("SOURCE == 'PLUTO' && ATTRIBUTE1 == 'NEW_HORIZONS-NEW_HORIZONS'", auths);
         
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         expected.add("pluto%00;neptune AdjacentDwarfPlanets/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");

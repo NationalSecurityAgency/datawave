@@ -2,9 +2,9 @@ package datawave.query.planner.pushdown;
 
 import java.util.Collection;
 
+import datawave.query.config.ShardQueryConfiguration;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
@@ -27,5 +27,5 @@ public interface PushDownPlanner {
      * @param config
      * @return
      */
-    ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, RefactoredShardQueryConfiguration config);
+    ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config);
 }

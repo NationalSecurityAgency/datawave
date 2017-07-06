@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.Callable;
 
+import datawave.query.config.ShardQueryConfiguration;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -26,7 +27,6 @@ import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.LiteralRange;
@@ -51,7 +51,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
     }
     
     @Override
-    public IndexLookupMap lookup(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, long maxLookup) {
+    public IndexLookupMap lookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, long maxLookup) {
         String startDay = DateHelper.format(config.getBeginDate());
         String endDay = DateHelper.format(config.getEndDate());
         
@@ -162,8 +162,8 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
         return fieldToUniqueTerms;
     }
     
-    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues,
-                    RefactoredShardQueryConfiguration config, Set<String> datatypeFilter, final Set<Text> fields, boolean isReverse, long timeout) {
+    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
+                    Set<String> datatypeFilter, final Set<Text> fields, boolean isReverse, long timeout) {
         final Set<String> myDatatypeFilter = datatypeFilter;
         return new Callable<Boolean>() {
             public Boolean call() {

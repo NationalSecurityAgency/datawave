@@ -26,13 +26,13 @@ import datawave.query.jexl.functions.QueryFunctions;
  *
  * Also added in the ability to count attributes pulled from the ValueTuples which contribute to the positive evaluation.
  */
-public class RefactoredDatawaveInterpreter extends Interpreter {
+public class DatawaveInterpreter extends Interpreter {
     
     protected Map<TreeHashNode,Object> resultMap;
     
-    private static final Logger log = Logger.getLogger(RefactoredDatawaveInterpreter.class);
+    private static final Logger log = Logger.getLogger(DatawaveInterpreter.class);
     
-    public RefactoredDatawaveInterpreter(JexlEngine jexl, JexlContext aContext, boolean strictFlag, boolean silentFlag) {
+    public DatawaveInterpreter(JexlEngine jexl, JexlContext aContext, boolean strictFlag, boolean silentFlag) {
         super(jexl, aContext, strictFlag, silentFlag);
         resultMap = Maps.newHashMap();
     }

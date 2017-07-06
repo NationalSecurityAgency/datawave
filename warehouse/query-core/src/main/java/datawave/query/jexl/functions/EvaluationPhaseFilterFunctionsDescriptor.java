@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Set;
 
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.functions.arguments.RefactoredJexlArgumentDescriptor;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
-public class EvaluationPhaseFilterFunctionsDescriptor implements RefactoredJexlFunctionArgumentDescriptorFactory {
+public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
     
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
@@ -30,7 +30,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements RefactoredJexlF
      * 
      *
      */
-    public static class EvaluationPhaseFilterJexlArgumentDescriptor implements RefactoredJexlArgumentDescriptor {
+    public static class EvaluationPhaseFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private static final Logger log = Logger.getLogger(EvaluationPhaseFilterJexlArgumentDescriptor.class);
         private static final ImmutableSet<String> regexFunctions = ImmutableSet.of("excludeRegex", "includeRegex");
         private static final ImmutableSet<String> andExpansionFunctions = ImmutableSet.of("isNull");
@@ -48,8 +48,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements RefactoredJexlF
          * Returns 'true' because none of these functions should influence the index query.
          */
         @Override
-        public JexlNode getIndexQuery(RefactoredShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper,
-                        Set<String> datatypeFilter) {
+        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
             // in the special case of date functions and then only with the between methods,
@@ -182,17 +181,17 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements RefactoredJexlF
                 List<JexlNode> arguments = functionMetadata.args();
                 
                 if (arguments.size() == 2) {
-                    return RefactoredJexlArgumentDescriptor.Fields.product(arguments.get(0));
+                    return JexlArgumentDescriptor.Fields.product(arguments.get(0));
                 }
             } else if (dateComparisonFunctions.contains(functionMetadata.name())) {
                 List<JexlNode> arguments = functionMetadata.args();
                 if (arguments.size() >= 2) {
-                    return RefactoredJexlArgumentDescriptor.Fields.product(arguments.get(0));
+                    return JexlArgumentDescriptor.Fields.product(arguments.get(0));
                 }
             } else if (andExpansionFunctions.contains(functionMetadata.name())) {
                 List<JexlNode> arguments = functionMetadata.args();
                 if (arguments.size() == 1) {
-                    return RefactoredJexlArgumentDescriptor.Fields.product(arguments.get(0));
+                    return JexlArgumentDescriptor.Fields.product(arguments.get(0));
                 }
             }
             
@@ -215,7 +214,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements RefactoredJexlF
     }
     
     @Override
-    public RefactoredJexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node) {
+    public JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node) {
         try {
             Class<?> clazz = GetFunctionClass.get(node);
             if (!EvaluationPhaseFilterFunctions.class.equals(clazz)) {

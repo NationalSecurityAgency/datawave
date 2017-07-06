@@ -3,7 +3,7 @@ package datawave.query.jexl.visitors;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.util.MetadataHelper;
 
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -16,7 +16,7 @@ public class BoundedRangeDetectionVisitor extends FunctionIndexQueryExpansionVis
     protected Set<String> indexOnlyFields;
     protected Set<String> termFrequencyFields;
     
-    public BoundedRangeDetectionVisitor(RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields,
+    public BoundedRangeDetectionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields,
                     Set<String> termFrequencyFields) {
         super(config, metadataHelper, null);
         this.indexOnlyFields = indexOnlyFields;
@@ -24,7 +24,7 @@ public class BoundedRangeDetectionVisitor extends FunctionIndexQueryExpansionVis
     }
     
     @SuppressWarnings("unchecked")
-    public static boolean mustExpandBoundedRange(RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields,
+    public static boolean mustExpandBoundedRange(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields,
                     Set<String> termFrequencyFields, JexlNode script) {
         BoundedRangeDetectionVisitor visitor = new BoundedRangeDetectionVisitor(config, metadataHelper, indexOnlyFields, termFrequencyFields);
         

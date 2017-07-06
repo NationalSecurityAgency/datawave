@@ -13,7 +13,7 @@ import datawave.query.planner.QueryPlanner;
  * that metadata for a parent is also inherited by the child.
  *
  */
-public class AncestorQueryLogic extends RefactoredShardQueryLogic {
+public class AncestorQueryLogic extends ShardQueryLogic {
     public AncestorQueryLogic() {
         super();
         setCreateUidsIteratorClass(AncestorCreateUidsIterator.class);

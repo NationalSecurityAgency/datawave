@@ -11,12 +11,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import datawave.query.config.ShardQueryConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import datawave.query.config.RefactoredShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 
 public abstract class IndexLookup {
@@ -33,7 +33,7 @@ public abstract class IndexLookup {
      * @param scannerFactory
      * @return a map of fieldname to values
      */
-    public abstract IndexLookupMap lookup(RefactoredShardQueryConfiguration config, ScannerFactory scannerFactory, long timer);
+    public abstract IndexLookupMap lookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, long timer);
     
     public boolean supportReference() {
         return false;
@@ -46,7 +46,7 @@ public abstract class IndexLookup {
     /**
      * 
      */
-    protected boolean timedScan(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, final RefactoredShardQueryConfiguration config,
+    protected boolean timedScan(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, final ShardQueryConfiguration config,
                     final Set<String> datatypeFilter, final Set<Text> fields, final boolean isReverse, final long timeout, final Logger log) {
         
         long maxLookup = timeout;
@@ -113,7 +113,7 @@ public abstract class IndexLookup {
         return result;
     }
     
-    protected Callable<Boolean> createTimedCallable(Iterator<Entry<Key,Value>> iter, IndexLookupMap fieldsToValues, RefactoredShardQueryConfiguration config,
+    protected Callable<Boolean> createTimedCallable(Iterator<Entry<Key,Value>> iter, IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
                     Set<String> datatypeFilter, Set<Text> fields, boolean isReverse, long timeout) {
         throw new UnsupportedOperationException("This operation isn't supported by this index lookup");
     }

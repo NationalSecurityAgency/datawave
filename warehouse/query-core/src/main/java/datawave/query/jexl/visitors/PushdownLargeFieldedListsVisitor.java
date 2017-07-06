@@ -17,7 +17,7 @@ import java.util.TreeSet;
 
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.query.Constants;
-import datawave.query.config.RefactoredShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
@@ -47,11 +47,11 @@ import com.google.common.collect.Multimap;
  */
 public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(PushdownLargeFieldedListsVisitor.class);
-    private RefactoredShardQueryConfiguration config;
+    private ShardQueryConfiguration config;
     private String fstHdfsUri;
     private FileSystem fs;
     
-    public PushdownLargeFieldedListsVisitor(RefactoredShardQueryConfiguration config, FileSystem fs, String fstHdfsUri) {
+    public PushdownLargeFieldedListsVisitor(ShardQueryConfiguration config, FileSystem fs, String fstHdfsUri) {
         this.config = config;
         this.fstHdfsUri = fstHdfsUri;
         this.fs = fs;
@@ -64,7 +64,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
      * @return The tree with additional index query portions
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T pushdown(RefactoredShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri) {
+    public static <T extends JexlNode> T pushdown(ShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri) {
         // flatten the tree
         script = TreeFlatteningRebuildingVisitor.flatten(script);
         
