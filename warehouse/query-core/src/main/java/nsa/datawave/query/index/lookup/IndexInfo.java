@@ -410,6 +410,14 @@ public class IndexInfo implements Writable, UidIntersector {
             
         }
         
+        Set<JexlNode> internalNodeList = Sets.newHashSet();
+        if (null != myNode)
+            internalNodeList.add(myNode);
+        internalNodeList.addAll(delayedNodes);
+        if (!internalNodeList.isEmpty()) {
+            myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(internalNodeList));
+        }
+        
         return true;
         
     }

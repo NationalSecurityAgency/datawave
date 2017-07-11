@@ -188,6 +188,7 @@ public class Union implements IndexStream {
         
         Set<JexlNode> nodes = Sets.newHashSet();
         
+        boolean childrenAdded = false;
         while (!children.isEmpty()) {
             String streamDayOrShard = children.peek().peek().first();
             if (log.isTraceEnabled())
@@ -204,6 +205,7 @@ public class Union implements IndexStream {
             itr.next();
             if (itr.hasNext())
                 children.add(itr);
+            childrenAdded = true;
         }
         
         nodes.add(pointers.myNode);
@@ -216,6 +218,10 @@ public class Union implements IndexStream {
             
         } else {
             currNode = JexlNodeFactory.createUnwrappedOrNode(FluentIterable.from(nodes).filter(Predicates.notNull()).toList());
+        }
+        
+        if (!childrenAdded) {
+            pointers.setNode(currNode);
         }
         
         return Tuples.tuple(dayOrShard, pointers);
