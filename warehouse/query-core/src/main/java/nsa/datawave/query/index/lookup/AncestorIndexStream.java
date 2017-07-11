@@ -66,12 +66,19 @@ public class AncestorIndexStream implements IndexStream {
      * @return
      */
     private Tuple2<String,IndexInfo> removeOverlappingRanges(Tuple2<String,IndexInfo> tuple) {
-        IndexInfo info = tuple.second();
+        return new Tuple2<>(tuple.first(), mergeRanges(tuple.second()));
+    }
+    
+    public static IndexInfo mergeRanges(IndexInfo info) {
+        if (info == null) {
+            return null;
+        }
+        
         Set<IndexMatch> matches = info.uids();
         
         // test if there are no specific uids for this tuple, if there are no uids, don't attempt to reduce it
         if (matches.size() == 0) {
-            return tuple;
+            return info;
         }
         
         Map<MatchGroup,Set<IndexMatch>> nodeMap = new HashMap<>();
@@ -103,10 +110,10 @@ public class AncestorIndexStream implements IndexStream {
         for (Set<IndexMatch> nodeMatches : nodeMap.values()) {
             allMatches.addAll(nodeMatches);
         }
-        IndexInfo newInfo = new IndexInfo(allMatches);
-        newInfo.myNode = info.myNode;
+        IndexInfo merged = new IndexInfo(allMatches);
+        merged.myNode = info.myNode;
         
-        return new Tuple2<>(tuple.first(), newInfo);
+        return merged;
     }
     
     private static class MatchGroup {
