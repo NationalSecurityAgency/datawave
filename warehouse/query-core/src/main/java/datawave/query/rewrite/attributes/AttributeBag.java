@@ -154,8 +154,6 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
     @Override
     public void setToKeep(boolean toKeep) {
         super.setToKeep(toKeep);
-        for (Attribute<?> a : getAttributes()) {
-            a.setToKeep(toKeep);
-        }
+        // do not change values of child attributes to avoid overriding earlier decisions
     }
 }
