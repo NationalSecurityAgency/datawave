@@ -1,4 +1,4 @@
-package datawave.security.util;
+package datawave.data.type.util;
 
 import java.util.Random;
 
