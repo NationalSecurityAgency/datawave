@@ -1,5 +1,6 @@
 package nsa.datawave.query.rewrite.ancestor;
 
+import nsa.datawave.query.index.lookup.AncestorCondensedUidIterator;
 import nsa.datawave.query.index.lookup.AncestorIndexStream;
 import nsa.datawave.query.index.lookup.IndexStream;
 import nsa.datawave.query.index.lookup.RangeStream;
@@ -15,6 +16,7 @@ import org.apache.commons.jexl2.parser.ASTOrNode;
 public class AncestorRangeStream extends RangeStream {
     public AncestorRangeStream(RefactoredShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         super(config, scanners, metadataHelper);
+        setCreateCondensedUidIteratorClass(AncestorCondensedUidIterator.class);
     }
     
     @Override
