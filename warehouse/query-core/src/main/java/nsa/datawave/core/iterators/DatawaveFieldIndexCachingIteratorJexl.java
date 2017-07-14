@@ -30,6 +30,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
@@ -579,8 +580,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 }
                 
                 if (this.setControl.isCancelledQuery()) {
-                    log.error("Ivarator query was cancelled");
-                    throw new IvaratorException("Ivarator query was cancelled");
+                    log.debug("Ivarator query was cancelled");
+                    throw new IterationInterruptedException("Ivarator query was cancelled");
                 }
                 
                 // if we have any persisted data or we have scanned a significant number of keys, then persist it completely
@@ -594,8 +595,13 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
             
             if (this.setControl.isCancelledQuery()) {
-                log.error("Ivarator query was cancelled or timed out");
-                throw new IvaratorException("Ivarator query was cancelled or timed out");
+                if (isTimedOut()) {
+                    log.error("Ivarator query timed out");
+                    throw new IvaratorException("Ivarator query timed out");
+                } else {
+                    log.debug("Ivarator query was cancelled");
+                    throw new IterationInterruptedException("Ivarator query was cancelled");
+                }
             }
             
         }
