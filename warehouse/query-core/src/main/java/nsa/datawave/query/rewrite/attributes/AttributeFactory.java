@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import com.beust.jcommander.internal.Lists;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import nsa.datawave.data.type.LcNoDiacriticsType;
 import nsa.datawave.data.type.NoOpType;
 import nsa.datawave.data.type.Type;
@@ -42,7 +42,8 @@ public class AttributeFactory {
     
     private String defaultType = NoOpType.class.getName();
     private Class<?> mostGeneralType = LcNoDiacriticsType.class;
-    private static final List<Class<?>> mostGeneralTypes = Collections.unmodifiableList(Lists.<Class<?>> newArrayList(NoOpType.class, LcNoDiacriticsType.class));
+    private static final List<Class<?>> mostGeneralTypes = Collections
+                    .unmodifiableList(Lists.<Class<?>> newArrayList(NoOpType.class, LcNoDiacriticsType.class));
     
     public AttributeFactory(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
@@ -88,23 +89,23 @@ public class AttributeFactory {
                 Class<?> dataTypeClass = clazzCache.get(dataType);
                 return getAttribute(dataTypeClass, fieldName, data, key, toKeep);
             } else {
-
-                Iterable<Class<?>> typeClasses = Iterables.transform(dataTypes, new Function<String,Class<?>>(){
+                
+                Iterable<Class<?>> typeClasses = Iterables.transform(dataTypes, new Function<String,Class<?>>() {
                     @Nullable
                     @Override
                     public Class<?> apply(@Nullable String s) {
                         try {
                             return clazzCache.get(s);
                         } catch (ExecutionException e) {
-                            throw new RuntimeException("could not make a class from "+s, e);
+                            throw new RuntimeException("could not make a class from " + s, e);
                         }
                     }
                 });
-
+                
                 Collection<Class<?>> keepers = AttributeFactory.getKeepers(typeClasses);
-
+                
                 HashSet<Attribute<? extends Comparable<?>>> attrSet = Sets.newHashSet();
-
+                
                 for (String dataType : dataTypes) {
                     Class<?> dataTypeClass = clazzCache.get(dataType);
                     Attribute<?> attribute = getAttribute(dataTypeClass, fieldName, data, key, toKeep);
@@ -131,7 +132,7 @@ public class AttributeFactory {
             // do not remove anything
             return keepers;
         }
-
+        
         // created and populated only for trace debug
         Collection<Class<?>> weepers = null;
         if (log.isTraceEnabled()) {
