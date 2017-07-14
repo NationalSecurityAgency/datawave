@@ -59,6 +59,7 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+
 /**
  * <p>
  * QueryIterator is the entry point to the Datawave query iterator stack. At a high level, this iterator has a source of Document Keys (row + columnfamily) and

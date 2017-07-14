@@ -6,26 +6,25 @@
         <artifactId>datawave-parent</artifactId>
         <version>2.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>datawave-warehouse</artifactId>
+    <artifactId>datawave-warehouse-parent</artifactId>
     <packaging>pom</packaging>
-    <name>datawave-warehouse</name>
+    <name>${project.artifactId}</name>
     <modules>
         <module>balancers</module>
         <module>common</module>
-        <module>configuration-core</module>
         <module>core</module>
         <module>edge-dictionary-core</module>
         <module>data-dictionary-core</module>
         <module>ingest-core</module>
         <module>query-core</module>
-        <module>ingest-core-configuration</module>
+        <module>ingest-configuration</module>
         <module>ingest-csv</module>
-        <module>regression-testing-core</module>
-        <module>scripts-core</module>
-        <module>assemble-core</module>
+        <module>regression-testing</module>
+        <module>ingest-scripts</module>
+        <module>assemble</module>
         <module>ingest-wikipedia</module>
         <module>metrics-core</module>
-        <module>operationTools</module>
+        <module>ops-tools</module>
     </modules>
     <scm>
         <connection>scm:git:https://fixme/git/warehouse/</connection>
@@ -114,17 +113,17 @@
             </dependency>
             <dependency>
                 <groupId>datawave</groupId>
+                <artifactId>assemble-geowave</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
                 <artifactId>datawave-balancers</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>datawave</groupId>
                 <artifactId>datawave-common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>datawave</groupId>
-                <artifactId>datawave-config-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -139,17 +138,27 @@
             </dependency>
             <dependency>
                 <groupId>datawave</groupId>
+                <artifactId>datawave-ingest-configuration</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
+                <artifactId>datawave-ingest-configuration</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave</groupId>
                 <artifactId>datawave-ingest-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>datawave</groupId>
-                <artifactId>datawave-ingest-core-configuration</artifactId>
+                <artifactId>datawave-ingest-csv</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>datawave</groupId>
-                <artifactId>datawave-ingest-csv</artifactId>
+                <artifactId>datawave-ingest-scripts</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -164,22 +173,12 @@
             </dependency>
             <dependency>
                 <groupId>datawave</groupId>
-                <artifactId>datawave-regression-testing-core</artifactId>
+                <artifactId>datawave-regression-testing</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
-                <artifactId>datawave-scripts-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>datawave</groupId>
-                <artifactId>deploy-geowave</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>datawave.webservice</groupId>
-                <artifactId>Client</artifactId>
+                <groupId>datawave.webservices</groupId>
+                <artifactId>datawave-ws-client</artifactId>
                 <version>${project.version}</version>
                 <exclusions>
                     <exclusion>
@@ -189,28 +188,28 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>datawave.webservice</groupId>
-                <artifactId>Common</artifactId>
+                <groupId>datawave.webservices</groupId>
+                <artifactId>datawave-ws-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave.webservice</groupId>
-                <artifactId>Common-Util</artifactId>
+                <groupId>datawave.webservices</groupId>
+                <artifactId>datawave-ws-common-util</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave.webservice</groupId>
-                <artifactId>MapReduce</artifactId>
+                <groupId>datawave.webservices</groupId>
+                <artifactId>datawave-ws-map-reduce</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave.webservice</groupId>
-                <artifactId>Modification</artifactId>
+                <groupId>datawave.webservices</groupId>
+                <artifactId>datawave-ws-modification</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>datawave.webservice</groupId>
-                <artifactId>Query</artifactId>
+                <groupId>datawave.webservices</groupId>
+                <artifactId>datawave-ws-query</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

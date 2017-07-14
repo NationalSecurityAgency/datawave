@@ -14,6 +14,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.log4j.Logger;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * A client that can be used to record live query metrics. This client will cache results and will periodically send them with a specified max cache size.
  */
