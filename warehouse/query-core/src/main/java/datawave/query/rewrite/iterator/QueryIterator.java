@@ -374,7 +374,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             depth++;
         }
         if (!(reason instanceof IterationInterruptedException)) {
-            log.error("Failure for query " + queryId, e);
+            log.error("Failure for query " + queryId + " : " + reason.getMessage());
             throw new RuntimeException("Failure for query " + queryId + " " + query, e);
         }
     }
