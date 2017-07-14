@@ -33,6 +33,7 @@ import datawave.query.rewrite.postprocessing.tf.TFFactory;
 import datawave.query.rewrite.predicate.EmptyDocumentFilter;
 import datawave.query.rewrite.predicate.EventDataQueryFilter;
 import datawave.query.rewrite.predicate.FilteredDocumentData;
+import datawave.query.rewrite.statsd.QueryStatsDClient;
 import datawave.query.rewrite.util.TraceIterators;
 import datawave.query.util.*;
 import datawave.util.StringUtils;
@@ -228,6 +229,10 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             if (null != s) {
                 s.stop();
             }
+            QueryStatsDClient client = getStatsdClient();
+            if (client != null) {
+                client.flush();
+            }
         }
     }
     
@@ -355,6 +360,10 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             }
             if (null != span) {
                 span.stop();
+            }
+            QueryStatsDClient client = getStatsdClient();
+            if (client != null) {
+                client.flush();
             }
         }
     }

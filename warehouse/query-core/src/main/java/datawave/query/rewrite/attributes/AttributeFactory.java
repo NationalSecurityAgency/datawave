@@ -8,10 +8,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.Lists;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
-
+import com.google.common.collect.Lists;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
@@ -90,6 +89,7 @@ public class AttributeFactory {
                 Class<?> dataTypeClass = clazzCache.get(dataType);
                 return getAttribute(dataTypeClass, fieldName, data, key, toKeep);
             } else {
+                
                 Iterable<Class<?>> typeClasses = Iterables.transform(dataTypes, new Function<String,Class<?>>() {
                     @Nullable
                     @Override
@@ -103,6 +103,7 @@ public class AttributeFactory {
                 });
                 
                 Collection<Class<?>> keepers = AttributeFactory.getKeepers(typeClasses);
+                
                 HashSet<Attribute<? extends Comparable<?>>> attrSet = Sets.newHashSet();
                 
                 for (String dataType : dataTypes) {
