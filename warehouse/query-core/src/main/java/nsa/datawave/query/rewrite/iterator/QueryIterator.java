@@ -33,6 +33,7 @@ import nsa.datawave.query.rewrite.postprocessing.tf.TFFactory;
 import nsa.datawave.query.rewrite.predicate.EmptyDocumentFilter;
 import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
 import nsa.datawave.query.rewrite.predicate.FilteredDocumentData;
+import nsa.datawave.query.rewrite.statsd.QueryStatsDClient;
 import nsa.datawave.query.rewrite.util.TraceIterators;
 import nsa.datawave.query.util.*;
 import nsa.datawave.util.StringUtils;
@@ -231,6 +232,10 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             if (null != s) {
                 s.stop();
             }
+            QueryStatsDClient client = getStatsdClient();
+            if (client != null) {
+                client.flush();
+            }
         }
     }
     
@@ -358,6 +363,10 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             }
             if (null != span) {
                 span.stop();
+            }
+            QueryStatsDClient client = getStatsdClient();
+            if (client != null) {
+                client.flush();
             }
         }
     }

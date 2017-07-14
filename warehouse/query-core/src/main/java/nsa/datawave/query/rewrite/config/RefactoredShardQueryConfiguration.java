@@ -263,9 +263,7 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     protected boolean sendTimingToStatsd = true;
     protected String statsdHost = "localhost";
     protected int statsdPort = 8125;
-    protected long statsdLatencyMs = 5000;
     protected int statsdMaxQueueSize = 500;
-    protected long statsdKeepAliveMs = 5000;
     
     protected boolean limitAnyFieldLookups = true;
     
@@ -1448,9 +1446,7 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.setSendTimingToStatsd(copy.getSendTimingToStatsd());
         this.setStatsdHost(copy.getStatsdHost());
         this.setStatsdPort(copy.getStatsdPort());
-        this.setStatsdLatencyMs(copy.getStatsdLatencyMs());
         this.setStatsdMaxQueueSize(copy.getStatsdMaxQueueSize());
-        this.setStatsdKeepAliveMs(copy.getStatsdKeepAliveMs());
         
         this.setQuery(query);
         this.setCollapseDatePercentThreshold(copy.getCollapseDatePercentThreshold());
@@ -1512,28 +1508,12 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.statsdPort = statsdPort;
     }
     
-    public long getStatsdLatencyMs() {
-        return statsdLatencyMs;
-    }
-    
-    public void setStatsdLatencyMs(long statsdLatencyMs) {
-        this.statsdLatencyMs = statsdLatencyMs;
-    }
-    
     public int getStatsdMaxQueueSize() {
         return statsdMaxQueueSize;
     }
     
     public void setStatsdMaxQueueSize(int statsdMaxQueueSize) {
         this.statsdMaxQueueSize = statsdMaxQueueSize;
-    }
-    
-    public long getStatsdKeepAliveMs() {
-        return statsdKeepAliveMs;
-    }
-    
-    public void setStatsdKeepAliveMs(long statsdKeepAliveMs) {
-        this.statsdKeepAliveMs = statsdKeepAliveMs;
     }
     
     public boolean getSendTimingToStatsd() {

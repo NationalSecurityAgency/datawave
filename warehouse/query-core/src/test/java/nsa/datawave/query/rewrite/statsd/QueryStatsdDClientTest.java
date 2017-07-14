@@ -35,41 +35,9 @@ public class QueryStatsdDClientTest {
     }
     
     @Test
-    public void testClientThreadCleanup() {
-        // create a client with a max queue size of 1 (forces a send and creation of threads immediately)
-        QueryStatsDClient client = new QueryStatsDClient("queryid", "localhost", server.getPort(), 2000, 1, 2000);
-        
-        // send more than 1 metric
-        client.next();
-        client.next();
-        
-        // verify threads running
-        boolean foundThread = Iterators.filter(Thread.getAllStackTraces().keySet().iterator(), new Predicate<Thread>() {
-            @Override
-            public boolean apply(@Nullable Thread thread) {
-                return (thread.getName().contains("StatsD"));
-            }
-        }).hasNext();
-        
-        Assert.assertTrue("Threads not started", foundThread);
-        
-        sleep(3000);
-        
-        // verify threads stopped
-        foundThread = Iterators.filter(Thread.getAllStackTraces().keySet().iterator(), new Predicate<Thread>() {
-            @Override
-            public boolean apply(@Nullable Thread thread) {
-                return (thread.getName().contains("StatsD"));
-            }
-        }).hasNext();
-        
-        Assert.assertFalse("Threads not stopped", foundThread);
-    }
-    
-    @Test
     public void testMetrics() {
         // create a client
-        QueryStatsDClient client = new QueryStatsDClient("queryid", "localhost", server.getPort(), 100, 50, 100);
+        QueryStatsDClient client = new QueryStatsDClient("queryid", "localhost", server.getPort(), 50);
         
         // send some metrics
         client.seek();
@@ -79,8 +47,9 @@ public class QueryStatsdDClientTest {
         client.addSource();
         client.addSource();
         client.timing("MyMethod", 4242);
+        client.flush();
         
-        // wait at least 200 ms to ensure the data is sent and received
+        // wait at least 200 ms to ensure the data is received
         sleep(1000);
         
         // verify the sent metrics
