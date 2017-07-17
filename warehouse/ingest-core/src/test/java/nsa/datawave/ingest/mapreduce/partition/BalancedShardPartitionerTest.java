@@ -3,6 +3,7 @@ package nsa.datawave.ingest.mapreduce.partition;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -71,7 +72,8 @@ public class BalancedShardPartitionerTest {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
         new TestShardGenerator(conf, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard", "errorShard");
         partitioner.setConf(conf);
-        assertEquals("shard,errorShard", conf.get(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES));
+        assertEquals(new HashSet<String>(Arrays.asList(new String[] {"shard", "errorShard"})),
+                        new HashSet<String>(conf.getStringCollection(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES)));
         
         // For a shard from today, we can assume that they're well balanced.
         // If offsetting is working, they will not go to the same partitions
