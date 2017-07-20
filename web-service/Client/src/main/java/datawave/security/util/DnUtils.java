@@ -113,10 +113,10 @@ public class DnUtils {
         issuerDN = normalizeDN(issuerDN);
         List<String> dnList = new ArrayList<String>();
         HashSet<String> subjects = new HashSet<String>();
-        String subject = subjectDN.replaceAll("(?<!\\\\)(<|>)", "\\\\$1");
+        String subject = subjectDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1");
         dnList.add(subject);
         subjects.add(subject);
-        dnList.add(issuerDN.replaceAll("(?<!\\\\)(<|>)", "\\\\$1"));
+        dnList.add(issuerDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1"));
         if (proxiedSubjectDNs != null) {
             if (proxiedIssuerDNs == null)
                 throw new IllegalArgumentException("If proxied subject DNs are supplied, then issuer DNs must be supplied as well.");
@@ -125,19 +125,7 @@ public class DnUtils {
             if (subjectDNarray.length != issuerDNarray.length)
                 throw new IllegalArgumentException("Subject and isser DN lists do not have the same number of entries: " + Arrays.toString(subjectDNarray)
                                 + " vs " + Arrays.toString(issuerDNarray));
-            for (int i = 0; i < subjectDNarray.length; ++i) {
-                subjectDNarray[i] = normalizeDN(subjectDNarray[i]);
-                if (!subjects.contains(subjectDNarray[i])) {
-                    issuerDNarray[i] = normalizeDN(issuerDNarray[i]);
-                    subjects.add(subjectDNarray[i]);
-                    dnList.add(subjectDNarray[i]);
-                    dnList.add(issuerDNarray[i]);
-                    if (issuerDNarray[i].equalsIgnoreCase(subjectDNarray[i]))
-                        throw new IllegalArgumentException("Subject DN " + issuerDNarray[i] + " was passed as an issuer DN.");
-                    if (SUBJECT_DN_PATTERN.matcher(issuerDNarray[i]).find())
-                        throw new IllegalArgumentException("It appears that a subject DN (" + issuerDNarray[i] + ") was passed as an issuer DN.");
-                }
-            }
+            fillDNlist(dnList, subjects, subjectDNarray, issuerDNarray);
         }
         return dnList;
     }
@@ -147,10 +135,10 @@ public class DnUtils {
         issuerDN = normalizeDN(issuerDN);
         List<String> dnList = new ArrayList<String>();
         HashSet<String> subjects = new HashSet<String>();
-        String subject = subjectDN.replaceAll("(?<!\\\\)(<|>)", "\\\\$1");
+        String subject = subjectDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1");
         dnList.add(subject);
         subjects.add(subject);
-        dnList.add(issuerDN.replaceAll("(?<!\\\\)(<|>)", "\\\\$1"));
+        dnList.add(issuerDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1"));
         if (proxiedSubjectDNs != null) {
             if (proxiedIssuerDNs == null)
                 throw new IllegalArgumentException("If proxied subject DNs are supplied, then issuer DNs must be supplied as well.");
@@ -159,19 +147,7 @@ public class DnUtils {
             if (subjectDNarray.length != issuerDNarray.length)
                 throw new IllegalArgumentException("Subject and issuer DN lists do not have the same number of entries: " + Arrays.toString(subjectDNarray)
                                 + " vs " + Arrays.toString(issuerDNarray));
-            for (int i = 0; i < subjectDNarray.length; ++i) {
-                subjectDNarray[i] = normalizeDN(subjectDNarray[i]);
-                if (!subjects.contains(subjectDNarray[i])) {
-                    issuerDNarray[i] = normalizeDN(issuerDNarray[i]);
-                    subjects.add(subjectDNarray[i]);
-                    dnList.add(subjectDNarray[i]);
-                    dnList.add(issuerDNarray[i]);
-                    if (issuerDNarray[i].equalsIgnoreCase(subjectDNarray[i]))
-                        throw new IllegalArgumentException("Subject DN " + issuerDNarray[i] + " was passed as an issuer DN.");
-                    if (SUBJECT_DN_PATTERN.matcher(issuerDNarray[i]).find())
-                        throw new IllegalArgumentException("It appears that a subject DN (" + issuerDNarray[i] + ") was passed as an issuer DN.");
-                }
-            }
+            fillDNlist(dnList, subjects, subjectDNarray, issuerDNarray);
         }
         
         StringBuilder sb = new StringBuilder();
@@ -184,9 +160,25 @@ public class DnUtils {
         return sb.toString();
     }
     
+    private static void fillDNlist(List<String> dnList, HashSet<String> subjects, String[] subjectDNarray, String[] issuerDNarray) {
+        for (int i = 0; i < subjectDNarray.length; ++i) {
+            subjectDNarray[i] = normalizeDN(subjectDNarray[i]);
+            if (!subjects.contains(subjectDNarray[i])) {
+                issuerDNarray[i] = normalizeDN(issuerDNarray[i]);
+                subjects.add(subjectDNarray[i]);
+                dnList.add(subjectDNarray[i]);
+                dnList.add(issuerDNarray[i]);
+                if (issuerDNarray[i].equalsIgnoreCase(subjectDNarray[i]))
+                    throw new IllegalArgumentException("Subject DN " + issuerDNarray[i] + " was passed as an issuer DN.");
+                if (SUBJECT_DN_PATTERN.matcher(issuerDNarray[i]).find())
+                    throw new IllegalArgumentException("It appears that a subject DN (" + issuerDNarray[i] + ") was passed as an issuer DN.");
+            }
+        }
+    }
+    
     public static String getCommonName(String dn) {
         String[] comps = getComponents(dn, "CN");
-        return (comps != null && comps.length >= 1) ? comps[0] : null;
+        return comps.length >= 1 ? comps[0] : null;
     }
     
     public static String[] getOrganizationalUnits(String dn) {
@@ -297,11 +289,9 @@ public class DnUtils {
         
         static boolean isNPE(String dn) {
             String[] ouList = getOrganizationalUnits(dn);
-            if (ouList != null) {
-                for (String ou : ouList) {
-                    if (NPE_OU_LIST.contains(ou.toUpperCase())) {
-                        return true;
-                    }
+            for (String ou : ouList) {
+                if (NPE_OU_LIST.contains(ou.toUpperCase())) {
+                    return true;
                 }
             }
             return false;

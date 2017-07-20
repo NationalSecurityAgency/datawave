@@ -16,6 +16,8 @@ import java.util.UUID;
 import javax.ejb.EJBContext;
 
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.mr.state.MapReduceStatePersisterBean.MapReduceState;
@@ -72,7 +74,7 @@ public class MapReduceStatePersisterTest {
             connection.tableOperations().delete(TABLE_NAME);
         if (connection.tableOperations().exists(INDEX_TABLE_NAME))
             connection.tableOperations().delete(INDEX_TABLE_NAME);
-        principal = new DatawavePrincipal(userDN + "<CN=ca, OU=acme>");
+        principal = new DatawavePrincipal(SubjectIssuerDNPair.of(userDN, "<CN=ca, OU=acme>"), UserType.USER);
         principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
         connectionFactory = createMock(AccumuloConnectionFactory.class);
         ctx = createStrictMock(EJBContext.class);
@@ -87,7 +89,7 @@ public class MapReduceStatePersisterTest {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         
         HashMap<String,String> trackingMap = new HashMap<>();
-        expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(connection);
         connectionFactory.returnConnection(connection);
         replayAll();
@@ -183,10 +185,10 @@ public class MapReduceStatePersisterTest {
         
         // Get ready to call updateState
         HashMap<String,String> trackingMap = new HashMap<>();
-        expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(connection);
         connectionFactory.returnConnection(connection);
-        expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(connection);
         connectionFactory.returnConnection(connection);
         replayAll();
@@ -229,7 +231,7 @@ public class MapReduceStatePersisterTest {
         
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
-        expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(connection);
         connectionFactory.returnConnection(connection);
         replayAll();
@@ -245,7 +247,7 @@ public class MapReduceStatePersisterTest {
     public void testFindNoResults() throws Exception {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
-        expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(connection);
         connectionFactory.returnConnection(connection);
         replayAll();
@@ -269,11 +271,11 @@ public class MapReduceStatePersisterTest {
         testPersistentCreate();
         PowerMock.resetAll();
         
-        principal = new DatawavePrincipal("CN=Gal Some Other sogal, OU=acme<CN=ca, OU=acme>");
+        principal = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Gal Some Other sogal, OU=acme", "CN=ca, OU=acme"), UserType.USER);
         principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
-        expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(connection);
         connectionFactory.returnConnection(connection);
         replayAll();
@@ -290,11 +292,11 @@ public class MapReduceStatePersisterTest {
         // create some entries
         testPersistentCreate();
         PowerMock.resetAll();
-        principal = new DatawavePrincipal("CN=Gal Some Other sogal, OU=acme<CN=ca, OU=acme>");
+        principal = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Gal Some Other sogal, OU=acme", "CN=ca, OU=acme"), UserType.USER);
         principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
-        expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(connection);
         connectionFactory.returnConnection(connection);
         replayAll();
@@ -314,7 +316,7 @@ public class MapReduceStatePersisterTest {
         
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
-        expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(connection);
         connectionFactory.returnConnection(connection);
         replayAll();
@@ -345,12 +347,12 @@ public class MapReduceStatePersisterTest {
         
         // Get ready to call remove
         HashMap<String,String> trackingMap = new HashMap<>();
-        expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(connection);
         connectionFactory.returnConnection(connection);
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
-        expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
+        expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(connection);
         connectionFactory.returnConnection(connection);
         replayAll();

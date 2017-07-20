@@ -5,10 +5,10 @@ import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.RefreshableScope;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipalLookupBean;
-import datawave.security.util.DnUtils;
+import datawave.security.authorization.DatawavePrincipalService;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.user.UserOperationsBean;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.jboss.security.JSSESecurityDomain;
 
@@ -36,7 +36,21 @@ public class ServerSecurityProducer {
     private JSSESecurityDomain domain;
     
     @Inject
-    private DatawavePrincipalLookupBean datawavePrincipalLookupBean;
+    private DatawavePrincipalService datawavePrincipalLookupBean;
+    
+    @Inject
+    private UserOperationsBean userOperationsBean;
+    
+    /**
+     * Produces a {@link DatawavePrincipal} that is {@link RequestScoped}. This is the principal of the calling user--that is, the principal that is available
+     * from the {@link javax.ejb.EJBContext} of an EJB.
+     */
+    @Produces
+    @CallerPrincipal
+    @RequestScoped
+    public DatawavePrincipal produceCallerPrincipal() throws Exception {
+        return userOperationsBean.getCurrentPrincipal();
+    }
     
     /**
      * Produces a {@link DatawavePrincipal} that is {@link RequestScoped}. This is a principal that is filled in with the name and authorizations for the server
@@ -49,7 +63,7 @@ public class ServerSecurityProducer {
         return datawavePrincipalLookupBean.lookupPrincipal(lookupServerDN());
     }
     
-    private String lookupServerDN() throws KeyStoreException {
+    private SubjectIssuerDNPair lookupServerDN() throws KeyStoreException {
         if (domain == null) {
             throw new IllegalArgumentException("Unable to find security domain.");
         }
@@ -58,7 +72,6 @@ public class ServerSecurityProducer {
         final X509Certificate cert = (X509Certificate) keystore.getCertificate(keystore.aliases().nextElement());
         final String serverDN = cert.getSubjectX500Principal().getName();
         final String serverIssuerDN = cert.getIssuerX500Principal().getName();
-        return DnUtils.buildNormalizedProxyDN(serverDN, serverIssuerDN, null, null);
-        
+        return SubjectIssuerDNPair.of(serverDN, serverIssuerDN);
     }
 }

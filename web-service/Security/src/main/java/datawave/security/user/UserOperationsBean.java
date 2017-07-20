@@ -3,13 +3,9 @@ package datawave.security.user;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -25,7 +21,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.security.authorization.AuthorizationService;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.PrincipalFactory;
 import datawave.security.cache.CredentialsCacheBean;
@@ -35,7 +30,8 @@ import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Path("/Security/User")
 @LocalBean
@@ -45,16 +41,13 @@ import org.apache.log4j.Logger;
 @DeclareRoles({"InternalUser", "AuthorizedUser", "AuthorizedServer", "AuthorizedQueryServer", "SecurityUser"})
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class UserOperationsBean {
-    private Logger log = Logger.getLogger(getClass());
+    private Logger log = LoggerFactory.getLogger(getClass());
     
     @Resource
     private EJBContext context;
     
     @Inject
     private PrincipalFactory principalFactory;
-    
-    @Inject
-    private AuthorizationService authorizationService;
     
     @Inject
     private CredentialsCacheBean credentialsCacheService;
@@ -115,8 +108,6 @@ public class UserOperationsBean {
         
         AuthorizationsListBase list = responseObjectFactory.getAuthorizationsList();
         
-        Map<String,Set<String>> authMap = new HashMap<>();
-        
         // Find out who/what called this method
         Principal p = context.getCallerPrincipal();
         String sid = p.getName();
@@ -124,7 +115,7 @@ public class UserOperationsBean {
             DatawavePrincipal datawavePrincipal = (DatawavePrincipal) p;
             sid = datawavePrincipal.getShortName();
             // Add the user DN's auths into the authorization list
-            String userDN = datawavePrincipal.getUserDN();
+            String userDN = datawavePrincipal.getUserDN().toString();
             if (userDN != null) {
                 String subjectDN = userDN;
                 String issuerDN = null;
@@ -144,6 +135,7 @@ public class UserOperationsBean {
                 list.setUserAuths(subjectDN, issuerDN, new HashSet<>(datawavePrincipal.getUserAuthorizations()));
             }
             // Now add all entity auth mappings into the list
+            list.setAuthMapping(datawavePrincipal.getRoleToAuthMapping());
             for (Entry<String,Collection<String>> entry : datawavePrincipal.getAuthorizationsMap().entrySet()) {
                 log.trace(sid + " has " + entry.getKey() + " -> " + entry.getValue());
                 String[] dns = DnUtils.splitProxiedSubjectIssuerDNs(entry.getKey());
@@ -154,41 +146,10 @@ public class UserOperationsBean {
                 else if (dns.length == 1)
                     issuerDN = null;
                 list.addAuths(subjectDN, issuerDN, new HashSet<>(entry.getValue()));
-                
-                // Map raw auth service role -> remapped auth service role(s) -> accumulo auth(s)
-                Collection<String> rawRoles = datawavePrincipal.getRawRoles(entry.getKey());
-                if (rawRoles != null) {
-                    for (String role : rawRoles) {
-                        String[] remappedAuthServicesRoles = principalFactory.remapRoles(entry.getKey(), new String[] {role});
-                        for (int i = 0; i < remappedAuthServicesRoles.length; ++i) {
-                            remapRole(remappedAuthServicesRoles[i], remappedAuthServicesRoles[i], authMap);
-                            // Put the first role in the mapping with the original role name. This should cover the case of renaming
-                            // a role (so long as the auth translator preserves the ordering where the renamed role is added to the
-                            // result list before any additional roles.
-                            if (i == 0)
-                                remapRole(remappedAuthServicesRoles[i], role, authMap);
-                        }
-                    }
-                    
-                } else {
-                    log.warn("No raw authorization service roles found for " + entry.getKey());
-                }
             }
-            list.setAuthMapping(authMap);
         }
         log.trace(sid + " has authorizations union " + list.getAllAuths());
         return list;
-    }
-    
-    protected void remapRole(String role, String roleName, Map<String,Set<String>> authMap) {
-        Set<String> authsForRole = authMap.get(roleName);
-        if (authsForRole == null) {
-            authsForRole = new HashSet<>();
-            authMap.put(roleName, authsForRole);
-        }
-        
-        String[] auths = principalFactory.toAccumuloAuthorizations(new String[] {role});
-        Collections.addAll(authsForRole, auths);
     }
     
     /**
@@ -209,7 +170,7 @@ public class UserOperationsBean {
         log.info("Flushing credentials for " + p + " from the cache.");
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal cp = (DatawavePrincipal) p;
-            String[] dns = DnUtils.splitProxiedSubjectIssuerDNs(cp.getUserDN());
+            String[] dns = DnUtils.splitProxiedSubjectIssuerDNs(cp.getUserDN().toString());
             String result = credentialsCacheService.evict(dns[0]);
             response.setResult(result);
         } else {
@@ -219,6 +180,22 @@ public class UserOperationsBean {
         }
         
         return response;
+    }
+    
+    public DatawavePrincipal getCurrentPrincipal() {
+        
+        if (context == null) {
+            return null;
+        } else {
+            Principal p = context.getCallerPrincipal();
+            if (p instanceof DatawavePrincipal) {
+                log.info("PRINCIPAL: {}", p.getName());
+                return (DatawavePrincipal) p;
+            } else {
+                log.info("PRINCIPAL: {}", p.getName());
+                return null;
+            }
+        }
     }
     
 }

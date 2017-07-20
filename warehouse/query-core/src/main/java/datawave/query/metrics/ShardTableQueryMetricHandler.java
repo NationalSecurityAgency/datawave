@@ -20,9 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -44,7 +42,7 @@ import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.query.rewrite.iterator.QueryOptions;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipalLookup;
+import datawave.security.system.CallerPrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
@@ -120,7 +118,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     private QueryLogicFactory queryLogicFactory;
     
     @Inject
-    private DatawavePrincipalLookup datawavePrincipalLookup;
+    @CallerPrincipal
+    private DatawavePrincipal callerPrincipal;
     
     @Inject
     @ConfigProperty(name = "dw.query.metrics.marking")
@@ -369,8 +368,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             Date begin = DateUtils.setYears(end, 2000);
             
             // user's DatawavePrincipal must have the Administrator role to use the Metrics query logic
-            DatawavePrincipal queryDatawavePrincipal = getDatawavePrincipal(updatedQueryMetric.getUser());
-            
             QueryMetric cachedQueryMetric;
             QueryMetric newCachedQueryMetric;
             synchronized (ShardTableQueryMetricHandler.class) {
@@ -417,7 +414,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     query.setPagesize(1000);
                     query.setId(UUID.randomUUID());
                     query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-                    queryMetrics = getQueryMetrics(response, query, queryDatawavePrincipal);
+                    queryMetrics = getQueryMetrics(response, query, callerPrincipal);
                 }
             } else {
                 queryMetrics = Collections.singletonList(cachedQueryMetric);
@@ -569,7 +566,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         try {
             enableLogs(false);
             // this method is open to any user
-            datawavePrincipal = getDatawavePrincipal(datawavePrincipal.getShortName());
+            datawavePrincipal = callerPrincipal;
             
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             QueryImpl query = new QueryImpl();
@@ -605,7 +602,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             String user = datawavePrincipal.getShortName();
             enableLogs(false);
             // this method is open to any user
-            datawavePrincipal = getDatawavePrincipal(datawavePrincipal.getShortName());
+            datawavePrincipal = callerPrincipal;
             
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             QueryImpl query = new QueryImpl();
@@ -843,11 +840,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         return helperMap;
     }
     
-    private DatawavePrincipal getDatawavePrincipal(String sid) {
-        DatawavePrincipal datawavePrincipal = datawavePrincipalLookup.getCurrentPrincipal();
-        return datawavePrincipal;
-    }
-    
     private void enableLogs(boolean enable) {
         if (enable) {
             ThreadLocalLogLevel.clear();
@@ -901,7 +893,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             enableLogs(false);
             enableLogs(true);
             // this method is open to any user
-            datawavePrincipal = getDatawavePrincipal(datawavePrincipal.getShortName());
+            datawavePrincipal = callerPrincipal;
             
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             QueryImpl query = new QueryImpl();

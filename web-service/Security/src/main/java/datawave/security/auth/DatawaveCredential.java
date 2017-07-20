@@ -1,7 +1,11 @@
 package datawave.security.auth;
 
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
+import datawave.security.authorization.SubjectIssuerDNPair;
 import io.undertow.security.idm.Credential;
 import datawave.security.util.DnUtils;
 
@@ -15,6 +19,7 @@ import datawave.security.util.DnUtils;
 public class DatawaveCredential implements Credential, Comparable<DatawaveCredential> {
     private X509Certificate certificate;
     private String userName;
+    private List<SubjectIssuerDNPair> entities = new ArrayList<>();
     
     /**
      * Constructs a {@link DatawaveCredential} using only DN information. This means there is no supplied certificate, and this credential will only be trusted
@@ -31,7 +36,7 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
      *            any additional issuer DNs (in the form &lt;DN&gt;&lt;DN&gt;...), one per subject listed in {@code proxiedSubjects}
      */
     public DatawaveCredential(String subjectDN, String issuerDN, String proxiedSubjects, String proxiedIssuers) {
-        userName = DnUtils.buildNormalizedProxyDN(subjectDN, issuerDN, proxiedSubjects, proxiedIssuers);
+        extractEntities(subjectDN, issuerDN, proxiedSubjects, proxiedIssuers);
     }
     
     /**
@@ -48,11 +53,32 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
         this.certificate = certificate;
         String subjectDN = certificate.getSubjectDN().getName();
         String issuerDN = certificate.getIssuerDN().getName();
+        extractEntities(subjectDN, issuerDN, proxiedSubjects, proxiedIssuers);
+    }
+    
+    private void extractEntities(String subjectDN, String issuerDN, String proxiedSubjects, String proxiedIssuers) {
+        entities.add(SubjectIssuerDNPair.of(subjectDN, issuerDN));
+        if (proxiedSubjects != null) {
+            String[] subjects = DnUtils.splitProxiedDNs(proxiedSubjects, true);
+            if (proxiedIssuers == null)
+                throw new IllegalArgumentException("Proxied issuers must be supplied if proxied subjects are supplied");
+            String[] issuers = DnUtils.splitProxiedDNs(proxiedIssuers, true);
+            if (subjects.length != issuers.length)
+                throw new IllegalArgumentException("Proxied subjects and issuers don't match up. Subjects=" + proxiedSubjects + ", Issuers=" + proxiedIssuers);
+            
+            for (int i = 0; i < subjects.length; ++i) {
+                entities.add(SubjectIssuerDNPair.of(subjects[i], issuers[i]));
+            }
+        }
         userName = DnUtils.buildNormalizedProxyDN(subjectDN, issuerDN, proxiedSubjects, proxiedIssuers);
     }
     
     public String getUserName() {
         return userName;
+    }
+    
+    public List<SubjectIssuerDNPair> getEntities() {
+        return Collections.unmodifiableList(entities);
     }
     
     public X509Certificate getCertificate() {

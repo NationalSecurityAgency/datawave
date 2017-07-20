@@ -1,6 +1,7 @@
 package datawave.user;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -38,8 +39,8 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
     
     @XmlElement(name = "authMapping")
     @XmlJavaTypeAdapter(AuthMappingAdapter.class)
-    public Map<String,Set<String>> getAuthMapping() {
-        return new TreeMap<String,Set<String>>(authMapping);
+    public Map<String,Collection<String>> getAuthMapping() {
+        return new TreeMap<String,Collection<String>>(authMapping);
     }
     
     @Override
@@ -52,7 +53,7 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
         }
         sb.append("]");
         sb.append(", authMapping=[");
-        for (Entry<String,Set<String>> mapping : authMapping.entrySet()) {
+        for (Entry<String,Collection<String>> mapping : authMapping.entrySet()) {
             sb.append(mapping.getKey()).append("->(");
             for (String value : mapping.getValue()) {
                 sb.append(value).append(",");
@@ -101,11 +102,11 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
         }
     }
     
-    public static class AuthMappingAdapter extends XmlAdapter<AuthMapList,Map<String,Set<String>>> {
+    public static class AuthMappingAdapter extends XmlAdapter<AuthMapList,Map<String,Collection<String>>> {
         
         @Override
-        public Map<String,Set<String>> unmarshal(AuthMapList v) throws Exception {
-            Map<String,Set<String>> results = new TreeMap<String,Set<String>>();
+        public Map<String,Collection<String>> unmarshal(AuthMapList v) throws Exception {
+            Map<String,Collection<String>> results = new TreeMap<String,Collection<String>>();
             for (AuthMapEntry entry : v.map) {
                 if (!results.containsKey(entry.getRole())) {
                     results.put(entry.getRole(), new HashSet<String>());
@@ -116,9 +117,9 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
         }
         
         @Override
-        public AuthMapList marshal(Map<String,Set<String>> v) throws Exception {
+        public AuthMapList marshal(Map<String,Collection<String>> v) throws Exception {
             AuthMapList map = new AuthMapList();
-            for (Entry<String,Set<String>> mapping : v.entrySet()) {
+            for (Entry<String,Collection<String>> mapping : v.entrySet()) {
                 for (String value : mapping.getValue()) {
                     map.map.add(new AuthMapEntry(mapping.getKey(), value));
                 }
@@ -213,7 +214,7 @@ public class DefaultAuthorizationsList extends AuthorizationsListBase<DefaultAut
         buf.append("<table>");
         buf.append("<tr><th>Role</th><th>Accumulo Authorizations</th></tr>");
         x = 0;
-        for (Entry<String,Set<String>> mapping : this.authMapping.entrySet()) {
+        for (Entry<String,Collection<String>> mapping : this.authMapping.entrySet()) {
             if (x % 2 == 0)
                 buf.append("<tr>");
             else

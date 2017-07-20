@@ -10,9 +10,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.EJBContext;
-import javax.ws.rs.core.MultivaluedHashMap;
 
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
@@ -73,7 +74,7 @@ public class MapReduceBeanTest extends EasyMockSupport {
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("metadatahelper.default.auths", "A,B,C,D");
-        principal = new DatawavePrincipal(userDN + "<CN=ca, OU=acme>");
+        principal = new DatawavePrincipal(SubjectIssuerDNPair.of(userDN, "CN=ca, OU=acme"), UserType.USER);
         principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
         principal.setUserRoles(principal.getName(), Arrays.asList("AuthorizedUser"));
         
@@ -176,7 +177,7 @@ public class MapReduceBeanTest extends EasyMockSupport {
     @Test(expected = UnauthorizedException.class)
     public void testInvalidUserAuthorization() throws Exception {
         // Create principal that does not have AuthorizedUser role
-        DatawavePrincipal p = new DatawavePrincipal(userDN + "<CN=ca, OU=acme>");
+        DatawavePrincipal p = new DatawavePrincipal(SubjectIssuerDNPair.of(userDN, "CN=ca, OU=acme"), UserType.USER);
         p.setAuthorizations(principal.getName(), Arrays.asList(auths));
         p.setUserRoles(principal.getName(), Arrays.asList("Administrator"));
         

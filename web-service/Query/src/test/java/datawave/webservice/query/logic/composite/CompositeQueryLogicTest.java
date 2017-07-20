@@ -13,7 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.DnUtils;
+import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
@@ -773,9 +774,8 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        String userDN = DnUtils.normalizeDN("CN=Other User Name ouser, OU=acme");
-        DatawavePrincipal p = new DatawavePrincipal(userDN + "<CN=ca, OU=acme>");
-        p.setUserRoles(userDN, Collections.singleton("TESTROLE"));
+        DatawavePrincipal p = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER);
+        p.setUserRoles(p.getUserDN().toString(), Collections.singleton("TESTROLE"));
         
         Assert.assertTrue(c.canRunQuery(p));
         Assert.assertEquals(2, c.getQueryLogics().size());
@@ -798,9 +798,8 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        String userDN = DnUtils.normalizeDN("CN=Other User Name ouser, OU=acme");
-        DatawavePrincipal p = new DatawavePrincipal(userDN + "<CN=ca, OU=acme>");
-        p.setUserRoles(userDN, Collections.singleton("TESTROLE"));
+        DatawavePrincipal p = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "<CN=ca, OU=acme>"), UserType.USER);
+        p.setUserRoles(p.getUserDN().toString(), Collections.singleton("TESTROLE"));
         
         Assert.assertTrue(c.canRunQuery(p));
         Assert.assertEquals(1, c.getQueryLogics().size());
@@ -823,9 +822,8 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        String userDN = DnUtils.normalizeDN("CN=Other User Name ouser, OU=acme");
-        DatawavePrincipal p = new DatawavePrincipal(userDN + "<CN=ca, OU=acme>");
-        p.setUserRoles(userDN, Collections.singleton("TESTROLE"));
+        DatawavePrincipal p = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "<CN=ca, OU=acme>"), UserType.USER);
+        p.setUserRoles(p.getUserDN().toString(), Collections.singleton("TESTROLE"));
         
         Assert.assertFalse(c.canRunQuery(p));
         Assert.assertEquals(0, c.getQueryLogics().size());

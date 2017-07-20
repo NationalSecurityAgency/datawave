@@ -850,7 +850,7 @@ public class CachedResultsBean {
         String dn = p.getName();
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal cp = (DatawavePrincipal) p;
-            dn = cp.getUserDN();
+            dn = cp.getUserDN().toString();
         }
         return dn;
     }

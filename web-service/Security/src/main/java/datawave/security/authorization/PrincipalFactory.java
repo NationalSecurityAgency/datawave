@@ -2,6 +2,7 @@ package datawave.security.authorization;
 
 import java.io.Serializable;
 
+import com.google.common.collect.Multimap;
 import datawave.security.authorization.DatawavePrincipal;
 
 import org.jboss.logging.Logger;
@@ -19,7 +20,7 @@ public interface PrincipalFactory extends Serializable {
      *            the authorization service supplied roles to convert to Accumulo authorizations
      * @return Accumulo authorization strings converted from {@code roles}
      */
-    String[] toAccumuloAuthorizations(String[] roles);
+    String[] toAccumuloAuthorizations(String[] roles, Multimap<String,String> roleToAuthMapping);
     
     /**
      * Maps {@code originalRoles} into a new set of authorization service roles. The intent of this method is to perform translation on the authorization

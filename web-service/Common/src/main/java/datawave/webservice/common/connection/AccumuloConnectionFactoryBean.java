@@ -422,7 +422,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         Principal p = context.getCallerPrincipal();
         
         if (p != null && p instanceof DatawavePrincipal) {
-            currentUserDN = ((DatawavePrincipal) p).getUserDN();
+            currentUserDN = ((DatawavePrincipal) p).getUserDN().toString();
         }
         
         return currentUserDN;

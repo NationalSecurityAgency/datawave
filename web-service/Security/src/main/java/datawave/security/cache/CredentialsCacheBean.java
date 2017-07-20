@@ -20,6 +20,7 @@ import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -30,6 +31,7 @@ import javax.ws.rs.QueryParam;
 import datawave.configuration.ConfigurationEvent;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.RefreshLifecycle;
+import datawave.security.authorization.CachedDatawavePrincipalService;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.cache.SharedCacheCoordinator;
@@ -81,6 +83,9 @@ public class CredentialsCacheBean {
     
     @Resource(name = "java:jboss/jaas/datawave")
     private AuthenticationManager authManager;
+    
+    @Inject
+    private Instance<CachedDatawavePrincipalService> cachedDatawavePrincipalService;
     
     @Inject
     @PrincipalsCache

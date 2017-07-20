@@ -10,6 +10,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Before;
@@ -35,7 +37,10 @@ public class AuthorizationsUtilTest {
         userAuths.add(Sets.newHashSet("A", "C", "D"));
         userAuths.add(Sets.newHashSet("A", "B", "E"));
         
-        principal = new DatawavePrincipal(new String[] {USER_DN, ISSUER_DN, "entity1UserDN", "entity1IssuerDN", "entity2UserDN", "entity2IssuerDN"});
+        List<SubjectIssuerDNPair> proxiedEntities = new ArrayList<>();
+        proxiedEntities.add(SubjectIssuerDNPair.of("entity1UserDN", "entity1IssuerDN"));
+        proxiedEntities.add(SubjectIssuerDNPair.of("entity2UserDN", "entity2IssuerDN"));
+        principal = new DatawavePrincipal(SubjectIssuerDNPair.of(USER_DN, ISSUER_DN), UserType.USER, proxiedEntities);
         principal.setAuthorizations(principal.getDNs()[0], Sets.newHashSet("A", "C", "D"));
         principal.setAuthorizations(principal.getDNs()[1], Sets.newHashSet("A", "B", "E"));
         principal.setAuthorizations(principal.getDNs()[2], Sets.newHashSet("A", "F", "G"));

@@ -21,9 +21,10 @@ import java.util.UUID;
 import java.util.ArrayList;
 
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -34,8 +35,6 @@ import datawave.webservice.query.logic.TestQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
 
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -69,7 +68,7 @@ public class RunningQueryTest {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("metadatahelper.default.auths", "A,B,C,D");
         
-        principal = new DatawavePrincipal("userDn<isserDn>");
+        principal = new DatawavePrincipal(SubjectIssuerDNPair.of("userDn", "isserDn"), UserType.USER);
         
         settings.setQueryLogicName("testQueryLogic");
         settings.setQuery("FOO == BAR");
@@ -98,14 +97,14 @@ public class RunningQueryTest {
     
     @SuppressWarnings("unchecked")
     @Test
-    public void testConstructorSetsConnection() throws AccumuloException, AccumuloSecurityException, Exception {
+    public void testConstructorSetsConnection() throws Exception {
         // setup mock connector
         InMemoryInstance instance = new InMemoryInstance("test instance");
         Connector connector = instance.getConnector("root", new PasswordToken(""));
         
         // setup mock logic, handles the setConnection method
         SampleGenericQueryConfiguration config = new SampleGenericQueryConfiguration();
-        expect(logic.initialize((Connector) anyObject(), (Query) anyObject(), (Set<Authorizations>) anyObject())).andReturn(config);
+        expect(logic.initialize(anyObject(), anyObject(), anyObject())).andReturn(config);
         logic.setupQuery(config);
         TransformIterator iter = new TransformIterator();
         expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
@@ -147,7 +146,7 @@ public class RunningQueryTest {
         auths[1] = "C";
         Authorizations expected = new Authorizations(auths);
         
-        principal.setAuthorizations(principal.getUserDN(), Arrays.asList(auths));
+        principal.setAuthorizations(principal.getUserDN().toString(), Arrays.asList(auths));
         RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
         
         assertEquals(expected, query.getCalculatedAuths());
@@ -163,7 +162,7 @@ public class RunningQueryTest {
         String[] auths = new String[2];
         auths[0] = "A";
         auths[1] = "C";
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
@@ -179,7 +178,7 @@ public class RunningQueryTest {
         CompositeQueryLogic compositeQueryLogic = new CompositeQueryLogic();
         compositeQueryLogic.setQueryLogics(logics);
         
-        principal.setAuthorizations(principal.getUserDN(), Arrays.asList(auths));
+        principal.setAuthorizations(principal.getUserDN().toString(), Arrays.asList(auths));
         try {
             RunningQuery query = new RunningQuery(connector, connectionPriority, compositeQueryLogic, settings, null, principal, new QueryMetricFactoryImpl());
         } catch (NullPointerException npe) {

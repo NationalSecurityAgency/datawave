@@ -45,7 +45,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
     
     protected LinkedHashMap<SubjectIssuerDNPair,Set<String>> auths = new LinkedHashMap<SubjectIssuerDNPair,Set<String>>();
     
-    protected Map<String,Set<String>> authMapping;
+    protected Map<String,Collection<String>> authMapping;
     
     public AuthorizationsListBase() {
         super();
@@ -78,8 +78,8 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
         return new TreeSet<String>(userAuths);
     }
     
-    public void setAuthMapping(Map<String,Set<String>> authMapping) {
-        this.authMapping = new TreeMap<String,Set<String>>(authMapping);
+    public void setAuthMapping(Map<String,Collection<String>> authMapping) {
+        this.authMapping = new TreeMap<String,Collection<String>>(authMapping);
     }
     
     public String getTitle() {
@@ -209,7 +209,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
                 }
             }
             if (message.authMapping != null) {
-                for (Map.Entry<String,Set<String>> entry : message.authMapping.entrySet()) {
+                for (Map.Entry<String,Collection<String>> entry : message.authMapping.entrySet()) {
                     for (String entry2 : entry.getValue()) {
                         output.writeString(2, entry.getKey() + "|" + entry2, true);
                     }
@@ -234,7 +234,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
                         break;
                     case 2:
                         if (message.authMapping == null)
-                            message.authMapping = new TreeMap<String,Set<String>>();
+                            message.authMapping = new TreeMap<String,Collection<String>>();
                         String[] auths = input.readString().split("\\|");
                         if (!message.authMapping.containsKey(auths[0]))
                             message.authMapping.put(auths[0], new HashSet<String>());

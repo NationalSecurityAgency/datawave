@@ -36,6 +36,8 @@ import com.google.common.collect.Multimap;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
@@ -216,18 +218,19 @@ public class QueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(p);
         
-        DatawavePrincipal principal = new DatawavePrincipal(userDN + "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>");
+        DatawavePrincipal principal = new DatawavePrincipal(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"),
+                        UserType.USER);
         String[] dns = principal.getDNs();
         Arrays.sort(dns);
         List<String> dnList = Arrays.asList(dns);
         
-        principal.setAuthorizations(principal.getUserDN(), Arrays.asList(auths));
+        principal.setAuthorizations(principal.getUserDN().toString(), Arrays.asList(auths));
         
         PowerMock.resetAll();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
         suppress(constructor(QueryParametersImpl.class));
-        EasyMock.expect(persister.create(userDN, dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean), queryLogicName,
-                        (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
+        EasyMock.expect(persister.create(principal.getUserDN().toString(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
+                        queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
         
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
@@ -242,7 +245,6 @@ public class QueryExecutorBeanTest {
         
         Object cachedRunningQuery = cache.get(q.getId().toString());
         Assert.assertNotNull(cachedRunningQuery);
-        Assert.assertTrue(cachedRunningQuery instanceof RunningQuery);
         RunningQuery rq2 = (RunningQuery) cachedRunningQuery;
         Assert.assertEquals(q, rq2.getSettings());
         
@@ -258,7 +260,7 @@ public class QueryExecutorBeanTest {
         String[] auths = new String[2];
         auths[0] = "PUBLIC";
         auths[1] = "PRIVATE";
-        DatawavePrincipal principal = new DatawavePrincipal(dn);
+        DatawavePrincipal principal = new DatawavePrincipal(SubjectIssuerDNPair.of(dn), UserType.USER);
         principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         EasyMock.replay(ctx);
@@ -375,24 +377,20 @@ public class QueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
         queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, q.getColumnVisibility());
         
-        final Thread createQuery = new Thread(new Runnable() {
-            
-            @Override
-            public void run() {
-                try {
-                    bean.createQuery("EventQueryLogic", queryParameters);
-                } catch (Exception e) {
-                    Assert.fail(e.getClass().getName() + " thrown with " + e.getMessage());
-                }
+        final Thread createQuery = new Thread(() -> {
+            try {
+                bean.createQuery("EventQueryLogic", queryParameters);
+            } catch (Exception e) {
+                Assert.fail(e.getClass().getName() + " thrown with " + e.getMessage());
             }
-            
         });
         
         @SuppressWarnings("rawtypes")
         QueryLogic logic = createMock(BaseQueryLogic.class);
         
-        DatawavePrincipal principal = new DatawavePrincipal(userDN + "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>");
-        principal.setAuthorizations(principal.getUserDN(), Arrays.asList(auths));
+        DatawavePrincipal principal = new DatawavePrincipal(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"),
+                        UserType.USER);
+        principal.setAuthorizations(principal.getUserDN().toString(), Arrays.asList(auths));
         principal.getShortName();
         String[] dns = principal.getDNs();
         Arrays.sort(dns);
@@ -404,14 +402,14 @@ public class QueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(queryParameters);
-        optionalParameters.putSingle(AuditParameters.USER_DN, userDN);
+        optionalParameters.putSingle(AuditParameters.USER_DN, principal.getUserDN().toString());
         optionalParameters.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, q.getColumnVisibility());
         optionalParameters.putSingle("logicClass", queryLogicName);
         
         PowerMock.resetAll();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
         EasyMock.expect(logic.getAuditType(null)).andReturn(AuditType.NONE);
-        EasyMock.expect(persister.create(userDN, dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
+        EasyMock.expect(persister.create(principal.getUserDN().toString(), dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
                         Whitebox.getInternalState(bean, QueryParameters.class), optionalParameters)).andReturn(q);
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(Maps.<String,String> newHashMap()).anyTimes();
         
@@ -435,17 +433,12 @@ public class QueryExecutorBeanTest {
         final AtomicBoolean initializeLooping = new AtomicBoolean(false);
         
         // During initialize, mark that we get here, and then sleep
-        final IAnswer<GenericQueryConfiguration> initializeAnswer = new IAnswer<GenericQueryConfiguration>() {
-            
-            @Override
-            public GenericQueryConfiguration answer() throws Throwable {
-                initializeLooping.set(true);
-                while (true) {
-                    Thread.sleep(1000);
-                    log.debug("Initialize: woke up");
-                }
+        final IAnswer<GenericQueryConfiguration> initializeAnswer = () -> {
+            initializeLooping.set(true);
+            while (true) {
+                Thread.sleep(1000);
+                log.debug("Initialize: woke up");
             }
-            
         };
         
         EasyMock.expect(logic.initialize(EasyMock.anyObject(Connector.class), EasyMock.anyObject(Query.class), EasyMock.anyObject(Set.class))).andAnswer(
@@ -453,19 +446,14 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         
         // On close, interrupt the thread to simulate the ScannerFactory cleaning up
-        final IAnswer<Object> closeAnswer = new IAnswer<Object>() {
-            
-            @SuppressWarnings("unused")
-            @Override
-            public Object answer() throws Throwable {
-                if (null != createQuery) {
-                    log.debug("createQuery thread is not null. interrupting");
-                    createQuery.interrupt();
-                } else {
-                    log.debug("createQuery thread is null. not interrupting");
-                }
-                return null;
+        final IAnswer<Object> closeAnswer = () -> {
+            if (null != createQuery) {
+                log.debug("createQuery thread is not null. interrupting");
+                createQuery.interrupt();
+            } else {
+                log.debug("createQuery thread is null. not interrupting");
             }
+            return null;
         };
         
         logic.close();

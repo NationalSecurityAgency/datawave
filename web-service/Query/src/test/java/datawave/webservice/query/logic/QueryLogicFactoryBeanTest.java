@@ -16,6 +16,8 @@ import javax.ejb.EJBContext;
 
 import datawave.security.authorization.DatawavePrincipal;
 
+import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -68,8 +70,7 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         
         ctx = createMock(EJBContext.class);
         logic = createMockBuilder(BaseQueryLogic.class).addMockedMethods("setLogicName", "getMaxPageSize", "getPageByteTrigger").createMock();
-        String dn = "CN=Poe Edgar Allan eapoe, OU=acme";
-        principal = new DatawavePrincipal(dn + "<CN=ca, OU=acme>");
+        principal = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER);
     }
     
     @Test(expected = IllegalArgumentException.class)

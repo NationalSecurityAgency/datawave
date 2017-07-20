@@ -16,6 +16,8 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.cache.AccumuloTableCache;
@@ -83,7 +85,7 @@ public class ModelBeanTest {
         instance = new InMemoryInstance("test");
         connector = instance.getConnector("root", new PasswordToken(""));
         
-        principal = new DatawavePrincipal(userDN + "<" + issuerDN + ">");
+        principal = new DatawavePrincipal(SubjectIssuerDNPair.of(userDN, issuerDN), UserType.USER);
         principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
         
         URL m1Url = ModelBeanTest.class.getResource("/ModelBeanTest_m1.xml");

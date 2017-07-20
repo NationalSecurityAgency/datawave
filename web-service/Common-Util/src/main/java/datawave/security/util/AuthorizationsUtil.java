@@ -88,9 +88,9 @@ public class AuthorizationsUtil {
             
             HashSet<String> missingAuths = (requested == null) ? new HashSet<String>() : new HashSet<>(requested);
             
-            Collection<String> userAuths = null;
+            Collection<String> userAuths;
             // Find the user DN as used in the principal's authorization map
-            String userDN = principal.getUserDN();
+            String userDN = principal.getUserDN().subjectDN();
             for (String dn : authsMap.keySet()) {
                 if (dn.startsWith(userDN)) {
                     userDN = dn;
@@ -201,7 +201,7 @@ public class AuthorizationsUtil {
         String auths = "";
         if (principal != null && (principal instanceof DatawavePrincipal)) {
             DatawavePrincipal datawavePrincipal = (DatawavePrincipal) principal;
-            String userDN = datawavePrincipal.getUserDN();
+            String userDN = datawavePrincipal.getUserDN().subjectDN();
             for (Map.Entry<String,Collection<String>> entry : datawavePrincipal.getAuthorizationsMap().entrySet()) {
                 if (entry.getKey().startsWith(userDN)) {
                     HashSet<byte[]> b = new HashSet<>();

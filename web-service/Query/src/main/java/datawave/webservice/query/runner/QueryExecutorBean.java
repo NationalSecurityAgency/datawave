@@ -445,7 +445,7 @@ public class QueryExecutorBean implements QueryExecutor {
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             userid = dp.getShortName();
-            userDN = dp.getUserDN();
+            userDN = dp.getUserDN().toString();
             String[] dns = dp.getDNs();
             Arrays.sort(dns);
             dnList = Arrays.asList(dns);
@@ -608,7 +608,7 @@ public class QueryExecutorBean implements QueryExecutor {
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             userid = dp.getShortName();
-            userDn = dp.getUserDN();
+            userDn = dp.getUserDN().toString();
             String[] dns = dp.getDNs();
             Arrays.sort(dns);
             dnList = Arrays.asList(dns);

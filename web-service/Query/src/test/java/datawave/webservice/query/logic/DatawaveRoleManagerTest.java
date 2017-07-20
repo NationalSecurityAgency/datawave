@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Set;
 
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,8 +37,8 @@ public class DatawaveRoleManagerTest {
         String issuerDN = "idn";
         String combinedDN = dn + "<" + issuerDN + ">";
         
-        String[] authArray = new String[] {"dn1", "dn2"};
-        datawavePrincipal = new DatawavePrincipal(authArray);
+        datawavePrincipal = new DatawavePrincipal(SubjectIssuerDNPair.of(dn, issuerDN), UserType.USER, Collections.singletonList(SubjectIssuerDNPair.of("dn2",
+                        issuerDN)));
         List<String> roles = new ArrayList<>();
         String[] authsForRoles = new String[] {"auth1", "auth2", "auth3"};
         
@@ -44,7 +46,7 @@ public class DatawaveRoleManagerTest {
         datawavePrincipal.setUserRoles(combinedDN, roles);
         
         Map<String,Collection<String>> roleMap = new LinkedHashMap<>();
-        Set<String> datawaveRoles = new HashSet<String>();
+        Set<String> datawaveRoles = new HashSet<>();
         datawaveRoles.add("REQ_ROLE_1");
         roleMap.put(combinedDN, datawaveRoles);
         
@@ -57,8 +59,8 @@ public class DatawaveRoleManagerTest {
         String issuerDN = "idn";
         String combinedDN = dn + "<" + issuerDN + ">";
         
-        String[] authArray = new String[] {dn, dn};
-        datawavePrincipal = new DatawavePrincipal(authArray);
+        datawavePrincipal = new DatawavePrincipal(SubjectIssuerDNPair.of(dn, issuerDN), UserType.USER, Collections.singletonList(SubjectIssuerDNPair.of(dn,
+                        issuerDN)));
         List<String> roles = new ArrayList<>();
         String[] authsForRoles = new String[] {"auth1", "auth2", "auth3"};
         
@@ -73,19 +75,19 @@ public class DatawaveRoleManagerTest {
     }
     
     public Set<String> getFirstRole() {
-        Set<String> datawaveRoles = new HashSet<String>();
+        Set<String> datawaveRoles = new HashSet<>();
         datawaveRoles.add("REQ_ROLE_1");
         return datawaveRoles;
     }
     
     public Set<String> getSecondRole() {
-        Set<String> datawaveRoles = new HashSet<String>();
+        Set<String> datawaveRoles = new HashSet<>();
         datawaveRoles.add("REQ_ROLE_2");
         return datawaveRoles;
     }
     
     public Set<String> getAllRoles() {
-        Set<String> datawaveRoles = new HashSet<String>();
+        Set<String> datawaveRoles = new HashSet<>();
         datawaveRoles.add("REQ_ROLE_1");
         datawaveRoles.add("REQ_ROLE_2");
         return datawaveRoles;

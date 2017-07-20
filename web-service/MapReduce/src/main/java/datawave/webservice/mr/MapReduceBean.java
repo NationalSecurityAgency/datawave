@@ -1046,7 +1046,7 @@ public class MapReduceBean {
             if (userRolesMap.size() == 1) {
                 usersRoles.addAll(userRolesMap.values().iterator().next());
             } else if (userRolesMap.size() > 1) {
-                String userDN = datawavePrincipal.getUserDN();
+                String userDN = datawavePrincipal.getUserDN().toString();
                 for (Entry<String,Collection<String>> entry : userRolesMap.entrySet()) {
                     if (entry.getKey().contains(userDN)) {
                         usersRoles.addAll(entry.getValue());

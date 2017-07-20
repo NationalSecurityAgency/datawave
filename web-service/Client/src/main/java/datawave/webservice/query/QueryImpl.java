@@ -14,9 +14,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.naming.InvalidNameException;
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -25,6 +22,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import datawave.security.util.DnUtils;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
@@ -682,25 +680,9 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         }
     }
     
-    private static String[] getComponents(String dn, String componentName) {
-        componentName = componentName.toUpperCase();
-        ArrayList<String> components = new ArrayList<String>();
-        try {
-            LdapName name = new LdapName(dn);
-            for (Rdn rdn : name.getRdns()) {
-                if (componentName.equals(rdn.getType().toUpperCase())) {
-                    components.add(String.valueOf(rdn.getValue()));
-                }
-            }
-        } catch (InvalidNameException e) {
-            // ignore -- invalid name, so can't find components
-        }
-        return components.toArray(new String[components.size()]);
-    }
-    
     private static String getCommonName(String dn) {
-        String[] comps = getComponents(dn, "CN");
-        return (comps != null && comps.length >= 1) ? comps[0] : null;
+        String[] comps = DnUtils.getComponents(dn, "CN");
+        return comps.length >= 1 ? comps[0] : null;
     }
     
     public static String getOwner(String dn) {

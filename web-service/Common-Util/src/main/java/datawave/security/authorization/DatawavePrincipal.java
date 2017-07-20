@@ -16,13 +16,14 @@ import java.util.Map.Entry;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import datawave.security.util.DnUtils;
 import datawave.webservice.HtmlProvider;
 
@@ -30,15 +31,22 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 
 @XmlRootElement
-@XmlType(factoryMethod = "emptyPrincipal", propOrder = {"shortName", "userDN", "name", "dns", "userRoles", "authorizations"})
+@XmlType(factoryMethod = "emptyPrincipal", propOrder = {"shortName", "userDN", "name", "DNs", "userRoles", "authorizations"})
 @XmlAccessorType(XmlAccessType.NONE)
 public class DatawavePrincipal implements Principal, Serializable, HtmlProvider {
     private static final long serialVersionUID = 1149052328073983085L;
-    
     private static final String TITLE = "Credentials", EMPTY = "";
     
-    @XmlElement(name = "dn")
-    @XmlElementWrapper(name = "dnList")
+    public enum UserType {
+        USER, SERVER
+    }
+    
+    @XmlElement
+    private SubjectIssuerDNPair userDN;
+    
+    @XmlElement
+    private List<SubjectIssuerDNPair> proxiedEntities;
+    
     private String[] dns;
     
     @XmlElement
@@ -48,7 +56,7 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
     private String shortName;
     
     @XmlElement
-    private String userDN;
+    private UserType userType;
     
     @XmlJavaTypeAdapter(AuthsAdapter.class)
     private Map<String,Collection<String>> authorizations;
@@ -57,33 +65,91 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
     private Map<String,Collection<String>> userRoles;
     
     @XmlTransient
-    private Map<String,Collection<String>> rawRoles;
-    
-    @XmlTransient
     private List<String> roleSets;
     
-    protected DatawavePrincipal() {
-        // internal use only (protected to allow CDI proxying of the bean)
-    }
+    @XmlTransient
+    private Multimap<String,String> roleToAuthMapping = HashMultimap.create();
     
-    public DatawavePrincipal(String dn) {
-        this(DnUtils.splitProxiedSubjectIssuerDNs(dn));
-    }
+    /**
+     * This constructor should not be used normally. It must be public in order for CDI to proxy this object and for JAX-B to properly serialize/de-serialize
+     * it.
+     */
+    public DatawavePrincipal() {}
     
-    public DatawavePrincipal(String[] dns) {
-        this.dns = dns;
-        this.name = DnUtils.buildProxiedDN(dns);
-        this.userDN = DnUtils.getUserDN(dns, true);
-        // A server-only principal should use the first DN as the user DN
-        if (userDN == null)
-            userDN = dns[0];
-        this.shortName = DnUtils.getShortName(userDN);
+    /**
+     * This constructor is only to be used by certain login modules that need to create a principal based on a username. Anyone implmenting a
+     * DatawavePrincipalService should use one of the other constructors which specify a user type.
+     *
+     * @param username
+     *            the username, which is assumed to be a DN in the form {@code subjectDN<issuerDN>[<proxiedSubjectDN><proxiedIssuerDN>...]}
+     */
+    public DatawavePrincipal(String username) {
+        this.name = username;
+        this.dns = DnUtils.splitProxiedSubjectIssuerDNs(username);
         
+        String udn = DnUtils.getUserDN(dns, true);
+        if (udn == null)
+            udn = dns[0];
+        userType = DnUtils.isServerDN(udn) ? UserType.SERVER : UserType.USER;
+        for (int i = 0; i < dns.length; i += 2) {
+            if (dns[i].equals(udn)) {
+                userDN = SubjectIssuerDNPair.of(udn, dns[i + 1]);
+                shortName = DnUtils.getShortName(udn);
+                break;
+            }
+        }
+        
+        if (dns.length > 2) {
+            proxiedEntities = new ArrayList<>();
+            for (int i = 0; i < dns.length; i += 2) {
+                if (!dns[i].equals(udn)) {
+                    proxiedEntities.add(SubjectIssuerDNPair.of(dns[i], dns[i + 1]));
+                }
+            }
+        }
+    }
+    
+    public DatawavePrincipal(SubjectIssuerDNPair primaryDN, UserType userType) {
+        this(primaryDN, userType, null);
+    }
+    
+    public DatawavePrincipal(SubjectIssuerDNPair primaryDN, UserType userType, List<SubjectIssuerDNPair> proxiedDNs) {
+        this.userDN = primaryDN;
+        this.userType = userType;
+        shortName = DnUtils.getShortName(primaryDN.subjectDN());
+        
+        if (proxiedDNs == null) {
+            proxiedEntities = new ArrayList<>();
+            dns = new String[] {userDN.subjectDN(), userDN.issuerDN()};
+            name = userDN.toString();
+        } else {
+            proxiedEntities = new ArrayList<>(proxiedDNs);
+            dns = new String[2 * (1 + proxiedDNs.size())];
+            dns[0] = userDN.subjectDN();
+            dns[1] = userDN.issuerDN();
+            for (int i = 0, pos = 2; i < proxiedDNs.size(); ++i) {
+                dns[pos++] = proxiedDNs.get(i).subjectDN();
+                dns[pos++] = proxiedDNs.get(i).issuerDN();
+            }
+            name = DnUtils.buildProxiedDN(dns);
+        }
     }
     
     @Override
     public String getName() {
         return name;
+    }
+    
+    /**
+     * Gets the user DN for this principal. If the principal is for a single user with no proxy involved, this is the only DN. Otherwise, if there is a proxy
+     * chain, this will return the DN for the user in the proxy (assumes there is never more than one user in the proxy chain).
+     */
+    public SubjectIssuerDNPair getUserDN() {
+        return userDN;
+    }
+    
+    public List<SubjectIssuerDNPair> getProxiedEntities() {
+        return Collections.unmodifiableList(proxiedEntities);
     }
     
     /**
@@ -99,6 +165,17 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
      */
     public String getShortName() {
         return shortName;
+    }
+    
+    /**
+     * Gets the {@link UserType} of this principal. If this is a proxied principal, then this will be the user type of the primary calling entity.
+     */
+    public UserType getUserType() {
+        return userType;
+    }
+    
+    public void setUserType(UserType userType) {
+        this.userType = userType;
     }
     
     /**
@@ -125,7 +202,7 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
     public Collection<String> getUserAuthorizations() {
         if (authorizations != null) {
             for (Entry<String,Collection<String>> entry : authorizations.entrySet()) {
-                if (entry.getKey().startsWith(getUserDN())) {
+                if (entry.getKey().startsWith(getUserDN().subjectDN())) {
                     return entry.getValue();
                 }
             }
@@ -138,8 +215,8 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
      */
     public void setAuthorizations(String dn, Collection<String> authorizations) {
         if (this.authorizations == null)
-            this.authorizations = new HashMap<String,Collection<String>>();
-        this.authorizations.put(dn, Collections.unmodifiableCollection(new LinkedHashSet<String>(authorizations)));
+            this.authorizations = new HashMap<>();
+        this.authorizations.put(dn, Collections.unmodifiableCollection(new LinkedHashSet<>(authorizations)));
     }
     
     /**
@@ -150,6 +227,16 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
      */
     public Collection<? extends Collection<String>> getUserRoles() {
         return userRoles == null ? null : Collections.unmodifiableCollection(userRoles.values());
+    }
+    
+    /**
+     * Gets the user roles (which may include additional roles added through client configuration in the security layer) for {@code dn}
+     *
+     * @return a collection of roles, one for each DN associated with this principal
+     */
+    public Collection<String> getUserRoles(String dn) {
+        Collection<String> roles = (userRoles == null) ? null : userRoles.get(dn);
+        return (roles == null) ? null : Collections.unmodifiableCollection(roles);
     }
     
     /**
@@ -166,25 +253,23 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
      */
     public void setUserRoles(String dn, Collection<String> userRoles) {
         if (this.userRoles == null)
-            this.userRoles = new HashMap<String,Collection<String>>();
-        this.userRoles.put(dn, Collections.unmodifiableCollection(new LinkedHashSet<String>(userRoles)));
+            this.userRoles = new HashMap<>();
+        this.userRoles.put(dn, Collections.unmodifiableCollection(new LinkedHashSet<>(userRoles)));
     }
     
     /**
-     * Gets the raw roles (unmodified) associated with {@code dn}
+     * Sets the mapping of role to Accumulo authorization that indicates what incoming authorization role let to what Accumulo authorization(s).
+     *
+     * @param roleToAuthMapping
      */
-    public Collection<String> getRawRoles(String dn) {
-        Collection<String> rawDNRoles = (rawRoles == null) ? null : rawRoles.get(dn);
-        return (rawDNRoles == null) ? null : Collections.unmodifiableCollection(rawDNRoles);
+    public void setRoleToAuthMapping(Multimap<String,String> roleToAuthMapping) {
+        if (roleToAuthMapping == null)
+            roleToAuthMapping = HashMultimap.create();
+        this.roleToAuthMapping = roleToAuthMapping;
     }
     
-    /**
-     * Sets the raw roles (unmodified) for {@code dn} to {@code rawRoles}
-     */
-    public void setRawRoles(String dn, Collection<String> rawRoles) {
-        if (this.rawRoles == null)
-            this.rawRoles = new HashMap<String,Collection<String>>();
-        this.rawRoles.put(dn, Collections.unmodifiableCollection(new LinkedHashSet<String>(rawRoles)));
+    public Map<String,Collection<String>> getRoleToAuthMapping() {
+        return Collections.unmodifiableMap(roleToAuthMapping.asMap());
     }
     
     /**
@@ -199,15 +284,7 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
      * Sets the role sets for this principal. This is a combined set of roles used to configure method/bean level access throughout the DATAWAVE web service.
      */
     public void setRoleSets(List<String> roleSets) {
-        this.roleSets = new ArrayList<String>(roleSets);
-    }
-    
-    /**
-     * Gets the user DN for this principal. If the principal is for a single user with no proxy involved, this is the only DN. Otherwise, if there is a proxy
-     * chain, this will return the DN for the user in the proxy (assumes there is never more than one user in the proxy chain).
-     */
-    public String getUserDN() {
-        return userDN;
+        this.roleSets = new ArrayList<>(roleSets);
     }
     
     public List<String> getProxyServers() {
@@ -220,7 +297,7 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
                     
                     String cn = DnUtils.getCommonName(dn);
                     if (proxyServers == null) {
-                        proxyServers = new ArrayList<String>();
+                        proxyServers = new ArrayList<>();
                     }
                     if (proxyServers.contains(cn) == false) {
                         proxyServers.add(cn);
@@ -245,7 +322,6 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
         int result = 1;
         result = prime * result + ((authorizations == null) ? 0 : authorizations.hashCode());
         result = prime * result + ((userRoles == null) ? 0 : userRoles.hashCode());
-        result = prime * result + ((rawRoles == null) ? 0 : rawRoles.hashCode());
         result = prime * result + Arrays.hashCode(dns);
         result = prime * result + ((name == null) ? 0 : name.hashCode());
         result = prime * result + ((shortName == null) ? 0 : shortName.hashCode());
@@ -271,11 +347,6 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
             if (other.userRoles != null)
                 return false;
         } else if (!userRoles.equals(other.userRoles))
-            return false;
-        if (rawRoles == null) {
-            if (other.rawRoles != null)
-                return false;
-        } else if (!rawRoles.equals(other.rawRoles))
             return false;
         if (!Arrays.equals(dns, other.dns))
             return false;
@@ -303,7 +374,7 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
     
     public static class Roles {
         @XmlElement(name = "rolesSet")
-        public List<RolesSet> roles = new ArrayList<RolesSet>();
+        public List<RolesSet> roles = new ArrayList<>();
     }
     
     public static class RolesSet {
@@ -322,7 +393,7 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
     
     public static class Auths {
         @XmlElement(name = "authorizationsSet")
-        public List<AuthsSet> auths = new ArrayList<AuthsSet>();
+        public List<AuthsSet> auths = new ArrayList<>();
     }
     
     public static class AuthsSet {
@@ -351,9 +422,9 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
         
         @Override
         public Map<String,? extends Collection<String>> unmarshal(Roles v) throws Exception {
-            HashMap<String,HashSet<String>> result = new HashMap<String,HashSet<String>>();
+            HashMap<String,HashSet<String>> result = new HashMap<>();
             for (RolesSet rs : v.roles)
-                result.put(rs.dn, new HashSet<String>(rs.roles));
+                result.put(rs.dn, new HashSet<>(rs.roles));
             return result;
         }
     }
@@ -370,9 +441,9 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
         
         @Override
         public Map<String,? extends Collection<String>> unmarshal(Auths v) throws Exception {
-            HashMap<String,HashSet<String>> result = new HashMap<String,HashSet<String>>();
+            HashMap<String,HashSet<String>> result = new HashMap<>();
             for (AuthsSet as : v.auths)
-                result.put(as.dn, new HashSet<String>(as.auths));
+                result.put(as.dn, new HashSet<>(as.auths));
             return result;
         }
     }
@@ -394,7 +465,7 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
     
     @Override
     public String getPageHeader() {
-        return "Credentials for " + StringEscapeUtils.escapeHtml(this.getUserDN());
+        return "Credentials for " + StringEscapeUtils.escapeHtml(getUserDN().toString());
     }
     
     /*
@@ -406,7 +477,7 @@ public class DatawavePrincipal implements Principal, Serializable, HtmlProvider 
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
         builder.append("<table>");
-        builder.append("<tr class=\"highlight\"><td>").append("UserDN").append("</td><td>").append(StringEscapeUtils.escapeHtml(this.getUserDN()))
+        builder.append("<tr class=\"highlight\"><td>").append("UserDN").append("</td><td>").append(StringEscapeUtils.escapeHtml(getUserDN().toString()))
                         .append("</td></tr>");
         builder.append("<tr><td>").append("Name").append("</td><td>").append(StringEscapeUtils.escapeHtml(this.getName())).append("</td></tr>");
         builder.append("<tr class=\"highlight\"><td>").append("Uid").append("</td><td>").append(this.getShortName()).append("</td></tr>");

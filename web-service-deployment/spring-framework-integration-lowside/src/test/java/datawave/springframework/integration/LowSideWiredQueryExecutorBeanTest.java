@@ -21,7 +21,9 @@ import datawave.query.tables.shard.FieldIndexCountQueryLogic;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.security.authorization.BasePrincipalFactoryConfiguration;
-import datawave.security.authorization.DatawavePrincipalLookup;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.system.CallerPrincipal;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.edgedictionary.DefaultDatawaveEdgeDictionaryImpl;
 import datawave.webservice.operations.configuration.LookupBeanConfiguration;
 import datawave.webservice.query.cache.QueryExpirationConfiguration;
@@ -100,12 +102,13 @@ public class LowSideWiredQueryExecutorBeanTest {
         }
     }
     
-    private static DatawavePrincipalLookup datawavePrincipalLookup = EasyMock.createMock(DatawavePrincipalLookup.class);
+    private static DatawavePrincipal mockDatawavePrincipal = EasyMock.createMock(DatawavePrincipal.class);
     
     public static class Producer {
         @Produces
-        public static DatawavePrincipalLookup produceDatawavePrincipalLookup() {
-            return datawavePrincipalLookup;
+        @CallerPrincipal
+        public static DatawavePrincipal produceDatawavePrincipal() {
+            return mockDatawavePrincipal;
         }
     }
 }

@@ -1,6 +1,7 @@
 package datawave.webservice.datadictionary;
 
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
@@ -92,7 +93,7 @@ public class DataDictionaryBeanTest extends EasyMockSupport {
         Map<String,Collection<String>> expectedAuths = new HashMap<>();
         expectedAuths.put("user", Collections.singletonList(auths));
         expect(principal.getAuthorizationsMap()).andReturn(expectedAuths);
-        expect(principal.getUserDN()).andReturn("user");
+        expect(principal.getUserDN()).andReturn(SubjectIssuerDNPair.of("user"));
         expect(this.dictionary.getFields(model, modelTable, metaTable, expectedDataTypeFilters, this.connector, setOfAuthObjs, 1)).andReturn(
                         Collections.EMPTY_SET);
         replayAll();

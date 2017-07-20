@@ -9,7 +9,7 @@ import javax.inject.Inject;
 import datawave.query.language.parser.ParseException;
 import datawave.query.rewrite.tables.RefactoredShardQueryLogic;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipalLookup;
+import datawave.security.system.CallerPrincipal;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
@@ -45,7 +45,8 @@ import org.apache.accumulo.core.security.Authorizations;
 public class QueryMetricQueryLogic extends RefactoredShardQueryLogic {
     
     @Inject
-    private DatawavePrincipalLookup datawavePrincipalLookup;
+    @CallerPrincipal
+    private DatawavePrincipal callerPrincipal;
     
     private List<String> roles = null;
     
@@ -59,7 +60,7 @@ public class QueryMetricQueryLogic extends RefactoredShardQueryLogic {
     
     public QueryMetricQueryLogic(QueryMetricQueryLogic other) {
         super(other);
-        datawavePrincipalLookup = other.datawavePrincipalLookup;
+        callerPrincipal = other.callerPrincipal;
         if (other.roles != null) {
             roles = new ArrayList<>();
             roles.addAll(other.roles);
@@ -80,8 +81,7 @@ public class QueryMetricQueryLogic extends RefactoredShardQueryLogic {
     public final String getJexlQueryString(Query settings) throws ParseException {
         
         if (null == this.roles) {
-            DatawavePrincipal userPrincipal = datawavePrincipalLookup.getCurrentPrincipal();
-            this.roles = userPrincipal.getRoleSets();
+            this.roles = callerPrincipal.getRoleSets();
         }
         
         String query = super.getJexlQueryString(settings);

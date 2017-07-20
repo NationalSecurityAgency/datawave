@@ -1,7 +1,7 @@
 package datawave.user;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -69,7 +69,7 @@ public class DefaultAuthorizationsListTest {
         // Test userAuths
         Assert.assertTrue(CollectionUtils.isEqualCollection(dal.userAuths, Sets.newHashSet("dnAuths1", "dnAuths2")));
         
-        Map<String,Set<String>> authMapping = new HashMap<String,Set<String>>();
+        Map<String,Collection<String>> authMapping = new HashMap<String,Collection<String>>();
         authMapping.put("authMapKey", auths);
         authMapping.put("authMapKey2", auths);
         dal.setAuthMapping(authMapping);
