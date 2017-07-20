@@ -2,16 +2,21 @@ package datawave.query.rewrite.attributes;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.util.TypeMetadata;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -19,6 +24,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
+
+import javax.annotation.Nullable;
 
 public class AttributeFactory {
     private static final Logger log = Logger.getLogger(AttributeFactory.class);
@@ -35,6 +42,8 @@ public class AttributeFactory {
     
     private String defaultType = NoOpType.class.getName();
     private Class<?> mostGeneralType = LcNoDiacriticsType.class;
+    private static final List<Class<?>> mostGeneralTypes = Collections
+                    .unmodifiableList(Lists.<Class<?>> newArrayList(NoOpType.class, LcNoDiacriticsType.class));
     
     public AttributeFactory(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
@@ -80,13 +89,29 @@ public class AttributeFactory {
                 Class<?> dataTypeClass = clazzCache.get(dataType);
                 return getAttribute(dataTypeClass, fieldName, data, key, toKeep);
             } else {
+                
+                Iterable<Class<?>> typeClasses = Iterables.transform(dataTypes, new Function<String,Class<?>>() {
+                    @Nullable
+                    @Override
+                    public Class<?> apply(@Nullable String s) {
+                        try {
+                            return clazzCache.get(s);
+                        } catch (ExecutionException e) {
+                            throw new RuntimeException("could not make a class from " + s, e);
+                        }
+                    }
+                });
+                
+                Collection<Class<?>> keepers = AttributeFactory.getKeepers(typeClasses);
+                
                 HashSet<Attribute<? extends Comparable<?>>> attrSet = Sets.newHashSet();
                 
                 for (String dataType : dataTypes) {
                     Class<?> dataTypeClass = clazzCache.get(dataType);
                     Attribute<?> attribute = getAttribute(dataTypeClass, fieldName, data, key, toKeep);
                     // if there is more than one dataType, mark the mostGeneral one as toKeep=false, leaving the more specific type(s)
-                    if (dataTypeClass.isAssignableFrom(this.mostGeneralType)) {
+                    // if the class is not a member of 'keepers', then set toKeep to false
+                    if (!keepers.contains(dataTypeClass)) {
                         attribute.setToKeep(false);
                     }
                     attrSet.add(attribute);
@@ -117,4 +142,39 @@ public class AttributeFactory {
             
         }
     }
+    
+    public static Collection<Class<?>> getKeepers(Iterable<Class<?>> finders) {
+        Collection<Class<?>> keepers = Sets.newHashSet(finders);
+        List<Class<?>> losers = AttributeFactory.mostGeneralTypes;
+        if (keepers.size() == 1) {
+            // do not remove anything
+            return keepers;
+        }
+        
+        // created and populated only for trace debug
+        Collection<Class<?>> weepers = null;
+        if (log.isTraceEnabled()) {
+            weepers = Sets.newHashSet();
+        }
+        for (Class<?> loser : losers) {
+            // try one at a time until only one remains
+            // the list of losers is in priority order, lowest at the beginning
+            boolean removed = keepers.remove(loser);
+            if (log.isTraceEnabled() && removed) {
+                weepers.add(loser);
+            }
+            if (keepers.size() == 1) {
+                // have to stop so i don't risk removing _everything_ from keepers
+                break;
+            }
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("finders: " + finders);
+            log.trace("keepers: " + keepers);
+            log.trace("losers: " + losers);
+            log.trace("weepers: " + weepers);
+        }
+        return keepers;
+    }
+    
 }

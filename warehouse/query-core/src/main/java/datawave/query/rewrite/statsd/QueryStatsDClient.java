@@ -5,19 +5,13 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.timgroup.statsd.NonBlockingStatsDClient;
 import com.timgroup.statsd.StatsDClient;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import datawave.query.rewrite.iterator.profile.QuerySpanCollector;
 import org.apache.log4j.Logger;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
- * A client that can be used to record live query metrics. This client will cache results and will periodically send them with a specified max latency and a
- * specified max cache size. A keepAlive value is also specified which will dictate how long the client and/or timer threads are kept alive without any
- * activity.
+ * A client that can be used to record live query metrics. This client will cache results and will periodically send them with a specified max cache size.
  */
 public class QueryStatsDClient {
     private static final Logger log = Logger.getLogger(QueryStatsDClient.class);
@@ -26,9 +20,7 @@ public class QueryStatsDClient {
     private final String queryId;
     private final String host;
     private final int port;
-    private final long latencyMs;
     private final int maxCacheSize;
-    private final long keepAliveMs;
     
     // thread safe caches
     private final AtomicInteger nextCalls = new AtomicInteger(0);
@@ -37,23 +29,15 @@ public class QueryStatsDClient {
     private final Multimap<String,Long> timings;
     
     // the client
-    private StatsDClient client = null;
+    private static StatsDClient client = null;
     // this monitor controls when the client is being used
-    private final Object clientMonitor = new Object();
+    private static final Object clientMonitor = new Object();
     
-    // the timer
-    private Timer timer = null;
-    // this boolean controls when a timer task has been submitted and the timer can be used
-    private final AtomicBoolean taskRunning = new AtomicBoolean(false);
-    private volatile long lastSend = System.currentTimeMillis();
-    
-    public QueryStatsDClient(String queryId, String host, int port, long latencyMs, int maxCacheSize, long keepAliveMs) {
+    public QueryStatsDClient(String queryId, String host, int port, int maxCacheSize) {
         this.queryId = queryId;
         this.host = host;
         this.port = port;
-        this.latencyMs = latencyMs;
         this.maxCacheSize = maxCacheSize;
-        this.keepAliveMs = keepAliveMs;
         Multimap<String,Long> temp = HashMultimap.create();
         this.timings = Multimaps.synchronizedMultimap(temp);
     }
@@ -69,19 +53,6 @@ public class QueryStatsDClient {
             }
         }
         return this.client;
-    }
-    
-    /**
-     * Close the client. This should only be called when the clientMonitor has been acquired.
-     */
-    private void closeClient() {
-        if (this.client != null) {
-            this.client.stop();
-            this.client = null;
-            if (log.isDebugEnabled()) {
-                log.debug("Stopped STATSD client with host = " + host + "; port = " + port + "; prefix = " + queryId + ".dwquery");
-            }
-        }
     }
     
     /**
@@ -121,36 +92,21 @@ public class QueryStatsDClient {
                     }
                 }
             }
-            if (flushed) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Flushed some STATSD stats for " + queryId);
-                }
-                lastSend = System.currentTimeMillis();
-            } else if (System.currentTimeMillis() - lastSend >= keepAliveMs) {
-                closeClient();
+            if (flushed && log.isTraceEnabled()) {
+                log.trace("Flushed some STATSD stats for " + queryId);
             }
         }
         return flushed;
-    }
-    
-    private void startTimer() {
-        if (taskRunning.compareAndSet(false, true)) {
-            if (timer == null) {
-                timer = new Timer("StatsD Timer tThread for " + queryId, true);
-            }
-            long delta = Math.min(System.currentTimeMillis() - lastSend, latencyMs);
-            timer.schedule(new QueryStatsDTimer(), latencyMs - delta);
-            if (log.isDebugEnabled()) {
-                log.debug("Created STATSD timer for " + (latencyMs - delta) + "ms from now for " + queryId);
-            }
-        }
     }
     
     private void flushAsNeeded() {
         if (getSize() > maxCacheSize) {
             flushStats();
         }
-        startTimer();
+    }
+    
+    public void flush() {
+        flushStats();
     }
     
     public void next() {
@@ -175,45 +131,5 @@ public class QueryStatsDClient {
     
     public int getSize() {
         return nextCalls.get() + seekCalls.get() + sources.get() + timings.size();
-    }
-    
-    private class QueryStatsDTimer extends TimerTask {
-        @Override
-        public void run() {
-            if (log.isDebugEnabled()) {
-                log.debug("STATSD Timer fired for " + queryId);
-            }
-            long delta = System.currentTimeMillis() - lastSend;
-            
-            // if at our latency threshold, then flush any existing stats
-            if (delta >= latencyMs) {
-                if (flushStats()) {
-                    delta = System.currentTimeMillis() - lastSend;
-                }
-            }
-            
-            // if we are over the keepalive limit, then terminate our threads (client and timer)
-            if (delta >= keepAliveMs) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Closing STATSD timer and client for " + queryId);
-                }
-                synchronized (clientMonitor) {
-                    closeClient();
-                }
-                timer.cancel();
-                timer = null;
-                if (log.isDebugEnabled()) {
-                    log.debug("Stopped STATSD timer for " + queryId);
-                }
-                taskRunning.getAndSet(false);
-            }
-            // otherwise lets restart the timer
-            else {
-                timer.schedule(new QueryStatsDTimer(), latencyMs - delta);
-                if (log.isDebugEnabled()) {
-                    log.debug("Created STATSD timer for " + (latencyMs - delta) + "ms from now for " + queryId);
-                }
-            }
-        }
     }
 }

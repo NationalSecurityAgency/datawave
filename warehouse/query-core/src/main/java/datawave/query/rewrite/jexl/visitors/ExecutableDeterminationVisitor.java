@@ -374,9 +374,13 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         STATE state;
+        // until we implement an ivarator that can handle an ExceededTermThreshold node, and ensure that the JexlContext gets
+        // _ANYFIELD_ values, then we cannot execute these nodes
+        if (ExceededTermThresholdMarkerJexlNode.instanceOf(node)) {
+            state = STATE.NON_EXECUTABLE;
+        }
         // if an ivarator the return true, else check out children
-        if (ExceededTermThresholdMarkerJexlNode.instanceOf(node) || ExceededValueThresholdMarkerJexlNode.instanceOf(node)
-                        || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+        else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
             state = STATE.EXECUTABLE;
         }
         // if a delayed predicate, then this is not-executable against the index by choice

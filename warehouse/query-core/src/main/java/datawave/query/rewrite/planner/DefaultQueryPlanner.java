@@ -1429,9 +1429,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 }
                 if (config.getSendTimingToStatsd()) {
                     addOption(cfg, QueryOptions.STATSD_HOST_COLON_PORT, config.getStatsdHost() + ':' + Integer.toString(config.getStatsdPort()), false);
-                    addOption(cfg, QueryOptions.STATSD_LATENCY_MS, Long.toString(config.getStatsdLatencyMs()), false);
                     addOption(cfg, QueryOptions.STATSD_MAX_QUEUE_SIZE, Integer.toString(config.getStatsdMaxQueueSize()), false);
-                    addOption(cfg, QueryOptions.STATSD_KEEP_ALIVE_MS, Long.toString(config.getStatsdKeepAliveMs()), false);
                 }
                 if (config.getHdfsSiteConfigURLs() != null) {
                     addOption(cfg, QueryOptions.HDFS_SITE_CONFIG_URLS, config.getHdfsSiteConfigURLs(), false);

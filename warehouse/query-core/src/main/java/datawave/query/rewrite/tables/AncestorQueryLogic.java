@@ -1,5 +1,6 @@
 package datawave.query.rewrite.tables;
 
+import datawave.query.index.lookup.AncestorCreateUidsIterator;
 import datawave.query.rewrite.ancestor.AncestorQueryIterator;
 import datawave.query.rewrite.ancestor.AncestorQueryPlanner;
 import datawave.query.rewrite.ancestor.AncestorRangeStream;
@@ -15,6 +16,7 @@ import datawave.query.rewrite.planner.QueryPlanner;
 public class AncestorQueryLogic extends RefactoredShardQueryLogic {
     public AncestorQueryLogic() {
         super();
+        setCreateUidsIteratorClass(AncestorCreateUidsIterator.class);
         setUidIntersector(new AncestorUidIntersector());
         QueryPlanner planner = new AncestorQueryPlanner();
         setQueryPlanner(planner);

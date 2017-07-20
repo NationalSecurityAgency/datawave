@@ -118,7 +118,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     protected IndexStream queryStream;
     protected boolean limitScanners = false;
     protected Class<? extends SortedKeyValueIterator<Key,Value>> createUidsIteratorClass = CreateUidsIterator.class;
-    
+    protected Class<? extends SortedKeyValueIterator<Key,Value>> createCondensedUidIteratorClass = CondensedUidIterator.class;
     protected Multimap<String,Type<?>> fieldDataTypes;
     
     protected BlockingQueue<Runnable> runnables;
@@ -472,7 +472,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     
                     boolean condensedTld = false;
                     if (setCondenseUids) {
-                        iterClazz = CondensedUidIterator.class;
+                        iterClazz = createCondensedUidIteratorClass;
                         if (createUidsIteratorClass == CreateTLDUidsIterator.class) {
                             condensedTld = true;
                         }
@@ -939,6 +939,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     public RangeStream setUidIntersector(UidIntersector uidIntersector) {
         this.uidIntersector = uidIntersector;
         return this;
+    }
+    
+    public void setCreateCondensedUidIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> createCondensedUidIteratorClass) {
+        this.createCondensedUidIteratorClass = createCondensedUidIteratorClass;
     }
     
     public Class<? extends SortedKeyValueIterator<Key,Value>> getCreateUidsIteratorClass() {
