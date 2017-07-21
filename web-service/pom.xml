@@ -571,7 +571,7 @@
                     <version>${version.surefire.plugin}</version>
                     <configuration>
                         <reuseForks>false</reuseForks>
-                        <forkCount>1C</forkCount>
+                        <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
                         <threadCountClasses>0</threadCountClasses>
                         <threadCountMethods>1</threadCountMethods>
