@@ -137,7 +137,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected MarkingFunctions markingFunctions;
     
     private Map<String,IngestHelperInterface> helpers = null;
-    private Map<String,EdgeDefinitionConfigurationHelper> edges = null;
+    protected Map<String,EdgeDefinitionConfigurationHelper> edges = null;
     
     protected TaskAttemptContext taskAttemptContext = null;
     protected boolean useStatsLogBloomFilter = false;
@@ -880,7 +880,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         revMetaSet.add(reverseBuilder.build());
     }
     
-    private String getEnrichmentFieldName(EdgeDefinition edgeDef) {
+    protected String getEnrichmentFieldName(EdgeDefinition edgeDef) {
         return (edgeDef.isEnrichmentEdge() ? edgeDef.getEnrichmentField() : null);
     }
     
@@ -913,7 +913,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         return null;
     }
     
-    private String getGroupedFieldName(NormalizedContentInterface value) {
+    protected String getGroupedFieldName(NormalizedContentInterface value) {
         String fieldName = value.getIndexedFieldName();
         if (value instanceof GroupedNormalizedContentInterface) {
             GroupedNormalizedContentInterface grouped = (GroupedNormalizedContentInterface) value;
@@ -926,7 +926,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     private static final String NO_GROUP = "";
     
-    private String getGroup(String groupedFieldName) {
+    protected String getGroup(String groupedFieldName) {
         int index = groupedFieldName.lastIndexOf('.');
         if (index >= 0) {
             return groupedFieldName.substring(index + 1);
@@ -938,7 +938,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     /*
      * This part makes the determination as to what type of edge key to build
      */
-    private long writeEdges(EdgeDataBundle value, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
+    protected long writeEdges(EdgeDataBundle value, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
                     ContextWriter<KEYOUT,VALUEOUT> contextWriter, boolean validActivtyDate, boolean sameActivityDate, long acquisitionDate) throws IOException,
                     InterruptedException {
         
@@ -1082,6 +1082,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                         .setSourceAttribute1(source.getCollectionType()).setSinkAttribute1(sink.getCollectionType())
                         .setAttribute3(edgeValue.getEdgeAttribute3()).setAttribute2(edgeValue.getEdgeAttribute2()).setColvis(visibility)
                         .setTimestamp(timestamp).setDateType(date_type);
+        builder.setDeleted(edgeValue.isDeleting());
         Key key = builder.build().encode();
         
         return key;
@@ -1094,6 +1095,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                         .setSourceRelationship(vertex.getRelationshipType()).setSourceAttribute1(vertex.getCollectionType())
                         .setAttribute3(edgeValue.getEdgeAttribute3()).setAttribute2(edgeValue.getEdgeAttribute2()).setColvis(visibility)
                         .setTimestamp(edgeValue.getEventDate()).setDateType(date_type);
+        builder.setDeleted(edgeValue.isDeleting());
         Key key = builder.build().encode();
         boolean isNewKey = false;
         
@@ -1303,7 +1305,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      * validates the activity date using the past and future delta configured variables both past and future deltas are expected to be positive numbers (in
      * milliseconds)
      */
-    private boolean validateActivityDate(long activityTime, long acquisitionTime) {
+    protected boolean validateActivityDate(long activityTime, long acquisitionTime) {
         
         if (acquisitionTime - activityTime > pastDelta) {
             // if activity > acquisition then number is negative and will be checked in the next else if statement
@@ -1319,7 +1321,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     /*
      * Compares activity and acquisition time. Returns true if they are both on the same day. Eg. both result in the same yyyyMMdd string
      */
-    private boolean compareActivityAndAcquisition(long activityDate, long acquisitionDate) {
+    protected boolean compareActivityAndAcquisition(long activityDate, long acquisitionDate) {
         // The date toString() returns dates in the format yyyy-mm-dd
         if (DateHelper.format(activityDate).equals(DateHelper.format(acquisitionDate))) {
             return true;
