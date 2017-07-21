@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import datawave.audit.SelectorExtractor;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.query.config.EdgeExtendedSummaryConfiguration;
@@ -38,6 +39,8 @@ public class DefaultExtendedEdgeQueryLogic extends RewriteEdgeQueryLogic {
     protected boolean summaryInputType = false;
     protected boolean summaryOutputType = false;
     protected boolean allowOverrideIO = true;
+    
+    protected SelectorExtractor listSelectorExtractor;
     
     public DefaultExtendedEdgeQueryLogic() {
         super();
@@ -259,6 +262,28 @@ public class DefaultExtendedEdgeQueryLogic extends RewriteEdgeQueryLogic {
     }
     
     @Override
+    public List<String> getSelectors(Query settings) throws IllegalArgumentException {
+        EdgeExtendedSummaryConfiguration conf = (EdgeExtendedSummaryConfiguration) setUpConfig(settings);
+        List<String> selectorList = null;
+        SelectorExtractor selExtr;
+        
+        if (conf.isSummaryInputType()) {
+            selExtr = listSelectorExtractor;
+        } else {
+            selExtr = selectorExtractor;
+        }
+        
+        if (selExtr != null) {
+            try {
+                selectorList = selExtr.extractSelectors(settings);
+            } catch (Exception e) {
+                throw new IllegalArgumentException(e.getMessage(), e);
+            }
+        }
+        return selectorList;
+    }
+    
+    @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> optionalParams = super.getOptionalQueryParameters();
         optionalParams.add(EdgeExtendedSummaryConfiguration.EDGE_TYPES_PARAM);
@@ -287,5 +312,9 @@ public class DefaultExtendedEdgeQueryLogic extends RewriteEdgeQueryLogic {
     
     public void setAllowOverrideIO(boolean allowOverrideIO) {
         this.allowOverrideIO = allowOverrideIO;
+    }
+    
+    public void setListSelectorExtractor(SelectorExtractor listSelectorExtractor) {
+        this.listSelectorExtractor = listSelectorExtractor;
     }
 }

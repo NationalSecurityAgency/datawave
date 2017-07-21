@@ -146,4 +146,27 @@ public class ExtendedEdgeQueryLogicTest extends RewriteEdgeQueryFunctionalTest {
         
         Assert.assertEquals(expectedQueryString, actualQueryString);
     }
+    
+    @Test
+    public void testSelectorExtractor() throws Exception {
+        QueryImpl q = configQuery("MARS,JUPITER,VENUS", auths);
+        q.addParameter("delimiter", ",");
+        q.addParameter("query.syntax", "LIST");
+        
+        List<String> expected = new ArrayList();
+        expected.add("MARS");
+        expected.add("JUPITER");
+        expected.add("VENUS");
+        
+        List<String> sources = logic.getSelectors(q);
+        
+        Assert.assertTrue(sources.containsAll(expected));
+        
+        q = configQuery("SOURCE == 'MARS' OR SOURCE == 'JUPITER' OR SOURCE == 'VENUS'", auths);
+        q.addParameter("query.syntax", "JEXL");
+        
+        sources = logic.getSelectors(q);
+        
+        Assert.assertTrue(sources.containsAll(expected));
+    }
 }
