@@ -49,6 +49,14 @@
         <property name="logicDescription" value="Edge query" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
+        <property name="listSelectorExtractor" ref="SplitSelectorExtractorParamDefaultNull" />
     </bean>
 
+    <bean id="SplitSelectorExtractorParamDefaultNull" scope="prototype" class="datawave.audit.SplitSelectorExtractor">
+        <property name="separatorCharacter">
+            <value type="char">\u0000</value>
+        </property>
+        <property name="separatorParameter" value="delimiter" />
+    </bean>
+    
 </beans>
