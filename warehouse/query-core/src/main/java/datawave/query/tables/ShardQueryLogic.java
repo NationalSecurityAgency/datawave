@@ -506,7 +506,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createRefactoredShardQueryConfigurationFromConfiguredLogic(this, settings);
+        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(this, settings);
         
         this.config = config;
         this.settings = settings;

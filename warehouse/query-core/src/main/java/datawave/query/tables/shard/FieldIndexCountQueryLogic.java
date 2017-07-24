@@ -94,7 +94,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         }
         
         // I'm using this config object in a pinch, we should probably create a custom one.
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createRefactoredShardQueryConfigurationFromConfiguredLogic(this, settings);
+        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(this, settings);
         config.setConnector(connection);
         config.setAuthorizations(auths);
         

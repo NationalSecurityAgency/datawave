@@ -16,7 +16,7 @@ import java.util.Set;
  */
 public class ShardQueryConfigurationFactory {
     
-    public static ShardQueryConfiguration createRefactoredShardQueryConfigurationFromConfiguredLogic(ShardQueryLogic configuredLogic, Query query) {
+    public static ShardQueryConfiguration createShardQueryConfigurationFromConfiguredLogic(ShardQueryLogic configuredLogic, Query query) {
         
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         
