@@ -75,11 +75,10 @@ public class ContentFunctionsDescriptor implements RefactoredJexlFunctionArgumen
                 final JexlNode eq = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
                 
                 for (String field : fieldsAndTerms[0]) {
-                    nodes.add(JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.AND_NODE, eq, null,
-                                    field, fieldsAndTerms[1]));
+                    nodes.add(JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.AND_NODE, eq, null, field, fieldsAndTerms[1]));
                 }
             }
-
+            
             // A single field needs no wrapper node.
             if (1 == fieldsAndTerms[0].size()) {
                 return nodes.iterator().next();
