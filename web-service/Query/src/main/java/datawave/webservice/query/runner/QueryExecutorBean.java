@@ -239,6 +239,9 @@ public class QueryExecutorBean implements QueryExecutor {
     private Multimap<String,PatternWrapper> traceInfos;
     private CacheListener traceCacheListener;
     
+    private final int PAGE_TIMEOUT_MIN = 1;
+    private final int PAGE_TIMEOUT_MAX = QueryExpirationConfiguration.PAGE_TIMEOUT_MIN_DEFAULT;
+    
     @Inject
     private QueryParameters qp;
     
@@ -372,6 +375,15 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     /**
+     * Helper to throw Response Error for create/define Query
+     */
+    private void throwBadRequest(DatawaveErrorCode ec, GenericResponse<String> response) {
+        BadRequestQueryException qe = new BadRequestQueryException(ec);
+        response.addException(qe);
+        throw new BadRequestException(qe, response);
+    }
+    
+    /**
      * @param queryLogicName
      * @param queryParameters
      * @return
@@ -395,15 +407,15 @@ public class QueryExecutorBean implements QueryExecutor {
         // The pagesize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
         // Leaving for now until we can test to ensure that is always the case.
         if (qp.getPagesize() <= 0) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_PAGE_SIZE);
-            response.addException(qe);
-            throw new BadRequestException(qe, response);
+            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
+        }
+        
+        if (qp.getPageTimeout() != -1 && (qp.getPageTimeout() < PAGE_TIMEOUT_MIN || qp.getPageTimeout() > PAGE_TIMEOUT_MAX)) {
+            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_TIMEOUT, response);
         }
         
         if (System.currentTimeMillis() >= qp.getExpirationDate().getTime()) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_EXPIRATION_DATE);
-            response.addException(qe);
-            throw new BadRequestException(qe, response);
+            throwBadRequest(DatawaveErrorCode.INVALID_EXPIRATION_DATE, response);
         }
         
         // Pull "params" values into individual query parameters for validation on the query logic.
@@ -484,8 +496,8 @@ public class QueryExecutorBean implements QueryExecutor {
                 throw new BadRequestQueryException(DatawaveErrorCode.PAGE_SIZE_TOO_LARGE, MessageFormat.format("Max = {0}.", logic.getMaxPageSize()));
             }
             
-            rq = new RunningQuery(metrics, null, priority, logic, q, qp.getAuths(), p, new RunningQueryTimingImpl(queryExpirationConf), this.executor,
-                            this.predictor, this.metricFactory);
+            rq = new RunningQuery(metrics, null, priority, logic, q, qp.getAuths(), p, new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()),
+                            this.executor, this.predictor, this.metricFactory);
             rq.setActiveCall(true);
             rq.getMetric().setProxyServers(proxyServers);
             rq.setTraceInfo(traceInfo);
@@ -555,14 +567,15 @@ public class QueryExecutorBean implements QueryExecutor {
         // The pagesize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
         // Leaving for now until we can test to ensure that is always the case.
         if (qp.getPagesize() <= 0) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_PAGE_SIZE);
-            response.addException(qe);
-            throw new BadRequestException(qe, response);
+            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
         }
+        
+        if (qp.getPageTimeout() != -1 && (qp.getPageTimeout() < PAGE_TIMEOUT_MIN || qp.getPageTimeout() > PAGE_TIMEOUT_MAX)) {
+            throwBadRequest(DatawaveErrorCode.INVALID_PAGE_TIMEOUT, response);
+        }
+        
         if (System.currentTimeMillis() >= qp.getExpirationDate().getTime()) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_EXPIRATION_DATE);
-            response.addException(qe);
-            throw new BadRequestException(qe, response);
+            throwBadRequest(DatawaveErrorCode.INVALID_EXPIRATION_DATE, response);
         }
         
         // Pull "params" values into individual query parameters for validation on the query logic.
@@ -694,8 +707,8 @@ public class QueryExecutorBean implements QueryExecutor {
             
             // hold on to a reference of the query logic so we cancel it if need be.
             qlCache.add(q.getId().toString(), userid, logic, connection);
-            rq = new RunningQuery(metrics, null, priority, logic, q, qp.getAuths(), p, new RunningQueryTimingImpl(queryExpirationConf), this.executor,
-                            this.predictor, this.metricFactory);
+            rq = new RunningQuery(metrics, null, priority, logic, q, qp.getAuths(), p, new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()),
+                            this.executor, this.predictor, this.metricFactory);
             rq.setActiveCall(true);
             rq.setTraceInfo(traceInfo);
             rq.getMetric().setProxyServers(proxyServers);
@@ -827,7 +840,7 @@ public class QueryExecutorBean implements QueryExecutor {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), p);
             AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
             RunningQuery query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
-                            queryExpirationConf), this.executor, this.predictor, this.metricFactory);
+                            queryExpirationConf, qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
             results.add(query);
             // Put in the cache by id if its not already in the cache.
             if (!queryCache.containsKey(q.getId().toString()))
@@ -860,8 +873,8 @@ public class QueryExecutorBean implements QueryExecutor {
                 // will throw IllegalArgumentException if not defined
                 QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), p);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
-                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(queryExpirationConf),
-                                this.executor, this.predictor, this.metricFactory);
+                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(queryExpirationConf,
+                                qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 queryCache.put(q.getId().toString(), query);
             }
@@ -894,8 +907,8 @@ public class QueryExecutorBean implements QueryExecutor {
             // will throw IllegalArgumentException if not defined
             final QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), ctx.getCallerPrincipal());
             final AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
-            query = RunningQuery.createQueryWithAuthorizations(metrics, null, priority, logic, q, auths, new RunningQueryTimingImpl(queryExpirationConf),
-                            this.executor, this.predictor, this.metricFactory);
+            query = RunningQuery.createQueryWithAuthorizations(metrics, null, priority, logic, q, auths,
+                            new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
             
             // Put in the cache by id and name, we will have two copies that reference the same object
             queryCache.put(q.getId().toString(), query);
@@ -2127,6 +2140,8 @@ public class QueryExecutorBean implements QueryExecutor {
      *            - defaults to old expiration, meaningless if transient (optional)
      * @param newPagesize
      *            - defaults to old pagesize, number of results to return on each call to next() (optional)
+     * @param newPageTimeout
+     *            - specify timeout (in minutes) for each call to next(), defaults to -1 indicating disabled (optional)
      * @param newPersistenceMode
      *            - defaults to PERSISTENT, indicates whether or not the query is persistent (optional)
      * @param newParameters
@@ -2134,7 +2149,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @param trace
      *            - optional (defaults to {@code false}) indication of whether or not the query should be traced using the distributed tracing mechanism
      * @see datawave.webservice.query.runner.QueryExecutorBean#duplicateQuery(String, String, String, String, String, Date, Date, String, Date, Integer,
-     *      QueryPersistence, String, boolean)
+     *      Integer, QueryPersistence, String, boolean)
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
@@ -2160,8 +2175,9 @@ public class QueryExecutorBean implements QueryExecutor {
                     @FormParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date newBeginDate, @FormParam("end") @DateFormat(
                                     defaultTime = "235959", defaultMillisec = "999") Date newEndDate, @FormParam("auths") String newQueryAuthorizations,
                     @FormParam("expiration") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date newExpirationDate,
-                    @FormParam("pagesize") Integer newPagesize, @FormParam("persistence") QueryPersistence newPersistenceMode,
-                    @FormParam("params") String newParameters, @FormParam("trace") @DefaultValue("false") boolean trace) {
+                    @FormParam("pagesize") Integer newPagesize, @FormParam("pageTimeout") Integer newPageTimeout,
+                    @FormParam("persistence") QueryPersistence newPersistenceMode, @FormParam("params") String newParameters,
+                    @FormParam("trace") @DefaultValue("false") boolean trace) {
         
         GenericResponse<String> response = new GenericResponse<>();
         
@@ -2201,6 +2217,9 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             if (newPagesize != null) {
                 q.setPagesize(newPagesize);
+            }
+            if (newPageTimeout != null) {
+                q.setPageTimeout(newPageTimeout);
             }
             Set<Parameter> params = new HashSet<>();
             if (newParameters != null) {
@@ -2249,6 +2268,8 @@ public class QueryExecutorBean implements QueryExecutor {
      *            - meaningless if transient (optional)
      * @param pagesize
      *            - number of results to return on each call to next() (optional)
+     * @param pageTimeout
+     *            - specify timeout (in minutes) for each call to next(), defaults to -1 indicating disabled (optional)
      * @param persistenceMode
      *            - indicates whether or not the query is persistent (optional)
      * @param parameters
@@ -2279,11 +2300,13 @@ public class QueryExecutorBean implements QueryExecutor {
                     @FormParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date beginDate, @FormParam("end") @DateFormat(
                                     defaultTime = "235959", defaultMillisec = "999") Date endDate, @FormParam("auths") String queryAuthorizations,
                     @FormParam("expiration") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date expirationDate,
-                    @FormParam("pagesize") Integer pagesize, @FormParam("persistence") QueryPersistence persistenceMode, @FormParam("params") String parameters) {
+                    @FormParam("pagesize") Integer pagesize, @FormParam("pageTimeout") Integer pageTimeout,
+                    @FormParam("persistence") QueryPersistence persistenceMode, @FormParam("params") String parameters) {
         GenericResponse<String> response = new GenericResponse<>();
         try {
             RunningQuery rq = getQueryById(id);
-            updateQuery(response, rq, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, persistenceMode, parameters);
+            updateQuery(response, rq, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode,
+                            parameters);
             
             response.setResult(id);
             return response;
@@ -2302,7 +2325,8 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private void updateQuery(GenericResponse<String> response, RunningQuery runningQuery, String queryLogicName, String query, Date beginDate, Date endDate,
-                    String queryAuthorizations, Date expirationDate, Integer pagesize, QueryPersistence persistenceMode, String parameters) throws Exception {
+                    String queryAuthorizations, Date expirationDate, Integer pagesize, Integer pageTimeout, QueryPersistence persistenceMode, String parameters)
+                    throws Exception {
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         String userid = p.getName();
@@ -2343,6 +2367,9 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         if (pagesize != null) {
             q.setPagesize(pagesize);
+        }
+        if (pageTimeout != null) {
+            q.setPageTimeout(pageTimeout);
         }
         if (parameters != null) {
             Set<Parameter> params = new HashSet<>();

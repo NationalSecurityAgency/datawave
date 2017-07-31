@@ -21,6 +21,7 @@ public class DashboardQuery {
     private static final String parameters = "limit.fields:PAGE_METRICS=1;reduced.response:true;return.fields:" + DashboardFields.getReturnFields();
     private static final boolean trace = false;
     private static final int pageSize = 10000;
+    private static final int pageTimeout = -1;
     
     private DashboardQuery() {}
     
@@ -31,6 +32,6 @@ public class DashboardQuery {
         return (ExtJsResponse) queryExecutor.createQueryAndNext(
                         logicName,
                         QueryParametersImpl.paramsToMap(logicName, queryString, queryName, columnVisibility, beginDate, endDate, auths,
-                                        DateUtils.addDays(now, 1), pageSize, persistence, parameters, trace));
+                                        DateUtils.addDays(now, 1), pageSize, pageTimeout, persistence, parameters, trace));
     }
 }

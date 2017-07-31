@@ -353,6 +353,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getColumnVisibility()).andReturn(null).anyTimes();
         expect(this.query.getQueryName()).andReturn(null).anyTimes();
         expect(this.query.getPagesize()).andReturn(0).anyTimes();
+        expect(this.query.getPageTimeout()).andReturn(-1).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(context.getCallerPrincipal()).andReturn(principal);
@@ -374,6 +375,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -660,6 +662,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 999999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         boolean trace = false;
         String userName = "userName";
@@ -680,6 +683,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
         queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
         queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
@@ -827,6 +831,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 999999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         boolean trace = false;
         String userName = "userName";
@@ -847,6 +852,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
         queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
         queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
@@ -905,6 +911,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations).anyTimes();
         expect(this.query.getQueryName()).andReturn(null).anyTimes();
         expect(this.query.getPagesize()).andReturn(0).anyTimes();
+        expect(this.query.getPageTimeout()).andReturn(-1).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
@@ -997,6 +1004,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         boolean trace = false;
         String userName = "userName";
@@ -1013,6 +1021,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
         queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
         queryParameters.putSingle("valid", "param");
@@ -1115,6 +1124,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 999999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         boolean trace = false;
         String userName = "userName";
@@ -1135,6 +1145,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
         queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
         queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
@@ -1184,6 +1195,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations).anyTimes();
         expect(this.query.getQueryName()).andReturn(null).anyTimes();
         expect(this.query.getPagesize()).andReturn(0).anyTimes();
+        expect(this.query.getPageTimeout()).andReturn(-1).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
@@ -1292,12 +1304,13 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime - 500);
         int pagesize = 1;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         boolean trace = false;
         
         MultivaluedMap<String,String> p = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, persistenceMode, parameters, trace);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
         
         // Run the test
         PowerMock.replayAll();
@@ -1333,12 +1346,13 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime);
         int pagesize = 0;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         boolean trace = false;
         
         MultivaluedMap<String,String> p = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, persistenceMode, parameters, trace);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
         
         // Run the test
         PowerMock.replayAll();
@@ -1373,13 +1387,14 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 1000;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         boolean trace = false;
         // Set expectations
         
         MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, persistenceMode, parameters, trace);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -1438,6 +1453,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 999999);
         int pagesize = 1;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         boolean trace = false;
@@ -1458,7 +1474,7 @@ public class ExtendedQueryExecutorBeanTest {
         Throwable result1 = null;
         try {
             MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, persistenceMode, parameters, trace);
+                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
             
             subject.createQueryAndNext(queryLogicName, queryParameters);
             
@@ -1486,6 +1502,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime - 500);
         int pagesize = 1;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         boolean trace = false;
@@ -1498,7 +1515,7 @@ public class ExtendedQueryExecutorBeanTest {
         Throwable result1 = null;
         try {
             MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, persistenceMode, parameters, trace);
+                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
             
             subject.defineQuery(queryLogicName, queryParameters);
             
@@ -1526,6 +1543,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime);
         int pagesize = 0;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = null;
         
@@ -1539,7 +1557,7 @@ public class ExtendedQueryExecutorBeanTest {
         Throwable result1 = null;
         try {
             MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, persistenceMode, parameters, trace);
+                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
             
             subject.defineQuery(queryLogicName, queryParameters);
         } catch (DatawaveWebApplicationException e) {
@@ -1566,6 +1584,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 10000);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String userName = "userName";
         String userSid = "userSid";
@@ -1575,7 +1594,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(null, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, persistenceMode, null, trace);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, null, trace);
         queryParameters.putSingle("valid", "param");
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
@@ -1698,6 +1717,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = true;
@@ -1716,6 +1736,7 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PARAMS, parameters);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
         queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
         queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
@@ -1789,7 +1810,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         GenericResponse<String> result1 = subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, persistenceMode, parameters, trace);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
         PowerMock.verifyAll();
         
         // Verify results
@@ -1810,6 +1831,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = false;
@@ -1839,7 +1861,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         try {
             subject.duplicateQuery(queryId.toString(), queryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
-                            expirationDate, pagesize, persistenceMode, parameters, trace);
+                            expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
         } finally {
             PowerMock.verifyAll();
         }
@@ -1860,6 +1882,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = true;
@@ -1914,7 +1937,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         try {
             subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
-                            expirationDate, pagesize, persistenceMode, parameters, trace);
+                            expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
         } finally {
             PowerMock.verifyAll();
         }
@@ -1933,6 +1956,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = true;
@@ -1950,7 +1974,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         try {
             subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
-                            expirationDate, pagesize, persistenceMode, parameters, trace);
+                            expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
         } finally {
             PowerMock.verifyAll();
         }
@@ -1969,6 +1993,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = true;
@@ -1981,7 +2006,7 @@ public class ExtendedQueryExecutorBeanTest {
         Exception result1 = null;
         try {
             subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
-                            expirationDate, pagesize, persistenceMode, parameters, trace);
+                            expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
         }
@@ -2185,6 +2210,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.containsKey(queryId.toString())).andReturn(false);
         expect(this.query.getQueryName()).andReturn(null).anyTimes();
         expect(this.query.getPagesize()).andReturn(0).anyTimes();
+        expect(this.query.getPageTimeout()).andReturn(-1).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
@@ -2197,6 +2223,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         QueryImplListResponse result1 = subject.list(queryName);
         PowerMock.verifyAll();
@@ -2723,6 +2750,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, AuditParameters.class, auditParameters);
@@ -2859,6 +2887,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         String userName = "userName";
@@ -2872,6 +2901,7 @@ public class ExtendedQueryExecutorBeanTest {
         p.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
         p.putSingle(QueryParameters.QUERY_NAME, queryName);
         p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
+        p.putSingle(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(pageTimeout));
         p.putSingle(QueryParameters.QUERY_STRING, query);
         p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
@@ -2900,6 +2930,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.query.setQueryAuthorizations(queryAuthorizations);
         this.query.setExpirationDate(expirationDate);
         this.query.setPagesize(pagesize);
+        this.query.setPageTimeout(pageTimeout);
         this.query.setParameters(isA(Set.class));
         expect(this.query.getQueryName()).andReturn(queryName);
         this.persister.update(this.query);
@@ -2923,7 +2954,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AuditParameters.class, auditParameters);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         GenericResponse<String> result1 = subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, persistenceMode, parameters);
+                        queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters);
         PowerMock.verifyAll();
         
         // Verify results
@@ -2944,6 +2975,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = false;
@@ -2963,6 +2995,7 @@ public class ExtendedQueryExecutorBeanTest {
         qp.setEndDate(endDate);
         qp.setExpirationDate(expirationDate);
         qp.setPagesize(pagesize);
+        qp.setPageTimeout(pageTimeout);
         qp.setColumnVisibility(queryAuthorizations);
         
         MultivaluedMap<String,String> params = qp.toMap();
@@ -3019,6 +3052,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 9999);
         int pagesize = 10;
+        int pageTimeout = -1;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
         boolean trace = false;
@@ -3056,7 +3090,7 @@ public class ExtendedQueryExecutorBeanTest {
         StreamingOutput result1 = null;
         try {
             MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, persistenceMode, parameters, trace);
+                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters, trace);
             
             result1 = subject.execute(queryLogicName, queryParameters, httpHeaders);
             
@@ -3082,6 +3116,7 @@ public class ExtendedQueryExecutorBeanTest {
             this.setExpirationDate(query.getExpirationDate());
             this.setId(query.getId());
             this.setPagesize(query.getPagesize());
+            this.setPageTimeout(query.getPageTimeout());
             this.setParameters(query.getParameters());
             this.setQuery(query.getQuery());
             this.setQueryAuthorizations(query.getQueryAuthorizations());
