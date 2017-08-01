@@ -243,7 +243,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
                                     + pageTimeInCall + " " + timing.toString());
                     hitPageTimeTrigger = true;
-                    this.getMetric().setLifecycle(QueryMetric.Lifecycle.NEXTTIMEOUT);
                     break;
                 }
                 scanned++;
@@ -301,7 +300,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // update timestamp in case this operation to a long time.
             touch();
             this.lastPageNumber++;
-            if (resultList.size() > 0 && !this.getMetric().isLifecycleFinal()) {
+            if (resultList.size() > 0) {
                 this.getMetric().setLifecycle(QueryMetric.Lifecycle.RESULTS);
             }
         } catch (Exception e) {
@@ -339,9 +338,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         }
         
         // change status to cancelled
-        if (!this.getMetric().isLifecycleFinal()) {
-            this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
-        }
+        this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
     }
     
     public boolean isFinished() {

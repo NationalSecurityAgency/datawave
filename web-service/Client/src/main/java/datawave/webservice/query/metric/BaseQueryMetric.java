@@ -578,7 +578,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     public enum Lifecycle {
         
-        NONE, DEFINED, INITIALIZED, RESULTS, CLOSED, CANCELLED, MAXRESULTS, NEXTTIMEOUT, TIMEOUT
+        NONE, DEFINED, INITIALIZED, RESULTS, CLOSED, CANCELLED, MAXRESULTS, NEXTTIMEOUT, TIMEOUT, SHUTDOWN
     }
     
     public BaseQueryMetric() {
@@ -812,7 +812,9 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     }
     
     public void setLifecycle(Lifecycle lifecycle) {
-        this.lifecycle = lifecycle;
+        if (!this.isLifecycleFinal()) {
+            this.lifecycle = lifecycle;
+        }
     }
     
     /**
@@ -822,7 +824,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
      */
     public boolean isLifecycleFinal() {
         return Lifecycle.CLOSED == lifecycle || Lifecycle.CANCELLED == lifecycle || Lifecycle.MAXRESULTS == lifecycle || Lifecycle.NEXTTIMEOUT == lifecycle
-                        || Lifecycle.TIMEOUT == lifecycle;
+                        || Lifecycle.TIMEOUT == lifecycle || Lifecycle.SHUTDOWN == lifecycle;
     }
     
     public int getLastWrittenHash() {
