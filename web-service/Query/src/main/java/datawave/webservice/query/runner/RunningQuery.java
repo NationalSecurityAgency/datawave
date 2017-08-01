@@ -239,7 +239,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 long pageTimeInCall = (System.currentTimeMillis() - pageStartTime);
                 
                 int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
-                if (timing != null && currentPageCount > 0 && timing.shoudReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
+                if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                     log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
                                     + pageTimeInCall + " " + timing.toString());
                     hitPageTimeTrigger = true;
@@ -490,14 +490,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * An interface used to force returning from a next call within a running query.
      */
     public static interface RunningQueryTiming {
-        boolean shoudReturnPartialResults(int pageSize, int maxPageSize, long timeInCall);
+        boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall);
     }
     
     /**
      * A noop implementation of the running query timing interface.
      */
     public static class RunningQueryTimingNoOp implements RunningQueryTiming {
-        public boolean shoudReturnPartialResults(int pageSize, int maxPageSize, long timeInCall) {
+        public boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall) {
             return false;
         }
     }

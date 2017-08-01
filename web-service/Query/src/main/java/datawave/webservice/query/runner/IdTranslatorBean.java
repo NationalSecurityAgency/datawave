@@ -113,6 +113,8 @@ public class IdTranslatorBean {
      *            - the ID for which to find related IDs (@Required)
      * @param pagesize
      *            - optional pagesize (default 100)
+     * @param pageTimeout
+     *            - optional pageTimeout (default -1)
      * @param systemFrom
      *            name of the sending system
      * @param dataSetType
@@ -140,13 +142,14 @@ public class IdTranslatorBean {
     @Path("/translateId/{id}")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public BaseQueryResponse translateId(@PathParam("id") String id, @QueryParam("pagesize") @DefaultValue("100") int pagesize,
-                    @QueryParam("systemFrom") String systemFrom, @QueryParam("dataSetType") String dataSetType, @QueryParam("purpose") String purpose,
-                    @QueryParam("parentAuditId") String parentAuditId, @QueryParam("TLDonly") @DefaultValue("true") String TLDonly) {
+                    @QueryParam("pageTimeout") @DefaultValue("-1") int pageTimeout, @QueryParam("systemFrom") String systemFrom,
+                    @QueryParam("dataSetType") String dataSetType, @QueryParam("purpose") String purpose, @QueryParam("parentAuditId") String parentAuditId,
+                    @QueryParam("TLDonly") @DefaultValue("true") String TLDonly) {
         
         String queryId = null;
         BaseQueryResponse response;
         try {
-            response = submitTranslationQuery(id, pagesize, TLDonly);
+            response = submitTranslationQuery(id, pagesize, pageTimeout, TLDonly);
             queryId = response.getQueryId();
             return response;
         } finally {
@@ -186,9 +189,9 @@ public class IdTranslatorBean {
     @GZIP
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public BaseQueryResponse translateIDs(@FormParam("idList") String idList, @FormParam("pagesize") @DefaultValue("100") int pagesize,
-                    @FormParam("TLDonly") @DefaultValue("true") String TLDonly) {
+                    @FormParam("pageTimeout") @DefaultValue("-1") int pageTimeout, @FormParam("TLDonly") @DefaultValue("true") String TLDonly) {
         
-        return submitTranslationQuery(idList, pagesize, TLDonly);
+        return submitTranslationQuery(idList, pagesize, pageTimeout, TLDonly);
     }
     
     private String buildQuery(String ids) {
@@ -207,7 +210,7 @@ public class IdTranslatorBean {
         return query.toString();
     }
     
-    private BaseQueryResponse submitTranslationQuery(String ids, int pagesize, String TLDonly) {
+    private BaseQueryResponse submitTranslationQuery(String ids, int pagesize, int pageTimeout, String TLDonly) {
         
         String queryName = UUID.randomUUID().toString();
         String parameters = "query.syntax:LUCENE";
@@ -243,6 +246,7 @@ public class IdTranslatorBean {
         p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, auths);
         p.putSingle(QueryParameters.QUERY_EXPIRATION, formatter.format(expirationDate));
         p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
+        p.putSingle(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(pageTimeout));
         p.putSingle(QueryParameters.QUERY_PERSISTENCE, QueryPersistence.TRANSIENT.name());
         p.putSingle(QueryParameters.QUERY_TRACE, Boolean.toString(false));
         // Put the original parameter string into the map also

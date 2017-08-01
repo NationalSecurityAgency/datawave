@@ -216,6 +216,8 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @XmlElement
     protected int pagesize;
     @XmlElement
+    protected int pageTimeout;
+    @XmlElement
     protected HashSet<Parameter> parameters = new HashSet<Parameter>();
     @XmlElement
     protected List<String> dnList;
@@ -264,6 +266,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         return pagesize;
     }
     
+    public int getPageTimeout() {
+        return pageTimeout;
+    }
+    
     public Set<Parameter> getParameters() {
         return parameters == null ? null : Collections.unmodifiableSet(parameters);
     }
@@ -298,6 +304,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     
     public void setPagesize(int pagesize) {
         this.pagesize = pagesize;
+    }
+    
+    public void setPageTimeout(int pageTimeout) {
+        this.pageTimeout = pageTimeout;
     }
     
     public void setParameters(Set<Parameter> parameters) {
@@ -377,6 +387,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         query.setExpirationDate(this.getExpirationDate());
         query.setId(UUID.randomUUID());
         query.setPagesize(this.getPagesize());
+        query.setPageTimeout(this.getPageTimeout());
         query.setQuery(this.getQuery());
         query.setQueryAuthorizations(this.getQueryAuthorizations());
         query.setUserDN(this.getUserDN());
@@ -393,9 +404,9 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(this.getQueryLogicName()).append(this.getQueryName()).append(this.getExpirationDate())
-                        .append(UUID.randomUUID()).append(this.getPagesize()).append(this.getQuery()).append(this.getQueryAuthorizations())
-                        .append(this.getUserDN()).append(this.getOwner()).append(this.getParameters()).append(this.getDnList())
-                        .append(this.getColumnVisibility()).append(this.getBeginDate()).append(this.getEndDate()).toHashCode();
+                        .append(UUID.randomUUID()).append(this.getPagesize()).append(this.getPageTimeout()).append(this.getQuery())
+                        .append(this.getQueryAuthorizations()).append(this.getUserDN()).append(this.getOwner()).append(this.getParameters())
+                        .append(this.getDnList()).append(this.getColumnVisibility()).append(this.getBeginDate()).append(this.getEndDate()).toHashCode();
     }
     
     @Override
@@ -406,6 +417,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         tsb.append("expirationDate", this.getExpirationDate());
         tsb.append("uuid", this.getId());
         tsb.append("pagesize", this.getPagesize());
+        tsb.append("pageTimeout", this.getPageTimeout());
         tsb.append("query", this.getQuery());
         tsb.append("queryAuthorizations", this.getQueryAuthorizations());
         tsb.append("userDN", this.getUserDN());
@@ -437,6 +449,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         eb.append(this.getQueryAuthorizations(), other.getQueryAuthorizations());
         eb.append(this.getExpirationDate(), other.getExpirationDate());
         eb.append(this.getPagesize(), other.getPagesize());
+        eb.append(this.getPageTimeout(), other.getPageTimeout());
         eb.append(this.getColumnVisibility(), other.getColumnVisibility());
         eb.append(this.getBeginDate(), other.getBeginDate());
         eb.append(this.getEndDate(), other.getEndDate());
@@ -473,7 +486,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         
         public boolean isInitialized(QueryImpl message) {
             return message.queryLogicName != null && message.id != null && message.userDN != null && message.query != null
-                            && message.queryAuthorizations != null && message.expirationDate != null && message.pagesize > 0;
+                            && message.queryAuthorizations != null && message.expirationDate != null && message.pagesize > 0 && message.pageTimeout != 0;
         }
         
         public void writeTo(Output output, QueryImpl message) throws IOException {
@@ -532,6 +545,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
             if (message.columnVisibility != null) {
                 output.writeString(14, message.columnVisibility, false);
             }
+            
+            if (message.pageTimeout == 0)
+                throw new UninitializedMessageException(message, SCHEMA);
+            output.writeUInt32(15, message.pageTimeout, false);
         }
         
         public void mergeFrom(Input input, QueryImpl message) throws IOException {
@@ -586,6 +603,9 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                     case 14:
                         message.columnVisibility = input.readString();
                         break;
+                    case 15:
+                        message.pageTimeout = input.readUInt32();
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -623,6 +643,8 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                     return "dnList";
                 case 14:
                     return "columnVisibility";
+                case 15:
+                    return "pageTimeout";
                 default:
                     return null;
             }
@@ -649,6 +671,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
             fieldMap.put("owner", 12);
             fieldMap.put("dnList", 13);
             fieldMap.put("columnVisibility", 14);
+            fieldMap.put("pageTimeout", 15);
         }
     };
     
@@ -665,6 +688,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.expirationDate = qp.getExpirationDate();
         this.id = UUID.randomUUID().toString();
         this.pagesize = qp.getPagesize();
+        this.pageTimeout = qp.getPageTimeout();
         this.query = qp.getQuery();
         this.queryAuthorizations = qp.getAuths();
         this.queryLogicName = queryLogicName;
