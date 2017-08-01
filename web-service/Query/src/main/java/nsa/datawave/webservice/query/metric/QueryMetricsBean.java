@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.EJBContext;
 import javax.ejb.LocalBean;
@@ -66,6 +67,11 @@ public class QueryMetricsBean {
     
     public QueryMetricsBean() {}
     
+    /*
+     * @PermitAll is necessary because this method is called indirectly from the @PreDestroy method of the QueryExpirationBean and the QueryExpirationBean's
+     * @RunAs annotation is not being honored in the @PreDestroy hook
+     */
+    @PermitAll
     public void updateMetric(BaseQueryMetric metric) throws Exception {
         DatawavePrincipal dp = getPrincipal();
         

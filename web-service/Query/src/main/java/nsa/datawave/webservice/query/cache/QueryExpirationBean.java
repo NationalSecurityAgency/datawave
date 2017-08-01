@@ -6,6 +6,7 @@ import nsa.datawave.webservice.common.connection.AccumuloConnectionFactory;
 import nsa.datawave.webservice.query.exception.DatawaveErrorCode;
 import nsa.datawave.webservice.query.exception.QueryException;
 import nsa.datawave.webservice.query.metric.QueryMetric;
+import nsa.datawave.webservice.query.metric.QueryMetricsBean;
 import nsa.datawave.webservice.query.runner.RunningQuery;
 import nsa.datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.trace.instrument.Span;
@@ -19,11 +20,7 @@ import javax.annotation.PreDestroy;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Schedule;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
+import javax.ejb.*;
 import javax.inject.Inject;
 import java.util.Date;
 
@@ -32,6 +29,7 @@ import java.util.Date;
 @DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
 @Startup
 @Singleton
+@DependsOn({"QueryMetricsBean", "AccumuloConnectionFactoryBean"})
 @Lock(LockType.WRITE)
 // by default all methods are blocking
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
@@ -41,14 +39,20 @@ public class QueryExpirationBean {
     
     @Inject
     private QueryCache cache;
+    
     @Inject
     @SpringBean(refreshable = true)
     private QueryExpirationConfiguration conf;
     
     @Inject
     private AccumuloConnectionFactory connectionFactory;
+    
     @Inject
     private CreatedQueryLogicCacheBean qlCache;
+    
+    @Inject
+    private QueryMetricsBean metrics;
+    
     private boolean clearAll = false;
     
     @PostConstruct
@@ -87,62 +91,40 @@ public class QueryExpirationBean {
         qlCache.clearQueryLogics(now, conf.getCallTimeInMS());
     }
     
-    /**
-     * Method to determine if a query should be evicted from the cache based on configured values.
-     */
-    private boolean shouldRemove(RunningQuery query, long currentTime) {
-        if (!query.hasActiveCall()) {
-            long difference = currentTime - query.getLastUsed();
-            if (log.isDebugEnabled()) {
-                long countDown = (conf.getIdleTimeInMS() / 1000) - (difference / 1000);
-                log.debug("Query: " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " will be evicted in: " + countDown + " seconds.");
-            }
-            
-            return difference > conf.getIdleTimeInMS();
-        }
-        
-        if (query.getTimeOfCurrentCall() == 0) {
-            log.warn("Query has active call set but a call time of 0ms.");
-            return false;
-        }
-        
-        query.touch(); // Since we know we're still in a call, go ahead and reset the idle time.
-        long difference = currentTime - query.getTimeOfCurrentCall();
-        
-        if (log.isDebugEnabled()) {
-            log.debug("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000) + "s.");
-        }
-        
-        if (difference > conf.getCallTimeInMS()) {
-            log.warn("A query has had a call running against it for: " + difference + "ms. We are evicting the query from the cache.");
-            return true;
-        }
-        
-        return false;
-    }
-    
     private void clearQueries(long now) {
         int count = 0;
         
         for (RunningQuery query : cache) {
-            if (clearAll || shouldRemove(query, now)) {
-                
+            boolean idleTooLong = !clearAll && !query.hasActiveCall() && isIdleTooLong(query, now) ? true : false;
+            boolean nextTooLong = !clearAll && query.hasActiveCall() && isNextTooLong(query, now) ? true : false;
+            if (clearAll || idleTooLong || nextTooLong) {
                 if (query.getSettings().getUncaughtExceptionHandler() == null) {
                     query.getSettings().setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
                 }
-                if (clearAll) {
-                    query.getSettings().getUncaughtExceptionHandler()
-                                    .uncaughtException(Thread.currentThread(), new QueryException(DatawaveErrorCode.SERVER_SHUTDOWN));
-                } else {
-                    if (!query.getMetric().isLifecycleFinal() && !query.isFinished() && !query.hasActiveCall() && isIdleTooLong(query, now)) {
-                        query.getMetric().setLifecycle(QueryMetric.Lifecycle.TIMEOUT);
+                try {
+                    if (clearAll) {
+                        query.getMetric().setLifecycle(QueryMetric.Lifecycle.SHUTDOWN);
+                        query.getSettings().getUncaughtExceptionHandler()
+                                        .uncaughtException(Thread.currentThread(), new QueryException(DatawaveErrorCode.SERVER_SHUTDOWN));
+                    } else {
+                        if (!query.getMetric().isLifecycleFinal() && !query.isFinished() && idleTooLong) {
+                            query.getMetric().setLifecycle(QueryMetric.Lifecycle.TIMEOUT);
+                        }
+                        if (!query.getMetric().isLifecycleFinal() && !query.isFinished() && nextTooLong) {
+                            query.getMetric().setLifecycle(QueryMetric.Lifecycle.NEXTTIMEOUT);
+                        }
+                        
+                        query.getSettings().getUncaughtExceptionHandler()
+                                        .uncaughtException(Thread.currentThread(), new QueryException(DatawaveErrorCode.QUERY_TIMEOUT));
                     }
-                    if (!query.getMetric().isLifecycleFinal() && !query.isFinished() && query.hasActiveCall() && isNextTooLong(query, now)) {
-                        query.getMetric().setLifecycle(QueryMetric.Lifecycle.NEXTTIMEOUT);
+                } finally {
+                    if (query.getLogic().getCollectQueryMetrics()) {
+                        try {
+                            metrics.updateMetric(query.getMetric());
+                        } catch (Exception e) {
+                            log.error(e.getMessage(), e);
+                        }
                     }
-                    
-                    query.getSettings().getUncaughtExceptionHandler()
-                                    .uncaughtException(Thread.currentThread(), new QueryException(DatawaveErrorCode.QUERY_TIMEOUT));
                 }
                 
                 if (query.hasActiveCall()) {
@@ -204,8 +186,24 @@ public class QueryExpirationBean {
      * @return true if query next has been running too long, false otherwise
      */
     private boolean isNextTooLong(RunningQuery query, long currentTime) {
-        long difference = currentTime - query.getLastUsed();
+        if (query.getTimeOfCurrentCall() == 0) {
+            log.warn("Query has active call set but a call time of 0ms.");
+            return false;
+        }
         
-        return difference > query.getTimeOfCurrentCall();
+        query.touch(); // Since we know we're still in a call, go ahead and reset the idle time.
+        long difference = currentTime - query.getTimeOfCurrentCall();
+        
+        if (difference > conf.getCallTimeInMS()) {
+            log.warn("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)
+                            + "s.  We are evicting this query from the cache.");
+            return true;
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)
+                                + "s.");
+            }
+            return false;
+        }
     }
 }
