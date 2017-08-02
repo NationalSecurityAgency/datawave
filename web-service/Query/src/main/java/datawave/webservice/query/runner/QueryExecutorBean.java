@@ -2275,7 +2275,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @param parameters
      *            - optional parameters to the query, a semi-colon separated list name=value pairs (optional, auditing required if changed)
      * @see datawave.webservice.query.runner.QueryExecutorBean#updateQuery(String, String, String, String, java.util.Date, java.util.Date, String,
-     *      java.util.Date, Integer, datawave.webservice.query.QueryPersistence, String)
+     *      java.util.Date, Integer, Integer, datawave.webservice.query.QueryPersistence, String)
      *
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
