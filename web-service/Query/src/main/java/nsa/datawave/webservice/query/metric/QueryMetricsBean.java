@@ -69,6 +69,7 @@ public class QueryMetricsBean {
     
     /*
      * @PermitAll is necessary because this method is called indirectly from the @PreDestroy method of the QueryExpirationBean and the QueryExpirationBean's
+     * 
      * @RunAs annotation is not being honored in the @PreDestroy hook
      */
     @PermitAll
