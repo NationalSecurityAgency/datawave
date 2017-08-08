@@ -557,8 +557,8 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
             hitSet.add((ValueTuple) left);
         } else if (right instanceof ValueTuple) {
             hitSet.add((ValueTuple) right);
-        } else {
-            log.warn("neither left nor right can be added to hit set left:" + (left != null ? left.getClass() : null) + ", right:"
+        } else if (log.isTraceEnabled()) {
+            log.trace("neither left nor right can be added to hit set left:" + (left != null ? left.getClass() : null) + ", right:"
                             + (right != null ? right.getClass() : null));
         }
     }
