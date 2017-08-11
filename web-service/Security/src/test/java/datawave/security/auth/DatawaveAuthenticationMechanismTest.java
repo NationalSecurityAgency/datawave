@@ -18,7 +18,9 @@ import org.junit.runner.RunWith;
 import org.powermock.api.easymock.annotation.MockStrict;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
@@ -180,6 +182,59 @@ public class DatawaveAuthenticationMechanismTest {
     
     @Test
     public void testSSLWithoutPeerCerts() throws Exception {
+        Certificate cert = new Certificate("DUMMY") {
+            @Override
+            public byte[] getEncoded() throws CertificateEncodingException {
+                return new byte[0];
+            }
+            
+            @Override
+            public void verify(PublicKey key) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException,
+                            SignatureException {}
+            
+            @Override
+            public void verify(PublicKey key, String sigProvider) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException,
+                            NoSuchProviderException, SignatureException {}
+            
+            @Override
+            public String toString() {
+                return null;
+            }
+            
+            @Override
+            public PublicKey getPublicKey() {
+                return null;
+            }
+        };
+        
+        httpHeaders.add(SUBJECT_DN_HEADER, testUserCert.getSubjectDN().toString());
+        httpHeaders.add(ISSUER_DN_HEADER, testUserCert.getIssuerDN().toString());
+        
+        String expectedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + ">";
+        
+        expect(httpServerExchange.getConnection()).andReturn(serverConnection);
+        expect(serverConnection.getSslSessionInfo()).andReturn(sslSessionInfo);
+        expect(sslSessionInfo.getPeerCertificates()).andThrow(new SSLPeerUnverifiedException("no client cert"));
+        expect(httpServerExchange.getRequestHeaders()).andReturn(httpHeaders).times(2);
+        expect(securityContext.getIdentityManager()).andReturn(identityManager);
+        expect(identityManager.verify(eq(expectedID), isA(Credential.class))).andReturn(account);
+        securityContext.authenticationComplete(account, "DATAWAVE-AUTH", false);
+        long requestStartTime = System.nanoTime();
+        HeaderMap headers = new HeaderMap();
+        expect(httpServerExchange.getRequestStartTime()).andReturn(requestStartTime);
+        expect(httpServerExchange.getRequestHeaders()).andReturn(headers);
+        
+        replayAll();
+        
+        AuthenticationMechanismOutcome outcome = datawaveAuthenticationMechanism.authenticate(httpServerExchange, securityContext);
+        assertEquals(AuthenticationMechanismOutcome.AUTHENTICATED, outcome);
+        
+        verifyAll();
+    }
+    
+    @Test
+    public void testSSLWithoutPeerCertsNoTrustedHeaderAuthentication() throws Exception {
+        Whitebox.setInternalState(datawaveAuthenticationMechanism, "trustedHeaderAuthentication", false);
         Certificate cert = new Certificate("DUMMY") {
             @Override
             public byte[] getEncoded() throws CertificateEncodingException {
