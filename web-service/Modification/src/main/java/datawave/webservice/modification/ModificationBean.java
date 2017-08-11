@@ -6,7 +6,6 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.AuditParameters;
-import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
@@ -51,6 +50,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -146,11 +146,11 @@ public class ModificationBean {
         Principal p = ctx.getCallerPrincipal();
         String user;
         Set<Authorizations> cbAuths = new HashSet<>();
-        Set<Collection<String>> userRoles = new HashSet<>();
+        Collection<String> userRoles = Collections.emptySet();
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             user = dp.getShortName();
-            userRoles.addAll(dp.getUserRoles());
+            userRoles = dp.getPrimaryUser().getRoles();
             for (Collection<String> c : dp.getAuthorizations())
                 cbAuths.add(new Authorizations(c.toArray(new String[c.size()])));
         } else {
@@ -175,15 +175,7 @@ public class ModificationBean {
             
             // Ensure that the user is in the list of authorized roles
             if (null != service.getAuthorizedRoles()) {
-                boolean authorized = false;
-                for (Collection<String> roles : userRoles) {
-                    HashSet<String> rolesSet = new HashSet<>(roles);
-                    boolean changed = rolesSet.retainAll(service.getAuthorizedRoles());
-                    if (!changed || rolesSet.size() > 0) {
-                        authorized = true;
-                        break;
-                    }
-                }
+                boolean authorized = !Collections.disjoint(userRoles, service.getAuthorizedRoles());
                 if (!authorized) {
                     // Then the user does not have any of the authorized roles
                     UnauthorizedQueryException qe = new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED, MessageFormat.format(

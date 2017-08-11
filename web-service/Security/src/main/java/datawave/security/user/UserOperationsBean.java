@@ -1,11 +1,7 @@
 package datawave.security.user;
 
 import java.security.Principal;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map.Entry;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -22,9 +18,8 @@ import javax.ws.rs.Produces;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.PrincipalFactory;
+import datawave.security.authorization.DatawaveUser;
 import datawave.security.cache.CredentialsCacheBean;
-import datawave.security.util.DnUtils;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -47,10 +42,7 @@ public class UserOperationsBean {
     private EJBContext context;
     
     @Inject
-    private PrincipalFactory principalFactory;
-    
-    @Inject
-    private CredentialsCacheBean credentialsCacheService;
+    private CredentialsCacheBean credentialsCache;
     
     @Inject
     private ResponseObjectFactory responseObjectFactory;
@@ -106,49 +98,28 @@ public class UserOperationsBean {
             "text/html"})
     public AuthorizationsListBase listEffectiveAuthorizations() {
         
-        AuthorizationsListBase list = responseObjectFactory.getAuthorizationsList();
+        final AuthorizationsListBase list = responseObjectFactory.getAuthorizationsList();
         
         // Find out who/what called this method
         Principal p = context.getCallerPrincipal();
-        String sid = p.getName();
+        String name = p.getName();
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal datawavePrincipal = (DatawavePrincipal) p;
-            sid = datawavePrincipal.getShortName();
+            name = datawavePrincipal.getShortName();
+            
             // Add the user DN's auths into the authorization list
-            String userDN = datawavePrincipal.getUserDN().toString();
-            if (userDN != null) {
-                String subjectDN = userDN;
-                String issuerDN = null;
-                String[] dns = DnUtils.splitProxiedSubjectIssuerDNs(userDN);
-                if (dns.length > 1) {
-                    subjectDN = dns[0];
-                    issuerDN = dns[1];
-                } else {
-                    List<String> dnList = Arrays.asList(datawavePrincipal.getDNs());
-                    int index = dnList.indexOf(userDN);
-                    if (index >= 0) {
-                        subjectDN = dnList.get(index);
-                        if (index < dnList.size() - 1)
-                            issuerDN = dnList.get(index + 1);
-                    }
-                }
-                list.setUserAuths(subjectDN, issuerDN, new HashSet<>(datawavePrincipal.getUserAuthorizations()));
-            }
-            // Now add all entity auth mappings into the list
-            list.setAuthMapping(datawavePrincipal.getRoleToAuthMapping());
-            for (Entry<String,Collection<String>> entry : datawavePrincipal.getAuthorizationsMap().entrySet()) {
-                log.trace(sid + " has " + entry.getKey() + " -> " + entry.getValue());
-                String[] dns = DnUtils.splitProxiedSubjectIssuerDNs(entry.getKey());
-                String subjectDN = dns[0];
-                String issuerDN = entry.getKey();
-                if (dns.length == 2)
-                    issuerDN = dns[1];
-                else if (dns.length == 1)
-                    issuerDN = null;
-                list.addAuths(subjectDN, issuerDN, new HashSet<>(entry.getValue()));
-            }
+            DatawaveUser primaryUser = datawavePrincipal.getPrimaryUser();
+            list.setUserAuths(primaryUser.getDn().subjectDN(), primaryUser.getDn().issuerDN(), new HashSet<>(primaryUser.getAuths()));
+            
+            // Now add all entity auth sets into the list
+            datawavePrincipal.getProxiedUsers().forEach(u -> list.addAuths(u.getDn().subjectDN(), u.getDn().issuerDN(), new HashSet<>(u.getAuths())));
+            
+            // Add the role to authorization mapping.
+            // NOTE: Currently this is only added for the primary user, which is really all anyone should care about in terms of mucking with
+            // authorizations. When used for queries, all non-primary users have all of their auths included -- there is no downgrading.
+            list.setAuthMapping(datawavePrincipal.getPrimaryUser().getRoleToAuthMapping().asMap());
         }
-        log.trace(sid + " has authorizations union " + list.getAllAuths());
+        log.trace(name + " has authorizations union " + list.getAllAuths());
         return list;
     }
     
@@ -166,15 +137,13 @@ public class UserOperationsBean {
     @PermitAll
     public GenericResponse<String> flushCachedCredentials() {
         GenericResponse<String> response = new GenericResponse<>();
-        Principal p = context.getCallerPrincipal();
-        log.info("Flushing credentials for " + p + " from the cache.");
-        if (p instanceof DatawavePrincipal) {
-            DatawavePrincipal cp = (DatawavePrincipal) p;
-            String[] dns = DnUtils.splitProxiedSubjectIssuerDNs(cp.getUserDN().toString());
-            String result = credentialsCacheService.evict(dns[0]);
-            response.setResult(result);
+        Principal callerPrincipal = context.getCallerPrincipal();
+        log.info("Flushing credentials for " + callerPrincipal + " from the cache.");
+        if (callerPrincipal instanceof DatawavePrincipal) {
+            DatawavePrincipal dp = (DatawavePrincipal) callerPrincipal;
+            response.setResult(credentialsCache.evict(dp.getUserDN().subjectDN()));
         } else {
-            log.warn(p + " is not a DatawavePrincipal.  Cannot flush credentials.");
+            log.warn(callerPrincipal + " is not a DatawavePrincipal.  Cannot flush credentials.");
             response.addMessage("Unable to determine calling user name.  Values were not flushed!");
             throw new DatawaveWebApplicationException(new IllegalStateException("Unable to flush credentials.  Unknown principal type."), response);
         }
@@ -183,7 +152,6 @@ public class UserOperationsBean {
     }
     
     public DatawavePrincipal getCurrentPrincipal() {
-        
         if (context == null) {
             return null;
         } else {

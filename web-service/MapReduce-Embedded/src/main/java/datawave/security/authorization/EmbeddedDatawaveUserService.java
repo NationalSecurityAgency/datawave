@@ -10,14 +10,14 @@ import java.util.Collection;
  */
 @Alternative
 @Priority(Interceptor.Priority.APPLICATION)
-public class EmbeddedPrincipalLookupBean implements DatawavePrincipalService {
+public class EmbeddedDatawaveUserService implements DatawaveUserService {
     @Override
-    public DatawavePrincipal lookupPrincipal(SubjectIssuerDNPair dn) throws Exception {
+    public DatawaveUser lookup(SubjectIssuerDNPair dn) throws AuthorizationException {
         throw new UnsupportedOperationException("Not supported in embedded mode.");
     }
     
     @Override
-    public DatawavePrincipal lookupPrincipal(Collection<SubjectIssuerDNPair> dns) throws Exception {
+    public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
         throw new UnsupportedOperationException("Not supported in embedded mode.");
     }
 }

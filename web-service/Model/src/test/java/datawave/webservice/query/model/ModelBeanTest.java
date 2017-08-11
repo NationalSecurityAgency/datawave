@@ -6,6 +6,7 @@ import static org.powermock.api.easymock.PowerMock.createStrictMock;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -16,7 +17,8 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.security.util.ScannerHelper;
@@ -65,7 +67,6 @@ public class ModelBeanTest {
     private DatawavePrincipal principal = null;
     
     private static long TIMESTAMP = System.currentTimeMillis();
-    private static long TIMESTAMP2 = TIMESTAMP + 1000;
     
     private datawave.webservice.model.Model MODEL_ONE = null;
     private datawave.webservice.model.Model MODEL_TWO = null;
@@ -85,8 +86,8 @@ public class ModelBeanTest {
         instance = new InMemoryInstance("test");
         connector = instance.getConnector("root", new PasswordToken(""));
         
-        principal = new DatawavePrincipal(SubjectIssuerDNPair.of(userDN, issuerDN), UserType.USER);
-        principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, issuerDN), UserType.USER, Arrays.asList(auths), null, null, 0L);
+        principal = new DatawavePrincipal(Collections.singletonList(user));
         
         URL m1Url = ModelBeanTest.class.getResource("/ModelBeanTest_m1.xml");
         URL m2Url = ModelBeanTest.class.getResource("/ModelBeanTest_m2.xml");

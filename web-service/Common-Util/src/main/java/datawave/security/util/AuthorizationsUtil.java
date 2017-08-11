@@ -2,12 +2,16 @@ package datawave.security.util;
 
 import java.security.Principal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.*;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class AuthorizationsUtil {
     public static Authorizations union(Iterable<byte[]> authorizations1, Iterable<byte[]> authorizations2) {
@@ -33,7 +37,7 @@ public class AuthorizationsUtil {
             return Collections.singleton(new Authorizations());
         
         HashSet<Authorizations> mergedAuths = new HashSet<>();
-        HashSet<String> missingAuths = (requested == null) ? new HashSet<String>() : new HashSet<>(requested);
+        HashSet<String> missingAuths = (requested == null) ? new HashSet<>() : new HashSet<>(requested);
         for (Collection<String> auths : userAuths) {
             if (null != requested) {
                 missingAuths.removeAll(auths);
@@ -81,39 +85,29 @@ public class AuthorizationsUtil {
         
         LinkedHashSet<Authorizations> mergedAuths = new LinkedHashSet<>();
         
-        Map<String,Collection<String>> authsMap = (principal == null) ? null : principal.getAuthorizationsMap();
-        if (null == principal || null == authsMap || authsMap.isEmpty()) {
+        if (null == principal) {
             mergedAuths.add(new Authorizations());
         } else {
+            HashSet<String> missingAuths = (requested == null) ? new HashSet<>() : new HashSet<>(requested);
             
-            HashSet<String> missingAuths = (requested == null) ? new HashSet<String>() : new HashSet<>(requested);
-            
-            Collection<String> userAuths;
-            // Find the user DN as used in the principal's authorization map
-            String userDN = principal.getUserDN().subjectDN();
-            for (String dn : authsMap.keySet()) {
-                if (dn.startsWith(userDN)) {
-                    userDN = dn;
-                    break;
-                }
-            }
-            // Intersect the user's auths against the request auths and add that to the return map first.
-            userAuths = authsMap.get(userDN);
-            if (userAuths != null) {
+            final DatawaveUser primaryUser = principal.getPrimaryUser();
+            HashSet<String> userAuths = new HashSet<>(primaryUser.getAuths());
+            if (!userAuths.isEmpty()) {
                 if (null != requested) {
                     missingAuths.removeAll(userAuths);
-                    userAuths = new HashSet<>(userAuths);
                     userAuths.retainAll(requested);
                 }
                 mergedAuths.add(new Authorizations(userAuths.toArray(new String[userAuths.size()])));
             }
-            // Now add the rest of the auths, skipping the user's auths
-            for (Map.Entry<String,Collection<String>> entry : authsMap.entrySet()) {
-                Collection<String> auths = entry.getValue();
-                if (!entry.getKey().equals(userDN)) {
-                    mergedAuths.add(new Authorizations(auths.toArray(new String[auths.size()])));
-                }
-            }
+            
+            // Now simply add the auths from each non-primary user to the merged auths set
+            // @formatter:off
+            principal.getProxiedUsers().stream()
+                    .filter(u -> u != primaryUser)
+                    .map(DatawaveUser::getAuths)
+                    .map(AuthorizationsUtil::toAuthorizations)
+                    .forEach(mergedAuths::add);
+            // @formatter:on
             
             if (!missingAuths.isEmpty()) {
                 throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
@@ -121,6 +115,10 @@ public class AuthorizationsUtil {
             }
         }
         return mergedAuths;
+    }
+    
+    private static Authorizations toAuthorizations(Collection<String> auths) {
+        return new Authorizations(auths.stream().map(String::trim).map(s -> s.getBytes(UTF_8)).collect(Collectors.toList()));
     }
     
     /**
@@ -161,7 +159,7 @@ public class AuthorizationsUtil {
             return finalAuths;
         } else {// missing auths.size() > 0; user requested auths they don't have
             throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
-                            + requested + ", User: " + userAuths.toString());
+                            + requested + ", User: " + userAuths);
         }
     }
     
@@ -201,17 +199,8 @@ public class AuthorizationsUtil {
         String auths = "";
         if (principal != null && (principal instanceof DatawavePrincipal)) {
             DatawavePrincipal datawavePrincipal = (DatawavePrincipal) principal;
-            String userDN = datawavePrincipal.getUserDN().subjectDN();
-            for (Map.Entry<String,Collection<String>> entry : datawavePrincipal.getAuthorizationsMap().entrySet()) {
-                if (entry.getKey().startsWith(userDN)) {
-                    HashSet<byte[]> b = new HashSet<>();
-                    for (String auth : entry.getValue()) {
-                        b.add(auth.getBytes());
-                    }
-                    auths = new Authorizations(b).toString();
-                    break;
-                }
-            }
+            
+            auths = new Authorizations(datawavePrincipal.getPrimaryUser().getAuths().toArray(new String[0])).toString();
         }
         return auths;
     }

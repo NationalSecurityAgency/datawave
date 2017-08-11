@@ -160,13 +160,7 @@ public class HudBean {
     }
     
     private boolean isAnAdmin(DatawavePrincipal dp) {
-        boolean isAnAdmin = false;
-        for (Collection<String> roleCollection : dp.getUserRoles()) {
-            if (null != roleCollection && (roleCollection.contains("Administrator") || roleCollection.contains("JBossAdministrator"))) {
-                isAnAdmin = true;
-                break;
-            }
-        }
-        return isAnAdmin;
+        Collection<String> roles = dp.getPrimaryUser().getRoles();
+        return roles.contains("Administrator") || roles.contains("JBossAdministrator");
     }
 }

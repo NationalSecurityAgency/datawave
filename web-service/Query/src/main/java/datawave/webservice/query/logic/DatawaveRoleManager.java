@@ -4,8 +4,6 @@ import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.security.authorization.DatawavePrincipal;
@@ -28,22 +26,8 @@ public class DatawaveRoleManager implements RoleManager {
             return false;
         DatawavePrincipal datawavePrincipal = (DatawavePrincipal) principal;
         if (requiredRoles != null && requiredRoles.size() > 0) {
-            Set<String> usersRoles = new HashSet<>();
-            Map<String,Collection<String>> userRolesMap = datawavePrincipal.getUserRolesMap();
-            if (userRolesMap.size() == 1) {
-                usersRoles.addAll(userRolesMap.values().iterator().next());
-            } else if (userRolesMap.size() > 1) {
-                String userDN = datawavePrincipal.getUserDN().toString();
-                for (Entry<String,Collection<String>> entry : userRolesMap.entrySet()) {
-                    if (entry.getKey().contains(userDN)) {
-                        usersRoles.addAll(entry.getValue());
-                        break;
-                    }
-                }
-            }
-            if (usersRoles.containsAll(requiredRoles) == false) {
-                return false;
-            }
+            Set<String> usersRoles = new HashSet<>(datawavePrincipal.getPrimaryUser().getRoles());
+            return usersRoles.containsAll(requiredRoles);
         }
         return true;
     }

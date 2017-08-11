@@ -42,9 +42,6 @@ embed-server --server-config=standalone-full.xml
 /system-property=dw.audit.log.mdb.pool.size:add(value=${audit.log.mdb.pool.size})
 /system-property=dw.audit.accumulo.mdb.pool.size:add(value=${audit.cb.mdb.pool.size})
 /system-property=dw.cache.coordinator.namespace:add(value=${accumulo.cache.table.name})
-/system-property=dw.principalLookup.projectName:add(value=${security.group.name})
-/system-property=dw.principalLookup.requiredRoles:add(value="${security.required.roles}")
-/system-property=dw.security.cache.tableName:add(value=${accumulo.cache.table.name})
 /system-property=dw.trusted.header.authentication:add(value=${trusted.header.login})
 /system-property=dw.transport.guarantee:add(value=${webapp.transport.guarantee})
 /system-property=dw.connectionPool.default:add(value=WAREHOUSE)
@@ -156,8 +153,8 @@ jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 deploy mysql/mysql-connector-java-${version.mysql-connector}.jar
 /subsystem=datasources/data-source=CachedResultsDS:add(jndi-name=java:jboss/datasources/CachedResultsDS,connection-url="jdbc:mysql://${mysql.host}:3306/${mysql.dbname}?zeroDateTimeBehavior=convertToNull",min-pool-size=${mysql.pool.min.size},max-pool-size=${mysql.pool.max.size},blocking-timeout-wait-millis=5000,idle-timeout-minutes=15,exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter,valid-connection-checker-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker,user-name=${mysql.user.name},password=${mysql.user.password},driver-name=mysql-connector-java-${version.mysql-connector}.jar_com.mysql.jdbc.Driver_5_1,driver-class=com.mysql.jdbc.Driver)
 
-# Configure the H2 DataSource used by the DatabaseAuthorizationService
-/subsystem=datasources/data-source=DatabaseAuthorizationServiceDS:add(jndi-name=java:jboss/datasources/DatabaseAuthorizationServiceDS,connection-url="jdbc:h2:${jboss.server.config.dir}/h2/databaseAuthUsers",user-name=sa,password=sa,driver-name=h2)
+# Configure the H2 DataSource used by the DatabaseUserService
+/subsystem=datasources/data-source=DatabaseUserServiceDS:add(jndi-name=java:jboss/datasources/DatabaseUserServiceDS,connection-url="jdbc:h2:${jboss.server.config.dir}/h2/databaseDatawaveUsers",user-name=sa,password=sa,driver-name=h2)
 
 #
 # Configure custom loggers and categories

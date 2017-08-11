@@ -437,7 +437,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // Find out who/what called this method
-        List<String> proxyServers = null;
+        Collection<String> proxyServers = null;
         Principal p = ctx.getCallerPrincipal();
         String userDN = p.getName();
         String userid = userDN;
@@ -600,7 +600,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         queryParameters.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, marking.toColumnVisibilityString());
         // Find out who/what called this method
-        List<String> proxyServers = null;
+        Collection<String> proxyServers = null;
         Principal p = ctx.getCallerPrincipal();
         String userDn = p.getName();
         String userid = userDn;
@@ -1127,7 +1127,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
     }
     
-    private BaseQueryResponse _next(RunningQuery query, String queryId, List<String> proxyServers, Span span) throws Exception {
+    private BaseQueryResponse _next(RunningQuery query, String queryId, Collection<String> proxyServers, Span span) throws Exception {
         // If we're tracing this query, then continue the trace for the next call.
         TInfo traceInfo = query.getTraceInfo();
         if (traceInfo != null) {
@@ -1495,7 +1495,7 @@ public class QueryExecutorBean implements QueryExecutor {
         // in case we don't make it to creating the response from the QueryLogic
         BaseQueryResponse response = responseObjectFactory.getEventQueryResponse();
         
-        List<String> proxyServers = null;
+        Collection<String> proxyServers = null;
         Principal p = ctx.getCallerPrincipal();
         String userid = p.getName();
         if (p instanceof DatawavePrincipal) {
@@ -2659,7 +2659,7 @@ public class QueryExecutorBean implements QueryExecutor {
          * This method captures the metrics on the query instead of doing it in the QueryMetricsEnrichmentInterceptor. The ExecuteStreamingOutputResponse class
          * is returned from this method and executed in the JAX-RS layer. It updates the metrics which are then updated on each call to the _next method.
          */
-        List<String> proxyServers = null;
+        Collection<String> proxyServers = null;
         Principal p = ctx.getCallerPrincipal();
         DatawavePrincipal dp;
         if (p instanceof DatawavePrincipal) {
@@ -2754,7 +2754,7 @@ public class QueryExecutorBean implements QueryExecutor {
         final RunningQuery rq = queryCache.get(queryId);
         rq.getMetric().setCreateCallTime(createCallTime);
         
-        final List<String> proxies = proxyServers;
+        final Collection<String> proxies = proxyServers;
         final SerializationType serializationType = s;
         final Class<?> queryResponseClass = responseClass;
         
@@ -2789,7 +2789,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Asynchronous
     public Future<?> executeAsync(String logicName, MultivaluedMap<String,String> queryParameters, Long startTime, Long loginTime,
                     AsyncQueryStatusObserver observer) {
-        List<String> proxyServers = null;
+        Collection<String> proxyServers = null;
         Principal p = ctx.getCallerPrincipal();
         DatawavePrincipal dp;
         if (p instanceof DatawavePrincipal) {
@@ -2902,10 +2902,10 @@ public class QueryExecutorBean implements QueryExecutor {
         private VoidResponse errorResponse = null;
         private RunningQuery rq = null;
         private SerializationType serializationType = SerializationType.XML;
-        private List<String> proxies = null;
+        private Collection<String> proxies = null;
         
         public ExecuteStreamingOutputResponse(String queryId, Class<?> queryResponseClass, VoidResponse errorResponse, RunningQuery rq,
-                        SerializationType serializationType, List<String> proxies) {
+                        SerializationType serializationType, Collection<String> proxies) {
             super();
             this.queryId = queryId;
             this.queryResponseClass = queryResponseClass;

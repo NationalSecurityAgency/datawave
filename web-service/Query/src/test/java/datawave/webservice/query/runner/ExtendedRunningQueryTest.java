@@ -15,7 +15,8 @@ import java.util.Set;
 import java.util.UUID;
 
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -120,8 +121,8 @@ public class ExtendedRunningQueryTest {
         String userSid = "userSid";
         UUID queryId = UUID.randomUUID();
         String methodAuths = "AUTH_1";
-        DatawavePrincipal principal = new DatawavePrincipal(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER);
-        principal.setAuthorizations(principal.getUserDN().toString(), Collections.singleton(methodAuths));
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         String query = "query";
         String queryLogicName = "queryLogicName";
         String queryName = "queryName";
@@ -198,8 +199,8 @@ public class ExtendedRunningQueryTest {
         String userSid = "userSid";
         UUID queryId = UUID.randomUUID();
         String methodAuths = "AUTH_1";
-        DatawavePrincipal principal = new DatawavePrincipal(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER);
-        principal.setAuthorizations(principal.getUserDN().toString(), Collections.singleton(methodAuths));
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         String query = "query";
         String queryLogicName = "queryLogicName";
         String queryName = "queryName";
@@ -279,8 +280,8 @@ public class ExtendedRunningQueryTest {
         String userDN = "userDN";
         UUID queryId = UUID.randomUUID();
         String methodAuths = "AUTH_1";
-        DatawavePrincipal principal = new DatawavePrincipal(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER);
-        principal.setAuthorizations(principal.getUserDN().toString(), Collections.singleton(methodAuths));
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
@@ -323,8 +324,8 @@ public class ExtendedRunningQueryTest {
         String userDN = "userDN";
         UUID queryId = UUID.randomUUID();
         String methodAuths = "AUTH_1";
-        DatawavePrincipal principal = new DatawavePrincipal(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER);
-        principal.setAuthorizations(principal.getUserDN().toString(), Collections.singleton(methodAuths));
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         
         // Set expectations
         expect(this.transformIterator.getTransformer()).andReturn(transformer);

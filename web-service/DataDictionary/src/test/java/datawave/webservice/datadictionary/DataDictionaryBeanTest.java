@@ -1,6 +1,7 @@
 package datawave.webservice.datadictionary;
 
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -35,12 +36,11 @@ public class DataDictionaryBeanTest extends EasyMockSupport {
     @Mock
     private EJBContext ctx;
     @Mock
-    private DatawavePrincipal principal;
-    @Mock
     private Connector connector;
     @Mock
     private DataDictionaryConfiguration config;
     
+    private DatawavePrincipal principal;
     private ResponseObjectFactory responseObjectFactory = new DefaultResponseObjectFactory();
     
     // placeholder parameter values
@@ -50,6 +50,12 @@ public class DataDictionaryBeanTest extends EasyMockSupport {
     private String auths = "AUTH_1";
     private List<List<String>> userAuths = Collections.singletonList(Arrays.asList(auths));
     private Set<Authorizations> setOfAuthObjs = AuthorizationsUtil.mergeAuthorizations(auths, userAuths);
+    
+    @Before
+    public void setup() throws Exception {
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("user"), DatawaveUser.UserType.USER, Collections.singletonList(auths), null, null, 0L);
+        principal = new DatawavePrincipal(Collections.singletonList(user));
+    }
     
     /**
      * Test basic marshalling and creation of object.
@@ -90,12 +96,8 @@ public class DataDictionaryBeanTest extends EasyMockSupport {
     private void callGetWithDataTypeFilters(String dataTypesInput, Collection<String> expectedDataTypeFilters) throws Exception {
         DataDictionaryBean dictionaryBean = createPartiallyMockedDictionaryBean();
         expect(ctx.getCallerPrincipal()).andReturn(principal);
-        Map<String,Collection<String>> expectedAuths = new HashMap<>();
-        expectedAuths.put("user", Collections.singletonList(auths));
-        expect(principal.getAuthorizationsMap()).andReturn(expectedAuths);
-        expect(principal.getUserDN()).andReturn(SubjectIssuerDNPair.of("user"));
         expect(this.dictionary.getFields(model, modelTable, metaTable, expectedDataTypeFilters, this.connector, setOfAuthObjs, 1)).andReturn(
-                        Collections.EMPTY_SET);
+                        Collections.emptySet());
         replayAll();
         
         DataDictionaryBase providedDictionary = dictionaryBean.get(model, modelTable, metaTable, auths, dataTypesInput);

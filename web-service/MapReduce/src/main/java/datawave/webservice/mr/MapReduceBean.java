@@ -48,7 +48,6 @@ import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.marking.SecurityMarking;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.PrincipalFactory;
 import datawave.security.system.ServerPrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
@@ -65,7 +64,6 @@ import datawave.webservice.mr.configuration.MapReduceJobConfiguration;
 import datawave.webservice.mr.configuration.NeedAccumuloConnectionFactory;
 import datawave.webservice.mr.configuration.NeedAccumuloDetails;
 import datawave.webservice.mr.configuration.NeedCallerDetails;
-import datawave.webservice.mr.configuration.NeedPrincipalFactory;
 import datawave.webservice.mr.configuration.NeedQueryCache;
 import datawave.webservice.mr.configuration.NeedQueryLogicFactory;
 import datawave.webservice.mr.configuration.NeedQueryPersister;
@@ -151,9 +149,6 @@ public class MapReduceBean {
     private DatawavePrincipal serverPrincipal;
     
     @Inject
-    private PrincipalFactory principalFactory;
-    
-    @Inject
     private SecurityMarking marking;
     
     @Inject
@@ -219,13 +214,11 @@ public class MapReduceBean {
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         
-        Set<Collection<String>> userRoles = new HashSet<>();
         String sid = null;
         String userDn = p.getName();
         DatawavePrincipal datawavePrincipal = null;
         if (p instanceof DatawavePrincipal) {
             datawavePrincipal = (DatawavePrincipal) p;
-            userRoles.addAll(datawavePrincipal.getUserRoles());
             sid = datawavePrincipal.getShortName();
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_PRINCIPAL_ERROR, MessageFormat.format("Class: {0}", p.getClass().getName()));
@@ -250,10 +243,6 @@ public class MapReduceBean {
         if (job instanceof NeedCallerDetails) {
             ((NeedCallerDetails) job).setUserSid(sid);
             ((NeedCallerDetails) job).setPrincipal(p);
-        }
-        
-        if (job instanceof NeedPrincipalFactory) {
-            ((NeedPrincipalFactory) job).setPrincipalFactory(principalFactory);
         }
         
         // Ensure that the user has the required roles and has passed the required auths
@@ -387,13 +376,11 @@ public class MapReduceBean {
         Principal p = ctx.getCallerPrincipal();
         String sid;
         Set<Collection<String>> cbAuths = new HashSet<>();
-        Set<Collection<String>> userRoles = new HashSet<>();
         DatawavePrincipal datawavePrincipal = null;
         
         if (p instanceof DatawavePrincipal) {
             datawavePrincipal = (DatawavePrincipal) p;
             sid = datawavePrincipal.getShortName();
-            userRoles.addAll(datawavePrincipal.getUserRoles());
             cbAuths.addAll(datawavePrincipal.getAuthorizations());
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_PRINCIPAL_ERROR, MessageFormat.format("Class: {0}", p.getClass().getName()));
@@ -461,10 +448,6 @@ public class MapReduceBean {
         
         if (job instanceof NeedQueryCache) {
             ((NeedQueryCache) job).setQueryCache(cache);
-        }
-        
-        if (job instanceof NeedPrincipalFactory) {
-            ((NeedPrincipalFactory) job).setPrincipalFactory(principalFactory);
         }
         
         // If this job is being restarted, then the jobId will be the same. The restart method
@@ -1041,20 +1024,8 @@ public class MapReduceBean {
         }
         DatawavePrincipal datawavePrincipal = (DatawavePrincipal) principal;
         if (requiredRoles != null && requiredRoles.size() > 0) {
-            Set<String> usersRoles = new HashSet<>();
-            Map<String,Collection<String>> userRolesMap = datawavePrincipal.getUserRolesMap();
-            if (userRolesMap.size() == 1) {
-                usersRoles.addAll(userRolesMap.values().iterator().next());
-            } else if (userRolesMap.size() > 1) {
-                String userDN = datawavePrincipal.getUserDN().toString();
-                for (Entry<String,Collection<String>> entry : userRolesMap.entrySet()) {
-                    if (entry.getKey().contains(userDN)) {
-                        usersRoles.addAll(entry.getValue());
-                        break;
-                    }
-                }
-            }
-            if (usersRoles.containsAll(requiredRoles) == false) {
+            Set<String> usersRoles = new HashSet<>(datawavePrincipal.getPrimaryUser().getRoles());
+            if (!usersRoles.containsAll(requiredRoles)) {
                 throw new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED, MessageFormat.format("Requires the following roles: {0}",
                                 requiredRoles));
             }
@@ -1064,7 +1035,7 @@ public class MapReduceBean {
             if (requiredAuths != null && requiredAuths.size() > 0) {
                 String authsString = queryParameters.getFirst("auths");
                 List<String> authorizations = AuthorizationsUtil.splitAuths(authsString);
-                if (authorizations.containsAll(requiredAuths) == false) {
+                if (!authorizations.containsAll(requiredAuths)) {
                     throw new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED, MessageFormat.format(
                                     "Requires the following auths: {0}", requiredAuths));
                 }

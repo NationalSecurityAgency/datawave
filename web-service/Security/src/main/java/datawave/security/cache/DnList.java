@@ -1,25 +1,22 @@
 package datawave.security.cache;
 
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.util.DnUtils;
+import datawave.webservice.HtmlProvider;
+import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-
-import org.apache.commons.lang.StringEscapeUtils;
-
-import datawave.security.util.DnUtils;
-import datawave.webservice.HtmlProvider;
-import org.infinispan.container.entries.CacheEntry;
-import org.infinispan.container.entries.InternalCacheEntry;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -27,26 +24,26 @@ public class DnList implements HtmlProvider {
     private static final String TITLE = "Credentials", EMPTY = "";
     
     @XmlElement(name = "dn")
-    private List<String> dns;
+    private Collection<String> dns;
     
     @XmlTransient
-    private Map<String,CacheEntry<String,Principal>> dnEntries;
+    private Map<String,? extends DatawaveUser> users;
     
     @SuppressWarnings("unused")
     public DnList() {
         dns = Collections.emptyList();
     }
     
-    public DnList(String... dns) {
-        this.dns = Arrays.asList(dns);
+    public DnList(List<String> dns) {
+        this.dns = dns;
     }
     
-    public DnList(Map<String,CacheEntry<String,Principal>> dnEntries) {
-        this.dnEntries = dnEntries;
-        this.dns = new ArrayList<>(dnEntries.keySet());
+    public DnList(Collection<? extends DatawaveUser> users) {
+        this.users = users.stream().collect(Collectors.toMap(DatawaveUser::getName, Function.identity()));
+        this.dns = this.users.keySet();
     }
     
-    public List<String> getDns() {
+    public Collection<String> getDns() {
         return dns;
     }
     
@@ -121,16 +118,16 @@ public class DnList implements HtmlProvider {
                 builder.append(" (issuer: ").append(StringEscapeUtils.escapeHtml(subDns[i + 1])).append(")");
             }
             builder.append("</a>").append("</td>");
-            InternalCacheEntry<String,Principal> cacheEntry = getCacheEntry(dn);
-            builder.append("<td>");
+            DatawaveUser u = (users != null) ? users.get(dn) : null;
             // append created time
-            if (cacheEntry != null)
-                builder.append(new Date(cacheEntry.getCreated()));
-            builder.append("</td>");
             builder.append("<td>");
-            // append expiry time
-            if (cacheEntry != null)
-                builder.append(new Date(cacheEntry.getExpiryTime()));
+            if (u != null && u.getCreationTime() > 0)
+                builder.append(new Date(u.getCreationTime()));
+            builder.append("</td>");
+            // append expires time
+            builder.append("<td>");
+            if (u != null && u.getExpirationTime() > 0)
+                builder.append(new Date(u.getExpirationTime()));
             builder.append("</td>");
             builder.append("<td>").append("<a href=\"").append(dn).append("/evict\">").append("evict").append("</a>").append("</td>\n");
             builder.append("</tr>");
@@ -139,16 +136,5 @@ public class DnList implements HtmlProvider {
         builder.append("</tbody></table>");
         
         return builder.toString();
-    }
-    
-    private InternalCacheEntry<String,Principal> getCacheEntry(String dn) {
-        InternalCacheEntry<String,Principal> cacheEntry = null;
-        if (dnEntries != null) {
-            CacheEntry<String,Principal> entry = dnEntries.get(dn);
-            if (entry != null && (entry instanceof InternalCacheEntry)) {
-                cacheEntry = (InternalCacheEntry<String,Principal>) entry;
-            }
-        }
-        return cacheEntry;
     }
 }

@@ -9,6 +9,7 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
 import static org.powermock.api.support.membermodification.MemberMatcher.field;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -16,7 +17,8 @@ import java.util.UUID;
 import javax.ejb.EJBContext;
 
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -74,8 +76,8 @@ public class MapReduceStatePersisterTest {
             connection.tableOperations().delete(TABLE_NAME);
         if (connection.tableOperations().exists(INDEX_TABLE_NAME))
             connection.tableOperations().delete(INDEX_TABLE_NAME);
-        principal = new DatawavePrincipal(SubjectIssuerDNPair.of(userDN, "<CN=ca, OU=acme>"), UserType.USER);
-        principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "CN=ca, OU=acme"), UserType.USER, Arrays.asList(auths), null, null, 0L);
+        principal = new DatawavePrincipal(Collections.singletonList(user));
         connectionFactory = createMock(AccumuloConnectionFactory.class);
         ctx = createStrictMock(EJBContext.class);
         bean = new MapReduceStatePersisterBean();
@@ -271,8 +273,9 @@ public class MapReduceStatePersisterTest {
         testPersistentCreate();
         PowerMock.resetAll();
         
-        principal = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Gal Some Other sogal, OU=acme", "CN=ca, OU=acme"), UserType.USER);
-        principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("CN=Gal Some Other sogal, OU=acme", "CN=ca, OU=acme"), UserType.USER, Arrays.asList(auths),
+                        null, null, 0L);
+        principal = new DatawavePrincipal(Collections.singletonList(user));
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
         expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
@@ -292,8 +295,9 @@ public class MapReduceStatePersisterTest {
         // create some entries
         testPersistentCreate();
         PowerMock.resetAll();
-        principal = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Gal Some Other sogal, OU=acme", "CN=ca, OU=acme"), UserType.USER);
-        principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("CN=Gal Some Other sogal, OU=acme", "CN=ca, OU=acme"), UserType.USER, Arrays.asList(auths),
+                        null, null, 0L);
+        principal = new DatawavePrincipal(Collections.singletonList(user));
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
         expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);

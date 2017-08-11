@@ -24,9 +24,11 @@ import javax.security.auth.login.FailedLoginException;
 
 import com.google.common.collect.Lists;
 import datawave.security.auth.DatawaveCredential;
+import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipal.UserType;
-import datawave.security.authorization.DatawavePrincipalService;
+import datawave.security.authorization.DatawaveUserService;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
 import datawave.security.util.DnUtils.NpeUtils;
@@ -52,7 +54,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     @Mock(type = STRICT)
     private JSSESecurityDomain securityDomain;
     @Mock(type = STRICT)
-    private DatawavePrincipalService datawavePrincipalService;
+    private DatawaveUserService datawaveUserService;
     private MockCallbackHandler callbackHandler;
     
     private KeyStore truststore;
@@ -61,7 +63,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
     private X509Certificate testUserCert;
     private X509Certificate testServerCert;
     
-    private DatawavePrincipal datawavePrincipal;
+    private SubjectIssuerDNPair userDN;
+    private DatawavePrincipal defaultPrincipal;
     
     @Before
     public void setUp() throws Exception {
@@ -82,7 +85,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         options.put("ocspLevel", "required");
         options.put("blacklistUserRole", BLACKLIST_ROLE);
         
-        Whitebox.setInternalState(datawaveLoginModule, DatawavePrincipalService.class, datawavePrincipalService);
+        Whitebox.setInternalState(datawaveLoginModule, DatawaveUserService.class, datawaveUserService);
         Whitebox.setInternalState(datawaveLoginModule, JSSESecurityDomain.class, securityDomain);
         datawaveLoginModule.initialize(new Subject(), callbackHandler, sharedState, options);
         
@@ -98,8 +101,9 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         testUserCert = (X509Certificate) keystore.getCertificate("testuser");
         testServerCert = (X509Certificate) serverKeystore.getCertificate("testserver");
         
-        datawavePrincipal = new DatawavePrincipal(SubjectIssuerDNPair.of(testUserCert.getSubjectDN().getName(), testUserCert.getIssuerDN().getName()),
-                        UserType.USER);
+        userDN = SubjectIssuerDNPair.of(testUserCert.getSubjectDN().getName(), testUserCert.getIssuerDN().getName());
+        DatawaveUser defaultUser = new DatawaveUser(userDN, UserType.USER, null, null, null, System.currentTimeMillis());
+        defaultPrincipal = new DatawavePrincipal(Lists.newArrayList(defaultUser));
     }
     
     @Test
@@ -110,7 +114,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         
         expect(securityDomain.getKeyStore()).andReturn(keystore);
         expect(securityDomain.getTrustStore()).andReturn(truststore);
-        expect(datawavePrincipalService.lookupPrincipal(datawaveCredential.getEntities())).andReturn(datawavePrincipal);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(defaultPrincipal.getProxiedUsers());
         
         replayAll();
         
@@ -126,15 +130,15 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
         
-        String[] expectedAuthServiceRoles = new String[] {"Role1", "Role2", "Role3"};
-        String[] expectedRoleSets = new String[] {"Role1", "Role2"};
-        datawavePrincipal.setUserRoles(callbackHandler.name, Arrays.asList(expectedAuthServiceRoles));
-        datawavePrincipal.setAuthorizations(callbackHandler.name, Arrays.asList("a", "b", "c"));
-        datawavePrincipal.setRoleSets(Arrays.asList(expectedRoleSets));
+        String[] expectedRoles = new String[] {"Role1", "Role2", "Role3"};
+        
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList("a", "b", "c"), Arrays.asList(expectedRoles), null,
+                        System.currentTimeMillis());
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user));
         
         expect(securityDomain.getKeyStore()).andReturn(keystore);
         expect(securityDomain.getTrustStore()).andReturn(truststore);
-        expect(datawavePrincipalService.lookupPrincipal(datawaveCredential.getEntities())).andReturn(datawavePrincipal);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
         
         replayAll();
         
@@ -151,15 +155,15 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
             rolesList.add(members.nextElement().getName());
         }
         Collections.sort(rolesList);
-        assertEquals(2, rolesList.size());
-        assertArrayEquals(expectedRoleSets, rolesList.toArray());
+        assertEquals(3, rolesList.size());
+        assertArrayEquals(expectedRoles, rolesList.toArray());
         
         SimpleGroup callerPrincipal = (SimpleGroup) roleSets[1];
         assertEquals("CallerPrincipal", callerPrincipal.getName());
         Enumeration<Principal> members = callerPrincipal.members();
         assertTrue("CallerPrincipal group has no members", members.hasMoreElements());
         Principal p = members.nextElement();
-        assertEquals(datawavePrincipal, p);
+        assertEquals(expected, p);
         assertFalse("CallerPrincipal group has too many members", members.hasMoreElements());
         
         verifyAll();
@@ -172,12 +176,12 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.credential = datawaveCredential;
         
         List<String> roles = Collections.singletonList(BLACKLIST_ROLE);
-        datawavePrincipal.setRoleSets(roles);
-        datawavePrincipal.setUserRoles(datawavePrincipal.getName(), roles);
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, roles, null, System.currentTimeMillis());
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user));
         
         expect(securityDomain.getKeyStore()).andReturn(keystore);
         expect(securityDomain.getTrustStore()).andReturn(truststore);
-        expect(datawavePrincipalService.lookupPrincipal(datawaveCredential.getEntities())).andReturn(datawavePrincipal);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
         
         replayAll();
         
@@ -198,22 +202,24 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
         String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
         SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
-        String proxiedSubjects = "<" + serverDN + "><" + otherServerDN + "><" + datawavePrincipal.getUserDN().subjectDN() + ">";
-        String proxiedIssuers = "<" + issuerDN + "><" + issuerDN + "><" + datawavePrincipal.getUserDN().issuerDN() + ">";
+        String proxiedSubjects = "<" + serverDN + "><" + otherServerDN + "><" + userDN.subjectDN() + ">";
+        String proxiedIssuers = "<" + issuerDN + "><" + issuerDN + "><" + userDN.issuerDN() + ">";
         DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
         
         List<String> blacklistRoles = Arrays.asList(BLACKLIST_ROLE, "TEST_ROLE");
         List<String> otherRoles = Collections.singletonList("TEST_ROLE");
-        DatawavePrincipal expected = new DatawavePrincipal(datawavePrincipal.getUserDN(), UserType.USER, Lists.newArrayList(server1, server2));
-        expected.setUserRoles(datawavePrincipal.getUserDN().toString(), otherRoles);
-        expected.setUserRoles(server1.toString(), otherRoles);
-        expected.setUserRoles(server2.toString(), blacklistRoles);
+        
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, otherRoles, null, System.currentTimeMillis());
+        DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, otherRoles, null, System.currentTimeMillis());
+        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, blacklistRoles, null, System.currentTimeMillis());
+        
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s1, s2));
         
         expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
         expect(securityDomain.getTrustStore()).andReturn(truststore);
-        expect(datawavePrincipalService.lookupPrincipal(datawaveCredential.getEntities())).andReturn(expected);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
         
         replayAll();
         
@@ -234,23 +240,25 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
         String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
         SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
-        String proxiedSubjects = "<" + serverDN + "><" + otherServerDN + "><" + datawavePrincipal.getUserDN().subjectDN() + ">";
-        String proxiedIssuers = "<" + issuerDN + "><" + issuerDN + "><" + datawavePrincipal.getUserDN().issuerDN() + ">";
+        String proxiedSubjects = "<" + serverDN + "><" + otherServerDN + "><" + userDN.subjectDN() + ">";
+        String proxiedIssuers = "<" + issuerDN + "><" + issuerDN + "><" + userDN.issuerDN() + ">";
         DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
         
-        DatawavePrincipal expected = new DatawavePrincipal(datawavePrincipal.getUserDN(), UserType.USER, Lists.newArrayList(server1, server2));
+        DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, null, null, System.currentTimeMillis());
+        DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, null, null, System.currentTimeMillis());
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(defaultPrincipal.getPrimaryUser(), s1, s2));
         
         expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
         expect(securityDomain.getTrustStore()).andReturn(truststore);
-        expect(datawavePrincipalService.lookupPrincipal(datawaveCredential.getEntities())).andReturn(expected);
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andReturn(expected.getProxiedUsers());
         
         replayAll();
         
         boolean success = datawaveLoginModule.login();
         assertTrue("Login did not succeed.", success);
-        assertEquals(datawavePrincipal.getUserDN(), expected.getUserDN());
+        assertEquals(userDN, expected.getUserDN());
         
         verifyAll();
     }
@@ -301,7 +309,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         
         expect(securityDomain.getKeyStore()).andReturn(keystore);
         expect(securityDomain.getTrustStore()).andReturn(truststore);
-        expect(datawavePrincipalService.lookupPrincipal(datawaveCredential.getEntities())).andThrow(new FailedLoginException("Unable to authenticate"));
+        expect(datawaveUserService.lookup(datawaveCredential.getEntities())).andThrow(new AuthorizationException("Unable to authenticate"));
         
         replayAll();
         

@@ -13,7 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
@@ -774,8 +775,9 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        DatawavePrincipal p = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER);
-        p.setUserRoles(p.getUserDN().toString(), Collections.singleton("TESTROLE"));
+        DatawaveUser u = new DatawaveUser(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER, null,
+                        Collections.singleton("TESTROLE"), null, 0L);
+        DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
         
         Assert.assertTrue(c.canRunQuery(p));
         Assert.assertEquals(2, c.getQueryLogics().size());
@@ -798,8 +800,9 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        DatawavePrincipal p = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "<CN=ca, OU=acme>"), UserType.USER);
-        p.setUserRoles(p.getUserDN().toString(), Collections.singleton("TESTROLE"));
+        DatawaveUser u = new DatawaveUser(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER, null,
+                        Collections.singleton("TESTROLE"), null, 0L);
+        DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
         
         Assert.assertTrue(c.canRunQuery(p));
         Assert.assertEquals(1, c.getQueryLogics().size());
@@ -822,8 +825,9 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        DatawavePrincipal p = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "<CN=ca, OU=acme>"), UserType.USER);
-        p.setUserRoles(p.getUserDN().toString(), Collections.singleton("TESTROLE"));
+        DatawaveUser u = new DatawaveUser(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER, null,
+                        Collections.singleton("TESTROLE"), null, 0L);
+        DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
         
         Assert.assertFalse(c.canRunQuery(p));
         Assert.assertEquals(0, c.getQueryLogics().size());

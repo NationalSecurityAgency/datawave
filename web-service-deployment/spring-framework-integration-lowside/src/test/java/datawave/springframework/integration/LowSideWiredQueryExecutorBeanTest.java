@@ -20,10 +20,8 @@ import datawave.query.rewrite.tables.facets.FacetedQueryLogic;
 import datawave.query.tables.shard.FieldIndexCountQueryLogic;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.util.DateIndexHelperFactory;
-import datawave.security.authorization.BasePrincipalFactoryConfiguration;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.edgedictionary.DefaultDatawaveEdgeDictionaryImpl;
 import datawave.webservice.operations.configuration.LookupBeanConfiguration;
 import datawave.webservice.query.cache.QueryExpirationConfiguration;
@@ -73,13 +71,13 @@ public class LowSideWiredQueryExecutorBeanTest {
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.data.type", "datawave.query.language.parser.jexl",
                                         "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration")
-                        .addClasses(DefaultResponseObjectFactory.class, BasePrincipalFactoryConfiguration.class, QueryExpirationConfiguration.class,
-                                        FacetedQueryPlanner.class, FacetedQueryLogic.class, DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class,
-                                        RefactoredShardQueryLogic.class, RefactoredCountingShardQueryLogic.class, EventQueryDataDecoratorTransformer.class,
-                                        FieldIndexCountQueryLogic.class, CompositeQueryLogic.class, QueryMetricQueryLogic.class, RefactoredTLDQueryLogic.class,
-                                        ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class, QueryLogicFactoryImpl.class,
-                                        NoOpQueryMetricHandler.class, DatawaveRoleManager.class, EasyRoleManager.class, CachedResultsConfiguration.class,
-                                        LookupBeanConfiguration.class, DateIndexHelperFactory.class, DefaultDatawaveEdgeDictionaryImpl.class)
+                        .addClasses(DefaultResponseObjectFactory.class, QueryExpirationConfiguration.class, FacetedQueryPlanner.class, FacetedQueryLogic.class,
+                                        DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class, RefactoredShardQueryLogic.class,
+                                        RefactoredCountingShardQueryLogic.class, EventQueryDataDecoratorTransformer.class, FieldIndexCountQueryLogic.class,
+                                        CompositeQueryLogic.class, QueryMetricQueryLogic.class, RefactoredTLDQueryLogic.class, ParentQueryLogic.class,
+                                        DiscoveryLogic.class, IndexQueryLogic.class, QueryLogicFactoryImpl.class, NoOpQueryMetricHandler.class,
+                                        DatawaveRoleManager.class, EasyRoleManager.class, CachedResultsConfiguration.class, LookupBeanConfiguration.class,
+                                        DateIndexHelperFactory.class, DefaultDatawaveEdgeDictionaryImpl.class)
                         .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
     

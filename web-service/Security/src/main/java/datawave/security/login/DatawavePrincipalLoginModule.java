@@ -8,7 +8,6 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -23,12 +22,11 @@ import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 
-import datawave.security.authorization.DatawavePrincipalService;
+import datawave.security.authorization.DatawaveUserService;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.auth.DatawaveCredential;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.DnUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.jboss.logging.Logger;
 import org.jboss.security.JSSESecurityDomain;
@@ -54,7 +52,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
     private String blacklistUserRole = null;
     
     @Inject
-    private DatawavePrincipalService datawavePrincipalService;
+    private DatawaveUserService datawaveUserService;
     @Inject
     private JSSESecurityDomain domain;
     
@@ -106,7 +104,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
     }
     
     protected void performFieldInjection() {
-        if (datawavePrincipalService == null) {
+        if (datawaveUserService == null) {
             BeanProvider.injectFields(this);
         }
     }
@@ -131,7 +129,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             String targetUser = getUsername();
             DatawavePrincipal principal = (DatawavePrincipal) getIdentity();
             
-            List<String> cpRoleSets = principal.getRoleSets();
+            Collection<String> cpRoleSets = principal.getPrimaryUser().getRoles();
             if (cpRoleSets != null) {
                 roles.addAll(cpRoleSets);
             }
@@ -267,19 +265,12 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             
             if (blacklistUserRole != null && loginOk && identity != null) {
                 DatawavePrincipal principal = (DatawavePrincipal) getIdentity();
-                String[] dns = principal.getDNs();
-                for (int i = 0; i < dns.length; i += 2) {
-                    if (i == dns.length - 1)
-                        break;
-                    String dn = DnUtils.buildProxiedDN(dns[i], dns[i + 1]);
-                    Collection<String> rawRoles = principal.getUserRoles(dn);
-                    if (rawRoles != null && rawRoles.contains(blacklistUserRole)) {
-                        loginOk = false; // this is critical as it is what the parent class uses to actually deny login
-                        String message = "Login denied for " + principal.getUserDN() + " due to membership of " + dn + " in the deny-access group "
-                                        + blacklistUserRole;
-                        log.debug(message);
-                        throw new AccountLockedException(message);
-                    }
+                
+                if (principal.getProxiedUsers().stream().anyMatch(u -> u.getRoles().contains(blacklistUserRole))) {
+                    loginOk = false; // this is critical as it is what the parent class uses to actually deny login
+                    String message = "Login denied for " + principal.getUserDN() + " due to membership in the deny-access group " + blacklistUserRole;
+                    log.debug(message);
+                    throw new AccountLockedException(message);
                 }
             }
         } catch (RuntimeException e) {
@@ -354,7 +345,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             }
             
             try {
-                identity = datawavePrincipalService.lookupPrincipal(credential.getEntities());
+                identity = new DatawavePrincipal(datawaveUserService.lookup(credential.getEntities()));
             } catch (Exception e) {
                 log.debug("Failing login due to EJB exception " + e.getMessage(), e);
                 throw new FailedLoginException("Unable to authenticate: " + e.getMessage());

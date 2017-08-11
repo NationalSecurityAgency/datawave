@@ -12,16 +12,17 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.ArrayList;
 
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -58,8 +59,7 @@ public class RunningQueryTest {
     final private QueryImpl settings = new QueryImpl();
     final private AccumuloConnectionFactory.Priority connectionPriority = AccumuloConnectionFactory.Priority.NORMAL;
     private String methodAuths = "";
-    private final Set<Set<String>> userAuths = new HashSet<>();
-    private DatawavePrincipal principal;
+    private SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDn", "issuerDn");
     private final QueryLogic<?> logic = createMock(BaseQueryLogic.class);
     
     @Before
@@ -67,8 +67,6 @@ public class RunningQueryTest {
         
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("metadatahelper.default.auths", "A,B,C,D");
-        
-        principal = new DatawavePrincipal(SubjectIssuerDNPair.of("userDn", "isserDn"), UserType.USER);
         
         settings.setQueryLogicName("testQueryLogic");
         settings.setQuery("FOO == BAR");
@@ -98,6 +96,9 @@ public class RunningQueryTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testConstructorSetsConnection() throws Exception {
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
+        
         // setup mock connector
         InMemoryInstance instance = new InMemoryInstance("test instance");
         Connector connector = instance.getConnector("root", new PasswordToken(""));
@@ -123,6 +124,8 @@ public class RunningQueryTest {
     @Test
     public void testConstructorWithNullConnector() throws Exception {
         Connector connector = null;
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         
         RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
         
@@ -134,11 +137,6 @@ public class RunningQueryTest {
         // setup
         Connector connector = null;
         methodAuths = "A,B,C";
-        HashSet<String> set = new HashSet<>();
-        set.add("A");
-        set.add("C");
-        set.add("D");
-        userAuths.add(set);
         
         // expected merged auths
         String[] auths = new String[2];
@@ -146,7 +144,8 @@ public class RunningQueryTest {
         auths[1] = "C";
         Authorizations expected = new Authorizations(auths);
         
-        principal.setAuthorizations(principal.getUserDN().toString(), Arrays.asList(auths));
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         RunningQuery query = new RunningQuery(connector, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
         
         assertEquals(expected, query.getCalculatedAuths());
@@ -178,7 +177,8 @@ public class RunningQueryTest {
         CompositeQueryLogic compositeQueryLogic = new CompositeQueryLogic();
         compositeQueryLogic.setQueryLogics(logics);
         
-        principal.setAuthorizations(principal.getUserDN().toString(), Arrays.asList(auths));
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         try {
             RunningQuery query = new RunningQuery(connector, connectionPriority, compositeQueryLogic, settings, null, principal, new QueryMetricFactoryImpl());
         } catch (NullPointerException npe) {

@@ -73,8 +73,8 @@ undeploy datawave-web-service.ear
 /subsystem=logging/pattern-formatter=PATTERN:write-attribute(name=pattern,value="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n")
 /subsystem=undertow/server=default-server/host=default-host/setting=access-log:remove
 
-# Remove the H2 DataSource used by the DatabaseAuthorizationService
-/subsystem=datasources/data-source=DatabaseAuthorizationServiceDS:remove
+# Remove the H2 DataSource used by the DatabaseUserService
+/subsystem=datasources/data-source=DatabaseUserServiceDS:remove
 
 # Remove the JDBC DataSource used by CachedResults
 /subsystem=datasources/data-source=CachedResultsDS:remove
@@ -155,9 +155,6 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.audit.log.mdb.pool.size:remove
 /system-property=dw.audit.accumulo.mdb.pool.size:remove
 /system-property=dw.cache.coordinator.namespace:remove
-/system-property=dw.principalLookup.projectName:remove
-/system-property=dw.principalLookup.requiredRoles:remove
-/system-property=dw.security.cache.tableName:remove
 /system-property=dw.trusted.header.authentication:remove
 /system-property=dw.transport.guarantee:remove
 /system-property=dw.connectionPool.default:remove

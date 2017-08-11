@@ -2,14 +2,18 @@ package datawave.security.system;
 
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipalService;
+import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.user.UserOperationsBean;
 import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.jboss.security.AuthenticationManager;
+import org.jboss.security.CacheableManager;
 import org.jboss.security.JSSESecurityDomain;
 
 import javax.annotation.Resource;
@@ -35,8 +39,11 @@ public class ServerSecurityProducer {
     @Resource(name = "java:jboss/jaas/datawave/jsse")
     private JSSESecurityDomain domain;
     
+    @Resource(name = "java:jboss/jaas/datawave")
+    private AuthenticationManager authenticationManager;
+    
     @Inject
-    private DatawavePrincipalService datawavePrincipalLookupBean;
+    private DatawaveUserService datawaveUserService;
     
     @Inject
     private UserOperationsBean userOperationsBean;
@@ -49,7 +56,8 @@ public class ServerSecurityProducer {
     @CallerPrincipal
     @RequestScoped
     public DatawavePrincipal produceCallerPrincipal() throws Exception {
-        return userOperationsBean.getCurrentPrincipal();
+        DatawavePrincipal dp = userOperationsBean.getCurrentPrincipal();
+        return dp == null ? DatawavePrincipal.anonymousPrincipal() : dp;
     }
     
     /**
@@ -60,7 +68,14 @@ public class ServerSecurityProducer {
     @ServerPrincipal
     @RequestScoped
     public DatawavePrincipal produceServerPrincipal() throws Exception {
-        return datawavePrincipalLookupBean.lookupPrincipal(lookupServerDN());
+        return new DatawavePrincipal(Collections.singleton(datawaveUserService.lookup(lookupServerDN())));
+    }
+    
+    @Produces
+    @AuthorizationCache
+    @SuppressWarnings("unchecked")
+    public CacheableManager<Object,Principal> produceAuthManager() {
+        return (authenticationManager instanceof CacheableManager) ? (CacheableManager<Object,Principal>) authenticationManager : null;
     }
     
     private SubjectIssuerDNPair lookupServerDN() throws KeyStoreException {

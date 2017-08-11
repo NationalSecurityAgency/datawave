@@ -55,6 +55,7 @@ import java.net.InetAddress;
 import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -261,7 +262,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             if (userDN != null)
                 trackingMap.put("user.dn", userDN);
             
-            final List<String> proxyServers = getCurrentProxyServers();
+            final Collection<String> proxyServers = getCurrentProxyServers();
             if (proxyServers != null)
                 trackingMap.put("proxyServers", proxyServers.toString());
         }
@@ -428,8 +429,8 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         return currentUserDN;
     }
     
-    public List<String> getCurrentProxyServers() {
-        List<String> currentProxyServers = null;
+    public Collection<String> getCurrentProxyServers() {
+        Set<String> currentProxyServers = null;
         Principal p = context.getCallerPrincipal();
         
         if (p != null && p instanceof DatawavePrincipal) {

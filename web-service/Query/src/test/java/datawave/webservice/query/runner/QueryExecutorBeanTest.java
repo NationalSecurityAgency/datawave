@@ -36,7 +36,8 @@ import com.google.common.collect.Multimap;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.audit.AuditBean;
@@ -218,13 +219,12 @@ public class QueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(p);
         
-        DatawavePrincipal principal = new DatawavePrincipal(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"),
-                        UserType.USER);
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"), UserType.USER,
+                        Arrays.asList(auths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         String[] dns = principal.getDNs();
         Arrays.sort(dns);
         List<String> dnList = Arrays.asList(dns);
-        
-        principal.setAuthorizations(principal.getUserDN().toString(), Arrays.asList(auths));
         
         PowerMock.resetAll();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
@@ -260,8 +260,8 @@ public class QueryExecutorBeanTest {
         String[] auths = new String[2];
         auths[0] = "PUBLIC";
         auths[1] = "PRIVATE";
-        DatawavePrincipal principal = new DatawavePrincipal(SubjectIssuerDNPair.of(dn), UserType.USER);
-        principal.setAuthorizations(principal.getName(), Arrays.asList(auths));
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(dn), UserType.USER, Arrays.asList(auths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         EasyMock.replay(ctx);
         
@@ -388,9 +388,9 @@ public class QueryExecutorBeanTest {
         @SuppressWarnings("rawtypes")
         QueryLogic logic = createMock(BaseQueryLogic.class);
         
-        DatawavePrincipal principal = new DatawavePrincipal(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"),
-                        UserType.USER);
-        principal.setAuthorizations(principal.getUserDN().toString(), Arrays.asList(auths));
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"), UserType.USER,
+                        Arrays.asList(auths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         principal.getShortName();
         String[] dns = principal.getDNs();
         Arrays.sort(dns);

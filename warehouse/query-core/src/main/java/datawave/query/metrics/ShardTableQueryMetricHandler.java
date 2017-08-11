@@ -456,7 +456,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             connector = this.connectionFactory.getConnection(Priority.ADMIN, trackingMap);
             QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(query.getQueryLogicName(), datawavePrincipal);
             if (queryLogic instanceof QueryMetricQueryLogic) {
-                ((QueryMetricQueryLogic) queryLogic).setRolesSets(datawavePrincipal.getRoleSets());
+                ((QueryMetricQueryLogic) queryLogic).setRolesSets(datawavePrincipal.getPrimaryUser().getRoles());
             }
             runningQuery = new RunningQuery(null, connector, Priority.ADMIN, queryLogic, query, query.getQueryAuthorizations(), datawavePrincipal,
                             metricFactory);

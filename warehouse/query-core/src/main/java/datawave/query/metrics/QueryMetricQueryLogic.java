@@ -1,6 +1,8 @@
 package datawave.query.metrics;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -48,9 +50,9 @@ public class QueryMetricQueryLogic extends RefactoredShardQueryLogic {
     @CallerPrincipal
     private DatawavePrincipal callerPrincipal;
     
-    private List<String> roles = null;
+    private Collection<String> roles = null;
     
-    public void setRolesSets(List<String> roleSets) {
+    public void setRolesSets(Collection<String> roleSets) {
         this.roles = roleSets;
     }
     
@@ -81,7 +83,7 @@ public class QueryMetricQueryLogic extends RefactoredShardQueryLogic {
     public final String getJexlQueryString(Query settings) throws ParseException {
         
         if (null == this.roles) {
-            this.roles = callerPrincipal.getRoleSets();
+            this.roles = callerPrincipal.getPrimaryUser().getRoles();
         }
         
         String query = super.getJexlQueryString(settings);

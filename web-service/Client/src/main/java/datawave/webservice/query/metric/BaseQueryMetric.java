@@ -523,7 +523,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     @XmlElement(name = "pageMetric")
     protected ArrayList<PageMetric> pageTimes = new ArrayList<PageMetric>();
     @XmlElement
-    protected List<String> proxyServers = null;
+    protected Collection<String> proxyServers = null;
     @XmlElement
     protected String errorMessage = null;
     @XmlElement
@@ -783,11 +783,11 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
         }
     }
     
-    public List<String> getProxyServers() {
+    public Collection<String> getProxyServers() {
         return proxyServers;
     }
     
-    public void setProxyServers(List<String> proxyServers) {
+    public void setProxyServers(Collection<String> proxyServers) {
         this.proxyServers = proxyServers;
     }
     

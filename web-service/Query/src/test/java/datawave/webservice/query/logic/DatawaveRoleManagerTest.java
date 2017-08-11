@@ -1,17 +1,14 @@
 package datawave.webservice.query.logic;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.Lists;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import org.junit.Assert;
@@ -35,43 +32,27 @@ public class DatawaveRoleManagerTest {
         
         String dn = "dn1";
         String issuerDN = "idn";
-        String combinedDN = dn + "<" + issuerDN + ">";
+        SubjectIssuerDNPair combinedDN = SubjectIssuerDNPair.of(dn, issuerDN);
+        Collection<String> roles = Lists.newArrayList("REQ_ROLE_1");
         
-        datawavePrincipal = new DatawavePrincipal(SubjectIssuerDNPair.of(dn, issuerDN), UserType.USER, Collections.singletonList(SubjectIssuerDNPair.of("dn2",
-                        issuerDN)));
-        List<String> roles = new ArrayList<>();
-        String[] authsForRoles = new String[] {"auth1", "auth2", "auth3"};
-        
-        Collections.addAll(roles, authsForRoles);
-        datawavePrincipal.setUserRoles(combinedDN, roles);
-        
-        Map<String,Collection<String>> roleMap = new LinkedHashMap<>();
-        Set<String> datawaveRoles = new HashSet<>();
-        datawaveRoles.add("REQ_ROLE_1");
-        roleMap.put(combinedDN, datawaveRoles);
-        
-        datawavePrincipal.setUserRoles(combinedDN, datawaveRoles);
+        DatawaveUser user = new DatawaveUser(combinedDN, UserType.USER, null, roles, null, System.currentTimeMillis());
+        datawavePrincipal = new DatawavePrincipal(Lists.newArrayList(user));
     }
     
     private void createAndSetWithTwoRoles() {
         
         String dn = "dn1";
         String issuerDN = "idn";
+        SubjectIssuerDNPair combinedDn1 = SubjectIssuerDNPair.of(dn, issuerDN);
         String combinedDN = dn + "<" + issuerDN + ">";
-        
-        datawavePrincipal = new DatawavePrincipal(SubjectIssuerDNPair.of(dn, issuerDN), UserType.USER, Collections.singletonList(SubjectIssuerDNPair.of(dn,
-                        issuerDN)));
-        List<String> roles = new ArrayList<>();
-        String[] authsForRoles = new String[] {"auth1", "auth2", "auth3"};
-        
-        Collections.addAll(roles, authsForRoles);
-        
         String dn2 = "dn2";
         String combinedDN2 = dn2 + "<" + issuerDN + ">";
+        SubjectIssuerDNPair combinedDn2 = SubjectIssuerDNPair.of(dn2, issuerDN);
         
-        // Set the user DN to have multiple roles
-        datawavePrincipal.setUserRoles(combinedDN, getFirstRole());
-        datawavePrincipal.setUserRoles(combinedDN2, getSecondRole());
+        DatawaveUser u1 = new DatawaveUser(combinedDn1, UserType.USER, null, getFirstRole(), null, System.currentTimeMillis());
+        DatawaveUser u2 = new DatawaveUser(combinedDn2, UserType.SERVER, null, getSecondRole(), null, System.currentTimeMillis());
+        
+        datawavePrincipal = new DatawavePrincipal(Lists.newArrayList(u1, u2));
     }
     
     public Set<String> getFirstRole() {

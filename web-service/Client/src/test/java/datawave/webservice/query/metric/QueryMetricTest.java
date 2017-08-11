@@ -108,7 +108,7 @@ public class QueryMetricTest {
         assertEquals(queryMetric.getNumUpdates(), 0);
         assertEquals(queryMetric.getPageTimes().get(0).getCallTime(), 0);
         assertEquals(queryMetric.getPositiveSelectors().get(0), "positiveSelector1");
-        assertEquals(queryMetric.getProxyServers().get(0), "proxyServer1");
+        assertEquals(queryMetric.getProxyServers().iterator().next(), "proxyServer1");
         assertEquals(queryMetric.getQuery(), "query");
         assertEquals(queryMetric.getQueryAuthorizations(), "auths");
         assertEquals(queryMetric.getQueryId(), "queryId");

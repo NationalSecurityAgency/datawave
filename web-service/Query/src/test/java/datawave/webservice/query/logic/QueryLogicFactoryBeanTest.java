@@ -7,6 +7,7 @@ import static org.junit.Assert.assertSame;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,8 @@ import javax.ejb.EJBContext;
 
 import datawave.security.authorization.DatawavePrincipal;
 
-import datawave.security.authorization.DatawavePrincipal.UserType;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import org.apache.log4j.Level;
@@ -70,7 +72,9 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         
         ctx = createMock(EJBContext.class);
         logic = createMockBuilder(BaseQueryLogic.class).addMockedMethods("setLogicName", "getMaxPageSize", "getPageByteTrigger").createMock();
-        principal = new DatawavePrincipal(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER);
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER, null, null, null,
+                        0L);
+        principal = new DatawavePrincipal(Collections.singletonList(user));
     }
     
     @Test(expected = IllegalArgumentException.class)

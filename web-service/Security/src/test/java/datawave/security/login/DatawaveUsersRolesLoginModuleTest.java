@@ -92,35 +92,23 @@ public class DatawaveUsersRolesLoginModuleTest {
     
     @Test
     public void normalizeDnWithCnLast() {
-        assertEquals(NORMALIZED_SUBJECT_DN, loginModule.normalizeUsername(SUBJECT_DN_WITH_CN_LAST));
+        assertEquals(NORMALIZED_SUBJECT_DN, DatawaveUsersRolesLoginModule.normalizeUsername(SUBJECT_DN_WITH_CN_LAST));
     }
     
     @Test
     public void normalizeDnWithCnFirst() {
-        assertEquals(NORMALIZED_SUBJECT_DN, loginModule.normalizeUsername(SUBJECT_DN_WITH_CN_FIRST));
+        assertEquals(NORMALIZED_SUBJECT_DN, DatawaveUsersRolesLoginModule.normalizeUsername(SUBJECT_DN_WITH_CN_FIRST));
     }
     
     @Test
     public void normalizeSubjectIssuerCombinations() {
-        assertEquals(NORMALIZED_SUBJECT_DN_WITH_ISSUER_DN, loginModule.normalizeUsername(SUBJECT_DN_WITH_CN_FIRST + "<" + ISSUER_DN_WITH_CN_FIRST + ">"));
-        assertEquals(NORMALIZED_SUBJECT_DN_WITH_ISSUER_DN, loginModule.normalizeUsername(SUBJECT_DN_WITH_CN_FIRST + "<" + ISSUER_DN_WITH_CN_LAST + ">"));
-        assertEquals(NORMALIZED_SUBJECT_DN_WITH_ISSUER_DN, loginModule.normalizeUsername(SUBJECT_DN_WITH_CN_LAST + "<" + ISSUER_DN_WITH_CN_FIRST + ">"));
-        assertEquals(NORMALIZED_SUBJECT_DN_WITH_ISSUER_DN, loginModule.normalizeUsername(SUBJECT_DN_WITH_CN_LAST + "<" + ISSUER_DN_WITH_CN_LAST + ">"));
-    }
-    
-    // utility for creating normalized dns for our properties files
-    public void verifyPropertiesAreNormalized() {
-        String[] rawDNs = new String[] {};
-        
-        for (String rawDn : rawDNs) {
-            System.out.println("RAW: " + rawDn);
-            String normalized = loginModule.normalizeUsername(rawDn);
-            if (rawDn.equals(normalized)) {
-                System.out.println("RAW format is valid as-is");
-            } else {
-                String newProperty = normalized.replace("=", "\\\\=").replace(" ", "\\\\ ").replace("/", "\\\\/");
-                System.out.println(newProperty);
-            }
-        }
+        assertEquals(NORMALIZED_SUBJECT_DN_WITH_ISSUER_DN,
+                        DatawaveUsersRolesLoginModule.normalizeUsername(SUBJECT_DN_WITH_CN_FIRST + "<" + ISSUER_DN_WITH_CN_FIRST + ">"));
+        assertEquals(NORMALIZED_SUBJECT_DN_WITH_ISSUER_DN,
+                        DatawaveUsersRolesLoginModule.normalizeUsername(SUBJECT_DN_WITH_CN_FIRST + "<" + ISSUER_DN_WITH_CN_LAST + ">"));
+        assertEquals(NORMALIZED_SUBJECT_DN_WITH_ISSUER_DN,
+                        DatawaveUsersRolesLoginModule.normalizeUsername(SUBJECT_DN_WITH_CN_LAST + "<" + ISSUER_DN_WITH_CN_FIRST + ">"));
+        assertEquals(NORMALIZED_SUBJECT_DN_WITH_ISSUER_DN,
+                        DatawaveUsersRolesLoginModule.normalizeUsername(SUBJECT_DN_WITH_CN_LAST + "<" + ISSUER_DN_WITH_CN_LAST + ">"));
     }
 }
