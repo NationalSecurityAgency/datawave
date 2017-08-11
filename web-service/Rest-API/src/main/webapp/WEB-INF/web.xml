@@ -181,6 +181,7 @@
             <url-pattern>/screen.css</url-pattern>
             <url-pattern>/jquery*</url-pattern>
             <url-pattern>/ext/*</url-pattern>
+            <url-pattern>/favicon.ico</url-pattern>
         </web-resource-collection>
         <!-- For static resources, there is no transport guarantee. -->
         <user-data-constraint>
