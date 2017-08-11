@@ -212,6 +212,7 @@ public enum DatawaveErrorCode {
     INVALID_DATE(400, 38, "Invalid date."),
     INVALID_NUMBER(400, 39, "Invalid number."),
     MISSING_REQUIRED_PARAMETER(400, 40, "Missing required parameter."),
+    INVALID_PAGE_TIMEOUT(400, 41, "Invalid page timeout."),
     // 401 Unauthorized
     QUERY_OWNER_MISMATCH(401, 1, "Current user does not match user that defined query."),
     JOB_EXECUTION_UNAUTHORIZED(401, 2, "User not authorized to run this job."),

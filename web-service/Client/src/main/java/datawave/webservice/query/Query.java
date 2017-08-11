@@ -53,6 +53,10 @@ public abstract class Query {
     
     public abstract void setPagesize(int pagesize);
     
+    public abstract int getPageTimeout();
+    
+    public abstract void setPageTimeout(int pageTimeout);
+    
     public abstract Set<Parameter> getParameters();
     
     public abstract void setParameters(Set<Parameter> params);

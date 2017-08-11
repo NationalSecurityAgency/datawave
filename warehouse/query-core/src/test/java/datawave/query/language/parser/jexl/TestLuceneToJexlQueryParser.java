@@ -252,6 +252,10 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("FIELD == 'value' && content:phrase(termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("FIELD:value AND \"quick brown fox\""));
         Assert.assertEquals(anyField + " == 'quick'", parseQuery("\"quick\""));
         Assert.assertEquals("content:phrase(termOffsetMap, 'qui.ck', 'brown', 'fox')", parseQuery("\"qui\\.ck brown fox\""));
+        
+        // Test smart quote conversions
+        Assert.assertEquals("content:phrase(termOffsetMap, 'quick', 'brown', 'fox1')", parseQuery("\u0093quick brown fox1\u0094"));
+        Assert.assertEquals("content:phrase(termOffsetMap, 'quick', 'brown', 'fox2')", parseQuery("\u201cquick brown fox2\u201d"));
     }
     
     @Test

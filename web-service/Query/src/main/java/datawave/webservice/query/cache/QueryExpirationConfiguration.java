@@ -8,10 +8,13 @@ import datawave.configuration.RefreshableScope;
 @RefreshableScope
 public class QueryExpirationConfiguration {
     
-    private long idleTimeMinutes = 15;
-    private long pageSizeShortCircuitCheckTimeMinutes = 15;
-    private long pageShortCircuitTimeoutMinutes = 28;
-    private long callTimeMinutes = 30;
+    public static final int PAGE_TIMEOUT_MIN_DEFAULT = 60;
+    public static final int IDLE_TIME_MIN_DEFAULT = 15;
+    
+    private long idleTimeMinutes = IDLE_TIME_MIN_DEFAULT;
+    private long callTimeMinutes = PAGE_TIMEOUT_MIN_DEFAULT;
+    private long pageSizeShortCircuitCheckTimeMinutes = PAGE_TIMEOUT_MIN_DEFAULT / 2;
+    private long pageShortCircuitTimeoutMinutes = Math.round(0.97 * PAGE_TIMEOUT_MIN_DEFAULT);
     
     public long getIdleTimeMinutes() {
         return idleTimeMinutes;

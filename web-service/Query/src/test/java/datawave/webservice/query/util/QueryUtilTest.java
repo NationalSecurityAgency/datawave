@@ -27,6 +27,7 @@ public class QueryUtilTest {
         q.setExpirationDate(new Date());
         q.setId(UUID.randomUUID());
         q.setPagesize(10);
+        q.setPageTimeout(-1);
         q.setQuery("FOO == BAR");
         q.setQueryName("test query");
         q.setQueryAuthorizations("ALL");

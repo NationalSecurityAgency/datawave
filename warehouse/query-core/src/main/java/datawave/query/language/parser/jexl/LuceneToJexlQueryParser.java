@@ -54,7 +54,6 @@ public class LuceneToJexlQueryParser implements QueryParser {
     
     @Override
     public QueryNode parse(String query) throws ParseException {
-        
         JexlNode parsedQuery = convertToJexlNode(query);
         QueryNode node = new ServerHeadNode();
         node.setOriginalQuery(parsedQuery.toString());
@@ -62,9 +61,11 @@ public class LuceneToJexlQueryParser implements QueryParser {
     }
     
     public JexlNode convertToJexlNode(String query) throws ParseException {
-        
         query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147
         query = query.replaceAll("\\u0094", "\""); // replace close smart quote 148
+        
+        query = query.replaceAll("\\u201c", "\""); // replace open left double quote
+        query = query.replaceAll("\\u201d", "\""); // replace close right double quote
         
         JexlNode parsedQuery = null;
         

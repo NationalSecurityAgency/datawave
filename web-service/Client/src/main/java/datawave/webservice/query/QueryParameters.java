@@ -12,6 +12,7 @@ public interface QueryParameters extends ParameterValidator {
     public static final String QUERY_NAME = "queryName";
     public static final String QUERY_PERSISTENCE = "persistence";
     public static final String QUERY_PAGESIZE = "pagesize";
+    public static final String QUERY_PAGETIMEOUT = "pageTimeout";
     public static final String QUERY_AUTHORIZATIONS = "auths";
     public static final String QUERY_EXPIRATION = "expiration";
     public static final String QUERY_TRACE = "trace";
@@ -36,6 +37,10 @@ public interface QueryParameters extends ParameterValidator {
     int getPagesize();
     
     void setPagesize(int pagesize);
+    
+    int getPageTimeout();
+    
+    void setPageTimeout(int pageTimeout);
     
     String getAuths();
     

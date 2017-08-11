@@ -134,8 +134,8 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
                 // No action - this mechanism can not attempt authentication without peer certificates, so allow it to drop out to NOT_ATTEMPTED
             }
         }
-        // We're not using SSL, so get the user info from trusted headers, if we're configured to do so.
-        else if (trustedHeaderAuthentication) {
+        // If we're either not using SSL and/or didn't get user info from the SSL session, then get it from the trusted headers, if we're configured to do so.
+        if (credential == null && trustedHeaderAuthentication) {
             try {
                 String subjectDN = getSingleHeader(exchange.getRequestHeaders(), SUBJECT_DN_HEADER);
                 String issuerDN = getSingleHeader(exchange.getRequestHeaders(), ISSUER_DN_HEADER);

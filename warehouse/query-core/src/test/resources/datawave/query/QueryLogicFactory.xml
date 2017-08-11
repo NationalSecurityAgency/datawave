@@ -23,6 +23,15 @@
         <bean class="datawave.query.language.functions.jexl.TimeFunction"/>
     </util:list>
 
+    <bean id="DatawaveSelectorExtractor" scope="prototype" class="datawave.audit.DatawaveSelectorExtractor" />
+
+    <bean id="SplitSelectorExtractorParamDefaultNull" scope="prototype" class="datawave.audit.SplitSelectorExtractor">
+        <property name="separatorCharacter">
+            <value type="char">\u0000</value>
+        </property>
+        <property name="separatorParameter" value="delimiter" />
+    </bean>
+
     <bean id="RewriteEdgeQuery" scope="prototype" parent="baseQueryLogic" class="datawave.query.tables.edge.RewriteEdgeQueryLogic">
 <!--     see the query-core pom.xml for explanation of hardcoding -->
 <!--         <property name="tableName" value="${edge.table.name}" /> -->
@@ -49,6 +58,7 @@
         <property name="auditType" value="ACTIVE" />
         <property name="logicDescription" value="Edge query" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
+        <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
     
     <!-- 
@@ -71,6 +81,7 @@
         <property name="edgeQueryModel" ref="edgeQueryModel" />
         <property name="modelTableName" value="DatawaveMetadata" />
         <property name="modelName" value="DATAWAVE_EDGE" />
+        <property name="listSelectorExtractor" ref="SplitSelectorExtractorParamDefaultNull" />
     </bean>
 
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
