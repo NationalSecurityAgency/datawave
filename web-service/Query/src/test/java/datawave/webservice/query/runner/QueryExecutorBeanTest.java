@@ -229,7 +229,7 @@ public class QueryExecutorBeanTest {
         PowerMock.resetAll();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
         suppress(constructor(QueryParametersImpl.class));
-        EasyMock.expect(persister.create(principal.getUserDN().toString(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
+        EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
         
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
@@ -402,14 +402,14 @@ public class QueryExecutorBeanTest {
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(queryParameters);
-        optionalParameters.putSingle(AuditParameters.USER_DN, principal.getUserDN().toString());
+        optionalParameters.putSingle(AuditParameters.USER_DN, principal.getUserDN().subjectDN());
         optionalParameters.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, q.getColumnVisibility());
         optionalParameters.putSingle("logicClass", queryLogicName);
         
         PowerMock.resetAll();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
         EasyMock.expect(logic.getAuditType(null)).andReturn(AuditType.NONE);
-        EasyMock.expect(persister.create(principal.getUserDN().toString(), dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
+        EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
                         Whitebox.getInternalState(bean, QueryParameters.class), optionalParameters)).andReturn(q);
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(Maps.<String,String> newHashMap()).anyTimes();
         

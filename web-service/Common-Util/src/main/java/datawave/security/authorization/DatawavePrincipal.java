@@ -5,15 +5,14 @@ import datawave.security.util.DnUtils;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.io.Serializable;
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,12 +23,14 @@ import static datawave.security.authorization.DatawaveUser.ANONYMOUS_USER;
  * user. The GUI server user represents the entity that made the call to us and the other proxied user would be the actual end user.
  */
 @XmlRootElement
-@XmlType(factoryMethod = "anonymous", propOrder = {"name", "proxiedUsers", "creationTime"})
+@XmlType(factoryMethod = "anonymousPrincipal", propOrder = {"name", "proxiedUsers", "creationTime"})
 @XmlAccessorType(XmlAccessType.NONE)
 public class DatawavePrincipal implements Principal, Serializable {
     private final String username;
     private final DatawaveUser primaryUser;
+    @XmlElement
     private final Set<DatawaveUser> proxiedUsers = new LinkedHashSet<>();
+    @XmlElement
     private final long creationTime;
     
     /**
@@ -79,6 +80,7 @@ public class DatawavePrincipal implements Principal, Serializable {
     }
     
     @Override
+    @XmlElement
     public String getName() {
         return username;
     }

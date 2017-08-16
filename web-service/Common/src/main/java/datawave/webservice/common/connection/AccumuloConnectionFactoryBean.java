@@ -25,9 +25,7 @@ import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
 import org.apache.htrace.HTraceConfiguration;
 import org.apache.htrace.Trace;
-import org.apache.htrace.Tracer;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.KeeperException;
 import org.jboss.resteasy.annotations.GZIP;
 
 import javax.annotation.PostConstruct;
@@ -423,7 +421,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         Principal p = context.getCallerPrincipal();
         
         if (p != null && p instanceof DatawavePrincipal) {
-            currentUserDN = ((DatawavePrincipal) p).getUserDN().toString();
+            currentUserDN = ((DatawavePrincipal) p).getUserDN().subjectDN();
         }
         
         return currentUserDN;
