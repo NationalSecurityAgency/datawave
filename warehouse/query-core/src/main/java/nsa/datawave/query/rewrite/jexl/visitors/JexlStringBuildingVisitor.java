@@ -2,6 +2,7 @@ package nsa.datawave.query.rewrite.jexl.visitors;
 
 import java.text.MessageFormat;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import nsa.datawave.query.rewrite.exceptions.DatawaveFatalQueryException;
 import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
@@ -21,6 +22,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     protected static final Logger log = Logger.getLogger(JexlStringBuildingVisitor.class);
     protected static final char BACKSLASH = '\\';
     protected static final char STRING_QUOTE = '\'';
+    private JexlASTHelper.HasMethodVisitor hasMethodVisitor = new JexlASTHelper.HasMethodVisitor();
     
     // allowed methods for composition. Nothing that mutates the collection is allowed, thus we have:
     private Set<String> allowedMethods = Sets.newHashSet("contains", "retainAll", "containsAll", "isEmpty", "size", "equals", "hashCode", "getValueForGroup",
@@ -410,20 +412,26 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
                 // adding any method arguments
                 JexlNode argumentNode = node.jjtGetChild(i);
                 if (argumentNode instanceof ASTReference) {
-                    for (int j = 0; j < argumentNode.jjtGetNumChildren(); j++) {
-                        JexlNode argKid = argumentNode.jjtGetChild(j);
-                        if (argKid instanceof ASTFunctionNode) {
-                            this.visit((ASTFunctionNode) argKid, argumentStringBuilder);
-                        } else {
-                            if (argumentStringBuilder.length() > 0) {
-                                argumentStringBuilder.append(",");
-                            }
-                            if (argKid instanceof ASTStringLiteral) {
-                                argumentStringBuilder.append("'");
-                            }
-                            argumentStringBuilder.append(argKid.image);
-                            if (argKid instanceof ASTStringLiteral) {
-                                argumentStringBuilder.append("'");
+                    // a method may have an argument that is another method. In this case, descend the visit tree for it
+                    if (((AtomicBoolean) argumentNode.jjtAccept(hasMethodVisitor, new AtomicBoolean(false))).get()) {
+                        this.visit((ASTReference) argumentNode, argumentStringBuilder);
+                    } else {
+                        
+                        for (int j = 0; j < argumentNode.jjtGetNumChildren(); j++) {
+                            JexlNode argKid = argumentNode.jjtGetChild(j);
+                            if (argKid instanceof ASTFunctionNode) {
+                                this.visit((ASTFunctionNode) argKid, argumentStringBuilder);
+                            } else {
+                                if (argumentStringBuilder.length() > 0) {
+                                    argumentStringBuilder.append(",");
+                                }
+                                if (argKid instanceof ASTStringLiteral) {
+                                    argumentStringBuilder.append("'");
+                                }
+                                argumentStringBuilder.append(argKid.image);
+                                if (argKid instanceof ASTStringLiteral) {
+                                    argumentStringBuilder.append("'");
+                                }
                             }
                         }
                     }

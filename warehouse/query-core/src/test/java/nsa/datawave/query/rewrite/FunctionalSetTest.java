@@ -209,6 +209,29 @@ public abstract class FunctionalSetTest {
     }
     
     @Test
+    public void testMethodAsArgumentToMethod() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        
+        if (log.isDebugEnabled()) {
+            log.debug("testMethodAsArgumentToMethod");
+        }
+        String[] queryStrings = {//
+        // this makes sure that the JexlStringBuildingVisitor will parse the method as a method argument
+        "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')).isEmpty() == false && "
+                        + "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')).containsAll(AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE'))) == true"
+        
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {//
+        Arrays.asList("SOPRANO")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+    }
+    
+    @Test
     public void testMinMax() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
