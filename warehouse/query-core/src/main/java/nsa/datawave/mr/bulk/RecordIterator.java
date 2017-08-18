@@ -327,7 +327,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         
         try {
             globalIter = applyTableIterators(topIter, conf);
-            globalIter = buildTopIterators(topIter, conf);
+            globalIter = buildTopIterators(globalIter, conf);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new IOException(e);
         }

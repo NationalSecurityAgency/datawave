@@ -51,6 +51,8 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
     
     protected Iterator<Authorizations> authIter;
     
+    protected String recordIterAuthString;
+    
     protected AtomicBoolean resought = new AtomicBoolean(false);
     
     protected AtomicBoolean closed = new AtomicBoolean(false);
@@ -66,21 +68,21 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
     public RfileScanner(Connector connector, Configuration conf, String table, Set<Authorizations> auths, int numQueryThreads) {
         ArgumentChecker.notNull(connector, conf, table, auths);
         this.table = table;
-        this.conf = new Configuration(conf);
         this.auths = auths;
         this.connector = connector;
         ranges = null;
         authIter = AuthorizationsUtil.minimize(auths).iterator();
-        conf.setBoolean(MultiRfileInputformat.CACHE_METADATA, true);
-        conf.set("recorditer.auth.string", authIter.next().toString());
-        conf.getInt(RecordIterator.RECORDITER_FAILURE_COUNT_MAX, RecordIterator.FAILURE_MAX_DEFAULT);
+        recordIterAuthString = authIter.next().toString();
         iterators = Lists.newArrayList();
         iterators = Collections.synchronizedList(iterators);
-        
+        setConfiguration(conf);
     }
     
     public void setConfiguration(Configuration conf) {
-        this.conf = conf;
+        this.conf = new Configuration(conf);
+        
+        this.conf.setBoolean(MultiRfileInputformat.CACHE_METADATA, true);
+        this.conf.set("recorditer.auth.string", recordIterAuthString);
     }
     
     @Override

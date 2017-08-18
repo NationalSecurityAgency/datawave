@@ -10,14 +10,12 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 public class BulkIteratorEnvironment implements IteratorEnvironment {
+
+    private IteratorScope scope;
+    private AccumuloConfiguration conf;
     
-    AccumuloConfiguration conf;
-    
-    public BulkIteratorEnvironment(AccumuloConfiguration conf) {
-        this.conf = conf;
-    }
-    
-    public BulkIteratorEnvironment() {
+    public BulkIteratorEnvironment(IteratorScope scope) {
+        this.scope = scope;
         this.conf = AccumuloConfiguration.getDefaultConfiguration();
     }
     
@@ -28,7 +26,7 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     
     @Override
     public IteratorScope getIteratorScope() {
-        throw new UnsupportedOperationException();
+        return scope;
     }
     
     @Override
