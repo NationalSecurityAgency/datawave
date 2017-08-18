@@ -10,7 +10,7 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 public class BulkIteratorEnvironment implements IteratorEnvironment {
-
+    
     private IteratorScope scope;
     private AccumuloConfiguration conf;
     
