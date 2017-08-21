@@ -350,7 +350,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         
         try {
             globalIter = applyTableIterators(topIter, conf);
-            globalIter = buildTopIterators(topIter, conf);
+            globalIter = buildTopIterators(globalIter, conf);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new IOException(e);
         }
@@ -419,7 +419,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         
         SortedKeyValueIterator<Key,Value> newIter = topIter;
         
-        BulkIteratorEnvironment myData = new BulkIteratorEnvironment();
+        BulkIteratorEnvironment myData = new BulkIteratorEnvironment(IteratorScope.scan);
         // ensure we create the iterators in priority order
         Collections.sort(iterators, new Comparator<AccumuloIterator>() {
             @Override
