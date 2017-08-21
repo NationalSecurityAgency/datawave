@@ -14,13 +14,11 @@ import org.apache.accumulo.core.security.Authorizations;
 
 public class BulkIteratorEnvironment implements IteratorEnvironment {
     
-    AccumuloConfiguration conf;
+    private IteratorScope scope;
+    private AccumuloConfiguration conf;
     
-    public BulkIteratorEnvironment(AccumuloConfiguration conf) {
-        this.conf = conf;
-    }
-    
-    public BulkIteratorEnvironment() {
+    public BulkIteratorEnvironment(IteratorScope scope) {
+        this.scope = scope;
         this.conf = AccumuloConfiguration.getDefaultConfiguration();
     }
     
@@ -31,7 +29,7 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     
     @Override
     public IteratorScope getIteratorScope() {
-        throw new UnsupportedOperationException();
+        return scope;
     }
     
     @Override
