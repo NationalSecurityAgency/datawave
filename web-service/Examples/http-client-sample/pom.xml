@@ -4,7 +4,7 @@
     <parent>
         <groupId>datawave.webservice</groupId>
         <artifactId>Examples</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0-srf-SNAPSHOT</version>
     </parent>
     <artifactId>http-client-sample</artifactId>
     <packaging>jar</packaging>
