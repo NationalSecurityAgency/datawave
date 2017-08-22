@@ -1,8 +1,10 @@
 package nsa.datawave.mr.bulk;
 
-import nsa.datawave.mr.bulk.split.FileRangeSplit;
-import nsa.datawave.mr.bulk.split.TabletSplitSplit;
-import nsa.datawave.security.iterator.ConfigurableVisibilityFilter;
+import datawave.mr.bulk.BulkInputFormat;
+import datawave.mr.bulk.RecordIterator;
+import datawave.mr.bulk.split.FileRangeSplit;
+import datawave.mr.bulk.split.TabletSplitSplit;
+import datawave.security.iterator.ConfigurableVisibilityFilter;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
