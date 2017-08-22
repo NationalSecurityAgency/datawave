@@ -31,8 +31,6 @@ import nsa.datawave.query.rewrite.jexl.visitors.SatisfactionVisitor;
 import nsa.datawave.query.rewrite.jexl.visitors.VariableNameVisitor;
 import nsa.datawave.query.rewrite.postprocessing.tf.TFFactory;
 import nsa.datawave.query.rewrite.predicate.EmptyDocumentFilter;
-import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
-import nsa.datawave.query.rewrite.predicate.FilteredDocumentData;
 import nsa.datawave.query.rewrite.statsd.QueryStatsDClient;
 import nsa.datawave.query.rewrite.util.TraceIterators;
 import nsa.datawave.query.util.*;
@@ -614,15 +612,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 }
             };
         } else {
-            if (projectResultsAndTrim) {
-                EventDataQueryFilter project = new EventDataQueryFilter();
-                project.initializeWhitelist(getProjection().getProjection().getWhitelist());
-                docMapper = new FilteredDocumentData(deepSourceCopy, super.equality, project, this.includeHierarchyFields, this.includeHierarchyFields);
-            } else {
-                
-                docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, super.equality, getEvaluationFilter(),
-                                this.includeHierarchyFields, this.includeHierarchyFields);
-            }
+            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, super.equality, getEvaluationFilter(),
+                            this.includeHierarchyFields, this.includeHierarchyFields);
         }
         
         Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, new Function<Key,Entry<DocumentData,Document>>() {
@@ -867,16 +858,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             log.trace("mapDocument " + fieldIndexSatisfiesQuery);
         }
         if (fieldIndexSatisfiesQuery) {
-            final KeyToDocumentData docMapper;
-            // TODO: no evaluation filter here as this is post evaluation
-            if (projectResultsAndTrim) {
-                EventDataQueryFilter project = new EventDataQueryFilter();
-                project.initializeWhitelist(getProjection().getProjection().getWhitelist());
-                docMapper = new FilteredDocumentData(deepSourceCopy, super.equality, project, this.includeHierarchyFields, this.includeHierarchyFields);
-            } else {
-                docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, super.equality, getEvaluationFilter(),
-                                this.includeHierarchyFields, this.includeHierarchyFields);
-            }
+            final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, super.equality,
+                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields);
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
                             documents,
                             new GetDocument(docMapper, new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata, this
