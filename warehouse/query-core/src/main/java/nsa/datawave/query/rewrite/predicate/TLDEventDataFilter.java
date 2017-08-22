@@ -14,7 +14,7 @@ import nsa.datawave.query.rewrite.Constants;
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields
  * are returned.
  */
-public class TLDEventDataFilter extends EventDataQueryFilter implements Filter {
+public class TLDEventDataFilter extends EventDataQueryFilter {
     
     public static final byte[] FI_CF = new Text("fi").getBytes();
     public static final byte[] TF_CF = Constants.TERM_FREQUENCY_COLUMN_FAMILY.getBytes();

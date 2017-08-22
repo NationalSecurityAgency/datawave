@@ -161,8 +161,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
      */
     protected boolean disableRangeCoalescing = false;
     
-    protected boolean filterMetadata = false;
-    
     /**
      * Allows developers to cache data types
      */
@@ -263,7 +261,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
         setDisableTestNonExistentFields(other.disableTestNonExistentFields);
         setDisableExpandIndexFunction(other.disableExpandIndexFunction);
         setDisableRangeCoalescing(other.disableRangeCoalescing);
-        setFilterMetadata(other.filterMetadata);
         if (null != other.cachedIndexedFields)
             cachedIndexedFields = Sets.newHashSet(other.cachedIndexedFields);
         if (null != other.cachedNormalizedFields)
@@ -1615,7 +1612,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
             }
             
             addOption(cfg, QueryOptions.PROJECTION_FIELDS, config.getProjectFieldsAsString(), false);
-            addOption(cfg, QueryOptions.PROJECTION_FIELDS_TRIM, Boolean.valueOf(filterMetadata).toString(), false);
         } else if (null != config.getBlacklistedFields() && !config.getBlacklistedFields().isEmpty()) {
             if (log.isDebugEnabled()) {
                 log.debug("Setting scan option: " + QueryOptions.BLACKLISTED_FIELDS + " to " + config.getBlacklistedFieldsAsString());
@@ -1925,14 +1921,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     public boolean getCompressOptionMappings() {
         return compressMappings;
-    }
-    
-    public void setFilterMetadata(boolean filterMetadata) {
-        this.filterMetadata = filterMetadata;
-    }
-    
-    public boolean getFilterMetadata() {
-        return filterMetadata;
     }
     
     /*

@@ -16,7 +16,6 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
@@ -47,7 +46,6 @@ import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
 import nsa.datawave.query.rewrite.jexl.functions.CardinalityAggregator;
 import nsa.datawave.query.rewrite.jexl.visitors.IteratorBuildingVisitor;
 import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
-import nsa.datawave.query.rewrite.predicate.FilteredDocumentData;
 import nsa.datawave.query.rewrite.tables.facets.FacetedConfiguration;
 import nsa.datawave.query.rewrite.tables.facets.FacetedSearchType;
 import nsa.datawave.query.util.TypeMetadata;
@@ -171,9 +169,9 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         if (configuration.getFacetedFields().size() > 0) {
             projection = new EventDataQueryFilter();
             projection.initializeWhitelist(configuration.getFacetedFields());
-            keyToDoc = new FilteredDocumentData(source.deepCopy(myEnvironment), super.equality, projection, this.includeHierarchyFields,
-                            this.includeHierarchyFields);
-        } else if (!configuration.hasFieldLimits()) {
+        }
+        
+        if (!configuration.hasFieldLimits() || projection != null) {
             keyToDoc = new KeyToDocumentData(source.deepCopy(myEnvironment), super.equality, projection, this.includeHierarchyFields,
                             this.includeHierarchyFields);
         }
