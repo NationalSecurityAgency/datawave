@@ -165,7 +165,7 @@ public class CredentialsCacheBean {
     public DnList listDNs(@QueryParam("localOnly") boolean localOnly) {
         DnList result;
         if (!cachedDatawaveUserServiceInstance.isUnsatisfied() && !localOnly) {
-            result = cachedDatawaveUserServiceInstance.get().listAll();
+            result = new DnList(cachedDatawaveUserServiceInstance.get().listAll());
         } else {
             // @formatter:off
             Set<DatawaveUser> userList = authManager.getCachedKeys().parallelStream()
@@ -192,7 +192,7 @@ public class CredentialsCacheBean {
     public DnList listDNsMatching(@QueryParam("substring") final String substr) {
         DnList result;
         if (!cachedDatawaveUserServiceInstance.isUnsatisfied()) {
-            result = cachedDatawaveUserServiceInstance.get().listMatching(substr);
+            result = new DnList(cachedDatawaveUserServiceInstance.get().listMatching(substr));
         } else {
             Set<Principal> principals = authManager.getCachedKeys();
             // @formatter:off

@@ -1,6 +1,6 @@
 package datawave.security.authorization;
 
-import datawave.security.cache.DnList;
+import java.util.Collection;
 
 /**
  * A version of {@link DatawaveUserService} that provides cache control.
@@ -15,12 +15,12 @@ public interface CachedDatawaveUserService extends DatawaveUserService {
     /**
      * Lists the DNs for all entries in the cache.
      */
-    DnList listAll();
+    Collection<? extends DatawaveUser> listAll();
     
     /**
      * Lists DNs for all entries in the cache where the {@link DatawaveUser#getName()} contains the supplied string.
      */
-    DnList listMatching(String substring);
+    Collection<? extends DatawaveUser> listMatching(String substring);
     
     /**
      * Evicts from the cache all entries whose {@link DatawaveUser#getName()} equals the supplied name
