@@ -67,6 +67,11 @@ public interface ColumnFamilyConstants {
     Text COLF_COUNT = new Text("count");
     
     /**
+     * a colf of 'version' debnotes a version (currently only used for edge_key row)
+     */
+    Text COLF_VERSION = new Text("version");
+    
+    /**
      * a colf of 'vi' denotes an event that is part of a virtual field this is not used yet....
      */
     Text COLF_VI = new Text("vi");
