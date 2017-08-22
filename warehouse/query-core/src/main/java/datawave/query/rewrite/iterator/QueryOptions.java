@@ -98,7 +98,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String FULL_TABLE_SCAN_ONLY = "full.table.scan.only";
     
     public static final String PROJECTION_FIELDS = "projection.fields";
-    public static final String PROJECTION_FIELDS_TRIM = "projection.fields.trim";
     public static final String BLACKLISTED_FIELDS = "blacklisted.fields";
     public static final String INDEX_ONLY_FIELDS = "index.only.fields";
     public static final String COMPOSITE_FIELDS = "composite.fields";
@@ -219,7 +218,6 @@ public class QueryOptions implements OptionDescriber {
     protected JexlArithmetic arithmetic = new DefaultArithmetic();
     
     protected boolean projectResults = false;
-    protected boolean projectResultsAndTrim = false;
     protected boolean useWhiteListedFields = false;
     protected Set<String> whiteListedFields = new HashSet<>();
     protected boolean useBlackListedFields = false;
@@ -337,7 +335,6 @@ public class QueryOptions implements OptionDescriber {
         this.fullTableScanOnly = other.fullTableScanOnly;
         
         this.projectResults = other.projectResults;
-        this.projectResultsAndTrim = other.projectResultsAndTrim;
         this.useWhiteListedFields = other.useWhiteListedFields;
         this.whiteListedFields = other.whiteListedFields;
         this.useBlackListedFields = other.useBlackListedFields;
