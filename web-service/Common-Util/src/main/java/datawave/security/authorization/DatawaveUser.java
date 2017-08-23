@@ -1,14 +1,17 @@
 package datawave.security.authorization;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import datawave.security.util.DnUtils;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Map;
 
 /**
  * A user of a DATAWAVE service. Typically, one or more of these users (a chain where a user called an intermediate service which in turn called us) is
@@ -26,7 +29,9 @@ public class DatawaveUser implements Serializable {
     private final SubjectIssuerDNPair dn;
     private final UserType userType;
     private final Collection<String> auths;
+    private final Collection<String> unmodifiableAuths;
     private final Collection<String> roles;
+    private final Collection<String> unmodifiableRoles;
     private final Multimap<String,String> roleToAuthMapping;
     private final long creationTime;
     private final long expirationTime;
@@ -36,15 +41,21 @@ public class DatawaveUser implements Serializable {
         this(dn, userType, auths, roles, roleToAuthMapping, creationTime, -1L);
     }
     
-    public DatawaveUser(SubjectIssuerDNPair dn, UserType userType, Collection<String> auths, Collection<String> roles,
-                    Multimap<String,String> roleToAuthMapping, long creationTime, long expirationTime) {
+    @JsonCreator
+    public DatawaveUser(@JsonProperty("dn") SubjectIssuerDNPair dn, @JsonProperty("userType") UserType userType,
+                    @JsonProperty("auths") Collection<String> auths, @JsonProperty("roles") Collection<String> roles,
+                    @JsonProperty("roleToAuthMapping") Multimap<String,String> roleToAuthMapping, @JsonProperty("creationTime") long creationTime,
+                    @JsonProperty("expirationTime") long expirationTime) {
         this.name = dn.toString();
         this.commonName = DnUtils.getCommonName(dn.subjectDN());
         this.dn = dn;
         this.userType = userType;
-        this.auths = auths == null ? Collections.emptyList() : Collections.unmodifiableCollection(new LinkedHashSet<>(auths));
-        this.roles = roles == null ? Collections.emptyList() : Collections.unmodifiableCollection(new LinkedHashSet<>(roles));
-        this.roleToAuthMapping = roleToAuthMapping == null ? LinkedHashMultimap.create() : LinkedHashMultimap.create(roleToAuthMapping);
+        this.auths = auths == null ? Collections.emptyList() : new LinkedHashSet<>(auths);
+        this.unmodifiableAuths = Collections.unmodifiableCollection(this.auths);
+        this.roles = roles == null ? Collections.emptyList() : new LinkedHashSet<>(roles);
+        this.unmodifiableRoles = Collections.unmodifiableCollection(this.roles);
+        this.roleToAuthMapping = roleToAuthMapping == null ? LinkedHashMultimap.create() : Multimaps.unmodifiableMultimap(LinkedHashMultimap
+                        .create(roleToAuthMapping));
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
     }
@@ -53,6 +64,7 @@ public class DatawaveUser implements Serializable {
         return name;
     }
     
+    @JsonIgnore
     public String getCommonName() {
         return commonName;
     }
@@ -66,11 +78,11 @@ public class DatawaveUser implements Serializable {
     }
     
     public Collection<String> getAuths() {
-        return auths == null ? Collections.emptyList() : auths;
+        return unmodifiableAuths;
     }
     
     public Collection<String> getRoles() {
-        return roles == null ? Collections.emptyList() : roles;
+        return unmodifiableRoles;
     }
     
     public Multimap<String,String> getRoleToAuthMapping() {

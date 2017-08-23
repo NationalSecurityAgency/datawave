@@ -1,11 +1,16 @@
 package datawave.security.authorization;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import datawave.security.util.DnUtils;
+
+import java.io.Serializable;
 
 /**
  * A simple pair containing a subject and (optional) issuer DN. The supplied DN values are normalized into a lower-case form with the CN portion first.
  */
-public class SubjectIssuerDNPair {
+public class SubjectIssuerDNPair implements Serializable {
     private final String subjectDN;
     private final String issuerDN;
     
@@ -13,7 +18,8 @@ public class SubjectIssuerDNPair {
         return new SubjectIssuerDNPair(subjectDN, null);
     }
     
-    public static SubjectIssuerDNPair of(String subjectDN, String issuerDN) {
+    @JsonCreator
+    public static SubjectIssuerDNPair of(@JsonProperty("subjectDN") String subjectDN, @JsonProperty("subjectDN") String issuerDN) {
         return new SubjectIssuerDNPair(subjectDN, issuerDN);
     }
     
@@ -26,10 +32,12 @@ public class SubjectIssuerDNPair {
         }
     }
     
+    @JsonGetter
     public String subjectDN() {
         return subjectDN;
     }
     
+    @JsonGetter
     public String issuerDN() {
         return issuerDN;
     }
