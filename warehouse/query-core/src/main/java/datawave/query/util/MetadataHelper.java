@@ -610,6 +610,8 @@ public class MetadataHelper implements ApplicationContextAware {
         ignoreColfs.add(ColumnFamilyConstants.COLF_H);
         ignoreColfs.add(ColumnFamilyConstants.COLF_VI);
         ignoreColfs.add(ColumnFamilyConstants.COLF_TF);
+        ignoreColfs.add(ColumnFamilyConstants.COLF_VERSION);
+        ignoreColfs.add(ColumnFamilyConstants.COLF_EXP);
         
         for (Map.Entry<Key,Value> entry : scan) {
             Text cf = entry.getKey().getColumnFamily();

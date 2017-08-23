@@ -1,7 +1,9 @@
 package datawave.query.rewrite.predicate;
 
 import java.util.Map.Entry;
+import java.util.Set;
 
+import com.google.common.base.Predicate;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.rewrite.jexl.JexlASTHelper;
 
@@ -11,12 +13,24 @@ import org.apache.log4j.Logger;
 /**
  * 
  */
-public class KeyProjection extends KeyStringProjection {
+public class KeyProjection implements Predicate<Entry<Key,String>> {
     
-    private static final Logger log = Logger.getLogger(KeyProjection.class);
+    protected Projection projection;
     
     public KeyProjection() {
-        super();
+        projection = new Projection();
+    }
+    
+    public void initializeWhitelist(Set<String> whiteListFields) {
+        projection.setWhitelist(whiteListFields);
+    }
+    
+    public void initializeBlacklist(Set<String> blackListFields) {
+        projection.setBlacklist(blackListFields);
+    }
+    
+    public Projection getProjection() {
+        return projection;
     }
     
     /*
@@ -26,7 +40,7 @@ public class KeyProjection extends KeyStringProjection {
      */
     @Override
     public boolean apply(Entry<Key,String> input) {
-        DatawaveKey parser = new DatawaveKey(input.getKey());
+        final DatawaveKey parser = new DatawaveKey(input.getKey());
         final String fieldName = JexlASTHelper.removeGroupingContext(parser.getFieldName());
         
         return projection.apply(fieldName);

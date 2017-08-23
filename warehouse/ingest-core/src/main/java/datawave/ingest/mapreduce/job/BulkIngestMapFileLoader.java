@@ -392,18 +392,22 @@ public final class BulkIngestMapFileLoader implements Runnable {
         try {
             while (true) {
                 try {
+                    if (!running)
+                        break;
                     sleep();
                     if (!running)
                         break;
                     long loadMessageDelta = System.currentTimeMillis() - lastLoadMessageTime;
-                    if (!canBringMapFilesOnline(lastOnlineTime, loadMessageDelta)) {
-                        if (loadMessageDelta > (5 * 60 * 1000)) {
+                    boolean logMessages = (loadMessageDelta > (5 * 60 * 1000));
+                    if (logMessages) {
+                        lastLoadMessageTime = System.currentTimeMillis();
+                    }
+                    if (!canBringMapFilesOnline(lastOnlineTime, logMessages)) {
+                        if (logMessages) {
                             log.info("Waiting for load to decrease before bringing more map files online.");
-                            lastLoadMessageTime = System.currentTimeMillis();
                         }
                         continue;
                     }
-                    lastLoadMessageTime = 0;
                     List<Path> processedDirectories = new ArrayList<>();
                     if (nextJobIndex >= jobDirectories.length) {
                         jobDirectories = getJobDirectories();
@@ -442,6 +446,9 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                     cleanUpJobDirectory(mapFilesDir);
                                     long end = System.currentTimeMillis();
                                     log.info("Finished processing " + mapFilesDir + ", duration (sec): " + ((end - start) / 1000));
+                                    
+                                    // now that we actually processed something, reset the last load message time to force a message on the next round
+                                    lastLoadMessageTime = 0;
                                 } catch (Exception e) {
                                     log.error("Failed to process " + mapFilesDir, e);
                                     boolean marked = markJobDirectoryFailed(workingHdfs, dstJobDirectory);
@@ -587,8 +594,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
      * Determines whether or not it is safe to bring map files online. This asks Accumulo for its stats for major compaction (running and queued), and will
      * return false if either "too many" compactions are running/queued.
      */
-    public boolean canBringMapFilesOnline(long lastOnlineTime, long notificationDelta) {
-        Level level = (notificationDelta > (5 * 60 * 1000)) ? Level.INFO : Level.DEBUG;
+    public boolean canBringMapFilesOnline(long lastOnlineTime, boolean logInfo) {
+        Level level = (logInfo ? Level.INFO : Level.DEBUG);
         int majC = getMajorCompactionCount();
         log.log(level, "There are " + majC + " compactions currently running or queued.");
         
