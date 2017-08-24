@@ -19,7 +19,7 @@ public class SubjectIssuerDNPair implements Serializable {
     }
     
     @JsonCreator
-    public static SubjectIssuerDNPair of(@JsonProperty("subjectDN") String subjectDN, @JsonProperty("subjectDN") String issuerDN) {
+    public static SubjectIssuerDNPair of(@JsonProperty("subjectDN") String subjectDN, @JsonProperty("issuerDN") String issuerDN) {
         return new SubjectIssuerDNPair(subjectDN, issuerDN);
     }
     
