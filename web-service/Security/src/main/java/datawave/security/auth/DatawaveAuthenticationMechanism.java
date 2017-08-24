@@ -49,6 +49,8 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
     private static final long CACHE_TIMEOUT_SECONDS = 300L;
     private static final HttpString HEADER_START_TIME = new HttpString(REQUEST_START_TIME_HEADER);
     private static final HttpString HEADER_LOGIN_TIME = new HttpString(REQUEST_LOGIN_TIME_HEADER);
+    protected static final HttpString HEADER_PROXIED_ENTITIES = new HttpString(PROXIED_ENTITIES_HEADER);
+    protected static final HttpString HEADER_PROXIED_ENTITIES_ACCEPTED = new HttpString("X-ProxiedEntitiesAccepted");
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
     
@@ -103,8 +105,6 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
     
     @Override
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
-        AuthenticationMechanismOutcome outcome = AuthenticationMechanismOutcome.NOT_ATTEMPTED;
-        
         // Pull proxied entity info from the headers. If proxied entities are there, but proxied issuers are missing, then fail authentication immediately.
         String proxiedEntities;
         String proxiedIssuers;
@@ -112,12 +112,11 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
             proxiedEntities = getSingleHeader(exchange.getRequestHeaders(), PROXIED_ENTITIES_HEADER);
             proxiedIssuers = getSingleHeader(exchange.getRequestHeaders(), PROXIED_ISSUERS_HEADER);
             if (proxiedEntities != null && proxiedIssuers == null) {
-                securityContext.authenticationFailed(PROXIED_ENTITIES_HEADER + " supplied, but missing " + PROXIED_ISSUERS_HEADER + " is missing!", name);
-                return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
+                return notAuthenticated(exchange, securityContext, PROXIED_ENTITIES_HEADER + " supplied, but missing " + PROXIED_ISSUERS_HEADER
+                                + " is missing!");
             }
         } catch (MultipleHeaderException e) {
-            securityContext.authenticationFailed(e.getMessage(), name);
-            return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
+            return notAuthenticated(exchange, securityContext, e.getMessage());
         }
         
         // Pull subject/issuer DN from the SSL client certificate if it's there.
@@ -141,18 +140,16 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
                 String issuerDN = getSingleHeader(exchange.getRequestHeaders(), ISSUER_DN_HEADER);
                 // If no DN headers supplied, then report that we did not authenticate
                 if (subjectDN == null && issuerDN == null) {
-                    return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
+                    return notAttempted(exchange);
                 }
                 // If one of subject or issuer is missing, then report authentication failure.
                 if (subjectDN == null || issuerDN == null) {
-                    securityContext.authenticationFailed("Missing trusted subject DN (" + subjectDN + ") or issuer DN (" + issuerDN
-                                    + ") for trusted header authentication.", name);
-                    return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
+                    return notAuthenticated(exchange, securityContext, "Missing trusted subject DN (" + subjectDN + ") or issuer DN (" + issuerDN
+                                    + ") for trusted header authentication.");
                 }
                 credential = new DatawaveCredential(subjectDN, issuerDN, proxiedEntities, proxiedIssuers);
             } catch (MultipleHeaderException e) {
-                securityContext.authenticationFailed(e.getMessage(), name);
-                return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
+                return notAuthenticated(exchange, securityContext, e.getMessage());
             }
         }
         
@@ -163,18 +160,40 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
             replaceAuthenticationManagerCacheIfNecessary(idm);
             Account account = idm.verify(username, credential);
             if (account != null) {
-                securityContext.authenticationComplete(account, name, false);
-                outcome = AuthenticationMechanismOutcome.AUTHENTICATED;
+                return authenticated(exchange, securityContext, account);
             }
         }
         
+        return notAttempted(exchange);
+    }
+    
+    private AuthenticationMechanismOutcome notAttempted(HttpServerExchange exchange) {
+        addTimingRequestHeaders(exchange);
+        return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
+    }
+    
+    private AuthenticationMechanismOutcome notAuthenticated(HttpServerExchange exchange, SecurityContext securityContext, String reason) {
+        securityContext.authenticationFailed(reason, name);
+        addTimingRequestHeaders(exchange);
+        return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
+    }
+    
+    private AuthenticationMechanismOutcome authenticated(HttpServerExchange exchange, SecurityContext securityContext, Account account) {
+        if (exchange.getRequestHeaders().contains(HEADER_PROXIED_ENTITIES)) {
+            exchange.getResponseHeaders().add(HEADER_PROXIED_ENTITIES_ACCEPTED, "true");
+        }
+        
+        securityContext.authenticationComplete(account, name, false);
+        addTimingRequestHeaders(exchange);
+        return AuthenticationMechanismOutcome.AUTHENTICATED;
+    }
+    
+    private void addTimingRequestHeaders(HttpServerExchange exchange) {
         long requestStartTime = exchange.getRequestStartTime();
         long loginTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - requestStartTime);
         HeaderMap headers = exchange.getRequestHeaders();
         headers.add(HEADER_START_TIME, requestStartTime);
         headers.add(HEADER_LOGIN_TIME, loginTime);
-        
-        return outcome;
     }
     
     /**
