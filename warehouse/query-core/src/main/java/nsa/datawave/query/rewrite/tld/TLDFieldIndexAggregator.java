@@ -19,15 +19,14 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 public class TLDFieldIndexAggregator implements FieldIndexAggregator {
-    private Set<String> indexOnlyFields;
+    private Set<String> fieldsToAggregate;
     private EventDataQueryFilter attrFilter;
     
-    public TLDFieldIndexAggregator(Set<String> indexOnlyFields, EventDataQueryFilter attrFilter) {
-        this.indexOnlyFields = indexOnlyFields;
+    public TLDFieldIndexAggregator(Set<String> fieldsToAggregate, EventDataQueryFilter attrFilter) {
+        this.fieldsToAggregate = fieldsToAggregate;
         this.attrFilter = attrFilter;
     }
     
@@ -43,8 +42,8 @@ public class TLDFieldIndexAggregator implements FieldIndexAggregator {
             value = value.substring(0, value.indexOf('\0'));
             Attribute<?> attr = af.create(field, value, key, true);
             // only keep fields that are index only and pass the attribute filter
-            attr.setToKeep((attrFilter == null || attrFilter.keep(key))
-                            && (indexOnlyFields == null || indexOnlyFields.contains(JexlASTHelper.removeGroupingContext(field))));
+            attr.setToKeep((fieldsToAggregate == null || fieldsToAggregate.contains(JexlASTHelper.removeGroupingContext(field)))
+                            && (attrFilter == null || attrFilter.keep(key)));
             d.put(field, attr);
             
             ByteSequence thisId = parsePointerFromFI(key.getColumnQualifierData());

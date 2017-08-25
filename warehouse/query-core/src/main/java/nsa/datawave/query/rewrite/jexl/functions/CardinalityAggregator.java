@@ -26,8 +26,8 @@ public class CardinalityAggregator extends IdentityAggregator {
     private static final Text EMPTY_TEXT = new Text();
     private boolean setDocIds;
     
-    public CardinalityAggregator(Set<String> indexOnlyFields, boolean setDocIds) {
-        super(indexOnlyFields);
+    public CardinalityAggregator(Set<String> fieldsToKeep, boolean setDocIds) {
+        super(fieldsToKeep);
         this.setDocIds = setDocIds;
     }
     
@@ -73,7 +73,7 @@ public class CardinalityAggregator extends IdentityAggregator {
             Cardinality card = new Cardinality(fvC, metadata, doc.isToKeep());
             
             // only keep fields that are index only
-            card.setToKeep(indexOnlyFields == null || indexOnlyFields.contains(JexlASTHelper.removeGroupingContext(field)));
+            card.setToKeep(fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(field)));
             doc.put(field, card);
             
             key = nextKey;

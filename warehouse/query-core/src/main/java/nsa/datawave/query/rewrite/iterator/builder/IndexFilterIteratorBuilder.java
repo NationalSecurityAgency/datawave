@@ -83,8 +83,8 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                 log.debug("Created a DatawaveFieldIndexFilterIteratorJexl: " + rangeIterator);
                 
                 // Add an interator to aggregate documents. This is needed for index only fields.
-                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(true, // this.indexOnlyFields == null ? false
-                                                                                                        // :this.indexOnlyFields.contains(field),
+                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(true, // this.fieldsToKeep == null ? false
+                                                                                                        // :this.fieldsToKeep.contains(field),
                                 this.typeMetadata, keyTform);
                 aggregatingIterator.init(rangeIterator, null, null);
                 

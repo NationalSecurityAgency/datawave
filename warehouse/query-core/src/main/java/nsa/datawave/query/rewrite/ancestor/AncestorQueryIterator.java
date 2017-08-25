@@ -12,6 +12,8 @@ import nsa.datawave.query.rewrite.attributes.ValueTuple;
 import nsa.datawave.query.rewrite.function.JexlEvaluation;
 import nsa.datawave.query.rewrite.jexl.HitListArithmetic;
 import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
+import nsa.datawave.query.rewrite.tld.TLDIndexBuildingVisitor;
+import nsa.datawave.query.rewrite.tld.TLDIndexIteratorBuilder;
 import nsa.datawave.query.util.*;
 import nsa.datawave.util.StringUtils;
 import nsa.datawave.query.rewrite.function.AncestorEquality;
@@ -215,21 +217,10 @@ public class AncestorQueryIterator extends QueryIterator {
     
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException {
-        if (log.isTraceEnabled()) {
-            log.trace(documentRange);
-        }
-        
-        // We need to pull tokenized fields from the field index as well as index only fields
-        Set<String> indexOnlyFields = new HashSet<String>(this.getIndexOnlyFields());
-        indexOnlyFields.addAll(this.getTermFrequencyFields());
-        
-        return new AncestorIndexBuildingVisitor(this, this.myEnvironment, this.getTimeFilter(), this.getTypeMetadata(), indexOnlyFields,
-                        this.getFieldIndexKeyDataTypeFilter(), this.fiAggregator, this.getFileSystemCache(), this.getQueryLock(),
-                        this.getIvaratorCacheBaseURIsAsList(), this.getQueryId(), this.getHdfsCacheSubDirPrefix(), this.getHdfsFileCompressionCodec(),
-                        this.getIvaratorCacheBufferSize(), this.getIvaratorCacheScanPersistThreshold(), this.getIvaratorCacheScanTimeout(),
-                        this.getMaxIndexRangeSplit(), this.getIvaratorMaxOpenFiles(), this.getMaxIvaratorSources(), this.getTypeMetadata().keySet(),
-                        Collections.<String> emptySet(), this.getTermFrequencyFields(), isQueryFullySatisfied, sortedUIDs, equality).limit(documentRange);
+                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
+        IteratorBuildingVisitor v = createIteratorBuildingVisitor(AncestorIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs)
+                        .setIteratorBuilder(AncestorIndexIteratorBuilder.class);
+        return ((AncestorIndexBuildingVisitor) v).setEquality(equality);
     }
     
     /**

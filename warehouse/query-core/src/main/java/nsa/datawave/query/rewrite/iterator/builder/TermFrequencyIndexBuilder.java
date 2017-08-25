@@ -28,7 +28,6 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     protected Range range;
     protected SortedKeyValueIterator<Key,Value> source;
     protected TypeMetadata typeMetadata;
-    protected Set<String> indexOnlyFields;
     protected Set<String> compositeFields;
     protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
     protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
@@ -52,10 +51,6 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
         this.range = range;
     }
     
-    public Set<String> getIndexOnlyFields() {
-        return indexOnlyFields;
-    }
-    
     public TypeMetadata getTypeMetadata() {
         return typeMetadata;
     }
@@ -64,7 +59,7 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
         this.typeMetadata = typeMetadata;
     }
     
-    public Set<String> gsetFieldsToAggregate() {
+    public Set<String> getFieldsToAggregate() {
         return fieldsToAggregate;
     }
     
@@ -78,10 +73,6 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     
     public void setCompositeFields(Set<String> compositeFields) {
         this.compositeFields = compositeFields;
-    }
-    
-    public void setIndexOnlyFields(Set<String> indexOnlyFields) {
-        this.indexOnlyFields = indexOnlyFields;
     }
     
     public Predicate<Key> getDatatypeFilter() {
@@ -112,8 +103,8 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     public NestedIterator<Key> build() {
         if (notNull(field, range, source, datatypeFilter, timeFilter)) {
             IndexIteratorBridge itr = new IndexIteratorBridge(new TermFrequencyIndexIterator(range.getStartKey(), range.getEndKey(), source, this.timeFilter,
-                            this.typeMetadata, this.indexOnlyFields == null ? false : this.indexOnlyFields.contains(field), this.datatypeFilter,
-                            new TermFrequencyAggregator(indexOnlyFields, attrFilter)));
+                            this.typeMetadata, this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), this.datatypeFilter,
+                            new TermFrequencyAggregator(fieldsToAggregate, attrFilter)));
             field = null;
             range = null;
             source = null;
