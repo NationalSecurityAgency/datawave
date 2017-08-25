@@ -1,53 +1,23 @@
 package nsa.datawave.query.rewrite.predicate;
 
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.base.Predicate;
 import nsa.datawave.query.rewrite.attributes.Document;
-import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
-
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
 
-import com.google.common.collect.Sets;
+import java.util.Map;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.
  */
-public class EventDataQueryFilter extends KeyProjection implements Filter, SeekingFilter {
-    
-    public EventDataQueryFilter() {
-        super();
-        // empty white list and black list
-    }
-    
-    /**
-     * Initialize the query field filter with all of the fields required to evaluation this query
-     * 
-     * @param script
-     */
-    public EventDataQueryFilter(ASTJexlScript script) {
-        Set<String> queryFields = Sets.newHashSet();
-        for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(script)) {
-            queryFields.add(JexlASTHelper.deconstructIdentifier(identifier));
-        }
-        
-        initializeWhitelist(queryFields);
-    }
-    
-    protected Key document = null;
+public interface EventDataQueryFilter extends Predicate<Map.Entry<Key,String>>, Filter, SeekingFilter {
     
     /**
      * This method can be used to change the document context fo the keep(Key k) method.
-     * 
+     *
      * @param document
      */
-    public void setDocumentKey(Key document) {
-        this.document = document;
-    }
+    void setDocumentKey(Key document);
     
     /*
      * (non-Javadoc)
@@ -55,9 +25,7 @@ public class EventDataQueryFilter extends KeyProjection implements Filter, Seeki
      * @see nsa.datawave.query.rewrite.predicate.Filter#keep(org.apache.accumulo.core.data.Key)
      */
     @Override
-    public boolean keep(Key k) {
-        return true;
-    }
+    boolean keep(Key k);
     
     /**
      * Define the start key given the from condition.
@@ -65,10 +33,7 @@ public class EventDataQueryFilter extends KeyProjection implements Filter, Seeki
      * @param from
      * @return
      */
-    public Key getStartKey(Key from) {
-        Key startKey = new Key(from.getRow(), from.getColumnFamily());
-        return startKey;
-    }
+    Key getStartKey(Key from);
     
     /**
      * Define the end key given the from condition.
@@ -76,9 +41,7 @@ public class EventDataQueryFilter extends KeyProjection implements Filter, Seeki
      * @param from
      * @return
      */
-    public Key getStopKey(Key from) {
-        return from.followingKey(PartialKey.ROW_COLFAM);
-    }
+    Key getStopKey(Key from);
     
     /**
      * Get the key range that covers the complete document specified by the input key range
@@ -86,30 +49,5 @@ public class EventDataQueryFilter extends KeyProjection implements Filter, Seeki
      * @param from
      * @return
      */
-    public Range getKeyRange(Map.Entry<Key,Document> from) {
-        return new Range(getStartKey(from.getKey()), true, getStopKey(from.getKey()), false);
-    }
-    
-    /**
-     * Not yet implemented for this filter. Not guaranteed to be called
-     *
-     * @param current
-     *            the current key at the top of the source iterator
-     * @param endKey
-     *            the current range endKey
-     * @param endKeyInclusive
-     *            the endKeyInclusive flag from the current range
-     * @return
-     */
-    @Override
-    public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
-        // not yet implemented
-        return null;
-    }
-    
-    @Override
-    public int getMaxNextCount() {
-        // not yet implemented
-        return -1;
-    }
+    public Range getKeyRange(Map.Entry<Key,Document> from);
 }

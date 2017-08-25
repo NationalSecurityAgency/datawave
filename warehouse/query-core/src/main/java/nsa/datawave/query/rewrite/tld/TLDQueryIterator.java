@@ -4,13 +4,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import nsa.datawave.query.rewrite.planner.SeekingQueryPlanner;
+import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -30,7 +29,6 @@ import nsa.datawave.query.rewrite.iterator.SourcedOptions;
 import nsa.datawave.query.rewrite.iterator.logic.IndexIterator;
 import nsa.datawave.query.rewrite.jexl.visitors.IteratorBuildingVisitor;
 import nsa.datawave.query.rewrite.predicate.ConfiguredPredicate;
-import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
 import nsa.datawave.query.rewrite.predicate.TLDEventDataFilter;
 import nsa.datawave.util.StringUtils;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -97,8 +95,9 @@ public class TLDQueryIterator extends QueryIterator {
     public EventDataQueryFilter getEvaluationFilter() {
         if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, useWhiteListedFields ? whiteListedFields : null, useBlackListedFields ? blackListedFields
-                            : null, maxFieldHitsBeforeSeek, maxKeysBeforeSeek);
+            this.evaluationFilter = new TLDEventDataFilter(script, typeMetadata, this.isDataQueryExpressionFilterEnabled(),
+                            useWhiteListedFields ? whiteListedFields : null, useBlackListedFields ? blackListedFields : null, maxFieldHitsBeforeSeek,
+                            maxKeysBeforeSeek);
         }
         return this.evaluationFilter;
     }

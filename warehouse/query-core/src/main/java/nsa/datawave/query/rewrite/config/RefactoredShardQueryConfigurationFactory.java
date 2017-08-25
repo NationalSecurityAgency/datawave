@@ -170,6 +170,8 @@ public class RefactoredShardQueryConfigurationFactory {
         
         config.setDebugMultithreadedSources(configuredLogic.isDebugMultithreadedSources());
         
+        config.setDataQueryExpressionFilterEnabled(configuredLogic.isDataQueryExpressionFilterEnabled());
+        
         config.setCollectTimingDetails(configuredLogic.getCollectTimingDetails());
         config.setLogTimingDetails(configuredLogic.getLogTimingDetails());
         config.setSendTimingToStatsd(configuredLogic.getSendTimingToStatsd());

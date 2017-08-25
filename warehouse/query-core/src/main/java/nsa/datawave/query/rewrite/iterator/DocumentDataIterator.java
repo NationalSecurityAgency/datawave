@@ -2,12 +2,9 @@ package nsa.datawave.query.rewrite.iterator;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import com.google.common.collect.Maps;
 import nsa.datawave.query.rewrite.attributes.Document;

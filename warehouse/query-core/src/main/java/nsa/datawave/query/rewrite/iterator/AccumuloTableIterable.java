@@ -11,8 +11,8 @@ import nsa.datawave.query.rewrite.attributes.Document;
 import nsa.datawave.query.rewrite.function.Equality;
 import nsa.datawave.query.rewrite.function.PrefixEquality;
 import nsa.datawave.query.rewrite.iterator.aggregation.DocumentData;
-import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
 
+import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
