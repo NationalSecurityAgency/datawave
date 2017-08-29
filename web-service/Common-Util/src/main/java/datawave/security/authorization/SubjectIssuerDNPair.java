@@ -22,7 +22,7 @@ public class SubjectIssuerDNPair implements Serializable {
     public static SubjectIssuerDNPair of(@JsonProperty("subjectDN") String subjectDN, @JsonProperty("issuerDN") String issuerDN) {
         return new SubjectIssuerDNPair(subjectDN, issuerDN);
     }
-
+    
     public static SubjectIssuerDNPair parse(String dn) {
         String[] dns = DnUtils.splitProxiedSubjectIssuerDNs(dn);
         if (dns.length != 2)

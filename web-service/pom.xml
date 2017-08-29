@@ -51,7 +51,6 @@
         <version.commons-compress>1.13</version.commons-compress>
         <version.commons-dbutils>1.6</version.commons-dbutils>
         <version.commons-digester>3.2</version.commons-digester>
-        <version.commons-httpclient>3.1</version.commons-httpclient>
         <version.commons-net>3.5</version.commons-net>
         <version.commons-pool2>2.4.2</version.commons-pool2>
         <version.geronimo-activation>1.1</version.geronimo-activation>
@@ -89,17 +88,6 @@
                 <groupId>commons-dbutils</groupId>
                 <artifactId>commons-dbutils</artifactId>
                 <version>${version.commons-dbutils}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>commons-httpclient</groupId>
-                <artifactId>commons-httpclient</artifactId>
-                <version>${version.commons-httpclient}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>

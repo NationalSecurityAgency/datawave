@@ -26,10 +26,6 @@
             <artifactId>commons-configuration</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-        </dependency>
-        <dependency>
             <groupId>datawave.webservice</groupId>
             <artifactId>Client</artifactId>
             <version>${project.version}</version>
@@ -248,9 +244,7 @@
                         <configuration>
                             <outputDirectory>lib</outputDirectory>
                             <!-- just grab the non-provided runtime dependencies -->
-                            <includeArtifactIds>commons-cli,commons-httpclient,commons-digester3,bcprov-jdk16</includeArtifactIds>
-                            <excludeGroupIds>org.apache.httpcomponents</excludeGroupIds>
-                            <!-- don't include the httpclient from httpcomponents, only include the org.apache.commons one -->
+                            <includeArtifactIds>commons-cli,httpclient,httpcore,commons-digester3,bcprov-jdk16</includeArtifactIds>
                             <excludeTransitive>false</excludeTransitive>
                         </configuration>
                     </execution>
