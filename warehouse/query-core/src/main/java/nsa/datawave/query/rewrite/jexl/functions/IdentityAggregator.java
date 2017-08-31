@@ -19,28 +19,22 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 public class IdentityAggregator implements FieldIndexAggregator {
-    protected Set<String> indexOnlyFields;
-    protected EventDataQueryFilter attrFilter;
+    protected Set<String> fieldsToKeep;
+    protected EventDataQueryFilter filter;
     
-    protected Set<String> compositeFields;
-    
-    public IdentityAggregator(Set<String> indexOnlyFields, Set<String> compositeFields, EventDataQueryFilter attrFilter) {
-        this.indexOnlyFields = indexOnlyFields;
-        this.compositeFields = compositeFields;
-        this.attrFilter = attrFilter;
+    public IdentityAggregator(Set<String> fieldsToKeep, EventDataQueryFilter filter) {
+        this.fieldsToKeep = fieldsToKeep;
+        this.filter = filter;
     }
     
-    public IdentityAggregator(Set<String> indexOnlyFields, EventDataQueryFilter attrFilter) {
-        this(indexOnlyFields, null, attrFilter);
+    public IdentityAggregator(Set<String> fieldsToKeep) {
+        this(fieldsToKeep, null);
     }
     
-    public IdentityAggregator(Set<String> indexOnlyFields) {
-        this(indexOnlyFields, null, null);
-    }
+    public IdentityAggregator() {}
     
     @Override
     public Key apply(SortedKeyValueIterator<Key,Value> itr) throws IOException {
@@ -74,9 +68,8 @@ public class IdentityAggregator implements FieldIndexAggregator {
             
             Attribute<?> attr = attrs.create(fieldNameValue.first(), fieldNameValue.second(), topKey, true);
             // only keep fields that are index only and pass the attribute filter
-            boolean toKeep = indexOnlyFields == null || indexOnlyFields.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first()));
-            // also keep any fields that are composites
-            toKeep |= this.compositeFields != null && this.compositeFields.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first()));
+            boolean toKeep = (fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
+                            && (filter == null || filter.keep(topKey));
             attr.setToKeep(toKeep);
             doc.put(fieldNameValue.first(), attr);
             key = nextKey;

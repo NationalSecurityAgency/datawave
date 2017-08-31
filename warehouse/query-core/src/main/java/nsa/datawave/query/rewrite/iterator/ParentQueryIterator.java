@@ -32,8 +32,6 @@ public class ParentQueryIterator extends QueryIterator {
     
     protected boolean parentDisableIndexOnlyDocuments = false;
     
-    protected EventDataQueryFilter evaluationFilter = null;
-    
     public ParentQueryIterator() {}
     
     public ParentQueryIterator(QueryIterator other, IteratorEnvironment env) {
@@ -56,7 +54,7 @@ public class ParentQueryIterator extends QueryIterator {
     
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
-        if (evaluationFilter == null) {
+        if (evaluationFilter == null && script != null) {
             this.evaluationFilter = new ParentEventDataFilter(script);
         }
         return evaluationFilter;
