@@ -135,8 +135,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     protected TypeMetadata typeMetadata;
     protected EventDataQueryFilter attrFilter;
-    protected Set<String> fieldsToAggregate;
+    protected Set<String> fieldsToAggregate = Collections.<String> emptySet();
     protected Set<String> termFrequencyFields = Collections.<String> emptySet();
+    protected Set<String> indexOnlyFields = Collections.<String> emptySet();
     protected FieldIndexAggregator fiAggregator = new IdentityAggregator(null);
     
     protected Range rangeLimiter;
@@ -240,9 +241,30 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             ((IndexRangeIteratorBuilder) data).setRange(ranges.keySet().iterator().next());
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(and)) {
             // if the parent is our ExceededValueThreshold marker, then use an
-            // Ivarator to get the job done
+            // Ivarator to get the job done unless we don't have to
             JexlNode source = ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(and);
-            if (!limitLookup) {
+            
+            String identifier = null;
+            LiteralRange<?> range = null;
+            boolean negated = false;
+            if (source instanceof ASTAndNode) {
+                range = buildLiteralRange(source, null);
+                identifier = range.getFieldName();
+            } else {
+                if (source instanceof ASTNRNode)
+                    negated = true;
+                range = buildLiteralRange(source);
+                identifier = JexlASTHelper.getIdentifier(source);
+            }
+            if (data instanceof AbstractIteratorBuilder) {
+                AbstractIteratorBuilder oib = (AbstractIteratorBuilder) data;
+                if (oib.isInANot()) {
+                    negated = true;
+                }
+            }
+            
+            // if we are not limiting the lookup, or the field is index only but not in the term frequencies, then we must ivarate
+            if (!limitLookup || (indexOnlyFields.contains(identifier) && !termFrequencyFields.contains(identifier))) {
                 if (source instanceof ASTAndNode) {
                     try {
                         if (JexlASTHelper.getFunctionNodes(source).isEmpty()) {
@@ -266,24 +288,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 }
             } else {
                 
-                String identifier = null;
-                LiteralRange<?> range = null;
-                boolean negated = false;
-                if (source instanceof ASTAndNode) {
-                    range = buildLiteralRange(source, null);
-                    identifier = range.getFieldName();
-                } else {
-                    if (source instanceof ASTNRNode)
-                        negated = true;
-                    range = buildLiteralRange(source);
-                    identifier = JexlASTHelper.getIdentifier(source);
-                }
-                if (data instanceof AbstractIteratorBuilder) {
-                    AbstractIteratorBuilder oib = (AbstractIteratorBuilder) data;
-                    if (oib.isInANot()) {
-                        negated = true;
-                    }
-                }
                 NestedIterator<Key> nested = null;
                 if (termFrequencyFields.contains(identifier)) {
                     
@@ -1292,8 +1296,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
-    public IteratorBuildingVisitor setFieldsToAggregate(Set<String> facetedFields) {
-        fieldsToAggregate = Sets.newHashSet(facetedFields);
+    public IteratorBuildingVisitor setFieldsToAggregate(Set<String> fieldsToAggregate) {
+        this.fieldsToAggregate = (fieldsToAggregate == null ? Collections.<String> emptySet() : fieldsToAggregate);
         return this;
     }
     
@@ -1447,7 +1451,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     public IteratorBuildingVisitor setTermFrequencyFields(Set<String> termFrequencyFields) {
-        this.termFrequencyFields = termFrequencyFields;
+        this.termFrequencyFields = (termFrequencyFields == null ? Collections.<String> emptySet() : termFrequencyFields);
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIndexOnlyFields(Set<String> indexOnlyFields) {
+        this.indexOnlyFields = (indexOnlyFields == null ? Collections.<String> emptySet() : indexOnlyFields);
         return this;
     }
     

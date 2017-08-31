@@ -1143,7 +1143,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                         .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles()).setIvaratorSources(this, this.getMaxIvaratorSources())
                         .setIncludes(indexedFields).setTermFrequencyFields(this.getTermFrequencyFields()).setIsQueryFullySatisfied(isQueryFullySatisfied)
                         .setSortedUIDs(sortedUIDs).limit(documentRange).disableIndexOnly(disableFiEval).limit(this.sourceLimit)
-                        .setCollectTimingDetails(this.collectTimingDetails).setQuerySpanCollector(this.querySpanCollector);
+                        .setCollectTimingDetails(this.collectTimingDetails).setQuerySpanCollector(this.querySpanCollector)
+                        .setIndexOnlyFields(this.getAllIndexOnlyFields());
         // TODO: .setStatsPort(this.statsdHostAndPort);
     }
     
