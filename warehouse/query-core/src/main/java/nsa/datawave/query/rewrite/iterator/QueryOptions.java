@@ -580,6 +580,17 @@ public class QueryOptions implements OptionDescriber {
         return this.indexOnlyFields;
     }
     
+    public Set<String> getAllIndexOnlyFields() {
+        Set<String> allIndexOnlyFields = new HashSet<String>();
+        // index only fields are by definition not in the event
+        if (indexOnlyFields != null)
+            allIndexOnlyFields.addAll(indexOnlyFields);
+        // composite fields are index only as well
+        if (compositeMetadata != null)
+            allIndexOnlyFields.addAll(compositeMetadata.keySet());
+        return allIndexOnlyFields;
+    }
+    
     /**
      * Get the fields that contain data that may not be in the event
      *
