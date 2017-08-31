@@ -22,7 +22,7 @@ import java.util.Set;
 public class SatisfactionVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(SatisfactionVisitor.class);
     
-    protected Set<String> indexOnlyFields;
+    protected Set<String> nonEventFields;
     private Collection<String> unindexedFields = Lists.newArrayList();
     protected boolean isQueryFullySatisfied;
     protected Collection<String> includeReferences = PowerSet.instance();
@@ -32,8 +32,8 @@ public class SatisfactionVisitor extends BaseVisitor {
         return isQueryFullySatisfied;
     }
     
-    public SatisfactionVisitor(Set<String> indexOnlyFields, Collection<String> includes, Collection<String> excludes, boolean isQueryFullySatisfied) {
-        this.indexOnlyFields = indexOnlyFields;
+    public SatisfactionVisitor(Set<String> nonEventFields, Collection<String> includes, Collection<String> excludes, boolean isQueryFullySatisfied) {
+        this.nonEventFields = nonEventFields;
         this.isQueryFullySatisfied = isQueryFullySatisfied;
         this.includeReferences = includes;
         this.excludeReferences = excludes;
@@ -92,7 +92,7 @@ public class SatisfactionVisitor extends BaseVisitor {
             JexlNode subNode = ASTDelayedPredicate.getQueryPropertySource(node, ASTDelayedPredicate.class);
             if (subNode instanceof ASTEQNode) {
                 String fn = JexlASTHelper.getIdentifier(subNode);
-                if (indexOnlyFields.contains(fn) == false) {
+                if (nonEventFields.contains(fn) == false) {
                     isQueryFullySatisfied = false;
                     return null;
                 } else {

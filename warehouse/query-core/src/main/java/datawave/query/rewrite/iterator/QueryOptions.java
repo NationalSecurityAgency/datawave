@@ -580,6 +580,25 @@ public class QueryOptions implements OptionDescriber {
         return this.indexOnlyFields;
     }
     
+    /**
+     * Get the fields that contain data that may not be in the event
+     *
+     * @return
+     */
+    public Set<String> getNonEventFields() {
+        Set<String> nonEventFields = new HashSet<String>();
+        // index only fields are by definition not in the event
+        if (indexOnlyFields != null)
+            nonEventFields.addAll(indexOnlyFields);
+        // term frequency fields contain forms of the data (tokens) that are not in the event in the same form
+        if (termFrequencyFields != null)
+            nonEventFields.addAll(termFrequencyFields);
+        // composite metadata contains combined fields that are not in the event in the same form
+        if (compositeMetadata != null)
+            nonEventFields.addAll(compositeMetadata.keySet());
+        return nonEventFields;
+    }
+    
     public boolean isContainsIndexOnlyTerms() {
         return containsIndexOnlyTerms;
     }
@@ -1016,7 +1035,7 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(COMPOSITE_METADATA)) {
             this.compositeMetadata = buildCompositeMetadata(options.get(COMPOSITE_METADATA));
         }
-        this.fiAggregator = new IdentityAggregator(indexOnlyFields);
+        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter());
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
             this.ignoreColumnFamilies = buildIgnoredColumnFamilies(options.get(IGNORE_COLUMN_FAMILIES));

@@ -137,7 +137,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         configuration.setFacetedFields(facetedFields);
         
-        fiAggregator = new CardinalityAggregator(getIndexOnlyFields(), !merge);
+        fiAggregator = new CardinalityAggregator(getNonEventFields(), !merge);
         // assign the options for later use by the document iterator
         documenIteratorOptions = options;
         
@@ -146,16 +146,16 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
     
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException {
+                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException {
         
-        IteratorBuildingVisitor parent = super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs);
-        return parent.setIteratorBuilder(CardinalityIteratorBuilder.class).setFieldsToAggregate(configuration.getFacetedFields());
+        return super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs).setIteratorBuilder(CardinalityIteratorBuilder.class)
+                        .setFieldsToAggregate(configuration.getFacetedFields());
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException,
-                    ConfigException {
+                    ConfigException, InstantiationException, IllegalAccessException {
         // Otherwise, we have to use the field index
         // Seek() the boolean logic stuff
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
@@ -237,6 +237,10 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
         } catch (ConfigException e) {
+            throw new IOException("Unable to create document iterator", e);
+        } catch (IllegalAccessException e) {
+            throw new IOException("Unable to create document iterator", e);
+        } catch (InstantiationException e) {
             throw new IOException("Unable to create document iterator", e);
         }
         

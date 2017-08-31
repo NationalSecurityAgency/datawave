@@ -14,6 +14,7 @@ import datawave.query.rewrite.iterator.SourceFactory;
 import datawave.query.rewrite.jexl.JexlASTHelper;
 import datawave.query.rewrite.jexl.functions.FieldIndexAggregator;
 import datawave.query.rewrite.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.rewrite.predicate.EventDataQueryFilter;
 import datawave.query.rewrite.predicate.TimeFilter;
 import datawave.query.rewrite.tld.TLD;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
@@ -32,29 +33,13 @@ import org.apache.log4j.Logger;
 public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(AncestorIndexBuildingVisitor.class);
     
-    private Map<String,List<String>> familyTreeMap;
-    private Map<String,Long> timestampMap;
+    private Map<String,List<String>> familyTreeMap = new HashMap<>();
+    private Map<String,Long> timestampMap = new HashMap<>();
     private Equality equality;
     
-    public AncestorIndexBuildingVisitor(SourceFactory<Key,Value> sourceFactory,
-                    IteratorEnvironment env,
-                    TimeFilter timeFilter,
-                    TypeMetadata typeMetadata,
-                    Set<String> indexOnlyFields,
-                    // EventDataQueryFilter attrFilter,
-                    Predicate<Key> datatypeFilter, FieldIndexAggregator fiAggregator, FileSystemCache fileSystemCache, QueryLock queryLock,
-                    List<String> hdfsCacheDirURIAlternatives, String queryId, String hdfsCacheSubDirPrefix, String hdfsFileCompressionCodec,
-                    int hdfsCacheBufferSize, long hdfsCacheScanPersistThreshold, long hdfsCacheScanTimeout, int maxRangeSplit, int maxOpenFiles,
-                    int maxIvaratorSources, Collection<String> includes, Collection<String> excludes, Set<String> termFrequencyFields,
-                    boolean isQueryFullySatisfied, boolean sortedUIDs, Equality equality) {
-        super(sourceFactory, env, timeFilter, typeMetadata, indexOnlyFields, datatypeFilter, fiAggregator, fileSystemCache, queryLock,
-                        hdfsCacheDirURIAlternatives, queryId, hdfsCacheSubDirPrefix, hdfsFileCompressionCodec, hdfsCacheBufferSize,
-                        hdfsCacheScanPersistThreshold, hdfsCacheScanTimeout, maxRangeSplit, maxOpenFiles, maxIvaratorSources, includes, excludes,
-                        termFrequencyFields, isQueryFullySatisfied, sortedUIDs);
-        setIteratorBuilder(AncestorIndexIteratorBuilder.class);
+    public AncestorIndexBuildingVisitor setEquality(Equality equality) {
         this.equality = equality;
-        familyTreeMap = new HashMap<>();
-        timestampMap = new HashMap<>();
+        return this;
     }
     
     @Override
@@ -64,7 +49,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         try {
             if (limitLookup && !negation) {
                 final String identifier = JexlASTHelper.getIdentifier(node);
-                if (!disableFiEval && indexOnlyFields.contains(identifier)) {
+                if (!disableFiEval && fieldsToAggregate.contains(identifier)) {
                     final SortedKeyValueIterator<Key,Value> baseIterator = source.deepCopy(env);
                     kvIter = new AncestorChildExpansionIterator(baseIterator, getMembers(), equality);
                     seekIndexOnlyDocument(kvIter, node);

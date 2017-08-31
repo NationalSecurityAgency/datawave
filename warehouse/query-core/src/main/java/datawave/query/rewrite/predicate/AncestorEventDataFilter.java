@@ -54,7 +54,7 @@ public class AncestorEventDataFilter extends EventDataQueryFilter {
     @Override
     public boolean keep(Key k) {
         // only keep the data for the document of interest
-        return docUid.equals(getUid(k));
+        return (docUid == null || docUid.equals(getUid(k)));
     }
     
     /**

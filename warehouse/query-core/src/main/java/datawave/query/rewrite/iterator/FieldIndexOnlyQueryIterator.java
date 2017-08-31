@@ -237,7 +237,8 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         
     }
     
-    protected void createAndSeekIndexIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException, ConfigException {
+    protected void createAndSeekIndexIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException, ConfigException,
+                    IllegalAccessException, InstantiationException {
         boolean isQueryFullySatisfiedInitialState = true;
         String hitListOptionString = documentOptions.get("hit.list");
         
@@ -284,7 +285,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
     }
     
     public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException,
-                    ConfigException {
+                    ConfigException, InstantiationException, IllegalAccessException {
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
         
         // Take the document Keys and transform it into Entry<Key,Document>, removing Attributes for this Document
@@ -305,6 +306,10 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
         } catch (ConfigException e) {
+            throw new IOException("Unable to create document iterator", e);
+        } catch (IllegalAccessException e) {
+            throw new IOException("Unable to create document iterator", e);
+        } catch (InstantiationException e) {
             throw new IOException("Unable to create document iterator", e);
         }
         

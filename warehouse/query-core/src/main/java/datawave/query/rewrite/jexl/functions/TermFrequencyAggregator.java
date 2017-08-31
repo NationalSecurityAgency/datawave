@@ -14,8 +14,8 @@ import datawave.query.util.Tuple2;
 
 public class TermFrequencyAggregator extends IdentityAggregator {
     
-    public TermFrequencyAggregator(Set<String> indexOnlyFields, EventDataQueryFilter attrFilter) {
-        super(indexOnlyFields, attrFilter);
+    public TermFrequencyAggregator(Set<String> fieldsToKeep, EventDataQueryFilter attrFilter) {
+        super(fieldsToKeep, attrFilter);
     }
     
     @Override

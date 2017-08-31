@@ -26,7 +26,6 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
     
     protected SortedKeyValueIterator<Key,Value> source;
     protected TypeMetadata typeMetadata;
-    protected Set<String> indexOnlyFields;
     protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
     protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
     protected FieldIndexAggregator keyTform;
@@ -34,10 +33,6 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
     
     public void setSource(final SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
-    }
-    
-    public Set<String> getIndexOnlyFields() {
-        return indexOnlyFields;
     }
     
     public TypeMetadata getTypeMetadata() {
@@ -48,16 +43,12 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
         this.typeMetadata = typeMetadata;
     }
     
-    public Set<String> gsetFieldsToAggregate() {
+    public Set<String> getFieldsToAggregate() {
         return fieldsToAggregate;
     }
     
     public void setFieldsToAggregate(Set<String> fields) {
         fieldsToAggregate = fields;
-    }
-    
-    public void setIndexOnlyFields(Set<String> indexOnlyFields) {
-        this.indexOnlyFields = indexOnlyFields;
     }
     
     public Predicate<Key> getDatatypeFilter() {
@@ -93,7 +84,7 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
     public NestedIterator<Key> build() {
         if (notNull(field, value, source, datatypeFilter, keyTform, timeFilter)) {
             
-            boolean canBuildDocument = this.indexOnlyFields == null ? false : this.indexOnlyFields.contains(field);
+            boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
             if (forceDocumentBuild) {
                 canBuildDocument = true;
             }
