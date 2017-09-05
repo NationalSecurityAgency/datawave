@@ -130,6 +130,9 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     // The fields in the the query that are tf fields
     private Set<String> queryTermFrequencyFields = Collections.emptySet();
     
+    // Are we required to get term frequencies (i.e. does the query contain content functions)
+    private boolean termFrequenciesRequired = false;
+    
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
     
@@ -1251,6 +1254,14 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     
     public void setQueryTermFrequencyFields(Set<String> queryTermFrequencyFields) {
         this.queryTermFrequencyFields = queryTermFrequencyFields;
+    }
+    
+    public boolean isTermFrequenciesRequired() {
+        return termFrequenciesRequired;
+    }
+    
+    public void setTermFrequenciesRequired(boolean termFrequenciesRequired) {
+        this.termFrequenciesRequired = termFrequenciesRequired;
     }
     
     public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
