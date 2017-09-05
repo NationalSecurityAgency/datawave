@@ -57,7 +57,6 @@ import datawave.query.rewrite.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.rewrite.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.rewrite.predicate.EventDataQueryFilter;
 import datawave.query.rewrite.predicate.Filter;
-import datawave.query.rewrite.predicate.NegationPredicate;
 import datawave.query.rewrite.predicate.TimeFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
@@ -116,7 +115,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected Map<Entry<String,String>,Entry<Key,Value>> limitedMap = null;
     protected Collection<String> includeReferences = PowerSet.instance();
     protected Collection<String> excludeReferences = Collections.emptyList();
-    protected Predicate<Key> datatypeFilter;
+    protected Predicate<Key> datatypeFilter = Predicates.<Key> alwaysTrue();
     protected TimeFilter timeFilter;
     
     protected FileSystemCache hdfsFileSystem;
@@ -124,7 +123,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected QueryLock queryLock;
     protected List<String> ivaratorCacheDirURIs;
     protected String queryId;
-    protected String ivaratorCacheSubDirPrefix;
+    protected String ivaratorCacheSubDirPrefix = "";
     protected long ivaratorCacheScanPersistThreshold = 100000L;
     protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     protected int ivaratorCacheBufferSize = 10000;
@@ -135,11 +134,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected int ivaratorCount = 0;
     
     protected TypeMetadata typeMetadata;
-    protected Set<String> indexOnlyFields;
     protected EventDataQueryFilter attrFilter;
-    protected Set<String> fieldsToAggregate;
-    protected Set<String> termFrequencyFields;
-    protected FieldIndexAggregator fiAggregator;
+    protected Set<String> fieldsToAggregate = Collections.<String> emptySet();
+    protected Set<String> termFrequencyFields = Collections.<String> emptySet();
+    protected Set<String> indexOnlyFields = Collections.<String> emptySet();
+    protected FieldIndexAggregator fiAggregator = new IdentityAggregator(null);
     
     protected Range rangeLimiter;
     
@@ -154,8 +153,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     private Collection<String> unindexedFields = Lists.newArrayList();
     
-    protected NegationPredicate predicate = null;
-    
     protected boolean disableFiEval = false;
     
     protected boolean collectTimingDetails = false;
@@ -169,7 +166,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     // warning, so that the
     // SatisfactionVisitor can be changed to accomodate the conditions that
     // caused it.
-    protected final boolean isQueryFullySatisfied;
+    protected boolean isQueryFullySatisfied;
     
     /**
      * Keep track of the iterator environment since we are deep copying
@@ -183,84 +180,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             return false;
         } else
             return isQueryFullySatisfied;
-    }
-    
-    /**
-     * A convenience constructor that accepts all terms doesn't give the index iterators built a key filter or transformer.
-     * 
-     * @param sourceFactory
-     * @param typeMetadata
-     * @param indexOnlyFields
-     */
-    public IteratorBuildingVisitor(SourceFactory sourceFactory, IteratorEnvironment env, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    Set<String> indexOnlyFields, boolean isQueryFullySatisfied) {
-        this(sourceFactory, env, timeFilter, typeMetadata, indexOnlyFields, Predicates.<Key> alwaysTrue(), new IdentityAggregator(null), null, null, null,
-                        null, null, null, 10000, 100000L, 1000L * 60 * 60, 11, 100, 33, PowerSet.<String> instance(), Collections.<String> emptyList(),
-                        Collections.<String> emptySet(), isQueryFullySatisfied, true);
-        
-    }
-    
-    /**
-     * A convenience constructor that accepts all terms.
-     * 
-     * @param sourceFactory
-     * @param typeMetadata
-     * @param indexOnlyFields
-     * @param datatypeFilter
-     */
-    public IteratorBuildingVisitor(SourceFactory sourceFactory, IteratorEnvironment env, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    Set<String> indexOnlyFields, Predicate<Key> datatypeFilter, FieldIndexAggregator keyTform, FileSystemCache hdfsFileSystem,
-                    QueryLock queryLock, List<String> ivaratorCacheDirURIAlternatives, String queryId, String ivaratorCacheSubDirPrefix,
-                    String hdfsFileCompressionCodec, int ivaratorCacheBufferSize, long ivaratorCacheScanPersistThreshold, long ivaratorCacheScanTimeout,
-                    int maxRangeSplit, int ivaratorMaxOpenFiles, int maxIvaratorSources, boolean isQueryFullySatisfied) {
-        this(sourceFactory, env, timeFilter, typeMetadata, indexOnlyFields, datatypeFilter, keyTform, hdfsFileSystem, queryLock,
-                        ivaratorCacheDirURIAlternatives, queryId, ivaratorCacheSubDirPrefix, hdfsFileCompressionCodec, ivaratorCacheBufferSize,
-                        ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, maxRangeSplit, ivaratorMaxOpenFiles, maxIvaratorSources, PowerSet
-                                        .<String> instance(), Collections.<String> emptyList(), Collections.<String> emptySet(), isQueryFullySatisfied, true);
-    }
-    
-    public IteratorBuildingVisitor(SourceFactory sourceFactory, IteratorEnvironment env, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    Set<String> indexOnlyFields, Predicate<Key> datatypeFilter, FieldIndexAggregator fiAggregator, FileSystemCache hdfsFileSystem,
-                    QueryLock queryLock, List<String> ivaratorCacheDirURIAlternatives, String queryId, String ivaratorCacheSubDirPrefix,
-                    String hdfsFileCompressionCodec, int ivaratorCacheBufferSize, long ivaratorCacheScanPersistThreshold, long ivaratorCacheScanTimeout,
-                    int maxRangeSplit, int ivaratorMaxOpenFiles, int maxIvaratorSources, Collection<String> includes, Collection<String> excludes,
-                    Set<String> termFrequencyFields, boolean isQueryFullySatisfied, boolean sortedUIDs) {
-        SortedKeyValueIterator<Key,Value> skvi = sourceFactory.getSourceDeepCopy();
-        this.source = new SourceManager(skvi);
-        this.env = env;
-        Map<String,String> options = Maps.newHashMap();
-        try {
-            this.source.init(skvi, options, env);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        
-        this.timeFilter = timeFilter;
-        this.typeMetadata = typeMetadata;
-        this.indexOnlyFields = indexOnlyFields;
-        this.fieldsToAggregate = indexOnlyFields;
-        this.attrFilter = attrFilter;
-        this.fiAggregator = fiAggregator;
-        this.datatypeFilter = datatypeFilter;
-        this.hdfsFileSystem = hdfsFileSystem;
-        this.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
-        this.queryLock = queryLock;
-        this.ivaratorCacheDirURIs = ivaratorCacheDirURIAlternatives;
-        this.queryId = queryId;
-        this.ivaratorCacheSubDirPrefix = (ivaratorCacheSubDirPrefix == null ? "" : ivaratorCacheSubDirPrefix);
-        this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
-        this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
-        this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
-        this.maxRangeSplit = maxRangeSplit;
-        this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
-        this.includeReferences = includes;
-        this.excludeReferences = excludes;
-        this.termFrequencyFields = termFrequencyFields;
-        predicate = new NegationPredicate(indexOnlyFields);
-        this.isQueryFullySatisfied = isQueryFullySatisfied;
-        this.sortedUIDs = sortedUIDs;
-        this.ivaratorSources = new SourcePool(sourceFactory, maxIvaratorSources);
-        this.ivaratorSource = new ThreadLocalPooledSource<Key,Value>(ivaratorSources);
     }
     
     @SuppressWarnings("unchecked")
@@ -322,9 +241,30 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             ((IndexRangeIteratorBuilder) data).setRange(ranges.keySet().iterator().next());
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(and)) {
             // if the parent is our ExceededValueThreshold marker, then use an
-            // Ivarator to get the job done
+            // Ivarator to get the job done unless we don't have to
             JexlNode source = ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(and);
-            if (!limitLookup) {
+            
+            String identifier = null;
+            LiteralRange<?> range = null;
+            boolean negated = false;
+            if (source instanceof ASTAndNode) {
+                range = buildLiteralRange(source, null);
+                identifier = range.getFieldName();
+            } else {
+                if (source instanceof ASTNRNode)
+                    negated = true;
+                range = buildLiteralRange(source);
+                identifier = JexlASTHelper.getIdentifier(source);
+            }
+            if (data instanceof AbstractIteratorBuilder) {
+                AbstractIteratorBuilder oib = (AbstractIteratorBuilder) data;
+                if (oib.isInANot()) {
+                    negated = true;
+                }
+            }
+            
+            // if we are not limiting the lookup, or the field is index only but not in the term frequencies, then we must ivarate
+            if (!limitLookup || (indexOnlyFields.contains(identifier) && !termFrequencyFields.contains(identifier))) {
                 if (source instanceof ASTAndNode) {
                     try {
                         if (JexlASTHelper.getFunctionNodes(source).isEmpty()) {
@@ -348,26 +288,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 }
             } else {
                 
-                String identifier = null;
-                LiteralRange<?> range = null;
-                boolean negated = false;
-                if (source instanceof ASTAndNode) {
-                    range = buildLiteralRange(source, null);
-                    identifier = range.getFieldName();
-                } else {
-                    if (source instanceof ASTNRNode)
-                        negated = true;
-                    range = buildLiteralRange(source);
-                    identifier = JexlASTHelper.getIdentifier(source);
-                }
-                if (data instanceof AbstractIteratorBuilder) {
-                    AbstractIteratorBuilder oib = (AbstractIteratorBuilder) data;
-                    if (oib.isInANot()) {
-                        negated = true;
-                    }
-                }
                 NestedIterator<Key> nested = null;
-                if (indexOnlyFields.contains(identifier) || termFrequencyFields.contains(identifier)) {
+                if (termFrequencyFields.contains(identifier)) {
                     
                     nested = buildExceededFromTermFrequency(identifier, range, data);
                     
@@ -478,7 +400,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
             builder.setSource(source.deepCopy(env));
             builder.setTypeMetadata(typeMetadata);
-            builder.setIndexOnlyFields(indexOnlyFields);
             builder.setFieldsToAggregate(fieldsToAggregate);
             builder.setTimeFilter(timeFilter);
             builder.setAttrFilter(attrFilter);
@@ -602,7 +523,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
         builder.setSource(source.deepCopy(env));
         builder.setTypeMetadata(typeMetadata);
-        builder.setIndexOnlyFields(indexOnlyFields);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setTimeFilter(timeFilter);
         builder.setDatatypeFilter(datatypeFilter);
@@ -678,7 +598,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setIndexOnlyFields(indexOnlyFields);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -724,7 +643,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     protected TimeFilter getTimeFilter(ASTEQNode node) {
         final String identifier = JexlASTHelper.getIdentifier(node);
-        if (limitLookup && !limitOverride && !indexOnlyFields.contains(identifier)) {
+        if (limitLookup && !limitOverride && !fieldsToAggregate.contains(identifier)) {
             return TimeFilter.alwaysTrue();
         }
         
@@ -739,10 +658,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         try {
             if (limitLookup && !negation) {
                 
-                if (!disableFiEval && indexOnlyFields.contains(identifier)) {
+                if (!disableFiEval && fieldsToAggregate.contains(identifier)) {
                     kvIter = source.deepCopy(env);
                     seekIndexOnlyDocument(kvIter, node);
-                } else if (disableFiEval && indexOnlyFields.contains(identifier)) {
+                } else if (disableFiEval && fieldsToAggregate.contains(identifier)) {
                     kvIter = createIndexOnlyKey(node);
                 } else if (limitOverride) {
                     kvIter = createIndexOnlyKey(node);
@@ -884,7 +803,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             JexlNode subNode = ASTDelayedPredicate.getQueryPropertySource(node, ASTDelayedPredicate.class);
             if (subNode instanceof ASTEQNode) {
                 String fn = JexlASTHelper.getIdentifier(subNode);
-                if (indexOnlyFields.contains(fn)) {
+                if (fieldsToAggregate.contains(fn)) {
                     if (limitLookup) {
                         visitDelayedIndexOnly((ASTEQNode) subNode, o);
                     } else {
@@ -931,7 +850,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setField(identifier);
         builder.setTimeFilter(TimeFilter.alwaysTrue());
         builder.setTypeMetadata(typeMetadata);
-        builder.setIndexOnlyFields(indexOnlyFields);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -964,7 +882,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setIndexOnlyFields(indexOnlyFields);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -1297,7 +1214,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setSource(ivaratorSource);
         builder.setTimeFilter(timeFilter);
         builder.setTypeMetadata(typeMetadata);
-        builder.setIndexOnlyFields(indexOnlyFields);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -1380,8 +1296,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
-    public IteratorBuildingVisitor setFieldsToAggregate(Set<String> facetedFields) {
-        fieldsToAggregate = Sets.newHashSet(facetedFields);
+    public IteratorBuildingVisitor setFieldsToAggregate(Set<String> fieldsToAggregate) {
+        this.fieldsToAggregate = (fieldsToAggregate == null ? Collections.<String> emptySet() : fieldsToAggregate);
         return this;
     }
     
@@ -1405,16 +1321,148 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
-    public void setCollectTimingDetails(boolean collectTimingDetails) {
+    public IteratorBuildingVisitor setCollectTimingDetails(boolean collectTimingDetails) {
         this.collectTimingDetails = collectTimingDetails;
+        return this;
     }
     
-    public void setQuerySpanCollector(QuerySpanCollector querySpanCollector) {
+    public IteratorBuildingVisitor setQuerySpanCollector(QuerySpanCollector querySpanCollector) {
         this.querySpanCollector = querySpanCollector;
+        return this;
     }
     
     public IteratorBuildingVisitor limitOverride(boolean limitOverride) {
         this.limitOverride = limitOverride;
         return this;
     }
+    
+    public IteratorBuildingVisitor setSource(SourceFactory sourceFactory, IteratorEnvironment env) {
+        SortedKeyValueIterator<Key,Value> skvi = sourceFactory.getSourceDeepCopy();
+        this.source = new SourceManager(skvi);
+        this.env = env;
+        Map<String,String> options = Maps.newHashMap();
+        try {
+            this.source.init(skvi, options, env);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setTimeFilter(TimeFilter timeFilter) {
+        this.timeFilter = timeFilter;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setTypeMetadata(TypeMetadata typeMetadata) {
+        this.typeMetadata = typeMetadata;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIsQueryFullySatisfied(boolean isQueryFullySatisfied) {
+        this.isQueryFullySatisfied = isQueryFullySatisfied;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setAttrFilter(EventDataQueryFilter attrFilter) {
+        this.attrFilter = attrFilter;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setDatatypeFilter(Predicate<Key> datatypeFilter) {
+        this.datatypeFilter = datatypeFilter;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setFiAggregator(FieldIndexAggregator fiAggregator) {
+        this.fiAggregator = fiAggregator;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setHdfsFileSystem(FileSystemCache hdfsFileSystem) {
+        this.hdfsFileSystem = hdfsFileSystem;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setQueryLock(QueryLock queryLock) {
+        this.queryLock = queryLock;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorCacheDirURIAlternatives(List<String> ivaratorCacheDirURIAlternatives) {
+        this.ivaratorCacheDirURIs = ivaratorCacheDirURIAlternatives;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setQueryId(String queryId) {
+        this.queryId = queryId;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorCacheSubDirPrefix(String ivaratorCacheSubDirPrefix) {
+        this.ivaratorCacheSubDirPrefix = (ivaratorCacheSubDirPrefix == null ? "" : ivaratorCacheSubDirPrefix);
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setHdfsFileCompressionCodec(String hdfsFileCompressionCodec) {
+        this.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
+        this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
+        this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
+        this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setMaxRangeSplit(int maxRangeSplit) {
+        this.maxRangeSplit = maxRangeSplit;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
+        this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIvaratorSources(SourceFactory sourceFactory, int maxIvaratorSources) {
+        this.ivaratorSources = new SourcePool(sourceFactory, maxIvaratorSources);
+        this.ivaratorSource = new ThreadLocalPooledSource<Key,Value>(ivaratorSources);
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIncludes(Collection<String> includes) {
+        this.includeReferences = includes;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setExcludes(Collection<String> excludes) {
+        this.excludeReferences = excludes;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setTermFrequencyFields(Set<String> termFrequencyFields) {
+        this.termFrequencyFields = (termFrequencyFields == null ? Collections.<String> emptySet() : termFrequencyFields);
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setIndexOnlyFields(Set<String> indexOnlyFields) {
+        this.indexOnlyFields = (indexOnlyFields == null ? Collections.<String> emptySet() : indexOnlyFields);
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setSortedUIDs(boolean sortedUIDs) {
+        this.sortedUIDs = sortedUIDs;
+        return this;
+    }
+    
 }

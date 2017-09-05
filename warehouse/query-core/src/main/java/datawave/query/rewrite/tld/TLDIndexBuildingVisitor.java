@@ -1,58 +1,31 @@
 package datawave.query.rewrite.tld;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.Map.Entry;
-
-import datawave.core.iterators.filesystem.FileSystemCache;
-import datawave.core.iterators.querylock.QueryLock;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import datawave.query.rewrite.Constants;
+import datawave.query.rewrite.iterator.builder.AbstractIteratorBuilder;
 import datawave.query.rewrite.iterator.builder.NegationBuilder;
-
+import datawave.query.rewrite.jexl.JexlASTHelper;
+import datawave.query.rewrite.jexl.JexlASTHelper.IdentifierOpLiteral;
+import datawave.query.rewrite.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.util.IteratorToSortedKeyValueIterator;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
-import datawave.query.rewrite.Constants;
-import datawave.query.rewrite.iterator.SourceFactory;
-import datawave.query.rewrite.iterator.builder.AbstractIteratorBuilder;
-import datawave.query.rewrite.jexl.JexlASTHelper;
-import datawave.query.rewrite.jexl.JexlASTHelper.IdentifierOpLiteral;
-import datawave.query.rewrite.jexl.functions.FieldIndexAggregator;
-import datawave.query.rewrite.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.rewrite.predicate.EventDataQueryFilter;
-import datawave.query.rewrite.predicate.TimeFilter;
-import datawave.query.util.IteratorToSortedKeyValueIterator;
-import datawave.query.util.TypeMetadata;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map.Entry;
 
 public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(TLDIndexBuildingVisitor.class);
-    
-    public TLDIndexBuildingVisitor(SourceFactory<Key,Value> sourceFactory, IteratorEnvironment env, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    Set<String> indexOnlyFields, Predicate<Key> datatypeFilter, FieldIndexAggregator fiAggregator, FileSystemCache fsCache,
-                    QueryLock queryLock, List<String> hdfsCacheDirURIAlternatives, String queryId, String hdfsCacheSubDirPrefix,
-                    String hdfsFileCompressionCodec, int hdfsCacheBufferSize, long hdfsCacheScanPersistThreshold, long hdfsCacheScanTimeout, int maxRangeSplit,
-                    int ivaratorMaxOpenFiles, int maxIvaratorSources, Collection<String> includes, Collection<String> excludes,
-                    Set<String> termFrequencyFields, boolean isQueryFullySatisfied, boolean sortedUIDs) {
-        super(sourceFactory, env, timeFilter, typeMetadata, indexOnlyFields, datatypeFilter, fiAggregator, fsCache, queryLock, hdfsCacheDirURIAlternatives,
-                        queryId, hdfsCacheSubDirPrefix, hdfsFileCompressionCodec, hdfsCacheBufferSize, hdfsCacheScanPersistThreshold, hdfsCacheScanTimeout,
-                        maxRangeSplit, ivaratorMaxOpenFiles, maxIvaratorSources, includes, excludes, termFrequencyFields, isQueryFullySatisfied, sortedUIDs);
-        setIteratorBuilder(TLDIndexIteratorBuilder.class);
-    }
     
     @Override
     public Object visit(ASTNENode node, Object data) {
@@ -64,8 +37,8 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         TLDIndexIteratorBuilder builder = new TLDIndexIteratorBuilder();
         builder.setSource(source.deepCopy(env));
         builder.setTypeMetadata(typeMetadata);
-        builder.setIndexOnlyFields(indexOnlyFields);
         builder.setDatatypeFilter(datatypeFilter);
+        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
         builder.setTimeFilter(timeFilter);
         node.childrenAccept(this, builder);
@@ -161,8 +134,9 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
-        builder.setIndexOnlyFields(indexOnlyFields);
+        builder.setTypeMetadata(typeMetadata);
         builder.setDatatypeFilter(datatypeFilter);
+        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
         node.childrenAccept(this, builder);
         

@@ -190,7 +190,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             this.source = source;
         }
         
-        this.fiAggregator = new IdentityAggregator(indexOnlyFields, this.getCompositeMetadata().keySet(), getEvaluationFilter());
+        this.fiAggregator = new IdentityAggregator(this.getNonEventFields(), getEvaluationFilter());
         
         if (isDebugMultithreadedSources()) {
             this.source = new SourceThreadTrackingIterator(this.source);
@@ -398,7 +398,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
      * @throws IOException
      */
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException {
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
         NestedIterator<Key> docIter = null;
         if (log.isTraceEnabled())
             log.trace("Batched queries is " + batchedQueries);
@@ -1038,7 +1038,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         return sb.toString();
     }
     
-    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript) throws IOException, ConfigException {
+    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript) throws IOException, ConfigException,
+                    IllegalAccessException, InstantiationException {
         NestedIterator<Key> sourceIter = null;
         // If we're doing field index or a non-fulltable (aka a normal
         // query)
@@ -1115,33 +1116,36 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     }
     
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException {
+                    throws ConfigException, MalformedURLException, InstantiationException, IllegalAccessException {
+        return createIteratorBuildingVisitor(IteratorBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs);
+    }
+    
+    protected IteratorBuildingVisitor createIteratorBuildingVisitor(Class<? extends IteratorBuildingVisitor> c, final Range documentRange,
+                    boolean isQueryFullySatisfied, boolean sortedUIDs) throws MalformedURLException, ConfigException, IllegalAccessException,
+                    InstantiationException {
         if (log.isTraceEnabled()) {
             log.trace(documentRange);
         }
-        
-        // We need to pull tokenized fields from the field index as well as
-        // index only fields
-        Set<String> indexOnlyFields = new HashSet<String>(this.getIndexOnlyFields());
-        indexOnlyFields.addAll(this.getTermFrequencyFields());
         
         // determine the list of indexed fields
         Set<String> indexedFields = new HashSet<String>(this.getTypeMetadata().keySet());
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
-        IteratorBuildingVisitor iteratorBuildingVisitor = new IteratorBuildingVisitor(this, this.myEnvironment, this.getTimeFilter(), this.getTypeMetadata(),
-                        indexOnlyFields, this.getFieldIndexKeyDataTypeFilter(), this.fiAggregator, this.getFileSystemCache(), this.getQueryLock(),
-                        this.getIvaratorCacheBaseURIsAsList(), this.getQueryId(), this.getHdfsCacheSubDirPrefix(), this.getHdfsFileCompressionCodec(),
-                        this.getIvaratorCacheBufferSize(), this.getIvaratorCacheScanPersistThreshold(), this.getIvaratorCacheScanTimeout(),
-                        this.getMaxIndexRangeSplit(), this.getIvaratorMaxOpenFiles(), this.getMaxIvaratorSources(), indexedFields,
-                        Collections.<String> emptySet(), this.getTermFrequencyFields(), isQueryFullySatisfied, sortedUIDs).limit(documentRange)
-                        .disableIndexOnly(disableFiEval).limit(this.sourceLimit);
-        
-        iteratorBuildingVisitor.setCollectTimingDetails(this.collectTimingDetails);
-        // TODO: iteratorBuildingVisitor.setStatsPort(this.statsdHostAndPort);
-        iteratorBuildingVisitor.setQuerySpanCollector(this.querySpanCollector);
-        
-        return iteratorBuildingVisitor;
+        return c.newInstance().setSource(this, this.myEnvironment).setTimeFilter(this.getTimeFilter()).setTypeMetadata(this.getTypeMetadata())
+                        .setFieldsToAggregate(this.getNonEventFields()).setAttrFilter(this.getEvaluationFilter())
+                        .setDatatypeFilter(this.getFieldIndexKeyDataTypeFilter()).setFiAggregator(this.fiAggregator)
+                        .setHdfsFileSystem(this.getFileSystemCache()).setQueryLock(this.getQueryLock())
+                        .setIvaratorCacheDirURIAlternatives(this.getIvaratorCacheBaseURIsAsList()).setQueryId(this.getQueryId())
+                        .setIvaratorCacheSubDirPrefix(this.getHdfsCacheSubDirPrefix()).setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec())
+                        .setIvaratorCacheBufferSize(this.getIvaratorCacheBufferSize())
+                        .setIvaratorCacheScanPersistThreshold(this.getIvaratorCacheScanPersistThreshold())
+                        .setIvaratorCacheScanTimeout(this.getIvaratorCacheScanTimeout()).setMaxRangeSplit(this.getMaxIndexRangeSplit())
+                        .setIvaratorMaxOpenFiles(this.getIvaratorMaxOpenFiles()).setIvaratorSources(this, this.getMaxIvaratorSources())
+                        .setIncludes(indexedFields).setTermFrequencyFields(this.getTermFrequencyFields()).setIsQueryFullySatisfied(isQueryFullySatisfied)
+                        .setSortedUIDs(sortedUIDs).limit(documentRange).disableIndexOnly(disableFiEval).limit(this.sourceLimit)
+                        .setCollectTimingDetails(this.collectTimingDetails).setQuerySpanCollector(this.querySpanCollector)
+                        .setIndexOnlyFields(this.getAllIndexOnlyFields());
+        // TODO: .setStatsPort(this.statsdHostAndPort);
     }
     
     protected String getHdfsCacheSubDirPrefix() {
@@ -1166,14 +1170,11 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     
     protected SatisfactionVisitor createSatisfiabilityVisitor(boolean isQueryFullySatisfiedInitialState) {
         
-        Set<String> indexOnlyFields = new HashSet<String>(this.getIndexOnlyFields());
-        indexOnlyFields.addAll(this.getTermFrequencyFields());
-        
         // determine the list of indexed fields
         Set<String> indexedFields = new HashSet<String>(this.getTypeMetadata().keySet());
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
-        SatisfactionVisitor satisfactionVisitor = new SatisfactionVisitor(indexOnlyFields, indexedFields, Collections.<String> emptySet(),
+        SatisfactionVisitor satisfactionVisitor = new SatisfactionVisitor(getNonEventFields(), indexedFields, Collections.<String> emptySet(),
                         isQueryFullySatisfiedInitialState);
         return satisfactionVisitor;
     }

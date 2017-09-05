@@ -75,7 +75,7 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                 rangeIterator.init(source, null, null);
                 log.debug("Created a DatawaveFieldIndexRangeIteratorJexl: " + rangeIterator);
                 
-                boolean canBuildDocument = this.indexOnlyFields == null ? false : this.indexOnlyFields.contains(field);
+                boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
                 if (forceDocumentBuild) {
                     canBuildDocument = true;
                 }

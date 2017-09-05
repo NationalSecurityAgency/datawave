@@ -39,7 +39,6 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
  */
 public class TLDQueryIterator extends QueryIterator {
     private static final Logger log = Logger.getLogger(TLDQueryIterator.class);
-    protected EventDataQueryFilter evaluationFilter = null;
     
     public TLDQueryIterator() {}
     
@@ -68,7 +67,7 @@ public class TLDQueryIterator extends QueryIterator {
         
         super.init(source, options, env);
         
-        super.fiAggregator = new TLDFieldIndexAggregator(super.getIndexOnlyFields(), getEvaluationFilter());
+        super.fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getEvaluationFilter());
         
         // Replace the fieldIndexKeyDataTypeFilter with a chain of "anded" index-filtering predicates.
         // If no other predicates are configured via the indexfiltering.classes property, the method
@@ -83,7 +82,7 @@ public class TLDQueryIterator extends QueryIterator {
     
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
-        if (this.evaluationFilter == null) {
+        if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
             this.evaluationFilter = new TLDEventDataFilter(script);
         }
@@ -176,26 +175,9 @@ public class TLDQueryIterator extends QueryIterator {
     
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException {
-        if (log.isTraceEnabled()) {
-            log.trace(documentRange);
-        }
-        
-        // We need to pull tokenized fields from the field index as well as index only fields
-        Set<String> indexOnlyFields = new HashSet<String>(this.getIndexOnlyFields());
-        indexOnlyFields.addAll(this.getTermFrequencyFields());
-        
-        // determine the list of indexed fields
-        Set<String> indexedFields = new HashSet<String>(this.getTypeMetadata().keySet());
-        indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
-        
-        return new TLDIndexBuildingVisitor(this, this.myEnvironment, this.getTimeFilter(), this.getTypeMetadata(), indexOnlyFields,
-                        this.getFieldIndexKeyDataTypeFilter(), this.fiAggregator, this.getFileSystemCache(), this.getQueryLock(),
-                        this.getIvaratorCacheBaseURIsAsList(), this.getQueryId(), this.getHdfsCacheSubDirPrefix(), this.getHdfsFileCompressionCodec(),
-                        this.getIvaratorCacheBufferSize(), this.getIvaratorCacheScanPersistThreshold(), this.getIvaratorCacheScanTimeout(),
-                        this.getMaxIndexRangeSplit(), this.getIvaratorMaxOpenFiles(), this.getMaxIvaratorSources(), indexedFields,
-                        Collections.<String> emptySet(), this.getTermFrequencyFields(), isQueryFullySatisfied, sortedUIDs).limit(documentRange).limit(
-                        sourceLimit);
+                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
+        return createIteratorBuildingVisitor(TLDIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs).setIteratorBuilder(
+                        TLDIndexIteratorBuilder.class);
     }
     
 }

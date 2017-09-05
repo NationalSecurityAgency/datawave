@@ -70,7 +70,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                 regexIterator.init(source, null, null);
                 log.debug("Created a DatawaveFieldIndexRegexIteratorJexl: " + regexIterator);
                 
-                boolean canBuildDocument = this.indexOnlyFields == null ? false : this.indexOnlyFields.contains(field);
+                boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
                 if (forceDocumentBuild) {
                     canBuildDocument = true;
                 }
