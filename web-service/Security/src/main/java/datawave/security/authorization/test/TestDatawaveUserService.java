@@ -148,7 +148,7 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
         Comparator<Bean<?>> beanComparator = Comparator.comparing(
             b -> b.getBeanClass().isAnnotationPresent(Priority.class)
                ? b.getBeanClass().getAnnotation(Priority.class).value()
-               : Integer.MAX_VALUE);
+               : Integer.MIN_VALUE);
 
         Bean<?> alternate = beanManager.getBeans(CachedDatawaveUserService.class).stream()
                 .filter(b -> b.getBeanClass() != getClass())
@@ -180,14 +180,7 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
             return;
         
         // Read in the Accumulo authorizations so we can trim what was supplied in the test file.
-        List<String> accumuloAuthorizations;
-        try {
-            Connector connector = accumuloConnectionFactory.getConnection(null, AccumuloConnectionFactory.Priority.ADMIN, new HashMap<>());
-            Authorizations auths = connector.securityOperations().getUserAuthorizations(connector.whoami());
-            accumuloAuthorizations = Arrays.asList(auths.toString().split("\\s*,\\s*"));
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to acquire accumulo connector: " + e.getMessage(), e);
-        }
+        List<String> accumuloAuthorizations = readAccumuloAuthorizations();
         
         // Use Jackson to de-serialize te JSON provided for each test user.
         ObjectMapper objectMapper = new ObjectMapper();
@@ -209,6 +202,16 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
                 throw new RuntimeException("Invalid test user configuration: " + e.getMessage(), e);
             }
         });
+    }
+    
+    protected List<String> readAccumuloAuthorizations() {
+        try {
+            Connector connector = accumuloConnectionFactory.getConnection(null, AccumuloConnectionFactory.Priority.ADMIN, new HashMap<>());
+            Authorizations auths = connector.securityOperations().getUserAuthorizations(connector.whoami());
+            return Arrays.asList(auths.toString().split("\\s*,\\s*"));
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to acquire accumulo connector: " + e.getMessage(), e);
+        }
     }
     
     @PreDestroy
