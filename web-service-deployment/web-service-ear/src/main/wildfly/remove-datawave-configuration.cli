@@ -154,7 +154,6 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.audit.queues:remove
 /system-property=dw.audit.log.mdb.pool.size:remove
 /system-property=dw.audit.accumulo.mdb.pool.size:remove
-/system-property=dw.cache.coordinator.namespace:remove
 /system-property=dw.trusted.header.authentication:remove
 /system-property=dw.transport.guarantee:remove
 /system-property=dw.connectionPool.default:remove
@@ -186,6 +185,7 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.metrics.reporter.host:remove
 /system-property=dw.metrics.reporter.port:remove
 /system-property=dw.metrics.reporter.class:remove
+/system-property=dw.security.use.testuserservice:remove
 /system-property=zookeeper.sasl.client:remove
 
 # Restore default transaction node identifier

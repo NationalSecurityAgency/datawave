@@ -17,7 +17,7 @@ cached_results.daysToLive, number of days that tables/views should remain in Cac
 cached_results.rows.per.batch, JDBC batch size for inserting into CachedResults store
 cached.results.hdfs.uri, HDFS for storing exports of CachedResults
 cached.results.export.dir, directory in HFDS for storing exports of CachedResults
-security.testauthservice.entries,
+security.testauthservice.users,
 event.query.data.decorators,
 event.query.max.results,
 external.host.name, external hostname for the web service

@@ -42,10 +42,11 @@ public class DatawaveUser implements Serializable {
     }
     
     @JsonCreator
-    public DatawaveUser(@JsonProperty("dn") SubjectIssuerDNPair dn, @JsonProperty("userType") UserType userType,
-                    @JsonProperty("auths") Collection<String> auths, @JsonProperty("roles") Collection<String> roles,
-                    @JsonProperty("roleToAuthMapping") Multimap<String,String> roleToAuthMapping, @JsonProperty("creationTime") long creationTime,
-                    @JsonProperty("expirationTime") long expirationTime) {
+    public DatawaveUser(@JsonProperty(value = "dn", required = true) SubjectIssuerDNPair dn,
+                    @JsonProperty(value = "userType", required = true) UserType userType, @JsonProperty("auths") Collection<String> auths,
+                    @JsonProperty("roles") Collection<String> roles, @JsonProperty("roleToAuthMapping") Multimap<String,String> roleToAuthMapping,
+                    @JsonProperty(value = "creationTime", defaultValue = "-1L") long creationTime,
+                    @JsonProperty(value = "expirationTime", defaultValue = "-1L") long expirationTime) {
         this.name = dn.toString();
         this.commonName = DnUtils.getCommonName(dn.subjectDN());
         this.dn = dn;

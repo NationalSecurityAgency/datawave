@@ -43,8 +43,6 @@ import org.jboss.logging.Logger;
  * <p>
  * This coordinator uses Zookeeper.
  */
-@Singleton
-// CDI singleton
 public class SharedCacheCoordinator implements Serializable {
     public interface EvictionCallback {
         void evict(String dn);

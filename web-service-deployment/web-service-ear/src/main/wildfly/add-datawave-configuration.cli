@@ -41,7 +41,6 @@ embed-server --server-config=standalone-full.xml
 /system-property=dw.audit.queues:add(value="${audit.queues}")
 /system-property=dw.audit.log.mdb.pool.size:add(value=${audit.log.mdb.pool.size})
 /system-property=dw.audit.accumulo.mdb.pool.size:add(value=${audit.cb.mdb.pool.size})
-/system-property=dw.cache.coordinator.namespace:add(value=${accumulo.cache.table.name})
 /system-property=dw.trusted.header.authentication:add(value=${trusted.header.login})
 /system-property=dw.transport.guarantee:add(value=${webapp.transport.guarantee})
 /system-property=dw.connectionPool.default:add(value=WAREHOUSE)
@@ -73,6 +72,7 @@ embed-server --server-config=standalone-full.xml
 /system-property=dw.metrics.reporter.host:add(value=${metrics.reporter.host})
 /system-property=dw.metrics.reporter.port:add(value=${metrics.reporter.port})
 /system-property=dw.metrics.reporter.class:add(value=${metrics.reporter.class})
+/system-property=dw.security.use.testuserservice:add(value=${security.use.testauthservice})
 
 # Disable SASL client authentication in zookeeper
 /system-property=zookeeper.sasl.client:add(value=false)

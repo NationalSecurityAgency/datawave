@@ -8,6 +8,16 @@ import java.util.Collection;
 public interface CachedDatawaveUserService extends DatawaveUserService {
     
     /**
+     * Retrieves the {@link DatawaveUser}s that correspond to the {@link SubjectIssuerDNPair}s supplied. Unlike the {@link #lookup(Collection)} method, this
+     * method guarantees that any caching is bypassed and users are reloaded from the back end service.
+     *
+     * @param dns
+     *            the list of DNs for which to retrieve user information
+     * @return the {@link DatawaveUser}s for {@code dns}
+     */
+    Collection<DatawaveUser> reload(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException;
+    
+    /**
      * Returns the {@link DatawaveUser} having the specified name as its {@link DatawaveUser#getName()} value.
      */
     DatawaveUser list(String name);
