@@ -160,7 +160,7 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String ALLOW_FIELD_INDEX_EVALUATION = "allow.field.index.evaluation";
     
-    public static final String ALL_INDEX_ONLY_TERMS = "contains.index.only.terms.all";
+    public static final String ALLOW_TERM_FREQUENCY_LOOKUP = "allow.term.frequency.lookup";
     
     public static final String HDFS_SITE_CONFIG_URLS = "hdfs.site.config.urls";
     
@@ -260,6 +260,8 @@ public class QueryOptions implements OptionDescriber {
     protected boolean mustUseFieldIndex = false;
     
     protected boolean allowFieldIndexEvaluation = true;
+    
+    protected boolean allowTermFrequencyLookup = true;
     
     protected String hdfsSiteConfigURLs = null;
     protected String hdfsFileCompressionCodec = null;
@@ -629,6 +631,14 @@ public class QueryOptions implements OptionDescriber {
         this.allowFieldIndexEvaluation = allowFieldIndexEvaluation;
     }
     
+    public boolean isAllowTermFrequencyLookup() {
+        return allowTermFrequencyLookup;
+    }
+    
+    public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
+        this.allowTermFrequencyLookup = allowTermFrequencyLookup;
+    }
+    
     public String getHdfsSiteConfigURLs() {
         return hdfsSiteConfigURLs;
     }
@@ -839,6 +849,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(CONTAINS_INDEX_ONLY_TERMS, "Does the query being evaluated contain any terms which are index-only");
         options.put(ALLOW_FIELD_INDEX_EVALUATION,
                         "Allow the evaluation to occur purely on values pulled from the field index for queries only accessing indexed fields (default is true)");
+        options.put(ALLOW_TERM_FREQUENCY_LOOKUP, "Allow the evaluation to use the term frequencies in lieu of the field index when appropriate");
         options.put(TERM_FREQUENCIES_REQUIRED, "Does the query require gathering term frequencies");
         options.put(TERM_FREQUENCY_FIELDS, "comma-delimited list of fields that contain term frequencies");
         options.put(CONTENT_EXPANSION_FIELDS, "comma-delimited list of fields used for content function expansions");
@@ -1141,6 +1152,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(ALLOW_FIELD_INDEX_EVALUATION)) {
             this.setAllowFieldIndexEvaluation(Boolean.parseBoolean(options.get(ALLOW_FIELD_INDEX_EVALUATION)));
+        }
+        
+        if (options.containsKey(ALLOW_TERM_FREQUENCY_LOOKUP)) {
+            this.setAllowTermFrequencyLookup(Boolean.parseBoolean(options.get(ALLOW_TERM_FREQUENCY_LOOKUP)));
         }
         
         if (options.containsKey(HDFS_SITE_CONFIG_URLS)) {

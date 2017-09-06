@@ -186,6 +186,11 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
      */
     private boolean allowFieldIndexEvaluation = true;
     
+    /**
+     * By default enable using term frequency instead of field index when possible for value lookup
+     */
+    private boolean allowTermFrequencyLookup = true;
+    
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
     
     // Threshold values used in the new RangeCalculator
@@ -1151,6 +1156,14 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.allowFieldIndexEvaluation = allowFieldIndexEvaluation;
     }
     
+    public boolean isAllowTermFrequencyLookup() {
+        return allowTermFrequencyLookup;
+    }
+    
+    public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
+        this.allowTermFrequencyLookup = allowTermFrequencyLookup;
+    }
+    
     public boolean allTermsIndexOnly() {
         return allTermsIndexOnly;
     }
@@ -1428,6 +1441,10 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.setMaxIndexScanTimeMillis(copy.getMaxIndexScanTimeMillis());
         
         this.setAllowShortcutEvaluation(copy.getAllowShortcutEvaluation());
+        
+        this.setAllowFieldIndexEvaluation(copy.isAllowFieldIndexEvaluation());
+        
+        this.setAllowTermFrequencyLookup(copy.isAllowTermFrequencyLookup());
         
         this.setLimitFields(new HashSet<String>(copy.getLimitFields()));
         this.setQuery(copy.getQuery());

@@ -290,8 +290,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 }
             }
             
-            // if the Range is for a single document and the query doesn't reference any index-only or requires term frequencies
-            else if (documentRange != null && (!this.isContainsIndexOnlyTerms() && !this.isTermFrequenciesRequired() && !super.mustUseFieldIndex)) {
+            // if the Range is for a single document and the query doesn't reference any index-only or tokenized fields
+            else if (documentRange != null && (!this.isContainsIndexOnlyTerms() && this.getTermFrequencyFields().isEmpty() && !super.mustUseFieldIndex)) {
                 if (log.isTraceEnabled())
                     log.trace("Received event specific range: " + documentRange);
                 // We can take a shortcut to the directly to the event
@@ -1143,7 +1143,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                         .setIncludes(indexedFields).setTermFrequencyFields(this.getTermFrequencyFields()).setIsQueryFullySatisfied(isQueryFullySatisfied)
                         .setSortedUIDs(sortedUIDs).limit(documentRange).disableIndexOnly(disableFiEval).limit(this.sourceLimit)
                         .setCollectTimingDetails(this.collectTimingDetails).setQuerySpanCollector(this.querySpanCollector)
-                        .setIndexOnlyFields(this.getAllIndexOnlyFields());
+                        .setIndexOnlyFields(this.getAllIndexOnlyFields()).setAllowTermFrequencyLookup(this.allowTermFrequencyLookup);
         // TODO: .setStatsPort(this.statsdHostAndPort);
     }
     

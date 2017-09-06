@@ -775,7 +775,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         config.setQueryTermFrequencyFields(queryTfFields);
         
         // now determine if we actually require gathering term frequencies
-        if (!termFrequencyFields.isEmpty()) {
+        if (!queryTfFields.isEmpty()) {
             Multimap<String,Function> contentFunctions = TermOffsetPopulator.getContentFunctions(queryTree);
             config.setTermFrequenciesRequired(!contentFunctions.isEmpty());
             
@@ -1681,6 +1681,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         addOption(cfg, QueryOptions.CONTAINS_INDEX_ONLY_TERMS, Boolean.toString(config.isContainsIndexOnlyTerms()), false);
         addOption(cfg, QueryOptions.CONTAINS_COMPOSITE_TERMS, Boolean.toString(config.isContainsCompositeTerms()), false);
         addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, Boolean.toString(config.isAllowFieldIndexEvaluation()), false);
+        addOption(cfg, QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, Boolean.toString(config.isAllowTermFrequencyLookup()), false);
         addOption(cfg, QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, Boolean.toString(config.isCompressServerSideResults()), false);
     }
     
