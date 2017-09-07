@@ -1,116 +1,44 @@
 package datawave.webservice.modification;
 
-import java.io.Serializable;
-
-import javax.xml.bind.annotation.XmlNsForm;
-import javax.xml.bind.annotation.XmlSchema;
-import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorOrder;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlEnum;
-import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlSeeAlso;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-
-@XmlRootElement(name = "ModificationOperation")
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-public class ModificationOperation implements Serializable {
-    
-    private static final long serialVersionUID = 5L;
+@XmlAccessorType(XmlAccessType.NONE)
+@XmlSeeAlso(ModificationOperationImpl.class)
+public abstract class ModificationOperation<T extends ModificationOperation> {
     
     @XmlEnum(String.class)
     public static enum OPERATIONMODE {
         INSERT, UPDATE, DELETE, REPLACE, KEEP
     }
     
-    @XmlElement(name = "operationMode", required = true)
-    protected OPERATIONMODE operationMode = null;
-    @XmlElement(name = "fieldName", required = true)
-    protected String fieldName = null;
-    @XmlElement(name = "fieldValue", required = true)
-    protected String fieldValue = null;
-    @XmlElement(name = "oldFieldValue", required = false)
-    protected String oldFieldValue = null;
-    @XmlElement(name = "columnVisibility")
-    protected String columnVisibility = null;
-    @XmlElement(name = "oldColumnVisibility")
-    protected String oldColumnVisibility = null;
+    public abstract OPERATIONMODE getOperationMode();
     
-    public OPERATIONMODE getOperationMode() {
-        return operationMode;
-    }
+    public abstract void setOperationMode(OPERATIONMODE operationMode);
     
-    public void setOperationMode(OPERATIONMODE operationMode) {
-        this.operationMode = operationMode;
-    }
+    public abstract void setOperationMode(String operationMode);
     
-    public void setOperationMode(String operationMode) {
-        this.operationMode = OPERATIONMODE.valueOf(operationMode);
-    }
+    public abstract String getFieldName();
     
-    public String getFieldName() {
-        return fieldName;
-    }
+    public abstract void setFieldName(String fieldName);
     
-    public void setFieldName(String fieldName) {
-        this.fieldName = fieldName;
-    }
+    public abstract String getFieldValue();
     
-    public String getFieldValue() {
-        return fieldValue;
-    }
+    public abstract void setFieldValue(String fieldValue);
     
-    public void setFieldValue(String fieldValue) {
-        this.fieldValue = fieldValue;
-    }
+    public abstract String getOldFieldValue();
     
-    public String getOldFieldValue() {
-        return oldFieldValue;
-    }
+    public abstract void setOldFieldValue(String oldFieldValue);
     
-    public void setOldFieldValue(String oldFieldValue) {
-        this.oldFieldValue = oldFieldValue;
-    }
+    public abstract String getColumnVisibility();
     
-    public String getColumnVisibility() {
-        return columnVisibility;
-    }
+    public abstract void setColumnVisibility(String columnVisibility);
     
-    public void setColumnVisibility(String columnVisibility) {
-        this.columnVisibility = columnVisibility;
-    }
+    public abstract String getOldColumnVisibility();
     
-    public String getOldColumnVisibility() {
-        return oldColumnVisibility;
-    }
+    public abstract void setOldColumnVisibility(String oldColumnVisibility);
     
-    public void setOldColumnVisibility(String oldColumnVisibility) {
-        this.oldColumnVisibility = oldColumnVisibility;
-    }
-    
-    public ModificationOperation clone() {
-        ModificationOperation modOp = new ModificationOperation();
-        modOp.setOperationMode(operationMode);
-        modOp.setFieldName(fieldName);
-        modOp.setFieldValue(fieldValue);
-        modOp.setOldFieldValue(oldFieldValue);
-        modOp.setColumnVisibility(columnVisibility);
-        modOp.setOldColumnVisibility(oldColumnVisibility);
-        return modOp;
-    }
-    
-    @Override
-    public String toString() {
-        ToStringBuilder tsb = new ToStringBuilder(this);
-        tsb.append("operationMode", operationMode);
-        tsb.append("fieldName", fieldName);
-        tsb.append("fieldValue", fieldValue);
-        tsb.append("oldFieldValue", oldFieldValue);
-        tsb.append("columnVisibility", columnVisibility);
-        tsb.append("oldColumnVisibility", oldColumnVisibility);
-        return tsb.toString();
-    }
+    public abstract T clone();
 }

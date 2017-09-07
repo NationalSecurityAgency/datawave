@@ -12,15 +12,12 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-public class ModificationEventBase<T extends ModificationOperation> {
+public abstract class ModificationEventBase<T extends ModificationOperation> {
     
     @XmlElement(name = "id", required = true)
     protected String id = null;
     @XmlElement(name = "idType", required = true)
     protected String idType = null;
-    @XmlElementWrapper(name = "operations", required = true)
-    @XmlElement(name = "operation", required = true)
-    protected List<T> operations = null;
     
     public ModificationEventBase() {
         super();
@@ -42,12 +39,8 @@ public class ModificationEventBase<T extends ModificationOperation> {
         this.idType = idType;
     }
     
-    public List<T> getOperations() {
-        return operations;
-    }
+    public abstract List<T> getOperations();
     
-    public void setOperations(List<T> operations) {
-        this.operations = operations;
-    }
+    public abstract void setOperations(List<T> operations);
     
 }
