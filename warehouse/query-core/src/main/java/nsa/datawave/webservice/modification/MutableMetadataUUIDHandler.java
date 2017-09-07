@@ -217,8 +217,8 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
         List<ModificationEvent> events = uuidModReq.getEvents();
         
         for (ModificationEvent event : events) {
-            List<ModificationOperation> operations = event.getOperations();
-            for (ModificationOperation operation : operations) {
+            List<ModificationOperationImpl> operations = event.getOperations();
+            for (ModificationOperationImpl operation : operations) {
                 ResetValues();
                 OPERATIONMODE mode = operation.getOperationMode();
                 String columnVisibility = operation.getColumnVisibility();
