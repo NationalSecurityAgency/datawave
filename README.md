@@ -37,3 +37,8 @@ pushd contrib/assert-properties
 mvn clean install
 popd
 ```
+
+## Quickstart
+
+See **contrib/datawave-quickstart** to quickly deploy a standalone DataWave cluster
+including ingest and web service components
