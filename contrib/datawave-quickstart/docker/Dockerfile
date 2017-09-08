@@ -37,7 +37,7 @@ RUN rm -f .dockerignore && \
 
 RUN /sbin/service sshd start && \
     echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc && \
-    /bin/bash -c "source ~/.bashrc && installAll && datawaveStart && stopAll" && \
+    /bin/bash -c "source ~/.bashrc && installAll && datawaveStart && datawaveWebTest && stopAll" && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
     rm -rf contrib/datawave-quickstart/accumulo/logs/* && \

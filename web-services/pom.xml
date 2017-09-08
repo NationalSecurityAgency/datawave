@@ -724,7 +724,7 @@
                         <version>2.0</version>
                         <inherited>true</inherited>
                         <configuration>
-                            <expectedPropertyNames>${datawave.root}/web-service/assert-plugin/required-properties.txt</expectedPropertyNames>
+                            <expectedPropertyNames>${datawave.root}/web-services/assert-plugin/required-properties.txt</expectedPropertyNames>
                         </configuration>
                         <executions>
                             <execution>

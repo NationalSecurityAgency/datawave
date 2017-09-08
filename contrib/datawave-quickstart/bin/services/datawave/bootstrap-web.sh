@@ -9,6 +9,7 @@ export JBOSS_HOME="${WILDFLY_HOME}"
 export PATH="${WILDFLY_HOME}/bin:${PATH}"
 
 DW_DATAWAVE_WEB_CMD_START="( cd "${WILDFLY_HOME}/bin" && nohup ./standalone.sh -c standalone-full.xml & )"
+DW_DATAWAVE_WEB_CMD_START_DEBUG="( cd "${WILDFLY_HOME}/bin" && nohup ./standalone.sh --debug -c standalone-full.xml & )"
 DW_DATAWAVE_WEB_CMD_STOP="datawaveWebIsRunning && [[ ! -z \$DATAWAVE_WEB_PID_LIST ]] && kill -15 \$DATAWAVE_WEB_PID_LIST"
 
 DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS="pgrep -f 'jboss.home.dir=${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK}'"
@@ -17,7 +18,7 @@ DW_DATAWAVE_WEB_SYMLINK="datawave-webservice"
 
 getDataWaveTarball "${DW_DATAWAVE_WEB_TARBALL}"
 DW_DATAWAVE_WEB_DIST="${tarball}"
-DW_DATAWAVE_WEB_VERSION="$( echo "${DW_DATAWAVE_WEB_DIST}" | sed "s/.*\///" | sed "s/datawave-web-service-//" | sed "s/-dev.tar.gz//" )"
+DW_DATAWAVE_WEB_VERSION="$( echo "${DW_DATAWAVE_WEB_DIST}" | sed "s/.*\///" | sed "s/datawave-ws-deploy-application-//" | sed "s/-dev.tar.gz//" )"
 DW_DATAWAVE_WEB_BASEDIR="datawave-web-${DW_DATAWAVE_WEB_VERSION}"
 
 function datawaveWebIsRunning() {
@@ -55,8 +56,7 @@ function datawaveWebIsInstalled() {
 }
 
 function datawaveWebTest() {
-    echo "TODO: Create one or more canned queries for wikipedia dataset"
-    return 0
+    "${DW_DATAWAVE_SERVICE_DIR}"/test-web/run.sh $@
 }
 
 function datawaveWebUninstall() {
@@ -94,7 +94,7 @@ function datawaveWebIsDeployed() {
       DW_DATAWAVE_EAR_STATUS="WILDFLY_DOWN"
       return 1
    fi
-   local deployedOK="$( ${WILDFLY_HOME}/bin/jboss-cli.sh -c --command="deployment-info --name=datawave-web-service-*.ear" | grep OK )"
+   local deployedOK="$( ${WILDFLY_HOME}/bin/jboss-cli.sh -c --command="deployment-info --name=datawave-ws-deploy-*.ear" | grep OK )"
    if [ -z "${deployedOK}" ] ; then
       DW_DATAWAVE_EAR_STATUS="DATAWAVE_EAR_NOT_DEPLOYED"
       return 1
@@ -105,14 +105,25 @@ function datawaveWebIsDeployed() {
 
 function datawaveWebStart() {
 
+    local debug=false
+
+    # Use --debug flag to start Wildfly in debug mode
+    [[ "${1}" == "--debug" || "${1}" == "-d" ]] && debug=true
+    [[ -n "${1}" && "${debug}" == false ]] && error "Unrecognized option: ${1}" && return
+
     ! hadoopIsRunning && hadoopStart
     ! accumuloIsRunning && accumuloStart
 
     if datawaveWebIsRunning ; then
        info "Wildfly is already running"
     else
-       info "Starting Wildfly"
-       eval "${DW_DATAWAVE_WEB_CMD_START}" > /dev/null 2>&1
+       if [ "${debug}" == true ] ; then
+           info "Starting Wildfly in debug mode"
+           eval "${DW_DATAWAVE_WEB_CMD_START_DEBUG}" > /dev/null 2>&1
+       else
+           info "Starting Wildfly"
+           eval "${DW_DATAWAVE_WEB_CMD_START}" > /dev/null 2>&1
+       fi
     fi
 
     local pollInterval=4

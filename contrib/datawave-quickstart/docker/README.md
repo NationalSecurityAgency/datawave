@@ -7,9 +7,28 @@
 * Provide a fully-configured dev environment for developers to use for experimentation, debugging, etc. 
   The Docker container retains all the functionality of the non-containerized quickstart environment (see 
   datawave-quickstart/README.md). For convenience, the container includes Maven for rebuilding DataWave, 
-  and Git for source code management
+  Git for source code management, etc
 
-* Enable streamlined testing and integration workflows for various CI/CD needs
+* Enable streamlined testing and integration workflows for various CI/CD needs 
+
+---
+
+### Docker Configuration
+
+* Testing was performed on **CentOS 7.2.1511** and **Docker 17.06.0-ce, build 02c1d87**, with Docker 
+  configured as follows: 
+  ```
+  $ cat /etc/docker/daemon.json
+  {
+    "storage-driver": "devicemapper",
+    "experimental":true
+  }
+  ```
+* The 'devicemapper' storage driver was used as a workaround for this Wildfly issue: 
+  https://issues.jboss.org/browse/WFCORE-2301
+  
+* Experimental mode was turned on to enable the ` docker build --squash ` feature, to help 
+  minimize the size of the resulting image
 
 ---
 
@@ -17,8 +36,8 @@
 
 ##### docker-build.sh 
 
-* Creates a Docker image that mirrors the current DataWave source tree under /opt/datawave, including a 
-  fully-functional deployment of DataWave under /opt/datawave/contrib/datawave-quickstart
+* Uses Dockerfile to create a Docker image that mirrors the current DataWave source tree under an /opt/datawave root 
+  directory, including a fully-initialized deployment of DataWave under /opt/datawave/contrib/datawave-quickstart
 
 ##### docker-run-example.sh
 
@@ -30,9 +49,9 @@
 
 ##### datawave-bootstrap.sh
 
-* Helper script for starting up DataWave ingest and web service components within the container, via 
+* Helper script for starting up DataWave ingest and web service components in the container, via 
   ` --ingest ` and ` --web ` flags respectively. When invoked with the ` --bash ` flag, the script
-  will ` exec /bin/bash ` as the foreground container process (approroiate for ` docker run -it ` usage).
+  will ` exec /bin/bash ` as the main container process (appropriate for ` docker run -it ` usage).
   Without the ` --bash ` flag, the script will go into an infinite loop after starting services
   (more appropriate for ` docker run -d ` usage)
 

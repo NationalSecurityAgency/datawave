@@ -79,12 +79,20 @@ function askYesNo() {
 }
 
 function downloadTarball() {
-   # Downloads the specified tarball, if it doesn't already exist
+   # Downloads the specified tarball, if it doesn't already exist.
+   # If you want to utilize a tarball from the local file system, simply use
+   # "file:///absolute/path/to/filename" as the $1 (uri) arg
    local uri="$1"
    local tarballdir="$2"
    tarball="$( basename ${uri} )"
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
-      $( cd "${tarballdir}" && wget "${uri}" ) || error "Failed to wget '${uri}'"
+      if [[ ${uri} == file://* ]] ; then
+          info "Copying ${uri} to ${tarballdir}..."
+          $( cd "${tarballdir}" && curl -o "./${tarball}" "${uri}" ) || error "Failed to copy '${uri}'"
+      else
+          info "Downloading ${uri} to ${tarballdir}..."
+          $( cd "${tarballdir}" && wget "${uri}" ) || error "Failed to wget '${uri}'"
+      fi
    fi
 }
 

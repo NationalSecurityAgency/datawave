@@ -60,10 +60,22 @@ function cleanBuildContext() {
 
     if [[ "${USE_EXISTING_BINARIES}" != true ]] ; then
         removeDatawaveTarball "*/datawave-dev-*-dist.tar.gz"
-        removeDatawaveTarball "*/datawave-web-service-*-dev.tar.gz"
+        removeDatawaveTarball "*/datawave-ws-deploy-application-*-dev.tar.gz"
     else
         info "Retaining any existing DataWave binaries"
     fi
+}
+
+function overrideBuildProperties() {
+
+    # Before we force a fresh DW build, set overrides for the current root directory and JAVA_HOME
+    # within dev.properties, to ensure deployment is properly configured for the Docker image.
+
+    # See services/datawave/bootstrap.sh, setBuildPropertyOverrides function
+
+    export DW_ROOT_DIRECTORY_OVERRIDE=/opt/datawave
+    export DW_JAVA_HOME_OVERRIDE=${DW_ROOT_DIRECTORY_OVERRIDE}/contrib/datawave-quickstart/java
+
 }
 
 function prepareBuildContext() {
@@ -72,10 +84,7 @@ function prepareBuildContext() {
 
     cleanBuildContext
 
-    # Override the current root directory within dev.properties in order to configure
-    # the build for deployment within the Docker image under the /opt/datawave/ dir
-
-    export DW_ROOT_DIRECTORY_OVERRIDE=/opt/datawave
+    overrideBuildProperties
 
     # Source env.sh to force all tarballs to be downloaded and the DW binaries to be built, if necessary
 

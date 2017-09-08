@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Resolve env.sh
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SERVICES_DIR="$( dirname "${THIS_DIR}" )"
