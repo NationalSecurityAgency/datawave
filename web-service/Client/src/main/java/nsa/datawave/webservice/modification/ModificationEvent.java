@@ -23,7 +23,7 @@ public class ModificationEvent extends ModificationEventBase<ModificationOperati
     private String user = null;
     
     @XmlElementWrapper(name = "operations", required = true)
-    @XmlElement(name = "operaton", required = true)
+    @XmlElement(name = "operation", required = true)
     protected List<ModificationOperationImpl> operations = null;
     
     public String getUser() {
