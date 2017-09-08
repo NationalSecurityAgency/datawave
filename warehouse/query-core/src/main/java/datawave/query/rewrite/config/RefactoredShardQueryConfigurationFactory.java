@@ -143,6 +143,7 @@ public class RefactoredShardQueryConfigurationFactory {
         
         config.setAllowShortcutEvaluation(configuredLogic.getAllowShortcutEvaluation());
         config.setAllowFieldIndexEvaluation(configuredLogic.isAllowFieldIndexEvaluation());
+        config.setAllowTermFrequencyLookup(configuredLogic.isAllowTermFrequencyLookup());
         config.setBypassAccumulo(configuredLogic.isBypassAccumulo());
         config.setSpeculativeScanning(configuredLogic.getSpeculativeScanning());
         config.setLimitFields(configuredLogic.getLimitFields());

@@ -252,6 +252,11 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     private boolean allowFieldIndexEvaluation = true;
     
     /**
+     * By default enable using term frequency instead of field index when possible for value lookup
+     */
+    private boolean allowTermFrequencyLookup = true;
+    
+    /**
      * By default don't use speculative scanning.
      */
     private boolean speculativeScanning = false;
@@ -489,6 +494,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.setCardinalityConfiguration(other.getCardinalityConfiguration());
         this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
         this.setAllowFieldIndexEvaluation(other.isAllowFieldIndexEvaluation());
+        this.setAllowTermFrequencyLookup(other.isAllowTermFrequencyLookup());
         this.setSpeculativeScanning(other.speculativeScanning);
         this.setBackoffEnabled(other.getBackoffEnabled());
         this.setUnsortedUIDsEnabled(other.getUnsortedUIDsEnabled());
@@ -2171,6 +2177,14 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     public void setAllowFieldIndexEvaluation(boolean allowFieldIndexEvaluation) {
         this.allowFieldIndexEvaluation = allowFieldIndexEvaluation;
+    }
+    
+    public boolean isAllowTermFrequencyLookup() {
+        return allowTermFrequencyLookup;
+    }
+    
+    public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
+        this.allowTermFrequencyLookup = allowTermFrequencyLookup;
     }
     
     public boolean getAccrueStats() {

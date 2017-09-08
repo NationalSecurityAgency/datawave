@@ -106,6 +106,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String IGNORE_COLUMN_FAMILIES = "ignore.column.families";
     public static final String INCLUDE_GROUPING_CONTEXT = "include.grouping.context";
     public static final String TERM_FREQUENCY_FIELDS = "term.frequency.fields";
+    public static final String TERM_FREQUENCIES_REQUIRED = "term.frequencies.are.required";
     public static final String CONTENT_EXPANSION_FIELDS = "content.expansion.fields";
     public static final String LIMIT_FIELDS = "limit.fields";
     public static final String GROUP_FIELDS = "group.fields";
@@ -159,7 +160,7 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String ALLOW_FIELD_INDEX_EVALUATION = "allow.field.index.evaluation";
     
-    public static final String ALL_INDEX_ONLY_TERMS = "contains.index.only.terms.all";
+    public static final String ALLOW_TERM_FREQUENCY_LOOKUP = "allow.term.frequency.lookup";
     
     public static final String HDFS_SITE_CONFIG_URLS = "hdfs.site.config.urls";
     
@@ -260,6 +261,8 @@ public class QueryOptions implements OptionDescriber {
     
     protected boolean allowFieldIndexEvaluation = true;
     
+    protected boolean allowTermFrequencyLookup = true;
+    
     protected String hdfsSiteConfigURLs = null;
     protected String hdfsFileCompressionCodec = null;
     protected FileSystemCache fsCache = null;
@@ -285,6 +288,7 @@ public class QueryOptions implements OptionDescriber {
     
     protected Map<String,Set<String>> nonIndexedDataTypeMap = Maps.newHashMap();
     
+    protected boolean termFrequenciesRequired = false;
     protected Set<String> termFrequencyFields = Collections.emptySet();
     protected Set<String> contentExpansionFields;
     
@@ -408,6 +412,7 @@ public class QueryOptions implements OptionDescriber {
         
         this.sortedUIDs = other.sortedUIDs;
         
+        this.termFrequenciesRequired = other.termFrequenciesRequired;
         this.termFrequencyFields = other.termFrequencyFields;
         this.contentExpansionFields = other.contentExpansionFields;
         
@@ -626,6 +631,14 @@ public class QueryOptions implements OptionDescriber {
         this.allowFieldIndexEvaluation = allowFieldIndexEvaluation;
     }
     
+    public boolean isAllowTermFrequencyLookup() {
+        return allowTermFrequencyLookup;
+    }
+    
+    public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
+        this.allowTermFrequencyLookup = allowTermFrequencyLookup;
+    }
+    
     public String getHdfsSiteConfigURLs() {
         return hdfsSiteConfigURLs;
     }
@@ -836,7 +849,9 @@ public class QueryOptions implements OptionDescriber {
         options.put(CONTAINS_INDEX_ONLY_TERMS, "Does the query being evaluated contain any terms which are index-only");
         options.put(ALLOW_FIELD_INDEX_EVALUATION,
                         "Allow the evaluation to occur purely on values pulled from the field index for queries only accessing indexed fields (default is true)");
-        options.put(TERM_FREQUENCY_FIELDS, "comma-delimited list of fields requiring term frequencies");
+        options.put(ALLOW_TERM_FREQUENCY_LOOKUP, "Allow the evaluation to use the term frequencies in lieu of the field index when appropriate");
+        options.put(TERM_FREQUENCIES_REQUIRED, "Does the query require gathering term frequencies");
+        options.put(TERM_FREQUENCY_FIELDS, "comma-delimited list of fields that contain term frequencies");
         options.put(CONTENT_EXPANSION_FIELDS, "comma-delimited list of fields used for content function expansions");
         options.put(HDFS_SITE_CONFIG_URLS, "URLs (comma delimited) of where to find the hadoop hdfs and core site configuration files");
         options.put(HDFS_FILE_COMPRESSION_CODEC, "A hadoop compression codec to use for files if supported");
@@ -1139,6 +1154,10 @@ public class QueryOptions implements OptionDescriber {
             this.setAllowFieldIndexEvaluation(Boolean.parseBoolean(options.get(ALLOW_FIELD_INDEX_EVALUATION)));
         }
         
+        if (options.containsKey(ALLOW_TERM_FREQUENCY_LOOKUP)) {
+            this.setAllowTermFrequencyLookup(Boolean.parseBoolean(options.get(ALLOW_TERM_FREQUENCY_LOOKUP)));
+        }
+        
         if (options.containsKey(HDFS_SITE_CONFIG_URLS)) {
             this.setHdfsSiteConfigURLs(options.get(HDFS_SITE_CONFIG_URLS));
         }
@@ -1199,6 +1218,9 @@ public class QueryOptions implements OptionDescriber {
             this.setMaxPipelineCachedResults(Integer.parseInt(options.get(MAX_PIPELINE_CACHED_RESULTS)));
         }
         
+        if (options.containsKey(TERM_FREQUENCIES_REQUIRED)) {
+            this.setTermFrequenciesRequired(Boolean.parseBoolean(options.get(TERM_FREQUENCIES_REQUIRED)));
+        }
         this.setTermFrequencyFields(parseTermFrequencyFields(options));
         this.setContentExpansionFields(parseContentExpansionFields(options));
         
@@ -1529,6 +1551,14 @@ public class QueryOptions implements OptionDescriber {
             }
         }
         return postProcessingBase;
+    }
+    
+    public boolean isTermFrequenciesRequired() {
+        return termFrequenciesRequired;
+    }
+    
+    public void setTermFrequenciesRequired(boolean termFrequenciesRequired) {
+        this.termFrequenciesRequired = termFrequenciesRequired;
     }
     
     public Set<String> parseTermFrequencyFields(Map<String,String> options) {

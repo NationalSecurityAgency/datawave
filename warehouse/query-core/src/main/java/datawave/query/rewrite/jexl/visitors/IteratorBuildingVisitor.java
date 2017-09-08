@@ -137,6 +137,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected EventDataQueryFilter attrFilter;
     protected Set<String> fieldsToAggregate = Collections.<String> emptySet();
     protected Set<String> termFrequencyFields = Collections.<String> emptySet();
+    protected boolean allowTermFrequencyLookup = true;
     protected Set<String> indexOnlyFields = Collections.<String> emptySet();
     protected FieldIndexAggregator fiAggregator = new IdentityAggregator(null);
     
@@ -263,8 +264,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 }
             }
             
-            // if we are not limiting the lookup, or the field is index only but not in the term frequencies, then we must ivarate
-            if (!limitLookup || (indexOnlyFields.contains(identifier) && !termFrequencyFields.contains(identifier))) {
+            // if we are not limiting the lookup, or not allowing term frequency lookup,
+            // or the field is index only but not in the term frequencies, then we must ivarate
+            if (!limitLookup || !allowTermFrequencyLookup || (indexOnlyFields.contains(identifier) && !termFrequencyFields.contains(identifier))) {
                 if (source instanceof ASTAndNode) {
                     try {
                         if (JexlASTHelper.getFunctionNodes(source).isEmpty()) {
@@ -1452,6 +1454,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setTermFrequencyFields(Set<String> termFrequencyFields) {
         this.termFrequencyFields = (termFrequencyFields == null ? Collections.<String> emptySet() : termFrequencyFields);
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
+        this.allowTermFrequencyLookup = allowTermFrequencyLookup;
         return this;
     }
     

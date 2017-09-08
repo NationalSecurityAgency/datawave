@@ -302,7 +302,7 @@ public class IngestJob implements Tool {
         }
         
         serializeAggregatorConfiguration(cbHelper, conf, log);
-
+        
         // get the source and output hadoop file systems
         FileSystem inputFs = getFileSystem(conf, srcHdfs);
         FileSystem outputFs = (writeDirectlyToDest ? getFileSystem(conf, destHdfs) : inputFs);

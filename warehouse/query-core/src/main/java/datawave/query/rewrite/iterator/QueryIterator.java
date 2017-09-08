@@ -274,12 +274,6 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             // determine whether this is a document specific range
             Range documentRange = isDocumentSpecificRange(range) ? range : null;
             
-            /**
-             * to determine whether or not we need to use the tf, and subsequently whether or not we must use an AccumuloTreeIteratable vice a
-             * DocumentSpecificTreeIterable, we check to see first if we have any tf fields, and the we check that tfFunction is not an empty tf function. This
-             * tells us that we have no content functions
-             */
-            boolean requiresTermFrequencies = !this.getTermFrequencyFields().isEmpty();
             // if we have a document specific range, but the key is not
             // inclusive then we have already returned the document; this scan
             // is done
@@ -294,10 +288,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 }
             }
             
-            // if the Range is for a single document and the query doesn't
-            // reference any index-only or tokenized fields
-            // (termFrequencyFields)
-            else if (documentRange != null && (!this.isContainsIndexOnlyTerms() && !requiresTermFrequencies && !super.mustUseFieldIndex)) {
+            // if the Range is for a single document and the query doesn't reference any index-only or tokenized fields
+            else if (documentRange != null && (!this.isContainsIndexOnlyTerms() && this.getTermFrequencyFields().isEmpty() && !super.mustUseFieldIndex)) {
                 if (log.isTraceEnabled())
                     log.trace("Received event specific range: " + documentRange);
                 // We can take a shortcut to the directly to the event
@@ -772,11 +764,16 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             
             // get the function we use for the tf functionality. Note we are
             // getting an additional source deep copy for this function
-            Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction;
-            tfFunction = TFFactory.getFunction(getScript(documentSource), getContentExpansionFields(), getTermFrequencyFields(), this.getTypeMetadata(),
-                            super.equality, getEvaluationFilter(), sourceDeepCopy.deepCopy(myEnvironment));
-            
-            final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
+            final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
+            if (this.isTermFrequenciesRequired()) {
+                Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction;
+                tfFunction = TFFactory.getFunction(getScript(documentSource), getContentExpansionFields(), getTermFrequencyFields(), this.getTypeMetadata(),
+                                super.equality, getEvaluationFilter(), sourceDeepCopy.deepCopy(myEnvironment));
+                
+                itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
+            } else {
+                itrWithContext = Iterators.transform(tupleItr, new EmptyContext<Key,Document,String,Object>());
+            }
             
             final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource), typeMetadataForEval,
                             compositeMetadata, this, variables, QueryIterator.this);
@@ -1144,7 +1141,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                         .setIncludes(indexedFields).setTermFrequencyFields(this.getTermFrequencyFields()).setIsQueryFullySatisfied(isQueryFullySatisfied)
                         .setSortedUIDs(sortedUIDs).limit(documentRange).disableIndexOnly(disableFiEval).limit(this.sourceLimit)
                         .setCollectTimingDetails(this.collectTimingDetails).setQuerySpanCollector(this.querySpanCollector)
-                        .setIndexOnlyFields(this.getAllIndexOnlyFields());
+                        .setIndexOnlyFields(this.getAllIndexOnlyFields()).setAllowTermFrequencyLookup(this.allowTermFrequencyLookup);
         // TODO: .setStatsPort(this.statsdHostAndPort);
     }
     
