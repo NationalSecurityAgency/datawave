@@ -1,0 +1,21 @@
+version: '2'
+services:
+  messaging:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+
+  configuration:
+    image: datawave/config-service
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=dev
+    environment:
+      MESSAGING_SERVER_HOSTNAME: messaging
+    ports:
+      - "8888:8888"
+    volumes:
+      - /tmp/microservice-config:/tmp/microservice-config
+    links:
+      - messaging

@@ -1,0 +1,18 @@
+server:
+  port: 8888
+
+management:
+  context-path: '/mgmt'
+  security:
+    enabled: false
+
+logging:
+  level:
+    org.springframework.cloud: 'TRACE'
+
+spring:
+  cloud:
+    discovery:
+      enabled: false
+  rabbitmq:
+    host: ${MESSAGING_SERVER_HOSTNAME:localhost}

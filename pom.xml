@@ -13,6 +13,7 @@
         <module>warehouse</module>
         <module>type-metadata-hdfs</module>
         <module>in-memory-accumulo</module>
+        <module>services</module>
     </modules>
     <properties>
         <assembly.basedir>${project.basedir}</assembly.basedir>
