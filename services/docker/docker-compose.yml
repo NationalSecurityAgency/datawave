@@ -19,3 +19,14 @@ services:
       - /tmp/microservice-config:/tmp/microservice-config
     links:
       - messaging
+
+  audit:
+    image: datawave/audit-service
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=dev
+    ports:
+      - "8080:8080"
+    links:
+      - messaging
+

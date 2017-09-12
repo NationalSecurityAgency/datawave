@@ -2,6 +2,7 @@ package datawave.webservice.results.cached;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -37,7 +38,7 @@ public class CachedResultsParameters implements ParameterValidator {
     private int pagesize = 10;
     
     @Override
-    public void validate(MultivaluedMap<String,String> parameters) throws IllegalArgumentException {
+    public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         for (String param : KNOWN_PARAMS) {
             List<String> values = parameters.get(param);
             if (null == values) {

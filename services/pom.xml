@@ -14,6 +14,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>config-service</module>
+        <module>audit</module>
     </modules>
     <properties>
         <docker.image.prefix>datawave</docker.image.prefix>

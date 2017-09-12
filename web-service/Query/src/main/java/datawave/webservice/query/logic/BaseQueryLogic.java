@@ -4,9 +4,8 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-
-import javax.ws.rs.core.MultivaluedMap;
 
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
@@ -280,7 +279,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     @Override
-    public final void validate(MultivaluedMap<String,String> parameters) throws IllegalArgumentException {
+    public final void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         Set<String> requiredParams = getRequiredQueryParameters();
         for (String required : requiredParams) {
             List<String> values = parameters.get(required);

@@ -1,24 +1,23 @@
-package datawave.webservice.common.audit;
+package datawave.microservice.audit.common;
+
+import com.google.common.base.Preconditions;
+import datawave.microservice.audit.common.Auditor.AuditType;
+import datawave.validation.ParameterValidator;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.MultivaluedMap;
-
-import datawave.validation.ParameterValidator;
-import datawave.webservice.common.audit.Auditor.AuditType;
-
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-
-import com.google.common.base.Preconditions;
-import java.util.Collection;
-
+@Component
 public class AuditParameters implements ParameterValidator {
     
     public static final String USER_DN = "auditUserDN";
@@ -147,8 +146,8 @@ public class AuditParameters implements ParameterValidator {
         return map;
     }
     
-    protected static MultivaluedMap<String,Object> parseMessage(Map<String,Object> msg) {
-        MultivaluedMap<String,Object> p = new MultivaluedMapImpl<>();
+    protected static Map<String,List<Object>> parseMessage(Map<String,Object> msg) {
+        MultiValueMap<String,Object> p = new LinkedMultiValueMap<>();
         p.put(USER_DN, Collections.singletonList((Object) msg.get(USER_DN)));
         p.put(QUERY_STRING, Collections.singletonList((Object) msg.get(QUERY_STRING)));
         if (msg.containsKey(QUERY_SELECTORS)) {
@@ -162,9 +161,9 @@ public class AuditParameters implements ParameterValidator {
     
     public AuditParameters fromMap(Map<String,Object> msg) {
         AuditParameters ap = new AuditParameters();
-        MultivaluedMap<String,Object> pObj = parseMessage(msg);
+        Map<String,List<Object>> pObj = parseMessage(msg);
         // parseMessage returns MultivaluedMap<String,Object> --> convert to a MultivaluedMap<String,Object> for call to validate()
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         for (Map.Entry<String,List<Object>> entry : pObj.entrySet()) {
             for (Object o : entry.getValue()) {
                 if (o instanceof String) {

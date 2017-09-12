@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: audit
+  cloud:
+    config:
+      # Always fail fast so we can retry if the config server is not up yet
+      failFast: true
+      # Give the config server time to start up if it hasn't already
+      retry:
+        max-attempts: 60
+      uri: '${CONFIG_SERVER_URL}'
+  rabbitmq:
+    host: '${MESSAGING_SERVER_HOSTNAME}'
+
+---
+
+spring:
+  profiles: 'dev'
+  cloud:
+    config:
+      uri: '${CONFIG_SERVER_URL:http://configuration:8888}'
+  rabbitmq:
+    host: '${MESSAGING_SERVER_HOSTNAME:messaging}'
