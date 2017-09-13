@@ -1,0 +1,18 @@
+# Ignore everything...
+*
+
+# But do not ignore these...
+!.gitignore
+!Dockerfile
+!README.md
+!bin
+!bin/common.sh
+!bin/logging.sh
+!bin/env.sh
+!bin/services
+!bin/services/*
+!bin/services/**/bootstrap*.sh
+!bin/services/**/install*.sh
+!.dockerignore
+!docker
+!docker/**

@@ -92,6 +92,8 @@ import datawave.query.rewrite.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.rewrite.jexl.visitors.ValidPatternVisitor;
 import datawave.query.rewrite.planner.pushdown.PushDownVisitor;
 import datawave.query.rewrite.planner.pushdown.rules.PushDownRule;
+import datawave.query.rewrite.postprocessing.tf.Function;
+import datawave.query.rewrite.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.rewrite.util.QueryStopwatch;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
@@ -430,6 +432,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TYPE_METADATA_IN_HDFS, Boolean.toString(config.isTypeMetadataInHdfs()), true);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
+        addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), true);
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
@@ -757,8 +760,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Determine if query contains term frequency (tokenized) fields");
         
         // Figure out if the query contained any term frequency terms so we know
-        // if we have to force it down the field-index path with event-specific
-        // ranges
+        // if we may use the term frequencies instead of the fields index in some cases
         Set<String> queryTfFields = Collections.<String> emptySet();
         if (!termFrequencyFields.isEmpty()) {
             queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config, metadataHelper, dateIndexHelper, queryTree);
@@ -771,6 +773,17 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
         
         config.setQueryTermFrequencyFields(queryTfFields);
+        
+        // now determine if we actually require gathering term frequencies
+        if (!queryTfFields.isEmpty()) {
+            Multimap<String,Function> contentFunctions = TermOffsetPopulator.getContentFunctions(queryTree);
+            config.setTermFrequenciesRequired(!contentFunctions.isEmpty());
+            
+            // Print the nice log message
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Computed that the query " + (contentFunctions.isEmpty() ? " does not require " : "requires") + " term frequency lookup");
+            }
+        }
         
         stopwatch.stop();
         
@@ -1668,6 +1681,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         addOption(cfg, QueryOptions.CONTAINS_INDEX_ONLY_TERMS, Boolean.toString(config.isContainsIndexOnlyTerms()), false);
         addOption(cfg, QueryOptions.CONTAINS_COMPOSITE_TERMS, Boolean.toString(config.isContainsCompositeTerms()), false);
         addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, Boolean.toString(config.isAllowFieldIndexEvaluation()), false);
+        addOption(cfg, QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, Boolean.toString(config.isAllowTermFrequencyLookup()), false);
         addOption(cfg, QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, Boolean.toString(config.isCompressServerSideResults()), false);
     }
     

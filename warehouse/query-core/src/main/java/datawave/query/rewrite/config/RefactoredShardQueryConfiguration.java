@@ -125,6 +125,9 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     // The fields in the the query that are tf fields
     private Set<String> queryTermFrequencyFields = Collections.emptySet();
     
+    // Are we required to get term frequencies (i.e. does the query contain content functions)
+    private boolean termFrequenciesRequired = false;
+    
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
     
@@ -177,6 +180,11 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
      * By default enable field index only evaluation (aggregation of document post evaluation)
      */
     private boolean allowFieldIndexEvaluation = true;
+    
+    /**
+     * By default enable using term frequency instead of field index when possible for value lookup
+     */
+    private boolean allowTermFrequencyLookup = true;
     
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
     
@@ -1143,6 +1151,14 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.allowFieldIndexEvaluation = allowFieldIndexEvaluation;
     }
     
+    public boolean isAllowTermFrequencyLookup() {
+        return allowTermFrequencyLookup;
+    }
+    
+    public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
+        this.allowTermFrequencyLookup = allowTermFrequencyLookup;
+    }
+    
     public boolean allTermsIndexOnly() {
         return allTermsIndexOnly;
     }
@@ -1246,6 +1262,14 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     
     public void setQueryTermFrequencyFields(Set<String> queryTermFrequencyFields) {
         this.queryTermFrequencyFields = queryTermFrequencyFields;
+    }
+    
+    public boolean isTermFrequenciesRequired() {
+        return termFrequenciesRequired;
+    }
+    
+    public void setTermFrequenciesRequired(boolean termFrequenciesRequired) {
+        this.termFrequenciesRequired = termFrequenciesRequired;
     }
     
     public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
@@ -1412,6 +1436,10 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.setMaxIndexScanTimeMillis(copy.getMaxIndexScanTimeMillis());
         
         this.setAllowShortcutEvaluation(copy.getAllowShortcutEvaluation());
+        
+        this.setAllowFieldIndexEvaluation(copy.isAllowFieldIndexEvaluation());
+        
+        this.setAllowTermFrequencyLookup(copy.isAllowTermFrequencyLookup());
         
         this.setLimitFields(new HashSet<String>(copy.getLimitFields()));
         this.setQuery(copy.getQuery());

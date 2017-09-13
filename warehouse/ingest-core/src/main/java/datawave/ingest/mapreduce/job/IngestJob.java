@@ -171,6 +171,7 @@ public class IngestJob implements Tool {
     protected boolean enableBloomFilters = false;
     protected boolean collectDistributionStats = false;
     protected boolean createTablesOnly = false;
+    protected boolean metricsOutputEnabled = true;
     private String metricsLabelOverride = null;
     protected boolean generateMapFileRowKeys = false;
     protected String compressionType = null;
@@ -236,6 +237,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-generateMapFileRowKeys]");
         System.out.println("                     [-enableBloomFilters]");
         System.out.println("                     [-collectDistributionStats]");
+        System.out.println("                     [-ingestMetricsDisabled]");
         System.out.println("                     [-ingestMetricsLabel label]");
         System.out.println("                     [-compressionType lzo|gz]");
         System.out.println("                     [-compressionTableBlackList table,table,...");
@@ -488,11 +490,15 @@ public class IngestJob implements Tool {
         // if we had a failure writing the metrics, or we have event processing errors, then return -5
         // this should result in administrators getting an email, but the job will be considered successful
         
-        log.info("Writing Stats");
-        Path statsDir = new Path(unqualifiedWorkPath.getParent(), "IngestMetrics");
-        if (!writeStats(log, job, jobID, counters, start, stop, outputMutations, inputFs, statsDir, this.metricsLabelOverride)) {
-            log.warn("Failed to output statistics for the job");
-            return -5;
+        if (metricsOutputEnabled) {
+            log.info("Writing Stats");
+            Path statsDir = new Path(unqualifiedWorkPath.getParent(), "IngestMetrics");
+            if (!writeStats(log, job, jobID, counters, start, stop, outputMutations, inputFs, statsDir, this.metricsLabelOverride)) {
+                log.warn("Failed to output statistics for the job");
+                return -5;
+            }
+        } else {
+            log.info("Ingest stats output disabled via 'ingestMetricsDisabled' flag");
         }
         
         if (eventProcessingError) {
@@ -635,6 +641,8 @@ public class IngestJob implements Tool {
                 conf.setBoolean(MultiTableRangePartitioner.PARTITION_STATS, true);
             } else if (args[i].equals("-ingestMetricsLabel")) {
                 this.metricsLabelOverride = args[++i];
+            } else if (args[i].equals("-ingestMetricsDisabled")) {
+                this.metricsOutputEnabled = false;
             } else if (args[i].equals("-generateMapFileRowKeys")) {
                 generateMapFileRowKeys = true;
             } else if (args[i].equals("-compressionType")) {
