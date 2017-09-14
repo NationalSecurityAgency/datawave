@@ -127,7 +127,11 @@ public class TestDatawaveUserServiceTest {
         }
         
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> re #67: Add common service classes.
     protected static class DatawaveUserService1 extends DefaultDatawaveUserService {
         @Override
         String getName() {

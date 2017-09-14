@@ -2,8 +2,6 @@ package datawave.microservice.config.server;
 
 import org.eclipse.jgit.api.TransportConfigCallback;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.metrics.rich.InMemoryRichGaugeRepository;
-import org.springframework.boot.actuate.metrics.writer.MetricWriter;
 import org.springframework.cloud.config.server.config.ConfigServerProperties;
 import org.springframework.cloud.config.server.environment.EnvironmentRepository;
 import org.springframework.cloud.config.server.environment.MultipleJGitEnvironmentRepository;
@@ -33,10 +31,5 @@ public class DatawaveConfigServerConfiguration {
             repository.setDefaultLabel(this.server.getDefaultLabel());
         }
         return repository;
-    }
-    
-    @Bean
-    public MetricWriter metricWriter() {
-        return new InMemoryRichGaugeRepository();
     }
 }

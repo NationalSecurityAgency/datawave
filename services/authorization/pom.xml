@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>datawave-external-services</artifactId>
+        <groupId>datawave.microservice</groupId>
+        <version>1.0.0-srf-SNAPSHOT</version>
+    </parent>
+    <artifactId>authorization-parent</artifactId>
+    <packaging>pom</packaging>
+    <modules>
+        <module>common</module>
+        <module>ehcache</module>
+    </modules>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>datawave.microservice</groupId>
+                <artifactId>authorization-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>datawave.microservice</groupId>
+                <artifactId>authorization-ehcache</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
