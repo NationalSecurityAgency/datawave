@@ -4,7 +4,7 @@
     <parent>
         <groupId>datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
     <groupId>datawave.webservice</groupId>
     <artifactId>web-service-deployment</artifactId>
