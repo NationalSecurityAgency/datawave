@@ -200,6 +200,8 @@ public class QueryMetricsWriter {
                 for (String fieldName : configuredMetricTags) {
                     String fieldValue = metricValues.get(fieldName);
                     if (!StringUtils.isBlank(fieldValue)) {
+                        // ensure that there are no spaces in tag values
+                        fieldValue = fieldValue.replaceAll(" ", "_");
                         tagSb.append(fieldName).append("=").append(fieldValue).append(" ");
                     }
                 }

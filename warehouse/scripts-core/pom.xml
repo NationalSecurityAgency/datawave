@@ -4,7 +4,7 @@
     <parent>
         <groupId>datawave</groupId>
         <artifactId>datawave-warehouse</artifactId>
-        <version>1.0.0-srf-SNAPSHOT</version>
+        <version>2.0.0-srf-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-scripts-core</artifactId>
     <name>datawave-scripts-core</name>
