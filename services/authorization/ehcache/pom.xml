@@ -4,7 +4,7 @@
     <parent>
         <artifactId>authorization-parent</artifactId>
         <groupId>datawave.microservice</groupId>
-        <version>1.0.0-srf-SNAPSHOT</version>
+        <version>2.0.0-srf-SNAPSHOT</version>
     </parent>
     <artifactId>ehcache</artifactId>
     <dependencies>

@@ -10,7 +10,7 @@
     </parent>
     <groupId>datawave.microservice</groupId>
     <artifactId>datawave-external-services</artifactId>
-    <version>1.0.0-srf-SNAPSHOT</version>
+    <version>2.0.0-srf-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
         <module>common</module>
