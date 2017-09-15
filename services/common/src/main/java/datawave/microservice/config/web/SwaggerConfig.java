@@ -30,6 +30,6 @@ public class SwaggerConfig {
     }
     
     private ApiInfo apiInfo(String appName, String appVersion) {
-        return new ApiInfo(appName + " API", "REST operations presented by the " + appName + " API", appVersion, null, (Contact) null, null, null);
+        return new ApiInfo(appName + " API", "REST operations provided by the " + appName + " API", appVersion, null, (Contact) null, null, null);
     }
 }

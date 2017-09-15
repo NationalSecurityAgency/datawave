@@ -7,5 +7,5 @@ ${AnsiColor.MAGENTA}| |   \ \  ___ _(_   _)___ _ __      __  ___ _ __    __ ____
 ${AnsiColor.MAGENTA}| |    )  / __' | | | / __' |\ \    / / / __' |\ \  / // --- \            #########################
 ${AnsiColor.MAGENTA}| |___/ /| (__| | | || (__| | \ \/\/ / | (__| | \ \/ /| |----'         #############################
 ${AnsiColor.MAGENTA}|______/  \____,_||_| \____,_| \/  \/   \____,_| \__/  \_\___,  ########################################
-${AnsiColor.MAGENTA}========================================================================================================
+${AnsiColor.DEFAULT}========================================================================================================
 :: ${AnsiColor.YELLOW}DATAWAVE Microservices${AnsiColor.DEFAULT} ::                                                            ${AnsiStyle.FAINT}${AnsiColor.WHITE}${application.formatted-version}${AnsiColor.DEFAULT}${AnsiStyle.NORMAL}

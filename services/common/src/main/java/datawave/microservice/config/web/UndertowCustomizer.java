@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import org.xnio.Options;
 
 /**
- * Customizdes Undertow for DATAWAVE use. Configures HTTP/2 unless disabled by the property {@code undertow.enable.http2}. This customizer also manages
+ * Customizes Undertow for DATAWAVE use. Configures HTTP/2 unless disabled by the property {@code undertow.enable.http2}. This customizer also manages
  * configuring both the secure and non-secure listeners.
  */
 @Component

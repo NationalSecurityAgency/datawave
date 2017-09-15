@@ -9,6 +9,7 @@ import org.springframework.boot.context.embedded.Ssl;
 import org.springframework.boot.web.client.RestTemplateCustomizer;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.client.RestTemplate;
 
@@ -25,6 +26,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * Customizes Spring {@link RestTemplate} instances by using our configured SSL certificate to presenta client certificate whenever asked by remote services.
  */
+@Component
 public class ClientCertRestTemplateCustomizer implements RestTemplateCustomizer {
     private final Ssl ssl;
     
@@ -61,7 +63,7 @@ public class ClientCertRestTemplateCustomizer implements RestTemplateCustomizer 
             URL url = ResourceUtils.getURL(ssl.getKeyStore());
             keyStore.load(url.openStream(), ssl.getKeyStorePassword().toCharArray());
             
-            // Get key manager to provide client credentials/
+            // Get key manager to provide client credentials.
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             char[] keyPassword = ssl.getKeyPassword() != null ? ssl.getKeyPassword().toCharArray() : ssl.getKeyStorePassword().toCharArray();
             keyManagerFactory.init(keyStore, keyPassword);

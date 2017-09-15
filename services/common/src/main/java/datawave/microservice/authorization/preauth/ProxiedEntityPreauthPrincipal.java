@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.stream.Collectors;
 
 /**
- * A principal object representing a pre-authentication caller principal (e.g., authenticated with X.509 certificates) that is acting as a proxy for a number of
+ * A principal object representing a pre-authenticated caller principal (e.g., authenticated with X.509 certificates) that is acting as a proxy for a number of
  * other entities.
  */
 public class ProxiedEntityPreauthPrincipal implements Serializable {

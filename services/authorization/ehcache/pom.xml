@@ -6,7 +6,7 @@
         <groupId>datawave.microservice</groupId>
         <version>2.0.0-srf-SNAPSHOT</version>
     </parent>
-    <artifactId>ehcache</artifactId>
+    <artifactId>authorization-ehcache</artifactId>
     <dependencies>
         <dependency>
             <groupId>datawave.microservice</groupId>

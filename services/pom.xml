@@ -407,5 +407,62 @@
                 </plugins>
             </build>
         </profile>
+        <!-- The dist profile (activated with -Ddist) triggers building of source and javadoc artifacts, as well as the docs module. -->
+        <profile>
+            <id>dist</id>
+            <activation>
+                <property>
+                    <name>dist</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <!-- build javadoc jars per module for publishing to the repo -->
+                            <execution>
+                                <id>module-apidocs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <encoding>UTF-8</encoding>
+                                    <destDir>${project.build.directory}/apidocs</destDir>
+                                    <javadocVersion>1.8</javadocVersion>
+                                    <additionalJOption>-J-Xmx768m</additionalJOption>
+                                    <additionalparam>-tag "HTTP:m:HTTP Return Codes" -tag "RequestHeader:m:HTTP Request Headers" -tag "ResponseHeader:m:HTTP ResponseHeader" -tag returnWrapped:m:Output</additionalparam>
+                                    <show>private</show>
+                                    <quiet>true</quiet>
+                                    <javaApiLinks>
+                                        <property>
+                                            <name>api_1.8</name>
+                                            <value>http://docs.oracle.com/javase/8/docs/api</value>
+                                        </property>
+                                    </javaApiLinks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <!-- Build source jars and attach them to the project for publishing -->
+                            <execution>
+                                <id>datawave-java-sources</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                    <goal>test-jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>

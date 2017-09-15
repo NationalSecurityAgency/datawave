@@ -71,15 +71,16 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
         String proxiedIssuers = request.getHeader(ISSUERS_HEADER);
         
         if (requireProxiedEntities) {
-            if (proxiedSubjects == null)
-                throw new BadCredentialsException(ENTITIES_HEADER + " is missing!");
-            else if (requireIssuers && proxiedIssuers == null)
+            if (proxiedSubjects == null) {
+                throw new BadCredentialsException(ENTITIES_HEADER + " header is missing!");
+            } else if (requireIssuers && proxiedIssuers == null) {
                 throw new BadCredentialsException(ENTITIES_HEADER + " header was supplied, but " + ISSUERS_HEADER + " header is missing.");
+            }
         }
         // If we're not requiring proxied entities, then copy the caller's DN information into the proxied entities slot.
         // Normally, we operate in a mode where an authorized certificate holder calls us on behalf of other entities. However,
         // if we don't require that, then we want to create the principal as though the caller proxied for itself.
-        else if (proxiedSubjects != null) {
+        else if (proxiedSubjects == null) {
             proxiedSubjects = "<" + cert.getSubjectX500Principal().getName() + ">";
             proxiedIssuers = "<" + cert.getIssuerX500Principal().getName() + ">";
         }

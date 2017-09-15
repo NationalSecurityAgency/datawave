@@ -5,6 +5,7 @@ import datawave.microservice.authorization.config.DatawaveSecurityProperties;
 import datawave.microservice.authorization.jwt.JWTAuthenticationFilter;
 import datawave.microservice.authorization.jwt.JWTAuthenticationProvider;
 import datawave.microservice.authorization.preauth.ProxiedEntityX509Filter;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.ManagementContextResolver;
 import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
 import org.springframework.boot.actuate.endpoint.mvc.EndpointHandlerMapping;
@@ -53,12 +54,12 @@ public class ManagementSecurityConfigurer extends WebSecurityConfigurerAdapter {
     private final JWTAuthenticationProvider jwtAuthenticationProvider;
     private final AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService;
     
-    public ManagementSecurityConfigurer(DatawaveSecurityProperties security, ManagementServerProperties management, ManagementContextResolver contextResolver,
-                    JWTAuthenticationProvider jwtAuthenticationProvider,
+    public ManagementSecurityConfigurer(DatawaveSecurityProperties security, ManagementServerProperties management,
+                    ObjectProvider<ManagementContextResolver> contextResolver, JWTAuthenticationProvider jwtAuthenticationProvider,
                     AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService) {
         this.security = security;
         this.management = management;
-        this.contextResolver = contextResolver;
+        this.contextResolver = contextResolver.getIfAvailable();
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
         this.authenticationUserDetailsService = authenticationUserDetailsService;
     }
@@ -88,7 +89,7 @@ public class ManagementSecurityConfigurer extends WebSecurityConfigurerAdapter {
             http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint).accessDeniedPage(null);
             // Match all requests for actuator endpoints
             http.requestMatcher(matcher);
-            // ... but permitAll for the non-sensitive ones
+            // ... but permitAll() for the non-sensitive ones
             configurePermittedRequests(http.authorizeRequests());
             // No cookies for management endpoints by default
             http.csrf().disable();
@@ -192,8 +193,7 @@ public class ManagementSecurityConfigurer extends WebSecurityConfigurerAdapter {
             ServerProperties server = contextResolver.getApplicationContext().getBean(ServerProperties.class);
             String path = management.getContextPath();
             if (StringUtils.hasText(path)) {
-                AntPathRequestMatcher matcher = new AntPathRequestMatcher(server.getPath(path) + "/**");
-                return matcher;
+                return new AntPathRequestMatcher(server.getPath(path) + "/**");
             }
             // Match everything, including the sensitive and non-sensitive paths
             return new LazyEndpointPathRequestMatcher(contextResolver, EndpointPaths.ALL);

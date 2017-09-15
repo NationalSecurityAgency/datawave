@@ -12,11 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.stereotype.Component;
 
 /**
  * An {@link AuthenticationProvider} that accepts {@link JWTPreauthToken}s and attempts to convert the included JWT token back into a {@link ProxiedUserDetails}
  * .
  */
+@Component
 public class JWTAuthenticationProvider implements AuthenticationProvider {
     private final JWTTokenHandler tokenHandler;
     

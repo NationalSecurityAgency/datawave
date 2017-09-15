@@ -12,7 +12,7 @@ public class DatawaveServerProperties extends ServerProperties {
         return securePort;
     }
     
-    public void setSecurePort(Integer securePort) {
+    public void setSecurePort(int securePort) {
         this.securePort = securePort;
     }
     

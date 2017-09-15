@@ -76,7 +76,12 @@ public class ProxiedUserDetails implements UserDetails {
     
     @Override
     public String toString() {
-        return "ProxiedUserDetails{name='" + username + "'" + ", proxiedUsers=" + proxiedUsers + "}";
+        // @formatter:off
+        return "ProxiedUserDetails{" +
+                "username='" + username + '\'' +
+                ", proxiedUsers=" + proxiedUsers +
+                '}';
+        // @formatter:on
     }
     
     @Override

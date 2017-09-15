@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Configures security fr the spring boot application. This config ensures that only listed certificate DNs can call us, and that we look up the proxied
+ * Configures security for the spring boot application. This config ensures that only listed certificate DNs can call us, and that we look up the proxied
  * users/servers using the supplied authorization service.
  */
 @Order(SecurityProperties.ACCESS_OVERRIDE_ORDER)
