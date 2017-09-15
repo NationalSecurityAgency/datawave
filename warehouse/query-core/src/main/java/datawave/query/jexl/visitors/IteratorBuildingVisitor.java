@@ -54,7 +54,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.LiteralRange.NodeOperand;
-import datawave.query.jexl.RefactoredDatawaveJexlEngine;
+import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
@@ -159,7 +159,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected Class<? extends IteratorBuilder> iteratorBuilderClass = IndexIteratorBuilder.class;
     
     private Collection<String> unindexedFields = Lists.newArrayList();
-
+    
     protected boolean disableFiEval = false;
     
     protected boolean collectTimingDetails = false;
@@ -188,7 +188,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         } else
             return isQueryFullySatisfied;
     }
-
+    
     @SuppressWarnings("unchecked")
     public <T> NestedIterator<T> root() {
         return root;
@@ -250,7 +250,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // if the parent is our ExceededValueThreshold marker, then use an
             // Ivarator to get the job done unless we don't have to
             JexlNode source = ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(and);
-
+            
             String identifier = null;
             LiteralRange<?> range = null;
             boolean negated = false;
@@ -269,7 +269,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                     negated = true;
                 }
             }
-
+            
             // if we are not limiting the lookup, or not allowing term frequency lookup,
             // or the field is index only but not in the term frequencies, then we must ivarate
             if (!limitLookup || !allowTermFrequencyLookup || (indexOnlyFields.contains(identifier) && !termFrequencyFields.contains(identifier))) {
@@ -295,7 +295,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                     throw new DatawaveFatalQueryException(qe);
                 }
             } else {
-
+                
                 NestedIterator<Key> nested = null;
                 if (termFrequencyFields.contains(identifier)) {
                     
@@ -1343,7 +1343,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         this.limitOverride = limitOverride;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setSource(SourceFactory sourceFactory, IteratorEnvironment env) {
         SortedKeyValueIterator<Key,Value> skvi = sourceFactory.getSourceDeepCopy();
         this.source = new SourceManager(skvi);
@@ -1356,126 +1356,126 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
         return this;
     }
-
+    
     public IteratorBuildingVisitor setTimeFilter(TimeFilter timeFilter) {
         this.timeFilter = timeFilter;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setTypeMetadata(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setIsQueryFullySatisfied(boolean isQueryFullySatisfied) {
         this.isQueryFullySatisfied = isQueryFullySatisfied;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setAttrFilter(EventDataQueryFilter attrFilter) {
         this.attrFilter = attrFilter;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setDatatypeFilter(Predicate<Key> datatypeFilter) {
         this.datatypeFilter = datatypeFilter;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setFiAggregator(FieldIndexAggregator fiAggregator) {
         this.fiAggregator = fiAggregator;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setHdfsFileSystem(FileSystemCache hdfsFileSystem) {
         this.hdfsFileSystem = hdfsFileSystem;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setQueryLock(QueryLock queryLock) {
         this.queryLock = queryLock;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setIvaratorCacheDirURIAlternatives(List<String> ivaratorCacheDirURIAlternatives) {
         this.ivaratorCacheDirURIs = ivaratorCacheDirURIAlternatives;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setQueryId(String queryId) {
         this.queryId = queryId;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setIvaratorCacheSubDirPrefix(String ivaratorCacheSubDirPrefix) {
         this.ivaratorCacheSubDirPrefix = (ivaratorCacheSubDirPrefix == null ? "" : ivaratorCacheSubDirPrefix);
         return this;
     }
-
+    
     public IteratorBuildingVisitor setHdfsFileCompressionCodec(String hdfsFileCompressionCodec) {
         this.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
         this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
         this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
         this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setMaxRangeSplit(int maxRangeSplit) {
         this.maxRangeSplit = maxRangeSplit;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setIvaratorSources(SourceFactory sourceFactory, int maxIvaratorSources) {
         this.ivaratorSources = new SourcePool(sourceFactory, maxIvaratorSources);
         this.ivaratorSource = new ThreadLocalPooledSource<Key,Value>(ivaratorSources);
         return this;
     }
-
+    
     public IteratorBuildingVisitor setIncludes(Collection<String> includes) {
         this.includeReferences = includes;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setExcludes(Collection<String> excludes) {
         this.excludeReferences = excludes;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setTermFrequencyFields(Set<String> termFrequencyFields) {
         this.termFrequencyFields = (termFrequencyFields == null ? Collections.<String> emptySet() : termFrequencyFields);
         return this;
     }
-
+    
     public IteratorBuildingVisitor setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
         this.allowTermFrequencyLookup = allowTermFrequencyLookup;
         return this;
     }
-
+    
     public IteratorBuildingVisitor setIndexOnlyFields(Set<String> indexOnlyFields) {
         this.indexOnlyFields = (indexOnlyFields == null ? Collections.<String> emptySet() : indexOnlyFields);
         return this;
     }
-
+    
     public IteratorBuildingVisitor setSortedUIDs(boolean sortedUIDs) {
         this.sortedUIDs = sortedUIDs;
         return this;
     }
-
+    
 }
