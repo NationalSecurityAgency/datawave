@@ -23,6 +23,7 @@
         <eclipseFormatterStyle>${datawave.root}/../contrib/Eclipse-Datawave-Codestyle.xml</eclipseFormatterStyle>
         <java.version>1.8</java.version>
         <version.accumulo>1.8.1</version.accumulo>
+        <version.datawave>2.0.0-srf-SNAPSHOT</version.datawave>
         <version.docker.plugin>1.0.0</version.docker.plugin>
         <version.spring.boot>1.5.6.RELEASE</version.spring.boot>
         <version.spring.cloud>Dalston.SR3</version.spring.cloud>
@@ -42,22 +43,17 @@
             <dependency>
                 <groupId>datawave.microservice</groupId>
                 <artifactId>authorization-common</artifactId>
-                <version>${project.version}</version>
+                <version>${version.datawave}</version>
             </dependency>
             <dependency>
                 <groupId>datawave.microservice</groupId>
                 <artifactId>common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>datawave.microservice</groupId>
-                <artifactId>common</artifactId>
-                <version>${project.version}</version>
+                <version>${version.datawave}</version>
             </dependency>
             <dependency>
                 <groupId>datawave.webservice</groupId>
                 <artifactId>Client</artifactId>
-                <version>${project.version}</version>
+                <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
                         <artifactId>*</artifactId>
@@ -72,7 +68,7 @@
             <dependency>
                 <groupId>datawave.webservice</groupId>
                 <artifactId>Common</artifactId>
-                <version>${project.version}</version>
+                <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
                         <artifactId>*</artifactId>
@@ -83,7 +79,7 @@
             <dependency>
                 <groupId>datawave.webservice</groupId>
                 <artifactId>Common-Util</artifactId>
-                <version>${project.version}</version>
+                <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
                         <artifactId>*</artifactId>
@@ -110,7 +106,7 @@
             <dependency>
                 <groupId>datawave.webservice</groupId>
                 <artifactId>Security</artifactId>
-                <version>${project.version}</version>
+                <version>${version.datawave}</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -195,7 +191,7 @@
             <dependency>
                 <groupId>datawave</groupId>
                 <artifactId>datawave-common-test</artifactId>
-                <version>${project.version}</version>
+                <version>${version.datawave}</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -289,7 +285,7 @@
                             <resource>
                                 <targetPath>/</targetPath>
                                 <directory>${project.build.directory}</directory>
-                                <include>${project.build.finalName}.jar</include>
+                                <include>${project.build.finalName}-exec.jar</include>
                             </resource>
                         </resources>
                     </configuration>
@@ -312,6 +308,14 @@
                         <compilerSource>${maven.compiler.source}</compilerSource>
                         <compilerCompliance>${maven.compiler.source}</compilerCompliance>
                         <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <configuration>
+                        <!-- Mark the repackaged executable jar with the "exec" classifier -->
+                        <classifier>exec</classifier>
                     </configuration>
                 </plugin>
                 <plugin>

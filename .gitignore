@@ -38,6 +38,7 @@ tags
 target
 target/
 **/target/
+**/logs/
 
 .DS_Store
 web-service/geoserver/gs-web-app/overlays/

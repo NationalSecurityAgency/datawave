@@ -8,7 +8,7 @@ LABEL VERSION=${project.version} \
       DESCRIPTION="DATAWAVE configuration microservice."
 
 VOLUME /tmp
-ADD config-service-${project.version}.jar /app.jar
+ADD config-service-${project.version}-exec.jar /app.jar
 RUN bash -c 'touch /app.jar && chown jboss:jboss /app.jar'
 
 # Switch back to jboss user
