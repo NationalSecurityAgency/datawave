@@ -2,12 +2,12 @@ package datawave.microservice.audit.log;
 
 import datawave.microservice.audit.common.AuditParameters;
 import datawave.microservice.audit.common.Auditor;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LogAuditor implements Auditor {
     
-    private Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
     
     @Override
     public void audit(AuditParameters am) throws Exception {

@@ -1,15 +1,15 @@
 package datawave.microservice.audit.common;
 
 import datawave.microservice.audit.common.Auditor.AuditType;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.inject.Inject;
 import java.util.Map;
 
 public class AuditMessageHandler {
     
-    private Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
     
     public static String LISTENER_METHOD = "onMessage";
     

@@ -6,7 +6,8 @@ import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -24,7 +25,7 @@ import javax.annotation.security.RolesAllowed;
 @RequestMapping(value = "/Common/Auditor", produces = MediaType.APPLICATION_JSON_VALUE)
 @EnableConfigurationProperties(AuditProperties.class)
 public class AuditController {
-    private static final Logger log = Logger.getLogger(AuditController.class);
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
     
     @Autowired
     private AuditProperties auditProperties;
@@ -60,7 +61,7 @@ public class AuditController {
             return response;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.AUDITING_ERROR, e);
-            log.error(qe);
+            log.error(qe.toString());
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
