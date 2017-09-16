@@ -162,7 +162,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * Disables the range coalescing visitor
      */
     protected boolean disableRangeCoalescing = false;
-
+    
     /**
      * Allows developers to cache data types
      */
@@ -777,13 +777,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (!queryTfFields.isEmpty()) {
             Multimap<String,Function> contentFunctions = TermOffsetPopulator.getContentFunctions(queryTree);
             config.setTermFrequenciesRequired(!contentFunctions.isEmpty());
-
+            
             // Print the nice log message
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Computed that the query " + (contentFunctions.isEmpty() ? " does not require " : "requires") + " term frequency lookup");
             }
         }
-
+        
         stopwatch.stop();
         
         return queryTree;
@@ -1933,7 +1933,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     public boolean getCompressOptionMappings() {
         return compressMappings;
     }
-
+    
     /*
      * 
      * (non-Javadoc)

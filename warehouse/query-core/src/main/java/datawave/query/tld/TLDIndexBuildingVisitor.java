@@ -26,7 +26,7 @@ import java.util.Map.Entry;
 
 public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(TLDIndexBuildingVisitor.class);
-
+    
     @Override
     public Object visit(ASTNENode node, Object data) {
         // We have no parent already defined

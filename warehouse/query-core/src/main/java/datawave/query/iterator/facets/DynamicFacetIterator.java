@@ -170,7 +170,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
             projection = new EventDataQueryFilter();
             projection.initializeWhitelist(configuration.getFacetedFields());
         }
-
+        
         if (!configuration.hasFieldLimits() || projection != null) {
             keyToDoc = new KeyToDocumentData(source.deepCopy(myEnvironment), super.equality, projection, this.includeHierarchyFields,
                             this.includeHierarchyFields);

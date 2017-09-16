@@ -127,7 +127,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     // Are we required to get term frequencies (i.e. does the query contain content functions)
     private boolean termFrequenciesRequired = false;
-
+    
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
     
@@ -180,12 +180,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
      * By default enable field index only evaluation (aggregation of document post evaluation)
      */
     private boolean allowFieldIndexEvaluation = true;
-
+    
     /**
      * By default enable using term frequency instead of field index when possible for value lookup
      */
     private boolean allowTermFrequencyLookup = true;
-
+    
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
     
     // Threshold values used in the new RangeCalculator
@@ -1154,11 +1154,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     public boolean isAllowTermFrequencyLookup() {
         return allowTermFrequencyLookup;
     }
-
+    
     public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
         this.allowTermFrequencyLookup = allowTermFrequencyLookup;
     }
-
+    
     public boolean allTermsIndexOnly() {
         return allTermsIndexOnly;
     }
@@ -1267,11 +1267,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     public boolean isTermFrequenciesRequired() {
         return termFrequenciesRequired;
     }
-
+    
     public void setTermFrequenciesRequired(boolean termFrequenciesRequired) {
         this.termFrequenciesRequired = termFrequenciesRequired;
     }
-
+    
     public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
         this.shouldLimitTermExpansionToModel = shouldLimitTermExpansionToModel;
     }
@@ -1438,9 +1438,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.setAllowShortcutEvaluation(copy.getAllowShortcutEvaluation());
         
         this.setAllowFieldIndexEvaluation(copy.isAllowFieldIndexEvaluation());
-
+        
         this.setAllowTermFrequencyLookup(copy.isAllowTermFrequencyLookup());
-
+        
         this.setLimitFields(new HashSet<String>(copy.getLimitFields()));
         this.setQuery(copy.getQuery());
         Set<QueryImpl.Parameter> parameterSet = query.getParameters();

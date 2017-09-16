@@ -59,7 +59,6 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-
 /**
  * <p>
  * QueryIterator is the entry point to the Datawave query iterator stack. At a high level, this iterator has a source of Document Keys (row + columnfamily) and
@@ -274,7 +273,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             
             // determine whether this is a document specific range
             Range documentRange = isDocumentSpecificRange(range) ? range : null;
-
+            
             // if we have a document specific range, but the key is not
             // inclusive then we have already returned the document; this scan
             // is done
@@ -770,7 +769,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction;
                 tfFunction = TFFactory.getFunction(getScript(documentSource), getContentExpansionFields(), getTermFrequencyFields(), this.getTypeMetadata(),
                                 super.equality, getEvaluationFilter(), sourceDeepCopy.deepCopy(myEnvironment));
-
+                
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
                 itrWithContext = Iterators.transform(tupleItr, new EmptyContext<Key,Document,String,Object>());
@@ -1117,14 +1116,14 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                     throws ConfigException, MalformedURLException, InstantiationException, IllegalAccessException {
         return createIteratorBuildingVisitor(IteratorBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs);
     }
-
+    
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(Class<? extends IteratorBuildingVisitor> c, final Range documentRange,
                     boolean isQueryFullySatisfied, boolean sortedUIDs) throws MalformedURLException, ConfigException, IllegalAccessException,
                     InstantiationException {
         if (log.isTraceEnabled()) {
             log.trace(documentRange);
         }
-
+        
         // determine the list of indexed fields
         Set<String> indexedFields = new HashSet<String>(this.getTypeMetadata().keySet());
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
@@ -1167,7 +1166,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     }
     
     protected SatisfactionVisitor createSatisfiabilityVisitor(boolean isQueryFullySatisfiedInitialState) {
-
+        
         // determine the list of indexed fields
         Set<String> indexedFields = new HashSet<String>(this.getTypeMetadata().keySet());
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());

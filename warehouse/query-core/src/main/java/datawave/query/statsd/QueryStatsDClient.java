@@ -35,14 +35,14 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     private final AtomicInteger sources = new AtomicInteger(0);
     private final Multimap<String,Long> timings;
     private final String prefix;
-
+    
     private static final Charset STATS_D_ENCODING = Charset.forName("UTF-8");
-
+    
     private static final StatsDClientErrorHandler NO_OP_HANDLER = new StatsDClientErrorHandler() {
         @Override
         public void handle(Exception e) { /* No-op */}
     };
-
+    
     // the client
     private static NonBlockingUdpSender client = null;
     // this monitor controls when the client is being used
@@ -156,7 +156,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     public int getSize() {
         return nextCalls.get() + seekCalls.get() + sources.get() + timings.size();
     }
-
+    
     /**
      * Cleanly shut down this StatsD client. This method may throw an exception if the socket cannot be closed.
      */
@@ -171,7 +171,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
             }
         }
     }
-
+    
     /**
      * Adjusts the specified counter by a given delta.
      *
@@ -191,7 +191,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     public void count(String aspect, long delta, double sampleRate) {
         send(messageFor(aspect, Long.toString(delta), "c", sampleRate));
     }
-
+    
     /**
      * Records the latest fixed value for the specified named gauge.
      *
@@ -208,22 +208,22 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     public void recordGaugeValue(String aspect, long value) {
         recordGaugeCommon(aspect, Long.toString(value), value < 0, false);
     }
-
+    
     @Override
     public void recordGaugeValue(String aspect, double value) {
         recordGaugeCommon(aspect, stringValueOf(value), value < 0, false);
     }
-
+    
     @Override
     public void recordGaugeDelta(String aspect, long value) {
         recordGaugeCommon(aspect, Long.toString(value), value < 0, true);
     }
-
+    
     @Override
     public void recordGaugeDelta(String aspect, double value) {
         recordGaugeCommon(aspect, stringValueOf(value), value < 0, true);
     }
-
+    
     private void recordGaugeCommon(String aspect, String value, boolean negative, boolean delta) {
         final StringBuilder message = new StringBuilder();
         if (!delta && negative) {
@@ -232,7 +232,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
         message.append(messageFor(aspect, (delta && !negative) ? ("+" + value) : value, "g"));
         send(message.toString());
     }
-
+    
     /**
      * StatsD supports counting unique occurrences of events between flushes, Call this method to records an occurrence of the specified named event.
      *
@@ -249,7 +249,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     public void recordSetEvent(String aspect, String eventName) {
         send(messageFor(aspect, eventName, "s"));
     }
-
+    
     /**
      * Records an execution time in milliseconds for the specified named operation.
      *
@@ -266,27 +266,27 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     public void recordExecutionTime(String aspect, long timeInMs, double sampleRate) {
         send(messageFor(aspect, Long.toString(timeInMs), "ms", sampleRate));
     }
-
+    
     private String messageFor(String aspect, String value, String type) {
         return messageFor(aspect, value, type, 1.0);
     }
-
+    
     private String messageFor(String aspect, String value, String type, double sampleRate) {
         final String message = prefix + aspect + ':' + value + '|' + type;
         return (sampleRate == 1.0) ? message : (message + "|@" + stringValueOf(sampleRate));
     }
-
+    
     private void send(final String message) {
         synchronized (this.clientMonitor) {
             client().send(message);
         }
     }
-
+    
     private String stringValueOf(double value) {
         NumberFormat formatter = NumberFormat.getInstance(Locale.US);
         formatter.setGroupingUsed(false);
         formatter.setMaximumFractionDigits(19);
         return formatter.format(value);
     }
-
+    
 }

@@ -60,22 +60,22 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             }
             
         }
-
+        
         public JexlNode getIndexQuery(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields) {
-
+            
             LinkedList<JexlNode> nodes = Lists.newLinkedList();
-
+            
             // get the cartesian product of all the fields and terms
             MutableBoolean oredFields = new MutableBoolean();
             Set<String>[] fieldsAndTerms = fieldsAndTerms(termFrequencyFields, indexedFields, contentFields, oredFields);
             if (!fieldsAndTerms[0].isEmpty()) {
                 final JexlNode eq = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
-
+                
                 for (String field : fieldsAndTerms[0]) {
                     nodes.add(JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.AND_NODE, eq, null, field, fieldsAndTerms[1]));
                 }
             }
-
+            
             // A single field needs no wrapper node.
             if (1 == fieldsAndTerms[0].size()) {
                 return nodes.iterator().next();
