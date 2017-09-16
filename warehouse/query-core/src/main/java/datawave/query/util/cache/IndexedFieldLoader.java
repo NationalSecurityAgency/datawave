@@ -6,7 +6,7 @@ import java.util.Set;
 
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;

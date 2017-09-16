@@ -9,7 +9,7 @@
     <version>2.0</version>
 
     <packaging>maven-plugin</packaging>
-    <name>assert-properties Maven Mojo</name>
+    <name>${project.artifactId}</name>
     <url>http://maven.apache.org</url>
 
     <build>

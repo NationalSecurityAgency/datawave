@@ -2,7 +2,7 @@ package datawave.query.util;
 
 import java.util.Collection;
 
-import datawave.query.rewrite.iterator.QueryInformationIterator;
+import datawave.query.iterator.QueryInformationIterator;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.query.Query;
 

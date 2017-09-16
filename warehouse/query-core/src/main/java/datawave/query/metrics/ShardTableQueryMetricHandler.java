@@ -20,9 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -42,7 +40,7 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.query.rewrite.iterator.QueryOptions;
+import datawave.query.iterator.QueryOptions;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawavePrincipalLookup;
 import datawave.security.util.AuthorizationsUtil;
@@ -864,16 +862,16 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             
             ThreadLocalLogLevel.setLevel("datawave.query.index.lookup.RangeStream", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.rewrite.planner.DefaultQueryPlanner", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.rewrite.planner.ThreadedRangeBundlerIterator", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.rewrite.scheduler.SequentialScheduler", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.rewrite.tables.RefactoredShardQueryLogic", Level.ERROR);
+            ThreadLocalLogLevel.setLevel("datawave.query.planner.DefaultQueryPlanner", Level.ERROR);
+            ThreadLocalLogLevel.setLevel("datawave.query.planner.ThreadedRangeBundlerIterator", Level.ERROR);
+            ThreadLocalLogLevel.setLevel("datawave.query.scheduler.SequentialScheduler", Level.ERROR);
+            ThreadLocalLogLevel.setLevel("datawave.query.tables.ShardQueryLogic", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.rewrite.VisibilityHelper", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.rewrite.jexl.visitors.QueryModelVisitor", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.rewrite.jexl.visitors.ExpandMultiNormalizedTerms", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.rewrite.jexl.lookups.LookupBoundedRangeForTerms", Level.ERROR);
-            ThreadLocalLogLevel.setLevel("datawave.query.rewrite.jexl.visitors.RangeConjunctionRebuildingVisitor", Level.ERROR);
+            ThreadLocalLogLevel.setLevel("datawave.query.VisibilityHelper", Level.ERROR);
+            ThreadLocalLogLevel.setLevel("datawave.query.jexl.visitors.QueryModelVisitor", Level.ERROR);
+            ThreadLocalLogLevel.setLevel("datawave.query.jexl.visitors.ExpandMultiNormalizedTerms", Level.ERROR);
+            ThreadLocalLogLevel.setLevel("datawave.query.jexl.lookups.LookupBoundedRangeForTerms", Level.ERROR);
+            ThreadLocalLogLevel.setLevel("datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor", Level.ERROR);
             
             ThreadLocalLogLevel.setLevel("datawave.ingest.data.TypeRegistry", Level.ERROR);
             ThreadLocalLogLevel.setLevel("datawave.ingest.data.config.ingest.BaseIngestHelper", Level.ERROR);

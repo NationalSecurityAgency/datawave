@@ -7,7 +7,7 @@ import java.util.Map.Entry;
 
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;

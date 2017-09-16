@@ -11,7 +11,7 @@ import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
-import datawave.query.rewrite.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlASTHelper;
 
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.JexlNode;

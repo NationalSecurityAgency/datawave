@@ -5,9 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import datawave.core.iterators.querylock.QueryLock;
-import datawave.query.rewrite.Constants;
-import datawave.query.rewrite.predicate.TimeFilter;
-import datawave.util.StringUtils;
+import datawave.query.Constants;
+import datawave.query.predicate.TimeFilter;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;

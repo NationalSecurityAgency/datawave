@@ -5,7 +5,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.TreeSet;
 
-import datawave.query.rewrite.collections.FunctionalSet;
+import datawave.query.collections.FunctionalSet;
 import org.apache.commons.jexl2.MapContext;
 
 public class DatawaveJexlContext extends MapContext {
@@ -88,7 +88,7 @@ public class DatawaveJexlContext extends MapContext {
         // So the question is whether a mapping to nothing should return 'null' or an empty collection...
         // If we return an empty collection, then our tests that expect 'null' will need to change
         // If we return a 'null', then our tests that invoke a method on the result of the context lookup will cause a NPE
-        // For now, leave it returning 'null', with the below fix in RefactoredDatawaveInterpreter's visit(ASTMethodNode):
+        // For now, leave it returning 'null', with the below fix in DatawaveInterpreter's visit(ASTMethodNode):
         //
         // public Object visit(ASTMethodNode node, Object data) {
         // if(data == null) {

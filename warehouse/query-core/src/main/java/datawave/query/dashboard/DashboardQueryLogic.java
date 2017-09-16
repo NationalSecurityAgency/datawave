@@ -1,6 +1,6 @@
 package datawave.query.dashboard;
 
-import datawave.query.rewrite.tables.RefactoredShardQueryLogic;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * Aggregate a range of query metrics into a single DashboardSummary object.
  */
-public class DashboardQueryLogic extends RefactoredShardQueryLogic implements QueryLogicTransformer {
+public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTransformer {
     
     public DashboardQueryLogic() {}
     

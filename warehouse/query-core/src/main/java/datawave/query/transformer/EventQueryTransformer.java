@@ -18,7 +18,7 @@ import datawave.marking.MarkingFunctions.Exception;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.EventFields;
 import datawave.query.parser.EventFields.FieldValue;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;

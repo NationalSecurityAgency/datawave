@@ -5,7 +5,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.log4j.Logger;
 
-import datawave.query.rewrite.iterator.SourceFactory;
+import datawave.query.iterator.SourceFactory;
 
 /**
  * This is a pool of sources that is created with a specified size, from which sources can be checked out, and then checked back in for subsequent use. The is

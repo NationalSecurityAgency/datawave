@@ -2,8 +2,8 @@ package datawave.query.tables.edge;
 
 import datawave.edge.model.EdgeModelAware;
 import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
-import datawave.query.rewrite.jexl.JexlASTHelper;
-import datawave.query.rewrite.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
 import datawave.webservice.results.edgedictionary.EventField;
 import datawave.webservice.results.edgedictionary.MetadataBase;

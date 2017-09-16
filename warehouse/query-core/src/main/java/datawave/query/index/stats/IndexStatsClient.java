@@ -18,7 +18,7 @@ import com.google.common.collect.ImmutableMap;
 
 import datawave.core.iterators.filter.CsvKeyFilter;
 import datawave.iterators.IteratorSettingHelper;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;

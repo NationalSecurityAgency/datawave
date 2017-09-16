@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
 
 import com.beust.jcommander.internal.Maps;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -24,19 +25,18 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
-import datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
-import datawave.query.rewrite.exceptions.DatawaveFatalQueryException;
-import datawave.query.rewrite.exceptions.InvalidQueryException;
-import datawave.query.rewrite.iterator.QueryOptions;
-import datawave.query.rewrite.jexl.JexlASTHelper;
-import datawave.query.rewrite.jexl.visitors.DateIndexCleanupVisitor;
-import datawave.query.rewrite.jexl.visitors.ExecutableDeterminationVisitor;
-import datawave.query.rewrite.jexl.visitors.ExecutableDeterminationVisitor.STATE;
-import datawave.query.rewrite.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.rewrite.jexl.visitors.PullupUnexecutableNodesVisitor;
-import datawave.query.rewrite.jexl.visitors.PushdownUnexecutableNodesVisitor;
-import datawave.query.rewrite.jexl.visitors.PushdownLargeFieldedListsVisitor;
-import datawave.query.rewrite.planner.DefaultQueryPlanner;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
+import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
+import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
+import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
+import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.RangeDefinition;
 import datawave.query.tables.async.ScannerChunk;
@@ -56,7 +56,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     
     protected static FileSystemCache fileSystemCache = null;
     
-    private RefactoredShardQueryConfiguration config;
+    private ShardQueryConfiguration config;
     protected MetadataHelper metadataHelper;
     protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
@@ -65,7 +65,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
     
-    public VisitorFunction(RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper) throws MalformedURLException {
+    public VisitorFunction(ShardQueryConfiguration config, MetadataHelper metadataHelper) throws MalformedURLException {
         this.config = config;
         
         if (VisitorFunction.fileSystemCache == null && this.config.getHdfsSiteConfigURLs() != null) {
@@ -264,7 +264,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     
     // push down large fielded lists. Assumes that the hdfs query cache uri and
     // site config urls are configured
-    protected ASTJexlScript pushdownLargeFieldedLists(RefactoredShardQueryConfiguration config, ASTJexlScript queryTree) throws IOException {
+    protected ASTJexlScript pushdownLargeFieldedLists(ShardQueryConfiguration config, ASTJexlScript queryTree) throws IOException {
         Query settings = config.getQuery();
         
         URI hdfsQueryCacheUri = getFstHdfsQueryCacheUri(config, settings);
@@ -275,7 +275,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri.toString());
     }
     
-    protected URI getFstHdfsQueryCacheUri(RefactoredShardQueryConfiguration config, Query settings) {
+    protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
         String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
         int index = new Random().nextInt(choices.length);
         Path path = new Path(choices[index], settings.getId().toString());

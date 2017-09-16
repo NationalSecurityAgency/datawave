@@ -3,7 +3,7 @@ package datawave.query.language.parser.jexl;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 
 import org.junit.Assert;
 import org.junit.Before;

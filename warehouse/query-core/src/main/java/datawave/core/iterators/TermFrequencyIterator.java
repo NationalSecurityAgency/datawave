@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import datawave.util.StringUtils;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;

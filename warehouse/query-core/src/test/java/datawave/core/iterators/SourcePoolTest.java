@@ -1,6 +1,6 @@
 package datawave.core.iterators;
 
-import datawave.query.rewrite.iterator.SourceFactory;
+import datawave.query.iterator.SourceFactory;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;

@@ -51,13 +51,13 @@
         </dependency>
         <dependency>
             <groupId>datawave</groupId>
-            <artifactId>datawave-ingest-core</artifactId>
+            <artifactId>datawave-ingest-configuration</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>datawave</groupId>
-            <artifactId>datawave-ingest-core-configuration</artifactId>
+            <artifactId>datawave-ingest-core</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
@@ -80,105 +80,105 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Accumulo</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-accumulo</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Accumulo-Client</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-accumulo-client</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Atom</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-atom</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Audit-Accumulo</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-audit-accumulo</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Audit-Log</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-audit-log</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>CachedResults</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-cached-results</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Client</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-client</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Common</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-common</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Common-Util</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-common-util</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>DataDictionary</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-data-dictionary</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>EdgeDictionary</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-edge-dictionary</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>MapReduce</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-map-reduce</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>MapReduceStatus</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-map-reduce-status</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Modification</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-modification</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Query</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-query</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Rest-API</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-rest-api</artifactId>
             <version>${project.version}</version>
             <type>war</type>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Security</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-security</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
@@ -297,7 +297,7 @@
                                     <groupId>datawave</groupId>
                                 </include>
                                 <include>
-                                    <groupId>datawave.webservice</groupId>
+                                    <groupId>datawave.webservices</groupId>
                                 </include>
                             </sourcepath-includes>
                         </configuration>
@@ -322,7 +322,7 @@
                             <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
                             <dependencySourceIncludes>
                                 <dependencySourceInclude>datawave:*</dependencySourceInclude>
-                                <dependencySourceInclude>datawave.webservice:*</dependencySourceInclude>
+                                <dependencySourceInclude>datawave.webservices:*</dependencySourceInclude>
                             </dependencySourceIncludes>
                         </configuration>
                     </execution>

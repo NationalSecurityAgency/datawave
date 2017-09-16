@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import datawave.marking.MarkingFunctions;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import datawave.util.StringUtils;
 
 import org.apache.accumulo.core.data.Key;

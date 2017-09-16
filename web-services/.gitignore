@@ -1,0 +1,16 @@
+target
+.classpath
+.project
+.settings
+.idea
+*.iml
+**/lib
+tags
+**/tags
+*.orig
+**/*.orig
+**/.externalToolBuilders/
+**/maven-eclipse.xml
+atlassian-ide-plugin.xml
+**/bin
+properties/git.properties
