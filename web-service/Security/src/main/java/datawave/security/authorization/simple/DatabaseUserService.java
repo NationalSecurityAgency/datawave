@@ -23,6 +23,7 @@ import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -124,9 +125,21 @@ public class DatabaseUserService implements DatawaveUserService {
     }
     
     @Override
-    public DatawaveUser lookup(SubjectIssuerDNPair dn) throws AuthorizationException {
+    public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
         try (Connection c = ds.getConnection();
                         PreparedStatement ps = c.prepareStatement("SELECT * from " + usersTableName + " where subjectDN = ? and issuerDN = ?")) {
+            ArrayList<DatawaveUser> users = new ArrayList<>();
+            for (SubjectIssuerDNPair dn : dns) {
+                users.add(lookup(ps, dn));
+            }
+            return users;
+        } catch (SQLException e) {
+            throw new AuthorizationException("Unable to lookup users " + dns + ": " + e.getMessage(), e);
+        }
+    }
+    
+    private DatawaveUser lookup(PreparedStatement ps, SubjectIssuerDNPair dn) throws AuthorizationException {
+        try {
             ps.setString(1, dn.subjectDN());
             ps.setString(2, dn.issuerDN());
             try (ResultSet rs = ps.executeQuery()) {
@@ -138,7 +151,7 @@ public class DatabaseUserService implements DatawaveUserService {
                     roles.forEach(r -> map.putAll(r, roleToAuthorizationMap.get(r)));
                     return new DatawaveUser(dn, userType, auths, roles, map, System.currentTimeMillis());
                 } else {
-                    return null;
+                    throw new AuthorizationException("No user found for " + dn);
                 }
             }
         } catch (SQLException e) {

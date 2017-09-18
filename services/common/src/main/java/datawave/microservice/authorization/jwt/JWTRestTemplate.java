@@ -1,6 +1,7 @@
 package datawave.microservice.authorization.jwt;
 
 import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.webservice.security.JWTTokenHandler;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
@@ -26,7 +27,7 @@ public class JWTRestTemplate extends RestTemplate {
     
     public <T> RequestEntity<T> createRequestEntity(ProxiedUserDetails currentUser, T body, MultiValueMap<String,String> additionalHeaders, HttpMethod method,
                     UriComponents uri) {
-        String token = jwtTokenHandler.createTokenFromUser(currentUser);
+        String token = jwtTokenHandler.createTokenFromUsers(currentUser.getUsername(), currentUser.getProxiedUsers());
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         if (additionalHeaders != null) {

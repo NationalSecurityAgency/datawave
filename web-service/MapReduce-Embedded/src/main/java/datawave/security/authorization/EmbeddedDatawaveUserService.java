@@ -12,11 +12,6 @@ import java.util.Collection;
 @Priority(Interceptor.Priority.APPLICATION)
 public class EmbeddedDatawaveUserService implements DatawaveUserService {
     @Override
-    public DatawaveUser lookup(SubjectIssuerDNPair dn) throws AuthorizationException {
-        throw new UnsupportedOperationException("Not supported in embedded mode.");
-    }
-    
-    @Override
     public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
         throw new UnsupportedOperationException("Not supported in embedded mode.");
     }

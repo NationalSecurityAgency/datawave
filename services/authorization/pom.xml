@@ -11,6 +11,7 @@
     <modules>
         <module>common</module>
         <module>ehcache</module>
+        <module>service</module>
     </modules>
     <dependencyManagement>
         <dependencies>

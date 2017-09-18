@@ -10,9 +10,11 @@ import org.springframework.boot.actuate.autoconfigure.ManagementContextResolver;
 import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
 import org.springframework.boot.actuate.endpoint.mvc.EndpointHandlerMapping;
 import org.springframework.boot.actuate.endpoint.mvc.MvcEndpoint;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.security.SpringBootWebSecurityConfiguration;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -44,6 +46,8 @@ import java.util.Set;
  * {@link org.springframework.boot.actuate.autoconfigure.ManagementWebSecurityAutoConfiguration} such that sensitive endpoints require X509 or JWT
  * authentication.
  */
+@Configuration
+@ConditionalOnProperty(prefix = "management.security", name = "enabled", matchIfMissing = true)
 public class ManagementSecurityConfigurer extends WebSecurityConfigurerAdapter {
     private static final String[] NO_PATHS = new String[0];
     private static final RequestMatcher MATCH_NONE = new NegatedRequestMatcher(AnyRequestMatcher.INSTANCE);
@@ -214,7 +218,7 @@ public class ManagementSecurityConfigurer extends WebSecurityConfigurerAdapter {
         
         private RequestMatcher createDelegate() {
             ServerProperties server = this.contextResolver.getApplicationContext().getBean(ServerProperties.class);
-            List<RequestMatcher> matchers = new ArrayList<RequestMatcher>();
+            List<RequestMatcher> matchers = new ArrayList<>();
             EndpointHandlerMapping endpointHandlerMapping = getRequiredEndpointHandlerMapping();
             for (String path : this.endpointPaths.getPaths(endpointHandlerMapping)) {
                 matchers.add(new AntPathRequestMatcher(server.getPath(path)));

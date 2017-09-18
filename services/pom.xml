@@ -411,7 +411,7 @@
                 </plugins>
             </build>
         </profile>
-        <!-- The dist profile (activated with -Ddist) triggers building of source and javadoc artifacts, as well as the docs module. -->
+        <!-- The dist profile (activated with -Ddist) triggers building of source and javadoc artifacts. -->
         <profile>
             <id>dist</id>
             <activation>

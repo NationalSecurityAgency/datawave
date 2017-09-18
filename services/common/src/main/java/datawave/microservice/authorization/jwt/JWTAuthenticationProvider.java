@@ -4,6 +4,8 @@ import datawave.microservice.authorization.jwt.exception.InvalidSignatureExcepti
 import datawave.microservice.authorization.jwt.exception.InvalidTokenException;
 import datawave.microservice.authorization.jwt.exception.TokenExpiredException;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.security.authorization.DatawaveUser;
+import datawave.webservice.security.JWTTokenHandler;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
@@ -13,6 +15,8 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
+
+import java.util.Collection;
 
 /**
  * An {@link AuthenticationProvider} that accepts {@link JWTPreauthToken}s and attempts to convert the included JWT token back into a {@link ProxiedUserDetails}
@@ -32,7 +36,9 @@ public class JWTAuthenticationProvider implements AuthenticationProvider {
         if (authentication instanceof JWTPreauthToken) {
             JWTPreauthToken jwtPreauthToken = (JWTPreauthToken) authentication;
             try {
-                ProxiedUserDetails proxiedUserDetails = tokenHandler.createPrincipalFromToken(jwtPreauthToken.getCredentials());
+                Collection<? extends DatawaveUser> users = tokenHandler.createUsersFromToken(jwtPreauthToken.getCredentials());
+                long minCreateTime = users.stream().map(DatawaveUser::getCreationTime).min(Long::compareTo).orElse(System.currentTimeMillis());
+                ProxiedUserDetails proxiedUserDetails = new ProxiedUserDetails(users, minCreateTime);
                 return new JWTAuthentication(proxiedUserDetails);
             } catch (UnsupportedJwtException | MalformedJwtException | IllegalArgumentException e) {
                 throw new InvalidTokenException("JWT is not valid.", e);

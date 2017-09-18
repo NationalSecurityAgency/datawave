@@ -5,7 +5,7 @@ USER root
 
 LABEL VERSION=${project.version} \
       RUN="docker run ${docker.image.prefix}/${project.artifactId}:latest" \
-      DESCRIPTION="DATAWAVE configuration microservice."
+      DESCRIPTION="DATAWAVE authorization microservice."
 
 VOLUME /tmp
 ADD ${project.build.finalName}-exec.jar /app.jar
@@ -14,5 +14,5 @@ RUN bash -c 'touch /app.jar && chown jboss:jboss /app.jar'
 # Switch back to jboss user
 USER jboss
 
-EXPOSE 8888
+EXPOSE 8543 8180
 ENTRYPOINT ["java","-jar","/app.jar"]

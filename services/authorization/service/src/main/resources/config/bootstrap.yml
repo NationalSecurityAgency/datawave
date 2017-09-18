@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: authorization
+  cloud:
+    config:
+      # Always fail fast so we can retry if the config server is no up yet
+      failFast: true
+      # Give the config server time to start up if it hasn't already
+      retry:
+        max-attempts: 60
+      uri: ${CONFIG_SERVER_URL:http://configuration:8888}
+
+---
+
+# For the dev profile, check localhost for the config server by default and don't use the AMQP bus
+spring:
+  profiles: 'dev'
+  cloud:
+    config:
+      uri: ${CONFIG_SERVER_URL:http://localhost:8888}
+    bus:
+      enabled: false

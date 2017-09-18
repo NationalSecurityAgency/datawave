@@ -68,7 +68,7 @@ public class ServerSecurityProducer {
     @ServerPrincipal
     @RequestScoped
     public DatawavePrincipal produceServerPrincipal() throws Exception {
-        return new DatawavePrincipal(Collections.singleton(datawaveUserService.lookup(lookupServerDN())));
+        return new DatawavePrincipal(datawaveUserService.lookup(Collections.singleton(lookupServerDN())));
     }
     
     @Produces

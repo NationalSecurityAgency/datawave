@@ -1,5 +1,6 @@
 package datawave.microservice.authorization.jwt;
 
+import datawave.webservice.security.JWTTokenHandler;
 import org.springframework.boot.web.client.RestTemplateCustomizer;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;

@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -55,7 +56,7 @@ public class TestDatawaveUserServiceTest {
         public void testCorrectAlternative() throws Exception {
             // Alternate 2 is the highest priority alternate class that we added to our deployment, so it should be selected
             assertEquals(AltDatawaveUserService2.class, userService.getClass());
-            DatawaveUser user = userService.lookup(SubjectIssuerDNPair.of("subject1", "issuer1"));
+            DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair.of("subject1", "issuer1"))).iterator().next();
             assertEquals("Alternative2", user.getRoles().iterator().next());
         }
         
@@ -80,14 +81,15 @@ public class TestDatawaveUserServiceTest {
         
         @Test
         public void testCorrectAlternative() throws Exception {
-            DatawaveUser user = userService.lookup(SubjectIssuerDNPair.of("subject1", "issuer1"));
+            DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair.of("subject1", "issuer1"))).iterator().next();
             assertTrue(user.getRoles().contains("Alternative2"));
         }
         
         @Test
         public void testCannedUser() throws Exception {
-            DatawaveUser user = userService.lookup(SubjectIssuerDNPair.of("cn=server1, ou=my department, o=my company, st=some-state, c=us",
-                            "cn=my company ca, o=my company, st=some-state, c=us"));
+            DatawaveUser user = userService
+                            .lookup(Collections.singleton(SubjectIssuerDNPair.of("cn=server1, ou=my department, o=my company, st=some-state, c=us",
+                                            "cn=my company ca, o=my company, st=some-state, c=us"))).iterator().next();
             assertTrue(user.getAuths().contains("PUB"));
             assertTrue(user.getAuths().contains("PVT"));
         }
@@ -114,14 +116,15 @@ public class TestDatawaveUserServiceTest {
         
         @Test
         public void testCorrectAlternative() throws Exception {
-            DatawaveUser user = userService.lookup(SubjectIssuerDNPair.of("subject1", "issuer1"));
+            DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair.of("subject1", "issuer1"))).iterator().next();
             assertTrue(user.getRoles().contains("Alternative4"));
         }
         
         @Test
         public void testCannedUser() throws Exception {
-            DatawaveUser user = userService.lookup(SubjectIssuerDNPair.of("cn=server1, ou=my department, o=my company, st=some-state, c=us",
-                            "cn=my company ca, o=my company, st=some-state, c=us"));
+            DatawaveUser user = userService
+                            .lookup(Collections.singleton(SubjectIssuerDNPair.of("cn=server1, ou=my department, o=my company, st=some-state, c=us",
+                                            "cn=my company ca, o=my company, st=some-state, c=us"))).iterator().next();
             assertTrue(user.getAuths().contains("PUB"));
             assertTrue(user.getAuths().contains("PVT"));
         }
@@ -184,8 +187,9 @@ public class TestDatawaveUserServiceTest {
         abstract String getName();
         
         @Override
-        public DatawaveUser lookup(SubjectIssuerDNPair dn) throws AuthorizationException {
-            return new DatawaveUser(dn, UserType.USER, null, Collections.singleton(getName()), null, -1L, -1L);
+        public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
+            return dns.stream().map(dn -> new DatawaveUser(dn, UserType.USER, null, Collections.singleton(getName()), null, -1L, -1L))
+                            .collect(Collectors.toList());
         }
     }
     

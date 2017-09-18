@@ -117,14 +117,6 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
     }
     
     @Override
-    public DatawaveUser lookup(SubjectIssuerDNPair dn) throws AuthorizationException {
-        if (cannedUsers.containsKey(dn))
-            return cannedUsers.get(dn);
-        else
-            return delegateService.lookup(dn);
-    }
-    
-    @Override
     public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
         // @formatter:off
         ArrayList<SubjectIssuerDNPair> missing = new ArrayList<>();

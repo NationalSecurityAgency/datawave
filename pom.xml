@@ -60,6 +60,7 @@
         <version.jcommander>1.35</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>3.6.10.Final</version.jgroups>
+        <version.jjwt>0.7.0</version.jjwt>
         <version.jts>1.13</version.jts>
         <version.junit>4.12</version.junit>
         <version.kryo>2.20</version.kryo>
@@ -265,6 +266,11 @@
                 <groupId>io.astefanutti.metrics.cdi</groupId>
                 <artifactId>metrics-cdi</artifactId>
                 <version>${version.dropwizard-metrics}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt</artifactId>
+                <version>${version.jjwt}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
