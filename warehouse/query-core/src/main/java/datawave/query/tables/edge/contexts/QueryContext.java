@@ -7,7 +7,7 @@ import java.util.Set;
 
 import datawave.edge.model.EdgeModelAware;
 import datawave.edge.util.EdgeKey;
-import datawave.query.tables.edge.RewriteEdgeQueryLogic;
+import datawave.query.tables.edge.EdgeQueryLogic;
 
 import com.google.common.collect.HashMultimap;
 import datawave.util.StringUtils;
@@ -433,7 +433,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         if (expression.getOperation().equals(EQUALS)) {
             preFilterValues.put(expression.getIdentity(), expression.getLiteral());
         } else if (expression.getOperation().equals(EQUALS_REGEX)) {
-            preFilterValues.put(expression.getIdentity(), RewriteEdgeQueryLogic.PRE_FILTER_DISABLE_KEYWORD);
+            preFilterValues.put(expression.getIdentity(), EdgeQueryLogic.PRE_FILTER_DISABLE_KEYWORD);
         }
         
     }

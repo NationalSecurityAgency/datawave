@@ -17,7 +17,6 @@ import java.util.concurrent.ExecutionException;
 
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
-import datawave.query.rewrite.util.QueryStopwatch;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
 

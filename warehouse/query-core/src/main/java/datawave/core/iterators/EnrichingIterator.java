@@ -9,7 +9,7 @@ import java.util.Map;
 
 import datawave.query.enrich.DataEnricher;
 
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;

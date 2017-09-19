@@ -5,16 +5,16 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.lookup.IndexStream.StreamContext;
-import datawave.query.rewrite.CloseableIterable;
-import datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
-import datawave.query.rewrite.exceptions.DatawaveQueryException;
-import datawave.query.rewrite.iterator.FieldIndexOnlyQueryIterator;
-import datawave.query.rewrite.iterator.QueryOptions;
-import datawave.query.rewrite.iterator.errors.ErrorKey;
-import datawave.query.rewrite.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.rewrite.planner.DefaultQueryPlanner;
-import datawave.query.rewrite.planner.QueryPlan;
+import datawave.query.CloseableIterable;
+import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.iterator.FieldIndexOnlyQueryIterator;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.iterator.errors.ErrorKey;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.util.time.DateHelper;
@@ -34,7 +34,7 @@ import com.google.common.collect.Iterators;
 
 public class ShardRangeStream extends RangeStream {
     
-    public ShardRangeStream(RefactoredShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper helper) {
+    public ShardRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper helper) {
         super(config, scanners, helper);
     }
     

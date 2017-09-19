@@ -64,28 +64,27 @@ import com.google.common.collect.Sets;
 
 import datawave.data.type.Type;
 import datawave.query.index.lookup.IndexStream.StreamContext;
-import datawave.query.rewrite.CloseableIterable;
-import datawave.query.rewrite.Constants;
-import datawave.query.rewrite.UnindexType;
-import datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
-import datawave.query.rewrite.exceptions.DatawaveFatalQueryException;
-import datawave.query.rewrite.iterator.QueryOptions;
-import datawave.query.rewrite.jexl.JexlASTHelper;
-import datawave.query.rewrite.jexl.JexlASTHelper.IdentifierOpLiteral;
-import datawave.query.rewrite.jexl.JexlNodeFactory;
-import datawave.query.rewrite.jexl.LiteralRange;
-import datawave.query.rewrite.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.rewrite.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.rewrite.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.rewrite.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.rewrite.jexl.visitors.BaseVisitor;
-import datawave.query.rewrite.jexl.visitors.DepthVisitor;
-import datawave.query.rewrite.jexl.visitors.EvaluationRendering;
-import datawave.query.rewrite.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.rewrite.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import datawave.query.rewrite.planner.QueryPlan;
-import datawave.query.rewrite.tld.CreateTLDUidsIterator;
-import datawave.query.tables.CondensedRangeStreamScanner;
+import datawave.query.CloseableIterable;
+import datawave.query.Constants;
+import datawave.query.UnindexType;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.visitors.BaseVisitor;
+import datawave.query.jexl.visitors.DepthVisitor;
+import datawave.query.jexl.visitors.EvaluationRendering;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.planner.QueryPlan;
+import datawave.query.tld.CreateTLDUidsIterator;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.SessionOptions;
@@ -110,7 +109,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      * An assignment to this variable can be used to specify a stream of shards and days anywhere in the query. Used by the date function index query creation.
      */
     
-    protected final RefactoredShardQueryConfiguration config;
+    protected final ShardQueryConfiguration config;
     protected final ScannerFactory scanners;
     protected final MetadataHelper metadataHelper;
     protected Iterator<QueryPlan> itr;
@@ -146,7 +145,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     protected Set<String> indexOnlyFields = Sets.newHashSet();
     
-    public RangeStream(RefactoredShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
+    public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         this.config = config;
         this.scanners = scanners;
         this.metadataHelper = metadataHelper;
@@ -819,7 +818,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return null;
     }
     
-    public Range rangeForTerm(String term, String field, RefactoredShardQueryConfiguration config) {
+    public Range rangeForTerm(String term, String field, ShardQueryConfiguration config) {
         return rangeForTerm(term, field, config.getBeginDate(), config.getEndDate());
     }
     
@@ -827,7 +826,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return new Range(new Key(term, field, DateHelper.format(start) + "_"), false, new Key(term, field, DateHelper.format(end) + "_" + '\uffff'), false);
     }
     
-    public static IteratorSetting makeDataTypeFilter(RefactoredShardQueryConfiguration config, int stackPosition) {
+    public static IteratorSetting makeDataTypeFilter(ShardQueryConfiguration config, int stackPosition) {
         IteratorSetting is = new IteratorSetting(stackPosition, DataTypeFilter.class);
         is.addOption(DataTypeFilter.TYPES, config.getDatatypeFilterAsString());
         return is;
@@ -866,7 +865,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
      * @param node
      * @return The list of index info ranges
      */
-    public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(RefactoredShardQueryConfiguration config, JexlNode node) {
+    public static List<Tuple2<String,IndexInfo>> createFullFieldIndexScanList(ShardQueryConfiguration config, JexlNode node) {
         List<Tuple2<String,IndexInfo>> list = new ArrayList<>();
         
         Calendar start = Calendar.getInstance();

@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Queue;
 
-import datawave.query.rewrite.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;

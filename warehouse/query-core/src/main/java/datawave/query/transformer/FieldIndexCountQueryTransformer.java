@@ -7,7 +7,7 @@ import java.util.Map.Entry;
 
 import datawave.data.hash.UID;
 import datawave.marking.MarkingFunctions;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import datawave.query.tables.shard.FieldIndexCountQueryLogic.Tuple;
 import datawave.util.TextUtil;
 import datawave.webservice.query.Query;

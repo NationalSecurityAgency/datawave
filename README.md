@@ -8,8 +8,8 @@ mvn -Pdev -Ddeploy -Dtar -DskipTests -DskipITs clean install
 
 This command will produce the following deployment archives:
 
-1. Web Service: `./web-service-deployment/web-service-ear/target/datawave-web-service-${project.version}-dev.tar.gz`
-2. Ingest: `./warehouse/assemble-core/deploy/target/datawave-dev-${project.version}-dist.tar.gz`
+1. Web Service: `./web-services/deploy/application/target/datawave-ws-deploy-application-${project.version}-dev.tar.gz`
+2. Ingest: `./warehouse/assemble/datawave/target/datawave-dev-${project.version}-dist.tar.gz`
 
 ### Building A Release
 

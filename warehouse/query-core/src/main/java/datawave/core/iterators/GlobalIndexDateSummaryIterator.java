@@ -13,8 +13,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
 import datawave.marking.MarkingFunctions;
 
-import datawave.marking.MarkingFunctionsFactory;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;

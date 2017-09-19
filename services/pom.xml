@@ -51,8 +51,8 @@
                 <version>${version.datawave}</version>
             </dependency>
             <dependency>
-                <groupId>datawave.webservice</groupId>
-                <artifactId>Client</artifactId>
+                <groupId>datawave.webservices</groupId>
+                <artifactId>datawave-ws-client</artifactId>
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
@@ -66,8 +66,8 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>datawave.webservice</groupId>
-                <artifactId>Common</artifactId>
+                <groupId>datawave.webservices</groupId>
+                <artifactId>datawave-ws-common</artifactId>
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
@@ -77,8 +77,8 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>datawave.webservice</groupId>
-                <artifactId>Common-Util</artifactId>
+                <groupId>datawave.webservices</groupId>
+                <artifactId>datawave-ws-common-util</artifactId>
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
@@ -104,8 +104,8 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>datawave.webservice</groupId>
-                <artifactId>Security</artifactId>
+                <groupId>datawave.webservices</groupId>
+                <artifactId>datawave-ws-security</artifactId>
                 <version>${version.datawave}</version>
             </dependency>
             <dependency>

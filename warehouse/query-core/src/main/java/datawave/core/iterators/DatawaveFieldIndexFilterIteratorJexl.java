@@ -2,9 +2,9 @@ package datawave.core.iterators;
 
 import com.google.common.base.Predicate;
 import datawave.core.iterators.querylock.QueryLock;
-import datawave.query.rewrite.Constants;
-import datawave.query.rewrite.predicate.Filter;
-import datawave.query.rewrite.predicate.TimeFilter;
+import datawave.query.Constants;
+import datawave.query.predicate.Filter;
+import datawave.query.predicate.TimeFilter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -16,7 +16,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

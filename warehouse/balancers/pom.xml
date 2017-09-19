@@ -3,18 +3,18 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>datawave</groupId>
-        <artifactId>datawave-warehouse</artifactId>
+        <artifactId>datawave-warehouse-parent</artifactId>
         <version>2.0.0-srf-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-balancers</artifactId>
-    <name>datawave-balancers</name>
+    <name>${project.artifactId}</name>
     <properties>
         <datawave.root>${project.parent.parent.basedir}</datawave.root>
     </properties>
     <dependencies>
         <dependency>
             <groupId>datawave</groupId>
-            <artifactId>in-memory-accumulo</artifactId>
+            <artifactId>datawave-in-memory-accumulo</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

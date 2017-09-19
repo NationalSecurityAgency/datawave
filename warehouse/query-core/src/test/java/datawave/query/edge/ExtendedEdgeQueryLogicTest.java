@@ -9,8 +9,8 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import datawave.configuration.spring.SpringBean;
-import datawave.query.tables.edge.RewriteEdgeQueryFunctionalTest;
-import datawave.query.tables.edge.RewriteEdgeQueryLogic;
+import datawave.query.tables.edge.EdgeQueryFunctionalTest;
+import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
@@ -20,7 +20,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ExtendedEdgeQueryLogicTest extends RewriteEdgeQueryFunctionalTest {
+public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
     
     @Inject
     @SpringBean(name = "ExtendedEdgeQuery")
@@ -68,7 +68,7 @@ public class ExtendedEdgeQueryLogicTest extends RewriteEdgeQueryFunctionalTest {
         
         QueryImpl q = configQuery("SOURCE == 'SUN' && (filter:includeregex(SINK, 'earth|mars'))", auths);
         
-        RewriteEdgeQueryLogic logic = runLogic(q, auths);
+        EdgeQueryLogic logic = runLogic(q, auths);
         
         List<String> expected = new ArrayList<>();
         

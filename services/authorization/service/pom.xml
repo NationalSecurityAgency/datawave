@@ -20,8 +20,8 @@
             <artifactId>common</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Security</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-security</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

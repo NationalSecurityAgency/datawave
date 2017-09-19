@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
 import datawave.marking.MarkingFunctions;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;

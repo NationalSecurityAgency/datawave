@@ -3,12 +3,12 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>datawave</groupId>
-        <artifactId>datawave-warehouse</artifactId>
+        <artifactId>datawave-warehouse-parent</artifactId>
         <version>2.0.0-srf-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-data-dictionary-core</artifactId>
     <packaging>jar</packaging>
-    <name>datawave-data-dictionary-core</name>
+    <name>${project.artifactId}</name>
     <properties>
         <datawave.root>${project.parent.parent.basedir}</datawave.root>
     </properties>
@@ -18,12 +18,12 @@
             <artifactId>datawave-query-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Client</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>DataDictionary</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-data-dictionary</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

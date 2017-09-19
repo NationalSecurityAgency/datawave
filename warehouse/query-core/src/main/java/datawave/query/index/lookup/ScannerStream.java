@@ -3,12 +3,10 @@ package datawave.query.index.lookup;
 import java.util.Collections;
 import java.util.Iterator;
 
-import datawave.query.rewrite.jexl.JexlNodeFactory;
-import datawave.query.rewrite.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.rewrite.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
 
-import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;

@@ -13,7 +13,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.ingest.protobuf.Uid;
-import datawave.query.rewrite.Constants;
+import datawave.query.Constants;
 import datawave.util.TextUtil;
 
 import datawave.util.time.DateHelper;

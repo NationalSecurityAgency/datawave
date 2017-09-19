@@ -21,7 +21,7 @@ import com.google.common.collect.Maps;
 import datawave.query.index.lookup.CondensedIndexInfo;
 import datawave.query.index.lookup.CondensedUidIterator;
 import datawave.query.index.lookup.IndexInfo;
-import datawave.query.rewrite.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation

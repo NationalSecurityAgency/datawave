@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
-import datawave.query.rewrite.jexl.JexlNodeFactory;
-import datawave.query.rewrite.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.WritableComparable;

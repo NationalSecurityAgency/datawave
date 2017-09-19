@@ -26,12 +26,12 @@
             <artifactId>authorization-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Common</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave.webservice</groupId>
-            <artifactId>Common-Util</artifactId>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-common-util</artifactId>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

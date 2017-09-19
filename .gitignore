@@ -1,9 +1,9 @@
 **/bin
 # Don't ignore the scripts bin dirs
 !**/datawave-quickstart/bin/
-!**/scripts-core/src/**/bin/
-!**/web-service-ear/src/main/wildfly/overlay/bin
-!**/web-service-deployment/web-service-ear/src/main/wildfly/overlay/bin
+!**/ingest-scripts/src/**/bin/
+!**/application/src/main/wildfly/overlay/bin
+!**/web-services/deploy/application/src/main/wildfly/overlay/bin
 **/*.iml
 **/*.orig
 **/*.prefs
@@ -25,13 +25,13 @@
 .settings
 atlassian-ide-plugin.xml
 phantomjsdriver.log
-!**/web-service-deployment/web-service-ear/src/main/wildfly/overlay/modules/org/apache/hadoop/common/main/lib
+!**/web-services/deploy/application/src/main/wildfly/overlay/modules/org/apache/hadoop/common/main/lib
 nb-configuration.xml
 nbactions.xml
 nbproject/
 **/properties/git.properties
 **/properties/*-passwords.properties
-assemble/deploy/src/main/assembly/*-passwords.properties
+assemble/datawave/src/main/assembly/*-passwords.properties
 ingest/DataWaveIngestProcessor/.classpath
 **/src/test/resources/.cache
 tags
@@ -41,4 +41,4 @@ target/
 **/logs/
 
 .DS_Store
-web-service/geoserver/gs-web-app/overlays/
+web-services/geoserver/geoserver-application/overlays/

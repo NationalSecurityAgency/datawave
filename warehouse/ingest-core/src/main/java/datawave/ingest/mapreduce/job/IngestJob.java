@@ -216,6 +216,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-distCpConfDir distCpHadoopConfDir] [-distCpBandwidth bandwidth]");
         System.out.println("                     [-distCpMaxMaps maps] [-distCpStrategy strategy]");
         System.out.println("                     [-writeDirectlyToDest]");
+        System.out.println("                     [-createTablesOnly]");
         System.out.println("                     [-doNotDeleteAfterDistCp]");
         System.out.println("                     [-idFilterFsts comma-separated-list-of-files]");
         System.out.println("                     [-inputFormat inputFormatClass]");
@@ -301,7 +302,13 @@ public class IngestJob implements Tool {
             }
         }
         
-        serializeAggregatorConfiguration(cbHelper, conf, log);
+        try {
+            serializeAggregatorConfiguration(cbHelper, conf, log);
+        } catch (TableNotFoundException tnf) {
+            log.error("One or more configured DataWave tables are missing in Accumulo. If this is a new system or if new tables have recently been introduced, run a job using the '-createTablesOnly' flag before attempting to ingest more data",
+                            tnf);
+            return -1;
+        }
         
         // get the source and output hadoop file systems
         FileSystem inputFs = getFileSystem(conf, srcHdfs);
