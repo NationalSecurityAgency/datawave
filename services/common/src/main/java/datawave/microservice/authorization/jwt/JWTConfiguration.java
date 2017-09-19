@@ -36,9 +36,9 @@ public class JWTConfiguration {
             String keyStoreType = ssl.getKeyStoreType();
             KeyStore keyStore = KeyStore.getInstance(keyStoreType == null ? "JKS" : keyStoreType);
             char[] keyPassword = ssl.getKeyPassword() != null ? ssl.getKeyPassword().toCharArray() : ssl.getKeyStorePassword().toCharArray();
-            keyStore.load(ResourceUtils.getURL(ssl.getKeyStore()).openStream(), keyPassword);
+            keyStore.load(ResourceUtils.getURL(ssl.getKeyStore()).openStream(), ssl.getKeyStorePassword().toCharArray());
             String alias = keyStore.aliases().nextElement();
-            Key signingKey = keyStore.getKey(alias, ssl.getKeyStorePassword().toCharArray());
+            Key signingKey = keyStore.getKey(alias, keyPassword);
             Certificate cert = keyStore.getCertificate(alias);
             return new JWTTokenHandler(cert, signingKey, securityProperties.getJwt().getTtl(TimeUnit.SECONDS), TimeUnit.SECONDS, objectMapper);
         } catch (Exception e) {
