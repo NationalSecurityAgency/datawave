@@ -17,7 +17,18 @@ public class SystemPermission implements Serializable {
     private static final long serialVersionUID = 1L;
     
     public enum SystemPermissionType {
-        GRANT, CREATE_TABLE, DROP_TABLE, ALTER_TABLE, CREATE_USER, DROP_USER, ALTER_USER, SYSTEM
+        GRANT,
+        CREATE_TABLE,
+        DROP_TABLE,
+        ALTER_TABLE,
+        CREATE_USER,
+        DROP_USER,
+        ALTER_USER,
+        SYSTEM,
+        CREATE_NAMESPACE,
+        DROP_NAMESPACE,
+        ALTER_NAMESPACE,
+        OBTAIN_DELEGATION_TOKEN
     };
     
     @XmlValue

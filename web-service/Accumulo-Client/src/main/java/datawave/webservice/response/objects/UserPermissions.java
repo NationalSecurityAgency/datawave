@@ -21,13 +21,17 @@ public class UserPermissions implements Serializable {
     @XmlElement(name = "TablePermission")
     private List<TablePermission> tablePermissions = null;
     
+    @XmlElement(name = "NamespacePermission")
+    private List<NamespacePermission> namespacePermissions = null;
+    
     public UserPermissions() {
         
     }
     
-    public UserPermissions(List<SystemPermission> systemPermissions, List<TablePermission> tablePermissions) {
+    public UserPermissions(List<SystemPermission> systemPermissions, List<TablePermission> tablePermissions, List<NamespacePermission> namespacePermissions) {
         this.systemPermissions = systemPermissions;
         this.tablePermissions = tablePermissions;
+        this.namespacePermissions = namespacePermissions;
     }
     
     public List<SystemPermission> getSystemPermissions() {
@@ -38,6 +42,10 @@ public class UserPermissions implements Serializable {
         return tablePermissions;
     }
     
+    public List<NamespacePermission> getNamespacePermissions() {
+        return namespacePermissions;
+    }
+    
     public void setSystemPermissions(List<SystemPermission> systemPermissions) {
         this.systemPermissions = systemPermissions;
     }
@@ -45,4 +53,9 @@ public class UserPermissions implements Serializable {
     public void setTablePermissions(List<TablePermission> tablePermissions) {
         this.tablePermissions = tablePermissions;
     }
+    
+    public void setNamespacePermissions(List<NamespacePermission> namespacePermissions) {
+        this.namespacePermissions = namespacePermissions;
+    }
+    
 }
