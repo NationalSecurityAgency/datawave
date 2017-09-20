@@ -3,7 +3,6 @@ package datawave.webservice.common.audit;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -86,7 +85,7 @@ public class AuditBean implements Auditor {
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
     @GZIP
-    public VoidResponse audit(Map<String,List<String>> parameters) {
+    public VoidResponse audit(MultivaluedMap<String,String> parameters) {
         VoidResponse response = new VoidResponse();
         try {
             auditParameters.clear();

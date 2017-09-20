@@ -12,7 +12,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.MediaType;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.core.MultivaluedMap;
 
 @RestController
 @RequestMapping(value = "/Common/Auditor", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,7 +52,7 @@ public class AuditController {
     
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
     @RequestMapping(path = "/audit", method = RequestMethod.POST)
-    public VoidResponse audit(@RequestParam MultiValueMap<String,String> parameters) {
+    public VoidResponse audit(@RequestParam MultivaluedMap<String,String> parameters) {
         VoidResponse response = new VoidResponse();
         try {
             auditParameters.clear();

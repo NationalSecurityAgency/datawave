@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -38,7 +37,7 @@ public class QueryParametersImpl implements QueryParameters {
         clear();
     }
     
-    public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
+    public void validate(MultivaluedMap<String,String> parameters) throws IllegalArgumentException {
         for (String param : KNOWN_PARAMS) {
             List<String> values = parameters.get(param);
             if (null == values) {
