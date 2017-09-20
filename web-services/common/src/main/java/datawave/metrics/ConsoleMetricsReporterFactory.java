@@ -4,9 +4,6 @@ import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 
-/**
- *
- */
 public class ConsoleMetricsReporterFactory implements MetricsReporterFactory {
     @Override
     public MetricsReporterBuilder forRegistry(MetricRegistry registry) {

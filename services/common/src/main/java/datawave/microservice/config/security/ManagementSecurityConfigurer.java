@@ -4,7 +4,7 @@ import datawave.microservice.authorization.Http403ForbiddenEntryPoint;
 import datawave.microservice.authorization.config.DatawaveSecurityProperties;
 import datawave.microservice.authorization.jwt.JWTAuthenticationFilter;
 import datawave.microservice.authorization.jwt.JWTAuthenticationProvider;
-import datawave.microservice.authorization.preauth.ProxiedEntityX509Filter;
+import datawave.microservice.config.security.JWTSecurityConfigurer.AllowedCallersFilter;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.ManagementContextResolver;
 import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
@@ -21,10 +21,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configurers.ExpressionUrlAuthorizationConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.security.web.authentication.preauth.x509.X509AuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -56,16 +53,15 @@ public class ManagementSecurityConfigurer extends WebSecurityConfigurerAdapter {
     private final ManagementServerProperties management;
     private final ManagementContextResolver contextResolver;
     private final JWTAuthenticationProvider jwtAuthenticationProvider;
-    private final AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService;
+    private final AuthenticationEntryPoint authenticationEntryPoint;
     
     public ManagementSecurityConfigurer(DatawaveSecurityProperties security, ManagementServerProperties management,
-                    ObjectProvider<ManagementContextResolver> contextResolver, JWTAuthenticationProvider jwtAuthenticationProvider,
-                    AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService) {
+                    ObjectProvider<ManagementContextResolver> contextResolver, JWTAuthenticationProvider jwtAuthenticationProvider) {
         this.security = security;
         this.management = management;
         this.contextResolver = contextResolver.getIfAvailable();
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
-        this.authenticationUserDetailsService = authenticationUserDetailsService;
+        this.authenticationEntryPoint = new Http403ForbiddenEntryPoint();
     }
     
     @Override
@@ -80,10 +76,7 @@ public class ManagementSecurityConfigurer extends WebSecurityConfigurerAdapter {
             AuthenticationEntryPoint authenticationEntryPoint = new Http403ForbiddenEntryPoint();
             AuthenticationManager authenticationManager = authenticationManager();
             
-            ProxiedEntityX509Filter proxiedX509Filter = new ProxiedEntityX509Filter(security.isProxiedEntitiesRequired(), security.isIssuersRequired(),
-                            authenticationEntryPoint);
-            proxiedX509Filter.setAuthenticationManager(authenticationManager);
-            
+            AllowedCallersFilter allowedCallersFilter = new AllowedCallersFilter(security);
             JWTAuthenticationFilter jwtFilter = new JWTAuthenticationFilter(false, authenticationManager, authenticationEntryPoint);
             
             // Any request to the actuator interfaces allows administrators, and all other requests (subject to the matcher patterns above) must be
@@ -103,20 +96,21 @@ public class ManagementSecurityConfigurer extends WebSecurityConfigurerAdapter {
             http.headers().contentSecurityPolicy("frame-ancestors 'self'");
             // Ensure that we never create a session--we always want to get the latest information from the certificate/headers
             http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-            // Pull certificate information from X509 certificates and/or headers
-            http.addFilterBefore(proxiedX509Filter, X509AuthenticationFilter.class);
-            // Allow JWT header authentication too
-            http.addFilterBefore(jwtFilter, ProxiedEntityX509Filter.class);
+            // Extract principal information from incoming certificates so that we can limit access to specific DNs
+            http.addFilterBefore(allowedCallersFilter, X509AuthenticationFilter.class);
+            // Allow JWT authentication
+            http.addFilterAfter(jwtFilter, AllowedCallersFilter.class);
             SpringBootWebSecurityConfiguration.configureHeaders(http.headers(), security.getHeaders());
         }
     }
     
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        PreAuthenticatedAuthenticationProvider provider = new PreAuthenticatedAuthenticationProvider();
-        provider.setPreAuthenticatedUserDetailsService(authenticationUserDetailsService);
         auth.authenticationProvider(jwtAuthenticationProvider);
-        auth.authenticationProvider(provider);
+    }
+    
+    protected AuthenticationEntryPoint getAuthenticationEntryPoint() {
+        return authenticationEntryPoint;
     }
     
     private RequestMatcher getRequestMatcher() {
