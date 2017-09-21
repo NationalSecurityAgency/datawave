@@ -45,7 +45,6 @@ public class UndertowCustomizer implements EmbeddedServletContainerCustomizer, A
         final UndertowEmbeddedServletContainerFactory undertowContainer = (UndertowEmbeddedServletContainerFactory) container;
         
         serverProperties = applicationContext.getBean(DatawaveServerProperties.class);
-        serverProperties.getError().setPath(null);
         
         // Replace the port with the secure port if we're using SSL, and save the original non-secure port in case we're configuring that later.
         final int nonSecurePort = serverProperties.getPort();
@@ -71,8 +70,8 @@ public class UndertowCustomizer implements EmbeddedServletContainerCustomizer, A
             undertowContainer.addBuilderCustomizers(c -> c.setServerOption(UndertowOptions.ENABLE_HTTP2, true));
         }
         
+        // @formatter:off
         undertowContainer.addBuilderCustomizers(c -> {
-            // @formatter:off
             // Tell XNIO to use Daemon threads (works around a bug where the VM won't exit if there's an error during undertow startup)
             c.setWorkerOption(Options.THREAD_DAEMON, true);
 
@@ -81,7 +80,7 @@ public class UndertowCustomizer implements EmbeddedServletContainerCustomizer, A
                 String host = undertowContainer.getAddress() == null ? "0.0.0.0" : undertowContainer.getAddress().getHostAddress();
                 c.addHttpListener(nonSecurePort, host);
             }
-            // @formatter:on
-                    });
+        });
+        // @formatter:on
     }
 }

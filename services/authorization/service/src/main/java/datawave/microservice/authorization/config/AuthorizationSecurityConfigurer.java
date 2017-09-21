@@ -5,7 +5,6 @@ import datawave.microservice.authorization.jwt.JWTAuthenticationProvider;
 import datawave.microservice.authorization.preauth.ProxiedEntityX509Filter;
 import datawave.microservice.config.security.JWTSecurityConfigurer;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -35,23 +34,19 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 @EnableCaching
 @EnableGlobalMethodSecurity(prePostEnabled = true, jsr250Enabled = true)
 public class AuthorizationSecurityConfigurer extends JWTSecurityConfigurer {
-    private final ServerProperties serverProperties;
     private final DatawaveSecurityProperties securityProperties;
     private final AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService;
     
-    public AuthorizationSecurityConfigurer(ServerProperties serverProperties, DatawaveSecurityProperties securityProperties,
+    public AuthorizationSecurityConfigurer(DatawaveSecurityProperties securityProperties,
                     AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService,
                     JWTAuthenticationProvider jwtAuthenticationProvider) {
         super(securityProperties, jwtAuthenticationProvider);
-        this.serverProperties = serverProperties;
         this.securityProperties = securityProperties;
         this.authenticationUserDetailsService = authenticationUserDetailsService;
     }
     
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        
-        serverProperties.getError().setPath(null);
         
         super.configure(http);
         
