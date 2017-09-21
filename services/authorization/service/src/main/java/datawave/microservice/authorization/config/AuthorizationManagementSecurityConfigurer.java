@@ -40,6 +40,7 @@ public class AuthorizationManagementSecurityConfigurer extends ManagementSecurit
         ProxiedEntityX509Filter proxiedX509Filter = new ProxiedEntityX509Filter(securityProperties.isProxiedEntitiesRequired(),
                         securityProperties.isIssuersRequired(), getAuthenticationEntryPoint());
         proxiedX509Filter.setAuthenticationManager(authenticationManager());
+        proxiedX509Filter.setContinueFilterChainOnUnsuccessfulAuthentication(false);
         http.addFilterAfter(proxiedX509Filter, JWTAuthenticationFilter.class);
     }
     
