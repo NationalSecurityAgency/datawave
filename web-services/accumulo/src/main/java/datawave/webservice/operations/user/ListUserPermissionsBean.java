@@ -7,8 +7,10 @@ import datawave.webservice.response.ListUserPermissionsResponse;
 import datawave.webservice.response.objects.UserPermissions;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.security.NamespacePermission;
 import org.apache.accumulo.core.security.SystemPermission;
 import org.apache.accumulo.core.security.TablePermission;
 import org.apache.log4j.Logger;
@@ -91,9 +93,23 @@ public class ListUserPermissionsBean {
                     }
                 }
             }
+            
+            List<datawave.webservice.response.objects.NamespacePermission> namespacePermissions = new ArrayList<>();
+            NamespaceOperations nops = connection.namespaceOperations();
+            SortedSet<String> namespaces = nops.list();
+            NamespacePermission[] allNamespacePerms = NamespacePermission.values();
+            for (String next : namespaces) {
+                for (NamespacePermission nextPerm : allNamespacePerms) {
+                    if (ops.hasNamespacePermission(userName, next, nextPerm)) {
+                        namespacePermissions.add(new datawave.webservice.response.objects.NamespacePermission(next, nextPerm.name()));
+                    }
+                }
+            }
+            
             UserPermissions userPermissions = new UserPermissions();
             userPermissions.setSystemPermissions(systemPermissions);
             userPermissions.setTablePermissions(tablePermissions);
+            userPermissions.setNamespacePermissions(namespacePermissions);
             response.setUserPermissions(userPermissions);
             
             return response;
