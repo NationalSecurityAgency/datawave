@@ -18,6 +18,10 @@
             <artifactId>jackson-datatype-guava</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.spotify</groupId>
+            <artifactId>dns</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils-core</artifactId>
         </dependency>

@@ -16,10 +16,19 @@ import java.util.concurrent.TimeUnit;
 public class DatawaveSecurityProperties extends SecurityProperties {
     @NestedConfigurationProperty
     private final Jwt jwt = new Jwt();
+    private boolean useTrustedSubjectHeaders;
     private boolean proxiedEntitiesRequired;
     private boolean issuersRequired;
     private boolean enforceAllowedCallers = true;
     private List<String> allowedCallers = new ArrayList<>();
+    
+    public boolean isUseTrustedSubjectHeaders() {
+        return useTrustedSubjectHeaders;
+    }
+    
+    public void setUseTrustedSubjectHeaders(boolean useTrustedSubjectHeaders) {
+        this.useTrustedSubjectHeaders = useTrustedSubjectHeaders;
+    }
     
     public boolean isProxiedEntitiesRequired() {
         return proxiedEntitiesRequired;

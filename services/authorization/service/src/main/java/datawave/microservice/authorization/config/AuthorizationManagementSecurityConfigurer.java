@@ -37,8 +37,8 @@ public class AuthorizationManagementSecurityConfigurer extends ManagementSecurit
         
         // The parent configures JWT-based security. Add an additional filter here to allow authentication based on the
         // X-ProxiedEntitiesChain/X-ProxiedIssuersChain headers that are supplied by trusted callers.
-        ProxiedEntityX509Filter proxiedX509Filter = new ProxiedEntityX509Filter(securityProperties.isProxiedEntitiesRequired(),
-                        securityProperties.isIssuersRequired(), getAuthenticationEntryPoint());
+        ProxiedEntityX509Filter proxiedX509Filter = new ProxiedEntityX509Filter(securityProperties.isUseTrustedSubjectHeaders(),
+                        securityProperties.isProxiedEntitiesRequired(), securityProperties.isIssuersRequired(), getAuthenticationEntryPoint());
         proxiedX509Filter.setAuthenticationManager(authenticationManager());
         proxiedX509Filter.setContinueFilterChainOnUnsuccessfulAuthentication(false);
         http.addFilterAfter(proxiedX509Filter, JWTAuthenticationFilter.class);

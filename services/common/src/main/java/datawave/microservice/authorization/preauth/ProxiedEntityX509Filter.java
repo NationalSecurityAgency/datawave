@@ -28,17 +28,26 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Allows authorization based on a supplied X.509 client certificate and proxied entities/issuers named in headers.
+ * Allows authorization based on a supplied X.509 client certificate (or information from trusted headers) and proxied entities/issuers named in headers.
+ * <p>
+ * If constructed to allow trusted subject headers, and no X.509 certificate is available in the request, this filter will look for the certificate information
+ * in trusted headers {@value #SUBJECT_DN_HEADER} and {@value #ISSUER_DN_HEADER}. If a load balancer is trusted to terminate incoming SSL connections and
+ * extract the client certificate information into headers, this method of authentication can be used.
  */
 public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingFilter {
+    public static final String SUBJECT_DN_HEADER = "X-SSL-clientcert-subject";
+    public static final String ISSUER_DN_HEADER = "X-SSL-clientcert-issuer";
     public static final String ENTITIES_HEADER = "X-ProxiedEntitiesChain";
     public static final String ISSUERS_HEADER = "X-ProxiedIssuersChain";
     
+    private final boolean useTrustedSubjectHeaders;
     private final boolean requireProxiedEntities;
     private final boolean requireIssuers;
     private final AuthenticationEntryPoint authenticationEntryPoint;
     
-    public ProxiedEntityX509Filter(boolean requireProxiedEntities, boolean requireIssuers, AuthenticationEntryPoint authenticationEntryPoint) {
+    public ProxiedEntityX509Filter(boolean useTrustedSubjectHeaders, boolean requireProxiedEntities, boolean requireIssuers,
+                    AuthenticationEntryPoint authenticationEntryPoint) {
+        this.useTrustedSubjectHeaders = useTrustedSubjectHeaders;
         this.requireProxiedEntities = requireProxiedEntities;
         this.requireIssuers = requireIssuers;
         this.authenticationEntryPoint = authenticationEntryPoint;
@@ -62,10 +71,7 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
     
     @Override
     protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
-        X509Certificate cert = extractClientCertificate(request);
-        if (cert == null) {
-            return null;
-        }
+        SubjectIssuerDNPair caller = (SubjectIssuerDNPair) getPreAuthenticatedCredentials(request);
         
         String proxiedSubjects = request.getHeader(ENTITIES_HEADER);
         String proxiedIssuers = request.getHeader(ISSUERS_HEADER);
@@ -81,36 +87,48 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
         // Normally, we operate in a mode where an authorized certificate holder calls us on behalf of other entities. However,
         // if we don't require that, then we want to create the principal as though the caller proxied for itself.
         else if (proxiedSubjects == null) {
-            proxiedSubjects = "<" + cert.getSubjectX500Principal().getName() + ">";
-            proxiedIssuers = "<" + cert.getIssuerX500Principal().getName() + ">";
+            proxiedSubjects = "<" + caller.subjectDN() + ">";
+            proxiedIssuers = "<" + caller.issuerDN() + ">";
         }
         
-        SubjectIssuerDNPair pair = SubjectIssuerDNPair.of(cert.getSubjectX500Principal().getName(), cert.getIssuerX500Principal().getName());
         Set<SubjectIssuerDNPair> proxiedEntities = getSubjectIssuerDNPairs(proxiedSubjects, proxiedIssuers);
         
-        return new ProxiedEntityPreauthPrincipal(pair, proxiedEntities);
+        return new ProxiedEntityPreauthPrincipal(caller, proxiedEntities);
     }
     
     @Override
     protected Object getPreAuthenticatedCredentials(HttpServletRequest request) {
-        return extractClientCertificate(request);
+        String subjectDN = null;
+        String issuerDN = null;
+        X509Certificate cert = extractClientCertificate(request);
+        if (cert != null) {
+            subjectDN = cert.getSubjectX500Principal().getName();
+            issuerDN = cert.getIssuerX500Principal().getName();
+        } else if (useTrustedSubjectHeaders) {
+            subjectDN = request.getHeader(SUBJECT_DN_HEADER);
+            issuerDN = request.getHeader(ISSUER_DN_HEADER);
+        }
+        if (subjectDN == null || issuerDN == null) {
+            return null;
+        } else {
+            return SubjectIssuerDNPair.of(subjectDN, issuerDN);
+        }
     }
     
     @Override
     protected boolean principalChanged(HttpServletRequest request, Authentication currentAuthentication) {
         Object principal = getPreAuthenticatedPrincipal(request);
         
-        if (currentAuthentication.getCredentials() instanceof X509Certificate && currentAuthentication.getPrincipal() instanceof ProxiedUserDetails
+        if (currentAuthentication.getCredentials() instanceof SubjectIssuerDNPair && currentAuthentication.getPrincipal() instanceof ProxiedUserDetails
                         && principal instanceof ProxiedEntityPreauthPrincipal) {
             ProxiedUserDetails curUsr = (ProxiedUserDetails) currentAuthentication.getPrincipal();
             ProxiedEntityPreauthPrincipal preAuthPrincipal = (ProxiedEntityPreauthPrincipal) principal;
-            X509Certificate certificate = (X509Certificate) currentAuthentication.getCredentials();
+            SubjectIssuerDNPair caller = (SubjectIssuerDNPair) currentAuthentication.getCredentials();
             
             List<String> curNames = curUsr.getProxiedUsers().stream().map(DatawaveUser::getName).collect(Collectors.toList());
             List<String> preAuthNames = preAuthPrincipal.getProxiedEntities().stream().map(SubjectIssuerDNPair::toString).collect(Collectors.toList());
             
-            SubjectIssuerDNPair pair = SubjectIssuerDNPair.of(certificate.getSubjectX500Principal().getName(), certificate.getIssuerX500Principal().getName());
-            if (pair.equals(preAuthPrincipal.getCallerPrincipal()) && curNames.equals(preAuthNames)) {
+            if (caller.equals(preAuthPrincipal.getCallerPrincipal()) && curNames.equals(preAuthNames)) {
                 return false;
             }
         } else {

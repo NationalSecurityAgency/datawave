@@ -6,6 +6,9 @@ import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.spotify.dns.DnsSrvResolver;
+import com.spotify.dns.DnsSrvResolvers;
+import com.spotify.dns.LookupResult;
 import datawave.configuration.RefreshableScope;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
@@ -15,18 +18,26 @@ import datawave.webservice.security.JWTTokenHandler;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.jboss.security.JSSESecurityDomain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xbill.DNS.ExtendedResolver;
+import org.xbill.DNS.Lookup;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -35,16 +46,22 @@ import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
 import javax.interceptor.Interceptor;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -70,7 +87,27 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     private JSSESecurityDomain jsseSecurityDomain;
     
     @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.uri", defaultValue = "https://localhost:8543/datawave/")
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.useSrvDnsLookup", defaultValue = "false")
+    private boolean useSrvDNS;
+    
+    @Inject
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.srvDnsServers", defaultValue = "127.0.0.1")
+    private List<String> srvDnsServers;
+    
+    @Inject
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.srvDnsPort", defaultValue = "8600")
+    private int srvDnsPort;
+    
+    @Inject
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.host", defaultValue = "localhost")
+    private String authServiceHost;
+    
+    @Inject
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.port", defaultValue = "8543")
+    private int authServicePort;
+    
+    @Inject
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.uri", defaultValue = "/datawave/")
     private String authServiceURI;
     
     @Inject
@@ -78,8 +115,16 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     private int maxConnections;
     
     @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.retryCount", defaultValue = "3")
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.retryCount", defaultValue = "5")
     private int retryCount;
+    
+    @Inject
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.unavailableRetryCount", defaultValue = "15")
+    private int unavailableRetryCount;
+    
+    @Inject
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.unavailableRetryDelayMS", defaultValue = "2000")
+    private int unavailableRetryDelay;
     
     @Inject
     @Metric(name = "dw.remoteDatawaveUserService.retries", absolute = true)
@@ -89,6 +134,8 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     @Metric(name = "dw.remoteDatawaveUserService.failures", absolute = true)
     private Counter failureCounter;
     
+    private DnsSrvResolver dnsSrvResolver;
+    
     @Override
     @Timed(name = "dw.remoteDatawaveUserService.lookup", absolute = true)
     public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
@@ -96,10 +143,11 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
         final String issuersHeader = "<" + dns.stream().map(SubjectIssuerDNPair::issuerDN).collect(Collectors.joining("><")) + ">";
         // @formatter:off
         String jwtString = executeGetMethodWithAuthorizationException("authorize",
-                uriBuilder -> encodeDNSparams(uriBuilder, dns),
+                uriBuilder -> {},
                 httpGet -> {
                     httpGet.setHeader("X-ProxiedEntitiesChain", enttiesHeader);
                     httpGet.setHeader("X-ProxiedIssuersChain", issuersHeader);
+                    httpGet.setHeader(HttpHeaders.ACCEPT, ContentType.TEXT_PLAIN.getMimeType());
                 },
                 EntityUtils::toString,
                 () -> "lookup " + dns);
@@ -110,33 +158,28 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     @Override
     @Timed(name = "dw.remoteDatawaveUserService.reload", absolute = true)
     public Collection<DatawaveUser> reload(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
+        Base64.Encoder encoder = Base64.getEncoder();
         // @formatter:off
         return executeGetMethodWithAuthorizationException("admin/reloadUsers",
-                uriBuilder -> encodeDNSparams(uriBuilder, dns),
+                // We need to base64 encode each parameter as a work-around since DNs contain
+                // commas, which are used as a separator for a multi-valued parameter.
+                uriBuilder -> dns.stream()
+                                .map(SubjectIssuerDNPair::toString)
+                                .map(s -> encoder.encodeToString(s.getBytes()))
+                                .forEach(s -> uriBuilder.addParameter("dns", s)),
                 httpGet -> {},
                 entity -> datawaveUserListReader.readValue(entity.getContent()),
                 () -> "reload " + dns);
         // @formatter:on
     }
-    
-    private static void encodeDNSparams(URIBuilder uriBuilder, Collection<SubjectIssuerDNPair> dns) {
-        // We need to base64 encode each parameter as a work-around since DNs contain
-        // commas, which are used as a separator for a multi-valued parameter.
-        // @formatter:off
-        Base64.Encoder encoder = Base64.getEncoder();
-        dns.stream()
-                .map(SubjectIssuerDNPair::toString)
-                .map(s -> encoder.encodeToString(s.getBytes()))
-                .forEach(s -> uriBuilder.addParameter("dns", s));
-        // @formatter:on
-    }
-    
+
     @Override
     @Timed(name = "dw.remoteDatawaveUserService.list", absolute = true)
     public DatawaveUser list(String name) {
         // @formatter:off
         return executeGetMethodWithRuntimeException("admin/listUser",
                 uriBuilder -> uriBuilder.addParameter("name", name),
+                httpGet -> {},
                 entity -> datawaveUserReader.readValue(entity.getContent()),
                 () -> "list");
         // @formatter:on
@@ -147,8 +190,8 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     public Collection<? extends DatawaveUser> listAll() {
         // @formatter:off
         return executeGetMethodWithRuntimeException("admin/listUsers",
-                uriBuilder -> {
-                },
+                uriBuilder -> {},
+                httpGet -> {},
                 entity -> datawaveUserListReader.readValue(entity.getContent()),
                 () -> "list all users");
         // @formatter:on
@@ -160,6 +203,7 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
         // @formatter:off
         return executeGetMethodWithRuntimeException("admin/listUsersMatching",
                 uriBuilder -> uriBuilder.addParameter("substring", substring),
+                httpGet -> {},
                 entity -> datawaveUserListReader.readValue(entity.getContent()),
                 () -> "list all users matching " + substring);
         // @formatter:on
@@ -171,6 +215,7 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
         // @formatter:off
         return executeGetMethodWithRuntimeException("admin/evictUser",
                 uriBuilder -> uriBuilder.addParameter("name", name),
+                httpGet -> httpGet.addHeader(HttpHeaders.ACCEPT, ContentType.TEXT_PLAIN.getMimeType()),
                 EntityUtils::toString,
                 () -> "evict " + name);
         // @formatter:on
@@ -182,6 +227,7 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
         // @formatter:off
         return executeGetMethodWithRuntimeException("admin/evictUsersMatching",
                 uriBuilder -> uriBuilder.addParameter("substring", substring),
+                httpGet -> httpGet.addHeader(HttpHeaders.ACCEPT, ContentType.TEXT_PLAIN.getMimeType()),
                 EntityUtils::toString,
                 () -> "evict users matching " + substring);
         // @formatter:on
@@ -191,17 +237,18 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     @Timed(name = "dw.remoteDatawaveUserService.evictAll", absolute = true)
     public String evictAll() {
         // @formatter:off
-        return executeGetMethodWithRuntimeException("admin/evictUsersMatching",
-                b -> {
-                },
+        return executeGetMethodWithRuntimeException("admin/evictAll",
+                b -> {},
+                httpGet -> httpGet.addHeader(HttpHeaders.ACCEPT, ContentType.TEXT_PLAIN.getMimeType()),
                 EntityUtils::toString,
                 () -> "evict all users");
         // @formatter:on
     }
     
-    protected <T> T executeGetMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> params, IOFunction<T> resultConverter, Supplier<String> errorStr) {
+    protected <T> T executeGetMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
+                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
         try {
-            return executeGetMethod(uriSuffix, params, resultConverter, errorStr);
+            return executeGetMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
         } catch (URISyntaxException e) {
             throw new RuntimeException("Invalid URI: " + e.getMessage(), e);
         } catch (IOException e) {
@@ -210,10 +257,10 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
         }
     }
     
-    protected <T> T executeGetMethodWithAuthorizationException(String uriSuffix, Consumer<URIBuilder> params, Consumer<HttpGet> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorStr) throws AuthorizationException {
+    protected <T> T executeGetMethodWithAuthorizationException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
+                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws AuthorizationException {
         try {
-            return executeGetMethod(uriSuffix, params, resultConverter, errorStr);
+            return executeGetMethod(uriSuffix, uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
         } catch (URISyntaxException e) {
             throw new AuthorizationException("Invalid URI: " + e.getMessage(), e);
         } catch (IOException e) {
@@ -221,15 +268,25 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
             throw new AuthorizationException(e.getMessage(), e);
         }
     }
-    
-    protected <T> T executeGetMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, IOFunction<T> resultConverter, Supplier<String> errorSupplier)
-                    throws URISyntaxException, IOException {
-        return executeGetMethod(uriSuffix, uriCustomizer, httpGet -> {}, resultConverter, errorSupplier);
-    }
-    
+
     protected <T> T executeGetMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
                     Supplier<String> errorSupplier) throws URISyntaxException, IOException {
-        URIBuilder builder = new URIBuilder(authServiceURI + uriSuffix);
+        URIBuilder builder = new URIBuilder();
+        builder.setScheme("https");
+        if (useSrvDNS) {
+            List<LookupResult> results = dnsSrvResolver.resolve(authServiceHost);
+            if (results != null && !results.isEmpty()) {
+                LookupResult result = results.get(0);
+                builder.setHost(result.host());
+                builder.setPort(result.port());
+            } else {
+                throw new IllegalArgumentException("Unable to resolve auth service host: " + authServiceHost);
+            }
+        } else {
+            builder.setHost(authServiceHost);
+            builder.setPort(authServicePort);
+        }
+        builder.setPath(authServiceURI + uriSuffix);
         uriCustomizer.accept(builder);
         HttpGet getRequest = new HttpGet(builder.build());
         requestCustomizer.accept(getRequest);
@@ -249,6 +306,20 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
         datawaveUserReader = objectMapper.readerFor(DatawaveUser.class);
         datawaveUserListReader = objectMapper.readerFor(objectMapper.getTypeFactory().constructCollectionType(Collection.class, DatawaveUser.class));
         
+        if (useSrvDNS) {
+            if (srvDnsServers != null && !srvDnsServers.isEmpty()) {
+                try {
+                    ExtendedResolver resolver = new ExtendedResolver(srvDnsServers.toArray(new String[srvDnsServers.size()]));
+                    resolver.setLoadBalance(true);
+                    resolver.setPort(srvDnsPort);
+                    Lookup.setDefaultResolver(resolver);
+                } catch (UnknownHostException e) {
+                    throw new IllegalArgumentException("Unable to resolve SRV DNS hosts: " + srvDnsServers + ": " + e.getMessage(), e);
+                }
+            }
+            dnsSrvResolver = DnsSrvResolvers.newBuilder().build();
+        }
+        
         try {
             SSLContext ctx = SSLContext.getInstance("TLSv1.2");
             ctx.init(jsseSecurityDomain.getKeyManagers(), jsseSecurityDomain.getTrustManagers(), null);
@@ -264,8 +335,10 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
             client = HttpClients.custom()
                     .setSSLContext(ctx)
                     .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                    .setDefaultHeaders(Collections.singletonList(new BasicHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType())))
                     .setMaxConnTotal(maxConnections)
-                    .setRetryHandler(new RemoteAuthRetryHandler(retryCount, false, retryCounter))
+                    .setRetryHandler(new DatawaveRetryHandler(retryCount, unavailableRetryCount, unavailableRetryDelay, retryCounter))
+                    .setServiceUnavailableRetryStrategy(new DatawaveUnavailableRetryStrategy(unavailableRetryCount, unavailableRetryDelay, retryCounter))
                     .build();
             // @formatter:on
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -286,17 +359,53 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
         }
     }
     
-    private static class RemoteAuthRetryHandler extends DefaultHttpRequestRetryHandler {
-        private Counter retryCounter;
+    private static class DatawaveRetryHandler extends DefaultHttpRequestRetryHandler {
+        private final int unavailableRetryCount;
+        private final int unavailableRetryDelay;
+        private final Counter retryCounter;
         
-        public RemoteAuthRetryHandler(int retryCount, boolean requestSentRetryEnabled, Counter retryCounter) {
-            super(retryCount, requestSentRetryEnabled);
+        public DatawaveRetryHandler(int retryCount, int unavailableRetryCount, int unavailableRetryDelay, Counter retryCounter) {
+            super(retryCount, false, Arrays.asList(UnknownHostException.class, SSLException.class));
+            this.unavailableRetryCount = unavailableRetryCount;
+            this.unavailableRetryDelay = unavailableRetryDelay;
             this.retryCounter = retryCounter;
         }
         
         @Override
         public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
             boolean shouldRetry = super.retryRequest(exception, executionCount, context);
+            if (exception instanceof ConnectException) {
+                shouldRetry = (executionCount <= unavailableRetryCount);
+                if (shouldRetry) {
+                    try {
+                        Thread.sleep(unavailableRetryDelay);
+                    } catch (InterruptedException e) {
+                        // Ignore -- we'll just end up retrying a little too fast
+                    }
+                }
+            }
+            if (shouldRetry) {
+                retryCounter.inc();
+            }
+            return shouldRetry;
+        }
+    }
+    
+    private static class DatawaveUnavailableRetryStrategy extends DefaultServiceUnavailableRetryStrategy {
+        private final int maxRetries;
+        private final Counter retryCounter;
+        
+        private DatawaveUnavailableRetryStrategy(int maxRetries, int retryInterval, Counter retryCounter) {
+            super(maxRetries, retryInterval);
+            this.maxRetries = maxRetries;
+            this.retryCounter = retryCounter;
+        }
+        
+        @Override
+        public boolean retryRequest(HttpResponse response, int executionCount, HttpContext context) {
+            // Note that a 404 can happen during service startup, so we want to retry.
+            boolean shouldRetry = executionCount <= maxRetries
+                            && (response.getStatusLine().getStatusCode() == HttpStatus.SC_SERVICE_UNAVAILABLE || response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND);
             if (shouldRetry) {
                 retryCounter.inc();
             }
