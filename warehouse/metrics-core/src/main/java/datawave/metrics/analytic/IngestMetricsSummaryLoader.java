@@ -58,7 +58,13 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
      * Convert file latencies into daily metric values.
      */
     private static class IngestMetricsMapper extends Mapper<Key,Value,Key,Value> {
-        private Pattern radixRegex = Pattern.compile("(\\p{Alpha}\\p{Alnum}{4})\\.\\p{Alnum}{5}\\.\\p{Alnum}{5}\\.[1-7]\\.\\p{Alnum}{2}\\..+");
+        
+        /*
+         * TODO: Determine whether this entire file should be removed or refactored, as it is currently not in use and its applicability toward general ingest
+         * usage patterns is somewhat questionable
+         */
+        
+        private Pattern radixRegex = Pattern.compile("TODO: <PATTERN-PLACEHOLDER>");
         private Set<String> processedJobs = new HashSet<>();
         private Scanner ingestScanner;
         private Text holder = new Text();
