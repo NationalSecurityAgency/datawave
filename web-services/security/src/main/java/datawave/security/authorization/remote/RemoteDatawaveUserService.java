@@ -172,7 +172,7 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
                 () -> "reload " + dns);
         // @formatter:on
     }
-
+    
     @Override
     @Timed(name = "dw.remoteDatawaveUserService.list", absolute = true)
     public DatawaveUser list(String name) {
@@ -268,7 +268,7 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
             throw new AuthorizationException(e.getMessage(), e);
         }
     }
-
+    
     protected <T> T executeGetMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
                     Supplier<String> errorSupplier) throws URISyntaxException, IOException {
         URIBuilder builder = new URIBuilder();

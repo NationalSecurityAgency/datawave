@@ -7,6 +7,7 @@ import datawave.microservice.config.security.ManagementSecurityConfigurer;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.ManagementContextResolver;
 import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -17,6 +18,7 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 
 @Order(99)
 @Configuration
+@ConditionalOnProperty(prefix = "management.security", name = "enabled", matchIfMissing = true)
 public class AuthorizationManagementSecurityConfigurer extends ManagementSecurityConfigurer {
     private final DatawaveSecurityProperties securityProperties;
     private final AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService;

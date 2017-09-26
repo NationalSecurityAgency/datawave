@@ -326,6 +326,8 @@
                     <configuration>
                         <!-- Mark the repackaged executable jar with the "exec" classifier -->
                         <classifier>exec</classifier>
+                        <!-- Make the jar fully executable so it can be used as an init.d script -->
+                        <executable>true</executable>
                     </configuration>
                 </plugin>
                 <plugin>
