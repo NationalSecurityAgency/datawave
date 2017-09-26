@@ -54,7 +54,7 @@ public class LogAuditConfig {
     }
     
     @Bean
-    MessageListenerAdapter listenerAdapter(AuditMessageHandler logAuditMessageHandler) {
+    MessageListenerAdapter logAuditListenerAdapter(AuditMessageHandler logAuditMessageHandler) {
         return new MessageListenerAdapter(logAuditMessageHandler, logAuditMessageHandler.LISTENER_METHOD);
     }
 }
