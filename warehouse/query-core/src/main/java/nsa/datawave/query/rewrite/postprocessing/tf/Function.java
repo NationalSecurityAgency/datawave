@@ -3,9 +3,12 @@ package nsa.datawave.query.rewrite.postprocessing.tf;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.google.common.collect.Lists;
+
+import nsa.datawave.query.rewrite.jexl.visitors.PrintingVisitor;
 
 /**
  * Represents a function in a JEXL expression. Functions have a name a list of arguments associated with them. Functions are agnostic with regards to the
@@ -13,9 +16,9 @@ import com.google.common.collect.Lists;
  */
 public class Function {
     private String name;
-    private List<String> args;
+    private List<JexlNode> args;
     
-    public Function(String name, Iterable<String> args) {
+    public Function(String name, Iterable<JexlNode> args) {
         this.name = name;
         this.args = Lists.newArrayList(args);
         this.args = Collections.unmodifiableList(this.args);
@@ -25,7 +28,7 @@ public class Function {
         return name;
     }
     
-    public List<String> args() {
+    public List<JexlNode> args() {
         return args;
     }
     
@@ -33,8 +36,8 @@ public class Function {
     public int hashCode() {
         HashCodeBuilder builder = new HashCodeBuilder();
         builder.append(name);
-        for (String arg : args) {
-            builder.append(arg);
+        for (JexlNode arg : args) {
+            builder.append(PrintingVisitor.formattedQueryString(arg));
         }
         return builder.toHashCode();
     }

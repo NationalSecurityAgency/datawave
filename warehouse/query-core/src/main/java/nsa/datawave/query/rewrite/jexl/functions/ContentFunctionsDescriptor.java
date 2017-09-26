@@ -19,8 +19,6 @@ import nsa.datawave.webservice.query.exception.NotFoundQueryException;
 import nsa.datawave.webservice.query.exception.PreConditionFailedQueryException;
 import nsa.datawave.webservice.query.exception.QueryException;
 
-import nsa.datawave.webservice.query.Query;
-import nsa.datawave.webservice.query.exception.*;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.*;
 
@@ -70,7 +68,7 @@ public class ContentFunctionsDescriptor implements RefactoredJexlFunctionArgumen
             
             // get the cartesian product of all the fields and terms
             MutableBoolean oredFields = new MutableBoolean();
-            Set<String>[] fieldsAndTerms = fieldsAndTerms(termFrequencyFields, indexedFields, contentFields, oredFields);
+            Set<String>[] fieldsAndTerms = fieldsAndTerms(termFrequencyFields, indexedFields, contentFields, oredFields, true);
             if (!fieldsAndTerms[0].isEmpty()) {
                 final JexlNode eq = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
                 
@@ -188,8 +186,13 @@ public class ContentFunctionsDescriptor implements RefactoredJexlFunctionArgumen
             
         }
         
-        @SuppressWarnings("unchecked")
         public Set<String>[] fieldsAndTerms(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields, MutableBoolean oredFields) {
+            return fieldsAndTerms(termFrequencyFields, indexedFields, contentFields, oredFields, false);
+        }
+        
+        @SuppressWarnings("unchecked")
+        public Set<String>[] fieldsAndTerms(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields, MutableBoolean oredFields,
+                        boolean validateFields) {
             
             final String funcName = name;
             
@@ -295,12 +298,15 @@ public class ContentFunctionsDescriptor implements RefactoredJexlFunctionArgumen
                     throw new IllegalArgumentException(qe);
                 }
                 
-                for (String field : fields) {
-                    // upcase the fieldname for testing in case we have not normalized the field names yet. Return the unnormalized fieldname.
-                    if (!termFreqFields.contains(field.toUpperCase())) {
-                        PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_PHRASE_QUERY_NOT_INDEXED,
-                                        MessageFormat.format("Field: {0}", field));
-                        throw new IllegalArgumentException(qe);
+                // moving this validation later in the call stack, since it requires other processing (i.e. apply query model)
+                if (validateFields) {
+                    for (String field : fields) {
+                        // deconstruct & upcase the fieldname for testing in case we have not normalized the field names yet. Return the unnormalized fieldname.
+                        if (!termFreqFields.contains(JexlASTHelper.deconstructIdentifier(field.toUpperCase()))) {
+                            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_PHRASE_QUERY_NOT_INDEXED,
+                                            MessageFormat.format("Field: {0}", field));
+                            throw new IllegalArgumentException(qe);
+                        }
                     }
                 }
                 
