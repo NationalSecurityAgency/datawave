@@ -1,6 +1,7 @@
 package datawave.validation;
 
-import javax.ws.rs.core.MultivaluedMap;
+import java.util.List;
+import java.util.Map;
 
 public interface ParameterValidator {
     
@@ -9,5 +10,5 @@ public interface ParameterValidator {
      * @param parameters
      * @throws IllegalArgumentException
      */
-    void validate(MultivaluedMap<String,String> parameters) throws IllegalArgumentException;
+    void validate(Map<String,List<String>> parameters) throws IllegalArgumentException;
 }

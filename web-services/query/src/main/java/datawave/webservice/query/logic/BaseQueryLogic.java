@@ -1,25 +1,23 @@
 package datawave.webservice.query.logic;
 
-import java.security.Principal;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.commons.collections.iterators.TransformIterator;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
+import java.security.Principal;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private String logicName = "No logicName was set";
@@ -279,7 +277,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
     
     @Override
-    public final void validate(MultivaluedMap<String,String> parameters) throws IllegalArgumentException {
+    public final void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         Set<String> requiredParams = getRequiredQueryParameters();
         for (String required : requiredParams) {
             List<String> values = parameters.get(required);

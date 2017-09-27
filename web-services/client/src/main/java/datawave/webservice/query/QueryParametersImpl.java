@@ -1,19 +1,18 @@
 package datawave.webservice.query;
 
+import com.google.common.base.Preconditions;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import javax.ws.rs.core.MultivaluedMap;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-
-import javax.ws.rs.core.MultivaluedMap;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-
-import com.google.common.base.Preconditions;
+import java.util.Map;
 
 public class QueryParametersImpl implements QueryParameters {
     
@@ -37,7 +36,7 @@ public class QueryParametersImpl implements QueryParameters {
         clear();
     }
     
-    public void validate(MultivaluedMap<String,String> parameters) throws IllegalArgumentException {
+    public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         for (String param : KNOWN_PARAMS) {
             List<String> values = parameters.get(param);
             if (null == values) {

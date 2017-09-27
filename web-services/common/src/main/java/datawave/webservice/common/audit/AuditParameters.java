@@ -7,8 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.MultivaluedMap;
-
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 
@@ -17,6 +15,8 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 import com.google.common.base.Preconditions;
+
+import javax.ws.rs.core.MultivaluedMap;
 import java.util.Collection;
 
 public class AuditParameters implements ParameterValidator {
@@ -40,7 +40,7 @@ public class AuditParameters implements ParameterValidator {
     protected AuditType auditType = null;
     protected ColumnVisibility colviz = null;
     
-    public void validate(MultivaluedMap<String,String> parameters) throws IllegalArgumentException {
+    public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         this.queryDate = new Date();
         for (String param : REQUIRED_PARAMS) {
             List<String> values = parameters.get(param);

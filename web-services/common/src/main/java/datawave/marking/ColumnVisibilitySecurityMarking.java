@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorOrder;
@@ -27,7 +26,7 @@ public class ColumnVisibilitySecurityMarking implements SecurityMarking {
     private String columnVisibility = null;
     
     @Override
-    public void validate(MultivaluedMap<String,String> parameters) throws IllegalArgumentException {
+    public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         List<String> values = parameters.get(VISIBILITY_MARKING);
         if (null == values) {
             throw new IllegalArgumentException("Required parameter " + VISIBILITY_MARKING + " not found");

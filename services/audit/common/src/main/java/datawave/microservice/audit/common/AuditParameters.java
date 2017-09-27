@@ -5,10 +5,9 @@ import datawave.microservice.audit.common.Auditor.AuditType;
 import datawave.validation.ParameterValidator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.core.MultivaluedMap;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,7 +38,7 @@ public class AuditParameters implements ParameterValidator {
     protected AuditType auditType = null;
     protected ColumnVisibility colviz = null;
     
-    public void validate(MultivaluedMap<String,String> parameters) throws IllegalArgumentException {
+    public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         this.queryDate = new Date();
         for (String param : REQUIRED_PARAMS) {
             List<String> values = parameters.get(param);
@@ -146,8 +145,8 @@ public class AuditParameters implements ParameterValidator {
         return map;
     }
     
-    protected static MultivaluedMap<String,Object> parseMessage(Map<String,Object> msg) {
-        MultivaluedMap<String,Object> p = new MultivaluedMapImpl<>();
+    protected static Map<String,List<Object>> parseMessage(Map<String,Object> msg) {
+        Map<String,List<Object>> p = new HashMap<>();
         p.put(USER_DN, Collections.singletonList((Object) msg.get(USER_DN)));
         p.put(QUERY_STRING, Collections.singletonList((Object) msg.get(QUERY_STRING)));
         if (msg.containsKey(QUERY_SELECTORS)) {
@@ -161,15 +160,16 @@ public class AuditParameters implements ParameterValidator {
     
     public AuditParameters fromMap(Map<String,Object> msg) {
         AuditParameters ap = new AuditParameters();
-        MultivaluedMap<String,Object> pObj = parseMessage(msg);
-        // parseMessage returns MultivaluedMap<String,Object> --> convert to a MultivaluedMap<String,Object> for call to validate()
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
+        Map<String,List<Object>> pObj = parseMessage(msg);
+        Map<String,List<String>> p = new HashMap<>();
         for (Map.Entry<String,List<Object>> entry : pObj.entrySet()) {
+            List<String> values = new ArrayList<>();
             for (Object o : entry.getValue()) {
                 if (o instanceof String) {
-                    p.add(entry.getKey(), (String) o);
+                    values.add((String) o);
                 }
             }
+            p.put(entry.getKey(), values);
         }
         ap.validate(p);
         ap.setQueryDate(new Date((long) msg.get(QUERY_DATE)));
