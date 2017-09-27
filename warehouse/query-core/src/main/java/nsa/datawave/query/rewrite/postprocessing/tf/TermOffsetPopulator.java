@@ -260,7 +260,7 @@ public class TermOffsetPopulator {
             
             Set<String> zones = new HashSet<String>();
             if (args.zone() != null) {
-                zones.add(args.zone());
+                zones.addAll(args.zone());
             } else {
                 zones.addAll(contentExpansionFields);
             }
