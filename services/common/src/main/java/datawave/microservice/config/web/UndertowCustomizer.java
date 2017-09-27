@@ -46,26 +46,6 @@ public class UndertowCustomizer implements EmbeddedServletContainerCustomizer, A
         
         serverProperties = applicationContext.getBean(DatawaveServerProperties.class);
         
-        // Replace the port with the secure port if we're using SSL, and save the original non-secure port in case we're configuring that later.
-        final int nonSecurePort = serverProperties.getPort();
-        if (serverProperties.getSsl() != null && serverProperties.getSsl().isEnabled()) {
-            // If the secure port has been set, then we want to use it on the container. If not, then we'll use the default port.
-            if (serverProperties.getSecurePort() != null) {
-                // Override the port on the container. It will create a secured listenerby default if ssl is configured
-                // so we want it to use the secured port.
-                container.setPort(serverProperties.getSecurePort());
-                
-                // If we're only using ssl, then ensure the non-secure port matches the secure port. Other bits of code in the chain
-                // may pull the nonSecurePort and make the assumption that it is the only port in use (i.e., if we're only using ssl
-                // some code assumes the non-secure port is the secure port).
-                if (!serverProperties.isNonSecureEnabled()) {
-                    serverProperties.setPort(serverProperties.getSecurePort());
-                }
-            } else {
-                serverProperties.setSecurePort(nonSecurePort);
-            }
-        }
-        
         if (enableHttp2) {
             undertowContainer.addBuilderCustomizers(c -> c.setServerOption(UndertowOptions.ENABLE_HTTP2, true));
         }
@@ -76,9 +56,10 @@ public class UndertowCustomizer implements EmbeddedServletContainerCustomizer, A
             c.setWorkerOption(Options.THREAD_DAEMON, true);
 
             // If we're using ssl and also want a non-secure listener, then add it here since the parent won't configure both
-            if (serverProperties.getSsl() != null && serverProperties.getSsl().isEnabled() && serverProperties.isNonSecureEnabled()) {
+            if (serverProperties.getSsl() != null && serverProperties.getSsl().isEnabled() && serverProperties.getNonSecurePort() != null &&
+                    serverProperties.getNonSecurePort() >= 0) {
                 String host = undertowContainer.getAddress() == null ? "0.0.0.0" : undertowContainer.getAddress().getHostAddress();
-                c.addHttpListener(nonSecurePort, host);
+                c.addHttpListener(serverProperties.getNonSecurePort(), host);
             }
         });
         // @formatter:on

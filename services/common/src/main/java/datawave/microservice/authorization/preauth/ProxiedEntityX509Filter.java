@@ -72,6 +72,9 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
     @Override
     protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
         SubjectIssuerDNPair caller = (SubjectIssuerDNPair) getPreAuthenticatedCredentials(request);
+        // If there is no certificate or trusted headers specified, then we can't return a pre-authenticated principal
+        if (caller == null)
+            return null;
         
         String proxiedSubjects = request.getHeader(ENTITIES_HEADER);
         String proxiedIssuers = request.getHeader(ISSUERS_HEADER);
