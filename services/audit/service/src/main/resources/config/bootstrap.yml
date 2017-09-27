@@ -2,9 +2,6 @@ spring:
   application:
     name: audit
   cloud:
-    # Disable discovery by default. We'll turn it back on in the consul profile if that profile is enabled.
-    discovery:
-      enabled: false
     config:
       # Disable consul-first config by default. We'll turn it back on in the consul profile if that profile is enabled.
       discovery:
@@ -14,26 +11,28 @@ spring:
       # Give the config server time to start up if it hasn't already
       retry:
         max-attempts: 60
+      uri: '${CONFIG_SERVER_URL:http://configuration:8888}'
 
 ---
 
+# For the dev profile, check localhost for the config server by default and don't use the AMQP bus
 spring:
   profiles: 'dev'
   cloud:
     config:
       uri: '${CONFIG_SERVER_URL:http://localhost:8888}'
+    bus:
+      enabled: false
 
 ---
 
 spring:
   profiles: 'consul'
   cloud:
-    discovery:
-      enabled: true
     config:
       # Use Consul to locate the configuration server and bootstrap app config.
       discovery:
         enabled: true
-      # Give the config server a long time to come up and regiser itself in Consul
+      # Give the config server a long time to come up and register itself in Consul
       retry:
         max-attempts: 120

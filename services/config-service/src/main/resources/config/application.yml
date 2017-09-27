@@ -17,6 +17,8 @@ spring:
     # Disable discovery by default. We'll turn it back on in the consul profile if that profile is enabled.
     discovery:
       enabled: false
+    consul:
+      enabled: false
     config:
       server:
         git:
@@ -24,7 +26,7 @@ spring:
           # Longer timeout since connections might be a bit slow during docker VM startup
           timeout: 10
   rabbitmq:
-    host: ${MESSAGING_SERVER_HOSTNAME:localhost}
+    host: '${MESSAGING_SERVER_HOSTNAME:messaging}'
 
 # Define encryption information so that we can encrypt/decrypt passwords.
 # KEYSTORE_LOCATION should be defined in the environment (or on the command-line with --encrypt.key-store.location=location)
@@ -51,6 +53,10 @@ spring:
           # Override this on the command-line by passing --spring.cloud.config.server.git.uri=file:///path/to/config/repo
           # If you change it to an SSH git URL, then you may need to add --spring.cloud.config.server.git.password=<your_private_key_password> if your private key is encrypted
           uri: 'file:///tmp/microservice-config'
+    bus:
+      enabled: false
+  rabbitmq:
+    host: '${MESSAGING_SERVER_HOSTNAME:localhost}'
 
 encrypt:
   failOnError: true
