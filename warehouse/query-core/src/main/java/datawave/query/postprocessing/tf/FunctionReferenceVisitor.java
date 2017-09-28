@@ -1,14 +1,11 @@
 package datawave.query.postprocessing.tf;
 
-import java.util.Collection;
 import java.util.LinkedList;
 
 import datawave.query.jexl.visitors.BaseVisitor;
 
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -49,50 +46,11 @@ public class FunctionReferenceVisitor extends BaseVisitor {
             int child = 0;
             String namespace = node.jjtGetChild(child++).image;
             String functionName = node.jjtGetChild(child++).image;
-            LinkedList<String> args = Lists.newLinkedList();
+            LinkedList<JexlNode> args = Lists.newLinkedList();
             for (; child < node.jjtGetNumChildren(); ++child) {
-                node.jjtGetChild(child).jjtAccept(this, args);
+                args.add(node.jjtGetChild(child));
             }
             functions.put(namespace, new Function(functionName, args));
-        }
-        return null;
-    }
-    
-    /**
-     * If data is not null and a collection, this method will add the node's image value to the collection.
-     */
-    @Override
-    public Object visit(ASTNumberLiteral node, Object data) {
-        if (data != null && data instanceof Collection) {
-            @SuppressWarnings("unchecked")
-            Collection<String> collection = (Collection<String>) data;
-            collection.add(node.image);
-        }
-        return null;
-    }
-    
-    /**
-     * If data is not null and a collection, this method will add the node's image value to the collection.
-     */
-    @Override
-    public Object visit(ASTStringLiteral node, Object data) {
-        if (data != null && data instanceof Collection) {
-            @SuppressWarnings("unchecked")
-            Collection<String> collection = (Collection<String>) data;
-            collection.add(node.image);
-        }
-        return null;
-    }
-    
-    /**
-     * If data is not null and a collection, this method will add the node's image value to the collection.
-     */
-    @Override
-    public Object visit(ASTIdentifier node, Object data) {
-        if (data != null && data instanceof Collection) {
-            @SuppressWarnings("unchecked")
-            Collection<String> collection = (Collection<String>) data;
-            collection.add(node.image);
         }
         return null;
     }
