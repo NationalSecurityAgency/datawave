@@ -10,7 +10,6 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -18,14 +17,11 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties(AccumuloAuditProperties.class)
-@ConditionalOnProperty(name = "dw.audit.accumulo.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "audit.accumulo.enabled", havingValue = "true")
 public class AccumuloAuditConfig {
     
-    @Autowired
-    AccumuloAuditProperties accumuloAuditProperties;
-    
     @Bean
-    Queue accumuloAuditQueue() {
+    Queue accumuloAuditQueue(AccumuloAuditProperties accumuloAuditProperties) {
         return new Queue(accumuloAuditProperties.getQueueName(), accumuloAuditProperties.isDurable());
     }
     
@@ -35,7 +31,7 @@ public class AccumuloAuditConfig {
     }
     
     @Bean
-    SimpleMessageListenerContainer accumuloAuditContainer(ConnectionFactory connectionFactory, MessageListenerAdapter accumuloAuditListenerAdapter) {
+    SimpleMessageListenerContainer accumuloAuditContainer(AccumuloAuditProperties accumuloAuditProperties, ConnectionFactory connectionFactory, MessageListenerAdapter accumuloAuditListenerAdapter) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         container.setQueueNames(accumuloAuditProperties.getQueueName());

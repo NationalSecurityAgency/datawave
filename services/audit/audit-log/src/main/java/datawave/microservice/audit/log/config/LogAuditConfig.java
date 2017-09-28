@@ -10,7 +10,6 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -18,14 +17,11 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties(LogAuditProperties.class)
-@ConditionalOnProperty(name = "dw.audit.log.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "audit.log.enabled", havingValue = "true")
 public class LogAuditConfig {
     
-    @Autowired
-    LogAuditProperties logAuditProperties;
-    
     @Bean
-    Queue logAuditQueue() {
+    Queue logAuditQueue(LogAuditProperties logAuditProperties) {
         return new Queue(logAuditProperties.getQueueName(), logAuditProperties.isDurable());
     }
     
@@ -35,7 +31,7 @@ public class LogAuditConfig {
     }
     
     @Bean
-    SimpleMessageListenerContainer logAuditContainer(ConnectionFactory connectionFactory, MessageListenerAdapter logAuditListenerAdapter) {
+    SimpleMessageListenerContainer logAuditContainer(LogAuditProperties logAuditProperties, ConnectionFactory connectionFactory, MessageListenerAdapter logAuditListenerAdapter) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         container.setQueueNames(logAuditProperties.getQueueName());

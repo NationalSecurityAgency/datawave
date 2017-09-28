@@ -2,13 +2,13 @@ package datawave.microservice.audit.accumulo.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "dw.audit.accumulo")
+@ConfigurationProperties(prefix = "audit.accumulo")
 public class AccumuloAuditProperties {
     
-    private boolean enabled;
-    private String queueName;
-    private boolean durable;
-    private String tableName;
+    private boolean enabled = true;
+    private String queueName = "AuditAccumulo";
+    private boolean durable = true;
+    private String tableName = "QueryAuditTable";
     
     private Accumulo accumuloConfig = new Accumulo();
     

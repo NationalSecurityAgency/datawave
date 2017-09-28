@@ -11,14 +11,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.hadoop.io.Text;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.TimeUnit;
 
-@EnableConfigurationProperties(AccumuloAuditProperties.class)
 public class AccumuloAuditor implements Auditor {
     
     private SimpleDateFormat formatter = new SimpleDateFormat(Auditor.ISO_8601_FORMAT_STRING);
@@ -26,7 +23,7 @@ public class AccumuloAuditor implements Auditor {
     private Connector connector;
     
     @Autowired
-    AccumuloAuditProperties accumuloAuditProperties;
+    private AccumuloAuditProperties accumuloAuditProperties;
     
     @PostConstruct
     public void init() throws Exception {

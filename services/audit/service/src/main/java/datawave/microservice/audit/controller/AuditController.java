@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.MediaType;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,8 +21,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.security.RolesAllowed;
 
 @RestController
-@RequestMapping(value = "/Common/Auditor", produces = MediaType.APPLICATION_JSON_VALUE)
-@EnableConfigurationProperties(AuditProperties.class)
+@RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 public class AuditController {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     

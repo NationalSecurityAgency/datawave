@@ -2,10 +2,10 @@ package datawave.microservice.audit.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "dw.audit")
+@ConfigurationProperties(prefix = "audit")
 public class AuditProperties {
     
-    private String exchangeName;
+    private String exchangeName = "Auditor";
     
     public String getExchangeName() {
         return exchangeName;

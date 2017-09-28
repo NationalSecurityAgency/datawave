@@ -2,12 +2,12 @@ package datawave.microservice.audit.log.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "dw.audit.log")
+@ConfigurationProperties(prefix = "audit.log")
 public class LogAuditProperties {
     
-    private boolean enabled;
-    private String queueName;
-    private boolean durable;
+    private boolean enabled = true;
+    private String queueName = "AuditLog";
+    private boolean durable = true;
     
     public boolean isEnabled() {
         return enabled;
