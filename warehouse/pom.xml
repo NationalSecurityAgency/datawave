@@ -143,11 +143,6 @@
             </dependency>
             <dependency>
                 <groupId>datawave</groupId>
-                <artifactId>datawave-ingest-configuration</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>datawave</groupId>
                 <artifactId>datawave-ingest-core</artifactId>
                 <version>${project.version}</version>
             </dependency>

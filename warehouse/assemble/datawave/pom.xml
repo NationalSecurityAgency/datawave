@@ -52,10 +52,6 @@
         </dependency>
         <dependency>
             <groupId>datawave</groupId>
-            <artifactId>datawave-ingest-configuration</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>datawave</groupId>
             <artifactId>datawave-ingest-core</artifactId>
         </dependency>
         <dependency>
