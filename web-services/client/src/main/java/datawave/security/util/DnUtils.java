@@ -25,7 +25,9 @@ public class DnUtils {
     
     private static final Properties PROPS = new Properties();
     
-    private static final Pattern SUBJECT_DN_PATTERN = Pattern.compile("(?:^|,)\\s*OU\\s*=\\s*D[0-9]{3}\\s*(?:,|$)", Pattern.CASE_INSENSITIVE);
+    public static final String SUBJECT_DN_PATTERN_PROPERTY = "subject.dn.pattern";
+    
+    private static final Pattern SUBJECT_DN_PATTERN;
     
     private static final Logger log = Logger.getLogger(DnUtils.class);
     
@@ -45,6 +47,16 @@ public class DnUtils {
                     log.warn("Failed to close input stream", e);
                 }
             }
+        }
+        String subjectDnPattern = System.getProperty(SUBJECT_DN_PATTERN_PROPERTY, PROPS.getProperty(SUBJECT_DN_PATTERN_PROPERTY));
+        try {
+            if (null == subjectDnPattern || subjectDnPattern.isEmpty()) {
+                throw new IllegalStateException(SUBJECT_DN_PATTERN_PROPERTY + " property value cannot be null");
+            }
+            SUBJECT_DN_PATTERN = Pattern.compile(subjectDnPattern, Pattern.CASE_INSENSITIVE);
+        } catch (Throwable t) {
+            log.error(SUBJECT_DN_PATTERN_PROPERTY + " = '" + subjectDnPattern + "' could not be compiled", t);
+            throw new RuntimeException(t);
         }
     }
     
@@ -123,57 +135,34 @@ public class DnUtils {
             String[] subjectDNarray = splitProxiedDNs(proxiedSubjectDNs, true);
             String[] issuerDNarray = splitProxiedDNs(proxiedIssuerDNs, true);
             if (subjectDNarray.length != issuerDNarray.length)
-                throw new IllegalArgumentException("Subject and isser DN lists do not have the same number of entries: " + Arrays.toString(subjectDNarray)
+                throw new IllegalArgumentException("Subject and issuer DN lists do not have the same number of entries: " + Arrays.toString(subjectDNarray)
                                 + " vs " + Arrays.toString(issuerDNarray));
-            fillDNlist(dnList, subjects, subjectDNarray, issuerDNarray);
+            for (int i = 0; i < subjectDNarray.length; ++i) {
+                subjectDNarray[i] = normalizeDN(subjectDNarray[i]);
+                if (!subjects.contains(subjectDNarray[i])) {
+                    issuerDNarray[i] = normalizeDN(issuerDNarray[i]);
+                    subjects.add(subjectDNarray[i]);
+                    dnList.add(subjectDNarray[i]);
+                    dnList.add(issuerDNarray[i]);
+                    if (issuerDNarray[i].equalsIgnoreCase(subjectDNarray[i]))
+                        throw new IllegalArgumentException("Subject DN " + issuerDNarray[i] + " was passed as an issuer DN.");
+                    if (SUBJECT_DN_PATTERN.matcher(issuerDNarray[i]).find())
+                        throw new IllegalArgumentException("It appears that a subject DN (" + issuerDNarray[i] + ") was passed as an issuer DN.");
+                }
+            }
         }
         return dnList;
     }
     
     public static String buildNormalizedProxyDN(String subjectDN, String issuerDN, String proxiedSubjectDNs, String proxiedIssuerDNs) {
-        subjectDN = normalizeDN(subjectDN);
-        issuerDN = normalizeDN(issuerDN);
-        List<String> dnList = new ArrayList<String>();
-        HashSet<String> subjects = new HashSet<String>();
-        String subject = subjectDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1");
-        dnList.add(subject);
-        subjects.add(subject);
-        dnList.add(issuerDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1"));
-        if (proxiedSubjectDNs != null) {
-            if (proxiedIssuerDNs == null)
-                throw new IllegalArgumentException("If proxied subject DNs are supplied, then issuer DNs must be supplied as well.");
-            String[] subjectDNarray = splitProxiedDNs(proxiedSubjectDNs, true);
-            String[] issuerDNarray = splitProxiedDNs(proxiedIssuerDNs, true);
-            if (subjectDNarray.length != issuerDNarray.length)
-                throw new IllegalArgumentException("Subject and issuer DN lists do not have the same number of entries: " + Arrays.toString(subjectDNarray)
-                                + " vs " + Arrays.toString(issuerDNarray));
-            fillDNlist(dnList, subjects, subjectDNarray, issuerDNarray);
-        }
-        
         StringBuilder sb = new StringBuilder();
-        for (String escapedDN : dnList) {
+        for (String escapedDN : buildNormalizedDNList(subjectDN, issuerDN, proxiedSubjectDNs, proxiedIssuerDNs)) {
             if (sb.length() == 0)
                 sb.append(escapedDN);
             else
                 sb.append('<').append(escapedDN).append('>');
         }
         return sb.toString();
-    }
-    
-    private static void fillDNlist(List<String> dnList, HashSet<String> subjects, String[] subjectDNarray, String[] issuerDNarray) {
-        for (int i = 0; i < subjectDNarray.length; ++i) {
-            subjectDNarray[i] = normalizeDN(subjectDNarray[i]);
-            if (!subjects.contains(subjectDNarray[i])) {
-                issuerDNarray[i] = normalizeDN(issuerDNarray[i]);
-                subjects.add(subjectDNarray[i]);
-                dnList.add(subjectDNarray[i]);
-                dnList.add(issuerDNarray[i]);
-                if (issuerDNarray[i].equalsIgnoreCase(subjectDNarray[i]))
-                    throw new IllegalArgumentException("Subject DN " + issuerDNarray[i] + " was passed as an issuer DN.");
-                if (SUBJECT_DN_PATTERN.matcher(issuerDNarray[i]).find())
-                    throw new IllegalArgumentException("It appears that a subject DN (" + issuerDNarray[i] + ") was passed as an issuer DN.");
-            }
-        }
     }
     
     public static String getCommonName(String dn) {
@@ -260,7 +249,7 @@ public class DnUtils {
     }
     
     /**
-     * Encapsulates the known/valid NPE OU list, and whatever else is needed for NPE handling Static inner-class, so that injection of the configured OUs is
+     * Encapsulates the known/valid NPE OU list, and whatever else is needed for NPE handling. Static inner-class, so that injection of the configured OUs is
      * only performed on-demand/if needed
      */
     public static class NpeUtils {

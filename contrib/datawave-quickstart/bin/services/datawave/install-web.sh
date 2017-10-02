@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Resolve env.sh
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SERVICES_DIR="$( dirname "${THIS_DIR}" )"
@@ -37,13 +39,12 @@ info "Configuring Wildfly for DataWave..."
 echo
 info "DataWave Web initialized and ready to start..."
 echo
-echo "       Start command: datawaveWebStart"
+echo "       Start command: datawaveWebStart [--debug|-d]"
 echo "        Stop command: datawaveWebStop"
 echo "      Status command: datawaveWebStatus"
-echo "        Test command: datawaveWebTest"
+echo "        Test command: datawaveWebTest [--help|-h] [--verbose|-v] [--no-cleanup|-nc] [--create-expected-responses|-cer]"
 echo "    Redeploy command: datawaveBuildDeploy"
 echo
 info "See \$DW_CLOUD_HOME/bin/services/datawave/bootstrap-web.sh to view/edit commands as needed"
 
 #askYesNo "Would you like to start up DataWave web services?" && datawaveWebStart
-

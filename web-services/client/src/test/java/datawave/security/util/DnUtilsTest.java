@@ -120,7 +120,7 @@ public class DnUtilsTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void testBuildNormalizedProxyDNSubjectDNInIssuer() {
-        DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2", "CN=foo,OU=D000");
+        DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2", "CN=foo,OU=My Department");
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -145,7 +145,7 @@ public class DnUtilsTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void testBuildNormalizedDNListSubjectDNInIssuer() {
-        DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2", "CN=foo,OU=D000");
+        DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2", "CN=foo,OU=My Department");
     }
     
 }

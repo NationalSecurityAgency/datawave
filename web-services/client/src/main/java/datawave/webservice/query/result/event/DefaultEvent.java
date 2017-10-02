@@ -57,7 +57,12 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
     }
     
     public void setMarkings(Map<String,String> markings) {
-        super.setMarkings(new HashMap<String,String>(markings));
+        if (null != markings) {
+            this.markings = new HashMap<String,String>(markings);
+        } else {
+            this.markings = null;
+        }
+        super.setMarkings(this.markings);
     }
     
     public Metadata getMetadata() {

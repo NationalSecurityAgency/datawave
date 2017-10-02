@@ -39,7 +39,13 @@ public class FileByteSummaryLoader extends Configured implements Tool {
     
     private static class FileByteMetricsMapper extends Mapper<Key,Value,Key,Value> {
         Text holder = new Text();
-        private Pattern radixRegex = Pattern.compile("(\\p{Alpha}\\p{Alnum}{4})\\.\\p{Alnum}{5}\\.\\p{Alnum}{5}\\.[1-7]\\.\\p{Alnum}{2}\\..+");
+        
+        /*
+         * TODO: Determine whether this entire file should be removed or refactored, as it is currently not in use and its applicability toward general ingest
+         * usage patterns is somewhat questionable
+         */
+        
+        private Pattern radixRegex = Pattern.compile("TODO: <PATTERN-PLACEHOLDER>");
         
         @Override
         protected void map(Key key, Value value, Context context) throws IOException, InterruptedException {

@@ -30,6 +30,11 @@
         </dependency>
         <dependency>
             <groupId>datawave</groupId>
+            <artifactId>datawave-ingest-configuration</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>datawave</groupId>
             <artifactId>datawave-metrics-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -164,6 +169,10 @@
             <artifactId>datawave-ws-web-root</artifactId>
             <version>${project.version}</version>
             <type>war</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-vfs2</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>

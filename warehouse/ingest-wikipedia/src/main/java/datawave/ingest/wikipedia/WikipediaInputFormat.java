@@ -20,8 +20,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import datawave.ingest.wikipedia.WikipediaRecordReader;
-
+import datawave.ingest.data.config.DataTypeHelperImpl;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -103,6 +102,17 @@ public class WikipediaInputFormat extends TextInputFormat {
     
     @Override
     public RecordReader<LongWritable,Text> createRecordReader(InputSplit split, TaskAttemptContext context) {
-        return new WikipediaRecordReader();
+        /*
+         * Reader will typically be datawave.ingest.wikipedia.WikipediaRecordReader, but the ingest api allows for other implementations so we'll defer to
+         * ingest config to tell us the concrete class
+         */
+        DataTypeHelperImpl d = new DataTypeHelperImpl();
+        d.setup(context.getConfiguration());
+        RecordReader<LongWritable,Text> reader = (RecordReader<LongWritable,Text>) d.getType().newRecordReader();
+        if (reader == null) {
+            throw new IllegalArgumentException(d.getType().typeName() + " not handled in WikipediaInputFormat");
+        }
+        
+        return reader;
     }
 }
