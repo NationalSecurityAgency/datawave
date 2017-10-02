@@ -5,7 +5,7 @@ services:
       - TCP_PORTS=15672, 5672
       - AUTOCLUSTER_TYPE=consul
       - AUTOCLUSTER_DELAY=60
-      - CONSUL_HOST=consul
+      - CONSUL_HOST=discovery
       - CONSUL_SVC_ADDR_AUTO=true
       - AUTOCLUSTER_CLEANUP=true
       - CLEANUP_WARN_ONLY=false
@@ -24,8 +24,8 @@ services:
 
   discovery:
     image: consul
-    hostname: consul
-    container_name: consul
+    hostname: discovery
+    container_name: discovery
     ports:
       - "8400:8400"
       - "8500:8500"
@@ -38,14 +38,14 @@ services:
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=dev,consul
+      - --spring.cloud.consul.host=discovery
       - --spring.cloud.bus.enabled=true
-      - --spring.cloud.consul.host=consul
-      - --spring.rabbitmq.discovery.enabled=true
-      - --spring.rabbitmq.discovery.failFast=true
+      - --management.health.rabbit.enabled=true
     ports:
       - "8888:8888"
     volumes:
       - ${PWD}/config:/tmp/microservice-config
+      - ${PWD}/config_git_metadata:/tmp/microservice-config/.git
     networks:
       - back
 
@@ -53,8 +53,8 @@ services:
     image: datawave/audit-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=dev,consul
-      - --spring.cloud.bus.enabled=true
+      - --spring.profiles.active=consul
+      - --spring.cloud.consul.host=discovery
     ports:
       - "8080:8080"
     networks:

@@ -43,6 +43,11 @@ public class RabbitDiscoveryConfiguration {
     private HeartbeatMonitor monitor = new HeartbeatMonitor();
     
     @Bean
+    public RabbitDiscoveryProperties rabbitDiscoveryProperties() {
+        return new RabbitDiscoveryProperties();
+    }
+    
+    @Bean
     public RabbitDiscoveryInstanceProvider rabbitDiscoveryInstanceProvider(DiscoveryClient discoveryClient) {
         return new RabbitDiscoveryInstanceProvider(discoveryClient);
     }

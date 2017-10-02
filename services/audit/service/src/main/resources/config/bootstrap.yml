@@ -11,7 +11,8 @@ spring:
       # Give the config server time to start up if it hasn't already
       retry:
         max-attempts: 60
-      uri: '${CONFIG_SERVER_URL:http://configuration:8888}'
+      #Bug? Setting this breaks discovery-first bootstrap.
+      #uri: '${CONFIG_SERVER_URL:http://configuration:8888}'
 
 ---
 

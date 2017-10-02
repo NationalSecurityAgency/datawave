@@ -58,6 +58,12 @@ spring:
   rabbitmq:
     host: '${MESSAGING_SERVER_HOSTNAME:localhost}'
 
+# Disable the RabbitMQ health check in the dev profile (it goes with disabling the AMQP bus)
+management:
+  health:
+    rabbit:
+      enabled: false
+
 encrypt:
   failOnError: true
   key-store:

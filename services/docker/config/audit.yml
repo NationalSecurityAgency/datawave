@@ -1,0 +1,6 @@
+server:
+  port: 8443
+  non-secure-port: 8080
+
+audit:
+  log.enabled: true
