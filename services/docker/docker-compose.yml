@@ -1,6 +1,7 @@
 version: '2.1'
 services:
   messaging:
+    image: pivotalrabbitmq/rabbitmq-autocluster:3.6.12
     environment:
       - TCP_PORTS=15672, 5672
       - AUTOCLUSTER_TYPE=consul
@@ -10,28 +11,23 @@ services:
       - AUTOCLUSTER_CLEANUP=true
       - CLEANUP_WARN_ONLY=false
       - CONSUL_DEREGISTER_AFTER=60
-    networks:
-      - back
-    image: pivotalrabbitmq/rabbitmq-autocluster:3.6.12
     ports:
       - "15672:15672"
     expose:
       - 5672
       - 5671
       - 15671
-    tty: true
-    command: sh -c "sleep 10; rabbitmq-server;"
+    networks:
+      - demo
 
   discovery:
-    image: consul
-    hostname: discovery
-    container_name: discovery
+    image: consul:0.9.3
     ports:
       - "8400:8400"
       - "8500:8500"
       - "8600:53"
     networks:
-      - back
+      - demo
 
   configuration:
     image: datawave/config-service
@@ -47,7 +43,7 @@ services:
       - ${PWD}/config:/tmp/microservice-config
       - ${PWD}/config_git_metadata:/tmp/microservice-config/.git
     networks:
-      - back
+      - demo
 
   audit:
     image: datawave/audit-service
@@ -58,7 +54,7 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - back
+      - demo
 
 networks:
-  back:
+  demo:
