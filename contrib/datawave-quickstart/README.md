@@ -83,7 +83,7 @@ Linux with at least Bash 4x will probably suffice
 
     * An individual service may be started at any time with its associated ` {serviceName}Start ` command
     
-    * Using a DataWave-specific commands such as ` datawaveWebStart ` (for starting DataWave web services in Wildfly) 
+    * Using a DataWave-specific command such as ` datawaveWebStart ` (for starting DataWave web services in Wildfly) 
       will automatically start up any dependencies, if necessary, such as Hadoop, Accumulo, ZooKeeper, etc
 
     * Execute the ` startAll ` command to bring up all services
@@ -120,7 +120,7 @@ at any time to rebuild & deploy DataWave's ingest and web service components
 ### PKI Notes
     
 * Note that DataWave Web is PKI enabled and by default uses the following self-signed materials from
-`{source-root}/web-service-deployment/web-service-ear/src/main/wildfly/overlay/standalone/configuration/certificates/`
+`{source-root}/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/`
 
     * Server Truststore [JKS]: ca.jks
     * Server Keystore [PKCS12]: testServer.p12

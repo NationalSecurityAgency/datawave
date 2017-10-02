@@ -20,7 +20,7 @@ do
              START_INGEST=true
              ;;
           *)
-             echo "Invalid argument to passed to $( basename "$0" ): $arg"
+             echo "Invalid argument passed to $( basename "$0" ): $arg"
              exit 1
     esac
 done

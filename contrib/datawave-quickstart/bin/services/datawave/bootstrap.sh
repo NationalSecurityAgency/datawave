@@ -11,11 +11,11 @@ DW_DATAWAVE_BUILD_PROPERTIES_DIR="${DW_DATAWAVE_DATA_DIR}/build-properties"
 DW_DATAWAVE_BUILD_STATUS_LOG="${DW_DATAWAVE_BUILD_PROPERTIES_DIR}/build-progress.tmp"
 
 DW_DATAWAVE_INGEST_TARBALL="*/datawave-dev-*-dist.tar.gz"
-DW_DATAWAVE_WEB_TARBALL="*/datawave-web-service-*-dev.tar.gz"
+DW_DATAWAVE_WEB_TARBALL="*/datawave-ws-deploy-application-*-dev.tar.gz"
 
-DW_DATAWAVE_KEYSTORE="${DW_DATAWAVE_SOURCE_DIR}/web-service-deployment/web-service-ear/src/main/wildfly/overlay/standalone/configuration/certificates/testServer.p12"
+DW_DATAWAVE_KEYSTORE="${DW_DATAWAVE_SOURCE_DIR}/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testServer.p12"
 DW_DATAWAVE_KEYSTORE_TYPE="PKCS12"
-DW_DATAWAVE_TRUSTSTORE="${DW_DATAWAVE_SOURCE_DIR}/web-service-deployment/web-service-ear/src/main/wildfly/overlay/standalone/configuration/certificates/ca.jks"
+DW_DATAWAVE_TRUSTSTORE="${DW_DATAWAVE_SOURCE_DIR}/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/ca.jks"
 DW_DATAWAVE_TRUSTSTORE_TYPE="JKS"
 
 function createBuildPropertiesDirectory() {
@@ -98,11 +98,16 @@ function setBuildPropertyOverrides() {
       echo "hdfs.site.config.urls=file://${HADOOP_CONF_DIR}/core-site.xml,file://${HADOOP_CONF_DIR}/hdfs-site.xml" >> ${BUILD_PROPERTIES_FILE}
    fi
 
-   # We can override any instances of DW_DATAWAVE_SOURCE_DIR within the config in order to relocate
-   # the deployment, if necessary. For example, this is used when building the datawave-quickstart
-   # Docker image to reorient the deployment under /opt/datawave/ within the container
+   # We can override any instances of DW_DATAWAVE_SOURCE_DIR within the build config in order to relocate
+   # the deployment, if necessary. For example, this is used when building the datawave-quickstart Docker
+   # image to reorient the deployment under /opt/datawave/ within the container
    if [ -n "${DW_ROOT_DIRECTORY_OVERRIDE}" ] ; then
       sed -i "s~${DW_DATAWAVE_SOURCE_DIR}~${DW_ROOT_DIRECTORY_OVERRIDE}~g" ${BUILD_PROPERTIES_FILE}
+   fi
+
+   # As with DW_ROOT_DIRECTORY_OVERRIDE, override JAVA_HOME for the deployment if necessary
+   if [ -n "${DW_JAVA_HOME_OVERRIDE}" ] ; then
+      sed -i "s~\(JAVA_HOME=\).*$~\1${DW_JAVA_HOME_OVERRIDE}~g" ${BUILD_PROPERTIES_FILE}
    fi
 
    # Replace any existing ~/.m2/*/dev.properties file/symlink with our own

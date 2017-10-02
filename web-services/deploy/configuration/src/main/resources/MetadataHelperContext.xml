@@ -40,7 +40,7 @@
         <bean class="org.apache.accumulo.core.security.Authorizations" >
             <constructor-arg>
                 <list>
-                    <value>ALL</value>
+                    <value>${metadatahelper.default.auths}</value>
                 </list>
             </constructor-arg>
         </bean>
