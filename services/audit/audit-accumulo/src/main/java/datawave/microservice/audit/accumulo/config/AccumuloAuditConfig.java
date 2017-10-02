@@ -31,7 +31,8 @@ public class AccumuloAuditConfig {
     }
     
     @Bean
-    SimpleMessageListenerContainer accumuloAuditContainer(AccumuloAuditProperties accumuloAuditProperties, ConnectionFactory connectionFactory, MessageListenerAdapter accumuloAuditListenerAdapter) {
+    SimpleMessageListenerContainer accumuloAuditContainer(AccumuloAuditProperties accumuloAuditProperties, ConnectionFactory connectionFactory,
+                    MessageListenerAdapter accumuloAuditListenerAdapter) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         container.setQueueNames(accumuloAuditProperties.getQueueName());

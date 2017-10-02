@@ -81,3 +81,7 @@ spring:
       # Allow a long time for the Consul agent to become available.
       retry:
         max-attempts: 120
+  rabbitmq:
+    discovery:
+      enabled: true
+      failFast: true

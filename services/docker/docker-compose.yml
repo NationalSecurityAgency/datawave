@@ -1,32 +1,64 @@
-version: '2'
+version: '2.1'
 services:
   messaging:
-    image: rabbitmq:3-management-alpine
+    environment:
+      - TCP_PORTS=15672, 5672
+      - AUTOCLUSTER_TYPE=consul
+      - AUTOCLUSTER_DELAY=60
+      - CONSUL_HOST=consul
+      - CONSUL_SVC_ADDR_AUTO=true
+      - AUTOCLUSTER_CLEANUP=true
+      - CLEANUP_WARN_ONLY=false
+      - CONSUL_DEREGISTER_AFTER=60
+    networks:
+      - back
+    image: pivotalrabbitmq/rabbitmq-autocluster:3.6.12
     ports:
       - "15672:15672"
-      - "5672:5672"
+    expose:
+      - 5672
+      - 5671
+      - 15671
+    tty: true
+    command: sh -c "sleep 10; rabbitmq-server;"
+
+  discovery:
+    image: consul
+    hostname: consul
+    container_name: consul
+    ports:
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:53"
+    networks:
+      - back
 
   configuration:
     image: datawave/config-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=dev
-    environment:
-      MESSAGING_SERVER_HOSTNAME: messaging
+      - --spring.profiles.active=dev,consul
+      - --spring.cloud.bus.enabled=true
+      - --spring.cloud.consul.host=consul
+      - --spring.rabbitmq.discovery.enabled=true
+      - --spring.rabbitmq.discovery.failFast=true
     ports:
       - "8888:8888"
     volumes:
-      - /tmp/microservice-config:/tmp/microservice-config
-    links:
-      - messaging
+      - ${PWD}/config:/tmp/microservice-config
+    networks:
+      - back
 
   audit:
     image: datawave/audit-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=dev
+      - --spring.profiles.active=dev,consul
+      - --spring.cloud.bus.enabled=true
     ports:
       - "8080:8080"
-    links:
-      - messaging
+    networks:
+      - back
 
+networks:
+  back:

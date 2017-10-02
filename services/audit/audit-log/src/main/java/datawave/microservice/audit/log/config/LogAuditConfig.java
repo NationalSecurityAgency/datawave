@@ -31,7 +31,8 @@ public class LogAuditConfig {
     }
     
     @Bean
-    SimpleMessageListenerContainer logAuditContainer(LogAuditProperties logAuditProperties, ConnectionFactory connectionFactory, MessageListenerAdapter logAuditListenerAdapter) {
+    SimpleMessageListenerContainer logAuditContainer(LogAuditProperties logAuditProperties, ConnectionFactory connectionFactory,
+                    MessageListenerAdapter logAuditListenerAdapter) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         container.setQueueNames(logAuditProperties.getQueueName());
