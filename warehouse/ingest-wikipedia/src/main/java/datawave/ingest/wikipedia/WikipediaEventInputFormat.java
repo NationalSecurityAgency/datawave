@@ -5,7 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.wikipedia.WikipediaRecordReader;
+import datawave.ingest.data.config.DataTypeHelperImpl;
+import datawave.ingest.input.reader.AbstractEventRecordReader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.BlockLocation;
@@ -22,9 +23,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 
-/**
- * 
- */
 public class WikipediaEventInputFormat extends SequenceFileInputFormat<LongWritable,RawRecordContainer> {
     static final String NUM_INPUT_FILES = "mapreduce.input.num.files";
     
@@ -83,7 +81,20 @@ public class WikipediaEventInputFormat extends SequenceFileInputFormat<LongWrita
     @Override
     public RecordReader<LongWritable,RawRecordContainer> createRecordReader(InputSplit split, TaskAttemptContext context) {
         return new RecordReader<LongWritable,RawRecordContainer>() {
-            private WikipediaRecordReader rrDelegate = new WikipediaRecordReader();
+            private AbstractEventRecordReader<RawRecordContainer> rrDelegate = null;
+            
+            {
+                /*
+                 * Reader will typically be datawave.ingest.wikipedia.WikipediaRecordReader, but the ingest api allows for other implementations so we'll defer
+                 * to ingest config to tell us the concrete class
+                 */
+                DataTypeHelperImpl d = new DataTypeHelperImpl();
+                d.setup(context.getConfiguration());
+                rrDelegate = (AbstractEventRecordReader<RawRecordContainer>) d.getType().newRecordReader();
+                if (rrDelegate == null) {
+                    throw new IllegalArgumentException(d.getType().typeName() + " not handled in WikipediaEventInputFormat");
+                }
+            }
             
             @Override
             public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
@@ -114,7 +125,6 @@ public class WikipediaEventInputFormat extends SequenceFileInputFormat<LongWrita
             public void close() throws IOException {
                 rrDelegate.close();
             }
-            
         };
     }
 }
