@@ -10,6 +10,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
@@ -18,15 +19,20 @@ import java.util.concurrent.TimeUnit;
 
 public class AccumuloAuditor implements Auditor {
     
+    private Logger log = Logger.getLogger(this.getClass());
+    
     private SimpleDateFormat formatter = new SimpleDateFormat(Auditor.ISO_8601_FORMAT_STRING);
+    
+    private AccumuloAuditProperties accumuloAuditProperties;
     
     private Connector connector;
     
-    @Autowired
-    private AccumuloAuditProperties accumuloAuditProperties;
+    public AccumuloAuditor(AccumuloAuditProperties accumuloAuditProperties) {
+        this.accumuloAuditProperties = accumuloAuditProperties;
+        init();
+    }
     
-    @PostConstruct
-    public void init() throws Exception {
+    private void init() {
         final Accumulo accumulo = accumuloAuditProperties.getAccumuloConfig();
         final BaseConfiguration baseConfiguration = new BaseConfiguration();
         baseConfiguration.setDelimiterParsingDisabled(true); // Silence warnings about multi-value properties
@@ -40,9 +46,11 @@ public class AccumuloAuditor implements Auditor {
                 connector.tableOperations().create(accumuloAuditProperties.getTableName());
         } catch (AccumuloException | AccumuloSecurityException e) {
             if (connector != null)
-                throw new Exception("Unable to create audit table: " + e.getMessage(), e);
+                log.error("Unable to create audit table.", e);
             else
-                throw new Exception("Unable to contact Accumulo: " + e.getMessage(), e);
+                log.error("Unable to contact Accumulo.", e);
+        } catch (TableExistsException e) {
+            log.warn("Accumulo Audit Table [" + accumuloAuditProperties.getTableName() + "] already exists.", e);
         }
     }
     

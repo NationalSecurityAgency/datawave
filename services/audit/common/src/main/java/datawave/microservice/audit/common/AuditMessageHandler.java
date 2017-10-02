@@ -13,12 +13,12 @@ public class AuditMessageHandler {
     
     public static String LISTENER_METHOD = "onMessage";
     
-    private Auditor auditor;
-    
-    @Autowired
     private AuditParameters auditParameters;
     
-    public AuditMessageHandler(Auditor auditor) {
+    private Auditor auditor;
+    
+    public AuditMessageHandler(AuditParameters auditParameters, Auditor auditor) {
+        this.auditParameters = auditParameters;
         this.auditor = auditor;
     }
     

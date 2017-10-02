@@ -1,6 +1,7 @@
 package datawave.microservice.audit.log.config;
 
 import datawave.microservice.audit.common.AuditMessageHandler;
+import datawave.microservice.audit.common.AuditParameters;
 import datawave.microservice.audit.common.Auditor;
 import datawave.microservice.audit.log.LogAuditor;
 import org.springframework.amqp.core.Binding;
@@ -21,17 +22,17 @@ import org.springframework.context.annotation.Configuration;
 public class LogAuditConfig {
     
     @Bean
-    Queue logAuditQueue(LogAuditProperties logAuditProperties) {
+    public Queue logAuditQueue(LogAuditProperties logAuditProperties) {
         return new Queue(logAuditProperties.getQueueName(), logAuditProperties.isDurable());
     }
     
     @Bean
-    Binding logAuditBinding(Queue logAuditQueue, FanoutExchange auditExchange) {
+    public Binding logAuditBinding(Queue logAuditQueue, FanoutExchange auditExchange) {
         return BindingBuilder.bind(logAuditQueue).to(auditExchange);
     }
     
     @Bean
-    SimpleMessageListenerContainer logAuditContainer(LogAuditProperties logAuditProperties, ConnectionFactory connectionFactory,
+    public SimpleMessageListenerContainer logAuditContainer(LogAuditProperties logAuditProperties, ConnectionFactory connectionFactory,
                     MessageListenerAdapter logAuditListenerAdapter) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
@@ -41,17 +42,17 @@ public class LogAuditConfig {
     }
     
     @Bean
-    Auditor logAuditor() {
+    public Auditor logAuditor() {
         return new LogAuditor();
     }
     
     @Bean
-    AuditMessageHandler logAuditMessageHandler(Auditor logAuditor) {
-        return new AuditMessageHandler(logAuditor);
+    public AuditMessageHandler logAuditMessageHandler(AuditParameters auditParameters, Auditor logAuditor) {
+        return new AuditMessageHandler(auditParameters, logAuditor);
     }
     
     @Bean
-    MessageListenerAdapter logAuditListenerAdapter(AuditMessageHandler logAuditMessageHandler) {
+    public MessageListenerAdapter logAuditListenerAdapter(AuditMessageHandler logAuditMessageHandler) {
         return new MessageListenerAdapter(logAuditMessageHandler, logAuditMessageHandler.LISTENER_METHOD);
     }
 }

@@ -25,16 +25,19 @@ import javax.annotation.security.RolesAllowed;
 public class AuditController {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
-    @Autowired
     private AuditProperties auditProperties;
     
-    @Autowired
     private AuditParameters auditParameters;
     
-    @Autowired
     private RabbitTemplate rabbitTemplate;
     
-    @PostConstruct
+    public AuditController(AuditProperties auditProperties, AuditParameters auditParameters, RabbitTemplate rabbitTemplate) {
+        this.auditProperties = auditProperties;
+        this.auditParameters = auditParameters;
+        this.rabbitTemplate = rabbitTemplate;
+        init();
+    }
+    
     private void init() {
         rabbitTemplate.setExchange(auditProperties.getExchangeName());
     }

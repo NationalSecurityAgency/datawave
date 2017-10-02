@@ -2,6 +2,7 @@ package datawave.microservice.audit.accumulo.config;
 
 import datawave.microservice.audit.accumulo.AccumuloAuditor;
 import datawave.microservice.audit.common.AuditMessageHandler;
+import datawave.microservice.audit.common.AuditParameters;
 import datawave.microservice.audit.common.Auditor;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -21,17 +22,17 @@ import org.springframework.context.annotation.Configuration;
 public class AccumuloAuditConfig {
     
     @Bean
-    Queue accumuloAuditQueue(AccumuloAuditProperties accumuloAuditProperties) {
+    public Queue accumuloAuditQueue(AccumuloAuditProperties accumuloAuditProperties) {
         return new Queue(accumuloAuditProperties.getQueueName(), accumuloAuditProperties.isDurable());
     }
     
     @Bean
-    Binding accumuloAuditBinding(Queue accumuloAuditQueue, FanoutExchange auditExchange) {
+    public Binding accumuloAuditBinding(Queue accumuloAuditQueue, FanoutExchange auditExchange) {
         return BindingBuilder.bind(accumuloAuditQueue).to(auditExchange);
     }
     
     @Bean
-    SimpleMessageListenerContainer accumuloAuditContainer(AccumuloAuditProperties accumuloAuditProperties, ConnectionFactory connectionFactory,
+    public SimpleMessageListenerContainer accumuloAuditContainer(AccumuloAuditProperties accumuloAuditProperties, ConnectionFactory connectionFactory,
                     MessageListenerAdapter accumuloAuditListenerAdapter) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
@@ -41,17 +42,17 @@ public class AccumuloAuditConfig {
     }
     
     @Bean
-    Auditor accumuloAuditor() {
-        return new AccumuloAuditor();
+    public Auditor accumuloAuditor(AccumuloAuditProperties accumuloAuditProperties) {
+        return new AccumuloAuditor(accumuloAuditProperties);
     }
     
     @Bean
-    AuditMessageHandler accumuloAuditMessageHandler(Auditor accumuloAuditor) {
-        return new AuditMessageHandler(accumuloAuditor);
+    public AuditMessageHandler accumuloAuditMessageHandler(AuditParameters auditParameters, Auditor accumuloAuditor) {
+        return new AuditMessageHandler(auditParameters, accumuloAuditor);
     }
     
     @Bean
-    MessageListenerAdapter accumuloAuditListenerAdapter(AuditMessageHandler accumuloAuditMessageHandler) {
+    public MessageListenerAdapter accumuloAuditListenerAdapter(AuditMessageHandler accumuloAuditMessageHandler) {
         return new MessageListenerAdapter(accumuloAuditMessageHandler, accumuloAuditMessageHandler.LISTENER_METHOD);
     }
 }
