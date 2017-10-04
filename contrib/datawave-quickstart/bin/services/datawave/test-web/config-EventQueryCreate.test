@@ -29,7 +29,9 @@ runTest
 ################################################################
 # Test /Query/${QUERY_ID}/next endpoint
 
-QUERY_ID="$( printQueryCreateID "${ACTUAL_RESPONSE_BODY}" )"
+setQueryIdFromResponseXml
+
+[ -z "${QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
 
 TEST_ID="EventQueryNext"
 TEST_DESCRIPTION="Gets the first page of results for the EventQueryCreate test"

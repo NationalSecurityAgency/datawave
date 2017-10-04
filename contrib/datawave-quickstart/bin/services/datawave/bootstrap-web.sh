@@ -1,5 +1,6 @@
 
-DW_WILDFLY_DIST_URI="http://download.jboss.org/wildfly/10.1.0.Final/wildfly-10.1.0.Final.tar.gz"
+# You may override DW_WILDFLY_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
+DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-http://download.jboss.org/wildfly/10.1.0.Final/wildfly-10.1.0.Final.tar.gz}"
 DW_WILDFLY_DIST="$( downloadTarball "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" && echo "${tarball}" )"
 DW_WILDFLY_BASEDIR="wildfly-install"
 DW_WILDFLY_SYMLINK="wildfly"
@@ -10,7 +11,7 @@ export PATH="${WILDFLY_HOME}/bin:${PATH}"
 
 DW_DATAWAVE_WEB_CMD_START="( cd "${WILDFLY_HOME}/bin" && nohup ./standalone.sh -c standalone-full.xml & )"
 DW_DATAWAVE_WEB_CMD_START_DEBUG="( cd "${WILDFLY_HOME}/bin" && nohup ./standalone.sh --debug -c standalone-full.xml & )"
-DW_DATAWAVE_WEB_CMD_STOP="datawaveWebIsRunning && [[ ! -z \$DATAWAVE_WEB_PID_LIST ]] && kill -15 \$DATAWAVE_WEB_PID_LIST"
+DW_DATAWAVE_WEB_CMD_STOP="datawaveWebIsRunning && [[ ! -z \$DW_DATAWAVE_WEB_PID_LIST ]] && kill -15 \$DW_DATAWAVE_WEB_PID_LIST"
 
 DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS="pgrep -f 'jboss.home.dir=${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK}'"
 
@@ -22,8 +23,8 @@ DW_DATAWAVE_WEB_VERSION="$( echo "${DW_DATAWAVE_WEB_DIST}" | sed "s/.*\///" | se
 DW_DATAWAVE_WEB_BASEDIR="datawave-web-${DW_DATAWAVE_WEB_VERSION}"
 
 function datawaveWebIsRunning() {
-    DATAWAVE_WEB_PID_LIST="$(eval "${DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS} -d ' '")"
-    [ -z "${DATAWAVE_WEB_PID_LIST}" ] && return 1 || return 0
+    DW_DATAWAVE_WEB_PID_LIST="$(eval "${DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS} -d ' '")"
+    [ -z "${DW_DATAWAVE_WEB_PID_LIST}" ] && return 1 || return 0
 }
 
 function datawaveWebStop() {
@@ -42,7 +43,7 @@ function datawaveWebStop() {
 }
 
 function datawaveWebStatus() {
-    datawaveWebIsRunning && echo "DataWave Web is running. PIDs: ${DATAWAVE_WEB_PID_LIST}" || echo "DataWave Web is not running"
+    datawaveWebIsRunning && echo "DataWave Web is running. PIDs: ${DW_DATAWAVE_WEB_PID_LIST}" || echo "DataWave Web is not running"
 }
 
 function datawaveWebIsInstalled() {
@@ -146,7 +147,7 @@ function datawaveWebStart() {
              echo "    -- Wildfly process not found (${i}/${maxAttempts})"
              ;;
           DATAWAVE_EAR_NOT_DEPLOYED)
-             echo "    +- Wildfly up (${DATAWAVE_WEB_PID_LIST}). EAR deployment pending (${i}/${maxAttempts})"
+             echo "    +- Wildfly up (${DW_DATAWAVE_WEB_PID_LIST}). EAR deployment pending (${i}/${maxAttempts})"
              ;;
        esac
        sleep $pollInterval

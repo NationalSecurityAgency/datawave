@@ -2,16 +2,23 @@
 
 DW_JAVA_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-DW_JAVA_DIST_URI="file://${DW_JAVA_SERVICE_DIR}/jdk-8-linux-x64.tar.gz"
+# You may override DW_JAVA_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
+DW_JAVA_DIST_URI="${DW_JAVA_DIST_URI:-http://Doesnt-matter.See-the-downloadOracleJava8Tarball-method/jdk-8-linux-x64.tar.gz}"
 DW_JAVA_DIST="$( basename "${DW_JAVA_DIST_URI}" )"
 DW_JAVA_BASEDIR="jdk-8-linux-x64"
 DW_JAVA_SYMLINK="java"
 
 function bootstrapEmbeddedJava() {
-    [ ! -f "${DW_JAVA_SERVICE_DIR}/${DW_JAVA_DIST}" ] \
-    && info "JDK 1.8 was not detected. Attempting to bootstrap a dedicated install..." \
-    && downloadOracleJava8Tarball "${DW_JAVA_DIST}" "${DW_JAVA_SERVICE_DIR}"
-
+    if [ ! -f "${DW_JAVA_SERVICE_DIR}/${DW_JAVA_DIST}" ] ; then
+        info "JDK 1.8 was not detected. Attempting to bootstrap a dedicated install..."
+        if [[ "${DW_JAVA_DIST_URI}" == file:///* && -f "${DW_JAVA_DIST_URI#file://}" ]] ; then
+            # We're configured for a local tarball copy
+            downloadTarball "${DW_JAVA_DIST_URI}" "${DW_JAVA_SERVICE_DIR}"
+        else
+            # We'll need to grab one remotely from Oracle
+            downloadOracleJava8Tarball "${DW_JAVA_DIST}" "${DW_JAVA_SERVICE_DIR}"
+        fi
+    fi
     export JAVA_HOME="${DW_CLOUD_HOME}/${DW_JAVA_SYMLINK}"
     export PATH="${JAVA_HOME}/bin:${PATH}"
 }
@@ -84,6 +91,10 @@ function javaPrintenv() {
    echo
    ( set -o posix ; set ) | grep "JAVA_"
    echo
+}
+
+function javaPidList() {
+   return 0 # No op
 }
 
 # Eager-loading here since Java is a common dependency for everything,

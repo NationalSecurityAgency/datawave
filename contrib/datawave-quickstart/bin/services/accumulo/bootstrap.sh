@@ -13,7 +13,9 @@
 DW_ACCUMULO_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Zookeeper config
-DW_ZOOKEEPER_DIST_URI="http://archive.cloudera.com/cdh5/cdh/5/zookeeper-3.4.5-cdh5.9.1.tar.gz"
+
+# You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
+DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-http://archive.cloudera.com/cdh5/cdh/5/zookeeper-3.4.5-cdh5.9.1.tar.gz}"
 DW_ZOOKEEPER_DIST="$( downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ZOOKEEPER_BASEDIR="zookeeper-install"
 DW_ZOOKEEPER_SYMLINK="zookeeper"
@@ -27,7 +29,9 @@ dataDir=${DW_CLOUD_DATA}/zookeeper
 maxClientCnxns=100"
 
 # Accumulo config
-DW_ACCUMULO_DIST_URI="http://apache.cs.utah.edu/accumulo/1.8.1/accumulo-1.8.1-bin.tar.gz"
+
+# You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
+DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-http://apache.cs.utah.edu/accumulo/1.8.1/accumulo-1.8.1-bin.tar.gz}"
 DW_ACCUMULO_DIST="$( downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
 DW_ACCUMULO_SYMLINK="accumulo"
@@ -71,8 +75,11 @@ DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./stop-all.sh )"
 DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -f 'o.start.Main master|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
 
 function accumuloIsRunning() {
-    ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS} -d ' '")"
-    [ -z "${ACCUMULO_PID_LIST}" ] && return 1 || return 0
+    DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS} -d ' '")"
+
+    zookeeperIsRunning
+
+    [[ -z "${DW_ACCUMULO_PID_LIST}" && -z "${DW_ZOOKEEPER_PID_LIST}" ]] && return 1 || return 0
 }
 
 function accumuloStart() {
@@ -92,13 +99,12 @@ function accumuloStart() {
 }
 
 function accumuloStop() {
-    accumuloIsRunning && eval "${DW_ACCUMULO_CMD_STOP}" || echo "Accumulo is already stopped"
+    accumuloIsRunning && [ ! -z "${DW_ACCUMULO_PID_LIST}" ] && eval "${DW_ACCUMULO_CMD_STOP}" || echo "Accumulo is already stopped"
     zookeeperStop
 }
 
 function accumuloStatus() {
-    accumuloIsRunning && echo "Accumulo is running. PIDs: ${ACCUMULO_PID_LIST}" || echo "Accumulo is not running"
-    zookeeperStatus
+    accumuloIsRunning && echo "Accumulo is running. PIDs: ${DW_ACCUMULO_PID_LIST} ${DW_ZOOKEEPER_PID_LIST}" || echo "Accumulo is not running"
 }
 
 function accumuloUninstall() {
@@ -150,8 +156,8 @@ function accumuloIsInstalled() {
 }
 
 function zookeeperIsRunning() {
-    ZOOKEEPER_PID_LIST="$(eval "${DW_ZOOKEEPER_CMD_FIND_ALL_PIDS} -d ' '")"
-    [ -z "${ZOOKEEPER_PID_LIST}" ] && return 1 || return 0
+    DW_ZOOKEEPER_PID_LIST="$(eval "${DW_ZOOKEEPER_CMD_FIND_ALL_PIDS} -d ' '")"
+    [ -z "${DW_ZOOKEEPER_PID_LIST}" ] && return 1 || return 0
 }
 
 function zookeeperStart() {
@@ -163,7 +169,7 @@ function zookeeperStop() {
 }
 
 function zookeeperStatus() {
-    zookeeperIsRunning && echo "ZooKeeper is running. PIDs: ${ZOOKEEPER_PID_LIST}" || echo "ZooKeeper is not running"
+    zookeeperIsRunning && echo "ZooKeeper is running. PIDs: ${DW_ZOOKEEPER_PID_LIST}" || echo "ZooKeeper is not running"
 }
 
 function accumuloPrintenv() {
@@ -172,4 +178,13 @@ function accumuloPrintenv() {
    echo
    ( set -o posix ; set ) | grep -E "ACCUMULO_|ZOOKEEPER_"
    echo
+}
+
+function accumuloPidList() {
+   # Refresh pid lists
+   accumuloIsRunning
+   zookeeperIsRunning
+   if [[ -n "${DW_ACCUMULO_PID_LIST}" || -n "${DW_ZOOKEEPER_PID_LIST}" ]] ; then
+      echo "${DW_ACCUMULO_PID_LIST} ${DW_ZOOKEEPER_PID_LIST}"
+   fi
 }
