@@ -24,7 +24,7 @@ import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Customizes Spring {@link RestTemplate} instances by using our configured SSL certificate to presenta client certificate whenever asked by remote services.
+ * Customizes Spring {@link RestTemplate} instances by using our configured SSL certificate to present a client certificate whenever asked by remote services.
  */
 @Component
 public class ClientCertRestTemplateCustomizer implements RestTemplateCustomizer {

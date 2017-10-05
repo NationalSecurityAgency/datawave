@@ -27,6 +27,9 @@ public class UndertowCustomizer implements EmbeddedServletContainerCustomizer, A
     @Value("${undertow.enable.http2:true}")
     private boolean enableHttp2;
     
+    @Value("${undertow.thread.daemon:false}")
+    private boolean useDaemonThreads;
+    
     private ApplicationContext applicationContext;
     
     private DatawaveServerProperties serverProperties;
@@ -52,8 +55,10 @@ public class UndertowCustomizer implements EmbeddedServletContainerCustomizer, A
         
         // @formatter:off
         undertowContainer.addBuilderCustomizers(c -> {
-            // Tell XNIO to use Daemon threads (works around a bug where the VM won't exit if there's an error during undertow startup)
-            c.setWorkerOption(Options.THREAD_DAEMON, true);
+            if (useDaemonThreads) {
+                // Tell XNIO to use Daemon threads
+                c.setWorkerOption(Options.THREAD_DAEMON, true);
+            }
 
             // If we're using ssl and also want a non-secure listener, then add it here since the parent won't configure both
             if (serverProperties.getSsl() != null && serverProperties.getSsl().isEnabled() && serverProperties.getNonSecurePort() != null &&
