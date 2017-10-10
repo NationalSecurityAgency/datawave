@@ -3,6 +3,7 @@ package datawave.microservice.audit.log.config;
 import datawave.microservice.audit.common.AuditMessageHandler;
 import datawave.microservice.audit.common.AuditParameters;
 import datawave.microservice.audit.common.Auditor;
+import datawave.microservice.audit.log.LogAuditor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
@@ -28,7 +29,12 @@ public class LogAuditConfig {
             }
         };
     }
-    
+
+    @Bean
+    public Auditor logAuditor() {
+        return new LogAuditor();
+    }
+
     public interface LogAuditBinding {
         String NAME = "logAuditSink";
         

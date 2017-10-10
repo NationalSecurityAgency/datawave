@@ -1,5 +1,6 @@
 package datawave.microservice.audit.accumulo.config;
 
+import datawave.microservice.audit.accumulo.AccumuloAuditor;
 import datawave.microservice.audit.common.AuditMessageHandler;
 import datawave.microservice.audit.common.AuditParameters;
 import datawave.microservice.audit.common.Auditor;
@@ -30,7 +31,12 @@ public class AccumuloAuditConfig {
             }
         };
     }
-    
+
+    @Bean
+    public Auditor accumuloAuditor(AccumuloAuditProperties accumuloAuditProperties) {
+        return new AccumuloAuditor(accumuloAuditProperties);
+    }
+
     public interface AccumuloAuditBinding {
         String NAME = "accumuloAuditSink";
         
