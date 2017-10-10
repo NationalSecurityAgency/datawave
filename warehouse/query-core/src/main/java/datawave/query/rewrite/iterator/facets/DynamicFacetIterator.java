@@ -204,7 +204,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         TypeMetadata typeMetadata = this.getTypeMetadata();
         
         documents = Iterators.transform(doc.iterator(), new Aggregation(this.getTimeFilter(), typeMetadata, compositeMetadata, this.isIncludeGroupingContext(),
-                        false, null));
+                        this.includeRecordId, false, null));
         
         switch (configuration.getType()) {
             case SHARD_COUNT:

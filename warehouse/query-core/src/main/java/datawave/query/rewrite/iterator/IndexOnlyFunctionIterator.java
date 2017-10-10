@@ -143,7 +143,8 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
             final CompositeMetadata compositeMetadata = this.contextCreator.getCompositeMetadata();
             boolean includeGroupingContext = this.contextCreator.isIncludeGroupingContext();
             final TimeFilter timeFilter = this.contextCreator.getTimeFilter();
-            final Aggregation aggregation = new Aggregation(timeFilter, typeMetadata, compositeMetadata, includeGroupingContext, false, null);
+            boolean includeRecordId = this.contextCreator.isIncludeRecordId();
+            final Aggregation aggregation = new Aggregation(timeFilter, typeMetadata, compositeMetadata, includeGroupingContext, includeRecordId, false, null);
             
             // Construct an iterator to build the document. Although the DocumentData will be retrieved from the tf section
             // of the shard table, the IndexOnlyKeyToDocumentData will reformat the entries to "look" like records from standard

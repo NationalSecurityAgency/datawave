@@ -245,9 +245,13 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        if (aggrKey != null) {
+            aggrKey = null;
+            aggrValue = null;
+        }
+        
         // do not want to seek to the middle of a value that should be
         // aggregated...
-        
         Range seekRange = IteratorUtil.maximizeStartKeyTimeStamp(range);
         
         iterator.seek(seekRange, columnFamilies, inclusive);

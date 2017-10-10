@@ -227,6 +227,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     // should we filter out masked values when the user can see the unmasked
     // value
     private boolean filterMaskedValues = true;
+    
+    private boolean includeRecordId = true;
     private boolean includeDataTypeAsField = false;
     private boolean includeHierarchyFields = false;
     private Map<String,String> hierarchyFieldOptions = Collections.emptyMap();
@@ -420,6 +422,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.setMinimumSelectivity(other.getMinimumSelectivity());
         this.setFilterMaskedValues(other.getFilterMaskedValues());
         this.setIncludeDataTypeAsField(other.getIncludeDataTypeAsField());
+        this.setIncludeRecordId(other.getIncludeRecordId());
         this.setIncludeHierarchyFields(other.getIncludeHierarchyFields());
         this.setIncludeGroupingContext(other.getIncludeGroupingContext());
         this.setReducedResponse(other.isReducedResponse());
@@ -864,25 +867,32 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
             // note that if any of these other options are set, then it overrides the settings here
             if (rawDataOnly) {
                 // set the grouping context to trye to ensure we get the full field names
+                this.setIncludeGroupingContext(true);
                 config.setIncludeGroupingContext(true);
                 // set the hierarchy fields to false as they are generated fields
+                this.setIncludeHierarchyFields(false);
                 config.setIncludeHierarchyFields(false);
                 // set the datatype field to false as it is a generated field
+                this.setIncludeDataTypeAsField(false);
                 config.setIncludeDataTypeAsField(false);
+                // do not include the record id
+                this.setIncludeRecordId(false);
+                config.setIncludeRecordId(false);
                 // set the hit list to false as it is a generated field
+                this.setHitList(false);
                 config.setHitList(false);
                 // set the raw types to true to avoid any type transformations of the values
                 config.setRawTypes(true);
-                // not not filter masked values
+                // do not filter masked values
                 this.setFilterMaskedValues(false);
                 config.setFilterMaskedValues(false);
                 // do not reduce the response
                 this.setReducedResponse(false);
                 config.setReducedResponse(false);
                 // clear the content field names to prevent content field transformations (see DocumentTransformer)
-                setContentFieldNames(Collections.EMPTY_LIST);
+                this.setContentFieldNames(Collections.EMPTY_LIST);
                 // clear the model name to avoid field name translations
-                this.modelName = null;
+                this.setModelName(null);
                 config.setModelName(null);
             }
         }
@@ -1077,6 +1087,14 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         String includeDatatypeAsFieldStr = settings.findParameter(QueryParameters.INCLUDE_DATATYPE_AS_FIELD).getParameterValue().trim();
         if (((org.apache.commons.lang.StringUtils.isNotBlank(includeDatatypeAsFieldStr) && Boolean.valueOf(includeDatatypeAsFieldStr)))
                         || (this.getIncludeDataTypeAsField() && !rawDataOnly)) {
+            config.setIncludeDataTypeAsField(true);
+        }
+        
+        // Get the INCLUDE_RECORD_ID spring setting
+        String includeRecordIdStr = settings.findParameter(QueryParameters.INCLUDE_RECORD_ID).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(includeRecordIdStr)) {
+            boolean includeRecordIdBool = Boolean.parseBoolean(includeRecordIdStr) && !rawDataOnly;
+            this.setIncludeRecordId(includeRecordIdBool);
             config.setIncludeDataTypeAsField(true);
         }
         
@@ -1386,6 +1404,14 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     public void setIncludeDataTypeAsField(boolean includeDataTypeAsField) {
         this.includeDataTypeAsField = includeDataTypeAsField;
+    }
+    
+    public boolean getIncludeRecordId() {
+        return includeRecordId;
+    }
+    
+    public void setIncludeRecordId(boolean includeRecordId) {
+        this.includeRecordId = includeRecordId;
     }
     
     public boolean getIncludeHierarchyFields() {

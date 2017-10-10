@@ -73,14 +73,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
     }
     
     public Document(Key key, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata, CompositeMetadata compositeMetadata,
-                    Boolean includeGroupingContext, EventDataQueryFilter attrFilter) {
-        this(key, docKeys, iter, typeMetadata, compositeMetadata, includeGroupingContext, attrFilter, true);
+                    boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter) {
+        this(key, docKeys, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, true);
     }
     
     public Document(Key key, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata, CompositeMetadata compositeMetadata,
-                    Boolean includeGroupingContext, EventDataQueryFilter attrFilter, boolean toKeep) {
+                    boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter, boolean toKeep) {
         this(key, toKeep);
-        this.consumeRawData(key, docKeys, iter, typeMetadata, compositeMetadata, includeGroupingContext, attrFilter);
+        this.consumeRawData(key, docKeys, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter);
     }
     
     @Override
@@ -113,7 +113,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * @return
      */
     public Document consumeRawData(Key docKey, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
-                    CompositeMetadata compositeMetadata, Boolean includeGroupingContext, EventDataQueryFilter attrFilter) {
+                    CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter) {
         invalidateMetadata();
         // extract the sharded time from the dockey if possible
         try {
@@ -140,7 +140,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
         
         // now add the dockeys as attributes
-        Attribute<?> docKeyAttributes = toDocKeyAttributes(docKeys, this.isToKeep(), attrFilter);
+        Attribute<?> docKeyAttributes = toDocKeyAttributes(docKeys, keepRecordId);
         if (docKeyAttributes != null) {
             this.put(DOCKEY_FIELD_NAME, docKeyAttributes);
         }
@@ -151,13 +151,11 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return this;
     }
     
-    public Attribute<?> toDocKeyAttributes(Set<Key> docKeys, boolean isToKeep, Filter attrFilter) {
-        Attributes attributes = new Attributes(isToKeep);
+    public Attribute<?> toDocKeyAttributes(Set<Key> docKeys, boolean keepRecordId) {
+        Attributes attributes = new Attributes(keepRecordId);
         for (Key docKey : docKeys) {
             // if the attribute filter says not to keep it, then don't even create it.
-            if (attrFilter == null || attrFilter.keep(docKey)) {
-                attributes.add(new DocumentKey(docKey, isToKeep()));
-            }
+            attributes.add(new DocumentKey(docKey, keepRecordId));
         }
         if (attributes.size() == 0) {
             return null;
