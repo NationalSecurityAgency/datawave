@@ -51,6 +51,7 @@ public class DatawaveKey {
     
     protected String fieldName = null;
     protected String fieldValue = null;
+    protected String shardId = null;
     protected String dataType = null;
     protected String uid = null;
     
@@ -95,8 +96,10 @@ public class DatawaveKey {
         // over the course of many evolutions the jit compiler should inline these array checks
         // along with the FI check, below.
         if (Arrays.equals(cf, TF_COLUMN_BYTES)) {
+            this.shardId = currentKey.getRow().toString();
             return parseTermFrequency(cq);
         } else if (Arrays.equals(cf, DOCUMENT_COLUMN_BYTES)) {
+            this.shardId = currentKey.getRow().toString();
             return parseDocumentKey(cq);
         } else {
             
@@ -110,6 +113,7 @@ public class DatawaveKey {
             // for the fi, find the last and second to last null byte, then grab that region
             if (WritableComparator.compareBytes(cf, 0, nullIndex, FI_COLUMN_BYTES, 0, FI_COLUMN_BYTES.length) == 0) {
                 // fi column
+                this.shardId = currentKey.getRow().toString();
                 
                 fieldName = new String(cf, nullIndex + 1, cfLength - nullIndex - 1);
                 int uidIndex = -1;
@@ -139,6 +143,7 @@ public class DatawaveKey {
                 
                 // data column
                 if (nullIndex > 0) {
+                    this.shardId = currentKey.getRow().toString();
                     // we have an event column
                     dataType = new String(cf, 0, nullIndex);
                     uid = new String(cf, nullIndex + 1, cfLength - nullIndex - 1);
@@ -173,8 +178,10 @@ public class DatawaveKey {
                     }
                     if (nullIndex < 0)
                         invalidKey = true;
-                    
-                    dataType = new String(cq, nullIndex + 1, cqLength - nullIndex - 1);
+                    else {
+                        shardId = new String(cq, 0, nullIndex);
+                        dataType = new String(cq, nullIndex + 1, cqLength - nullIndex - 1);
+                    }
                     
                     return KeyType.INDEX;
                 }
@@ -194,35 +201,24 @@ public class DatawaveKey {
                 if (uidIndex == -1)
                     uidIndex = i;
                 else {
-                    nullIndex = i + 1;
+                    nullIndex = i;
                 }
                 if (uidIndex > 0 && nullIndex > 0)
                     break;
             }
         }
         
-        int otherIndex = -1;
-        
-        for (int i = cqLength - 1; i >= 0; i--) {
-            if (cq[i] == NULL) {
-                if (otherIndex == -1)
-                    otherIndex = i;
-                break;
-            }
-            
-        }
-        
-        if (otherIndex == -1 || (otherIndex + 1 == nullIndex)) {
+        if (uidIndex == -1 || nullIndex == -1) {
             invalidKey = true;
         } else {
             dataType = new String(cq, 0, uidIndex);
-            uid = new String(cq, uidIndex + 1, (nullIndex - 1 - (uidIndex + 1)));
+            uid = new String(cq, uidIndex + 1, (nullIndex - uidIndex - 1));
+            fieldName = new String(cq, nullIndex + 1, cq.length - nullIndex - 1);
             
             /**
              * These fields don't exist within document fields.
              */
             fieldValue = "";
-            fieldName = "";
             
         }
         
@@ -282,6 +278,17 @@ public class DatawaveKey {
             invalidKey = true;
         
         return KeyType.TERM_OFFSETS;
+    }
+    
+    public String getShardId(boolean ignore) {
+        if (!ignore && invalidKey)
+            throw new RuntimeException("Attempting to access invalid key part");
+        else
+            return shardId;
+    }
+    
+    public String getShardId() {
+        return getShardId(true);
     }
     
     public String getFieldName(boolean ignore) {

@@ -67,7 +67,7 @@ public class ParentQueryIterator extends QueryIterator {
         // no evaluation filter here as this is post evaluation
                         new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, this.equality, null, this.includeHierarchyFields,
                                         this.includeHierarchyFields), new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata,
-                                        this.isIncludeGroupingContext(), this.parentDisableIndexOnlyDocuments, null)));
+                                        this.isIncludeGroupingContext(), this.includeRecordId, this.parentDisableIndexOnlyDocuments, null)));
         
         Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(parentDocuments, new TupleToEntry<Key,Document>());
         retDocuments = Iterators.transform(retDocuments, new ParentQueryIterator.KeepAllFlagSetter());

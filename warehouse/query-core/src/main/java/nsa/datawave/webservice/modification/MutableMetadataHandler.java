@@ -1,23 +1,31 @@
 package nsa.datawave.webservice.modification;
 
+import com.google.common.base.Function;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Multimap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
+import javax.annotation.Nullable;
+import nsa.datawave.core.iterators.FieldIndexDocumentFilter;
 import nsa.datawave.data.ColumnFamilyConstants;
 import nsa.datawave.data.type.Type;
 import nsa.datawave.ingest.protobuf.Uid;
 import nsa.datawave.ingest.protobuf.Uid.List.Builder;
 import nsa.datawave.marking.MarkingFunctions;
+import nsa.datawave.query.data.parsers.DatawaveKey;
+import nsa.datawave.query.data.parsers.DatawaveKey.KeyType;
 import nsa.datawave.query.util.MetadataHelper;
 import nsa.datawave.query.util.MetadataHelperFactory;
 import nsa.datawave.security.util.ScannerHelper;
@@ -34,16 +42,18 @@ import nsa.datawave.webservice.query.runner.QueryExecutorBean;
 import nsa.datawave.webservice.result.BaseQueryResponse;
 import nsa.datawave.webservice.result.DefaultEventQueryResponse;
 import nsa.datawave.webservice.result.GenericResponse;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -162,6 +172,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     protected static final String DESCRIPTION = "Modification service that processes insert, update, and delete requests of event fields for event(s) identified by the shard id, datatype, and event uid.";
     public static final String FIELD_INDEX_PREFIX = "fi\0";
     protected static final String NULL_BYTE = "\0";
+    protected static final String MAX_CHAR = new String(Character.toChars(Character.MAX_CODE_POINT));
     protected static final Value NULL_VALUE = new Value(new byte[0]);
     public static final String HISTORY_PREFIX = "HISTORY_";
     
@@ -171,6 +182,15 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     protected String metadataTableName = null;
     protected MetadataHelperFactory metadataHelperFactory;
     protected MarkingFunctions markingFunctions = null;
+    
+    // a map of event fields to index only/derived fields to enable appropriate deleting of event fields and all derivatives.
+    protected Multimap<String,String> indexOnlyMap = null;
+    
+    // a set of token suffixes to include to enable appropriate deleting of event fields and all derivatives
+    protected Set<String> indexOnlySuffixes = null;
+    
+    // a list of event fields that map to content
+    protected Set<String> contentFields = null;
     
     public String getEventTableName() {
         return eventTableName;
@@ -212,6 +232,36 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         this.markingFunctions = markingFunctions;
     }
     
+    public Multimap<String,String> getIndexOnlyMap() {
+        return indexOnlyMap;
+    }
+    
+    // this is set from a spring configuration wher the value is comma delimited
+    public void setIndexOnlyMap(Map<String,String> map) {
+        this.indexOnlyMap = HashMultimap.create();
+        for (Map.Entry<String,String> entry : map.entrySet()) {
+            for (String value : StringUtils.split(entry.getValue(), ',')) {
+                this.indexOnlyMap.put(entry.getKey(), value.trim());
+            }
+        }
+    }
+    
+    public Set<String> getContentFields() {
+        return contentFields;
+    }
+    
+    public void setContentFields(Set<String> fields) {
+        this.contentFields = fields;
+    }
+    
+    public Set<String> getIndexOnlySuffixes() {
+        return indexOnlySuffixes;
+    }
+    
+    public void setIndexOnlySuffixes(Set<String> suffixes) {
+        this.indexOnlySuffixes = suffixes;
+    }
+    
     public MetadataHelperFactory getMetadataHelperFactory() {
         return metadataHelperFactory;
     }
@@ -234,11 +284,11 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     @Override
     public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths, String user)
                     throws Exception {
-        this.process(con, request, mutableFieldList, userAuths, user, true);
+        this.process(con, request, mutableFieldList, userAuths, user, false, true);
     }
     
     public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths, String user,
-                    boolean insertHistory) throws Exception {
+                    boolean purgeIndex, boolean insertHistory) throws Exception {
         
         DefaultModificationRequest mr = DefaultModificationRequest.class.cast(request);
         
@@ -272,8 +322,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 
                 boolean isIndexed = helper.isIndexed(fieldName, datatypeFilter);
                 boolean isReverseIndexed = helper.isReverseIndexed(fieldName, datatypeFilter);
-                
                 boolean isIndexOnly = helper.getIndexOnlyFields(datatypeFilter).contains(fieldName);
+                boolean isContent = (contentFields != null && contentFields.contains(fieldName));
                 Set<Type<?>> dataTypes = helper.getDatatypesForField(fieldName, Collections.singleton(datatype));
                 
                 if ((isIndexed || isReverseIndexed || isIndexOnly) && (null == dataTypes || dataTypes.size() == 0))
@@ -333,11 +383,11 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     insert(writer, shardId, datatype, eventUid, fieldMarkings, colviz, fieldName, fieldValue, isIndexOnly, isIndexed, isReverseIndexed,
                                     dataTypes, user, MODE.INSERT, origTimestamp + valHistoryCount, insertHistory);
                 } else if (MODE.DELETE.equals(mode)) {
-                    delete(writer, currentEntryList, isIndexOnly, isIndexed, isReverseIndexed, dataTypes, user, MODE.DELETE, origTimestamp + valHistoryCount,
-                                    insertHistory);
+                    delete(writer, con, userAuths, currentEntryList, isIndexOnly, isIndexed, isReverseIndexed, isContent, dataTypes, user, MODE.DELETE,
+                                    origTimestamp + valHistoryCount, purgeIndex, insertHistory);
                 } else {
-                    delete(writer, currentEntryList, isIndexOnly, isIndexed, isReverseIndexed, dataTypes, user, MODE.UPDATE, origTimestamp + valHistoryCount,
-                                    insertHistory);
+                    delete(writer, con, userAuths, currentEntryList, isIndexOnly, isIndexed, isReverseIndexed, isContent, dataTypes, user, MODE.UPDATE,
+                                    origTimestamp + valHistoryCount, purgeIndex, insertHistory);
                     String fieldValue = mr.getFieldValue();
                     Map<String,String> fieldMarkings = mr.getFieldMarkings();
                     String columnVisibility = mr.getColumnVisibility();
@@ -441,7 +491,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         writer.flush();
         
         if (!isIndexOnlyField && insertHistory) {
-            InsertHistory(writer, shardId, datatype, eventUid, viz, fieldName, fieldValue, timestamp, isIndexOnlyField, isIndexed, isReverseIndexed, dataTypes,
+            insertHistory(writer, shardId, datatype, eventUid, viz, fieldName, fieldValue, timestamp, isIndexOnlyField, isIndexed, isReverseIndexed, dataTypes,
                             user, mode);
         }
     }
@@ -465,7 +515,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * @param mode
      * @throws Exception
      */
-    protected void InsertHistory(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, ColumnVisibility viz, String fieldName,
+    protected void insertHistory(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, ColumnVisibility viz, String fieldName,
                     String fieldValue, long timestamp, boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, Set<Type<?>> dataTypes,
                     String user, MODE mode) throws Exception {
         // Capture the fact of the insert in a history element
@@ -498,8 +548,6 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * @param shardId
      * @param datatype
      * @param eventUid
-     * @param cl
-     * @param ac
      * @param fieldName
      * @param fieldValue
      * @param isIndexed
@@ -526,98 +574,119 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     
     /**
      * Delete the current K,V from the event, put in a history element
-     * 
+     *
      * @param writer
      * @param currentEntryList
      * @param isIndexed
      * @param isReverseIndexed
+     * @param isContentField
      * @param dataTypes
      * @param user
      * @param mode
+     * @param ts
+     * @param purgeTokens
+     *            If set true, then this will delete all tokens for a field as well.
+     * @param insertHistory
      * @throws Exception
      */
-    protected void delete(MultiTableBatchWriter writer, List<Pair<Key,Value>> currentEntryList, boolean isIndexOnlyField, boolean isIndexed,
-                    boolean isReverseIndexed, Set<Type<?>> dataTypes, String user, MODE mode, long ts, boolean insertHistory) throws Exception {
+    protected void delete(MultiTableBatchWriter writer, Connector con, Set<Authorizations> userAuths, List<Pair<Key,Value>> currentEntryList,
+                    boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, boolean isContentField, Set<Type<?>> dataTypes, String user,
+                    MODE mode, long ts, boolean purgeTokens, boolean insertHistory) throws Exception {
         
         for (Pair<Key,Value> currentEntry : currentEntryList) {
             
-            String shardId = currentEntry.getFirst().getRow().toString();
+            ColumnVisibility viz = currentEntry.getFirst().getColumnVisibilityParsed();
             
-            ColumnVisibility viz = new ColumnVisibility(currentEntry.getFirst().getColumnVisibility());
+            DatawaveKey key = new DatawaveKey(currentEntry.getFirst());
             
-            // Need to parse current entry differently if this is an FI key that we are deleting.
-            boolean isFIKey = false;
-            if (!currentEntry.getFirst().getColumnFamily().toString().startsWith(FIELD_INDEX_PREFIX)) {} else {
-                isFIKey = true;
-            }
+            String shardId = key.getRow().toString();
             
             long currentEntryTimestamp = currentEntry.getFirst().getTimestamp();
             
-            if (isFIKey) {
+            if (key.getType().equals(KeyType.INDEX_EVENT)) {
                 // Only the delete the fi key
                 Mutation e = new Mutation(currentEntry.getFirst().getRow());
                 e.putDelete(currentEntry.getFirst().getColumnFamily(), currentEntry.getFirst().getColumnQualifier(), viz, currentEntryTimestamp);
                 writer.getBatchWriter(this.getEventTableName()).addMutation(e);
-            } else {
+            } else if (key.getType().equals(KeyType.EVENT)) {
+                Mutation m = new Mutation(key.getFieldName());
                 
-                int idx = currentEntry.getFirst().getColumnFamily().toString().indexOf(NULL_BYTE);
-                String datatype = currentEntry.getFirst().getColumnFamily().toString().substring(0, idx);
-                String eventUid = currentEntry.getFirst().getColumnFamily().toString().substring(idx + 1);
-                
-                idx = currentEntry.getFirst().getColumnQualifier().toString().indexOf(NULL_BYTE);
-                String fieldName = currentEntry.getFirst().getColumnQualifier().toString().substring(0, idx);
-                String fieldValue = currentEntry.getFirst().getColumnQualifier().toString().substring(idx + 1);
-                
-                Mutation m = new Mutation(fieldName);
-                // Decrement the term frequency
-                m.put(ColumnFamilyConstants.COLF_F, new Text(datatype + NULL_BYTE + DateHelper.format(currentEntryTimestamp)), new Value(
+                // Decrement the frequency (metadata table)
+                m.put(ColumnFamilyConstants.COLF_F, new Text(key.getDataType() + NULL_BYTE + DateHelper.format(currentEntryTimestamp)), new Value(
                                 SummingCombiner.VAR_LEN_ENCODER.encode(-1L)));
-                // Remove the field.
-                Mutation e = new Mutation(currentEntry.getFirst().getRow());
-                if (!isIndexOnlyField)
-                    e.putDelete(currentEntry.getFirst().getColumnFamily(), currentEntry.getFirst().getColumnQualifier(), viz, currentEntryTimestamp);
                 
-                if (isIndexed) {
-                    
-                    long tsToDay = (ts / MS_PER_DAY) * MS_PER_DAY;
-                    
-                    // Create a UID object for the Value
-                    Builder uidBuilder = Uid.List.newBuilder();
-                    uidBuilder.setIGNORE(false);
-                    uidBuilder.setCOUNT(-1);
-                    uidBuilder.addUID(eventUid);
-                    Uid.List uidList = uidBuilder.build();
-                    Value val = new Value(uidList.toByteArray());
-                    
-                    for (Type<?> n : dataTypes) {
-                        String indexedValue = n.normalize(fieldValue);
-                        
-                        // Remove the global index entry
-                        Mutation i = new Mutation(indexedValue);
-                        i.put(fieldName, shardId + NULL_BYTE + datatype, viz, tsToDay, val);
-                        writer.getBatchWriter(this.getIndexTableName()).addMutation(i);
-                        
-                        if (isReverseIndexed) {
-                            String reverseIndexedValue = StringUtils.reverse(indexedValue);
-                            // Remove the global reverse index entry
-                            Mutation ri = new Mutation(reverseIndexedValue);
-                            ri.put(fieldName, shardId + NULL_BYTE + datatype, viz, tsToDay, val);
-                            writer.getBatchWriter(this.getReverseIndexTableName()).addMutation(ri);
+                // Remove the event field.
+                Mutation e = new Mutation(currentEntry.getFirst().getRow());
+                if (!isIndexOnlyField) {
+                    e.putDelete(currentEntry.getFirst().getColumnFamily(), currentEntry.getFirst().getColumnQualifier(), viz, currentEntryTimestamp);
+                }
+                
+                // Remove the content column
+                if (isContentField) {
+                    ContentIterable dKeys = getContentKeys(con, this.getEventTableName(), userAuths, shardId, key.getDataType(), key.getUid());
+                    try {
+                        for (Key dKey : dKeys) {
+                            e.putDelete(dKey.getColumnFamily(), dKey.getColumnQualifier(), dKey.getColumnVisibilityParsed(), dKey.getTimestamp());
                         }
-                        // Remove the field index entry
-                        e.putDelete(new Text(FIELD_INDEX_PREFIX + fieldName), new Text(indexedValue + NULL_BYTE + datatype + NULL_BYTE + eventUid), viz,
-                                        currentEntryTimestamp);
+                    } finally {
+                        dKeys.close();
                     }
                 }
-                if (e.size() > 0)
+                
+                long tsToDay = (ts / MS_PER_DAY) * MS_PER_DAY;
+                
+                FieldIndexIterable fiKeys = getFieldIndexKeys(con, this.getEventTableName(), userAuths, shardId, key.getDataType(), key.getUid(),
+                                key.getFieldName(), key.getFieldValue(), dataTypes, purgeTokens);
+                try {
+                    for (Key fiKey : fiKeys) {
+                        // Remove the field index entry
+                        e.putDelete(fiKey.getColumnFamily(), fiKey.getColumnQualifier(), fiKey.getColumnVisibilityParsed(), fiKey.getTimestamp());
+                        
+                        DatawaveKey fiKeyParsed = new DatawaveKey(fiKey);
+                        
+                        // Remove the term frequency entry
+                        e.putDelete(ColumnFamilyConstants.COLF_TF.toString(), fiKeyParsed.getDataType() + NULL_BYTE + fiKeyParsed.getUid() + NULL_BYTE
+                                        + fiKeyParsed.getFieldValue() + NULL_BYTE + fiKeyParsed.getFieldName(), fiKey.getColumnVisibilityParsed(),
+                                        fiKey.getTimestamp());
+                        
+                        // Create a UID object for the Value which will remove this UID
+                        Builder uidBuilder = Uid.List.newBuilder();
+                        uidBuilder.setIGNORE(false);
+                        uidBuilder.setCOUNT(-1);
+                        uidBuilder.addUID(fiKeyParsed.getUid());
+                        Uid.List uidList = uidBuilder.build();
+                        Value val = new Value(uidList.toByteArray());
+                        
+                        // buffer the global indexes cq
+                        String cq = shardId + NULL_BYTE + fiKeyParsed.getDataType();
+                        
+                        // Remove the global index entry by adding the value
+                        Mutation i = new Mutation(fiKeyParsed.getFieldValue());
+                        i.put(fiKeyParsed.getFieldName(), cq, fiKey.getColumnVisibilityParsed(), tsToDay, val);
+                        writer.getBatchWriter(this.getIndexTableName()).addMutation(i);
+                        
+                        // Remove the reverse global index entry
+                        if (isReverseIndexed) {
+                            String reverseIndexedValue = StringUtils.reverse(fiKeyParsed.getFieldValue());
+                            Mutation ri = new Mutation(reverseIndexedValue);
+                            ri.put(fiKeyParsed.getFieldName(), cq, viz, tsToDay, val);
+                            writer.getBatchWriter(this.getReverseIndexTableName()).addMutation(ri);
+                        }
+                    }
+                } finally {
+                    fiKeys.close();
+                }
+                
+                if (e.size() > 0) {
                     writer.getBatchWriter(this.getEventTableName()).addMutation(e);
+                }
+                
                 writer.getBatchWriter(this.getMetadataTableName()).addMutation(m);
                 
                 if (!isIndexOnlyField && insertHistory) {
-                    InsertHistory(writer, shardId, datatype, eventUid, viz, fieldName, fieldValue, ts, isIndexOnlyField, isIndexed, isReverseIndexed,
-                                    dataTypes, user, mode);
+                    insertHistory(writer, shardId, key.getDataType(), key.getUid(), viz, key.getFieldName(), key.getFieldValue(), ts, isIndexOnlyField,
+                                    isIndexed, isReverseIndexed, dataTypes, user, mode);
                 }
-                
             }
         }
         writer.flush();
@@ -654,36 +723,40 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         List<Pair<Key,Value>> results = new ArrayList<>();
         
         Scanner s = ScannerHelper.createScanner(con, this.getEventTableName(), userAuths);
-        s.setRange(new Range(shardId));
-        if (qualifier == null) {
-            s.fetchColumnFamily(family);
-        } else {
-            s.fetchColumn(family, qualifier);
-        }
-        
-        for (Entry<Key,Value> e : s) {
-            ColumnVisibility thisViz = new ColumnVisibility(e.getKey().getColumnVisibility());
-            
-            if (!e.getKey().getColumnQualifier().toString().startsWith(fieldName)) {
-                continue;
-            }
-            
-            if (null != oldColumnVisibility) {
-                // need to compare the flattened values for equivalence. It's possible for the visibility to be in a different order
-                String oldColViz = new String(oldColumnVisibility.flatten(), "UTF-8");
-                String thisVis = new String(thisViz.flatten(), "UTF-8");
-                if (!oldColViz.equals(thisVis)) {
-                    log.trace("Skipping key that does not match with column visibility: " + e.getKey().toString());
-                    continue;
-                }
+        try {
+            s.setRange(new Range(shardId));
+            if (qualifier == null) {
+                s.fetchColumnFamily(family);
             } else {
-                Map<String,String> markings = markingFunctions.translateFromColumnVisibilityForAuths(e.getKey().getColumnVisibilityParsed(), userAuths);
-                if (null != oldFieldMarkings && !oldFieldMarkings.equals(markings)) {
-                    log.trace("Skipping key that does not match with markings: " + e.getKey().toString());
+                s.fetchColumn(family, qualifier);
+            }
+            
+            for (Entry<Key,Value> e : s) {
+                ColumnVisibility thisViz = new ColumnVisibility(e.getKey().getColumnVisibility());
+                
+                if (!e.getKey().getColumnQualifier().toString().startsWith(fieldName)) {
                     continue;
                 }
+                
+                if (null != oldColumnVisibility) {
+                    // need to compare the flattened values for equivalence. It's possible for the visibility to be in a different order
+                    String oldColViz = new String(oldColumnVisibility.flatten(), "UTF-8");
+                    String thisVis = new String(thisViz.flatten(), "UTF-8");
+                    if (!oldColViz.equals(thisVis)) {
+                        log.trace("Skipping key that does not match with column visibility: " + e.getKey().toString());
+                        continue;
+                    }
+                } else {
+                    Map<String,String> markings = markingFunctions.translateFromColumnVisibilityForAuths(e.getKey().getColumnVisibilityParsed(), userAuths);
+                    if (null != oldFieldMarkings && !oldFieldMarkings.equals(markings)) {
+                        log.trace("Skipping key that does not match with markings: " + e.getKey().toString());
+                        continue;
+                    }
+                }
+                results.add(new Pair<>(e.getKey(), e.getValue()));
             }
-            results.add(new Pair<>(e.getKey(), e.getValue()));
+        } finally {
+            s.close();
         }
         return results;
     }
@@ -707,31 +780,41 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         
         HashMap<Long,Integer> timestampCounts = new HashMap<>();
         
-        // Pull the entire event
-        Scanner s = ScannerHelper.createScanner(con, this.getEventTableName(), userAuths);
-        s.setRange(new Range(shardId));
-        s.fetchColumnFamily(family);
-        
-        // Populate map with how often each timestamp occurs
-        for (Entry<Key,Value> e : s) {
-            long ts = e.getKey().getTimestamp();
-            if (!timestampCounts.containsKey(ts)) {
-                timestampCounts.put(ts, 1);
-            } else {
-                timestampCounts.put(ts, timestampCounts.get(ts) + 1);
-            }
-        }
-        
         long highestOccurrenceTimestamp = 0;
         int highestOccurrences = -1;
-        // Determine the most common timestamp
-        for (Entry<Long,Integer> entry : timestampCounts.entrySet()) {
-            Long ts = entry.getKey();
-            int occurrences = entry.getValue();
-            if (occurrences > highestOccurrences) {
-                highestOccurrences = occurrences;
-                highestOccurrenceTimestamp = ts;
+        
+        // Pull the entire event
+        Scanner s = ScannerHelper.createScanner(con, this.getEventTableName(), userAuths);
+        try {
+            s.setRange(new Range(shardId));
+            s.fetchColumnFamily(family);
+            
+            // Populate map with how often each timestamp occurs
+            for (Entry<Key,Value> e : s) {
+                long ts = e.getKey().getTimestamp();
+                if (!timestampCounts.containsKey(ts)) {
+                    timestampCounts.put(ts, 1);
+                } else {
+                    timestampCounts.put(ts, timestampCounts.get(ts) + 1);
+                }
             }
+            
+            // Determine the most common timestamp
+            if (timestampCounts.size() == 0) {
+                // if no fields exis, then use the shard date at 00:00:00
+                highestOccurrenceTimestamp = DateHelper.parse(shardId.substring(0, 8)).getTime();
+            } else {
+                for (Entry<Long,Integer> entry : timestampCounts.entrySet()) {
+                    Long ts = entry.getKey();
+                    int occurrences = entry.getValue();
+                    if (occurrences > highestOccurrences) {
+                        highestOccurrences = occurrences;
+                        highestOccurrenceTimestamp = ts;
+                    }
+                }
+            }
+        } finally {
+            s.close();
         }
         
         return highestOccurrenceTimestamp;
@@ -842,6 +925,146 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         
         return e;
         
+    }
+    
+    /**
+     * Find the field index keys associated with a specified field and a specified event. Note that this will return all keys for that field and configured
+     * token fields if includeTokens is true.
+     *
+     * @param con
+     * @param shardTable
+     * @param userAuths
+     * @param shardId
+     * @param datatype
+     * @param eventUid
+     * @param fieldName
+     * @param fieldValue
+     * @param dataTypes
+     * @param includeTokens
+     *            If true then this will return all associated token fields as well
+     * @return An iterable of Keys
+     * @throws Exception
+     */
+    protected FieldIndexIterable getFieldIndexKeys(Connector con, String shardTable, Set<Authorizations> userAuths, String shardId, String datatype,
+                    String eventUid, String fieldName, String fieldValue, Set<Type<?>> dataTypes, boolean includeTokens) throws Exception {
+        
+        List<Range> ranges = new ArrayList();
+        fieldName = stripGrouping(fieldName);
+        if (includeTokens) {
+            // if we are including everything, then include the mapped tokenized fields as well.
+            List<String> fields = new ArrayList();
+            fields.add(fieldName);
+            if (this.indexOnlyMap != null) {
+                fields.addAll(this.indexOnlyMap.get(fieldName));
+            }
+            if (this.indexOnlySuffixes != null) {
+                for (String suffix : indexOnlySuffixes) {
+                    fields.add(fieldName + suffix);
+                }
+            }
+            for (String field : fields) {
+                Key startKey = new Key(shardId, "fi" + NULL_BYTE + field);
+                Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
+                Range range = new Range(startKey, true, endKey, false);
+                ranges.add(range);
+            }
+        } else {
+            for (Type<?> n : dataTypes) {
+                String indexedValue = n.normalize(fieldValue);
+                Key startKey = new Key(shardId, "fi" + NULL_BYTE + fieldName, indexedValue + NULL_BYTE + datatype + NULL_BYTE);
+                Key endKey = new Key(shardId, "fi" + NULL_BYTE + fieldName, indexedValue + NULL_BYTE + datatype + NULL_BYTE + MAX_CHAR);
+                Range range = new Range(startKey, true, endKey, true);
+                ranges.add(range);
+            }
+        }
+        return new FieldIndexIterable(con, shardTable, eventUid, datatype, userAuths, ranges);
+    }
+    
+    protected static class FieldIndexIterable implements Iterable<Key>, AutoCloseable {
+        private BatchScanner scanner;
+        
+        public FieldIndexIterable(Connector con, String shardTable, String eventUid, String datatype, Set<Authorizations> userAuths, List<Range> ranges)
+                        throws TableNotFoundException {
+            scanner = ScannerHelper.createBatchScanner(con, shardTable, userAuths, ranges.size());
+            scanner.setRanges(ranges);
+            Map<String,String> options = new HashMap();
+            options.put(FieldIndexDocumentFilter.DATA_TYPE_OPT, datatype);
+            options.put(FieldIndexDocumentFilter.EVENT_UID_OPT, eventUid);
+            IteratorSetting settings = new IteratorSetting(100, FieldIndexDocumentFilter.class, options);
+            scanner.addScanIterator(settings);
+        }
+        
+        @Override
+        public Iterator<Key> iterator() {
+            return Iterators.transform(scanner.iterator(), new Function<Entry<Key,Value>,Key>() {
+                @Nullable
+                @Override
+                public Key apply(@Nullable Entry<Key,Value> keyValueEntry) {
+                    return keyValueEntry.getKey();
+                }
+            });
+        }
+        
+        @Override
+        public void close() throws Exception {
+            scanner.close();
+        }
+    }
+    
+    private String stripGrouping(String fieldName) {
+        int index = fieldName.indexOf('.');
+        if (index >= 0) {
+            return fieldName.substring(0, index);
+        } else {
+            return fieldName;
+        }
+    }
+    
+    /**
+     * Find the index only keys associated with a specified field and a specified event
+     *
+     * @param con
+     * @param shardTable
+     * @param userAuths
+     * @param shardId
+     * @param datatype
+     * @param eventUid
+     * @return An iterable of Keys
+     * @throws Exception
+     */
+    protected ContentIterable getContentKeys(Connector con, String shardTable, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid)
+                    throws Exception {
+        
+        Key startKey = new Key(shardId, "d", datatype + NULL_BYTE + eventUid + NULL_BYTE);
+        Key endKey = new Key(shardId, "d", datatype + NULL_BYTE + eventUid + NULL_BYTE + MAX_CHAR);
+        Range range = new Range(startKey, true, endKey, false);
+        return new ContentIterable(con, shardTable, eventUid, datatype, userAuths, range);
+    }
+    
+    protected static class ContentIterable implements Iterable<Key>, AutoCloseable {
+        private Scanner scanner;
+        
+        public ContentIterable(Connector con, String shardTable, String eventUid, String datatype, Set<Authorizations> userAuths, Range range)
+                        throws TableNotFoundException {
+            scanner = ScannerHelper.createScanner(con, shardTable, userAuths);
+            scanner.setRange(range);
+        }
+        
+        @Override
+        public Iterator<Key> iterator() {
+            return Iterators.transform(scanner.iterator(), new Function<Entry<Key,Value>,Key>() {
+                @Nullable
+                @Override
+                public Key apply(@Nullable Entry<Key,Value> keyValueEntry) {
+                    return keyValueEntry.getKey();
+                }
+            });
+        }
+        
+        @Override
+        public void close() throws Exception {
+            scanner.close();
+        }
     }
     
 }

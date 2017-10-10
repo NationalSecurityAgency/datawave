@@ -1658,6 +1658,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
             addOption(cfg, QueryOptions.INCLUDE_DATATYPE, Boolean.toString(true), false);
         }
         
+        // Include the RECORD_ID as a field
+        if (!config.getIncludeRecordId()) {
+            addOption(cfg, QueryOptions.INCLUDE_RECORD_ID, Boolean.toString(false), false);
+        }
+        
         // Conditionally include CHILD_COUNT, DESCENDANT_COUNT, HAS_CHILDREN
         // and/or PARENT_UID fields, plus
         // various options for output and optimization

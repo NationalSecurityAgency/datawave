@@ -203,7 +203,6 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     
     @Override
     public boolean hasTop() {
-        
         boolean result = this.key != null && this.value != null;
         if (log.isTraceEnabled())
             log.trace("hasTop() " + result);
@@ -624,7 +623,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         Iterator<Entry<Key,Document>> documents = null;
         CompositeMetadata compositeMetadata = new CompositeMetadata(this.getCompositeMetadata());
         Aggregation a = new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
-                        this.disableIndexOnlyDocuments(), this.getEvaluationFilter());
+                        this.includeRecordId, this.disableIndexOnlyDocuments(), this.getEvaluationFilter());
         if (gatherTimingDetails()) {
             documents = Iterators.transform(sourceIterator, new EvaluationTrackingFunction<>(QuerySpan.Stage.Aggregation, trackingSpan, a));
         } else {
@@ -860,7 +859,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
                             documents,
                             new GetDocument(docMapper, new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata, this
-                                            .isIncludeGroupingContext(), this.disableIndexOnlyDocuments(), this.getEvaluationFilter())));
+                                            .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), this.getEvaluationFilter())));
             
             Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<Key,Document>());
             return retDocuments;

@@ -57,6 +57,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     private final SortedKeyValueIterator<Key,Value> documentSpecificSource;
     private final Function<Range,Key> getDocumentKey;
     private final boolean includeGroupingContext;
+    private final boolean includeRecordId;
     private final Collection<String> indexOnlyFields;
     private final TypeMetadata typeMetadata;
     private final CompositeMetadata compositeMetadata;
@@ -92,6 +93,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         this.compositeMetadata = compositeMetadata;
         this.getDocumentKey = new CreatorOptions(options).getDocumentKey();
         this.includeGroupingContext = options.isIncludeGroupingContext();
+        this.includeRecordId = options.isIncludeRecordId();
         this.indexOnlyFields = options.getIndexOnlyFields();
         
         this.range = range;
@@ -154,6 +156,10 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     
     public boolean isIncludeGroupingContext() {
         return this.includeGroupingContext;
+    }
+    
+    public boolean isIncludeRecordId() {
+        return includeRecordId;
     }
     
     @Override

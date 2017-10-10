@@ -154,6 +154,9 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     // Used to add the event datatype to the event as an event field.
     private boolean includeDataTypeAsField = false;
     
+    // Used to add the event RECORD_ID to the event as an event field
+    private boolean includeRecordId = true;
+    
     // Used to add the CHILD_COUNT, DESCENDANT_COUNT, HAS_CHILDREN and/or
     // PARENT_UID as event fields,
     // plus various options for output and optimization
@@ -1083,6 +1086,14 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.includeDataTypeAsField = includeDataTypeAsField;
     }
     
+    public boolean getIncludeRecordId() {
+        return includeRecordId;
+    }
+    
+    public void setIncludeRecordId(boolean includeRecordId) {
+        this.includeRecordId = includeRecordId;
+    }
+    
     public boolean getIncludeHierarchyFields() {
         return includeHierarchyFields;
     }
@@ -1385,6 +1396,7 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.setFilterMaskedValues(copy.getFilterMaskedValues());
         
         this.setIncludeDataTypeAsField(copy.getIncludeDataTypeAsField());
+        this.setIncludeRecordId(copy.getIncludeRecordId());
         this.setIncludeHierarchyFields(copy.getIncludeHierarchyFields());
         this.setHierarchyFieldOptions(null == copy.getHierarchyFieldOptions() ? null : Maps.newHashMap(copy.getHierarchyFieldOptions()));
         this.setBlacklistedFields(null == copy.getBlacklistedFields() ? null : Sets.newHashSet(copy.getBlacklistedFields()));

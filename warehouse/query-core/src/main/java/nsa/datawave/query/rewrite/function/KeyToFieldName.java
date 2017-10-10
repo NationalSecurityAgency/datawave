@@ -23,7 +23,7 @@ public class KeyToFieldName implements Function<Entry<Key,Value>,Entry<Key,Strin
     
     public KeyToFieldName() {}
     
-    public KeyToFieldName(Boolean includeGroupingContext) {
+    public KeyToFieldName(boolean includeGroupingContext) {
         this.includeGroupingContext = includeGroupingContext;
     }
     
