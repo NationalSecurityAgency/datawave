@@ -14,6 +14,6 @@ public interface Auditor {
      *            parameters for the audit message
      * @throws Exception
      */
-    public void audit(AuditParameters msg) throws Exception;
+    void audit(AuditParameters msg) throws Exception;
     
 }

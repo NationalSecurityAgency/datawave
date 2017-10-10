@@ -1,15 +1,15 @@
 package datawave.microservice.audit.config;
 
-import org.springframework.amqp.core.FanoutExchange;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
+import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.MessageChannel;
 
 @Configuration
-@EnableConfigurationProperties(AuditProperties.class)
 public class AuditServiceConfig {
-    @Bean
-    public FanoutExchange auditExchange(AuditProperties auditProperties) {
-        return new FanoutExchange(auditProperties.getExchangeName());
+    public interface AuditSourceBinding {
+        String NAME = "auditSource";
+        
+        @Output(NAME)
+        MessageChannel auditSource();
     }
 }

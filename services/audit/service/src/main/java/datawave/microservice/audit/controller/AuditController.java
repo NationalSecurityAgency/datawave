@@ -1,23 +1,23 @@
 package datawave.microservice.audit.controller;
 
 import datawave.microservice.audit.common.AuditParameters;
-import datawave.microservice.audit.config.AuditProperties;
+import datawave.microservice.audit.config.AuditServiceConfig;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
+import org.springframework.integration.support.MessageBuilder;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.security.RolesAllowed;
 
 @RestController
@@ -25,30 +25,17 @@ import javax.annotation.security.RolesAllowed;
 public class AuditController {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
-    private AuditProperties auditProperties;
-    
     private AuditParameters auditParameters;
     
-    private RabbitTemplate rabbitTemplate;
+    private MessageChannel messageChannel;
     
-    public AuditController(AuditProperties auditProperties, AuditParameters auditParameters, RabbitTemplate rabbitTemplate) {
-        this.auditProperties = auditProperties;
+    public AuditController(AuditParameters auditParameters, @Qualifier(AuditServiceConfig.AuditSourceBinding.NAME) MessageChannel messageChannel) {
         this.auditParameters = auditParameters;
-        this.rabbitTemplate = rabbitTemplate;
-        init();
+        this.messageChannel = messageChannel;
     }
     
-    private void init() {
-        rabbitTemplate.setExchange(auditProperties.getExchangeName());
-    }
-    
-    protected void sendMessage(AuditParameters parameters) throws Exception {
-        try {
-            rabbitTemplate.convertAndSend(parameters.toMap());
-        } catch (Exception e) {
-            log.error("Error sending audit message to " + auditProperties.getExchangeName() + ": " + parameters.toString(), e);
-            throw e;
-        }
+    private void sendMessage(AuditParameters parameters) throws Exception {
+        messageChannel.send(MessageBuilder.withPayload(parameters.toMap()).build());
     }
     
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})

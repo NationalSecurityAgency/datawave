@@ -4,16 +4,22 @@ import datawave.microservice.audit.accumulo.config.AccumuloAuditProperties;
 import datawave.microservice.audit.accumulo.config.AccumuloAuditProperties.Accumulo;
 import datawave.microservice.audit.common.AuditParameters;
 import datawave.microservice.audit.common.Auditor;
-import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.ClientConfiguration;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.Instance;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.PostConstruct;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.TimeUnit;
 

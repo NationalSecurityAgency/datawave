@@ -5,36 +5,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "audit.accumulo")
 public class AccumuloAuditProperties {
     
-    private boolean enabled = true;
-    private String queueName = "AuditAccumulo";
-    private boolean durable = true;
     private String tableName = "QueryAuditTable";
     
     private Accumulo accumuloConfig = new Accumulo();
-    
-    public boolean isEnabled() {
-        return enabled;
-    }
-    
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-    
-    public String getQueueName() {
-        return queueName;
-    }
-    
-    public void setQueueName(String queueName) {
-        this.queueName = queueName;
-    }
-    
-    public boolean isDurable() {
-        return durable;
-    }
-    
-    public void setDurable(boolean durable) {
-        this.durable = durable;
-    }
     
     public String getTableName() {
         return tableName;
