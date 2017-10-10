@@ -42,14 +42,31 @@
 						<property name="eventTableName" value="${shard.table.name}" />
 						<property name="metadataTableName" value="${metadata.table.name}" />
 						<property name="indexTableName" value="${index.table.name}" />
-					    <property name="reverseIndexTableName" value="${rindex.table.name}" />
+						<property name="reverseIndexTableName" value="${rindex.table.name}" />
 						<property name="markingFunctions" ref="markingFunctions" />
-				        <property name="securityMarkingExemptFields">
-					        <list value-type="java.lang.String">
-					        	${mutableMetadata.securityMarkingExemptFields} 
+						<property name="securityMarkingExemptFields">
+							<list value-type="java.lang.String">
+								${mutableMetadata.securityMarkingExemptFields}
 							</list>
-					    </property>
-					    <property name="requiresAudit" value="false" /> 
+						</property>
+						<property name="requiresAudit" value="false" />
+						<property name="indexOnlyMap">
+							<!-- A map of event fields to index only/derived fields to enable appropriate deleting of event fiels and all derivitives.
+							                      The value is a comma delimited set of index-only fields. -->
+							<map key-type="java.lang.String" value-type="java.lang.String">
+								    ${mutable.metadata.index.only.mapping}
+							</map>
+						</property>
+						<property name="indexOnlySuffixes">
+							<set value-type="java.lang.String">
+								${mutable.metadata.index.only.suffixes}
+							</set>
+						</property>
+						<property name="contentFields">
+							<set value-type="java.lang.String">
+								${mutable.metadata.index.only.suffixes}
+							</set>
+						</property>
 					</bean>
 				</entry>
 				<entry key="MutableMetadataService">
@@ -69,6 +86,23 @@
 						<property name="reverseIndexTableName" value="${rindex.table.name}" />							
 						<property name="markingFunctions" ref="markingFunctions" />
 						<property name="requiresAudit" value="false" />
+						<property name="indexOnlyMap">
+							<!-- A map of event fields to index only/derived fields to enable appropriate deleting of event fiels and all derivitives.
+							                      The value is a comma delimited set of index-only fields. -->
+							<map key-type="java.lang.String" value-type="java.lang.String">
+								${mutable.metadata.index.only.mapping}
+							</map>
+						</property>
+						<property name="indexOnlySuffixes">
+							<set value-type="java.lang.String">
+								${mutable.metadata.index.only.suffixes}
+							</set>
+						</property>
+						<property name="contentFields">
+							<set value-type="java.lang.String">
+								${mutable.metadata.index.only.suffixes}
+							</set>
+						</property>
 						<!-- Required Properties specified in the class
 						<property name="requiredRuntimeParameters">
 							<map key-type="java.lang.String" value-type="java.lang.Class">

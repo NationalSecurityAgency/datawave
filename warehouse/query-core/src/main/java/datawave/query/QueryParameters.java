@@ -66,6 +66,11 @@ public class QueryParameters {
     public static final String INCLUDE_DATATYPE_AS_FIELD = "include.datatype.as.field";
     
     /**
+     * Should the RECORD_ID field be included in the results (default is true)
+     */
+    public static final String INCLUDE_RECORD_ID = "include.record.id";
+    
+    /**
      * Should the grouping portion of the fieldnames be returned as well. These are numbers tagged onto the end of the field names to denote what group they
      * belong to. This is helpful when determining which foo values goes with which bar value when an event contains multiple foo and bar values.
      */

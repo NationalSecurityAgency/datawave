@@ -119,6 +119,7 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String FILTER_MASKED_VALUES = "filter.masked.values";
     public static final String INCLUDE_DATATYPE = "include.datatype";
+    public static final String INCLUDE_RECORD_ID = "include.record.id";
     public static final String LOG_TIMING_DETAILS = "log.timing.details";
     public static final String COLLECT_TIMING_DETAILS = "collect.timing.details";
     public static final String STATSD_HOST_COLON_PORT = "statsd.host.colon.port";
@@ -253,6 +254,7 @@ public class QueryOptions implements OptionDescriber {
     
     protected boolean filterMaskedValues = true;
     
+    protected boolean includeRecordId = true;
     protected boolean includeDatatype = false;
     protected boolean includeHierarchyFields = false;
     protected String datatypeKey;
@@ -358,6 +360,7 @@ public class QueryOptions implements OptionDescriber {
         this.filterMaskedValues = other.filterMaskedValues;
         this.includeDatatype = other.includeDatatype;
         this.datatypeKey = other.datatypeKey;
+        this.includeRecordId = other.includeRecordId;
         
         this.includeHierarchyFields = other.includeHierarchyFields;
         
@@ -547,6 +550,14 @@ public class QueryOptions implements OptionDescriber {
     
     public void setIncludeGroupingContext(boolean includeGroupingContext) {
         this.includeGroupingContext = includeGroupingContext;
+    }
+    
+    public boolean isIncludeRecordId() {
+        return includeRecordId;
+    }
+    
+    public void setIncludeRecordId(boolean includeRecordId) {
+        this.includeRecordId = includeRecordId;
     }
     
     public JexlArithmetic getArithmetic() {
@@ -828,6 +839,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(BLACKLISTED_FIELDS, "Attributes to *not* return to the client");
         options.put(FILTER_MASKED_VALUES, "Filter the masked values when both the masked and unmasked variants are in the result set.");
         options.put(INCLUDE_DATATYPE, "Include the data type as a field in the document.");
+        options.put(INCLUDE_RECORD_ID, "Include the record id as a field in the document.");
         options.put(COLLECT_TIMING_DETAILS, "Collect timing details about the underlying iterators");
         options.put(STATSD_HOST_COLON_PORT,
                         "A configured statsd host:port which will be used to send resource and timing details from the underlying iterators if configured");
@@ -1016,6 +1028,10 @@ public class QueryOptions implements OptionDescriber {
             if (this.includeDatatype) {
                 this.datatypeKey = options.containsKey(DATATYPE_FIELDNAME) ? options.get(DATATYPE_FIELDNAME) : DEFAULT_DATATYPE_FIELDNAME;
             }
+        }
+        
+        if (options.containsKey(INCLUDE_RECORD_ID)) {
+            this.includeRecordId = Boolean.parseBoolean(options.get(INCLUDE_RECORD_ID));
         }
         
         if (options.containsKey(COLLECT_TIMING_DETAILS)) {

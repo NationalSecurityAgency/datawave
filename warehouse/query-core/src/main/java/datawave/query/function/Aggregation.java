@@ -26,21 +26,23 @@ public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<
     private EventDataQueryFilter attrFilter;
     
     private boolean includeGroupingContext = false;
+    private boolean includeRecordId = false;
     
-    protected Boolean disableIndexOnlyDocuments = false;
+    protected boolean disableIndexOnlyDocuments = false;
     
     // Need to provide the mapping
     @SuppressWarnings("unused")
     private Aggregation() {}
     
-    public Aggregation(TimeFilter timeFilter, TypeMetadata typeMetadata, CompositeMetadata compositeMetadata, Boolean includeGroupingContext,
-                    Boolean disableIndexOnlyDocuments, EventDataQueryFilter attrFilter) {
+    public Aggregation(TimeFilter timeFilter, TypeMetadata typeMetadata, CompositeMetadata compositeMetadata, boolean includeGroupingContext,
+                    boolean includeRecordId, boolean disableIndexOnlyDocuments, EventDataQueryFilter attrFilter) {
         Preconditions.checkNotNull(timeFilter);
         
         this.timeFilter = timeFilter;
         this.typeMetadata = typeMetadata;
         this.compositeMetadata = compositeMetadata;
         this.includeGroupingContext = includeGroupingContext;
+        this.includeRecordId = includeRecordId;
         this.attrFilter = attrFilter;
         this.disableIndexOnlyDocuments = disableIndexOnlyDocuments;
     }
@@ -56,7 +58,7 @@ public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<
         
         // Only load attributes for this document that fall within the expected date range
         Document d = new Document(docData.getKey(), docData.getDocKeys(), Iterators.filter(docData.getData().iterator(), timeFilter.getKeyValueTimeFilter()),
-                        this.typeMetadata, this.compositeMetadata, this.includeGroupingContext, this.attrFilter);
+                        this.typeMetadata, this.compositeMetadata, this.includeGroupingContext, this.includeRecordId, this.attrFilter);
         
         if (log.isTraceEnabled()) {
             log.trace("disable index only docs? " + disableIndexOnlyDocuments + " , size is " + d.size());
