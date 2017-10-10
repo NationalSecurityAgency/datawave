@@ -20,12 +20,13 @@ function register() {
    #
    #       {servicename}Start       - Starts the service
    #       {servicename}Stop        - Stops the service
-   #       {servicename}Status      - Current status of the service. PIDs if running
+   #       {servicename}Status      - Current status of the service, including PIDs if running
    #       {servicename}Install     - Installs the service
    #       {servicename}Uninstall   - Uninstalls the service
    #       {servicename}IsRunning   - Returns 0 if running, non-zero otherwise
    #       {servicename}IsInstalled - Returns 0 if installed, non-zero otherwise
    #       {servicename}Printenv    - Display current state of the service config
+   #       {servicename}PidList     - Display all service PIDs (on a single line, space-delimited)
    #
    if [ -z "${servicename}" ] ; then
       error "Registration failed: service name was null"
@@ -87,11 +88,9 @@ function downloadTarball() {
    tarball="$( basename ${uri} )"
    if [ ! -f "${tarballdir}/${tarball}" ] ; then
       if [[ ${uri} == file://* ]] ; then
-          info "Copying ${uri} to ${tarballdir}..."
-          $( cd "${tarballdir}" && curl -o "./${tarball}" "${uri}" ) || error "Failed to copy '${uri}'"
+          $( cd "${tarballdir}" && curl -o "./${tarball}" "${uri}" )
       else
-          info "Downloading ${uri} to ${tarballdir}..."
-          $( cd "${tarballdir}" && wget "${uri}" ) || error "Failed to wget '${uri}'"
+          $( cd "${tarballdir}" && wget ${DW_WGET_OPTS} "${uri}" )
       fi
    fi
 }
@@ -155,17 +154,29 @@ function startAll() {
 }
 
 function stopAll() {
+
+   [[ "${1}" == "--hard" ]] && local kill9=true
+
    # Stops all registered services
    if ! servicesAreRunning ; then
       echo "No services are currently running"
       return 1
    fi
+
    local services=(${DW_CLOUD_SERVICES})
    # Loop in reverse order for stopping services
    # In other words, order of registration matters.
    # e.g., we don't want to stop Hadoop *before* Accumulo.
    for (( idx=${#services[@]}-1 ; idx>=0 ; idx-- )) ; do
-      ${services[idx]}Stop
+      if [ "${kill9}" == true ] ; then
+         local pidList="$( ${services[idx]}PidList )"
+         if [ ! -z "${pidList}" ] ; then
+            info "Killing ${services[idx]} services: ${pidList}"
+            kill -9 ${pidList}
+         fi
+      else
+         ${services[idx]}Stop
+      fi
    done
 }
 
