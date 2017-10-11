@@ -203,7 +203,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     
     @Override
     public boolean hasTop() {
-        boolean result = this.key != null && this.value != null;
+        boolean yielded = (this.yield != null) && this.yield.hasYielded();
+        boolean result = (!yielded) && (this.key != null) && (this.value != null);
         if (log.isTraceEnabled())
             log.trace("hasTop() " + result);
         return result;
