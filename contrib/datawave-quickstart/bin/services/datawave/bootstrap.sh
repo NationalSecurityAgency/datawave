@@ -271,6 +271,14 @@ function datawavePrintenv() {
    echo
 }
 
+function datawavePidList() {
+   datawaveIngestIsRunning
+   datawaveWebIsRunning
+   if [[ -n "${DW_DATAWAVE_WEB_PID_LIST}" || -n "${DW_DATAWAVE_INGEST_PID_LIST}" ]] ; then
+      echo "${DW_DATAWAVE_WEB_PID_LIST} ${DW_DATAWAVE_INGEST_PID_LIST}"
+   fi
+}
+
 function datawaveBuildDeploy() {
    datawaveIsRunning && info "Stopping all DataWave services" && datawaveStop
    datawaveIsInstalled && info "Uninstalling DataWave" && datawaveUninstall

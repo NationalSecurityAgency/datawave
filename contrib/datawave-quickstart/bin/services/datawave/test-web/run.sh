@@ -25,7 +25,7 @@ source "${THIS_DIR}/common.sh"
 
 function usage() {
     echo
-    echo "Usage: \$DW_DATAWAVE_SERVICE_DIR/$( basename $0) , or the 'datawaveWebTest' shell function can be used as an alias"
+    echo "Usage: \$DW_DATAWAVE_SERVICE_DIR/test-web/$( basename $0) , or the 'datawaveWebTest' shell function can be used as an alias"
     echo
     echo " Optional flags:"
     echo

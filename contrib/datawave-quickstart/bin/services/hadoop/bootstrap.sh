@@ -2,7 +2,8 @@
 
 DW_HADOOP_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-DW_HADOOP_DIST_URI="http://archive-primary.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.9.1.tar.gz"
+# You may override DW_HADOOP_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
+DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://archive-primary.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.9.1.tar.gz}"
 DW_HADOOP_DIST="$( downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" && echo "${tarball}" )"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
@@ -94,8 +95,8 @@ DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && ./mr-jobhistory-daemon.sh stop h
 DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -f 'datanode.DataNode|namenode.NameNode|namenode.SecondaryNameNode|nodemanager.NodeManager|resourcemanager.ResourceManager|mapreduce.v2.hs.JobHistoryServer'"
 
 function hadoopIsRunning() {
-    HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS} -d ' '")"
-    [ -z "${HADOOP_PID_LIST}" ] && return 1 || return 0
+    DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS} -d ' '")"
+    [ -z "${DW_HADOOP_PID_LIST}" ] && return 1 || return 0
 }
 
 function hadoopStart() {
@@ -111,7 +112,7 @@ function hadoopStop() {
 }
 
 function hadoopStatus() {
-    hadoopIsRunning && echo "Hadoop is running. PIDs: ${HADOOP_PID_LIST}" || echo "Hadoop is not running"
+    hadoopIsRunning && echo "Hadoop is running. PIDs: ${DW_HADOOP_PID_LIST}" || echo "Hadoop is not running"
 }
 
 function hadoopIsInstalled() {
@@ -146,4 +147,10 @@ function hadoopPrintenv() {
    echo
    ( set -o posix ; set ) | grep HADOOP_
    echo
+}
+
+function hadoopPidList() {
+
+   hadoopIsRunning && echo "${DW_HADOOP_PID_LIST}"
+
 }

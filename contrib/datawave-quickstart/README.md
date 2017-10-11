@@ -52,14 +52,33 @@ Linux with at least Bash 4x will probably suffice
     ```bash
     $ echo 'source /path/to/datawave-quickstart/bin/env.sh' >> ~/.bashrc 
     ```
+    If you happen to update ~/.bashrc via some other method, such as with *vi* or other, beware that
+    env.sh sourcing should be placed *AFTER* any of your existing Hadoop-, Accumulo-, Wildfly-, and
+    ZooKeeper-related variable exports. This will prevent those existing configs from interfering
+    with the quickstart installation
 
 2. Open a new bash terminal, or ` source ~/.bashrc ` in your current terminal...
 
     * Tarballs for any registered services (in this case, Hadoop, Accumulo, and ZooKeeper) 
       will begin downloading immediately
 
-    * If desired, it's easy to select which version of a binary gets downloaded/installed
-      for a given service, just update the service's ` **_DIST_URI ` variable in its bootstrap.sh
+    * If desired, it's easy to affect which version of a binary gets downloaded/installed
+      for a given service, just override the ` **_DIST_URI ` variable (defined in the service's 
+      bootstrap script) in your environment before */datawave-quickstart/bin/env.sh gets sourced.
+      
+      For example...
+      ```bash
+      $ vi ~/.bashrc
+
+          ...
+  
+          export DW_ACCUMULO_DIST_URI=http://my.favorite.apache.mirror/accumulo/1.8.X/accumulo-1.8.X-bin.tar.gz
+          export DW_JAVA_DIST_URI=file:///my/local/binaries/jdk-8-linux-x64.tar.gz
+          export DW_HADOOP_DIST_URI=file:///my/local/binaries/hadoop-2.6.0-cdh5.9.1.tar.gz
+          export DW_ZOOKEEPER_DIST_URI=file:///my/local/binaries/zookeeper-3.4.5-cdh5.9.1.tar.gz
+  
+          source /path/to/datawave-quickstart/bin/env.sh
+      ``` 
 
     * In the case of DataWave's ingest and web service binaries, a Maven build will be kicked
       off automatically, and their respective tarballs will be moved into place upon successful
@@ -102,10 +121,12 @@ Linux with at least Bash 4x will probably suffice
 
 ### Stop and/or uninstall services
 
-1. To stop all services, execute the ` stopAll ` command. Likewise, you may stop individual services
+1. To stop all services gracefully, execute the ` stopAll ` command. Likewise, you may stop individual services
    with the associated ` {serviceName}Stop ` command
+   
+2. ` stopAll --hard ` will bring down all services via ` kill -9 ` with no prompting
 
-2. To tear down all services and remove *all* associated data directories, execute the ` uninstallAll `
+3. To tear down all services and remove *all* associated data directories, execute the ` uninstallAll `
    command. Individual services may be uninstalled at any time with ` {serviceName}Uninstall `
 
 ---
