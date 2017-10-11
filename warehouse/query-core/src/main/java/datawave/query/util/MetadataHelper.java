@@ -1569,7 +1569,7 @@ public class MetadataHelper implements ApplicationContextAware {
     private static class MetadataDefaultsFactory {
         
         static final String PROPS_RESOURCE = "metadata.properties";
-        static final Properties defaultProps = new Properties();;
+        static final Properties defaultProps = new Properties();
         
         private MetadataDefaultsFactory() {}
         

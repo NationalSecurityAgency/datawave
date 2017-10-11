@@ -78,6 +78,7 @@ public class ShardQueryConfigurationFactory {
         config.setFilterMaskedValues(configuredLogic.getFilterMaskedValues());
         
         config.setIncludeDataTypeAsField(configuredLogic.getIncludeDataTypeAsField());
+        config.setIncludeRecordId(configuredLogic.getIncludeRecordId());
         config.setIncludeHierarchyFields(configuredLogic.getIncludeHierarchyFields());
         config.setHierarchyFieldOptions(configuredLogic.getHierarchyFieldOptions());
         config.setBlacklistedFields(configuredLogic.getBlacklistedFields());

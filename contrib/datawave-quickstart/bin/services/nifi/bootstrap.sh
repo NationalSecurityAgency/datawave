@@ -2,7 +2,8 @@
 
 DW_NIFI_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-DW_NIFI_DIST_URI="http://apache.claz.org/nifi/1.1.1/nifi-1.1.1-bin.tar.gz"
+# You may override DW_NIFI_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
+DW_NIFI_DIST_URI="${DW_NIFI_DIST_URI:-http://apache.claz.org/nifi/1.1.1/nifi-1.1.1-bin.tar.gz}"
 DW_NIFI_DIST="$( downloadTarball "${DW_NIFI_DIST_URI}" "${DW_NIFI_SERVICE_DIR}" && echo "${tarball}" )"
 DW_NIFI_BASEDIR="nifi-install"
 DW_NIFI_SYMLINK="nifi"
@@ -18,8 +19,8 @@ DW_NIFI_CMD_STOP="( cd ${NIFI_HOME}/bin && ./nifi.sh stop )"
 DW_NIFI_CMD_FIND_ALL_PIDS="pgrep -f 'org.apache.nifi'"
 
 function nifiIsRunning() {
-    NIFI_PID_LIST="$(eval "${DW_NIFI_CMD_FIND_ALL_PIDS} -d ' '")"
-    [ -z "${NIFI_PID_LIST}" ] && return 1 || return 0
+    DW_NIFI_PID_LIST="$(eval "${DW_NIFI_CMD_FIND_ALL_PIDS} -d ' '")"
+    [ -z "${DW_NIFI_PID_LIST}" ] && return 1 || return 0
 }
 
 function nifiStart() {
@@ -33,7 +34,7 @@ function nifiStop() {
 }
 
 function nifiStatus() {
-    nifiIsRunning && echo "NiFi is running. PIDs: ${NIFI_PID_LIST}" || echo "NiFi is not running"
+    nifiIsRunning && echo "NiFi is running. PIDs: ${DW_NIFI_PID_LIST}" || echo "NiFi is not running"
 }
 
 function nifiIsInstalled() {
@@ -60,6 +61,12 @@ function nifiUninstall() {
 
 function nifiInstall() {
    ${DW_NIFI_SERVICE_DIR}/install.sh
+}
+
+function nifiPidList() {
+
+   nifiIsRunning && echo "${DW_NIFI_PID_LIST}"
+
 }
 
 function nifiPrintenv() {

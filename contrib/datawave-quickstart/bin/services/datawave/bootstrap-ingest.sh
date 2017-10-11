@@ -60,8 +60,8 @@ DW_DATAWAVE_INGEST_CMD_STOP="( cd ${DW_DATAWAVE_INGEST_HOME}/bin/system && ./sto
 DW_DATAWAVE_INGEST_CMD_FIND_ALL_PIDS="pgrep -f 'ingest-server.sh|Dapp=FlagMaker|mapreduce.job.BulkIngestMapFileLoader|datawave.ingest.mapreduce.job.IngestJob|ingest/cleanupserver.py'"
 
 function datawaveIngestIsRunning() {
-    DATAWAVE_INGEST_PID_LIST="$(eval "${DW_DATAWAVE_INGEST_CMD_FIND_ALL_PIDS} -d ' '")"
-    [[ -z "${DATAWAVE_INGEST_PID_LIST}" ]] && return 1 || return 0
+    DW_DATAWAVE_INGEST_PID_LIST="$(eval "${DW_DATAWAVE_INGEST_CMD_FIND_ALL_PIDS} -d ' '")"
+    [[ -z "${DW_DATAWAVE_INGEST_PID_LIST}" ]] && return 1 || return 0
 }
 
 function datawaveIngestStart() {
@@ -76,7 +76,7 @@ function datawaveIngestStop() {
 }
 
 function datawaveIngestStatus() {
-    datawaveIngestIsRunning && echo "DataWave Ingest is running. PIDs: ${DATAWAVE_INGEST_PID_LIST}" || echo "DataWave Ingest is not running"
+    datawaveIngestIsRunning && echo "DataWave Ingest is running. PIDs: ${DW_DATAWAVE_INGEST_PID_LIST}" || echo "DataWave Ingest is not running"
 }
 
 function datawaveIngestIsInstalled() {
