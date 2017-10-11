@@ -1095,7 +1095,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         if (org.apache.commons.lang.StringUtils.isNotBlank(includeRecordIdStr)) {
             boolean includeRecordIdBool = Boolean.parseBoolean(includeRecordIdStr) && !rawDataOnly;
             this.setIncludeRecordId(includeRecordIdBool);
-            config.setIncludeDataTypeAsField(true);
+            config.setIncludeRecordId(includeRecordIdBool);
         }
         
         // Get the INCLUDE_HIERARCHY_FIELDS spring setting
