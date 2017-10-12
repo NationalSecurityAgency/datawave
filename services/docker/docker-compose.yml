@@ -1,5 +1,18 @@
 version: '2.1'
 services:
+  discovery:
+    image: consul:0.9.3
+    hostname: discovery
+    environment:
+      - 'CONSUL_LOCAL_CONFIG={"datacenter": "demo_dc"}'
+      - CONSUL_BIND_INTERFACE=eth0
+    ports:
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:53"
+    networks:
+      - demo
+
   messaging:
     image: pivotalrabbitmq/rabbitmq-autocluster:3.6.12
     environment:
@@ -19,31 +32,28 @@ services:
       - 15671
     networks:
       - demo
-
-  discovery:
-    image: consul:0.9.3
-    ports:
-      - "8400:8400"
-      - "8500:8500"
-      - "8600:53"
-    networks:
-      - demo
+    depends_on:
+      discovery:
+        condition: service_started
 
   configuration:
     image: datawave/config-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=dev,consul
+      - --spring.profiles.active=dev,consul,native
       - --spring.cloud.consul.host=discovery
       - --spring.cloud.bus.enabled=true
       - --management.health.rabbit.enabled=true
+      - --spring.cloud.config.server.native.searchLocations=file:///microservice-config
     ports:
       - "8888:8888"
     volumes:
-      - ${PWD}/config:/tmp/microservice-config
-      - ${PWD}/config_git_metadata:/tmp/microservice-config/.git
+      - ${CONFIG_DIR:-./config}:/microservice-config:ro
     networks:
       - demo
+    depends_on:
+      messaging:
+        condition: service_started
 
   audit:
     image: datawave/audit-service
@@ -55,6 +65,11 @@ services:
       - "8080:8080"
     networks:
       - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/datawave/mgmt/health
+    depends_on:
+      messaging:
+        condition: service_started
 
 networks:
   demo:

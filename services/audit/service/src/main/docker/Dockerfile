@@ -1,8 +1,8 @@
 FROM openjdk:8-jdk-alpine
 
-LABEL VERSION=${project.version} \
-      RUN="docker run ${docker.image.prefix}/${project.artifactId}:latest" \
-      DESCRIPTION="DATAWAVE audit microservice."
+LABEL version=${project.version} \
+      run="docker run ${docker.image.prefix}/${project.artifactId}:latest" \
+      description="DATAWAVE audit microservice."
 
 ADD ${project.build.finalName}-exec.jar /app.jar
 

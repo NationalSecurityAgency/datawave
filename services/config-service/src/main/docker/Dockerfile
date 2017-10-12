@@ -3,9 +3,9 @@ FROM jboss/base-jdk:8
 # Switch to the root user (base module leaves the user as datawave) to do some configuration
 USER root
 
-LABEL VERSION=${project.version} \
-      RUN="docker run ${docker.image.prefix}/${project.artifactId}:latest" \
-      DESCRIPTION="DATAWAVE configuration microservice."
+LABEL version=${project.version} \
+      run="docker run ${docker.image.prefix}/${project.artifactId}:latest" \
+      description="DATAWAVE configuration microservice."
 
 VOLUME /tmp
 ADD ${project.build.finalName}-exec.jar /app.jar
