@@ -196,7 +196,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     protected MetadataHelperFactory metadataHelperFactory;
     protected MarkingFunctions markingFunctions = null;
     
-    // a map of event fields to index only/derived fields to enable appropriate deleting of event fields and all derivatives.
+    // a map of event fields to index only/derived fields to enable appropriate deleting of event fields and all derivatives
     protected Multimap<String,String> indexOnlyMap = null;
     
     // a set of token suffixes to include to enable appropriate deleting of event fields and all derivatives
@@ -249,7 +249,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         return indexOnlyMap;
     }
     
-    // this is set from a spring configuration wher the value is comma delimited
+    // this is set from a spring configuration where the value is comma delimited
     public void setIndexOnlyMap(Map<String,String> map) {
         this.indexOnlyMap = HashMultimap.create();
         for (Map.Entry<String,String> entry : map.entrySet()) {
@@ -814,7 +814,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
             
             // Determine the most common timestamp
             if (timestampCounts.size() == 0) {
-                // if no fields exis, then use the shard date at 00:00:00
+                // if no fields exist, then use the shard date at 00:00:00
                 highestOccurrenceTimestamp = DateHelper.parse(shardId.substring(0, 8)).getTime();
             } else {
                 for (Entry<Long,Integer> entry : timestampCounts.entrySet()) {
