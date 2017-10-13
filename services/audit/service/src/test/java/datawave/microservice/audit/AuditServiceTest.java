@@ -29,11 +29,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map;
 
 import static datawave.security.authorization.DatawaveUser.UserType.USER;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @Category(IntegrationTest.class)
 @RunWith(SpringRunner.class)
