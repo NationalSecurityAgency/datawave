@@ -12,5 +12,9 @@
             <groupId>datawave.microservice</groupId>
             <artifactId>audit-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+        </dependency>
     </dependencies>
 </project>

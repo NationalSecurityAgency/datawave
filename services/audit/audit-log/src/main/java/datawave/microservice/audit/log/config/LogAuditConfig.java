@@ -29,12 +29,12 @@ public class LogAuditConfig {
             }
         };
     }
-
+    
     @Bean
     public Auditor logAuditor() {
         return new LogAuditor();
     }
-
+    
     public interface LogAuditBinding {
         String NAME = "logAuditSink";
         
