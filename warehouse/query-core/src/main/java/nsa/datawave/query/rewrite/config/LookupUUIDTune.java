@@ -4,6 +4,7 @@ import java.util.Map.Entry;
 
 import nsa.datawave.query.rewrite.planner.DefaultQueryPlanner;
 import nsa.datawave.query.rewrite.planner.QueryPlanner;
+import nsa.datawave.query.rewrite.planner.SeekingQueryPlanner;
 import nsa.datawave.query.rewrite.tables.RefactoredShardQueryLogic;
 import nsa.datawave.query.rewrite.tld.CreateTLDUidsIterator;
 import nsa.datawave.query.rewrite.tld.TLDQueryIterator;
@@ -21,6 +22,9 @@ public class LookupUUIDTune implements Profile {
     protected boolean reduceResponse = false;
     protected boolean enablePreload = false;
     protected boolean speculativeScanning = false;
+    protected int maxFieldHitsBeforeSeek = -1;
+    protected int maxKeysBeforeSeek = -1;
+    protected String queryIteratorClass = TLDQueryIterator.class.getCanonicalName();
     
     @Override
     public void configure(BaseQueryLogic<Entry<Key,Value>> logic) {
@@ -31,6 +35,12 @@ public class LookupUUIDTune implements Profile {
             rsq.setCacheModel(enableCaching);
             if (reduceResponse) {
                 rsq.setCreateUidsIteratorClass(CreateTLDUidsIterator.class);
+                
+                // setup SeekingQueryPlanner in case the queryIterator requires it
+                SeekingQueryPlanner planner = new SeekingQueryPlanner();
+                planner.setMaxFieldHitsBeforeSeek(maxFieldHitsBeforeSeek);
+                planner.setMaxKeysBeforeSeek(maxKeysBeforeSeek);
+                rsq.setQueryPlanner(planner);
             }
         }
         
@@ -50,7 +60,12 @@ public class LookupUUIDTune implements Profile {
                 dqp.setDisableRangeCoalescing(true);
                 dqp.setDisableTestNonExistentFields(true);
                 if (reduceResponse)
-                    dqp.setQueryIteratorClass(TLDQueryIterator.class);
+                    try {
+                        Class iteratorClass = Class.forName(this.queryIteratorClass);
+                        dqp.setQueryIteratorClass(iteratorClass);
+                    } catch (ClassNotFoundException e) {
+                        throw new IllegalStateException("Cannot Instantiate queryIteratorClass: " + this.queryIteratorClass, e);
+                    }
             }
             if (enablePreload) {
                 dqp.setPreloadOptions(true);
@@ -119,5 +134,29 @@ public class LookupUUIDTune implements Profile {
     
     public boolean getReduceResponse() {
         return reduceResponse;
+    }
+    
+    public void setMaxFieldHitsBeforeSeek(int maxFieldHitsBeforeSeek) {
+        this.maxFieldHitsBeforeSeek = maxFieldHitsBeforeSeek;
+    }
+    
+    public int getMaxFieldHitsBeforeSeek() {
+        return maxFieldHitsBeforeSeek;
+    }
+    
+    public void setMaxKeysBeforeSeek(int maxKeysBeforeSeek) {
+        this.maxKeysBeforeSeek = maxKeysBeforeSeek;
+    }
+    
+    public int getMaxKeysBeforeSeek() {
+        return maxKeysBeforeSeek;
+    }
+    
+    public void setQueryIteratorClass(String queryIteratorClass) {
+        this.queryIteratorClass = queryIteratorClass;
+    }
+    
+    public String getQueryIteratorClass() {
+        return queryIteratorClass;
     }
 }
