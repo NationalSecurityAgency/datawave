@@ -154,7 +154,7 @@ public class MetadataHelperUpdateHdfsListener {
                         ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(this.instance)
                                         .withZkHosts(this.zookeepers));
                         Connector connector = instance.getConnector(this.username, new PasswordToken(this.password));
-                        metadataHelper.initialize(connector, "DatawaveMetadata", allMetadataAuths);
+                        metadataHelper.initialize(connector, metadataTableName, allMetadataAuths);
                         this.typeMetadataWriter.writeTypeMetadataMap(this.metadataHelper.getTypeMetadataMap(), metadataTableName);
                         if (log.isDebugEnabled()) {
                             log.debug("table:" + metadataTableName + " " + this + " set the sharedTriState needsUpdate to UPDATED for " + metadataTableName);
