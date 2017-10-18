@@ -14,14 +14,14 @@ import mil.nga.giat.geowave.core.geotime.ingest.SpatialDimensionalityTypeProvide
 import mil.nga.giat.geowave.core.geotime.ingest.SpatialTemporalDimensionalityTypeProvider;
 import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.index.StringUtils;
-import mil.nga.giat.geowave.core.store.DataStoreEntryInfo;
+import mil.nga.giat.geowave.core.store.base.DataStoreEntryInfo;
 import mil.nga.giat.geowave.core.store.data.PersistentValue;
 import mil.nga.giat.geowave.core.store.data.field.FieldReader;
 import mil.nga.giat.geowave.core.store.data.visibility.GlobalVisibilityHandler;
 import mil.nga.giat.geowave.core.store.data.visibility.UniformVisibilityWriter;
 import mil.nga.giat.geowave.core.store.index.CommonIndexValue;
 import mil.nga.giat.geowave.core.store.index.PrimaryIndex;
-import mil.nga.giat.geowave.core.store.memory.DataStoreUtils;
+import mil.nga.giat.geowave.core.store.util.DataStoreUtils;
 import datawave.data.type.DateType;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
