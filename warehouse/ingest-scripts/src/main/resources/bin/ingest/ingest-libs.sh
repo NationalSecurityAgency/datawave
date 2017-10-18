@@ -90,6 +90,7 @@ JCOMMANDER_JAR=$(findJar jcommander)
 
 #for geo hilbert curve processing
 JTS_JAR=$(findJar jts)
+GEOWAVE_ADAPTER_RASTER_JAR=$(findJar geowave-adapter-raster)
 GEOWAVE_ADAPTER_VECTOR_JAR=$(findJar geowave-adapter-vector)
 GEOWAVE_CORE_CLI_JAR=$(findJar geowave-core-cli)
 GEOWAVE_CORE_INDEX_JAR=$(findJar geowave-core-index)
@@ -181,6 +182,7 @@ CLASSPATH=${CLASSPATH}:${JCOMMANDER_JAR}
 #for geo hilbert curve processing
 CLASSPATH=${CLASSPATH}:${VECMATH_JAR}
 CLASSPATH=${CLASSPATH}:${JTS_JAR}
+CLASSPATH=${CLASSPATH}:${GEOWAVE_ADAPTER_RASTER_JAR}
 CLASSPATH=${CLASSPATH}:${GEOWAVE_ADAPTER_VECTOR_JAR}
 CLASSPATH=${CLASSPATH}:${GEOWAVE_CORE_CLI_JAR}
 CLASSPATH=${CLASSPATH}:${GEOWAVE_CORE_INGEST_JAR}
