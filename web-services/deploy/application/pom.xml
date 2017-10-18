@@ -406,12 +406,40 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <executions>
+                            <execution>
+                                <id>copy-dependencies</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>prepare-package</phase>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>datawave.webservices</groupId>
+                                            <artifactId>datawave-ws-geoserver-application</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                            <overWrite>true</overWrite>
+                                            <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}</outputDirectory>
+                                            <destFileName>datawave-ws-geoserver-application-${project.version}.war</destFileName>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <artifactId>maven-ear-plugin</artifactId>
                         <configuration>
                             <modules>
                                 <webModule>
                                     <groupId>datawave.webservices</groupId>
                                     <artifactId>datawave-ws-geoserver-application</artifactId>
+                                    <bundleFileName>datawave-ws-geoserver-application-${project.version}.war</bundleFileName>
                                     <contextRoot>/geoserver</contextRoot>
                                 </webModule>
                             </modules>

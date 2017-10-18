@@ -37,7 +37,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
      */
     protected static final String[] SPATIAL_RELATION_OPERATIONS = new String[] {"contains", "covers", "covered_by", "crosses", "intersects", "overlaps",
             "within"};
-    protected static final int MAX_EXPANSION = 800;
+    public static final int MAX_EXPANSION = 800;
     private static final Logger LOGGER = Logger.getLogger(GeoWaveFunctionsDescriptor.class);
     
     public static class GeoWaveJexlArgumentDescriptor implements JexlArgumentDescriptor {

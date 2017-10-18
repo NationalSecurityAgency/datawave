@@ -327,6 +327,12 @@
                 <groupId>mil.nga.giat</groupId>
                 <artifactId>geowave-adapter-raster</artifactId>
                 <version>${version.geowave}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>mil.nga.giat</groupId>

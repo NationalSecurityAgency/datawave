@@ -30,6 +30,16 @@
         </dependency>
         <dependency>
             <groupId>mil.nga.giat</groupId>
+            <artifactId>geowave-adapter-raster</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.geoserver</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>mil.nga.giat</groupId>
             <artifactId>geowave-adapter-vector</artifactId>
             <exclusions>
                 <exclusion>
