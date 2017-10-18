@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Date;
 
+import datawave.data.type.util.Geometry;
 import datawave.data.type.util.IpAddress;
 
 public interface Normalizer<T> extends Serializable {
@@ -14,6 +15,7 @@ public interface Normalizer<T> extends Serializable {
     Normalizer<String> LC_NO_DIACRITICS_NORMALIZER = new LcNoDiacriticsNormalizer();
     Normalizer<Date> DATE_NORMALIZER = new DateNormalizer();
     Normalizer<String> RAW_DATE_NORMALIZER = new RawDateNormalizer();
+    Normalizer<Geometry> GEOMETRY_NORMALIZER = new GeometryNormalizer();
     Normalizer<String> GEO_LAT_NORMALIZER = new GeoLatNormalizer();
     Normalizer<String> GEO_LON_NORMALIZER = new GeoLonNormalizer();
     Normalizer<String> GEO_NORMALIZER = new GeoNormalizer();
