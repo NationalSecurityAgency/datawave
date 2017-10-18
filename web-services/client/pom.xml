@@ -89,6 +89,10 @@
             <artifactId>vecmath</artifactId>
         </dependency>
         <dependency>
+            <groupId>mil.nga.giat</groupId>
+            <artifactId>geowave-core-geotime</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
         </dependency>
