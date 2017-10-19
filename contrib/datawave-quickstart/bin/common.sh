@@ -254,7 +254,7 @@ function uninstallAll() {
    fi
 
    askYesNo "Uninstalling everything under '${DW_CLOUD_HOME}'. This can not be undone.
-Continue?" || exit 1
+Continue?" || return 1
 
    local services=(${DW_CLOUD_SERVICES})
    for servicename in "${services[@]}" ; do
