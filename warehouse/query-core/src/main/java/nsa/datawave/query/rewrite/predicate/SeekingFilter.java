@@ -8,7 +8,7 @@ import org.apache.accumulo.core.data.Range;
  */
 public interface SeekingFilter {
     /**
-     * Get the next seek range from the filter
+     * Get the next seek range suggested by the filter
      * 
      * @param current
      *            the current key at the top of the source iterator
@@ -16,7 +16,7 @@ public interface SeekingFilter {
      *            the current range endKey
      * @param endKeyInclusive
      *            the endKeyInclusive flag from the current range
-     * @return the new seek range, or null if the filter does not require a seek
+     * @return the new seek range, or null if the filter does not suggest a seek
      */
     Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive);
 }

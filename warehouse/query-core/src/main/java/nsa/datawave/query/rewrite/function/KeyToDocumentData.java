@@ -197,8 +197,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                     
                     if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
                         documentAttributes.add(Maps.immutableEntry(docAttrKey.get(), source.getTopValue()));
-                    } else if (filter instanceof SeekingFilter) {
-                        Range seekRange = ((SeekingFilter) filter).getSeekRange(docAttrKey.get(), keyRange.getEndKey(), keyRange.isEndKeyInclusive());
+                    } else if (filter != null) {
+                        // request a seek range from the filter
+                        Range seekRange = filter.getSeekRange(docAttrKey.get(), keyRange.getEndKey(), keyRange.isEndKeyInclusive());
                         if (seekRange != null) {
                             source.seek(seekRange, columnFamilies, inclusive);
                             seeked = true;
