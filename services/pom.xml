@@ -14,9 +14,10 @@
     <packaging>pom</packaging>
     <modules>
         <module>common</module>
-        <module>authorization</module>
+        <module>authorization-service</module>
         <module>config-service</module>
         <module>audit</module>
+        <module>hazelcast</module>
     </modules>
     <properties>
         <docker.image.prefix>datawave</docker.image.prefix>
@@ -42,12 +43,12 @@
             </dependency>
             <dependency>
                 <groupId>datawave.microservice</groupId>
-                <artifactId>authorization-common</artifactId>
+                <artifactId>common</artifactId>
                 <version>${version.datawave}</version>
             </dependency>
             <dependency>
                 <groupId>datawave.microservice</groupId>
-                <artifactId>common</artifactId>
+                <artifactId>hazelcast-client</artifactId>
                 <version>${version.datawave}</version>
             </dependency>
             <dependency>

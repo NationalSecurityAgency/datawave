@@ -34,8 +34,9 @@ spring:
       host: consul
       discovery:
         port: ${server.non-secure-port}
-        healthCheckPath: ${server.context-path}${management.context-path}/health
-        healthCheckInterval: 15s
+        health-check-path: ${server.context-path}${management.context-path}/health
+        health-check-interval: 15s
+        instance-id: ${spring.application.name}:${vcap.application.instance_id:${spring.application.instance_id:${random.value}}}
       # Allow a long time for the Consul agent to become available.
       retry:
         max-attempts: 120

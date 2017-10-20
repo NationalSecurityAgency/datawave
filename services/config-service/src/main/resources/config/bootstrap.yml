@@ -91,3 +91,19 @@ spring:
     discovery:
       enabled: true
       failFast: true
+
+---
+
+spring:
+  profiles: 'nomessaging'
+  cloud:
+    discovery:
+      enabled: false
+  rabbitmq:
+    discovery:
+      enabled: false
+
+management:
+  health:
+    rabbit:
+      enabled: false

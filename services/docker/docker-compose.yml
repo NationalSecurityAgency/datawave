@@ -1,4 +1,4 @@
-version: '2.1'
+version: '2.2'
 services:
   discovery:
     image: consul:0.9.3
@@ -35,6 +35,15 @@ services:
     depends_on:
       discovery:
         condition: service_started
+
+  cache:
+    image: datawave/hazelcast-server
+    scale: 3
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.cloud.consul.host=discovery
+    networks:
+      - demo
 
   configuration:
     image: datawave/config-service

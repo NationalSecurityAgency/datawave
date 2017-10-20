@@ -1,0 +1,13 @@
+server:
+  port: 8443
+  non-secure-port: 8080
+
+spring:
+  cloud:
+    consul:
+      discovery:
+        register-health-check: false
+
+management:
+  security:
+    enabled: false
