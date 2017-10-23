@@ -19,6 +19,7 @@ import nsa.datawave.query.rewrite.exceptions.DatawaveFatalQueryException;
 import nsa.datawave.query.rewrite.iterator.QueryOptions;
 import nsa.datawave.query.rewrite.iterator.aggregation.DocumentData;
 import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
+import nsa.datawave.query.rewrite.predicate.SeekingFilter;
 import nsa.datawave.query.util.Tuple3;
 import nsa.datawave.webservice.query.exception.DatawaveErrorCode;
 import nsa.datawave.webservice.query.exception.QueryException;
@@ -131,7 +132,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                                                 // efficiency
             final Set<Key> docKeys = new HashSet<Key>();
             if (source.hasTop()) {
-                attrs = this.collectDocumentAttributes(from.getKey(), docKeys);
+                attrs = this.collectDocumentAttributes(from.getKey(), docKeys, keyRange);
                 this.appendHierarchyFields(attrs, keyRange, from.getKey());
             } else {
                 attrs = Collections.emptyList();
@@ -154,10 +155,12 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      *            A Key of the form "bucket type\x00uid: "
      * @param docKeys
      *            the names of generated generated attributes
+     * @param keyRange
+     *            the Range used to initialize source with seek()
      * @return
      */
-    public List<Entry<Key,Value>> collectDocumentAttributes(final Key documentStartKey, final Set<Key> docKeys) throws IOException {
-        return collectAttributesForDocumentKey(documentStartKey, source, equality, filter, docKeys);
+    public List<Entry<Key,Value>> collectDocumentAttributes(final Key documentStartKey, final Set<Key> docKeys, final Range keyRange) throws IOException {
+        return collectAttributesForDocumentKey(documentStartKey, source, equality, filter, docKeys, keyRange);
     }
     
     /**
@@ -166,10 +169,12 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      * 
      * @param documentStartKey
      *            A Key of the form "bucket type\x00uid: "
+     * @param keyRange
+     *            the Range used to initialize source with seek()
      * @return the attributes
      */
     private static List<Entry<Key,Value>> collectAttributesForDocumentKey(Key documentStartKey, SortedKeyValueIterator<Key,Value> source, Equality equality,
-                    EventDataQueryFilter filter, Set<Key> docKeys) throws IOException {
+                    EventDataQueryFilter filter, Set<Key> docKeys, Range keyRange) throws IOException {
         
         // setup the document key we are filtering for on the EventDataQueryFilter
         if (filter != null) {
@@ -184,6 +189,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             WeakReference<Key> docAttrKey = new WeakReference<>(source.getTopKey());
             
             while (docAttrKey != null) {
+                boolean seeked = false;
                 if (equality.partOf(documentStartKey, docAttrKey.get())) {
                     if (filter == null || filter.keep(docAttrKey.get())) {
                         docKeys.add(getDocKey(docAttrKey.get()));
@@ -191,10 +197,20 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                     
                     if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
                         documentAttributes.add(Maps.immutableEntry(docAttrKey.get(), source.getTopValue()));
+                    } else if (filter != null) {
+                        // request a seek range from the filter
+                        Range seekRange = filter.getSeekRange(docAttrKey.get(), keyRange.getEndKey(), keyRange.isEndKeyInclusive());
+                        if (seekRange != null) {
+                            source.seek(seekRange, columnFamilies, inclusive);
+                            seeked = true;
+                        }
                     }
                 }
                 
-                source.next();
+                // only call next if this wasn't a fresh seek()
+                if (!seeked) {
+                    source.next();
+                }
                 
                 if (source.hasTop()) {
                     docAttrKey = new WeakReference<>(source.getTopKey());
