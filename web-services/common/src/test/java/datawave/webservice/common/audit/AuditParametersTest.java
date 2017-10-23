@@ -1,4 +1,4 @@
-package datawave.microservice.audit.common;
+package datawave.webservice.common.audit;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.junit.Test;

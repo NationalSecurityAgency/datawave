@@ -3,8 +3,8 @@ package datawave.microservice.audit.accumulo.config;
 import datawave.microservice.audit.accumulo.AccumuloAuditor;
 import datawave.microservice.audit.accumulo.config.AccumuloAuditProperties.Accumulo;
 import datawave.microservice.audit.common.AuditMessageHandler;
-import datawave.microservice.audit.common.AuditParameters;
-import datawave.microservice.audit.common.Auditor;
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.Auditor;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.ClientConfiguration;
@@ -39,7 +39,7 @@ public class AccumuloAuditConfig {
         return new AuditMessageHandler(auditParameters, accumuloAuditor) {
             @Override
             @StreamListener(AccumuloAuditBinding.NAME)
-            public void onMessage(Map<String,Object> msg) throws Exception {
+            public void onMessage(Map<String,String> msg) throws Exception {
                 super.onMessage(msg);
             }
         };

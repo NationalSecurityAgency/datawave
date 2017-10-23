@@ -1,7 +1,7 @@
 package datawave.microservice.audit.accumulo;
 
-import datawave.microservice.audit.common.AuditParameters;
-import datawave.microservice.audit.common.Auditor;
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.Auditor;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;

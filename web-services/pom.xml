@@ -14,8 +14,6 @@
         <module>common-util</module>
         <module>security</module>
         <module>common</module>
-        <module>audit-log</module>
-        <module>audit-accumulo</module>
         <module>query</module>
         <module>client</module>
         <module>cached-results</module>

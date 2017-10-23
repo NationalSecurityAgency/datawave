@@ -1,9 +1,9 @@
 package datawave.microservice.audit.log.config;
 
 import datawave.microservice.audit.common.AuditMessageHandler;
-import datawave.microservice.audit.common.AuditParameters;
-import datawave.microservice.audit.common.Auditor;
 import datawave.microservice.audit.log.LogAuditor;
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.Auditor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Input;
@@ -24,7 +24,7 @@ public class LogAuditConfig {
         return new AuditMessageHandler(auditParameters, logAuditor) {
             @Override
             @StreamListener(LogAuditBinding.NAME)
-            public void onMessage(Map<String,Object> msg) throws Exception {
+            public void onMessage(Map<String,String> msg) throws Exception {
                 super.onMessage(msg);
             }
         };

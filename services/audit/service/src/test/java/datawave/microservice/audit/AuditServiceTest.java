@@ -1,13 +1,13 @@
 package datawave.microservice.audit;
 
 import datawave.common.test.integration.IntegrationTest;
-import datawave.microservice.audit.common.AuditParameters;
-import datawave.microservice.audit.common.Auditor;
 import datawave.microservice.audit.config.AuditServiceConfig;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.Auditor.AuditType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -58,7 +58,7 @@ public class AuditServiceTest {
     private String userDN = "userDn";
     private String query = "some query";
     private String authorizations = "AUTH1,AUTH2";
-    private Auditor.AuditType auditType = Auditor.AuditType.ACTIVE;
+    private AuditType auditType = AuditType.ACTIVE;
     
     @Before
     public void setup() {

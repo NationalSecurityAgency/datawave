@@ -2,8 +2,8 @@ package datawave.microservice.audit.accumulo;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.microservice.audit.accumulo.config.AccumuloAuditProperties;
-import datawave.microservice.audit.common.AuditParameters;
-import datawave.microservice.audit.common.Auditor;
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.Auditor;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -161,6 +161,10 @@ public class AccumuloAuditorTest {
     @Profile("AccumuloAuditorTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class AccumuloAuditorTestConfiguration {
+        @Bean
+        public AuditParameters auditParameters() {
+            return new AuditParameters();
+        }
         
         @Bean
         public Instance accumuloInstance(AccumuloAuditProperties accumuloAuditProperties) {

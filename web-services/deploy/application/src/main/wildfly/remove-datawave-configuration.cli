@@ -40,8 +40,6 @@ undeploy datawave-web-service.ear
 /subsystem=logging/logger=datawave.security:remove
 /subsystem=logging/logger=org.jboss.security.auth:remove
 /subsystem=logging/logger=org.jboss.security.authorization.modules.ejb.EJBPolicyModuleDelegate:remove
-/subsystem=logging/logger=datawave.webservice.audit.log:remove
-/subsystem=logging/logger=datawave.webservice.common.audit:remove
 /subsystem=logging/logger=datawave.webservice.mr:remove
 /subsystem=logging/logger=org.apache.hadoop.mapred:remove
 /subsystem=logging/logger=org.apache.hadoop.mapreduce:remove
@@ -54,19 +52,16 @@ undeploy datawave-web-service.ear
 /subsystem=logging/logger=org.jboss.resteasy.plugins.server:remove
 /subsystem=logging/logger=org.jboss.resteasy.specimpl:remove
 /subsystem=logging/logger=datawave.resteasy.interceptor:remove
-/subsystem=logging/logger=datawave.webservice.audit.server.log:remove
 /subsystem=logging/logger=grails.app.controllers.multimediawebgui:remove
 /subsystem=logging/logger=grails.app.filter.multimediawebgui:remove
 
 /subsystem=logging/periodic-rotating-file-handler=QUERY_LOG/:remove
 /subsystem=logging/periodic-rotating-file-handler=CACHED_LOG/:remove
 /subsystem=logging/periodic-rotating-file-handler=SECURITY_LOG/:remove
-/subsystem=logging/periodic-rotating-file-handler=AUDIT_LOG/:remove
 /subsystem=logging/periodic-rotating-file-handler=MAPREDUCE_LOG/:remove
 /subsystem=logging/periodic-rotating-file-handler=MODIFICATION_LOG/:remove
 /subsystem=logging/periodic-rotating-file-handler=DISTRIBUTED_QUERY_LOG/:remove
 /subsystem=logging/periodic-rotating-file-handler=RESTEASY_LOG/:remove
-/subsystem=logging/periodic-rotating-file-handler=SERVER_AUDIT_LOG/:remove
 
 /subsystem=logging/pattern-formatter=COLOR-PATTERN:write-attribute(name=pattern,value="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n")
 /subsystem=logging/pattern-formatter=PATTERN:write-attribute(name=pattern,value="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n")
@@ -99,9 +94,6 @@ undeploy mysql-connector-java-${version.mysql-connector}.jar
 # Remove ActiveMQ configuration changes, JMS Topics/Queues/DLQs
 #
 /subsystem=messaging-activemq/server=default/address-setting=jms.topic.AccumuloTableCache/:remove
-/subsystem=messaging-activemq/server=default/address-setting=jms.queue.ServerLogAuditQueue/:remove
-/subsystem=messaging-activemq/server=default/address-setting=jms.queue.LogAuditQueue/:remove
-/subsystem=messaging-activemq/server=default/address-setting=jms.queue.AccumuloAuditQueue/:remove
 /subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=redistribution-delay,value=-1L)
 /subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=page-size-bytes,value=2097152L)
 /subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=max-size-bytes,value=10485760L)
@@ -112,12 +104,6 @@ undeploy mysql-connector-java-${version.mysql-connector}.jar
 #/subsystem=messaging-activemq/server=default/:write-attribute(name=security-domain,value=other)
 jms-topic remove --topic-address=AccumuloTableCache
 jms-queue remove --queue-address=AccumuloTableCacheDLQ
-jms-queue remove --queue-address=LogAuditQueue
-jms-queue remove --queue-address=LogAuditDLQ
-jms-queue remove --queue-address=ServerLogAuditQueue
-jms-queue remove --queue-address=ServerLogAuditDLQ
-jms-queue remove --queue-address=AccumuloAuditQueue
-jms-queue remove --queue-address=AccumuloAuditDLQ
 jms-queue remove --queue-address=QueryMetricsQueue
 
 # Reset HTTP/HTTPS listener configuration for undertow
@@ -150,9 +136,6 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.metrics.accumulo.password:remove
 /system-property=dw.hornetq.system.userName:remove
 /system-property=dw.hornetq.system.password:remove
-/system-property=dw.audit.queues:remove
-/system-property=dw.audit.log.mdb.pool.size:remove
-/system-property=dw.audit.accumulo.mdb.pool.size:remove
 /system-property=dw.trusted.header.authentication:remove
 /system-property=dw.transport.guarantee:remove
 /system-property=dw.connectionPool.default:remove

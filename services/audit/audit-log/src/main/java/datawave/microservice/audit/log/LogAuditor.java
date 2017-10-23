@@ -1,7 +1,7 @@
 package datawave.microservice.audit.log;
 
-import datawave.microservice.audit.common.AuditParameters;
-import datawave.microservice.audit.common.Auditor;
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.Auditor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

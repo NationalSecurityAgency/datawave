@@ -72,18 +72,6 @@
         </dependency>
         <dependency>
             <groupId>datawave.webservices</groupId>
-            <artifactId>datawave-ws-audit-accumulo</artifactId>
-            <version>${project.version}</version>
-            <type>ejb</type>
-        </dependency>
-        <dependency>
-            <groupId>datawave.webservices</groupId>
-            <artifactId>datawave-ws-audit-log</artifactId>
-            <version>${project.version}</version>
-            <type>ejb</type>
-        </dependency>
-        <dependency>
-            <groupId>datawave.webservices</groupId>
             <artifactId>datawave-ws-cached-results</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
@@ -297,14 +285,6 @@
                         <ejbModule>
                             <groupId>datawave.webservices</groupId>
                             <artifactId>datawave-ws-security</artifactId>
-                        </ejbModule>
-                        <ejbModule>
-                            <groupId>datawave.webservices</groupId>
-                            <artifactId>datawave-ws-audit-accumulo</artifactId>
-                        </ejbModule>
-                        <ejbModule>
-                            <groupId>datawave.webservices</groupId>
-                            <artifactId>datawave-ws-audit-log</artifactId>
                         </ejbModule>
                         <ejbModule>
                             <groupId>datawave.webservices</groupId>

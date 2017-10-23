@@ -12,11 +12,9 @@ import datawave.webservice.common.audit.Auditor.AuditType;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 import com.google.common.base.Preconditions;
 
-import javax.ws.rs.core.MultivaluedMap;
 import java.util.Collection;
 
 public class AuditParameters implements ParameterValidator {
@@ -133,13 +131,13 @@ public class AuditParameters implements ParameterValidator {
         return selectors;
     }
     
-    public Map<String,Object> toMap() {
-        Map<String,Object> map = new HashMap<>();
-        map.put(QUERY_DATE, this.queryDate.getTime());
+    public Map<String,String> toMap() {
+        Map<String,String> map = new HashMap<>();
+        map.put(QUERY_DATE, Long.toString(this.queryDate.getTime()));
         map.put(USER_DN, this.userDn);
         map.put(QUERY_STRING, this.query);
         if (this.selectors != null) {
-            map.put(QUERY_SELECTORS, this.selectors);
+            map.put(QUERY_SELECTORS, String.join(",", this.selectors));
         }
         map.put(QUERY_AUTHORIZATIONS, this.auths);
         map.put(QUERY_AUDIT_TYPE, this.auditType.name());
@@ -147,34 +145,26 @@ public class AuditParameters implements ParameterValidator {
         return map;
     }
     
-    protected static MultivaluedMap<String,Object> parseMessage(Map<String,Object> msg) {
-        MultivaluedMap<String,Object> p = new MultivaluedMapImpl<>();
-        p.put(USER_DN, Collections.singletonList((Object) msg.get(USER_DN)));
-        p.put(QUERY_STRING, Collections.singletonList((Object) msg.get(QUERY_STRING)));
+    protected static Map<String,List<String>> parseMessage(Map<String,String> msg) {
+        Map<String,List<String>> p = new HashMap<>();
+        p.put(USER_DN, Collections.singletonList(msg.get(USER_DN)));
+        p.put(QUERY_STRING, Collections.singletonList(msg.get(QUERY_STRING)));
+        p.put(QUERY_DATE, Collections.singletonList(msg.get(QUERY_DATE)));
         if (msg.containsKey(QUERY_SELECTORS)) {
-            p.put(QUERY_SELECTORS, (List<Object>) msg.get(QUERY_SELECTORS));
+            p.put(QUERY_SELECTORS, Arrays.asList(msg.get(QUERY_SELECTORS).split(",")));
         }
-        p.put(QUERY_AUTHORIZATIONS, Collections.singletonList((Object) msg.get(QUERY_AUTHORIZATIONS)));
-        p.put(QUERY_AUDIT_TYPE, Collections.singletonList((Object) msg.get(QUERY_AUDIT_TYPE)));
-        p.put(QUERY_SECURITY_MARKING_COLVIZ, Collections.singletonList((Object) msg.get(QUERY_SECURITY_MARKING_COLVIZ)));
+        p.put(QUERY_AUTHORIZATIONS, Collections.singletonList(msg.get(QUERY_AUTHORIZATIONS)));
+        p.put(QUERY_AUDIT_TYPE, Collections.singletonList(msg.get(QUERY_AUDIT_TYPE)));
+        p.put(QUERY_SECURITY_MARKING_COLVIZ, Collections.singletonList(msg.get(QUERY_SECURITY_MARKING_COLVIZ)));
         return p;
     }
     
-    public AuditParameters fromMap(Map<String,Object> msg) {
+    public AuditParameters fromMap(Map<String,String> msg) {
         AuditParameters ap = new AuditParameters();
-        MultivaluedMap<String,Object> pObj = parseMessage(msg);
-        // parseMessage returns MultivaluedMap<String,Object> --> convert to a MultivaluedMap<String,Object> for call to validate()
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
-        for (Map.Entry<String,List<Object>> entry : pObj.entrySet()) {
-            for (Object o : entry.getValue()) {
-                if (o instanceof String) {
-                    p.add(entry.getKey(), (String) o);
-                }
-            }
-        }
+        Map<String,List<String>> p = parseMessage(msg);
         ap.validate(p);
-        ap.setQueryDate(new Date((long) msg.get(QUERY_DATE)));
-        ap.setSelectors((List<String>) msg.get(QUERY_SELECTORS));
+        ap.setQueryDate(new Date(Long.parseLong(msg.get(QUERY_DATE))));
+        ap.setSelectors(p.get(QUERY_SELECTORS));
         return ap;
     }
     

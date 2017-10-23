@@ -38,9 +38,6 @@ embed-server --server-config=standalone-full.xml
 /system-property=dw.metrics.accumulo.password:add(value=${accumulo.user.password})
 /system-property=dw.hornetq.system.userName:add(value=${hornetq.system.username})
 /system-property=dw.hornetq.system.password:add(value=${hornetq.system.password})
-/system-property=dw.audit.queues:add(value="${audit.queues}")
-/system-property=dw.audit.log.mdb.pool.size:add(value=${audit.log.mdb.pool.size})
-/system-property=dw.audit.accumulo.mdb.pool.size:add(value=${audit.cb.mdb.pool.size})
 /system-property=dw.trusted.header.authentication:add(value=${trusted.header.login})
 /system-property=dw.transport.guarantee:add(value=${webapp.transport.guarantee})
 /system-property=dw.connectionPool.default:add(value=WAREHOUSE)
@@ -118,12 +115,6 @@ embed-server --server-config=standalone-full.xml
 # Set up ActiveMQ, JMS Topics/Queues/DLQs
 #
 jms-topic add --topic-address=AccumuloTableCache --entries=topic/AccumuloTableCache
-jms-queue add --queue-address=LogAuditQueue --entries=queue/Audit.Log
-jms-queue add --queue-address=ServerLogAuditQueue --entries=queue/Audit.ServerLog
-jms-queue add --queue-address=AccumuloAuditQueue --entries=queue/Audit.Accumulo
-jms-queue add --queue-address=LogAuditDLQ --entries=queue/Audit.Log.DLQ
-jms-queue add --queue-address=ServerLogAuditDLQ --entries=queue/Audit.ServerLog.DLQ
-jms-queue add --queue-address=AccumuloAuditDLQ --entries=queue/Audit.Accumulo.DLQ
 jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTableCache.DLQ
 jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 #/subsystem=messaging-activemq/server=default/:write-attribute(name=security-domain,value=datawave)
@@ -134,9 +125,6 @@ jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 /subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=max-size-bytes,value=104857600)
 /subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=page-size-bytes,value=10485760)
 /subsystem=messaging-activemq/server=default/address-setting=#:write-attribute(name=redistribution-delay,value=10000)
-/subsystem=messaging-activemq/server=default/address-setting=jms.queue.LogAuditQueue/:add(dead-letter-address=jms.queue.LogAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
-/subsystem=messaging-activemq/server=default/address-setting=jms.queue.ServerLogAuditQueue/:add(dead-letter-address=jms.queue.ServerLogAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
-/subsystem=messaging-activemq/server=default/address-setting=jms.queue.AccumuloAuditQueue/:add(dead-letter-address=jms.queue.AccumuloAuditDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
 /subsystem=messaging-activemq/server=default/address-setting=jms.topic.AccumuloTableCache/:add(dead-letter-address=jms.queue.AccumuloTableCacheDLQ,expiry-address=jms.queue.ExpiryQueue,redistribution-delay=0,max-size-bytes=104857600,page-size-bytes=10485760,message-counter-history-day-limit=10,address-full-policy=PAGE,redelivery-delay=10000)
 
 #
@@ -172,12 +160,10 @@ deploy mysql/mysql-connector-java-${version.mysql-connector}.jar
 /subsystem=logging/periodic-rotating-file-handler=QUERY_LOG/:add(level=DEBUG,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"Query.log"})
 /subsystem=logging/periodic-rotating-file-handler=CACHED_LOG/:add(level=INFO,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"CachedResults.log"})
 /subsystem=logging/periodic-rotating-file-handler=SECURITY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"Security.log"})
-/subsystem=logging/periodic-rotating-file-handler=AUDIT_LOG/:add(level=INFO,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"all_query_audit.log"})
 /subsystem=logging/periodic-rotating-file-handler=MAPREDUCE_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"MapReduce.log"})
 /subsystem=logging/periodic-rotating-file-handler=MODIFICATION_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"ModificationService.log"})
 /subsystem=logging/periodic-rotating-file-handler=DISTRIBUTED_QUERY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"DistributedQueryService.log"})
 /subsystem=logging/periodic-rotating-file-handler=RESTEASY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"RestEasy.log"})
-/subsystem=logging/periodic-rotating-file-handler=SERVER_AUDIT_LOG/:add(level=INFO,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"server_to_server_query_audit.log"})
 
 /subsystem=logging/logger=datawave.query:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.query.factory:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
@@ -198,8 +184,6 @@ deploy mysql/mysql-connector-java-${version.mysql-connector}.jar
 /subsystem=logging/logger=datawave.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.auth:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.authorization.modules.ejb.EJBPolicyModuleDelegate:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
-/subsystem=logging/logger=datawave.webservice.audit.log:add(use-parent-handlers=false,handlers=["AUDIT_LOG"],level=INFO)
-/subsystem=logging/logger=datawave.webservice.common.audit:add(use-parent-handlers=false,handlers=["AUDIT_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.webservice.mr:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
 /subsystem=logging/logger=org.apache.hadoop.mapred:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
 /subsystem=logging/logger=org.apache.hadoop.mapreduce:add(use-parent-handlers=false,handlers=["MAPREDUCE_LOG"])
@@ -212,7 +196,6 @@ deploy mysql/mysql-connector-java-${version.mysql-connector}.jar
 /subsystem=logging/logger=org.jboss.resteasy.plugins.server:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.specimpl:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=datawave.resteasy.interceptor:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
-/subsystem=logging/logger=datawave.webservice.audit.server.log:add(use-parent-handlers=false,handlers=["SERVER_AUDIT_LOG"],level=INFO)
 
 # Custom log levels
 /subsystem=logging/logger=httpclient.wire:add(level=TRACE)

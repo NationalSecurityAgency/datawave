@@ -1,7 +1,7 @@
 package datawave.microservice.audit.log;
 
-import datawave.microservice.audit.common.AuditParameters;
-import datawave.microservice.audit.common.Auditor;
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.Auditor;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -16,6 +16,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -106,7 +107,10 @@ public class LogAuditorTest {
     @Profile("LogAuditorTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class LogAuditorTestConfiguration {
-        
+        @Bean
+        public AuditParameters auditParameters() {
+            return new AuditParameters();
+        }
     }
     
     static class TestAppender extends AbstractAppender {

@@ -1,6 +1,8 @@
 package datawave.microservice.audit.common;
 
-import datawave.microservice.audit.common.Auditor.AuditType;
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.Auditor;
+import datawave.webservice.common.audit.Auditor.AuditType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +21,7 @@ public class AuditMessageHandler {
         this.auditor = auditor;
     }
     
-    public void onMessage(Map<String,Object> msg) throws Exception {
+    public void onMessage(Map<String,String> msg) throws Exception {
         try {
             auditParameters.clear();
             AuditParameters ap = auditParameters.fromMap(msg);

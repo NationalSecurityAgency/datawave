@@ -1,5 +1,8 @@
 package datawave.microservice.audit.common;
 
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.Auditor;
+import datawave.webservice.common.audit.Auditor.AuditType;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.junit.Test;
 
@@ -16,7 +19,7 @@ public class AuditMessageHandlerTest {
         auditParams.setUserDn("someUser");
         auditParams.setAuths("AUTH1,AUTH2");
         auditParams.setQuery("test query");
-        auditParams.setAuditType(Auditor.AuditType.ACTIVE);
+        auditParams.setAuditType(AuditType.ACTIVE);
         auditParams.setColviz(new ColumnVisibility("ALL"));
         auditParams.setQueryDate(new Date());
         
@@ -26,8 +29,8 @@ public class AuditMessageHandlerTest {
         
         auditMessageHandler.onMessage(auditParams.toMap());
         
-        Map<String,Object> received = auditor.getAuditParameters().toMap();
-        Map<String,Object> expected = auditParams.toMap();
+        Map<String,String> received = auditor.getAuditParameters().toMap();
+        Map<String,String> expected = auditParams.toMap();
         
         for (String param : expected.keySet()) {
             assertEquals(expected.get(param), received.get(param));

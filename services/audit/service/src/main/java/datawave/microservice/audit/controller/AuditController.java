@@ -1,7 +1,7 @@
 package datawave.microservice.audit.controller;
 
-import datawave.microservice.audit.common.AuditParameters;
 import datawave.microservice.audit.config.AuditServiceConfig;
+import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
