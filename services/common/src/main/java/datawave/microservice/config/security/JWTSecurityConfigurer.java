@@ -8,6 +8,7 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.autoconfigure.security.SpringBootWebSecurityConfiguration;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +42,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true, jsr250Enabled = true)
+@ConditionalOnProperty(name = "security.jwt.enabled", matchIfMissing = true)
 public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
     private final ManagementServerProperties managementServerProperties;
     private final DatawaveSecurityProperties securityProperties;

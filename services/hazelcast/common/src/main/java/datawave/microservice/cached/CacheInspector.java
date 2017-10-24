@@ -1,21 +1,11 @@
 package datawave.microservice.cached;
 
-import org.springframework.cache.CacheManager;
-
 import java.util.List;
 
 /**
  * Provides functionality to query the objects (typically DatawaveUser objects) stored in a cache.
  */
 public interface CacheInspector {
-    
-    /**
-     * Indicates the {@link CacheManager} class type that this inspector can inspect.
-     * 
-     * @return the supported {@link CacheManager} class
-     */
-    Class<? extends CacheManager> getManagerClass();
-    
     /**
      * Retrieves the T cached in cacheName under key.
      *

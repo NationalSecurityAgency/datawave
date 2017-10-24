@@ -67,7 +67,16 @@ public class DatawaveSecurityProperties extends SecurityProperties {
     }
     
     public static class Jwt {
+        private boolean enabled = true;
         private int ttl;
+        
+        public boolean isEnabled() {
+            return enabled;
+        }
+        
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
         
         public int getTtl() {
             return ttl;

@@ -1,7 +1,6 @@
 package datawave.microservice.cached;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.spring.cache.HazelcastCacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
@@ -9,7 +8,6 @@ import org.springframework.cache.CacheManager;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -22,11 +20,6 @@ class HazelcastCacheInspector implements CacheInspector {
     
     public HazelcastCacheInspector(CacheManager cacheManager) {
         this.cacheManager = cacheManager;
-    }
-    
-    @Override
-    public Class<? extends CacheManager> getManagerClass() {
-        return HazelcastCacheManager.class;
     }
     
     @Override

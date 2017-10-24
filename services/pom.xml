@@ -22,6 +22,7 @@
     <properties>
         <docker.image.prefix>datawave</docker.image.prefix>
         <eclipseFormatterStyle>${datawave.root}/../contrib/Eclipse-Datawave-Codestyle.xml</eclipseFormatterStyle>
+        <hazelcast.version>3.9</hazelcast.version>
         <java.version>1.8</java.version>
         <version.accumulo>1.8.1</version.accumulo>
         <version.datawave>2.0.0-srf-SNAPSHOT</version.datawave>
