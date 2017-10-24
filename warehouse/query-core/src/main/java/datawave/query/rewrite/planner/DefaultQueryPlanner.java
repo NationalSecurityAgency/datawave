@@ -1418,6 +1418,16 @@ public class DefaultQueryPlanner extends QueryPlanner {
         return baseUriAlternatives.toString();
     }
     
+    /**
+     * Extend to further configure QueryIterator
+     * 
+     * @param config
+     * @param cfg
+     */
+    protected void configureAdditionalOptions(RefactoredShardQueryConfiguration config, IteratorSetting cfg) {
+        // no-op
+    }
+    
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final RefactoredShardQueryConfiguration config,
                     final Query settings, final String queryString, final Boolean isFullTable) throws DatawaveQueryException {
         
@@ -1470,6 +1480,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
                 
                 configureTypeMappings(config, cfg, metadataHelper, compressMappings);
+                configureAdditionalOptions(config, cfg);
                 
                 try {
                     addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS,
