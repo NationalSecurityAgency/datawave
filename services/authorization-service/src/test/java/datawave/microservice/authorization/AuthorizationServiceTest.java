@@ -1,5 +1,8 @@
 package datawave.microservice.authorization;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import datawave.common.test.integration.IntegrationTest;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
@@ -106,13 +109,20 @@ public class AuthorizationServiceTest {
     }
     
     @ImportAutoConfiguration({RefreshAutoConfiguration.class})
-    @AutoConfigureCache(cacheProvider = CacheType.EHCACHE)
+    @AutoConfigureCache(cacheProvider = CacheType.HAZELCAST)
     @ComponentScan(basePackages = "datawave.microservice")
     @Configuration
     public static class AuthorizationServiceTestConfiguration {
         @Bean
         public CachedDatawaveUserService cachedDatawaveUserService(CacheManager cacheManager, CacheInspector cacheInspector) {
             return new TestUserService(cacheManager, cacheInspector);
+        }
+        
+        @Bean
+        public HazelcastInstance hazelcastInstance() {
+            Config config = new Config();
+            config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+            return Hazelcast.newHazelcastInstance(config);
         }
     }
     

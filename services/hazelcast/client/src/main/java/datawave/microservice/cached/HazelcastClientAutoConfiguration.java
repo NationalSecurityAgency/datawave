@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,6 +23,7 @@ import java.io.ByteArrayInputStream;
 @ConditionalOnBean(DiscoveryServiceProvider.class)
 @AutoConfigureBefore(HazelcastAutoConfiguration.class)
 @AutoConfigureAfter(HazelcastDiscoveryServiceAutoConfiguration.class)
+@EnableConfigurationProperties(HazelcastClientProperties.class)
 public class HazelcastClientAutoConfiguration {
     @Bean
     public ClientConfig clientConfig(HazelcastClientProperties clientProperties, DiscoveryServiceProvider discoveryServiceProvider) {
