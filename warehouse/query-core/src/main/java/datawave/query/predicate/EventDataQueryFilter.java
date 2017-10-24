@@ -17,7 +17,7 @@ import com.google.common.collect.Sets;
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.
  */
-public class EventDataQueryFilter extends KeyProjection implements Filter {
+public class EventDataQueryFilter extends KeyProjection implements Filter, SeekingFilter {
     
     public EventDataQueryFilter() {
         super();
@@ -88,5 +88,22 @@ public class EventDataQueryFilter extends KeyProjection implements Filter {
      */
     public Range getKeyRange(Map.Entry<Key,Document> from) {
         return new Range(getStartKey(from.getKey()), true, getStopKey(from.getKey()), false);
+    }
+    
+    /**
+     * Not yet implemented for this filter. Not guaranteed to be called
+     *
+     * @param current
+     *            the current key at the top of the source iterator
+     * @param endKey
+     *            the current range endKey
+     * @param endKeyInclusive
+     *            the endKeyInclusive flag from the current range
+     * @return
+     */
+    @Override
+    public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
+        // not yet implemented
+        return null;
     }
 }
