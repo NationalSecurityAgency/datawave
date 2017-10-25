@@ -62,7 +62,7 @@ public class UndertowStartupBugWorkaroundConfig {
                 ReflectionUtils.makeAccessible(undertowField);
                 Undertow undertow = (Undertow) ReflectionUtils.getField(undertowField, this);
                 
-                Field deploymentManagerField = ReflectionUtils.findField(UndertowEmbeddedServletContainer.class, null, Undertow.class);
+                Field deploymentManagerField = ReflectionUtils.findField(UndertowEmbeddedServletContainer.class, null, DeploymentManager.class);
                 ReflectionUtils.makeAccessible(deploymentManagerField);
                 DeploymentManager deploymentManager = (DeploymentManager) ReflectionUtils.getField(deploymentManagerField, this);
                 

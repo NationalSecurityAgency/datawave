@@ -7,8 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Provides an instance of a {@link CacheInspector} based on the type of wired {@link CacheManager}. Currently only EhCache, Hazelcast, Guava, and ConcurrentMap
- * caches are supported.
+ * Provides an instance of a {@link CacheInspector}.
  */
 @Configuration
 @ConditionalOnClass(CacheManager.class)

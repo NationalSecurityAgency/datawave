@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +21,7 @@ import java.io.ByteArrayInputStream;
  * Auto-configuration necessary to set up a Hazelcast client that connects to a Hazelcast cluster that has been discovered using Consul.
  */
 @Configuration
+@ConditionalOnProperty(name = "hazelcast.client.enabled", matchIfMissing = true)
 @ConditionalOnBean(DiscoveryServiceProvider.class)
 @AutoConfigureBefore(HazelcastAutoConfiguration.class)
 @AutoConfigureAfter(HazelcastDiscoveryServiceAutoConfiguration.class)
