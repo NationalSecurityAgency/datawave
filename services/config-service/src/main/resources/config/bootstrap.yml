@@ -53,16 +53,8 @@ spring:
           # Override this on the command-line by passing --spring.cloud.config.server.git.uri=file:///path/to/config/repo
           # If you change it to an SSH git URL, then you may need to add --spring.cloud.config.server.git.password=<your_private_key_password> if your private key is encrypted
           uri: 'file:///tmp/microservice-config'
-    bus:
-      enabled: false
   rabbitmq:
     host: '${MESSAGING_SERVER_HOSTNAME:localhost}'
-
-# Disable the RabbitMQ health check in the dev profile (it goes with disabling the AMQP bus)
-management:
-  health:
-    rabbit:
-      enabled: false
 
 encrypt:
   failOnError: true
@@ -94,10 +86,11 @@ spring:
 
 ---
 
+# For the "No Messaging" profile, we need to disable the AMQP bus, our custom RabbitMQ discovery, and the RabbitMQ health indicator.
 spring:
   profiles: 'nomessaging'
   cloud:
-    discovery:
+    bus:
       enabled: false
   rabbitmq:
     discovery:

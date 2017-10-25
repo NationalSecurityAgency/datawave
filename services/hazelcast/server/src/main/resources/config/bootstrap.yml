@@ -1,12 +1,9 @@
-logging:
-  level:
-    org.springframework.cloud: 'TRACE'
-
 spring:
   application:
     name: cache
   cloud:
     config:
+      enabled: true
       # Use Consul to locate the configuration server and bootstrap app config.
       discovery:
         enabled: true
@@ -15,14 +12,20 @@ spring:
       # Give the config server a long time to come up and register itself in Consul
       retry:
         max-attempts: 120
-      enabled: true
-    consul:
-      enabled: true
-      discovery:
-        tags: "hzHost=${hazelcast.cluster.host}, hzPort=${hazelcast.cluster.port}"
-        register-health-check: false
-        instance-id: ${spring.application.name}:${vcap.application.instance_id:${spring.application.instance_id:${random.value}}}
+
+---
+
+# For the "No Messaging" profile, we need to disable the AMQP bus, our custom RabbitMQ discovery, and the RabbitMQ health indicator.
+spring:
+  profiles: 'nomessaging'
+  cloud:
+    bus:
+      enabled: false
   rabbitmq:
     discovery:
-      enabled: true
-      failFast: true
+      enabled: false
+
+management:
+  health:
+    rabbit:
+      enabled: false

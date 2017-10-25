@@ -17,7 +17,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -56,17 +55,16 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
         this.authenticationEntryPoint = new Http403ForbiddenEntryPoint();
     }
-    
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-        // Ignore all requests to the management interface for this configuration. We'll configure security for that separately.
-        web.ignoring().antMatchers(managementServerProperties.getContextPath() + "/**");
-    }
-    
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         // Apply this configuration to all requests...
         http = http.requestMatchers().anyRequest().and();
+        // Explicitly allow actuator (management) requests. Normally if we're using the actuator interfaces, the security for them is configured separately.
+        // However, if we disable that security, then this one will apply and would require that all requests be authorized which would then defeat the
+        // purpose of setting management.security.enabled to false. Therefore, we explicitly allow those interfaces here knowing that, if management security
+        // is enabled, that configuration will take precedence over this one.
+        http.authorizeRequests().antMatchers(managementServerProperties.getContextPath() + "/**").permitAll();
         
         if (securityProperties.isRequireSsl()) {
             http.requiresChannel().anyRequest().requiresSecure();

@@ -42,6 +42,10 @@ services:
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.cloud.consul.host=discovery
+    ports:
+      - "5701"
+      - "8080"
+      - "8443"
     networks:
       - demo
 
@@ -51,8 +55,6 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=dev,consul,native
       - --spring.cloud.consul.host=discovery
-      - --spring.cloud.bus.enabled=true
-      - --management.health.rabbit.enabled=true
       - --spring.cloud.config.server.native.searchLocations=file:///microservice-config
     ports:
       - "8888:8888"

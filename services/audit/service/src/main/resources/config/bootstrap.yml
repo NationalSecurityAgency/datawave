@@ -11,19 +11,16 @@ spring:
       # Give the config server time to start up if it hasn't already
       retry:
         max-attempts: 60
-      #Bug? Setting this breaks discovery-first bootstrap.
-      #uri: '${CONFIG_SERVER_URL:http://configuration:8888}'
+      uri: '${CONFIG_SERVER_URL:http://configuration:8888}'
 
 ---
 
-# For the dev profile, check localhost for the config server by default and don't use the AMQP bus
+# For the dev profile, check localhost for the config server by default
 spring:
   profiles: 'dev'
   cloud:
     config:
       uri: '${CONFIG_SERVER_URL:http://localhost:8888}'
-    bus:
-      enabled: false
 
 ---
 
@@ -37,3 +34,20 @@ spring:
       # Give the config server a long time to come up and register itself in Consul
       retry:
         max-attempts: 120
+
+---
+
+# For the "No Messaging" profile, we need to disable the AMQP bus, our custom RabbitMQ discovery, and the RabbitMQ health indicator.
+spring:
+  profiles: 'nomessaging'
+  cloud:
+    bus:
+      enabled: false
+  rabbitmq:
+    discovery:
+      enabled: false
+
+management:
+  health:
+    rabbit:
+      enabled: false
