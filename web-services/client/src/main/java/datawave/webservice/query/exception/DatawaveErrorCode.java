@@ -245,6 +245,7 @@ public enum DatawaveErrorCode {
     FIELD_NAME_MISSING(404, 26, "Could not get field name."),
     STOPWATCH_MISSING(404, 27, "Stopwatch missing."),
     VALUE_OPERATOR_MISSING(404, 28, "No operator for value."),
+    SERVICE_NOT_CONFIGURED(404, 29, "Service is not configured."),
     // 412 Precondition Failed
     CACHED_RESULTS_IMPORT_ERROR(412, 1, "Error trying to import cached results data from another node."),
     CACHED_RESULTS_PERSIST_ERROR(412, 2, "Error trying to persist/retrieve cached results."),
