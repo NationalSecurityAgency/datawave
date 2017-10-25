@@ -55,7 +55,7 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
         this.authenticationEntryPoint = new Http403ForbiddenEntryPoint();
     }
-
+    
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         // Apply this configuration to all requests...
