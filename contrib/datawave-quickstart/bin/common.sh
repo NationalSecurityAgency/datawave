@@ -2,32 +2,15 @@ BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 source "${BIN_DIR}/logging.sh"
 
+# Upon uninstall, tarballs will be preserved in place by default.
+# To remove them, use DW_UNINSTALL_RM_BINARIES_FLAG
+
+DW_UNINSTALL_RM_BINARIES_FLAG="--remove-binaries"
+
 function register() {
    local servicename="$1"
    local servicescript="${DW_CLOUD_HOME}/bin/services/${servicename}/bootstrap.sh"
-   #
-   # Here we create & maintain a simple registry of service names, so that services can
-   # be manipulated without hard-coding their distinct names in our "*All" functions
-   # below, etc...
-   #
-   # Note that the service "contract" requires the following:
-   #
-   #   (1) A "bin/services/{servicename}/bootstrap.sh" script must exist and provide any
-   #       environment variables and configs that are required for bootstrapping.
-   #
-   #   (2) More specifically, the bootstrap.sh script must implement the following wrapper
-   #       functions, which can be used to control and inspect the service as needed:
-   #
-   #       {servicename}Start       - Starts the service
-   #       {servicename}Stop        - Stops the service
-   #       {servicename}Status      - Current status of the service, including PIDs if running
-   #       {servicename}Install     - Installs the service
-   #       {servicename}Uninstall   - Uninstalls the service
-   #       {servicename}IsRunning   - Returns 0 if running, non-zero otherwise
-   #       {servicename}IsInstalled - Returns 0 if installed, non-zero otherwise
-   #       {servicename}Printenv    - Display current state of the service config
-   #       {servicename}PidList     - Display all service PIDs (on a single line, space-delimited)
-   #
+
    if [ -z "${servicename}" ] ; then
       error "Registration failed: service name was null"
       return 1
@@ -52,7 +35,11 @@ function register() {
 }
 
 function resetDataWaveEnvironment() {
+   # This function will re-source all bootstraps and thus re-register all configured services.
+   # To accomplish that, all we need to do is unset DW_CLOUD_SERVICES and then source env.sh
+
    DW_CLOUD_SERVICES=""
+
    source "${DW_CLOUD_HOME}/bin/env.sh"
 }
 
@@ -95,25 +82,7 @@ function downloadTarball() {
    fi
 }
 
-function downloadOracleJava8Tarball() {
-    local tarball="$1"
-    local tarballdir="$2"
 
-    local oracle_url="http://www.oracle.com"
-    local jdk_url1="$oracle_url/technetwork/java/javase/downloads/index.html"
-    local jdk_url2=$(curl -s "${jdk_url1}" | egrep -o "\/technetwork\/java/\javase\/downloads\/jdk8-downloads-.+?\.html" | head -1 | cut -d '"' -f 1)
-
-    [[ -z "$jdk_url2" ]] && error "Could not get jdk download url - $jdk_url1"
-
-    local jdk_url3="${oracle_url}${jdk_url2}"
-    local jdk_url4=$(curl -s $jdk_url3 | egrep -o "http\:\/\/download.oracle\.com\/otn-pub\/java\/jdk\/8u[0-9]+\-(.*)+\/jdk-8u[0-9]+(.*)linux-x64.tar.gz")
-
-    if [ ! -f "${tarballdir}/${tarball}" ] ; then
-        $( cd "${tarballdir}" && wget --no-cookies --no-check-certificate \
-             --header "Cookie: oraclelicense=accept-securebackup-cookie" \
-             $jdk_url4 -O $tarball ) || error "Failed to wget '${jdk_url4}'"
-    fi
-}
 
 function writeSiteXml() {
    # Writes *-site.xml files, such as hdfs-site.xml, accumulo-site.xml, etc...
@@ -133,7 +102,7 @@ function writeSiteXml() {
    printf "<configuration>${xml}\n</configuration>" > ${sitefile} )
 }
 
-function statusAll() {
+function allStatus() {
    # Gets the status of all registered services
    local services=(${DW_CLOUD_SERVICES})
    for servicename in "${services[@]}" ; do
@@ -141,7 +110,7 @@ function statusAll() {
    done
 }
 
-function startAll() {
+function allStart() {
    # Starts all registered services
    local services=(${DW_CLOUD_SERVICES})
    for servicename in "${services[@]}" ; do
@@ -153,7 +122,7 @@ function startAll() {
    done
 }
 
-function stopAll() {
+function allStop() {
 
    [[ "${1}" == "--hard" ]] && local kill9=true
 
@@ -230,11 +199,11 @@ function installMissingServices() {
    fi
 }
 
-function installAll() {
+function allInstall() {
    # Installs all registered services
    if servicesAreRunning ; then
       echo "Services are currently running"
-      statusAll
+      allStatus
       return 1
    fi
    local services=(${DW_CLOUD_SERVICES})
@@ -243,31 +212,52 @@ function installAll() {
    done
 }
 
-function uninstallAll() {
-   # All data will be removed by default. To keep data, add '--keep-data' argument
+function allUninstall() {
+   # ${DW_CLOUD_DATA} will be removed by default. To keep it, use '--keep-data' flag
 
    # Uninstalls all registered services. 
    if servicesAreRunning ; then
       echo "Stop running services before uninstalling!"
-      statusAll
+      allStatus
       return 1
    fi
 
    askYesNo "Uninstalling everything under '${DW_CLOUD_HOME}'. This can not be undone.
 Continue?" || return 1
 
-   local services=(${DW_CLOUD_SERVICES})
-   for servicename in "${services[@]}" ; do
-      ${servicename}Uninstall
+   local removeBinaries=false
+   local keepData=false
+
+   while [ "${1}" != "" ]; do
+      case "${1}" in
+         --keep-data)
+            keepData=true
+            ;;
+         ${DW_UNINSTALL_RM_BINARIES_FLAG})
+            removeBinaries=true
+            ;;
+         *)
+            error "Invalid argument passed: ${1}" && return 1
+       esac
+       shift
    done
 
-   if [[ -z  "$1" || "$1" != "--keep-data" ]] ; then
+   local services=(${DW_CLOUD_SERVICES})
+   for servicename in "${services[@]}" ; do
+      if [ "${removeBinaries}" == true ] ; then
+         ${servicename}Uninstall ${DW_UNINSTALL_RM_BINARIES_FLAG}
+      else
+         ${servicename}Uninstall
+      fi
+   done
+
+   if [[ "${keepData}" == false ]] ; then
       # Remove data
       [ -d "${DW_CLOUD_DATA}" ] && rm -rf "${DW_CLOUD_DATA}" && info "Removed ${DW_CLOUD_DATA}"
    fi
 }
 
-function printenvAll() {
+function allPrintenv() {
    echo
    echo "DW Cloud Environment"
    echo
@@ -283,7 +273,7 @@ function assertCreateDir() {
    [[ $# -eq 0 || -z "$1" ]] && fatal "[${FUNCNAME[0]}] Directory parameter cannot be empty"
    [ -d $1 ] && warn "[${FUNCNAME[0]}] already exists!" && return
    mkdir -p "$1" && info "Created directory: $1"
-   [ ! -d "$1" ] && fatal "[${FUNCNAME[0]}] configured based directory $1 does not exist"
+   [ ! -d "$1" ] && fatal "[${FUNCNAME[0]}] configured base directory $1 does not exist"
 }
 
 function sshIsInstalled() {

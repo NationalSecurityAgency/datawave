@@ -57,6 +57,8 @@ function nifiUninstall() {
    else
       info "NiFi not installed. Nothing to do"
    fi
+
+   [ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG}" ] && rm -f "${DW_NIFI_SERVICE_DIR}"/*.tar.gz
 }
 
 function nifiInstall() {

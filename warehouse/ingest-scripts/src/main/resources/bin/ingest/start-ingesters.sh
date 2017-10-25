@@ -52,7 +52,7 @@ $START_INGEST_SERVERS_CMD -type all
 
 sleep 1
 
-PID=`ps -wwef | egrep "python .*cleanupserver.py" | grep -v grep | awk {'print $2'}`
+PID=`ps -wwef | egrep "python .*cleanup-server.py" | grep -v grep | awk {'print $2'}`
 if [ -z $PID ]; then
         echo "starting cleanup server ..."
         $CLEAN_CMD &

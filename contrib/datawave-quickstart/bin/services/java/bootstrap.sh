@@ -8,6 +8,26 @@ DW_JAVA_DIST="$( basename "${DW_JAVA_DIST_URI}" )"
 DW_JAVA_BASEDIR="jdk-8-linux-x64"
 DW_JAVA_SYMLINK="java"
 
+function downloadOracleJava8Tarball() {
+    local tarball="$1"
+    local tarballdir="$2"
+
+    local oracle_url="http://www.oracle.com"
+    local jdk_url1="$oracle_url/technetwork/java/javase/downloads/index.html"
+    local jdk_url2=$(curl -s "${jdk_url1}" | egrep -o "\/technetwork\/java/\javase\/downloads\/jdk8-downloads-.+?\.html" | head -1 | cut -d '"' -f 1)
+
+    [[ -z "$jdk_url2" ]] && error "Could not get jdk download url - $jdk_url1"
+
+    local jdk_url3="${oracle_url}${jdk_url2}"
+    local jdk_url4=$(curl -s $jdk_url3 | egrep -o "http\:\/\/download.oracle\.com\/otn-pub\/java\/jdk\/8u[0-9]+\-(.*)+\/jdk-8u[0-9]+(.*)linux-x64.tar.gz")
+
+    if [ ! -f "${tarballdir}/${tarball}" ] ; then
+        $( cd "${tarballdir}" && wget --no-cookies --no-check-certificate \
+             --header "Cookie: oraclelicense=accept-securebackup-cookie" \
+             $jdk_url4 -O $tarball ) || error "Failed to wget '${jdk_url4}'"
+    fi
+}
+
 function bootstrapEmbeddedJava() {
     if [ ! -f "${DW_JAVA_SERVICE_DIR}/${DW_JAVA_DIST}" ] ; then
         info "JDK 1.8 was not detected. Attempting to bootstrap a dedicated install..."
@@ -67,6 +87,8 @@ function javaUninstall() {
     else
         info "Java not installed. Nothing to do"
     fi
+
+    [ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG}" ] && rm -f "${DW_JAVA_SERVICE_DIR}"/*.tar.gz
 }
 
 function javaIsRunning() {

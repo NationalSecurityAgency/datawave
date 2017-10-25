@@ -51,8 +51,8 @@
 
 * Helper script for starting up DataWave ingest and web service components in the container, via 
   ` --ingest ` and ` --web ` flags respectively. When invoked with the ` --bash ` flag, the script
-  will ` exec /bin/bash ` as the main container process (appropriate for ` docker run -it ` usage).
-  Without the ` --bash ` flag, the script will go into an infinite loop after starting services
-  (more appropriate for ` docker run -d ` usage)
+  will ` exec /bin/bash ` as the main container process, appropriate for ` docker run -it ` usage.
+  Without the ` --bash ` flag, the script will go into an infinite loop after starting services,
+  more appropriate for ` docker run -d ` usage
 
 ---

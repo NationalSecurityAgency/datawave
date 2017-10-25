@@ -14,10 +14,15 @@
 !bin/services/**/bootstrap*.sh
 !bin/services/**/install*.sh
 !bin/services/datawave/test-web
+!/bin/services/datawave/test-web/tests
+!/bin/services/datawave/test-web/responses
+!bin/services/datawave/**/tests/*.test
+!bin/services/datawave/**/responses/*.expected
 !bin/services/datawave/test*/run.sh
 !bin/services/datawave/test*/common.sh
-!bin/services/datawave/**/http-response-*.expected
-!bin/services/datawave/**/config-*.test
+
+
 !.dockerignore
 !docker
 !docker/**
+

@@ -1,0 +1,144 @@
+
+################################################################
+# Test /Query/EventQuery/create endpoint but using JEXL syntax
+
+# The only difference between this test file and EventQueryLuceneSyntax.test
+# is that we're using JEXL syntax here throughout.
+
+# Note that the JEXL equivalent of the unfielded LUCENE query
+# uses the special _ANYFIELD_ identifier
+
+setData query=$( urlencode "_ANYFIELD_ == 'anarchy'" ) \
+        queryName=EventQueryTestJexl \
+        begin=20130301 \
+        end=20130401 \
+        pagesize=1 \
+        auths=PUBLIC \
+        columnVisibility=PRIVATE \
+        query.syntax=JEXL
+
+TEST_ID="EventQueryCreateJexlUnfielded"
+TEST_DESCRIPTION="Creates an equivalent 'unfielded' EventQuery w/JEXL query syntax via '_ANYFIELD_' identifier"
+TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DATA} -X POST ${URI_ROOT}/Query/EventQuery/create"
+EXPECTED_RESPONSE_TYPE="application/xml"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+# We run the above test here (rather than in run.sh), so that we can guarantee proper execution order,
+# as we need to parse out the dynamic query-id to configure follow-on tests below
+
+runTest
+
+################################################################
+# Test /Query/${QUERY_ID}/next endpoint
+
+setQueryIdFromResponseXml
+
+[ -z "${QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
+
+TEST_ID="EventQueryNextJexlUnfielded"
+TEST_DESCRIPTION="Gets the first page of results for the EventQueryCreate test"
+TEST_URL_OPTS="-X GET ${URI_ROOT}/Query/${QUERY_ID}/next"
+EXPECTED_RESPONSE_TYPE="application/xml"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+################################################################
+# Test /Query/${QUERY_ID}/close endpoint
+
+TEST_ID="EventQueryCloseJexlUnfielded"
+TEST_DESCRIPTION="Closes the query as necessary"
+TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${QUERY_ID}/close"
+EXPECTED_RESPONSE_TYPE="application/xml"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+    ################################################################
+######################### JEXL Fielded Query Tests #######################
+    ################################################################
+
+################################################################
+# Test /Query/EventQuery/create endpoint, FIELDED query this time
+# Should have two events returned...
+
+setData query=$( urlencode "PAGE_TITLE == 'anarchism' || PAGE_TITLE == 'accessiblecomputing'" ) \
+        queryName=EventQueryTestJexlFielded \
+        begin=20130301 \
+        end=20130401 \
+        pagesize=1 \
+        auths=PUBLIC \
+        columnVisibility=PRIVATE \
+        query.syntax=JEXL
+
+TEST_ID="EventQueryCreateJexlFielded"
+TEST_DESCRIPTION="Creates a valid, fielded EventQuery w/ JEXL query syntax"
+TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DATA} -X POST ${URI_ROOT}/Query/EventQuery/create"
+EXPECTED_RESPONSE_TYPE="application/xml"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+setQueryIdFromResponseXml
+[ -z "${QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
+
+################################################################
+# Get 1st page from /Query/${QUERY_ID}/next, in JSON format this time
+
+TEST_ID="EventQueryNextJexlFieldedJsonPage1"
+TEST_DESCRIPTION="Gets the 1st page of results for the EventQueryCreateJexlFielded test in JSON format"
+TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${QUERY_ID}/next"
+EXPECTED_RESPONSE_TYPE="application/json"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+################################################################
+# Get 2nd page from /Query/${QUERY_ID}/next, in JSON format
+
+TEST_ID="EventQueryNextJexlFieldedJsonPage2"
+TEST_DESCRIPTION="Gets the 2nd page of results for the EventQueryCreateJexlFielded test in JSON format"
+TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${QUERY_ID}/next"
+EXPECTED_RESPONSE_TYPE="application/json"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+################################################################
+# Try to get another page from /Query/${QUERY_ID}/next. Should be 204 / No content
+#
+# If this test fails, it's probably b/c the number of enwiki articles in the shard table != 2.
+#
+# If you're not sure why the failure occurred, check your ingest M/R job logs under datawave-ingest/logs/
+# or datawave-ingest/logs/archive/ to see if the HDFS file /Ingest/wikipedia/enwiki-20130305-pages-articles-brief.xml
+# was ingested. The file was left there intentionally to demonstrate DataWave Ingest FlagMaker usage. So, if
+# you've started up ingest at any point, then it was probably picked up by the FlagMaker process and ingested
+# automatically
+#
+
+TEST_ID="EventQueryNextJexlFielded204"
+TEST_DESCRIPTION="Returns 204 code signaling no-more-data for the EventQueryCreateJexlFielded test"
+TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${QUERY_ID}/next"
+EXPECTED_RESPONSE_TYPE=""
+EXPECTED_RESPONSE_CODE=204
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+################################################################
+# Close fielded query with /Query/${QUERY_ID}/close endpoint
+
+TEST_ID="EventQueryCloseJexlFielded"
+TEST_DESCRIPTION="Closes the query as necessary"
+TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${QUERY_ID}/close"
+EXPECTED_RESPONSE_TYPE="application/xml"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+# This last test is executed by run.sh, as usual

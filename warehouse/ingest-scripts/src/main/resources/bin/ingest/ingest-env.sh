@@ -16,7 +16,6 @@ fi
 shopt -s compat31 > /dev/null 2>&1
 
 # load the external password specifications.  The following needs to be defined in this script: PASSWORD, TRUSTSTORE_PASSWORD, KEYSTORE_PASSWORD
-# Optionally these additional passwords need to be defined: CACHE_PWORD, AGEOFF_SERVER_CERT_PASS
 function checkForVar (){
    found=`cat $1 | egrep " $2 *="`
    if [[ "$found" == "" ]]; then
@@ -29,10 +28,8 @@ if [[ "$PASSWORD_INGEST_ENV" != "" ]]; then
    if [[ -e ${PASSWORD_INGEST_ENV} ]]; then
       missing=\
 "$(checkForVar $PASSWORD_INGEST_ENV "PASSWORD")\
-$(checkForVar $PASSWORD_INGEST_ENV "CACHE_PWORD")\
 $(checkForVar $PASSWORD_INGEST_ENV "TRUSTSTORE_PASSWORD")\
-$(checkForVar $PASSWORD_INGEST_ENV "KEYSTORE_PASSWORD")\
-$(checkForVar $PASSWORD_INGEST_ENV "AGEOFF_SERVER_CERT_PASS")"
+$(checkForVar $PASSWORD_INGEST_ENV "KEYSTORE_PASSWORD")"
       if [[ "$missing" != "" ]]; then
          echo "FATAL: ${PASSWORD_INGEST_ENV} is missing the following definitions: $missing"
          exit 10
@@ -46,10 +43,8 @@ else
    echo "FATAL: PASSWORD_INGEST_ENV was not defined.  Please define this in your deployment properties and create that script on this system."
    echo "   e.g. /opt/datawave-ingest/ingest-passwd.sh:"
    echo "        export PASSWORD=\"accumulo_passwd\""
-   echo "        export CACHE_PWORD=\"accumulo_passwd\""
    echo "        export TRUSTSTORE_PASSWORD=\"trust_passwd\""
    echo "        export KEYSTORE_PASSWORD=\"cert_passwd\""
-   echo  "        export AGEOFF_SERVER_CERT_PASS=\"cert_passwd\""
    exit 10
 fi
 
@@ -136,7 +131,7 @@ LIVE_CHILD_MAX_MEMORY_MB="${LIVE_CHILD_MAX_MEMORY_MB}"
 BULK_CHILD_MAX_MEMORY_MB="${BULK_CHILD_MAX_MEMORY_MB}"
 MISSION_MGMT_CHILD_MAP_MAX_MEMORY_MB="${MISSION_MGMT_CHILD_MAP_MAX_MEMORY_MB}"
 
-# The next two comma delimited lists work in concet with each other and must align
+# The next two comma delimited lists work in concert with each other and must align
 CONFIG_DATA_TYPES="${CONFIG_DATA_TYPES}"
 CONFIG_FILES="${CONFIG_FILES}"
 if [[ "$CONFIG_FILES" == "" ]]; then
@@ -286,21 +281,21 @@ export NUM_SHARDS NUM_DATE_INDEX_SHARDS
 export INDEX_STATS_MAX_MAPPERS
 
 BULK_CHILD_MAP_MAX_MEMORY_MB="${BULK_CHILD_MAP_MAX_MEMORY_MB}"
-BULK_CHILD_MAP_MAX_MEMORY_MB="${BULK_CHILD_MAP_MAX_MEMORY_MB:-BULK_CHILD_MAX_MEMORY_MB}"
+BULK_CHILD_MAP_MAX_MEMORY_MB="${BULK_CHILD_MAP_MAX_MEMORY_MB:-$BULK_CHILD_MAX_MEMORY_MB}"
 LIVE_CHILD_MAP_MAX_MEMORY_MB="${LIVE_CHILD_MAP_MAX_MEMORY_MB}"
-LIVE_CHILD_MAP_MAX_MEMORY_MB="${LIVE_CHILD_MAP_MAX_MEMORY_MB:-LIVE_CHILD_MAX_MEMORY_MB}"
+LIVE_CHILD_MAP_MAX_MEMORY_MB="${LIVE_CHILD_MAP_MAX_MEMORY_MB:-$LIVE_CHILD_MAX_MEMORY_MB}"
 
 BULK_CHILD_REDUCE_MAX_MEMORY_MB="${BULK_CHILD_REDUCE_MAX_MEMORY_MB}"
-BULK_CHILD_REDUCE_MAX_MEMORY_MB="${BULK_CHILD_REDUCE_MAX_MEMORY_MB:-BULK_CHILD_MAX_MEMORY_MB}"
+BULK_CHILD_REDUCE_MAX_MEMORY_MB="${BULK_CHILD_REDUCE_MAX_MEMORY_MB:-$BULK_CHILD_MAX_MEMORY_MB}"
 LIVE_CHILD_REDUCE_MAX_MEMORY_MB="${LIVE_CHILD_REDUCE_MAX_MEMORY_MB}"
-LIVE_CHILD_REDUCE_MAX_MEMORY_MB="${LIVE_CHILD_REDUCE_MAX_MEMORY_MB:-LIVE_CHILD_MAX_MEMORY_MB}"
+LIVE_CHILD_REDUCE_MAX_MEMORY_MB="${LIVE_CHILD_REDUCE_MAX_MEMORY_MB:-$LIVE_CHILD_MAX_MEMORY_MB}"
 
 DEFAULT_IO_SORT_MB="${DEFAULT_IO_SORT_MB}"
 DEFAULT_IO_SORT_MB="${DEFAULT_IO_SORT_MB:-"768"}"
 BULK_CHILD_IO_SORT_MB="${BULK_CHILD_IO_SORT_MB}"
-BULK_CHILD_IO_SORT_MB="${BULK_CHILD_IO_SORT_MB:-DEFAULT_IO_SORT_MB}"
+BULK_CHILD_IO_SORT_MB="${BULK_CHILD_IO_SORT_MB:-$DEFAULT_IO_SORT_MB}"
 LIVE_CHILD_IO_SORT_MB="${LIVE_CHILD_IO_SORT_MB}"
-LIVE_CHILD_IO_SORT_MB="${LIVE_CHILD_IO_SORT_MB:-DEFAULT_IO_SORT_MB}"
+LIVE_CHILD_IO_SORT_MB="${LIVE_CHILD_IO_SORT_MB:-$DEFAULT_IO_SORT_MB}"
 
 COMPOSITE_INGEST_DATA_TYPES="${COMPOSITE_INGEST_DATA_TYPES}"
 DEPRECATED_INGEST_DATA_TYPES="${DEPRECATED_INGEST_DATA_TYPES}"
@@ -326,9 +321,6 @@ export INGEST_LIVE_JOBS
 export BULK_INGEST_GROUPING LIVE_INGEST_GROUPING
 export BULK_INGEST_TIMEOUT_SECS LIVE_INGEST_TIMEOUT_SECS
 
-# AGEOFF ENVIRONMENT VARIABLES
-AGEOFF_SERVER_CERT="${HOME}/certificates/${server.cert.basename}.pem"
-
 # CERT required for various download scripts (PEM format)
 export SERVER_CERT="${SERVER_CERT}"
 export KEYSTORE="${KEYSTORE}"
@@ -336,13 +328,6 @@ export KEYSTORE_TYPE="${KEYSTORE_TYPE}"
 export TRUSTSTORE="${TRUSTSTORE}"
 export TRUSTSTORE_TYPE="${TRUSTSTORE_TYPE}"
 
-
-# CACHE VARIABLES
-HORNETQ_HOST=${hornetq.host}
-HORNETQ_PORT=${hornetq.port}
-CACHE_USER=${cache.accumulo.username}
-CACHE_KEEPERS=${cache.accumulo.zookeepers}
-CACHE_INSTANCE=${cache.accumulo.instance}
 
 LOAD_JOBCACHE_CPU_MULTIPLIER="${LOAD_JOBCACHE_CPU_MULTIPLIER}"
 declare -i LOAD_JOBCACHE_CPU_MULTIPLIER=${LOAD_JOBCACHE_CPU_MULTIPLIER:-2}
@@ -373,4 +358,3 @@ flagBasename() {
   BASENAME=${f%%.flag*}
   echo $BASENAME
 }
-

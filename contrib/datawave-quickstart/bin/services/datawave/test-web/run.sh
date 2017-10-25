@@ -25,80 +25,140 @@ source "${THIS_DIR}/common.sh"
 
 function usage() {
     echo
-    echo "Usage: \$DW_DATAWAVE_SERVICE_DIR/test-web/$( basename $0) , or the 'datawaveWebTest' shell function can be used as an alias"
+    echo "Usage: \$DW_DATAWAVE_SERVICE_DIR/test-web/$( printGreen "$( basename $0)" )"
+    echo "       Or the $( printGreen "datawaveWebTest" ) shell function may be used as an alias"
     echo
-    echo " Optional flags:"
+    echo " Optional arguments:"
     echo
-    echo "   --verbose, -v : display curl command and full web service response, otherwise only display test- and response-specific metadata"
-    echo "   --no-cleanup, -nc : prevent cleanup of 'actual' HTTP response files and temp PKI materials. Useful for post-mortem troubleshooting and/or manual testing"
-    echo "   --create-expected-responses, -cer : update all the expected HTTP response body files, used for test assertions"
-    echo "   --help, -h : print this usage information and exit the script"
+    echo " $( printGreen "-v" ) | $( printGreen "--verbose" )"
+    echo "  Display each test's curl command and full web service response"
+    echo "  Otherwise, only test- and response-related metadata are displayed"
+    echo
+    echo " $( printGreen "-n" ) | $( printGreen "--no-cleanup" )"
+    echo "  Prevent cleanup of 'actual' HTTP response files and temp PKI materials"
+    echo "  Useful for post-mortem troubleshooting and/or manual testing"
+    echo
+    echo " $( printGreen "-c" ) | $( printGreen "--create-expected-responses" )"
+    echo "  Update all the *.expected HTTP response body files in order to"
+    echo "  auto-configure their respective test assertions"
+    echo
+    echo " $( printGreen "-wf" ) | $( printGreen "--whitelist-files" ) F1.test,F2.test,..,Fn.test"
+    echo "  Only execute test files having basename of F1.test or F2.test .. or Fn.test"
+    echo "  If more than one, must be comma-delimited with no spaces"
+    echo "  If used in conjunction with --blacklist-files, blacklist takes precedence"
+    echo
+    echo " $( printGreen "-bf" ) | $( printGreen "--blacklist-files" ) F1.test,F2.test,..,Fn.test"
+    echo "  Exclude test files having basename of F1.test or F2.test .. or Fn.test"
+    echo "  If more than one, must be comma-delimited with no spaces"
+    echo "  If used in conjunction with --whitelist-files, blacklist takes precedence"
+    echo
+    echo " $( printGreen "-wt" ) | $( printGreen "--whitelist-tests" ) T1,T2,..,Tn"
+    echo "  Only execute tests having TEST_ID of T1 or T2 .. or Tn"
+    echo "  If more than one, must be comma-delimited with no spaces"
+    echo "  If used in conjunction with --blacklist-tests, blacklist takes precedence"
+    echo
+    echo " $( printGreen "-bt" ) | $( printGreen "--blacklist-tests" ) T1,T2,..,Tn"
+    echo "  Exclude tests having TEST_ID of T1 or T2 .. or Tn"
+    echo "  If more than one, must be comma-delimited with no spaces"
+    echo "  If used in conjunction with --whitelist-tests, blacklist takes precedence"
+    echo
+    echo " $( printGreen "-h" ) | $( printGreen "--help" )"
+    echo "  Print this usage information and exit the script"
     echo
 }
 
 function configure() {
 
-    # TEST_FILE_DIR contains 'config-${TEST_ID}.test' script files, which are sourced at runtime to set a
-    # few required variables and configure test parameters. To add another test to the existing suite of
-    # tests, copy & modify an existing config to suit your needs.
-
-    # This directory also contains prepared, 'expected' http response bodies for each test, for performing
-    # assertions against 'actual' responses as needed. 'Actual' response bodies are saved here temporarily
-    # and removed during the cleanup phase, but they may be retained, if needed, via the --no-cleanup flag
-
-    # Also note that only the content type and status code assertions are configured manually via the test
-    # configs. The assertion for the HTTP body is configured automatically via the --create-expected-responses
-    # flag, and it may be enabled/disabled on a per-test basis as needed. See 'assertBodyResponse' method
-
-    TEST_FILE_DIR=${THIS_DIR}
-
-    LABEL_PASS="PASS"   # status label displayed for successful assertions
-    LABEL_FAIL="FAIL"   # status label displayed for failed assertions
-    LABEL_NA="DISABLED" # 'Not applicable' label displayed for disabled assertions,
-
     HOST_PORT="localhost:8443"
     URI_ROOT="https://${HOST_PORT}/DataWave"
+
+    # TEST_FILE_DIR contains 'TestName.test' script files. These are sourced at runtime to set a few
+    # required variables, to configure any test-specific curl args, and to execute any arbitrary code
+    # that the test may need. See the 'runConfiguredTests' function below for details
+
+    TEST_FILE_DIR=${THIS_DIR}/tests
+
+    # RESP_FILE_DIR contains prepared, 'expected' HTTP response bodies for each test, for performing
+    # assertions against 'actual' responses as needed. Actual response bodies are saved here temporarily
+    # and removed during the cleanup phase. They may be retained via the --no-cleanup flag, if needed
+
+    # Only the content type and status code assertions are configured manually via the test configs. The
+    # assertion for the HTTP body is configured automatically via the --create-expected-responses flag.
+    # See 'assertBodyResponse' method for details
+
+    RESP_FILE_DIR=${THIS_DIR}/responses
+
+    # Assertion status labels displayed for each test...
+
+    LABEL_PASS="PASSED"
+    LABEL_FAIL="FAILED"
+    LABEL_NA="DISABLED"
+
+    # Process args...
 
     VERBOSE=false
     CLEANUP=true
     CREATE_EXPECTED=false
+    TEST_WHITELIST=""
+    TEST_BLACKLIST=""
+    FILE_WHITELIST=""
+    FILE_BLACKLIST=""
 
-    for arg in "${@}"
-    do
-       case "$arg" in
-          --verbose|-v)
+    while [ "${1}" != "" ]; do
+       case "${1}" in
+          --verbose | -v)
              VERBOSE=true
              ;;
-          --no-cleanup|-nc)
+          --no-cleanup | -n)
              CLEANUP=false
              ;;
-          --create-expected-responses|-cer)
+          --create-expected-responses | -c)
              CREATE_EXPECTED=true
              ;;
-          --help|-h)
+          --whitelist-tests | -wt)
+             TEST_WHITELIST="${2}"
+             shift
+             ;;
+          --blacklist-tests | -bt)
+             TEST_BLACKLIST="${2}"
+             shift
+             ;;
+          --whitelist-files | -wf)
+             FILE_WHITELIST="${2}"
+             shift
+             ;;
+          --blacklist-files | -bf)
+             FILE_BLACKLIST="${2}"
+             shift
+             ;;
+          --help | -h)
              usage && exit 0
              ;;
           *)
-             fatal "Invalid argument passed to $( basename "$0" ): $arg"
+             fatal "Invalid argument passed to $( basename "$0" ): ${1}"
        esac
+       shift
     done
 
-    CURL="$( which curl )" && [ -z "${CURL}" ] && fatal "Curl executable not found!"
+    # Misc....
 
     datawaveWebIsInstalled || fatal "DataWave Web must be installed and running"
 
     datawaveWebIsRunning || fatal "DataWave Web must be running"
 
-    configureUserIdentity
+    CURL="$( which curl )" && [ -z "${CURL}" ] && fatal "Curl executable not found!"
 
     TEST_COUNTER=0
+
+    configureUserIdentity
 }
 
 function configureUserIdentity() {
 
-    info "Converting testUser.p12 client cert into more curl-friendly & portable (hopefully) PKI materials"
+    info "Converting client certificate into more curl-friendly & portable (hopefully) PKI materials"
 
-    PKCS12_CLIENT_CERT="${DW_DATAWAVE_SOURCE_DIR}/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testUser.p12"
+    PKCS12_CLIENT_CERT=${PKCS12_CLIENT_CERT:-"${DW_DATAWAVE_SOURCE_DIR}"/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testUser.p12}
+    CLIENT_CERT_PASS=${CLIENT_CERT_PASS:-secret}
 
     PKI_TMP_DIR="${DW_DATAWAVE_DATA_DIR}"/pki-temp
 
@@ -115,10 +175,10 @@ function configureUserIdentity() {
 
     [ ! -f "${PKCS12_CLIENT_CERT}" ] && fatal "Source client certificate not found: ${PKCS12_CLIENT_CERT}"
 
-    ${OPENSSL} pkcs12 -passin pass:secret -passout pass:secret -in "${PKCS12_CLIENT_CERT}" -out "${CURL_KEY}" -nocerts > /dev/null 2>&1 || fatal "Key creation failed!"
-    ${OPENSSL} rsa -passin pass:secret -in "${CURL_KEY}" -out "${CURL_KEY_RSA}" > /dev/null 2>&1 || fatal "RSA key creation failed!"
-    ${OPENSSL} pkcs12 -passin pass:secret -in "${PKCS12_CLIENT_CERT}" -out "${CURL_CERT}" -clcerts -nokeys > /dev/null 2>&1 || fatal "Certificate creation failed!"
-    ${OPENSSL} pkcs12 -passin pass:secret -in "${PKCS12_CLIENT_CERT}" -out "${CURL_CA}" -cacerts -nokeys > /dev/null 2>&1 || fatal "CA creation failed!"
+    ${OPENSSL} pkcs12 -passin pass:${CLIENT_CERT_PASS} -passout pass:${CLIENT_CERT_PASS} -in "${PKCS12_CLIENT_CERT}" -out "${CURL_KEY}" -nocerts > /dev/null 2>&1 || fatal "Key creation failed!"
+    ${OPENSSL} rsa -passin pass:${CLIENT_CERT_PASS} -in "${CURL_KEY}" -out "${CURL_KEY_RSA}" > /dev/null 2>&1 || fatal "RSA key creation failed!"
+    ${OPENSSL} pkcs12 -passin pass:${CLIENT_CERT_PASS} -in "${PKCS12_CLIENT_CERT}" -out "${CURL_CERT}" -clcerts -nokeys > /dev/null 2>&1 || fatal "Certificate creation failed!"
+    ${OPENSSL} pkcs12 -passin pass:${CLIENT_CERT_PASS} -in "${PKCS12_CLIENT_CERT}" -out "${CURL_CA}" -cacerts -nokeys > /dev/null 2>&1 || fatal "CA creation failed!"
 
 }
 
@@ -130,7 +190,7 @@ function cleanup() {
 
     [ -d "${PKI_TMP_DIR}" ] && rm -rf "${PKI_TMP_DIR}"
 
-    rm -f "${TEST_FILE_DIR}"/http-response-*.actual
+    rm -f "${RESP_FILE_DIR}"/*.actual
 
     echo
 }
@@ -182,11 +242,11 @@ function assertBodyResponse() {
     # assertions. If needed, you can create new or overwrite existing response files at any time with
     # the --create-expected-responses flag.
 
-    EXPECTED_RESPONSE_FILE="${TEST_FILE_DIR}/http-response-${TEST_ID}.expected"
+    EXPECTED_RESPONSE_FILE="${RESP_FILE_DIR}/${TEST_ID}.expected"
+    ACTUAL_RESPONSE_FILE="${RESP_FILE_DIR}/${TEST_ID}.actual"
 
     # Write actual response to file
 
-    ACTUAL_RESPONSE_FILE="${TEST_FILE_DIR}/http-response-${TEST_ID}.actual"
     echo -n "${ACTUAL_RESPONSE_BODY}" > "${ACTUAL_RESPONSE_FILE}"
 
     [ "${CREATE_EXPECTED}" == true ] && echo -n "${ACTUAL_RESPONSE_BODY}" > "${EXPECTED_RESPONSE_FILE}"
@@ -217,6 +277,10 @@ function parseCurlResponse() {
 
 function runTest() {
 
+    # Filter the current TEST_ID based on whitelist/blacklist
+    [ -n "$( echo "${TEST_BLACKLIST}" | grep -E "\b${TEST_ID}\b" )" ] && return
+    [ -n "${TEST_WHITELIST}" ] && [ -z "$( echo "${TEST_WHITELIST}" | grep -E "\b${TEST_ID}\b" )" ] && return
+
     TEST_COUNTER=$((TEST_COUNTER+1))
 
     TEST_COMMAND="${CURL} ${CURL_ADDITIONAL_OPTS} --silent \
@@ -224,9 +288,10 @@ function runTest() {
 --insecure --cert '${CURL_CERT}' --key '${CURL_KEY_RSA}' --cacert '${CURL_CA}' ${TEST_URL_OPTS}"
 
     echo
-    printLine
+    #printLine
     echo "Test ID: ${TEST_ID}"
     echo "Test Description: ${TEST_DESCRIPTION}"
+    echo "Test File: $( basename "${TEST_FILE}" )"
     if [ "$VERBOSE" == true ] ; then
         echo
         echo "Test Command:"
@@ -264,12 +329,13 @@ function runTest() {
         echo "Test Status: $( printRed "${TEST_STATUS}" )"
     fi
 
+    echo
     printLine
 }
 
 function printLine() {
 
-    echo "********************************************************************************************************"
+    echo "$( printGreen "********************************************************************************************************" )"
 
 }
 
@@ -304,9 +370,9 @@ function printTestSummary() {
     else
         local failed=(${TEST_FAILURES})
         echo "$( printRed " Tests Failed: ${#failed[@]}" )"
-        echo " --------------------------------------------------------------------------------------------------"
+        echo " ------------------------------------------------------------------------------------------------------"
         echo "  [StatusCode Assertion][ContentType Assertion][Body Assertion] $( printGreen "${LABEL_PASS}")|$( printRed "${LABEL_FAIL}" )|${LABEL_NA} -> FailedTestID"
-        echo " --------------------------------------------------------------------------------------------------"
+        echo " ------------------------------------------------------------------------------------------------------"
         for f in "${failed[@]}" ; do
             printTestFailure "${f}"
         done
@@ -316,13 +382,41 @@ function printTestSummary() {
 }
 
 function exitWithTestStatus() {
-    [ -n "${TEST_FAILURES}" ] && exit 1 || exit 0
+    [ -n "${TEST_FAILURES}" ] && exit 1
+    exit 0
 }
 
 function runConfiguredTests() {
 
-    for testConfig in $( find "${TEST_FILE_DIR}" -type f -name "config-*.test" ) ; do
-        source "${testConfig}" && runTest
+    # By design, each ${TEST_FILE_DIR}/*.test file may contain one or more distinct tests
+
+    # At minimum, each distinct test within a file is defined by the following required variables:
+
+    # TEST_ID                          - Unique identifier for the test
+    # TEST_DESCRIPTION                 - Short text description of the test
+    # TEST_URL_OPTS                    - Test-specific options for curl, e.g., "-X GET ${URI_ROOT}/DataDictionary"
+    # EXPECTED_RESPONSE_TYPE           - Expected Content-Type for the response, e.g., "application/xml"
+    # EXPECTED_RESPONSE_CODE           - Expected HTTP response code, e.g., 200, 404, 500, etc
+    # EXPECTED_RESPONSE_BODY_ASSERTION - true/false, enables/disables expected vs actual HTTP body assertion
+
+    # If a file contains multiple tests, then all but the *last* test within the file must be
+    # followed by its own 'runTest' invocation. The last test in a file is always executed in
+    # the for-loop below
+
+    # Note that we process files in lexicographical order of filename. So, if needed, "C.test" can
+    # reliably depend on tests "A.test" and "B.test" having already been run
+
+    printLine
+
+    for TEST_FILE in $( find "${TEST_FILE_DIR}" -type f -name "*.test" | sort ) ; do
+
+        # Filter the current *.test file based on whitelist/blacklist
+
+        [ -n "$( echo "${FILE_BLACKLIST}" | grep "$( basename ${TEST_FILE} )" )" ] && continue
+
+        [ -n "${FILE_WHITELIST}" ] && [ -z "$( echo "${FILE_WHITELIST}" | grep "$( basename ${TEST_FILE} )" )" ] && continue
+
+        source "${TEST_FILE}" && runTest
     done
 
 }

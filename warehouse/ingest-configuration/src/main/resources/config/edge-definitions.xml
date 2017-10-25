@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+http://www.springframework.org/schema/context
+http://www.springframework.org/schema/context/spring-context-4.0.xsd
+http://www.springframework.org/schema/util
+http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <!--
+       This spring context demonstrates setting up edge definitions for the various data types that
+       are configured for DataWave Ingest
+
+       In this case, we create edge definitions for the data types registered as data.name == 'mycsv'
+       and data.name == 'wikipedia'
+
+       During ingest, this config will be utilized by the ProtobufEdgeDataTypeHandler class, which performs
+       the work of creating edge keys from the incoming data, ie, whenever an incoming record contains a
+       field name matching a 'selector' in one or more of the edge definitions below
+
+       Additionally, for edge keys to be generated at all, ProtobufEdgeDataTypeHandler must be configured
+       as a handler class in the data type's *-ingest-config.xml via the '<type>.handler.classes' property,
+       or configured as one of the 'all.handler.classes' in the global data type config, 'all-config.xml'
+    -->
+
+    <!-- 'mycsv' edge definitions -->
+
+    <!-- Note that the bean id here must match a known/registered 'data.name' within the DataWave ingest type registry  -->
+    <bean id="mycsv" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper"
+          scope="prototype">
+        <!-- (data-driven key component) for a given CSV record, use its FOO_FIELD value for this component of the DataWave edge key  -->
+	    <property name="edgeAttribute2" value="FOO_FIELD"/>
+	    <!-- (data-driven key component) for a given CSV record, use its BAR_FIELD value for this component of the DataWave edge key -->
+	    <property name="edgeAttribute3" value="BAR_FIELD"/>
+	    <!-- (data-driven key component) for a given CSV record, use its EVENT_DATE value for the activity date component of the DataWave edge key  -->
+        <property name="activityDateField" value = "EVENT_DATE"/>
+        <property name="edges">
+            <list>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <!-- (config-driven key component) for a given CSV record, use this literal value for the "edge type" component of the DataWave edge key -->
+                    <property name="edgeType" value="MY_EDGE_TYPE"/>
+                    <!-- for a given CSV record, create a "bi-directional" edge (i.e., generate both the "FROM-TO" edge and its reverse "TO-FROM" edge) -->
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
+                                <property name="selector" value="EDGE_VERTEX_FROM"/>
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex, 
+                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <property name="relationship" value="FROM"/>
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource, 
+                                     defined by 'protobufedge.table.collections' bean below-->
+                                <property name="collection" value="CSV_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
+                                <property name="selector" value="EDGE_VERTEX_TO"/>
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex, 
+                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <property name="relationship" value="TO"/>
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource, 
+                                     defined by 'protobufedge.table.collections' bean below-->
+                                <property name="collection" value="CSV_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+    <!-- 'wikipedia' edge definitions -->
+
+    <bean id="wikipedia" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper" scope="prototype">
+        <property name="edgeAttribute2" value="REVISION_MODEL"/>
+        <property name="edgeAttribute3" value="REVISION_TEXT_SPACE"/>
+        <property name="activityDateField" value ="null"/>
+        <property name="edges">
+            <list>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="REDIRECT"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="PAGE_TITLE"/>
+                                <property name="relationship" value="PAGE"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="PAGE_REDIRECT_TITLE"/>
+                                <property name="relationship" value="REDIRECT"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="REVISION"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="REVISION_ID"/>
+                                <property name="relationship" value="REVISIONID"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="PAGE_ID"/>
+                                <property name="relationship" value="PAGEID"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="ASSOCIATION"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="PAGE_TITLE"/>
+                                <property name="relationship" value="PAGE"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="PAGE_ID"/>
+                                <property name="relationship" value="PAGEID"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="CONTRIBUTION"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="CONTRIBUTOR_ID"/>
+                                <property name="relationship" value="CONTRIBUTORID"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="PAGE_ID"/>
+                                <property name="relationship" value="PAGEID"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="REVISION"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="REVISION_ID"/>
+                                <property name="relationship" value="REVISIONID"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="PAGE_ID"/>
+                                <property name="relationship" value="PAGEID"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="REVISION"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="REVISION_ID"/>
+                                <property name="relationship" value="REVISIONID"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="CONTRIBUTOR_ID"/>
+                                <property name="relationship" value="CONTRIBUTORID"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="ASSOCIATION"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="CONTRIBUTOR_USERNAME"/>
+                                <property name="relationship" value="CONTRIBUTOR"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="CONTRIBUTOR_ID"/>
+                                <property name="relationship" value="CONTRIBUTORID"/>
+                                <property name="collection" value="WIKI_PAGE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+            </list>
+        </property>
+
+    </bean>
+
+    <bean id="default.protobufedge.table.blacklist.values" class="org.springframework.beans.factory.config.SetFactoryBean">
+        <property name="targetSetClass" value="java.util.HashSet"/>
+        <property name="sourceSet">
+            <set>
+                <value>.</value>
+                <value>..</value>
+                <value>,</value>
+                <value> </value>
+                <value>  </value>
+                <value>;</value>
+                <value>:</value>
+                <value>"</value>
+            </set>
+        </property>
+    </bean>
+
+   <!-- Define the set of valid 'relationship' values -->
+   <bean id="protobufedge.table.relationships" class="org.springframework.beans.factory.config.SetFactoryBean">
+        <property name="targetSetClass" value="java.util.HashSet"/>
+        <property name="sourceSet">
+            <set>
+                <value>TO</value>
+                <value>FROM</value>
+                <value>EQUIVALENCE</value>
+                <value>USERNAME</value>
+                <value>USERID</value>
+                <value>PAGEID</value>
+                <value>REVISIONID</value>
+                <value>CONTRIBUTORID</value>
+                <value>CONTRIBUTOR</value>
+                <value>COMMENT</value>
+                <value>USER</value>
+                <value>PAGE</value>
+                <value>REDIRECT</value>
+                <value>REVISION</value>
+            </set>
+        </property>
+    </bean>
+
+    <!-- Define the set of valid 'collection' values -->
+    <bean id="protobufedge.table.collections" class="org.springframework.beans.factory.config.SetFactoryBean">
+        <property name="targetSetClass" value="java.util.HashSet"/>
+        <property name="sourceSet">
+            <set>
+                <value>CSV_METADATA</value>
+                <value>WIKI_PAGE_METADATA</value>
+            </set>
+        </property>
+    </bean>
+
+</beans>
+

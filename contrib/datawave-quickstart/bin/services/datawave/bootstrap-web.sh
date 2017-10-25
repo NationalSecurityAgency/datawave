@@ -19,7 +19,7 @@ DW_DATAWAVE_WEB_SYMLINK="datawave-webservice"
 
 getDataWaveTarball "${DW_DATAWAVE_WEB_TARBALL}"
 DW_DATAWAVE_WEB_DIST="${tarball}"
-DW_DATAWAVE_WEB_VERSION="$( echo "${DW_DATAWAVE_WEB_DIST}" | sed "s/.*\///" | sed "s/datawave-ws-deploy-application-//" | sed "s/-dev.tar.gz//" )"
+DW_DATAWAVE_WEB_VERSION="$( echo "${DW_DATAWAVE_WEB_DIST}" | sed "s/.*\///" | sed "s/datawave-ws-deploy-application-//" | sed "s/-${DW_DATAWAVE_BUILD_PROFILE}.tar.gz//" )"
 DW_DATAWAVE_WEB_BASEDIR="datawave-web-${DW_DATAWAVE_WEB_VERSION}"
 
 function datawaveWebIsRunning() {
