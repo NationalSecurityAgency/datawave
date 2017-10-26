@@ -251,7 +251,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
             }
             
             // Aggregate the document. NOTE: This will advance the source iterator
-            tk = buildDocument ? aggregation.apply(source, document, attributeFactory) : aggregation.apply(source);
+            tk = buildDocument ? aggregation.apply(source, document, attributeFactory) : aggregation.apply(source, scanRange, seekColumnFamilies,
+                            includeColumnFamilies);
             if (log.isTraceEnabled()) {
                 log.trace("Doc size: " + this.document.size());
                 log.trace("Returning pointer " + tk.toStringNoTime());
