@@ -1,5 +1,7 @@
 server:
   context-path: /datawave
+  port: 8443
+  non-secure-port: 8080
   ssl:
     key-store: 'classpath:/testKeystore.jks'
     key-store-type: JKS

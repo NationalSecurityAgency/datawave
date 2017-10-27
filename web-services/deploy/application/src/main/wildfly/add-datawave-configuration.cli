@@ -73,6 +73,12 @@ embed-server --server-config=standalone-full.xml
 /system-property=dw.metrics.reporter.port:add(value=${metrics.reporter.port})
 /system-property=dw.metrics.reporter.class:add(value=${metrics.reporter.class})
 /system-property=dw.security.use.testuserservice:add(value=${security.use.testauthservice})
+/system-property=dw.remoteDatawaveUserService.useSrvDnsLookup:add(value=${security.remoteuserservice.srv.lookup.enabled})
+/system-property=dw.remoteDatawaveUserService.srvDnsServers:add(value=${security.remoteuserservice.srv.lookup.servers})
+/system-property=dw.remoteDatawaveUserService.srvDnsPort:add(value=${security.remoteuserservice.srv.lookup.port})
+/system-property=dw.remoteDatawaveUserService.scheme:add(value=${security.remoteuserservice.scheme})
+/system-property=dw.remoteDatawaveUserService.host:add(value=${security.remoteuserservice.host})
+/system-property=dw.remoteDatawaveUserService.port:add(value=${security.remoteuserservice.port})
 
 # Disable SASL client authentication in zookeeper
 /system-property=zookeeper.sasl.client:add(value=false)

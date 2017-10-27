@@ -73,7 +73,8 @@ services:
       - --spring.profiles.active=consul
       - --spring.cloud.consul.host=discovery
     ports:
-      - "8080:8080"
+      - "8080"
+      - "8443"
     networks:
       - demo
     healthcheck:

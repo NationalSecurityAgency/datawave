@@ -14,9 +14,11 @@ import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
 import datawave.webservice.security.JWTTokenHandler;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
@@ -36,8 +38,11 @@ import org.apache.http.util.EntityUtils;
 import org.jboss.security.JSSESecurityDomain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xbill.DNS.DClass;
 import org.xbill.DNS.ExtendedResolver;
 import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.Type;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -57,10 +62,10 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -99,11 +104,15 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     private int srvDnsPort;
     
     @Inject
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.scheme", defaultValue = "https")
+    private String authServiceScheme;
+    
+    @Inject
     @ConfigProperty(name = "dw.remoteDatawaveUserService.host", defaultValue = "localhost")
     private String authServiceHost;
     
     @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.port", defaultValue = "8543")
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.port", defaultValue = "8643")
     private int authServicePort;
     
     @Inject
@@ -272,13 +281,23 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     protected <T> T executeGetMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
                     Supplier<String> errorSupplier) throws URISyntaxException, IOException {
         URIBuilder builder = new URIBuilder();
-        builder.setScheme("https");
+        builder.setScheme(authServiceScheme);
         if (useSrvDNS) {
             List<LookupResult> results = dnsSrvResolver.resolve(authServiceHost);
             if (results != null && !results.isEmpty()) {
                 LookupResult result = results.get(0);
                 builder.setHost(result.host());
                 builder.setPort(result.port());
+                // Consul sends the hostname back in its own namespace. Although the A record is included in the
+                // "ADDITIONAL SECTION", Spotify SRV lookup doesn't translate, so we need to do the lookup manually.
+                if (result.host().endsWith(".consul.")) {
+                    Record[] newResults = new Lookup(result.host(), Type.A, DClass.IN).run();
+                    if (newResults != null && newResults.length > 0) {
+                        builder.setHost(newResults[0].rdataToString());
+                    } else {
+                        throw new IllegalArgumentException("Unable to resolve auth service host " + authServiceHost + " -> " + result.host() + " -> ???");
+                    }
+                }
             } else {
                 throw new IllegalArgumentException("Unable to resolve auth service host: " + authServiceHost);
             }
@@ -331,11 +350,19 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
             
             jwtTokenHandler = new JWTTokenHandler(certs[0], signingKey, 24, TimeUnit.HOURS, objectMapper);
             
+            ArrayList<Header> defaultHeaders = new ArrayList<>();
+            defaultHeaders.add(new BasicHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType()));
+            // If we're using HTTP, then add our cert in as a header so the authorization service knows who we are.
+            if ("http".equals(authServiceScheme)) {
+                defaultHeaders.add(new BasicHeader("X-SSL-clientcert-subject", DnUtils.normalizeDN(certs[0].getSubjectX500Principal().getName())));
+                defaultHeaders.add(new BasicHeader("X-SSL-clientcert-subject", DnUtils.normalizeDN(certs[0].getIssuerX500Principal().getName())));
+            }
+            
             // @formatter:off
             client = HttpClients.custom()
                     .setSSLContext(ctx)
                     .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
-                    .setDefaultHeaders(Collections.singletonList(new BasicHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType())))
+                    .setDefaultHeaders(defaultHeaders)
                     .setMaxConnTotal(maxConnections)
                     .setRetryHandler(new DatawaveRetryHandler(retryCount, unavailableRetryCount, unavailableRetryDelay, retryCounter))
                     .setServiceUnavailableRetryStrategy(new DatawaveUnavailableRetryStrategy(unavailableRetryCount, unavailableRetryDelay, retryCounter))

@@ -57,7 +57,6 @@ undeploy datawave-web-service.ear
 /subsystem=logging/logger=datawave.webservice.audit.server.log:remove
 /subsystem=logging/logger=grails.app.controllers.multimediawebgui:remove
 /subsystem=logging/logger=grails.app.filter.multimediawebgui:remove
-/subsystem=logging/logger=r6.multimedia:remove
 
 /subsystem=logging/periodic-rotating-file-handler=QUERY_LOG/:remove
 /subsystem=logging/periodic-rotating-file-handler=CACHED_LOG/:remove
@@ -186,6 +185,12 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.metrics.reporter.port:remove
 /system-property=dw.metrics.reporter.class:remove
 /system-property=dw.security.use.testuserservice:remove
+/system-property=dw.remoteDatawaveUserService.useSrvDnsLookup:remove
+/system-property=dw.remoteDatawaveUserService.srvDnsServers:remove
+/system-property=dw.remoteDatawaveUserService.srvDnsPort:remove
+/system-property=dw.remoteDatawaveUserService.scheme:remove
+/system-property=dw.remoteDatawaveUserService.host:remove
+/system-property=dw.remoteDatawaveUserService.port:remove
 /system-property=zookeeper.sasl.client:remove
 
 # Restore default transaction node identifier
