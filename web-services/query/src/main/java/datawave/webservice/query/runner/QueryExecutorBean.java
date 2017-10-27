@@ -401,6 +401,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
         qp.clear();
+        qp.setRequestHeaders(httpHeaders != null ? httpHeaders.getRequestHeaders() : null);
         qp.validate(queryParameters);
         
         GenericResponse<String> response = new GenericResponse<>();
@@ -561,6 +562,7 @@ public class QueryExecutorBean implements QueryExecutor {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
         log.debug(queryParameters);
         qp.clear();
+        qp.setRequestHeaders(httpHeaders != null ? httpHeaders.getRequestHeaders() : null);
         qp.validate(queryParameters);
         
         GenericResponse<String> response = new GenericResponse<>();
