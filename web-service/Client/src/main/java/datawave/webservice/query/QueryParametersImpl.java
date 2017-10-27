@@ -32,6 +32,7 @@ public class QueryParametersImpl implements QueryParameters {
     protected Date endDate;
     protected String visibility;
     protected String logicName;
+    protected MultivaluedMap<String,String> requestHeaders;
     
     public QueryParametersImpl() {
         clear();
@@ -126,6 +127,8 @@ public class QueryParametersImpl implements QueryParameters {
             return false;
         if (!queryName.equals(that.queryName))
             return false;
+        if (requestHeaders != null ? !requestHeaders.equals(that.requestHeaders) : that.requestHeaders != null)
+            return false;
         return true;
     }
     
@@ -143,6 +146,7 @@ public class QueryParametersImpl implements QueryParameters {
         result = 31 * result + (endDate != null ? endDate.hashCode() : 0);
         result = 31 * result + (visibility != null ? visibility.hashCode() : 0);
         result = 31 * result + (logicName != null ? logicName.hashCode() : 0);
+        result = 31 * result + (requestHeaders != null ? requestHeaders.hashCode() : 0);
         return result;
     }
     
@@ -397,7 +401,17 @@ public class QueryParametersImpl implements QueryParameters {
     public void setLogicName(String logicName) {
         this.logicName = logicName;
     }
-    
+
+    @Override
+    public MultivaluedMap<String, String> getRequestHeaders() {
+        return requestHeaders;
+    }
+
+    @Override
+    public void setRequestHeaders(MultivaluedMap<String, String> requestHeaders) {
+        this.requestHeaders = requestHeaders;
+    }
+
     @Override
     public MultivaluedMap<String,String> getUnknownParameters(MultivaluedMap<String,String> allQueryParameters) {
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
@@ -425,5 +439,6 @@ public class QueryParametersImpl implements QueryParameters {
         this.endDate = null;
         this.visibility = null;
         this.logicName = null;
+        this.requestHeaders = null;
     }
 }

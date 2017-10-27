@@ -403,6 +403,7 @@ public class QueryExecutorBean implements QueryExecutor {
         
         log.debug(queryParameters);
         qp.clear();
+        qp.setRequestHeaders(httpHeaders != null ? httpHeaders.getRequestHeaders() : null);
         qp.validate(queryParameters);
         
         // The pagesize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
@@ -598,7 +599,11 @@ public class QueryExecutorBean implements QueryExecutor {
     public GenericResponse<String> createQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
                     MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
-        
+        log.debug(queryParameters);
+        qp.clear();
+        qp.setRequestHeaders(httpHeaders != null ? httpHeaders.getRequestHeaders() : null);
+        qp.validate(queryParameters);
+
         QueryData qd = validateQuery(queryLogicName, queryParameters);
         
         GenericResponse<String> response = new GenericResponse<>();
