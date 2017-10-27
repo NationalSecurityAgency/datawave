@@ -355,7 +355,7 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
             // If we're using HTTP, then add our cert in as a header so the authorization service knows who we are.
             if ("http".equals(authServiceScheme)) {
                 defaultHeaders.add(new BasicHeader("X-SSL-clientcert-subject", DnUtils.normalizeDN(certs[0].getSubjectX500Principal().getName())));
-                defaultHeaders.add(new BasicHeader("X-SSL-clientcert-subject", DnUtils.normalizeDN(certs[0].getIssuerX500Principal().getName())));
+                defaultHeaders.add(new BasicHeader("X-SSL-clientcert-issuer", DnUtils.normalizeDN(certs[0].getIssuerX500Principal().getName())));
             }
             
             // @formatter:off
