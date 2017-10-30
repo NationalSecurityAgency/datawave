@@ -19,4 +19,10 @@ public interface SeekingFilter {
      * @return the new seek range, or null if the filter does not suggest a seek
      */
     Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive);
+    
+    /**
+     *
+     * @return the max next() calls before a seek() is triggered
+     */
+    int getMaxNextCount();
 }

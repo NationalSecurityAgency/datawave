@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import datawave.marking.ColumnVisibilityCache;
+import datawave.query.rewrite.Constants;
 import datawave.query.rewrite.attributes.Attribute;
 import datawave.query.rewrite.attributes.AttributeFactory;
 import datawave.query.rewrite.attributes.Document;
@@ -21,20 +22,53 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-public class IdentityAggregator implements FieldIndexAggregator {
+/**
+ * Aggregates FI keys reducing matching keys. The FIELD/VALUE are not compared. In a real utilization the expectation is that there will be keys with different
+ * dataType/uids prior to ever having a field/value change so the aggregator for efficiency reasons does not address this.
+ *
+ */
+public class IdentityAggregator extends SeekingAggregator implements FieldIndexAggregator {
     protected Set<String> fieldsToKeep;
     protected EventDataQueryFilter filter;
     
-    public IdentityAggregator(Set<String> fieldsToKeep, EventDataQueryFilter filter) {
+    public IdentityAggregator(Set<String> fieldsToKeep, EventDataQueryFilter filter, int maxNextCount) {
+        super(maxNextCount);
         this.fieldsToKeep = fieldsToKeep;
         this.filter = filter;
+    }
+    
+    public IdentityAggregator(Set<String> fieldsToKeep, EventDataQueryFilter filter) {
+        this(fieldsToKeep, filter, -1);
     }
     
     public IdentityAggregator(Set<String> fieldsToKeep) {
         this(fieldsToKeep, null);
     }
     
-    public IdentityAggregator() {}
+    public IdentityAggregator() {
+        super(-1);
+    }
+    
+    @Override
+    protected ByteSequence parsePointer(Key current) {
+        return parsePointer(current.getColumnQualifierData());
+    }
+    
+    @Override
+    protected Key getResult(Key current, ByteSequence pointer) {
+        return TLD.buildParentKey(current.getRow(), pointer, parseFieldNameValue(current.getColumnFamilyData(), current.getColumnQualifierData()),
+                        current.getColumnVisibility(), current.getTimestamp());
+    }
+    
+    @Override
+    protected boolean skip(Key next, Text row, ByteSequence pointer) {
+        return next != null && samePointer(row, pointer, next);
+    }
+    
+    @Override
+    protected Key getSeekStartKey(Key current, ByteSequence pointer) {
+        return new Key(current.getRow(), current.getColumnFamily(), current.getColumnQualifier(), 0);
+    }
     
     @Override
     public Key apply(SortedKeyValueIterator<Key,Value> itr) throws IOException {

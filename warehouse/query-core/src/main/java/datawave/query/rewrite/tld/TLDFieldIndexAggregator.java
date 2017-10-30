@@ -4,9 +4,11 @@ import static datawave.query.rewrite.tld.TLD.parsePointerFromFI;
 import static datawave.query.rewrite.tld.TLD.parseRootPointerFromFI;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Set;
 
 import datawave.marking.ColumnVisibilityCache;
+import datawave.query.rewrite.Constants;
 import datawave.query.rewrite.attributes.Attribute;
 import datawave.query.rewrite.attributes.AttributeFactory;
 import datawave.query.rewrite.attributes.Document;
@@ -14,18 +16,25 @@ import datawave.query.rewrite.attributes.DocumentKey;
 import datawave.query.rewrite.jexl.JexlASTHelper;
 import datawave.query.rewrite.jexl.functions.FieldIndexAggregator;
 
+import datawave.query.rewrite.jexl.functions.SeekingAggregator;
 import datawave.query.rewrite.predicate.EventDataQueryFilter;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-public class TLDFieldIndexAggregator implements FieldIndexAggregator {
+public class TLDFieldIndexAggregator extends SeekingAggregator implements FieldIndexAggregator {
     private Set<String> fieldsToAggregate;
     private EventDataQueryFilter attrFilter;
     
     public TLDFieldIndexAggregator(Set<String> fieldsToAggregate, EventDataQueryFilter attrFilter) {
+        this(fieldsToAggregate, attrFilter, -1);
+    }
+    
+    public TLDFieldIndexAggregator(Set<String> fieldsToAggregate, EventDataQueryFilter attrFilter, int maxNextCount) {
+        super(maxNextCount);
         this.fieldsToAggregate = fieldsToAggregate;
         this.attrFilter = attrFilter;
     }
@@ -33,6 +42,7 @@ public class TLDFieldIndexAggregator implements FieldIndexAggregator {
     public Key apply(SortedKeyValueIterator<Key,Value> itr, Document d, AttributeFactory af) throws IOException {
         Key key = itr.getTopKey();
         ByteSequence parentId = parseRootPointerFromFI(key.getColumnQualifierData());
+        Text row = key.getRow();
         ByteSequence docId = null;
         Key nextKey = key;
         do {
@@ -56,22 +66,45 @@ public class TLDFieldIndexAggregator implements FieldIndexAggregator {
             }
             itr.next();
             nextKey = itr.hasTop() ? itr.getTopKey() : null;
-        } while (nextKey != null && isFi(nextKey.getColumnFamilyData()) && parentId.equals(parseRootPointerFromFI(nextKey.getColumnQualifierData())));
-        return TLD.buildParentKey(key.getRow(), parentId, TLD.parseFieldAndValueFromFI(key.getColumnFamilyData(), key.getColumnQualifierData()),
-                        key.getColumnVisibility(), key.getTimestamp());
+        } while (skip(nextKey, row, parentId));
+        return getResult(key, parentId);
     }
     
     public Key apply(SortedKeyValueIterator<Key,Value> itr) throws IOException {
         Key key = itr.getTopKey();
-        ByteSequence parentId = parseRootPointerFromFI(key.getColumnQualifierData());
+        ByteSequence parentId = parsePointer(key);
+        Text row = key.getRow();
         Key nextKey = key;
         do {
             key = nextKey;
             itr.next();
             nextKey = (itr.hasTop() ? itr.getTopKey() : null);
-        } while (nextKey != null && isFi(nextKey.getColumnFamilyData()) && parentId.equals(parseRootPointerFromFI(nextKey.getColumnQualifierData())));
-        return TLD.buildParentKey(key.getRow(), parentId, TLD.parseFieldAndValueFromFI(key.getColumnFamilyData(), key.getColumnQualifierData()),
-                        key.getColumnVisibility(), key.getTimestamp());
+        } while (skip(nextKey, row, parentId));
+        return getResult(key, parentId);
+    }
+    
+    @Override
+    protected ByteSequence parsePointer(Key current) {
+        return parseRootPointerFromFI(current.getColumnQualifierData());
+    }
+    
+    @Override
+    protected Key getResult(Key current, ByteSequence pointer) {
+        return TLD.buildParentKey(current.getRow(), pointer, TLD.parseFieldAndValueFromFI(current.getColumnFamilyData(), current.getColumnQualifierData()),
+                        current.getColumnVisibility(), current.getTimestamp());
+    }
+    
+    @Override
+    protected boolean skip(Key next, Text row, ByteSequence pointer) {
+        return next != null && isFi(next.getColumnFamilyData()) && pointer.equals(parseRootPointerFromFI(next.getColumnQualifierData()));
+    }
+    
+    @Override
+    protected Key getSeekStartKey(Key current, ByteSequence pointer) {
+        int lastNullIndex = current.getColumnQualifier().toString().lastIndexOf(Constants.NULL);
+        lastNullIndex = current.getColumnQualifier().toString().lastIndexOf(Constants.NULL, lastNullIndex - 1);
+        String prefix = current.getColumnQualifier().toString().substring(0, lastNullIndex + 1);
+        return new Key(current.getRow(), current.getColumnFamily(), new Text(prefix + pointer + Constants.MAX_UNICODE_STRING));
     }
     
     public boolean isFi(ByteSequence byteSeq) {

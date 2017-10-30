@@ -1077,7 +1077,8 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(COMPOSITE_METADATA)) {
             this.compositeMetadata = buildCompositeMetadata(options.get(COMPOSITE_METADATA));
         }
-        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter());
+        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
+                        .getMaxNextCount() : -1);
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
             this.ignoreColumnFamilies = buildIgnoredColumnFamilies(options.get(IGNORE_COLUMN_FAMILIES));
