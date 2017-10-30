@@ -106,4 +106,10 @@ public class EventDataQueryFilter extends KeyProjection implements Filter, Seeki
         // not yet implemented
         return null;
     }
+    
+    @Override
+    public int getMaxNextCount() {
+        // not yet implemented
+        return -1;
+    }
 }
