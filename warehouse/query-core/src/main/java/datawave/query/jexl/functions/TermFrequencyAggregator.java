@@ -10,12 +10,21 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 
 import datawave.query.data.parsers.DatawaveKey;
+import datawave.query.Constants;
 import datawave.query.util.Tuple2;
 
+/**
+ * Aggregator for TF keys. TF keys that will be aggregated will be matching row and dataType/uid. FIELD/VALUE are not evaluated for performance reasons since
+ * the likelyhood of a collision is extremely small
+ */
 public class TermFrequencyAggregator extends IdentityAggregator {
     
+    public TermFrequencyAggregator(Set<String> fieldsToKeep, EventDataQueryFilter attrFilter, int maxNextCount) {
+        super(fieldsToKeep, attrFilter, maxNextCount);
+    }
+    
     public TermFrequencyAggregator(Set<String> fieldsToKeep, EventDataQueryFilter attrFilter) {
-        super(fieldsToKeep, attrFilter);
+        this(fieldsToKeep, attrFilter, -1);
     }
     
     @Override
@@ -45,4 +54,10 @@ public class TermFrequencyAggregator extends IdentityAggregator {
         return false;
     }
     
+    @Override
+    protected Key getSeekStartKey(Key current, ByteSequence pointer) {
+        // CQ = dataType\0UID\0Normalized field value\0Field name
+        // seek to the next documents TF
+        return new Key(current.getRow(), current.getColumnFamily(), new Text(pointer + Constants.NULL_BYTE_STRING + Constants.MAX_UNICODE_STRING));
+    }
 }
