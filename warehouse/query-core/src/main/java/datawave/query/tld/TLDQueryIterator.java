@@ -67,7 +67,7 @@ public class TLDQueryIterator extends QueryIterator {
         
         super.init(source, options, env);
         
-        super.fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getEvaluationFilter());
+        super.fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getEvaluationFilter(), getEvaluationFilter().getMaxNextCount());
         
         // Replace the fieldIndexKeyDataTypeFilter with a chain of "anded" index-filtering predicates.
         // If no other predicates are configured via the indexfiltering.classes property, the method

@@ -69,6 +69,10 @@ public interface QueryParameters extends ParameterValidator {
     String getLogicName();
     
     void setLogicName(String logicName);
+
+    MultivaluedMap<String,String> getRequestHeaders();
+
+    void setRequestHeaders(MultivaluedMap<String,String> requestHeaders);
     
     MultivaluedMap<String,String> getUnknownParameters(MultivaluedMap<String,String> allQueryParameters);
     
