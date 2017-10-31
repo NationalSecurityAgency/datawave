@@ -11,8 +11,6 @@ accumulo.user.name, name of the Accumulo user for the connection pools
 accumulo.user.password, password for the Accumulo user -- SET IN PRIVATE MAVEN SETTINGS
 atom.table.name, name of the table that contains the Atom entries created by the AtomDataTypeHandler
 atom.connection.pool.name, name of the configured connection pool where the Atom table resides
-audit.cb.mdb.pool.size, number of MDBs in the pool to audit queries to Accumulo
-audit.log.mdb.pool.size, number of MDBs in the pool to audit queries to the log file
 cached_results.daysToLive, number of days that tables/views should remain in CachedResults store
 cached_results.rows.per.batch, JDBC batch size for inserting into CachedResults store
 cached.results.hdfs.uri, HDFS for storing exports of CachedResults
