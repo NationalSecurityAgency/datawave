@@ -417,8 +417,14 @@ public class CachedResultsBean {
                 }
             } finally {
                 if (rq != null) {
-                    // this will allow the original query to be expired
+                    // the original query was cloned including the queryId
+                    // remove original query from the cache to avoid duplicate metrics
+                    // when it is expired by the QueryExpirationBean
                     rq.setActiveCall(false);
+                    if (rq.getConnection() != null) {
+                        connectionFactory.returnConnection(rq.getConnection());
+                    }
+                    runningQueryCache.remove(queryId);
                 }
             }
             
