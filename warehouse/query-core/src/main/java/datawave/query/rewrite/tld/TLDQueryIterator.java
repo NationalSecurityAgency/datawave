@@ -28,6 +28,7 @@ import datawave.query.rewrite.iterator.QueryIterator;
 import datawave.query.rewrite.iterator.SourcedOptions;
 import datawave.query.rewrite.iterator.logic.IndexIterator;
 import datawave.query.rewrite.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.rewrite.planner.SeekingQueryPlanner;
 import datawave.query.rewrite.predicate.ConfiguredPredicate;
 import datawave.query.rewrite.predicate.EventDataQueryFilter;
 import datawave.query.rewrite.predicate.TLDEventDataFilter;
@@ -39,6 +40,9 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
  */
 public class TLDQueryIterator extends QueryIterator {
     private static final Logger log = Logger.getLogger(TLDQueryIterator.class);
+    
+    protected int maxFieldHitsBeforeSeek = -1;
+    protected int maxKeysBeforeSeek = -1;
     
     public TLDQueryIterator() {}
     
@@ -65,9 +69,18 @@ public class TLDQueryIterator extends QueryIterator {
             log.trace("TLDQueryIterator init()");
         }
         
+        // extract SeekingQueryPlanner fields if available
+        if (options.get(SeekingQueryPlanner.MAX_FIELD_HITS_BEFORE_SEEK) != null) {
+            maxFieldHitsBeforeSeek = Integer.parseInt(options.get(SeekingQueryPlanner.MAX_FIELD_HITS_BEFORE_SEEK));
+        }
+        
+        if (options.get(SeekingQueryPlanner.MAX_KEYS_BEFORE_SEEK) != null) {
+            maxKeysBeforeSeek = Integer.parseInt(options.get(SeekingQueryPlanner.MAX_KEYS_BEFORE_SEEK));
+        }
+        
         super.init(source, options, env);
         
-        super.fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getEvaluationFilter(), getEvaluationFilter().getMaxNextCount());
+        super.fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getEvaluationFilter(), maxKeysBeforeSeek);
         
         // Replace the fieldIndexKeyDataTypeFilter with a chain of "anded" index-filtering predicates.
         // If no other predicates are configured via the indexfiltering.classes property, the method
@@ -84,7 +97,8 @@ public class TLDQueryIterator extends QueryIterator {
     public EventDataQueryFilter getEvaluationFilter() {
         if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script);
+            this.evaluationFilter = new TLDEventDataFilter(script, useWhiteListedFields ? whiteListedFields : null, useBlackListedFields ? blackListedFields
+                            : null, maxFieldHitsBeforeSeek, maxKeysBeforeSeek);
         }
         return this.evaluationFilter;
     }
