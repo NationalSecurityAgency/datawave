@@ -34,6 +34,9 @@ spring:
       # Give the config server a long time to come up and register itself in Consul
       retry:
         max-attempts: 120
+    # Allow the default Consul host to be overridden via an environment variable
+    consul:
+      host: ${CONSUL_HOST:localhost}
 
 ---
 

@@ -14,12 +14,12 @@ spring:
   application:
     name: configserver
   cloud:
-    # Disable discovery by default. We'll turn it back on in the consul profile if that profile is enabled.
-    discovery:
-      enabled: false
     consul:
       enabled: false
     config:
+      # Disable discovery by default. We'll turn it back on in the consul profile if that profile is enabled.
+      discovery:
+        enabled: false
       server:
         git:
           uri: '${CONFIG_GIT_URL}'
@@ -69,10 +69,13 @@ encrypt:
 spring:
   profiles: 'consul'
   cloud:
-    discovery:
-      enabled: true
+    config:
+      discovery:
+        enabled: true
     consul:
       enabled: true
+      # Allow the default Consul host to be overridden via an environment variable
+      host: ${CONSUL_HOST:localhost}
       discovery:
         healthCheckPath: ${management.context-path}/health
         healthCheckInterval: 15s
