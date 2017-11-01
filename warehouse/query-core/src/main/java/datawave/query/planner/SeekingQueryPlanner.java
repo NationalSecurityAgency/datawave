@@ -19,6 +19,15 @@ public class SeekingQueryPlanner extends DefaultQueryPlanner {
         addOption(cfg, MAX_KEYS_BEFORE_SEEK, Integer.toString(maxKeysBeforeSeek), false);
     }
     
+    @Override
+    public DefaultQueryPlanner clone() {
+        SeekingQueryPlanner clone = new SeekingQueryPlanner();
+        clone.setMaxFieldHitsBeforeSeek(maxFieldsBeforeSeek);
+        clone.setMaxKeysBeforeSeek(maxKeysBeforeSeek);
+        
+        return clone;
+    }
+    
     public void setMaxFieldHitsBeforeSeek(int maxFieldHitsBeforeSeek) {
         this.maxFieldsBeforeSeek = maxFieldHitsBeforeSeek;
     }
