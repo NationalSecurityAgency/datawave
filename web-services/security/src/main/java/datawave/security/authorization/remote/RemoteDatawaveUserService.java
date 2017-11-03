@@ -187,7 +187,7 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     public DatawaveUser list(String name) {
         // @formatter:off
         return executeGetMethodWithRuntimeException("admin/listUser",
-                uriBuilder -> uriBuilder.addParameter("name", name),
+                uriBuilder -> uriBuilder.addParameter("username", name),
                 httpGet -> {},
                 entity -> datawaveUserReader.readValue(entity.getContent()),
                 () -> "list");
@@ -223,7 +223,7 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     public String evict(String name) {
         // @formatter:off
         return executeGetMethodWithRuntimeException("admin/evictUser",
-                uriBuilder -> uriBuilder.addParameter("name", name),
+                uriBuilder -> uriBuilder.addParameter("username", name),
                 httpGet -> httpGet.addHeader(HttpHeaders.ACCEPT, ContentType.TEXT_PLAIN.getMimeType()),
                 EntityUtils::toString,
                 () -> "evict " + name);
