@@ -4,7 +4,7 @@ FROM jboss/base-jdk:8
 USER root
 
 LABEL version=${project.version} \
-      run="docker run ${docker.image.prefix}/${project.artifactId}:latest" \
+      run="docker run ${docker.image.prefix}${project.artifactId}:latest" \
       description="DATAWAVE configuration microservice."
 
 VOLUME /tmp

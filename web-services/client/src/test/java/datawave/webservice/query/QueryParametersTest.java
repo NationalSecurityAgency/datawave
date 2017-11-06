@@ -35,10 +35,10 @@ public class QueryParametersTest {
     private String formatDateCheck = "20160807 000000.000";
     @SuppressWarnings("deprecation")
     private Date parseDateCheck = new Date("Sun Aug 7 00:00:00 GMT 2016");
-
+    
     private String headerName = "Header-name1";
     private String headerValue = "headervalue1";
-
+    
     @Before
     public void beforeTests() {
         beginDate = new Date(accumuloDate);
