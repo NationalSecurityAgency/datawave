@@ -4,7 +4,7 @@
     <parent>
         <groupId>nsa.datawave.webservice</groupId>
         <artifactId>Examples</artifactId>
-        <version>4.4.7</version>
+        <version>4.4.8-SNAPSHOT</version>
     </parent>
     <artifactId>jms-streamed-client</artifactId>
     <packaging>jar</packaging>

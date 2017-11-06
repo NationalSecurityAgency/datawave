@@ -4,7 +4,7 @@
     <parent>
         <groupId>nsa.datawave.webservice</groupId>
         <artifactId>WebService</artifactId>
-        <version>4.4.7</version>
+        <version>4.4.8-SNAPSHOT</version>
     </parent>
     <artifactId>MapReduce-Embedded</artifactId>
     <packaging>jar</packaging>
