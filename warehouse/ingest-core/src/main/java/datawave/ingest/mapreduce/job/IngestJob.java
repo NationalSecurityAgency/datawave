@@ -291,15 +291,13 @@ public class IngestJob implements Tool {
             return -1;
         }
         
-        if (createTablesOnly) {
-            boolean wasConfigureTablesSuccessful = configureTables(cbHelper, conf);
-            if (!wasConfigureTablesSuccessful) {
-                return -1;
-            } else {
-                // Exit early if we are only creating tables
-                log.info("Created tables: " + getTables(conf) + " successfully!");
-                return 0;
-            }
+        boolean wasConfigureTablesSuccessful = configureTables(cbHelper, conf);
+        if (!wasConfigureTablesSuccessful) {
+            return -1;
+        } else if (createTablesOnly) {
+            // Exit early if we are only creating tables
+            log.info("Created tables: " + getTables(conf) + " successfully!");
+            return 0;
         }
         
         try {
