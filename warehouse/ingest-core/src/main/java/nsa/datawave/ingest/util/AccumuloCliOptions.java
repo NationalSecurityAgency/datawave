@@ -21,8 +21,7 @@ public class AccumuloCliOptions {
         options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Accumulo username").create("u"));
         options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Accumulo password").create("p"));
         options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Accumulo instance name").create("i"));
-        options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Comma separated list of ZooKeeper servers")
-                        .create("zk"));
+        options.addOption(OptionBuilder.isRequired(true).hasArg().withDescription("Comma separated list of ZooKeeper servers").create("zk"));
     }
     
     /**
