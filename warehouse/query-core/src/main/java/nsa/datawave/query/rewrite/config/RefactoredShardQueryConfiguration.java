@@ -306,6 +306,11 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
      */
     protected boolean debugMultithreadedSources = false;
     
+    /**
+     * Used to enable Event Field Value filtering in the TLD based on Query Expressions
+     */
+    protected boolean dataQueryExpressionFilterEnabled = false;
+    
     public RefactoredShardQueryConfiguration() {
         query = new QueryImpl();
     }
@@ -520,6 +525,14 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     
     public void setDebugMultithreadedSources(boolean debugMultithreadedSources) {
         this.debugMultithreadedSources = debugMultithreadedSources;
+    }
+    
+    public boolean isDataQueryExpressionFilterEnabled() {
+        return dataQueryExpressionFilterEnabled;
+    }
+    
+    public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
+        this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
     }
     
     public Boolean getUseFilters() {
@@ -1494,6 +1507,8 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.fstCount = copy.fstCount;
         
         this.setDebugMultithreadedSources(copy.isDebugMultithreadedSources());
+        
+        this.setDataQueryExpressionFilterEnabled(copy.isDataQueryExpressionFilterEnabled());
         
         this.setSortedUIDs(copy.isSortedUIDs());
     }

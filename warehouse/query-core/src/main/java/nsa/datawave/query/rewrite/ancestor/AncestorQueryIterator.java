@@ -113,7 +113,7 @@ public class AncestorQueryIterator extends QueryIterator {
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
         // return a new script each time as this is not thread safe (maintains state)
-        return new AncestorEventDataFilter(script);
+        return new AncestorEventDataFilter(script, typeMetadata, this.isDataQueryExpressionFilterEnabled());
     }
     
     @Override

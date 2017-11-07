@@ -76,9 +76,6 @@ public class AttributeFactory {
     public Attribute<?> create(String fieldName, String data, Key key, String ingestType, boolean toKeep) {
         
         Collection<String> dataTypes = this.typeMetadata.getTypeMetadata(fieldName, ingestType);
-        if (dataTypes.isEmpty()) {
-            return new NoOpContent(data, key, toKeep);
-        }
         
         try {
             if (null == dataTypes || dataTypes.isEmpty()) {

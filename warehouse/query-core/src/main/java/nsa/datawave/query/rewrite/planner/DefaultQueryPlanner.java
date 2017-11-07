@@ -1520,6 +1520,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
                 }
                 
+                if (config.isDataQueryExpressionFilterEnabled()) {
+                    addOption(cfg, QueryOptions.DATA_QUERY_EXPRESSION_FILTER_ENABLED, Boolean.toString(config.isDataQueryExpressionFilterEnabled()), false);
+                }
+                
                 return cfg;
             }
         });
