@@ -14,6 +14,7 @@ import mil.nga.giat.geowave.adapter.vector.util.FeatureDataUtils;
 import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.index.StringUtils;
 import mil.nga.giat.geowave.core.index.persist.PersistenceUtils;
+import mil.nga.giat.geowave.core.store.AdapterToIndexMapping;
 import mil.nga.giat.geowave.core.store.adapter.statistics.DataStatistics;
 import mil.nga.giat.geowave.core.store.adapter.statistics.RowRangeHistogramStatistics;
 import mil.nga.giat.geowave.core.store.base.DataStoreEntryInfo;
@@ -40,6 +41,7 @@ public class GeoWaveMetadata implements RawRecordMetadata {
     public static final String INDEX_CF = "INDEX";
     public static final String ADAPTER_CF = "ADAPTER";
     public static final String STATISTICS_CF = "STATS";
+    public static final String ADAPTER_INDEX_CF = "AIM";
     
     private final String tableNamespace;
     private final PrimaryIndex index;
@@ -148,6 +150,11 @@ public class GeoWaveMetadata implements RawRecordMetadata {
                         PersistenceUtils.toBinary(index)));
     }
     
+    private KeyValue adapterIndexMappingToKeyValue(final AdapterToIndexMapping aim) {
+        return new KeyValue(new Key(new Text(aim.getAdapterId().getBytes()), new Text(GeoWaveMetadata.ADAPTER_INDEX_CF), new Text()), new Value(
+                        PersistenceUtils.toBinary(aim)));
+    }
+    
     private KeyValue statToKeyValue(final DataStatistics stat) {
         return new KeyValue(new Key(new Text(stat.getStatisticsId().getBytes()), new Text(STATISTICS_CF), new Text(dataAdapter.getAdapterId().getString())),
                         new Value(PersistenceUtils.toBinary(stat)));
@@ -167,6 +174,11 @@ public class GeoWaveMetadata implements RawRecordMetadata {
         if (index != null) {
             final KeyValue indexKV = indexToKeyValue(index);
             values.put(new BulkIngestKey(tableName, indexKV.getKey()), indexKV.getValue());
+        }
+        
+        if (dataAdapter != null && index != null) {
+            final KeyValue aimKV = adapterIndexMappingToKeyValue(new AdapterToIndexMapping(dataAdapter.getAdapterId(), new PrimaryIndex[] {index}));
+            values.put(new BulkIngestKey(tableName, aimKV.getKey()), aimKV.getValue());
         }
         
         if (bboxStats != null) {
