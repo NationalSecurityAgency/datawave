@@ -62,14 +62,12 @@ public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
      */
     @Override
     public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
-        // not yet implemented
-        return null;
+        return filter.getSeekRange(current, endKey, endKeyInclusive);
     }
     
     @Override
     public int getMaxNextCount() {
-        // not yet implemented
-        return -1;
+        return filter.getMaxNextCount();
     }
     
     @Override

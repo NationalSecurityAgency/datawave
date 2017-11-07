@@ -76,10 +76,6 @@ public class AttributeFactory {
     public Attribute<?> create(String fieldName, String data, Key key, String ingestType, boolean toKeep) {
         
         Collection<String> dataTypes = this.typeMetadata.getTypeMetadata(fieldName, ingestType);
-        /*
-         * I'm not entirely sure we should be doing this - shouldn't we be falling back on the default type in line 86 below? if (dataTypes.isEmpty()) { return
-         * new NoOpContent(data, key, toKeep); }
-         */
         
         try {
             if (null == dataTypes || dataTypes.isEmpty()) {

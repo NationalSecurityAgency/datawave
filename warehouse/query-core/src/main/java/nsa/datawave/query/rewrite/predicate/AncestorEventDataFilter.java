@@ -4,6 +4,7 @@ import java.util.Map.Entry;
 
 import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.rewrite.tld.TLD;
+import nsa.datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
@@ -11,14 +12,14 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
  * This filter will filter event data keys by only those fields that are required in the specified query except for the base document in which case all fields
  * are returned.
  */
-public class AncestorEventDataFilter extends EventDataQueryFieldFilter {
+public class AncestorEventDataFilter extends ConfigurableEventDataQueryFilter {
     /**
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
      */
-    public AncestorEventDataFilter(ASTJexlScript script) {
-        super(script);
+    public AncestorEventDataFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled) {
+        super(script, metadata, expressionFilterEnabled);
     }
     
     /*
