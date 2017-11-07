@@ -3,25 +3,25 @@ package datawave.ingest.metadata;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.vividsolutions.jts.io.ParseException;
-import mil.nga.giat.geowave.adapter.vector.FeatureDataAdapter;
-import mil.nga.giat.geowave.adapter.vector.stats.FeatureBoundingBoxStatistics;
-import mil.nga.giat.geowave.adapter.vector.util.FeatureDataUtils;
-import mil.nga.giat.geowave.core.index.ByteArrayId;
-import mil.nga.giat.geowave.core.index.PersistenceUtils;
-import mil.nga.giat.geowave.core.index.StringUtils;
-import mil.nga.giat.geowave.core.store.DataStoreEntryInfo;
-import mil.nga.giat.geowave.core.store.adapter.statistics.DataStatistics;
-import mil.nga.giat.geowave.core.store.adapter.statistics.RowRangeHistogramStatistics;
-import mil.nga.giat.geowave.core.store.data.visibility.GlobalVisibilityHandler;
-import mil.nga.giat.geowave.core.store.data.visibility.UniformVisibilityWriter;
-import mil.nga.giat.geowave.core.store.index.Index;
-import mil.nga.giat.geowave.core.store.index.PrimaryIndex;
-import mil.nga.giat.geowave.core.store.memory.DataStoreUtils;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.geowave.GeoWaveDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import mil.nga.giat.geowave.adapter.vector.FeatureDataAdapter;
+import mil.nga.giat.geowave.adapter.vector.stats.FeatureBoundingBoxStatistics;
+import mil.nga.giat.geowave.adapter.vector.util.FeatureDataUtils;
+import mil.nga.giat.geowave.core.index.ByteArrayId;
+import mil.nga.giat.geowave.core.index.StringUtils;
+import mil.nga.giat.geowave.core.index.persist.PersistenceUtils;
+import mil.nga.giat.geowave.core.store.adapter.statistics.DataStatistics;
+import mil.nga.giat.geowave.core.store.adapter.statistics.RowRangeHistogramStatistics;
+import mil.nga.giat.geowave.core.store.base.DataStoreEntryInfo;
+import mil.nga.giat.geowave.core.store.data.visibility.GlobalVisibilityHandler;
+import mil.nga.giat.geowave.core.store.data.visibility.UniformVisibilityWriter;
+import mil.nga.giat.geowave.core.store.index.Index;
+import mil.nga.giat.geowave.core.store.index.PrimaryIndex;
+import mil.nga.giat.geowave.core.store.util.DataStoreUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Value;
@@ -70,11 +70,11 @@ public class GeoWaveMetadata implements RawRecordMetadata {
         
         // loop through available data adapter statistics and find the bounding
         // box stat that matches our default geometry
-        for (final ByteArrayId statsId : dataAdapter.getSupportedStatisticsIds()) {
+        for (final ByteArrayId statsId : dataAdapter.getSupportedStatisticsTypes()) {
             final DataStatistics stat = dataAdapter.createDataStatistics(statsId);
             if (stat instanceof FeatureBoundingBoxStatistics) {
                 final FeatureBoundingBoxStatistics bboxStats = (FeatureBoundingBoxStatistics) stat;
-                if (bboxStats.getFieldName().equals(dataAdapter.getType().getGeometryDescriptor().getLocalName())) {
+                if (bboxStats.getFieldName().equals(dataAdapter.getFeatureType().getGeometryDescriptor().getLocalName())) {
                     this.bboxStats = bboxStats;
                 }
             }
