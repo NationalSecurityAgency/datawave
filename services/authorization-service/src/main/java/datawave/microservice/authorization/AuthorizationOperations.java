@@ -3,7 +3,10 @@ package datawave.microservice.authorization;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUserInfo;
 import datawave.webservice.security.JWTTokenHandler;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,6 +33,10 @@ public class AuthorizationOperations {
         this.cachedDatawaveUserService = cachedDatawaveUserService;
     }
     
+    @ApiOperation(value = "Authorizes the calling user to produce a JWT value",
+                    notes = "The returned JWT can be passed to other calls in a header. For example: \"Authorization: bearer <JWT value>\".\n"
+                                    + "The user can be determined with from the supplied client certificate or trusted headers ("
+                                    + "X-SSL-clientcert-subject/X-SSL-clientcert-issuer).")
     @RequestMapping(path = "/authorize", produces = MediaType.TEXT_PLAIN_VALUE, method = RequestMethod.GET)
     public String user(@AuthenticationPrincipal ProxiedUserDetails currentUser) {
         return tokenHandler.createTokenFromUsers(currentUser.getUsername(), currentUser.getProxiedUsers());
@@ -38,6 +45,10 @@ public class AuthorizationOperations {
     /**
      * Returns the {@link ProxiedUserDetails} that represents the authenticated calling user.
      */
+    @ApiOperation(value = "Returns details about the current user/proxied users.",
+                    notes = "The user can be determined with from the supplied client certificate or trusted headers ("
+                                    + "X-SSL-clientcert-subject/X-SSL-clientcert-issuer). Proxied user headers (X-ProxiedEntitiesChain/X-ProxiedIssuersChain) "
+                                    + "are also used to determine proxied users to include in the returned details.")
     @RequestMapping(path = "/whoami", method = RequestMethod.GET)
     public ProxiedUserDetails hello(@AuthenticationPrincipal ProxiedUserDetails currentUser) {
         return currentUser;
@@ -53,9 +64,10 @@ public class AuthorizationOperations {
      * @return status indicating whether or not any users were evicted from the authentication cache
      * @see CachedDatawaveUserService#evict(String)
      */
+    @ApiOperation("Evicts the named user from the authorization cache.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "/admin/evictUser", produces = MediaType.TEXT_PLAIN_VALUE, method = {RequestMethod.GET, RequestMethod.DELETE})
-    public String evictUser(@RequestParam String username) {
+    public String evictUser(@ApiParam("The username (e.g., subjectDn<issuerDn>) to evict") @RequestParam String username) {
         return cachedDatawaveUserService.evict(username);
     }
     
@@ -67,9 +79,10 @@ public class AuthorizationOperations {
      * @return status indicating whether or not any users were evicted from the authentication cache
      * @see CachedDatawaveUserService#evictMatching(String)
      */
+    @ApiOperation("Evicts from the authorization cache all users whose name contains the supplied substring.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "/admin/evictUsersMatching", produces = MediaType.TEXT_PLAIN_VALUE, method = {RequestMethod.GET, RequestMethod.DELETE})
-    public String evictUsersMatching(@RequestParam String substring) {
+    public String evictUsersMatching(@ApiParam("A substring to search for in user names to evict") @RequestParam String substring) {
         return cachedDatawaveUserService.evictMatching(substring);
     }
     
@@ -81,6 +94,7 @@ public class AuthorizationOperations {
      * @return status indicating whether or not any users were evicted from the authentication cache
      * @see CachedDatawaveUserService#evictAll()
      */
+    @ApiOperation("Evicts all users from the authorization cache.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "/admin/evictAll", produces = MediaType.TEXT_PLAIN_VALUE, method = {RequestMethod.GET, RequestMethod.DELETE})
     public String evictAll() {
@@ -97,9 +111,10 @@ public class AuthorizationOperations {
      * @return the cached user whose {@link DatawaveUser#getName()} is name, or null if no such user is cached
      * @see CachedDatawaveUserService#list(String)
      */
+    @ApiOperation("Lists the details for the named cached user.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "/admin/listUser", method = RequestMethod.GET)
-    public DatawaveUser listCachedUser(@RequestParam String username) {
+    public DatawaveUser listCachedUser(@ApiParam("The username (e.g., subjectDn<issuerDn>) to evict") @RequestParam String username) {
         return cachedDatawaveUserService.list(username);
     }
     
@@ -113,9 +128,11 @@ public class AuthorizationOperations {
      * @return the matching cached users, ifany
      * @see CachedDatawaveUserService#listMatching(String)
      */
+    @ApiOperation(value = "Retrieves details for all cached users whose names match a substring.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "/admin/listUsersMatching", method = RequestMethod.GET)
-    public Collection<? extends DatawaveUser> listCachedUsersMatching(@RequestParam String substring) {
+    public Collection<? extends DatawaveUserInfo> listCachedUsersMatching(
+                    @ApiParam("A substring to search for in user names to list") @RequestParam String substring) {
         return cachedDatawaveUserService.listMatching(substring);
     }
     
@@ -127,9 +144,10 @@ public class AuthorizationOperations {
      * @return a collection of all {@link DatawaveUser}s that are stored in the authentication cache
      * @see CachedDatawaveUserService#listAll()
      */
+    @ApiOperation(value = "Retrieves details for all cached users.")
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "/admin/listUsers", method = RequestMethod.GET)
-    public Collection<? extends DatawaveUser> listCachedUsers() {
+    public Collection<? extends DatawaveUserInfo> listCachedUsers() {
         return cachedDatawaveUserService.listAll();
     }
 }

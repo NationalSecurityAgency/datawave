@@ -13,6 +13,7 @@ import datawave.configuration.RefreshableScope;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
 import datawave.webservice.security.JWTTokenHandler;
@@ -85,6 +86,7 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     
     private ObjectReader datawaveUserReader;
     private ObjectReader datawaveUserListReader;
+    private ObjectReader datawaveUserInfoListReader;
     private CloseableHttpClient client;
     private JWTTokenHandler jwtTokenHandler;
     
@@ -196,24 +198,24 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     
     @Override
     @Timed(name = "dw.remoteDatawaveUserService.listAll", absolute = true)
-    public Collection<? extends DatawaveUser> listAll() {
+    public Collection<? extends DatawaveUserInfo> listAll() {
         // @formatter:off
         return executeGetMethodWithRuntimeException("admin/listUsers",
                 uriBuilder -> {},
                 httpGet -> {},
-                entity -> datawaveUserListReader.readValue(entity.getContent()),
+                entity -> datawaveUserInfoListReader.readValue(entity.getContent()),
                 () -> "list all users");
         // @formatter:on
     }
     
     @Override
     @Timed(name = "dw.remoteDatawaveUserService.listMatching", absolute = true)
-    public Collection<? extends DatawaveUser> listMatching(String substring) {
+    public Collection<? extends DatawaveUserInfo> listMatching(String substring) {
         // @formatter:off
         return executeGetMethodWithRuntimeException("admin/listUsersMatching",
                 uriBuilder -> uriBuilder.addParameter("substring", substring),
                 httpGet -> {},
-                entity -> datawaveUserListReader.readValue(entity.getContent()),
+                entity -> datawaveUserInfoListReader.readValue(entity.getContent()),
                 () -> "list all users matching " + substring);
         // @formatter:on
     }
@@ -324,6 +326,7 @@ public class RemoteDatawaveUserService implements CachedDatawaveUserService {
         objectMapper.registerModule(new GuavaModule());
         datawaveUserReader = objectMapper.readerFor(DatawaveUser.class);
         datawaveUserListReader = objectMapper.readerFor(objectMapper.getTypeFactory().constructCollectionType(Collection.class, DatawaveUser.class));
+        datawaveUserInfoListReader = objectMapper.readerFor(objectMapper.getTypeFactory().constructCollectionType(Collection.class, DatawaveUserInfo.class));
         
         if (useSrvDNS) {
             if (srvDnsServers != null && !srvDnsServers.isEmpty()) {

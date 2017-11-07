@@ -5,6 +5,7 @@ import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -206,12 +207,12 @@ public class TestDatawaveUserServiceTest {
         }
         
         @Override
-        public Collection<? extends DatawaveUser> listAll() {
+        public Collection<? extends DatawaveUserInfo> listAll() {
             return null;
         }
         
         @Override
-        public Collection<? extends DatawaveUser> listMatching(String substring) {
+        public Collection<? extends DatawaveUserInfo> listMatching(String substring) {
             return null;
         }
         

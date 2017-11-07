@@ -10,6 +10,7 @@ import datawave.microservice.cached.CacheInspector;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import org.junit.Before;
 import org.junit.Test;
@@ -153,12 +154,12 @@ public class AuthorizationServiceTest {
         }
         
         @Override
-        public Collection<? extends DatawaveUser> listAll() {
+        public Collection<? extends DatawaveUserInfo> listAll() {
             return null;
         }
         
         @Override
-        public Collection<? extends DatawaveUser> listMatching(String substring) {
+        public Collection<? extends DatawaveUserInfo> listMatching(String substring) {
             return null;
         }
         

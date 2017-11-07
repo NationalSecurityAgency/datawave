@@ -25,12 +25,12 @@ public interface CachedDatawaveUserService extends DatawaveUserService {
     /**
      * Lists the DNs for all entries in the cache.
      */
-    Collection<? extends DatawaveUser> listAll();
+    Collection<? extends DatawaveUserInfo> listAll();
     
     /**
      * Lists DNs for all entries in the cache where the {@link DatawaveUser#getName()} contains the supplied string.
      */
-    Collection<? extends DatawaveUser> listMatching(String substring);
+    Collection<? extends DatawaveUserInfo> listMatching(String substring);
     
     /**
      * Evicts from the cache all entries whose {@link DatawaveUser#getName()} equals the supplied name

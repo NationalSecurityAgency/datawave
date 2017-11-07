@@ -1,6 +1,6 @@
 package datawave.security.cache;
 
-import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.util.DnUtils;
 import datawave.webservice.HtmlProvider;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -27,7 +27,7 @@ public class DnList implements HtmlProvider {
     private Collection<String> dns;
     
     @XmlTransient
-    private Map<String,? extends DatawaveUser> users;
+    private Map<String,? extends DatawaveUserInfo> userInfos;
     
     @SuppressWarnings("unused")
     public DnList() {
@@ -38,9 +38,9 @@ public class DnList implements HtmlProvider {
         this.dns = dns;
     }
     
-    public DnList(Collection<? extends DatawaveUser> users) {
-        this.users = users.stream().collect(Collectors.toMap(DatawaveUser::getName, Function.identity()));
-        this.dns = this.users.keySet();
+    public DnList(Collection<? extends DatawaveUserInfo> users) {
+        this.userInfos = users.stream().collect(Collectors.toMap(i -> i.getDn().toString(), Function.identity()));
+        this.dns = this.userInfos.keySet();
     }
     
     public Collection<String> getDns() {
@@ -118,7 +118,7 @@ public class DnList implements HtmlProvider {
                 builder.append(" (issuer: ").append(StringEscapeUtils.escapeHtml(subDns[i + 1])).append(")");
             }
             builder.append("</a>").append("</td>");
-            DatawaveUser u = (users != null) ? users.get(dn) : null;
+            DatawaveUserInfo u = (userInfos != null) ? userInfos.get(dn) : null;
             // append created time
             builder.append("<td>");
             if (u != null && u.getCreationTime() > 0)

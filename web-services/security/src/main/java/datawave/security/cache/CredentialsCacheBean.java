@@ -33,6 +33,7 @@ import datawave.configuration.RefreshLifecycle;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.system.AuthorizationCache;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
@@ -168,9 +169,10 @@ public class CredentialsCacheBean {
             result = new DnList(cachedDatawaveUserServiceInstance.get().listAll());
         } else {
             // @formatter:off
-            Set<DatawaveUser> userList = authManager.getCachedKeys().parallelStream()
+            Set<DatawaveUserInfo> userList = authManager.getCachedKeys().parallelStream()
                     .filter(p -> p instanceof DatawavePrincipal)
                     .flatMap(p -> ((DatawavePrincipal) p).getProxiedUsers().stream())
+                    .map(DatawaveUserInfo::new)
                     .collect(Collectors.toSet());
             // @formatter:on
             result = new DnList(userList);
@@ -196,10 +198,11 @@ public class CredentialsCacheBean {
         } else {
             Set<Principal> principals = authManager.getCachedKeys();
             // @formatter:off
-            Set<DatawaveUser> userList = principals.parallelStream()
+            Set<DatawaveUserInfo> userList = principals.parallelStream()
                     .filter(p -> p instanceof DatawavePrincipal)
                     .flatMap(p -> ((DatawavePrincipal) p).getProxiedUsers().stream())
                     .filter(u -> u.getName().contains(substr))
+                    .map(DatawaveUserInfo::new)
                     .collect(Collectors.toSet());
             // @formatter:on
             result = new DnList(userList);
