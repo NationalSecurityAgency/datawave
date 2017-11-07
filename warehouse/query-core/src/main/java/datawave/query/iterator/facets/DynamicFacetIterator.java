@@ -12,6 +12,7 @@ import java.util.SortedSet;
 
 import javax.annotation.Nullable;
 
+import datawave.query.predicate.EventDataQueryFieldFilter;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -45,7 +46,6 @@ import datawave.query.iterator.builder.CardinalityIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.CardinalityAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.tables.facets.FacetedConfiguration;
 import datawave.query.tables.facets.FacetedSearchType;
 import datawave.query.util.TypeMetadata;
@@ -162,12 +162,12 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         Function<Entry<Key,Document>,Entry<DocumentData,Document>> keyToDoc = null;
         
-        EventDataQueryFilter projection = null;
+        EventDataQueryFieldFilter projection = null;
         
         Iterator<Entry<Key,Document>> documents = null;
         
         if (configuration.getFacetedFields().size() > 0) {
-            projection = new EventDataQueryFilter();
+            projection = new EventDataQueryFieldFilter();
             projection.initializeWhitelist(configuration.getFacetedFields());
         }
         

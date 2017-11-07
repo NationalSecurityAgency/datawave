@@ -177,7 +177,7 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
     /*
      * (non-Javadoc)
      * 
-     * @see nsa.datawave.query.rewrite.attributes.Attribute#deepCopy()
+     * @see nsa.datawave.query.attributes.Attribute#deepCopy()
      */
     @Override
     public Geometry copy() {

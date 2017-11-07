@@ -1,27 +1,7 @@
 package datawave.query.tld;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
-
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-
 import datawave.query.function.TLDEquality;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
@@ -33,7 +13,15 @@ import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TLDEventDataFilter;
 import datawave.util.StringUtils;
+import org.apache.accumulo.core.data.*;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.*;
 
 /**
  * This is a TLD (Top Level Document) QueryIterator implementation.
@@ -97,8 +85,9 @@ public class TLDQueryIterator extends QueryIterator {
     public EventDataQueryFilter getEvaluationFilter() {
         if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, useWhiteListedFields ? whiteListedFields : null, useBlackListedFields ? blackListedFields
-                            : null, maxFieldHitsBeforeSeek, maxKeysBeforeSeek);
+            this.evaluationFilter = new TLDEventDataFilter(script, typeMetadata, this.isDataQueryExpressionFilterEnabled(),
+                            useWhiteListedFields ? whiteListedFields : null, useBlackListedFields ? blackListedFields : null, maxFieldHitsBeforeSeek,
+                            maxKeysBeforeSeek);
         }
         return this.evaluationFilter;
     }

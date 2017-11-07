@@ -55,7 +55,7 @@ public class ParentQueryIterator extends QueryIterator {
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
         if (evaluationFilter == null && script != null) {
-            this.evaluationFilter = new ParentEventDataFilter(script);
+            this.evaluationFilter = new ParentEventDataFilter(script, typeMetadata, this.isDataQueryExpressionFilterEnabled());
         }
         return evaluationFilter;
     }
