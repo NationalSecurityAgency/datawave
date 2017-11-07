@@ -465,9 +465,15 @@
                 ${event.query.filters.index.classnames}
             </list>
         </property>
+        <property name="dataQueryExpressionFilterEnabled" value="${query.tld.query.expression.filter.enabled}"/>
     </bean>
 
     <bean id="ParentEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.ParentQueryLogic">
+        <property name="dataQueryExpressionFilterEnabled" value="${query.parent.query.expression.filter.enabled}"/>
+    </bean>
+
+    <bean id="AncestorEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.AncestorQueryLogic">
+        <property name="dataQueryExpressionFilterEnabled" value="${query.ancestor.query.expression.filter.enabled}"/>
     </bean>
 
     <bean id="CountQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.CountingShardQueryLogic">

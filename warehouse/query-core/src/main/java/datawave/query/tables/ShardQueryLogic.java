@@ -377,6 +377,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     protected boolean debugMultithreadedSources = false;
     
+    protected boolean dataQueryExpressionFilterEnabled = false;
+    
     public ShardQueryLogic() {
         super();
         setBaseIteratorPriority(100);
@@ -500,6 +502,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setBackoffEnabled(other.getBackoffEnabled());
         this.setUnsortedUIDsEnabled(other.getUnsortedUIDsEnabled());
         this.setDebugMultithreadedSources(other.isDebugMultithreadedSources());
+        this.setDataQueryExpressionFilterEnabled(other.isDataQueryExpressionFilterEnabled());
         this.setMaxDocScanTimeout(other.maxDocScanTimeout);
         this.setConfiguredProfiles(other.configuredProfiles);
         if (other.eventQueryDataDecoratorTransformer != null) {
@@ -2315,6 +2318,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setDebugMultithreadedSources(boolean debugMultithreadedSources) {
         this.debugMultithreadedSources = debugMultithreadedSources;
+    }
+    
+    public boolean isDataQueryExpressionFilterEnabled() {
+        return dataQueryExpressionFilterEnabled;
+    }
+    
+    public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
+        this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
     }
     
     public long getBeginDateCap() {
