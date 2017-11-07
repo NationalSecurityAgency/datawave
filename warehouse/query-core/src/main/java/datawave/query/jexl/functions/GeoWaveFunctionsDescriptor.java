@@ -106,7 +106,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             int maxRanges = MAX_EXPANSION / envs.size();
             for (Envelope env : envs) {
                 for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(env).getIndexConstraints(GeometryNormalizer.indexStrategy)) {
-                    allRanges.addAll(GeometryNormalizer.indexStrategy.getQueryRanges(range, maxRanges));
+                    allRanges.addAll(Lists.reverse(GeometryNormalizer.indexStrategy.getQueryRanges(range, maxRanges)));
                 }
             }
             Iterable<JexlNode> rangeNodes = Iterables.transform(allRanges, new ByteArrayRangeToJexlNode(fieldName));
