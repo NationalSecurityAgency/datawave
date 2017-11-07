@@ -1,11 +1,12 @@
 package datawave.query.rewrite.predicate;
 
-import java.util.Map;
 import java.util.Map.Entry;
 
 import datawave.query.rewrite.Constants;
 import datawave.query.rewrite.attributes.Document;
 import datawave.query.rewrite.tld.TLD;
+import datawave.query.util.TypeMetadata;
+import datawave.query.rewrite.predicate.ConfigurableEventDataQueryFilter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
@@ -13,14 +14,14 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
  * This filter will filter event data keys by only those fields that are required in the specified query except for the base document in which case all fields
  * are returned.
  */
-public class AncestorEventDataFilter extends EventDataQueryFilter {
+public class AncestorEventDataFilter extends ConfigurableEventDataQueryFilter {
     /**
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
      */
-    public AncestorEventDataFilter(ASTJexlScript script) {
-        super(script);
+    public AncestorEventDataFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled) {
+        super(script, metadata, expressionFilterEnabled);
     }
     
     /*

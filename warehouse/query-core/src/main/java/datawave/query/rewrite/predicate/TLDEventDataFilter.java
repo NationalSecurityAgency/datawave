@@ -5,7 +5,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Set;
 
+import datawave.query.util.TypeMetadata;
+import datawave.query.rewrite.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -23,7 +26,7 @@ import datawave.query.rewrite.jexl.JexlASTHelper;
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields
  * are returned.
  */
-public class TLDEventDataFilter extends EventDataQueryFilter {
+public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     
     public static final byte[] FI_CF = new Text("fi").getBytes();
     public static final byte[] TF_CF = Constants.TERM_FREQUENCY_COLUMN_FAMILY.getBytes();
@@ -54,8 +57,9 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
      * 
      * @param script
      */
-    public TLDEventDataFilter(ASTJexlScript script, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        super(script);
+    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
+                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
+        super(script, attributeFactory, expressionFilterEnabled);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
@@ -110,7 +114,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * Test a key against the last parsed key. Return a new parsedInfo if the cached version is not the same, otherwise reuse the existing ParseInfo
-     * 
+     *
      * @param current
      *            the key to get ParseInfo for
      * @return the non-null ParseInfo for the Key
@@ -210,7 +214,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     /**
      * When dealing with a root pointer, seek through any field that should be returned in the result, when dealing with a child seek to the next query field in
      * the current child
-     * 
+     *
      * @param current
      *            the current key at the top of the source iterator
      * @param endKey
@@ -235,7 +239,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * Look in the query fields only, regardless of whitelist or blacklist configuration
-     * 
+     *
      * @param current
      *            the current key
      * @param endKey
@@ -261,7 +265,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * As long as a seek should not be bypassed, generate either a whitelist or blacklist range
-     * 
+     *
      * @param current
      *            the current key
      * @param endKey
@@ -290,7 +294,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * Seek using the main sorted whitelist and lastListSeekIndex
-     * 
+     *
      * @param current
      *            the current key
      * @param fieldName
@@ -308,7 +312,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * Moving through the whitelist from the lastHit index create a start key for the next acceptable field/uid
-     * 
+     *
      * @param current
      *            the current key
      * @param fieldName
@@ -421,7 +425,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * Bypass the seek we have not met any threshold for seeking
-     * 
+     *
      * @return true if the seek should be bypassed, false otherwise
      */
     protected boolean bypassSeek() {
@@ -430,7 +434,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * If maxFieldsBeforeSeek is non-negative, see if the threshold has been met to seek
-     * 
+     *
      * @return true if the seek should be bypassed, false otherwise
      */
     private boolean bypassSeekOnMaxFields() {
@@ -439,7 +443,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * If maxKeysBeforeSeek is non-negative, see if the threshold has been met to seek
-     * 
+     *
      * @return true if the seek should be bypassed, false otherwise
      */
     private boolean bypassSeekOnMaxKeys() {
@@ -448,7 +452,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * Extract the query fields from the script and sort them
-     * 
+     *
      * @param script
      */
     private void extractQueryFieldsFromScript(ASTJexlScript script) {
@@ -468,7 +472,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     /**
      * Ensure that if using a whitelist that all the queryFields are on it and that if using a blacklist none of the queryFields are on it. The whitelist and
      * blacklist sets will be modified
-     * 
+     *
      * @param whitelist
      *            the list of whitelist queryFields or null if not using a whitelist
      * @param blacklist
@@ -496,7 +500,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * Set the sortedWHitelist and sortedBlacklist from the queryFields modified versions and sort them
-     * 
+     *
      * @param whitelist
      *            the whitelist modified by queryFields
      * @param blacklist
@@ -516,7 +520,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * Test if a field should be kept and keep state for seeking. Track internal counters for seeking
-     * 
+     *
      * @param current
      *            the current key
      * @param applyCount
@@ -554,7 +558,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * Test a field against the whitelist and blacklist
-     * 
+     *
      * @param field
      *            the field to test
      * @param isTld
@@ -578,7 +582,7 @@ public class TLDEventDataFilter extends EventDataQueryFilter {
     
     /**
      * Parse the field from an event key, it should always be the value to to the first null in the cq
-     * 
+     *
      * @param current
      * @return
      */

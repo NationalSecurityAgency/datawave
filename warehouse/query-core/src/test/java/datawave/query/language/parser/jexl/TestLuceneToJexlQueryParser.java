@@ -455,6 +455,12 @@ public class TestLuceneToJexlQueryParser {
     }
     
     @Test
+    public void testGrouping() throws ParseException {
+        String s = "FOO.1:ABC AND FOO.2:DEF";
+        Assert.assertEquals("FOO.1 == 'ABC' && FOO.2 == 'DEF'", parseQuery(s));
+    }
+    
+    @Test
     public void testSmartQuoteReplacement() throws ParseException {
         String s = "\u0093see jane run\u0094";
         Assert.assertEquals("content:phrase(termOffsetMap, 'see', 'jane', 'run')", parseQuery(s));
