@@ -421,7 +421,8 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
             final DataStoreEntryInfo ingestInfo = DataStoreUtils.getIngestInfo(dataAdapter, index, feature, new UniformVisibilityWriter<SimpleFeature>(
                             new GlobalVisibilityHandler<SimpleFeature,Object>(StringUtils.stringFromBinary(visibility))));
             
-            final List<DataStoreEntryInfo.FieldInfo<?>> fieldInfoList = composeFlattenedFields(ingestInfo.getFieldInfo(), index);
+            final List<DataStoreEntryInfo.FieldInfo<?>> fieldInfoList = DataStoreUtils.composeFlattenedFields(ingestInfo.getFieldInfo(), index.getIndexModel(),
+                            dataAdapter);
             
             for (final ByteArrayId row : ingestInfo.getRowIds()) {
                 for (final DataStoreEntryInfo.FieldInfo fieldInfo : fieldInfoList) {
