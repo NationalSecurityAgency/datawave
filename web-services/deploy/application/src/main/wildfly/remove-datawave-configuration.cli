@@ -136,6 +136,7 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.metrics.accumulo.password:remove
 /system-property=dw.hornetq.system.userName:remove
 /system-property=dw.hornetq.system.password:remove
+/system-property=dw.modification.cache.mdb.pool.size:remove
 /system-property=dw.trusted.header.authentication:remove
 /system-property=dw.transport.guarantee:remove
 /system-property=dw.connectionPool.default:remove

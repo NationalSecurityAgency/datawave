@@ -38,6 +38,7 @@ embed-server --server-config=standalone-full.xml
 /system-property=dw.metrics.accumulo.password:add(value=${accumulo.user.password})
 /system-property=dw.hornetq.system.userName:add(value=${hornetq.system.username})
 /system-property=dw.hornetq.system.password:add(value=${hornetq.system.password})
+/system-property=dw.modification.cache.mdb.pool.size:add(value=${modification.cache.mdb.pool.size})
 /system-property=dw.trusted.header.authentication:add(value=${trusted.header.login})
 /system-property=dw.transport.guarantee:add(value=${webapp.transport.guarantee})
 /system-property=dw.connectionPool.default:add(value=WAREHOUSE)
