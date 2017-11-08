@@ -76,7 +76,7 @@ public class DateIndexDataTypeHandlerTest {
         // create a sample event
         String data = "00000000-0000-0000-0000-000000000000,UUID,FOO,null,2013-04-30T11:53:11Z,2013-04-29T11:53:10Z";
         RawRecordContainer event = getEvent(data);
-        String shardId = ShardIdFactory.getShardId(event, 11);
+        String shardId = new ShardIdFactory(conf).getShardId(event);
         int shard1 = ShardIdFactory.getShard(shardId);
         
         // create some fields
@@ -132,7 +132,7 @@ public class DateIndexDataTypeHandlerTest {
         // create a sample event
         String data = "00000000-0000-0000-0000-000000000000,UUID,FOO,null,2013-04-30T11:53:11Z,2013-04-29T11:53:10Z";
         RawRecordContainer event = getEvent(data);
-        String shardId = ShardIdFactory.getShardId(event, 11);
+        String shardId = new ShardIdFactory(conf).getShardId(event);
         int shard1 = ShardIdFactory.getShard(shardId);
         
         // create some fields
@@ -151,7 +151,7 @@ public class DateIndexDataTypeHandlerTest {
         // create a second sample event
         data = "00000000-0000-0000-0000-000000000000,UUID,FOO,null,2013-04-30T00:00:00Z,2013-04-29T11:11:11Z";
         event = getEvent(data);
-        shardId = ShardIdFactory.getShardId(event, 11);
+        shardId = new ShardIdFactory(conf).getShardId(event);
         int shard2 = ShardIdFactory.getShard(shardId);
         eventFields = helper.getEventFields(event);
         // do not put the load date in this one: eventFields.put("LOAD_DATE", loadDate);
