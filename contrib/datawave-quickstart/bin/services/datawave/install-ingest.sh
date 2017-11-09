@@ -10,6 +10,8 @@ source "${THIS_DIR}/bootstrap.sh"
 source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 source "${SERVICES_DIR}/accumulo/bootstrap.sh"
 
+[ -z "$( which bc )" ] && fatal "DataWave Ingest install cannot proceed because 'bc' was not found. Please install 'bc' and then resume via 'allInstall' or 'datawaveIngestInstall"
+
 hadoopIsInstalled || fatal "DataWave Ingest requires that Hadoop be installed"
 accumuloIsInstalled || fatal "DataWave Ingest requires that Accumulo be installed"
 
@@ -34,15 +36,15 @@ if ! hadoopIsRunning ; then
 fi
 
 # Create any Hadoop directories related to Datawave Ingest
-if [ -n "${DW_DATAWAVE_INGEST_HDFS_INPUTS}" ]; then
-   OLD_IFS=$IFS
-   IFS=','
-   read -r -a INGEST_HDFS_INPUT_ARRAY <<< "$DW_DATAWAVE_INGEST_HDFS_INPUTS"
-   IFS=$OLD_IFS
-   # Create the HDFS directories
-   for dir in "${INGEST_HDFS_INPUT_ARRAY[@]}"
-   do
-      "${HADOOP_HOME}"/bin/hdfs dfs -mkdir -p "${dir}" || fatal "Failed to create HDFS directory "${dir}""
+if [[ -n "${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES}" ]] ; then
+
+   OLD_IFS="${IFS}"
+   IFS=","
+   HDFS_RAW_INPUT_DIRS=( ${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES} )
+   IFS="${OLD_IFS}"
+
+   for dir in "${HDFS_RAW_INPUT_DIRS[@]}" ; do
+      hdfs dfs -mkdir -p "${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/${dir}" || fatal "Failed to create HDFS directory: ${dir}"
    done
 fi
 
@@ -50,9 +52,9 @@ fi
 # Configure/update Accumulo classpath, set auths, etc
 #----------------------------------------------------------
 
-if accumuloIsRunning; then
+if accumuloIsRunning ; then
   info "Stopping Accumulo to update classpath, etc..."
-  accumuloStop || fatal "Failed to stop an already running Accumulo"
+  accumuloStop || warn "Failed to stop an already running Accumulo"
 fi
 
 # Update Accumulo classpath for DataWave jars in HDFS/VFS directories (or lib/ext)
@@ -74,10 +76,10 @@ else
    rm -f ${ACCUMULO_HOME}/lib/ext/*.jar
    info "Copying DataWave jars into ${ACCUMULO_HOME}/lib/ext"
    if [ -d ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib ]; then
-      cp ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/*.jar ${ACCUMULO_HOME}/lib/ext
+      cp ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/*.jar ${ACCUMULO_HOME}/lib/ext > /dev/null 2>&1
    fi
    if [ -d ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext ]; then
-      cp ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext/*.jar ${ACCUMULO_HOME}/lib/ext
+      cp ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext/*.jar ${ACCUMULO_HOME}/lib/ext > /dev/null 2>&1
    fi
 fi
 
@@ -145,14 +147,24 @@ info "See \$DW_CLOUD_HOME/bin/services/datawave/bootstrap-ingest.sh to view/edit
 
 OK_TO_INGEST_WIKIPEDIA=true
 if [ "${DW_REDEPLOY_IN_PROGRESS}" == true ] ; then
-    if ! askYesNo "Do you want to ingest '${DW_DATAWAVE_INGEST_TEST_FILE}' ?" ; then
+    if ! askYesNo "Do you want to ingest '${DW_DATAWAVE_INGEST_TEST_FILE_WIKI}' ?" ; then
         OK_TO_INGEST_WIKIPEDIA=false
     fi
 fi
 
 if [ "${OK_TO_INGEST_WIKIPEDIA}" == true ] ; then
-    # First run a job to create all necessary tables
-    datawaveIngestCreateTables
     # Lastly, ingest wikipedia rawfile
-    datawaveIngestWikipedia "${DW_DATAWAVE_INGEST_TEST_FILE}"
+    datawaveIngestWikipedia "${DW_DATAWAVE_INGEST_TEST_FILE_WIKI}"
+fi
+
+OK_TO_INGEST_CSV=true
+if [ "${DW_REDEPLOY_IN_PROGRESS}" == true ] ; then
+    if ! askYesNo "Do you want to ingest '${DW_DATAWAVE_INGEST_TEST_FILE_CSV}' ?" ; then
+        OK_TO_INGEST_CSV=false
+    fi
+fi
+
+if [ "${OK_TO_INGEST_CSV}" == true ] ; then
+    # Lastly, ingest csv rawfile
+    datawaveIngestCsv "${DW_DATAWAVE_INGEST_TEST_FILE_CSV}"
 fi

@@ -1,116 +1,201 @@
 # Sourced by env.sh
 
+# This bootstrap sources both bootstrap-ingest.sh and bootstrap-web.sh, so that
+# higher level scripts can harness both of those services via the "datawave"
+# service name, and so that there's a single place to define variables and code
+# shared by both components
+
+# Current script dir
+
 DW_DATAWAVE_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Source/repository root
+
 DW_DATAWAVE_SOURCE_DIR="$( cd "${DW_DATAWAVE_SERVICE_DIR}/../../../../.." && pwd )"
 
-# Home of temp data and build property overrides for this instance of DataWave
+# Comma-delimited list of Accumulo authorizations to grant the root user. These will be automatically assigned to the
+# Accumulo root user with a dynamically generated accumulo-shell script during the DataWave install. Override the
+# default list as needed for whatever your test data requires
+
+DW_DATAWAVE_ACCUMULO_AUTHS="${DW_DATAWAVE_ACCUMULO_AUTHS:-PUBLIC,PRIVATE}"
+
+# Comma-delimited list of web service and Accumulo authorizations to grant the test user. This list will be used to
+# auto-generate the appropriate TestAuthorizationServiceConfiguration.xml entries for the web service. Concatenates
+# DW_DATAWAVE_ACCUMULO_AUTHS by default, since you'll most likely want your test user to be able to see everything
+# in Accumulo. Override the default list as needed for whatever your user-based testing requires
+
+DW_DATAWAVE_USER_AUTHS="${DW_DATAWAVE_USER_AUTHS:-AuthorizedUser,Administrator,JBossAdministrator,${DW_DATAWAVE_ACCUMULO_AUTHS}}"
+
+# Test user's client cert subject DN and issuer DN. Defaults to DN's from testUser.p12 cert
+
+DW_DATAWAVE_USER_DN="${DW_DATAWAVE_USER_DN:-cn=test a. user, ou=my department, o=my company, st=some-state, c=us}"
+
+DW_DATAWAVE_ISSUER_DN="${DW_DATAWAVE_ISSUER_DN:-cn=test ca, ou=my department, o=my company, st=some-state, c=us}"
+
+# Selected Maven profile for the DataWave build
+
+DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
+
+# Maven command
+
+DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install}"
+
+# Home of any temp data and *.property overrides for this instance of DataWave
+
 DW_DATAWAVE_DATA_DIR="${DW_CLOUD_DATA}/datawave"
 
-DW_DATAWAVE_BUILD_COMMAND="mvn -Pdev -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install"
+# Temp dir for persisting our dynamically-generated ${DW_DATAWAVE_BUILD_PROFILE}.properties file
+
 DW_DATAWAVE_BUILD_PROPERTIES_DIR="${DW_DATAWAVE_DATA_DIR}/build-properties"
+
 DW_DATAWAVE_BUILD_STATUS_LOG="${DW_DATAWAVE_BUILD_PROPERTIES_DIR}/build-progress.tmp"
 
-DW_DATAWAVE_INGEST_TARBALL="*/datawave-dev-*-dist.tar.gz"
-DW_DATAWAVE_WEB_TARBALL="*/datawave-ws-deploy-application-*-dev.tar.gz"
+DW_DATAWAVE_INGEST_TARBALL="*/datawave-${DW_DATAWAVE_BUILD_PROFILE}-*-dist.tar.gz"
 
-DW_DATAWAVE_KEYSTORE="${DW_DATAWAVE_SOURCE_DIR}/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testServer.p12"
-DW_DATAWAVE_KEYSTORE_TYPE="PKCS12"
-DW_DATAWAVE_TRUSTSTORE="${DW_DATAWAVE_SOURCE_DIR}/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/ca.jks"
-DW_DATAWAVE_TRUSTSTORE_TYPE="JKS"
+DW_DATAWAVE_WEB_TARBALL="*/datawave-ws-deploy-application-*-${DW_DATAWAVE_BUILD_PROFILE}.tar.gz"
+
+DW_DATAWAVE_KEYSTORE="${DW_DATAWAVE_KEYSTORE:-${DW_DATAWAVE_SOURCE_DIR}/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testServer.p12}"
+
+DW_DATAWAVE_KEYSTORE_TYPE="${DW_DATAWAVE_KEYSTORE_TYPE:-PKCS12}"
+
+DW_DATAWAVE_TRUSTSTORE="${DW_DATAWAVE_TRUSTSTORE:-${DW_DATAWAVE_SOURCE_DIR}/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/ca.jks}"
+
+DW_DATAWAVE_TRUSTSTORE_TYPE="${DW_DATAWAVE_TRUSTSTORE_TYPE:-JKS}"
+
+# Accumulo shell script for initializing whatever we may need in Accumulo for DataWave
+
+DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT:-
+#config -s table.classpath.context=datawave
+createtable QueryMetrics_m
+setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}
+quit
+}"
 
 function createBuildPropertiesDirectory() {
-   [ ! -d ${DW_DATAWAVE_BUILD_PROPERTIES_DIR} ] && ! mkdir -p ${DW_DATAWAVE_BUILD_PROPERTIES_DIR} && error "Failed to create directory ${DW_DATAWAVE_BUILD_PROPERTIES_DIR}"
+   if [ ! -d ${DW_DATAWAVE_BUILD_PROPERTIES_DIR} ] ; then
+      if ! mkdir -p ${DW_DATAWAVE_BUILD_PROPERTIES_DIR} ; then
+         error "Failed to create directory ${DW_DATAWAVE_BUILD_PROPERTIES_DIR}"
+         return 1
+      fi
+   fi
+   return 0
 }
 
 function setBuildPropertyOverrides() {
-   # The purpose of this function is to inject certain property-value overrides
-   # into the Maven build, so that the DW deployment's required runtime directories
-   # are configured in a portable manner, i.e., relative to the location of your
-   # datawave-quickstart root directory.
 
-   # Here we copy the CM'ed dev.properties file to DW_DATAWAVE_DATA_DIR/build-properties,
-   # inject overrides, and then create a '~/.m2/datawave/properties/dev.properties' symlink to it
+   # DataWave's build configs (*.properties) can be loaded from a variety of locations based on the 'read-properties'
+   # Maven plugin configuration. Typically, the source-root/properties/*.properties files are loaded first to provide
+   # default values, starting with 'default.properties', followed by '{selected-profile}.properties'. Finally,
+   # ~/.m2/datawave/properties/{selected-profile}.properties is loaded, if it exists, allowing you to override
+   # defaults as needed
 
-   local BUILD_PROPERTIES_BASENAME=dev.properties
+   # With that in mind, the goal of this function is to generate a new '${DW_DATAWAVE_BUILD_PROFILE}.properties' file under
+   # DW_DATAWAVE_BUILD_PROPERTIES_DIR and *symlinked* as ~/.m2/datawave/properties/${DW_DATAWAVE_BUILD_PROFILE}.properties,
+   # to inject all the overrides that we need for successful deployment to source-root/contrib/datawave-quickstart/
+
+   # If a file having the name '${DW_DATAWAVE_BUILD_PROFILE}.properties' already exists under ~/.m2/datawave/properties,
+   # then it will be renamed automatically with a ".saved-by-quickstart-$(date)" suffix, and the symlink for the new
+   # file will be created as required
+
+   local BUILD_PROPERTIES_BASENAME=${DW_DATAWAVE_BUILD_PROFILE}.properties
    local BUILD_PROPERTIES_FILE=${DW_DATAWAVE_BUILD_PROPERTIES_DIR}/${BUILD_PROPERTIES_BASENAME}
    local BUILD_PROPERTIES_SYMLINK_DIR=${HOME}/.m2/datawave/properties
    local BUILD_PROPERTIES_SYMLINK=${BUILD_PROPERTIES_SYMLINK_DIR}/${BUILD_PROPERTIES_BASENAME}
 
-   createBuildPropertiesDirectory
+   ! createBuildPropertiesDirectory && error "Failed to override properties!" && return 1
 
    # Create symlink directory if it doesn't exist
-   [ ! -d ${BUILD_PROPERTIES_SYMLINK_DIR} ] && ! mkdir -p ${BUILD_PROPERTIES_SYMLINK_DIR} && error "Failed to create symlink directory ${BUILD_PROPERTIES_SYMLINK_DIR}"
+   [ ! -d ${BUILD_PROPERTIES_SYMLINK_DIR} ] \
+       && ! mkdir -p ${BUILD_PROPERTIES_SYMLINK_DIR} \
+       && error "Failed to create symlink directory ${BUILD_PROPERTIES_SYMLINK_DIR}" \
+       && return 1
 
-   if [ ! -e "${BUILD_PROPERTIES_FILE}" ]; then
-      # Copy dev.properties from the source code directory to the ./build-properties directory
-      ! cp "${DW_DATAWAVE_SOURCE_DIR}/properties/${BUILD_PROPERTIES_BASENAME}" ${BUILD_PROPERTIES_FILE} && error "Failed to copy ${BUILD_PROPERTIES_FILE}"
+   # Copy existing source-root/properties/${DW_DATAWAVE_BUILD_PROFILE}.properties to our new $BUILD_PROPERTIES_FILE
+   ! cp "${DW_DATAWAVE_SOURCE_DIR}/properties/${DW_DATAWAVE_BUILD_PROFILE}.properties" ${BUILD_PROPERTIES_FILE} \
+       && error "Aborting property overrides! Failed to copy ${DW_DATAWAVE_BUILD_PROFILE}.properties" \
+       && return 1
 
-      # Override dev.properties with custom values
-      sed -i "s~\(WAREHOUSE_ACCUMULO_HOME=\).*$~\1${ACCUMULO_HOME}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(WAREHOUSE_INSTANCE_NAME=\).*$~\1${DW_ACCUMULO_INSTANCE_NAME}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(WAREHOUSE_JOBTRACKER_NODE=\).*$~\1${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(INGEST_ACCUMULO_HOME=\).*$~\1${ACCUMULO_HOME}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(INGEST_INSTANCE_NAME=\).*$~\1${DW_ACCUMULO_INSTANCE_NAME}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(INGEST_JOBTRACKER_NODE=\).*$~\1${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(BULK_INGEST_DATA_TYPES=\).*$~\1${DW_DATAWAVE_INGEST_BULK_DATA_TYPES}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(LIVE_INGEST_DATA_TYPES=\).*$~\1${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(PASSWORD=\).*$~\1${DW_ACCUMULO_PASSWORD}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(ZOOKEEPER_HOME=\).*$~\1${ZOOKEEPER_HOME}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(HADOOP_HOME=\).*$~\1${HADOOP_HOME}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(MAPRED_HOME=\).*$~\1${HADOOP_HOME}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(WAREHOUSE_HADOOP_CONF=\).*$~\1${HADOOP_CONF_DIR}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(INGEST_HADOOP_CONF=\).*$~\1${HADOOP_CONF_DIR}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(HDFS_BASE_DIR=\).*$~\1${DW_DATAWAVE_INGEST_HDFS_BASEDIR}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(MAPRED_INGEST_OPTS=\).*$~\1${DW_DATAWAVE_MAPRED_INGEST_OPTS}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(LOG_DIR=\).*$~\1${DW_DATAWAVE_INGEST_LOG_DIR}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(FLAG_DIR=\).*$~\1${DW_DATAWAVE_INGEST_FLAGFILE_DIR}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(FLAG_MAKER_CONFIG=\).*$~\1${DW_DATAWAVE_INGEST_FLAGMAKER_CONFIGS}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(BIN_DIR_FOR_FLAGS=\).*$~\1${DW_DATAWAVE_INGEST_HOME}\/bin~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(KEYSTORE=\).*$~\1${DW_DATAWAVE_KEYSTORE}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(KEYSTORE_TYPE=\).*$~\1${DW_DATAWAVE_KEYSTORE_TYPE}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(KEYSTORE_PASSWORD=\).*$~\1${DW_ACCUMULO_PASSWORD}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(TRUSTSTORE=\).*$~\1${DW_DATAWAVE_TRUSTSTORE}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(FLAG_METRICS_DIR=\).*$~\1${DW_DATAWAVE_INGEST_FLAGMETRICS_DIR}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(TRUSTSTORE_TYPE=\).*$~\1${DW_DATAWAVE_TRUSTSTORE_TYPE}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(accumulo\.instance\.name=\).*$~\1${DW_ACCUMULO_INSTANCE_NAME}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(accumulo\.user\.password=\).*$~\1${DW_ACCUMULO_PASSWORD}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(cached\.results\.hdfs\.uri=\).*$~\1${DW_HADOOP_DFS_URI}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(lock\.file\.dir=\).*$~\1${DW_DATAWAVE_INGEST_LOCKFILE_DIR}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(JAVA_HOME=\).*$~\1${JAVA_HOME}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(server\.keystore\.password=\).*$~\1${DW_ACCUMULO_PASSWORD}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(mysql\.user\.password=\).*$~\1${DW_ACCUMULO_PASSWORD}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(jboss\.jmx\.password=\).*$~\1${DW_ACCUMULO_PASSWORD}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(hornetq\.cluster\.password=\).*$~\1${DW_ACCUMULO_PASSWORD}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(hornetq\.system\.password=\).*$~\1${DW_ACCUMULO_PASSWORD}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(mapReduce\.job\.tracker=\).*$~\1${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}~g" ${BUILD_PROPERTIES_FILE}
-      sed -i "s~\(bulkResults\.job\.tracker=\).*$~\1${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}~g" ${BUILD_PROPERTIES_FILE}
+   # Apply overrides as needed by simply appending them to the end of the file...
 
-      # Override the following according to wikipedia.properties
+   echo "#" >> ${BUILD_PROPERTIES_FILE}
+   echo "######## Begin overrides for datawave-quickstart ########" >> ${BUILD_PROPERTIES_FILE}
+   echo "#" >> ${BUILD_PROPERTIES_FILE}
 
-      sed -i "s~\(EVENT_DISCARD_INTERVAL=\).*$~\10~g" ${BUILD_PROPERTIES_FILE}
-      echo "ingest.data.types=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES}" >> ${BUILD_PROPERTIES_FILE}
-      echo "JOB_CACHE_REPLICATION=1" >> ${BUILD_PROPERTIES_FILE}
-      echo "EDGE_DEFINITION_FILE=config/WikiEdgeSpringConfig.xml" >> ${BUILD_PROPERTIES_FILE}
+   echo "WAREHOUSE_ACCUMULO_HOME=${ACCUMULO_HOME}" >> ${BUILD_PROPERTIES_FILE}
+   echo "WAREHOUSE_INSTANCE_NAME=${DW_ACCUMULO_INSTANCE_NAME}" >> ${BUILD_PROPERTIES_FILE}
+   echo "WAREHOUSE_JOBTRACKER_NODE=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "INGEST_ACCUMULO_HOME=${ACCUMULO_HOME}" >> ${BUILD_PROPERTIES_FILE}
+   echo "INGEST_INSTANCE_NAME=${DW_ACCUMULO_INSTANCE_NAME}" >> ${BUILD_PROPERTIES_FILE}
+   echo "INGEST_JOBTRACKER_NODE=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "BULK_INGEST_DATA_TYPES=${DW_DATAWAVE_INGEST_BULK_DATA_TYPES}" >> ${BUILD_PROPERTIES_FILE}
+   echo "LIVE_INGEST_DATA_TYPES=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES}" >> ${BUILD_PROPERTIES_FILE}
+   echo "PASSWORD=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+   echo "ZOOKEEPER_HOME=${ZOOKEEPER_HOME}" >> ${BUILD_PROPERTIES_FILE}
+   echo "HADOOP_HOME=${HADOOP_HOME}" >> ${BUILD_PROPERTIES_FILE}
+   echo "MAPRED_HOME=${HADOOP_HOME}" >> ${BUILD_PROPERTIES_FILE}
+   echo "WAREHOUSE_HADOOP_CONF=${HADOOP_CONF_DIR}" >> ${BUILD_PROPERTIES_FILE}
+   echo "INGEST_HADOOP_CONF=${HADOOP_CONF_DIR}" >> ${BUILD_PROPERTIES_FILE}
+   echo "HDFS_BASE_DIR=${DW_DATAWAVE_INGEST_HDFS_BASEDIR}" >> ${BUILD_PROPERTIES_FILE}
+   echo "MAPRED_INGEST_OPTS=${DW_DATAWAVE_MAPRED_INGEST_OPTS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "LOG_DIR=${DW_DATAWAVE_INGEST_LOG_DIR}" >> ${BUILD_PROPERTIES_FILE}
+   echo "FLAG_DIR=${DW_DATAWAVE_INGEST_FLAGFILE_DIR}" >> ${BUILD_PROPERTIES_FILE}
+   echo "FLAG_MAKER_CONFIG=${DW_DATAWAVE_INGEST_FLAGMAKER_CONFIGS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "BIN_DIR_FOR_FLAGS=${DW_DATAWAVE_INGEST_HOME}/bin" >> ${BUILD_PROPERTIES_FILE}
+   echo "KEYSTORE=${DW_DATAWAVE_KEYSTORE}" >> ${BUILD_PROPERTIES_FILE}
+   echo "KEYSTORE_TYPE=${DW_DATAWAVE_KEYSTORE_TYPE}" >> ${BUILD_PROPERTIES_FILE}
+   echo "KEYSTORE_PASSWORD=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+   echo "TRUSTSTORE=${DW_DATAWAVE_TRUSTSTORE}" >> ${BUILD_PROPERTIES_FILE}
+   echo "FLAG_METRICS_DIR=${DW_DATAWAVE_INGEST_FLAGMETRICS_DIR}" >> ${BUILD_PROPERTIES_FILE}
+   echo "TRUSTSTORE_TYPE=${DW_DATAWAVE_TRUSTSTORE_TYPE}" >> ${BUILD_PROPERTIES_FILE}
+   echo "accumulo.instance.name=${DW_ACCUMULO_INSTANCE_NAME}" >> ${BUILD_PROPERTIES_FILE}
+   echo "accumulo.user.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+   echo "cached.results.hdfs.uri=${DW_HADOOP_DFS_URI}" >> ${BUILD_PROPERTIES_FILE}
+   echo "lock.file.dir=${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" >> ${BUILD_PROPERTIES_FILE}
+   echo "server.keystore.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+   echo "mysql.user.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+   echo "jboss.jmx.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+   echo "hornetq.cluster.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+   echo "hornetq.system.password=${DW_ACCUMULO_PASSWORD}" >> ${BUILD_PROPERTIES_FILE}
+   echo "mapReduce.job.tracker=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "bulkResults.job.tracker=${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "EVENT_DISCARD_INTERVAL=0" >> ${BUILD_PROPERTIES_FILE}
+   echo "ingest.data.types=${DW_DATAWAVE_INGEST_LIVE_DATA_TYPES},${DW_DATAWAVE_INGEST_BULK_DATA_TYPES}" >> ${BUILD_PROPERTIES_FILE}
+   echo "JOB_CACHE_REPLICATION=1" >> ${BUILD_PROPERTIES_FILE}
+   echo "EDGE_DEFINITION_FILE=${DW_DATAWAVE_INGEST_EDGE_DEFINITIONS}" >> ${BUILD_PROPERTIES_FILE}
+   echo "DATAWAVE_INGEST_HOME=${DW_DATAWAVE_INGEST_HOME}" >> ${BUILD_PROPERTIES_FILE}
+   echo "PASSWORD_INGEST_ENV=${DW_DATAWAVE_INGEST_PASSWD_FILE}" >> ${BUILD_PROPERTIES_FILE}
+   echo "hdfs.site.config.urls=file://${HADOOP_CONF_DIR}/core-site.xml,file://${HADOOP_CONF_DIR}/hdfs-site.xml" >> ${BUILD_PROPERTIES_FILE}
+   echo "NUM_SHARDS=${DW_DATAWAVE_INGEST_NUM_SHARDS}" >> ${BUILD_PROPERTIES_FILE}
 
-      # Append the following to the dev.properties file
-      echo "DATAWAVE_INGEST_HOME=${DW_DATAWAVE_INGEST_HOME}" >> ${BUILD_PROPERTIES_FILE}
-      echo "PASSWORD_INGEST_ENV=${DW_DATAWAVE_INGEST_PASSWD_FILE}" >> ${BUILD_PROPERTIES_FILE}
-      echo "hdfs.site.config.urls=file://${HADOOP_CONF_DIR}/core-site.xml,file://${HADOOP_CONF_DIR}/hdfs-site.xml" >> ${BUILD_PROPERTIES_FILE}
+   generateTestAuthorizationServiceConfig
+
+   # Apply DW_JAVA_HOME_OVERRIDE, if needed...
+   # We can override the JAVA_HOME location for the DataWave deployment, if necessary. E.g., if we're deploying
+   # to a Docker container or other, where our current JAVA_HOME isn't applicable
+
+   if [ -n "${DW_JAVA_HOME_OVERRIDE}" ] ; then
+      echo "JAVA_HOME=${DW_JAVA_HOME_OVERRIDE}" >> ${BUILD_PROPERTIES_FILE}
+   else
+      echo "JAVA_HOME=${JAVA_HOME}" >> ${BUILD_PROPERTIES_FILE}
    fi
 
+   # Apply DW_ROOT_DIRECTORY_OVERRIDE, if needed...
    # We can override any instances of DW_DATAWAVE_SOURCE_DIR within the build config in order to relocate
-   # the deployment, if necessary. For example, this is used when building the datawave-quickstart Docker
-   # image to reorient the deployment under /opt/datawave/ within the container
+   # the deployment, if necessary. E.g., used when building the datawave-quickstart Docker image to reorient
+   # the deployment under /opt/datawave/ within the container
+
    if [ -n "${DW_ROOT_DIRECTORY_OVERRIDE}" ] ; then
       sed -i "s~${DW_DATAWAVE_SOURCE_DIR}~${DW_ROOT_DIRECTORY_OVERRIDE}~g" ${BUILD_PROPERTIES_FILE}
    fi
 
-   # As with DW_ROOT_DIRECTORY_OVERRIDE, override JAVA_HOME for the deployment if necessary
-   if [ -n "${DW_JAVA_HOME_OVERRIDE}" ] ; then
-      sed -i "s~\(JAVA_HOME=\).*$~\1${DW_JAVA_HOME_OVERRIDE}~g" ${BUILD_PROPERTIES_FILE}
-   fi
+   # Create the symlink under ~/.m2/datawave/properties
 
-   # Replace any existing ~/.m2/*/dev.properties file/symlink with our own
+   setBuildPropertiesSymlink || return 1
+}
+
+function setBuildPropertiesSymlink() {
+   # Replace any existing ~/.m2/datawave/properties/${BUILD_PROPERTIES_BASENAME} file/symlink with
+   # a symlink to our new ${BUILD_PROPERTIES_FILE}
 
    if [[ -f ${BUILD_PROPERTIES_SYMLINK} || -L ${BUILD_PROPERTIES_SYMLINK} ]] ; then
        if [ -L ${BUILD_PROPERTIES_SYMLINK} ] ; then
@@ -132,7 +217,57 @@ function setBuildPropertyOverrides() {
        info "Override for ${BUILD_PROPERTIES_BASENAME} successful"
    else
        error "Override for ${BUILD_PROPERTIES_BASENAME} failed"
+       return 1
    fi
+}
+
+function generateTestAuthorizationServiceConfig() {
+
+   # The goal here is to write to BUILD_PROPERTIES_FILE all the props required to configure TestAuthorizationService
+   # for the 'testUser.p12' cert/user, or whichever cert/user is currently configured.
+
+   # TestAuthorizationService implements datawave.security.authorization.AuthorizationService and retrieves DataWave
+   # user roles/auths from a local file, i.e., Spring bean context 'TestAuthorizationServiceConfiguration.xml', rather
+   # than from an external service
+
+   # We dynamically generate the auth entries for TestAuthorizationServiceConfiguration.xml from $DW_DATAWAVE_USER_AUTHS
+   # and map those entries to the DN given by DW_DATAWAVE_USER_DN
+
+   OLD_IFS="$IFS"
+   IFS=","
+   local userAuths=( ${DW_DATAWAVE_USER_AUTHS} )
+   IFS="$OLD_IFS"
+   local authXmlEntries=""
+   for auth in "${userAuths[@]}" ; do
+      authXmlEntries="${authXmlEntries}<value>${auth}</value>"
+   done
+
+   echo "security.use.testauthservice=true" >> ${BUILD_PROPERTIES_FILE}
+   echo "security.cdi.alternatives=<class>datawave.security.authorization.TestAuthorizationService</class>"  >> ${BUILD_PROPERTIES_FILE}
+   echo "security.testauthservice.context.entry=<value>classpath*:datawave/security/TestDatawaveUserServiceConfiguration.xml</value>" >> ${BUILD_PROPERTIES_FILE}
+
+   # TODO: We've transitioned from XML to JSON for auth and role config, so I need to transition loop above
+   #       and parameterize below config accordingly
+
+   echo "security.testauthservice.users= \\"                                 >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        <value><![CDATA[ \\"                                     >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        { \\"                                                    >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n            \"dn\": { \\"                                        >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n                 \"subjectDN\": \"${DW_DATAWAVE_USER_DN}\", \\"  >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n                 \"issuerDN\": \"${DW_DATAWAVE_ISSUER_DN}\" \\"  >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        }, \\"                                                   >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        \"userType\": \"USER\",\\"                               >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        \"auths\": [ \"PRIVATE\", \"PUBLIC\" ], \\"              >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        \"roles\": [ \"PRIVATE\", \"PUBLIC\", \"Administrator\", \"AuthorizedUser\", \"JBossAdministrator\" ], \\" >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        \"roleToAuthMapping\": { \\"                             >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n             \"PRIVATE\": [ \"PRIVATE\" ], \\"                   >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n             \"PUBLIC\": [ \"PUBLIC\" ] \\"                      >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n            }, \\"                                               >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        \"creationTime\": -1, \\"                                >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        \"expirationTime\": -1 \\"                               >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        } \\"                                                    >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        ]]></value>"                                             >> ${BUILD_PROPERTIES_FILE}
+
 }
 
 function buildRequiredPlugins() {
@@ -156,7 +291,7 @@ function buildDataWave() {
 
    [[ "$1" == "--verbose" ]] && local verbose=true
 
-   setBuildPropertyOverrides
+   ! setBuildPropertyOverrides && error "Aborting DataWave build" && return 1
 
    [ -f "${DW_DATAWAVE_BUILD_STATUS_LOG}" ] && rm -f "$DW_DATAWAVE_BUILD_STATUS_LOG"
 
@@ -256,6 +391,8 @@ function datawaveIsInstalled() {
 function datawaveUninstall() {
    datawaveIngestUninstall
    datawaveWebUninstall
+
+   [ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG}" ] && rm -f "${DW_DATAWAVE_SERVICE_DIR}"/*.tar.gz
 }
 
 function datawaveInstall() {

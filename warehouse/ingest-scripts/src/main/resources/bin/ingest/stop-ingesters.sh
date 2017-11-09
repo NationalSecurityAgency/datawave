@@ -44,7 +44,7 @@ for f in `shopt -s extglob; find ${FLAG_DIR} -regextype posix-egrep -regex ".*\.
    mv $f $flag_file
 done
 
-PID=`ps -wwef | egrep "python .*cleanupserver.py" | grep -v grep | awk {'print $2'}`
+PID=`ps -wwef | egrep "python .*cleanup-server.py" | grep -v grep | awk {'print $2'}`
 if [ -z "$PID" ]; then
         echo "no cleanup server running"
 else

@@ -59,8 +59,8 @@ function cleanBuildContext() {
     # will guarantee that a fresh Maven build is triggered whenever env.sh is sourced
 
     if [[ "${USE_EXISTING_BINARIES}" != true ]] ; then
-        removeDatawaveTarball "*/datawave-dev-*-dist.tar.gz"
-        removeDatawaveTarball "*/datawave-ws-deploy-application-*-dev.tar.gz"
+        removeDatawaveTarball "*/datawave-${DW_DATAWAVE_BUILD_PROFILE}-*-dist.tar.gz"
+        removeDatawaveTarball "*/datawave-ws-deploy-application-*-${DW_DATAWAVE_BUILD_PROFILE}.tar.gz"
     else
         info "Retaining any existing DataWave binaries"
     fi

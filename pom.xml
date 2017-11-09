@@ -1529,29 +1529,6 @@
             </build>
         </profile>
         <profile>
-            <id>wikipedia</id>
-            <properties>
-                <build.env>wikipedia</build.env>
-                <env>wikipedia</env>
-            </properties>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>datawave</groupId>
-                            <artifactId>read-properties</artifactId>
-                            <configuration>
-                                <files>
-                                    <file>wikipedia.properties</file>
-                                    <file>wikipedia-passwords.properties</file>
-                                </files>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
             <id>clover</id>
             <dependencies>
                 <dependency>

@@ -135,6 +135,8 @@ function hadoopUninstall() {
    else
       info "Hadoop not installed. Nothing to do"
    fi
+
+   [ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG}" ] && rm -f "${DW_HADOOP_SERVICE_DIR}"/*.tar.gz
 }
 
 function hadoopInstall() {

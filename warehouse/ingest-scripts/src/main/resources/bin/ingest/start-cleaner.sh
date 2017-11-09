@@ -23,4 +23,4 @@ if [ -e ${LOCK_FILE_DIR}/INGEST_STARTUP.LCK ]; then
 fi
 
 
-$PYTHON $THIS_DIR/cleanupserver.py > $LOG_DIR/cleanup.log 2>&1 < /dev/null &
+$PYTHON $THIS_DIR/cleanup-server.py > $LOG_DIR/cleanup.log 2>&1 < /dev/null &

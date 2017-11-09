@@ -1,43 +1,62 @@
-FROM centos:centos6
+FROM centos:centos7
 
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
 
 USER root
 
-# Context should be DataWave source root dir, minus .git and other dirs. See .dockerignore
+# ENV params for hadoop here are a hack/fix for the "chown: missing operand after '**/hadoop/logs'"
+# errors thrown by hadoop startup scripts for both the resourcemanager and historyserver. Those
+# errors occur due to $USER being mysteriously null/undefined at the point that log file names are
+# established and subsequently chowned in those scripts. But aside from the chown errors and a few
+# irregularly-named log files, the null $USER issue doesn't seem to have any other negative impact.
+# Mostly an annoyance and odd that it only seems to occur in Docker, which is why I'm documenting
+# it here (issue has been observed w/ both centos6 and centos7 base images)
+
+ENV YARN_IDENT_STRING=root HADOOP_MAPRED_IDENT_STRING=root
+
+# Build context should be the DataWave source root, minus .git and other dirs. See .dockerignore
 
 COPY . /opt/datawave
 
-# Install dependencies, configure password-less/zero-prompt SSH
+# Install dependencies, configure password-less/zero-prompt SSH...
 
-RUN yum -y install openssh openssh-server openssh-clients openssl-libs bc wget git && \
-    chkconfig sshd on && \
+RUN yum -y install openssl openssh openssh-server openssh-clients openssl-libs which bc wget git && \
     yum clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
     chmod 0600 ~/.ssh/authorized_keys && \
+    ssh-keygen -q -N "" -t dsa -f /etc/ssh/ssh_host_dsa_key && \
+    ssh-keygen -q -N "" -t rsa -f /etc/ssh/ssh_host_rsa_key && \
+    ssh-keygen -q -N "" -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key && \
+    ssh-keygen -q -N "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key && \
     echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config && \
     echo "UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config && \
     echo "LogLevel QUIET" >> /etc/ssh/ssh_config
 
 WORKDIR /opt/datawave
 
-# Create new Git repo for convenience
+# Create new Git repo for convenience...
 
 RUN rm -f .dockerignore && \
     git init && \
     git add . && \
+    git config user.email "root@localhost.local" && \
+    git config user.name "Root User" && \
     git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID"
 
-# This works exactly like the setup for a non-containerized version of the quickstart
-# environment. That is, ~/.bashrc (and thus datawave-quickstart/bin/env.sh) is sourced, which
-# bootstraps the quickstart environment. Likewise, 'installAll' and 'datawaveStart' are used
-# to initialize services. Finally, services are stopped gracefully and any cruft is purged
+# This works exactly like the setup for a non-containerized instance of the datawave-quickstart
+# environment. That is, ~/.bashrc and datawave-quickstart/bin/env.sh are sourced, bootstrapping
+# the quickstart environment. Likewise, 'allInstall' and 'datawaveStart' wrapper functions are
+# used to initialize services and their log dirs. Finally, web services are tested, services are
+# stopped gracefully, and any cruft is purged.
 
-RUN /sbin/service sshd start && \
+# By design, if 'datawaveWebTest' exits with non-zero status, the docker build will fail
+
+RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
     echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc && \
-    /bin/bash -c "source ~/.bashrc && installAll && datawaveStart && datawaveWebTest && stopAll" && \
+    /bin/bash -c "source ~/.bashrc && allInstall && datawaveStart && datawaveWebTest --verbose && allStop" && \
+    echo "0.0.0.0" > contrib/datawave-quickstart/accumulo/conf/monitor && \
     rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
     rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
     rm -rf contrib/datawave-quickstart/accumulo/logs/* && \
@@ -46,34 +65,32 @@ RUN /sbin/service sshd start && \
 # Lastly, establish volumes for data, logs & other directories, wire up
 # the entrypoint & bootstrap scripts, expose ports, and set default CMD...
 
-# Data volume (HDFS, ZooKeeper, etc)
+# Primary data volume (for HDFS, Accumulo, ZooKeeper, etc)
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/data"]
 
 # In case user wants to rebuild DW
 VOLUME ["~/.m2/repository"]
 
-# Logs
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/hadoop/logs"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/accumulo/logs"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/wildfly/standalone/log"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/datawave-ingest/logs"]
 
-EXPOSE 8443 9995 50070 8088 9000 22
+EXPOSE 8443 9995 50070 8088 9000 2181
 
 WORKDIR /opt/datawave/contrib/datawave-quickstart
 
 RUN ln -s /opt/datawave/contrib/datawave-quickstart/docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh && \
     ln -s /opt/datawave/contrib/datawave-quickstart/docker/datawave-bootstrap.sh /usr/local/bin/datawave-bootstrap.sh
 
-# The entrypoint script will ensure that the sshd service is started, etc, and it'll
-# simply 'exec "$@"' whatever command is passed
+# The entrypoint script will ensure that sshd is started, and it'll simply 'exec "$@"' whatever command is passed
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 
-# Default CMD uses the bootstrap script to start up DataWave's web services. Due to the --bash arg it'll
-# exec /bin/bash for the container process, which is appropriate for 'docker run -it ...' usage.
+# Default CMD uses the bootstrap script to start up DataWave's web services. Due to the --bash flag, it'll
+# exec /bin/bash for the container process, intended for 'docker run -it ...' usage.
 
 CMD ["datawave-bootstrap.sh", "--web", "--bash"]
 
-# Note that without the --bash arg, datawave-bootstrap.sh will exec an infinite loop to prevent the container
-# from exiting, which is more appropriate for 'docker run -d ...' usage
+# Without the --bash flag, datawave-bootstrap.sh will go into an infinite loop to prevent the container
+# from exiting, better for 'docker run -d ...' usage
