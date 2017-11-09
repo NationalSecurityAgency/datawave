@@ -2,18 +2,23 @@ package nsa.datawave.webservice.results.datadictionary;
 
 import io.protostuff.Message;
 import nsa.datawave.webservice.query.result.event.HasMarkings;
+import nsa.datawave.webservice.query.util.StringMapAdapter;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.Map;
 
-/**
-
- */
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class DescriptionBase<T> implements HasMarkings, Message<T> {
     
-    protected transient Map<String,String> markings;
+    @XmlElement(name = "description")
+    protected String description;
+    
+    @XmlElement(name = "markings")
+    @XmlJavaTypeAdapter(StringMapAdapter.class)
+    protected Map<String,String> markings;
     
     public abstract String getDescription();
     
