@@ -14,6 +14,7 @@ import datawave.security.util.DnUtils;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.security.JWTTokenHandler;
+import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.http.Header;
@@ -80,7 +81,7 @@ import java.util.function.Supplier;
 @Alternative
 // Make this alternative active for the entire application per the CDI 1.2 specification
 @Priority(Interceptor.Priority.APPLICATION)
-@Exclude(onExpression = "dw.audit.use.remoteauditservice!=true")
+@Exclude(onExpression = "dw.audit.use.remoteauditservice!=true", interpretedBy = NotEqualPropertyExpressionInterpreter.class)
 public class RemoteAuditor implements Auditor {
     private final Logger log = LoggerFactory.getLogger(getClass());
     

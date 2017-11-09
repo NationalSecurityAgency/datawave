@@ -17,6 +17,7 @@ import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
 import datawave.webservice.security.JWTTokenHandler;
+import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.http.Header;
@@ -80,7 +81,7 @@ import java.util.stream.Collectors;
 @Alternative
 // Make this alternative active for the entire application per the CDI 1.2 specification
 @Priority(Interceptor.Priority.APPLICATION)
-@Exclude(onExpression = "dw.security.use.remoteuserservice!=true")
+@Exclude(onExpression = "dw.security.use.remoteuserservice!=true", interpretedBy = NotEqualPropertyExpressionInterpreter.class)
 public class RemoteDatawaveUserService implements CachedDatawaveUserService {
     private final Logger log = LoggerFactory.getLogger(getClass());
     

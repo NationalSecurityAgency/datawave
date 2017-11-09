@@ -12,6 +12,7 @@ import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.exclude.Exclude;
@@ -46,7 +47,7 @@ import java.util.Set;
 // Make this alternative active for the entire application per the CDI 1.2 specification
 @Priority(Interceptor.Priority.PLATFORM_AFTER)
 // Exclude this bean if the system property dw.security.use.testuserservice isn't defined to be true
-@Exclude(onExpression = "dw.security.use.testuserservice!=true")
+@Exclude(onExpression = "dw.security.use.testuserservice!=true", interpretedBy = NotEqualPropertyExpressionInterpreter.class)
 public class TestDatawaveUserService implements CachedDatawaveUserService {
     private HashMap<SubjectIssuerDNPair,DatawaveUser> cannedUsers = new HashMap<>();
     private DatawaveUserService delegateService;
