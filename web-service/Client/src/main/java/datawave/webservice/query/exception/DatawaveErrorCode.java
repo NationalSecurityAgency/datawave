@@ -166,6 +166,8 @@ public enum DatawaveErrorCode {
     COMPOSITE_METADATA_CONFIG_ERROR(500, 158, "Could not configure composite metadata."),
     DOCUMENT_EVALUATION_ERROR(500, 159, "Could not evaluate document"),
     OOZIE_JOB_START_ERROR(500, 160, "Error starting Oozie job."),
+    QUERY_PLAN_ERROR(500, 161, "Error retrieving plan for query."),
+    QUERY_PREDICTIONS_ERROR(500, 162, "Error retrieving predictions for query."),
     // 204 No Content
     NO_QUERIES_FOUND(204, 1, "No queries found for user."),
     RESULTS_NOT_SENT(204, 2, "Results not sent."),
