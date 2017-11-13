@@ -1618,6 +1618,9 @@ public class ExtendedQueryExecutorBeanTest {
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
+        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
+        op.putSingle(AuditParameters.USER_DN, userDN);
+        op.putSingle("logicClass", queryLogicName);
         
         // Set expectations
         queryLogic1.validate(queryParameters);
@@ -1631,6 +1634,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
         expect(this.query.getId()).andReturn(queryId).times(3);
         expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.queryLogic1.getMaxPageSize()).andReturn(100).times(2);
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap(query)));
         PowerMock.mockStaticPartial(Trace.class, "start");

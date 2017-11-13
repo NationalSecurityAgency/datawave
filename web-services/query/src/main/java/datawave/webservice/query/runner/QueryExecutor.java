@@ -28,6 +28,13 @@ public interface QueryExecutor {
      * @param queryParameters
      * @return
      */
+    GenericResponse<String> predictQuery(String logicName, MultivaluedMap<String,String> queryParameters);
+    
+    /**
+     * @param logicName
+     * @param queryParameters
+     * @return
+     */
     GenericResponse<String> defineQuery(String logicName, MultivaluedMap<String,String> queryParameters);
     
     /**
@@ -135,6 +142,23 @@ public interface QueryExecutor {
      * @HTTP 500 internal server error
      */
     <T> T lookupUUIDBatch(MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders);
+    
+    /**
+     * Gets the plan from the query object. If the object is no longer alive, meaning that the current session has expired, then this will fail.
+     *
+     * @param id
+     * @return the plan
+     */
+    GenericResponse<String> plan(String id);
+    
+    /**
+     * Gets the latest query predictions from the query object. If the object is no longer alive, meaning that the current session has expired, then this will
+     * fail.
+     *
+     * @param id
+     * @return the predictions
+     */
+    GenericResponse<String> predictions(String id);
     
     /**
      * Gets the next page of results from the query object. If the object is no longer alive, meaning that the current session has expired, then this will fail.

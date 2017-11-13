@@ -234,6 +234,8 @@
         </property>
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <property name="sendTimingToStatsd" value="false" />
+	<property name="collectQueryMetrics" value="false" />
+	<property name="logTimingDetails" value="false" />
         <property name="statsdHost" value="localhost" />
         <property name="statsdPort" value="8125" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -447,7 +449,6 @@
 	    <property name="indexTableName" value="${query.metrics.table.basename}_i" />
 	    <property name="reverseIndexTableName" value="${query.metrics.table.basename}_r" />
 	    <property name="auditType" value="NONE" />
-	    <property name="collectQueryMetrics" value="false" />
 	</bean>
 
     <bean id="DashboardQueryLogic" scope="prototype"  parent="QueryMetricsQuery" class="datawave.query.dashboard.DashboardQueryLogic">
