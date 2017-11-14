@@ -370,33 +370,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     }
     
     /**
-     * Get the number of shard from the configuration
-     * 
-     * @param context
-     * @return the number of shard
-     * @deprecated Use the ShardIdFactory
-     */
-    public static int getNumShards(TaskAttemptContext context) {
-        return ShardIdFactory.getNumShards(context.getConfiguration());
-    }
-    
-    /**
      * Calculates the shard id of the event
      * 
      * @param event
      * @return Shard id
-     * @deprecated Use the ShardIdFactory
-     */
-    public static String getShardId(RawRecordContainer event, int numShards) {
-        return ShardIdFactory.getShardId(event, numShards);
-    }
-    
-    /**
-     * Calculates the shard id of the event
-     * 
-     * @param event
-     * @return Shard id
-     * @deprecated Use the ShardIdFactory
      */
     public byte[] getShardId(RawRecordContainer event) {
         return shardIdFactory.getShardIdBytes(event);

@@ -22,7 +22,6 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
     
     private Configuration conf;
     private Map<String,Map<Text,Integer>> shardHashes;
-    private int numShards = -1;
     
     /**
      * Given a map of shard IDs to tablet server locations, this method determines a partition for a given key's shard ID. The goal is that we want to ensure
@@ -58,16 +57,6 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
     @Override
     public void setConf(Configuration conf) {
         this.conf = conf;
-    }
-    
-    private int getNumShards() throws IllegalArgumentException {
-        if (numShards < 0) {
-            numShards = conf.getInt(ShardIdFactory.NUM_SHARDS, 0);
-            if (numShards == 0) {
-                throw new IllegalArgumentException("Missing number of shards");
-            }
-        }
-        return numShards;
     }
     
     /**

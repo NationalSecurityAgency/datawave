@@ -5,12 +5,9 @@ import datawave.ingest.mapreduce.job.*;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.*;
-import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.*;
-import org.apache.hadoop.mapreduce.lib.partition.HashPartitioner;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
 
@@ -25,10 +22,11 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
     private static final String BASE_TIME = PREFIX + ".basetime";
     
     private Configuration conf;
-    private int numShards = -1;
     private long baseTime = -1;
     private static int MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
     private static int SHARD_ID_SPLIT = 8;
+    
+    private ShardIdFactory shardIdFactory = null;
     
     /**
      * Given the shard id and the number of shards, evenly distribute the shards across the reducers by turning the shard id into a consecutive sequence of
@@ -38,7 +36,7 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
     public synchronized int getPartition(BulkIngestKey key, Value value, int numReduceTasks) {
         String shardId = key.getKey().getRow().toString();
         try {
-            long shardIndex = generateNumberForShardId(shardId, getNumShards(), getBaseTime());
+            long shardIndex = generateNumberForShardId(shardId, getBaseTime());
             return (int) (shardIndex % numReduceTasks);
             
         } catch (Exception e) {
@@ -56,6 +54,7 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
         this.conf = conf;
         long tomorrow = (new Date().getTime() / MILLIS_PER_DAY) + 1;
         conf.setLong(BASE_TIME, tomorrow);
+        shardIdFactory = new ShardIdFactory(conf);
     }
     
     /**
@@ -63,10 +62,9 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
      * sequential for all shard ids
      *
      * @param shardId
-     * @param numShards
      * @throws ParseException
      */
-    private long generateNumberForShardId(String shardId, int numShards, long baseTime) throws ParseException {
+    private long generateNumberForShardId(String shardId, long baseTime) throws ParseException {
         if (shardId.charAt(SHARD_ID_SPLIT) != '_') {
             throw new ParseException("Shard id is not in expected format: yyyyMMdd_n: " + shardId, SHARD_ID_SPLIT);
         }
@@ -82,19 +80,9 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
         int shard = Integer.valueOf(shardId.substring(SHARD_ID_SPLIT + 1));
         
         // now turn the shard id into a number that is sequential (without gaps) with all other shard ids
-        long shardIndex = (daysFromBaseTime * numShards) + shard;
+        long shardIndex = (daysFromBaseTime * shardIdFactory.getNumShards(date.getTime())) + shard;
         
         return shardIndex;
-    }
-    
-    private int getNumShards() throws IllegalArgumentException {
-        if (numShards < 0) {
-            numShards = conf.getInt(ShardIdFactory.NUM_SHARDS, 0);
-            if (numShards == 0) {
-                throw new IllegalArgumentException("Missing number of shards");
-            }
-        }
-        return numShards;
     }
     
     private long getBaseTime() throws IllegalArgumentException {

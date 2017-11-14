@@ -39,11 +39,12 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private Configuration conf;
     private Map<String,Map<Text,Integer>> shardPartitionsByTable;
     private Map<String,TreeMap<Text,String>> shardIdToLocations = Maps.newHashMap();
-    private int numShards;
-    private Map<Text,Integer> offsetsByTable;
+    private Map<Text,Integer> offsetsFactorByTable;
     int missingShardIdCount = 0;
     
     public static final String MISSING_SHARD_STRATEGY_PROP = "datawave.ingest.mapreduce.partition.BalancedShardPartitioner.missing.shard.strategy";
+    
+    private ShardIdFactory shardIdFactory = null;
     
     @Override
     public synchronized int getPartition(BulkIngestKey key, Value value, int numReduceTasks) {
@@ -52,7 +53,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
             int partition = getAssignedPartition(key.getTableName().toString(), key.getKey().getRow());
             
             // the offsets should help send today's shard data to a different set of reducers than today's error shard data
-            int offsetForTable = offsetsByTable.get(key.getTableName());
+            int offsetForTable = shardIdFactory.getNumShards(key.getKey().getTimestamp()) * offsetsFactorByTable.get(key.getTableName());
             
             return (partition + offsetForTable) % numReduceTasks;
         } catch (IOException e) {
@@ -236,16 +237,15 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     @Override
     public void setConf(Configuration conf) {
         this.conf = conf;
+        shardIdFactory = new ShardIdFactory(conf);
         defineOffsetsForTables(conf);
     }
     
     private void defineOffsetsForTables(Configuration conf) {
-        offsetsByTable = new HashMap<>();
-        int offset = 0;
-        numShards = ShardIdFactory.getNumShards(conf);
+        offsetsFactorByTable = new HashMap<>();
+        int offsetFactor = 0;
         for (String tableName : conf.getStrings(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES)) {
-            offsetsByTable.put(new Text(tableName), offset);
-            offset += numShards;
+            offsetsFactorByTable.put(new Text(tableName), offsetFactor++);
         }
     }
 }

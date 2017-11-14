@@ -18,6 +18,7 @@ public class ShardIdPartitionerTest {
     @Before
     public void setUp() {
         conf = new Configuration();
+        conf.setInt(ShardIdFactory.NUM_SHARDS, 31);
         partitioner = new ShardIdPartitioner();
         partitioner.setConf(conf);
     }
@@ -34,7 +35,6 @@ public class ShardIdPartitionerTest {
         Map<String,Path> shardedTableMapFiles = new HashMap<>();
         shardedTableMapFiles.put("shard", new Path("/path/that/is/fake/to/make/the/test/pass"));
         
-        conf.setInt(ShardIdFactory.NUM_SHARDS, 31);
         // now generate keys and ensure we have even distribution of the partitions
         int shardCount = 0;
         int[] partitions = new int[58];

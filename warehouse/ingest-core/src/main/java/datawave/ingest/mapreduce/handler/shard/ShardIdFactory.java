@@ -5,7 +5,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.util.time.DateHelper;
 
 import org.apache.hadoop.conf.Configuration;
@@ -13,14 +12,10 @@ import org.apache.hadoop.conf.Configuration;
 public class ShardIdFactory {
     
     public static final String NUM_SHARDS = "num.shards";
-    private int numShards = 0;
+    private NumShards numShards = null;
     
     public ShardIdFactory(Configuration conf) {
-        numShards = getNumShards(conf);
-    }
-    
-    public static int getNumShards(Configuration conf) {
-        return ConfigurationHelper.isNull(conf, NUM_SHARDS, Integer.class);
+        this.numShards = new NumShards(conf);
     }
     
     /**
@@ -34,13 +29,23 @@ public class ShardIdFactory {
     }
     
     /**
-     * Calculates the shard id of the event
+     * this method will return numShards based on date in epoch millis
      * 
-     * @param record
-     * @return Shard id
+     * @param date
+     * @return
      */
-    public String getShardId(RawRecordContainer record) {
-        return getShardId(record, numShards);
+    public int getNumShards(long date) {
+        return numShards.getNumShards(date);
+    }
+    
+    /**
+     * this method will return numShards based on date string 'yyyyMMdd'
+     * 
+     * @param date
+     * @return
+     */
+    public int getNumShards(String date) {
+        return numShards.getNumShards(date);
     }
     
     /**
@@ -49,11 +54,11 @@ public class ShardIdFactory {
      * @param record
      * @return Shard id
      */
-    public static String getShardId(RawRecordContainer record, int numShards) {
+    public String getShardId(RawRecordContainer record) {
         StringBuilder buf = new StringBuilder();
         buf.append(DateHelper.format(record.getDate()));
         buf.append("_");
-        int partition = (Integer.MAX_VALUE & record.getId().getShardedPortion().hashCode()) % numShards;
+        int partition = (Integer.MAX_VALUE & record.getId().getShardedPortion().hashCode()) % getNumShards(record.getDate());
         buf.append(partition);
         return buf.toString();
     }
@@ -82,4 +87,7 @@ public class ShardIdFactory {
         return Integer.parseInt(shardId.substring(shardId.indexOf('_') + 1));
     }
     
+    public boolean isMultipleNumShardsConfigured() {
+        return numShards.getShardCount() > 1;
+    }
 }
