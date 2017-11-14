@@ -8,6 +8,7 @@ import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
 import datawave.ingest.mapreduce.EventMapper;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.NumShards;
 import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
 import datawave.ingest.mapreduce.job.reduce.AggregatingReducer;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
@@ -225,6 +226,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-disableRefreshSplits]");
         System.out.println("                     [-splitsCacheDir /path/to/directory]");
         System.out.println("                     [-cacheBaseDir baseDir] [-cacheJars jar,jar,...]");
+        System.out.println("                     [-multipleNumShardsCacheDir /path/to/directory]");
         System.out.println("                     [-skipMarkerFileGeneration] [-markerFileLIFO]");
         System.out.println("                     [-markerFileReducePercentage float_in_0_to_1]");
         System.out.println("                     [-pipelineId id]");
@@ -598,6 +600,8 @@ public class IngestJob implements Tool {
                 conf.setBoolean(MetadataTableSplits.REFRESH_SPLITS, false);
             } else if (args[i].equals("-splitsCacheDir")) {
                 conf.set(MetadataTableSplits.SPLITS_CACHE_DIR, args[++i]);
+            } else if (args[i].equals("-multipleNumShardsCacheDir")) {
+                conf.set(NumShards.MULTIPLE_NUMSHARDS_CACHE_PATH, args[++i]);
             } else if (args[i].equals("-disableSpeculativeExecution")) {
                 disableSpeculativeExecution = true;
             } else if (args[i].equals("-skipMarkerFileGeneration")) {
@@ -983,6 +987,15 @@ public class IngestJob implements Tool {
         // we always want the job to use our jars instead of the ones in $HADOOP_HOME/lib
         job.getConfiguration().setBoolean("mapreduce.job.user.classpath.first", true);
         
+        // fetch the multiple numshards cache, if necessary
+        if (job.getConfiguration().getBoolean(NumShards.ENABLE_MULTIPLE_NUMSHARDS, false)) {
+            NumShards numShards = new NumShards(job.getConfiguration());
+            String multipleNumShardsConfig = numShards.readMultipleNumShardsConfig();
+            
+            // this could return empty string, if the feature is enabled, but no entries in the metadata table
+            // if it didn't throw RuntimeException, it found a valid cache file
+            job.getConfiguration().set(NumShards.PREFETCHED_MULTIPLE_NUMSHARDS_CONFIGURATION, multipleNumShardsConfig == null ? "" : multipleNumShardsConfig);
+        }
     }
     
     /**
