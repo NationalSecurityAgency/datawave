@@ -7,12 +7,16 @@
 !README.md
 !bin
 !bin/common.sh
+!bin/query.sh
 !bin/logging.sh
 !bin/env.sh
 !bin/services
 !bin/services/*
 !bin/services/**/bootstrap*.sh
 !bin/services/**/install*.sh
+!/bin/services/datawave/ingest-examples
+!/bin/services/datawave/ingest-examples/*.sh
+!/bin/services/datawave/ingest-examples/*.py
 !bin/services/datawave/test-web
 !/bin/services/datawave/test-web/tests
 !/bin/services/datawave/test-web/responses

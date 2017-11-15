@@ -59,7 +59,7 @@ fi
 
 # Update Accumulo classpath for DataWave jars in HDFS/VFS directories (or lib/ext)
 
-if [ -n "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" ]; then
+if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" == true ]; then
    if ${HADOOP_HOME}/bin/hdfs dfs -test -f ${DW_ACCUMULO_VFS_DATAWAVE_DIR}/*.jar > /dev/null 2>&1 ; then
       ${HADOOP_HOME}/bin/hdfs dfs -rm -R ${DW_ACCUMULO_VFS_DATAWAVE_DIR}/* || fatal "HDFS delete failed for ${DW_ACCUMULO_VFS_DATAWAVE_DIR}/*"
    fi
@@ -134,6 +134,13 @@ if [ "${OK_TO_LOAD_JOB_CACHE}" == true ] ; then
    ! datawaveIngestLoadJobCache && fatal "DataWave Ingest initialization failed"
 fi
 
+function ingestExampleData() {
+    # Ingest some canned, example data files
+    datawaveIngestWikipedia "${DW_DATAWAVE_INGEST_TEST_FILE_WIKI}"
+    datawaveIngestJson "${DW_DATAWAVE_INGEST_TEST_FILE_JSON}"
+    datawaveIngestCsv "${DW_DATAWAVE_INGEST_TEST_FILE_CSV}"
+}
+
 echo
 info "DataWave Ingest initialized and ready to start..."
 echo
@@ -141,30 +148,15 @@ echo "       Start command: datawaveIngestStart"
 echo "        Stop command: datawaveIngestStop"
 echo "      Status command: datawaveIngestStatus"
 echo "        Test command: datawaveIngestWikipedia <raw-enwiki-file>"
+echo "        Test command: datawaveIngestCsv <raw-csv-file>"
+echo "        Test command: datawaveIngestJson <raw-json-file>"
+echo "       Build command: datawaveBuild"
 echo "    Redeploy command: datawaveBuildDeploy"
 echo
 info "See \$DW_CLOUD_HOME/bin/services/datawave/bootstrap-ingest.sh to view/edit commands as needed"
 
-OK_TO_INGEST_WIKIPEDIA=true
-if [ "${DW_REDEPLOY_IN_PROGRESS}" == true ] ; then
-    if ! askYesNo "Do you want to ingest '${DW_DATAWAVE_INGEST_TEST_FILE_WIKI}' ?" ; then
-        OK_TO_INGEST_WIKIPEDIA=false
-    fi
-fi
-
-if [ "${OK_TO_INGEST_WIKIPEDIA}" == true ] ; then
-    # Lastly, ingest wikipedia rawfile
-    datawaveIngestWikipedia "${DW_DATAWAVE_INGEST_TEST_FILE_WIKI}"
-fi
-
-OK_TO_INGEST_CSV=true
-if [ "${DW_REDEPLOY_IN_PROGRESS}" == true ] ; then
-    if ! askYesNo "Do you want to ingest '${DW_DATAWAVE_INGEST_TEST_FILE_CSV}' ?" ; then
-        OK_TO_INGEST_CSV=false
-    fi
-fi
-
-if [ "${OK_TO_INGEST_CSV}" == true ] ; then
-    # Lastly, ingest csv rawfile
-    datawaveIngestCsv "${DW_DATAWAVE_INGEST_TEST_FILE_CSV}"
+if [ "${DW_REDEPLOY_IN_PROGRESS}" != true ] ; then
+   ingestExampleData
+else
+   info "After deployment, ingest desired datasets manually as needed"
 fi

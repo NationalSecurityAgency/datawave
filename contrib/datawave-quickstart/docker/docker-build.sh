@@ -9,23 +9,26 @@
 
 function help() {
     echo
-    echo "  Usage: ./$( basename ${BASH_SOURCE[0]} ) <image tag name> [ --use-existing-binaries ]"
+    echo "  $( printGreen "Usage:" ) ./$( basename ${BASH_SOURCE[0]} ) $( printGreen "<image tag name>" ) [ $( printGreen "--use-existing-binaries" ) ]"
     echo
     echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT"
     echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT --use-existing-binaries"
     echo
-    echo "     By default, this script will force a fresh build of DataWave's ingest and web binaries to ensure"
+    echo "     By default, this script will force a fresh build of DataWave's ingest and web tarballs to ensure"
     echo "     that they're properly configured for container deployment...that is, configured for deployment to"
-    echo "     the Docker image's /opt/datawave directory"
+    echo "     the Docker image's $( printGreen "/opt/datawave" ) directory"
     echo
-    echo "     The optional --use-existing-binaries flag can be used as a time saver to skip the DataWave build if"
+    echo "     The optional $( printGreen "--use-existing-binaries" ) flag can be used as a time saver to skip the DataWave build if"
     echo "     both binaries already exist, but it should only be used under the following circumstances:"
     echo
-    echo "     1) Your current DATAWAVE_SOURCE_DIR happens to be /opt/datawave already, in which case your"
-    echo "        datawave-quickstart deployment is properly configured by default. OR..."
+    echo "     $( printGreen "1)" ) Your current $( printGreen "DATAWAVE_SOURCE_DIR" ) happens to be $( printGreen "/opt/datawave" ) already, in which case the"
+    echo "        existing binaries from your datawave-quickstart deployment are properly configured by default."
+    echo "        $( printGreen "Hint:" ) your current $( printGreen "DATAWAVE_SOURCE_DIR" ) = $( printGreen "${DATAWAVE_SOURCE_DIR}" )"
+    echo "        OR..."
     echo
-    echo "     2) You've already forced a rebuild of your datawave-quickstart binaries, and you had set"
-    echo "        DW_ROOT_DIRECTORY_OVERRIDE=/opt/datawave in your environment prior to the build"
+    echo "     $( printGreen "2)" ) This script has just run and the forced DataWave build succeeded, but the subsequent docker"
+    echo "        build failed. Since this script sets $( printGreen "DW_ROOT_DIRECTORY_OVERRIDE" ) = $( printGreen "/opt/datawave" ) in the environment"
+    echo "        prior to the build, you may assume that the resulting binaries are still valid"
     echo
 }
 
@@ -35,11 +38,14 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 QUICKSTART_DIR="$( dirname "${THIS_DIR}" )"
 DATAWAVE_SOURCE_DIR="$( cd ${QUICKSTART_DIR}/../../ && pwd )"
 
+DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
+
 source "${QUICKSTART_DIR}/bin/logging.sh"
 
 function validateArgs() {
-   [ -z "$1" ] && fatal "Tag name is required $( help )"
-   [ "$1" == "--use-existing-binaries" ] && fatal "First argument must be the tag name $( help )"
+   [[ "$1" == "-h" || "$1" == "--help" ]] && help && exit 0
+   [ -z "$1" ] && error "Tag name is required" && help && exit 1
+   [ "$1" == "--use-existing-binaries" ] && error "First argument must be the tag name" && help && exit 1
    [ "$2" == "--use-existing-binaries" ] && USE_EXISTING_BINARIES=true
 
    IMAGE_NAME="datawave-quickstart:$1"

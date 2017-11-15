@@ -103,6 +103,7 @@
                 <include>${groupId}:datawave-query-core</include>
                 <include>${groupId}:datawave-edge-dictionary-core</include>
                 <include>${groupId}:datawave-ingest-wikipedia</include>
+                <include>${groupId}:datawave-ingest-json</include>
                 <include>datawave.webservices:datawave-ws-common</include>
                 <include>datawave.webservices:datawave-ws-common-util</include>
                 <include>datawave.webservices:datawave-ws-client</include>
@@ -120,6 +121,14 @@
                 <include>org.springframework:spring-context-support</include>
                 <include>org.springframework:spring-expression</include>
                 <include>aopalliance:aopalliance</include>
+                <!-- For the NGA Geometry code -->
+                <include>mil.nga.giat:geowave-adapter-vector</include>
+                <include>mil.nga.giat:geowave-core-geotime</include>
+                <include>mil.nga.giat:geowave-core-store</include>
+                <include>mil.nga.giat:geowave-core-index</include>
+                <include>mil.nga.giat:geowave-core-ingest</include>
+                <include>com.vividsolutions:jts</include>
+                <include>com.google.uzaygezen:uzaygezen-core</include>
             </includes>
         </dependencySet>
         <!-- Stuff that goes in /opt/accumulo-metrics/current/lib/ext -->
@@ -134,6 +143,7 @@
                   <include>${groupId}:datawave-core</include>
                   
                   <include>${groupId}:datawave-ingest-csv</include>
+                  <include>${groupId}:datawave-ingest-json</include>
                   <include>${groupId}:datawave-ingest-core</include>
                   <include>${groupId}:datawave-ingest-configuration</include>
                   
@@ -148,14 +158,6 @@
                   <include>org.springframework:spring-context</include>
                   <include>org.springframework:spring-context-support</include>
                   <include>org.springframework:spring-expression</include>
-                  <!-- For the NGA Geometry code -->
-                  <include>mil.nga.giat:geowave-adapter-vector</include>
-                  <include>mil.nga.giat:geowave-core-geotime</include>
-                  <include>mil.nga.giat:geowave-core-store</include>
-                  <include>mil.nga.giat:geowave-core-index</include>
-                  <include>mil.nga.giat:geowave-core-ingest</include>
-                  <include>com.vividsolutions:jts</include>
-                  <include>com.google.uzaygezen:uzaygezen-core</include>
             </includes>
         </dependencySet>
     </dependencySets>

@@ -884,7 +884,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         if (value instanceof GroupedNormalizedContentInterface) {
             GroupedNormalizedContentInterface grouped = (GroupedNormalizedContentInterface) value;
             if (grouped.isGrouped() && grouped.getGroup() != null) {
-                fieldName = fieldName + '.' + grouped.getGroup();
+                if (grouped.getGroup().length() > 0 && grouped.getGroup().charAt(0) == '.') {
+                    fieldName = fieldName + grouped.getGroup();
+                } else {
+                    fieldName = fieldName + '.' + grouped.getGroup();
+                }
             }
         }
         return fieldName;

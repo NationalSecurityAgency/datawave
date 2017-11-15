@@ -18,11 +18,6 @@ BIN_DIR="$( dirname "${SERVICES_DIR}" )"
 source "${BIN_DIR}/env.sh"
 source "${THIS_DIR}/../bootstrap.sh"
 
-# Any shared utility code needed by the tests themselves should
-# be added to ${THIS_DIR}/common.sh, rather than to this script...
-
-source "${THIS_DIR}/common.sh"
-
 function usage() {
     echo
     echo "Usage: \$DW_DATAWAVE_SERVICE_DIR/test-web/$( printGreen "$( basename $0)" )"
@@ -35,12 +30,12 @@ function usage() {
     echo "  Otherwise, only test- and response-related metadata are displayed"
     echo
     echo " $( printGreen "-n" ) | $( printGreen "--no-cleanup" )"
-    echo "  Prevent cleanup of 'actual' HTTP response files and temp PKI materials"
+    echo "  Prevent cleanup of 'actual' HTTP response files and temporary PKI materials"
     echo "  Useful for post-mortem troubleshooting and/or manual testing"
     echo
     echo " $( printGreen "-c" ) | $( printGreen "--create-expected-responses" )"
-    echo "  Update all the *.expected HTTP response body files in order to"
-    echo "  auto-configure their respective test assertions"
+    echo "  Update all *.expected HTTP response files to auto-configure body assertions"
+    echo "  Or use in conjunction with whitelist/blacklist options to target only a subset"
     echo
     echo " $( printGreen "-wf" ) | $( printGreen "--whitelist-files" ) F1.test,F2.test,..,Fn.test"
     echo "  Only execute test files having basename of F1.test or F2.test .. or Fn.test"
@@ -62,6 +57,9 @@ function usage() {
     echo "  If more than one, must be comma-delimited with no spaces"
     echo "  If used in conjunction with --whitelist-tests, blacklist takes precedence"
     echo
+    echo " $( printGreen "-p" ) | $( printGreen "--pretty-print" )"
+    echo "  Will format web service responses for readability, when used in conjunction with -v,--verbose"
+    echo
     echo " $( printGreen "-h" ) | $( printGreen "--help" )"
     echo "  Print this usage information and exit the script"
     echo
@@ -69,7 +67,7 @@ function usage() {
 
 function configure() {
 
-    HOST_PORT="localhost:8443"
+    HOST_PORT="${HOST_PORT:-localhost:8443}"
     URI_ROOT="https://${HOST_PORT}/DataWave"
 
     # TEST_FILE_DIR contains 'TestName.test' script files. These are sourced at runtime to set a few
@@ -90,8 +88,8 @@ function configure() {
 
     # Assertion status labels displayed for each test...
 
-    LABEL_PASS="PASSED"
-    LABEL_FAIL="FAILED"
+    LABEL_PASS="$( printGreen PASSED )"
+    LABEL_FAIL="$( printRed FAILED )"
     LABEL_NA="DISABLED"
 
     # Process args...
@@ -103,6 +101,7 @@ function configure() {
     TEST_BLACKLIST=""
     FILE_WHITELIST=""
     FILE_BLACKLIST=""
+    PRETTY_PRINT=false
 
     while [ "${1}" != "" ]; do
        case "${1}" in
@@ -131,6 +130,9 @@ function configure() {
              FILE_BLACKLIST="${2}"
              shift
              ;;
+          --pretty-print | -p)
+             PRETTY_PRINT=true
+             ;;
           --help | -h)
              usage && exit 0
              ;;
@@ -150,46 +152,13 @@ function configure() {
 
     TEST_COUNTER=0
 
-    configureUserIdentity
-}
-
-function configureUserIdentity() {
-
-    info "Converting client certificate into more curl-friendly & portable (hopefully) PKI materials"
-
-    PKCS12_CLIENT_CERT=${PKCS12_CLIENT_CERT:-"${DW_DATAWAVE_SOURCE_DIR}"/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testUser.p12}
-    CLIENT_CERT_PASS=${CLIENT_CERT_PASS:-secret}
-
-    PKI_TMP_DIR="${DW_DATAWAVE_DATA_DIR}"/pki-temp
-
-    CURL_CERT="${PKI_TMP_DIR}/testUser.pem"
-    CURL_KEY="${PKI_TMP_DIR}/testUser.key"
-    CURL_KEY_RSA="${PKI_TMP_DIR}/testUser.key.rsa"
-    CURL_CA="${PKI_TMP_DIR}/testUser.ca"
-
-    [ -d "${PKI_TMP_DIR}" ] && info "Temporary directory already exists: ${PKI_TMP_DIR}. Will use existing PKI materials" && return
-
-    mkdir -p "${PKI_TMP_DIR}"
-
-    OPENSSL="$( which openssl )" && [ -z "${OPENSSL}" ] && fatal "OpenSSL executable not found!"
-
-    [ ! -f "${PKCS12_CLIENT_CERT}" ] && fatal "Source client certificate not found: ${PKCS12_CLIENT_CERT}"
-
-    ${OPENSSL} pkcs12 -passin pass:${CLIENT_CERT_PASS} -passout pass:${CLIENT_CERT_PASS} -in "${PKCS12_CLIENT_CERT}" -out "${CURL_KEY}" -nocerts > /dev/null 2>&1 || fatal "Key creation failed!"
-    ${OPENSSL} rsa -passin pass:${CLIENT_CERT_PASS} -in "${CURL_KEY}" -out "${CURL_KEY_RSA}" > /dev/null 2>&1 || fatal "RSA key creation failed!"
-    ${OPENSSL} pkcs12 -passin pass:${CLIENT_CERT_PASS} -in "${PKCS12_CLIENT_CERT}" -out "${CURL_CERT}" -clcerts -nokeys > /dev/null 2>&1 || fatal "Certificate creation failed!"
-    ${OPENSSL} pkcs12 -passin pass:${CLIENT_CERT_PASS} -in "${PKCS12_CLIENT_CERT}" -out "${CURL_CA}" -cacerts -nokeys > /dev/null 2>&1 || fatal "CA creation failed!"
-
+    configureUserIdentity || fatal "Failed to configure PKI"
 }
 
 function cleanup() {
 
     [ "$CLEANUP" != true ] && echo && return
-
     info "Cleaning up temporary files"
-
-    [ -d "${PKI_TMP_DIR}" ] && rm -rf "${PKI_TMP_DIR}"
-
     rm -f "${RESP_FILE_DIR}"/*.actual
 
     echo
@@ -285,10 +254,9 @@ function runTest() {
 
     TEST_COMMAND="${CURL} ${CURL_ADDITIONAL_OPTS} --silent \
 --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
---insecure --cert '${CURL_CERT}' --key '${CURL_KEY_RSA}' --cacert '${CURL_CA}' ${TEST_URL_OPTS}"
+--insecure --cert '${DW_CURL_CERT}' --key '${DW_CURL_KEY_RSA}' --cacert '${DW_CURL_CA}' ${TEST_URL_OPTS}"
 
     echo
-    #printLine
     echo "Test ID: ${TEST_ID}"
     echo "Test Description: ${TEST_DESCRIPTION}"
     echo "Test File: $( basename "${TEST_FILE}" )"
@@ -315,7 +283,11 @@ function runTest() {
         if [ "$VERBOSE" == true ] ; then
             echo
             echo "HTTP Response Body:"
-            echo "${ACTUAL_RESPONSE_BODY}"
+            if [ "$PRETTY_PRINT" == true ] ; then
+                prettyPrintTestResponse
+            else
+                echo "${ACTUAL_RESPONSE_BODY}"
+            fi
         fi
         echo
         echo "Test Finished: ${TEST_ID}"
@@ -323,11 +295,7 @@ function runTest() {
 
     fi
 
-    if [ "${TEST_STATUS}" == "${LABEL_PASS}" ] ; then
-        echo "Test Status: $( printGreen "${TEST_STATUS}" )"
-    else
-        echo "Test Status: $( printRed "${TEST_STATUS}" )"
-    fi
+    echo "Test Status: ${TEST_STATUS}"
 
     echo
     printLine
@@ -339,14 +307,27 @@ function printLine() {
 
 }
 
-function printTestFailure() {
-    #echo "${1}"
-    local addSpaces="$( echo "${1}" | sed "s/->/ -> /" )"
-    #echo "${addSpaces}"
-    local formatPassFail="$( echo "${addSpaces}" | sed "s/${LABEL_PASS}/\$(printGreen ${LABEL_PASS}\)/g" | sed "s/${LABEL_FAIL}/\$(printRed ${LABEL_FAIL}\)/g" )"
-    #echo "${formatPassFail}"
-    echo -n "  "
-    eval "echo \"${formatPassFail}\""
+function prettyPrintTestResponse() {
+   echo
+   if [ -n "${ACTUAL_RESPONSE_BODY}" ] ; then
+
+       if [ "${ACTUAL_RESPONSE_TYPE}" == "application/json" ] ; then
+           # defined in bin/query.sh
+           prettyPrintJson "${ACTUAL_RESPONSE_BODY}"
+
+       elif [ "${ACTUAL_RESPONSE_TYPE}" == "application/xml" ] ; then
+           # defined in bin/query.sh
+           prettyPrintXml "${ACTUAL_RESPONSE_BODY}"
+       fi
+   else
+       if [ "${ACTUAL_RESPONSE_CODE}" == "204" ] ; then
+           info "No results for this query, as indicated by response code '204'"
+           echo
+       else
+           info "No response body to print"
+           echo
+       fi
+   fi
 }
 
 function printTestSummary() {
@@ -370,11 +351,12 @@ function printTestSummary() {
     else
         local failed=(${TEST_FAILURES})
         echo "$( printRed " Tests Failed: ${#failed[@]}" )"
-        echo " ------------------------------------------------------------------------------------------------------"
-        echo "  [StatusCode Assertion][ContentType Assertion][Body Assertion] $( printGreen "${LABEL_PASS}")|$( printRed "${LABEL_FAIL}" )|${LABEL_NA} -> FailedTestID"
-        echo " ------------------------------------------------------------------------------------------------------"
+        echo " ---------------------------------------------------------------------------------"
+        echo "  [StatusCode Assertion][ContentType Assertion][Body Assertion] -> FailedTestID"
+        echo " ---------------------------------------------------------------------------------"
         for f in "${failed[@]}" ; do
-            printTestFailure "${f}"
+             # Add whitespace padding
+             echo "  $( echo "${f}" | sed "s/->/ -> /" )"
         done
     fi
     echo

@@ -8,7 +8,7 @@
 # Note that the JEXL equivalent of the unfielded LUCENE query
 # uses the special _ANYFIELD_ identifier
 
-setData query=$( urlencode "_ANYFIELD_ == 'anarchy'" ) \
+setCurlData query=$( urlencode "_ANYFIELD_ == 'anarchy'" ) \
         queryName=EventQueryTestJexl \
         begin=20130301 \
         end=20130401 \
@@ -19,7 +19,7 @@ setData query=$( urlencode "_ANYFIELD_ == 'anarchy'" ) \
 
 TEST_ID="EventQueryCreateJexlUnfielded"
 TEST_DESCRIPTION="Creates an equivalent 'unfielded' EventQuery w/JEXL query syntax via '_ANYFIELD_' identifier"
-TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DATA} -X POST ${URI_ROOT}/Query/EventQuery/create"
+TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create"
 EXPECTED_RESPONSE_TYPE="application/xml"
 EXPECTED_RESPONSE_CODE=200
 EXPECTED_RESPONSE_BODY_ASSERTION=false
@@ -30,15 +30,15 @@ EXPECTED_RESPONSE_BODY_ASSERTION=false
 runTest
 
 ################################################################
-# Test /Query/${QUERY_ID}/next endpoint
+# Test /Query/${DW_QUERY_ID}/next endpoint
 
-setQueryIdFromResponseXml
+setQueryIdFromResponseXml "${ACTUAL_RESPONSE_BODY}"
 
-[ -z "${QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
+[ -z "${DW_QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
 
 TEST_ID="EventQueryNextJexlUnfielded"
 TEST_DESCRIPTION="Gets the first page of results for the EventQueryCreate test"
-TEST_URL_OPTS="-X GET ${URI_ROOT}/Query/${QUERY_ID}/next"
+TEST_URL_OPTS="-X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next"
 EXPECTED_RESPONSE_TYPE="application/xml"
 EXPECTED_RESPONSE_CODE=200
 EXPECTED_RESPONSE_BODY_ASSERTION=false
@@ -46,11 +46,11 @@ EXPECTED_RESPONSE_BODY_ASSERTION=false
 runTest
 
 ################################################################
-# Test /Query/${QUERY_ID}/close endpoint
+# Test /Query/${DW_QUERY_ID}/close endpoint
 
 TEST_ID="EventQueryCloseJexlUnfielded"
 TEST_DESCRIPTION="Closes the query as necessary"
-TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${QUERY_ID}/close"
+TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${DW_QUERY_ID}/close"
 EXPECTED_RESPONSE_TYPE="application/xml"
 EXPECTED_RESPONSE_CODE=200
 EXPECTED_RESPONSE_BODY_ASSERTION=false
@@ -65,7 +65,7 @@ runTest
 # Test /Query/EventQuery/create endpoint, FIELDED query this time
 # Should have two events returned...
 
-setData query=$( urlencode "PAGE_TITLE == 'anarchism' || PAGE_TITLE == 'accessiblecomputing'" ) \
+setCurlData query=$( urlencode "PAGE_TITLE == 'anarchism' || PAGE_TITLE == 'accessiblecomputing'" ) \
         queryName=EventQueryTestJexlFielded \
         begin=20130301 \
         end=20130401 \
@@ -76,22 +76,22 @@ setData query=$( urlencode "PAGE_TITLE == 'anarchism' || PAGE_TITLE == 'accessib
 
 TEST_ID="EventQueryCreateJexlFielded"
 TEST_DESCRIPTION="Creates a valid, fielded EventQuery w/ JEXL query syntax"
-TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DATA} -X POST ${URI_ROOT}/Query/EventQuery/create"
+TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create"
 EXPECTED_RESPONSE_TYPE="application/xml"
 EXPECTED_RESPONSE_CODE=200
 EXPECTED_RESPONSE_BODY_ASSERTION=false
 
 runTest
 
-setQueryIdFromResponseXml
-[ -z "${QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
+setQueryIdFromResponseXml "${ACTUAL_RESPONSE_BODY}"
+[ -z "${DW_QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
 
 ################################################################
-# Get 1st page from /Query/${QUERY_ID}/next, in JSON format this time
+# Get 1st page from /Query/${DW_QUERY_ID}/next, in JSON format this time
 
 TEST_ID="EventQueryNextJexlFieldedJsonPage1"
 TEST_DESCRIPTION="Gets the 1st page of results for the EventQueryCreateJexlFielded test in JSON format"
-TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${QUERY_ID}/next"
+TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next"
 EXPECTED_RESPONSE_TYPE="application/json"
 EXPECTED_RESPONSE_CODE=200
 EXPECTED_RESPONSE_BODY_ASSERTION=false
@@ -99,11 +99,11 @@ EXPECTED_RESPONSE_BODY_ASSERTION=false
 runTest
 
 ################################################################
-# Get 2nd page from /Query/${QUERY_ID}/next, in JSON format
+# Get 2nd page from /Query/${DW_QUERY_ID}/next, in JSON format
 
 TEST_ID="EventQueryNextJexlFieldedJsonPage2"
 TEST_DESCRIPTION="Gets the 2nd page of results for the EventQueryCreateJexlFielded test in JSON format"
-TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${QUERY_ID}/next"
+TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next"
 EXPECTED_RESPONSE_TYPE="application/json"
 EXPECTED_RESPONSE_CODE=200
 EXPECTED_RESPONSE_BODY_ASSERTION=false
@@ -111,7 +111,7 @@ EXPECTED_RESPONSE_BODY_ASSERTION=false
 runTest
 
 ################################################################
-# Try to get another page from /Query/${QUERY_ID}/next. Should be 204 / No content
+# Try to get another page from /Query/${DW_QUERY_ID}/next. Should be 204 / No content
 #
 # If this test fails, it's probably b/c the number of enwiki articles in the shard table != 2.
 #
@@ -124,7 +124,7 @@ runTest
 
 TEST_ID="EventQueryNextJexlFielded204"
 TEST_DESCRIPTION="Returns 204 code signaling no-more-data for the EventQueryCreateJexlFielded test"
-TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${QUERY_ID}/next"
+TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next"
 EXPECTED_RESPONSE_TYPE=""
 EXPECTED_RESPONSE_CODE=204
 EXPECTED_RESPONSE_BODY_ASSERTION=false
@@ -132,11 +132,11 @@ EXPECTED_RESPONSE_BODY_ASSERTION=false
 runTest
 
 ################################################################
-# Close fielded query with /Query/${QUERY_ID}/close endpoint
+# Close fielded query with /Query/${DW_QUERY_ID}/close endpoint
 
 TEST_ID="EventQueryCloseJexlFielded"
 TEST_DESCRIPTION="Closes the query as necessary"
-TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${QUERY_ID}/close"
+TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${DW_QUERY_ID}/close"
 EXPECTED_RESPONSE_TYPE="application/xml"
 EXPECTED_RESPONSE_CODE=200
 EXPECTED_RESPONSE_BODY_ASSERTION=false

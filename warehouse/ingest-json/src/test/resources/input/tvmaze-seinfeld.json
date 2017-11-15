@@ -1,0 +1,175 @@
+{
+  "_embedded": {
+    "cast": [
+      {
+        "character": {
+          "_links": {
+            "self": {
+              "href": "http://api.tvmaze.com/characters/85601"
+            }
+          }, 
+          "id": 85601, 
+          "image": {
+            "medium": "http://static.tvmaze.com/uploads/images/medium_portrait/4/11366.jpg", 
+            "original": "http://static.tvmaze.com/uploads/images/original_untouched/4/11366.jpg"
+          }, 
+          "name": "Jerry Seinfeld", 
+          "url": "http://www.tvmaze.com/characters/85601/seinfeld-jerry-seinfeld"
+        }, 
+        "person": {
+          "_links": {
+            "self": {
+              "href": "http://api.tvmaze.com/people/48987"
+            }
+          }, 
+          "id": 48987, 
+          "image": {
+            "medium": "http://static.tvmaze.com/uploads/images/medium_portrait/4/11992.jpg", 
+            "original": "http://static.tvmaze.com/uploads/images/original_untouched/4/11992.jpg"
+          }, 
+          "name": "Jerry Seinfeld", 
+          "url": "http://www.tvmaze.com/people/48987/jerry-seinfeld"
+        }
+      }, 
+      {
+        "character": {
+          "_links": {
+            "self": {
+              "href": "http://api.tvmaze.com/characters/85604"
+            }
+          }, 
+          "id": 85604, 
+          "image": {
+            "medium": "http://static.tvmaze.com/uploads/images/medium_portrait/4/11368.jpg", 
+            "original": "http://static.tvmaze.com/uploads/images/original_untouched/4/11368.jpg"
+          }, 
+          "name": "Cosmo Kramer", 
+          "url": "http://www.tvmaze.com/characters/85604/seinfeld-cosmo-kramer"
+        }, 
+        "person": {
+          "_links": {
+            "self": {
+              "href": "http://api.tvmaze.com/people/49003"
+            }
+          }, 
+          "id": 49003, 
+          "image": {
+            "medium": "http://static.tvmaze.com/uploads/images/medium_portrait/4/11993.jpg", 
+            "original": "http://static.tvmaze.com/uploads/images/original_untouched/4/11993.jpg"
+          }, 
+          "name": "Michael Richards", 
+          "url": "http://www.tvmaze.com/people/49003/michael-richards"
+        }
+      }, 
+      {
+        "character": {
+          "_links": {
+            "self": {
+              "href": "http://api.tvmaze.com/characters/85603"
+            }
+          }, 
+          "id": 85603, 
+          "image": {
+            "medium": "http://static.tvmaze.com/uploads/images/medium_portrait/4/11369.jpg", 
+            "original": "http://static.tvmaze.com/uploads/images/original_untouched/4/11369.jpg"
+          }, 
+          "name": "George Louis Costanza", 
+          "url": "http://www.tvmaze.com/characters/85603/seinfeld-george-louis-costanza"
+        }, 
+        "person": {
+          "_links": {
+            "self": {
+              "href": "http://api.tvmaze.com/people/12849"
+            }
+          }, 
+          "id": 12849, 
+          "image": {
+            "medium": "http://static.tvmaze.com/uploads/images/medium_portrait/32/81823.jpg", 
+            "original": "http://static.tvmaze.com/uploads/images/original_untouched/32/81823.jpg"
+          }, 
+          "name": "Jason Alexander", 
+          "url": "http://www.tvmaze.com/people/12849/jason-alexander"
+        }
+      }, 
+      {
+        "character": {
+          "_links": {
+            "self": {
+              "href": "http://api.tvmaze.com/characters/85602"
+            }
+          }, 
+          "id": 85602, 
+          "image": {
+            "medium": "http://static.tvmaze.com/uploads/images/medium_portrait/4/11367.jpg", 
+            "original": "http://static.tvmaze.com/uploads/images/original_untouched/4/11367.jpg"
+          }, 
+          "name": "Elaine Marie Benes", 
+          "url": "http://www.tvmaze.com/characters/85602/seinfeld-elaine-marie-benes"
+        }, 
+        "person": {
+          "_links": {
+            "self": {
+              "href": "http://api.tvmaze.com/people/27606"
+            }
+          }, 
+          "id": 27606, 
+          "image": {
+            "medium": "http://static.tvmaze.com/uploads/images/medium_portrait/3/8670.jpg", 
+            "original": "http://static.tvmaze.com/uploads/images/original_untouched/3/8670.jpg"
+          }, 
+          "name": "Julia Louis-Dreyfus", 
+          "url": "http://www.tvmaze.com/people/27606/julia-louis-dreyfus"
+        }
+      }
+    ]
+  }, 
+  "_links": {
+    "previousepisode": {
+      "href": "http://api.tvmaze.com/episodes/48246"
+    }, 
+    "self": {
+      "href": "http://api.tvmaze.com/shows/530"
+    }
+  }, 
+  "externals": {
+    "imdb": "tt0098904", 
+    "thetvdb": 79169, 
+    "tvrage": 5145
+  }, 
+  "genres": [
+    "Comedy"
+  ], 
+  "id": 530, 
+  "image": {
+    "medium": "http://static.tvmaze.com/uploads/images/medium_portrait/4/11365.jpg", 
+    "original": "http://static.tvmaze.com/uploads/images/original_untouched/4/11365.jpg"
+  }, 
+  "language": "English", 
+  "name": "Seinfeld", 
+  "network": {
+    "country": {
+      "code": "US", 
+      "name": "United States", 
+      "timezone": "America/New_York"
+    }, 
+    "id": 1, 
+    "name": "NBC"
+  }, 
+  "officialSite": "http://www.sonypictures.com/tv/seinfeld/", 
+  "premiered": "1989-07-05", 
+  "rating": {
+    "average": 8.8
+  }, 
+  "runtime": 30, 
+  "schedule": {
+    "days": [], 
+    "time": ""
+  }, 
+  "status": "Ended", 
+  "summary": "<p><b>Seinfeld</b> is the story of a fictionalized version of stand-up comedian Jerry Seinfeld, his life in New York City and his quirky group of friends who join him in wrestling with life's most perplexing, yet often trivial questions. Often described as \"a show about nothing,\" Seinfeld mines the humor in life's mundane situations like waiting in line, searching for a lost item, or the trials and tribulations of dating.</p>", 
+  "type": "Scripted", 
+  "updated": 1511682713, 
+  "url": "http://www.tvmaze.com/shows/530/seinfeld", 
+  "webChannel": null, 
+  "weight": 90
+}
