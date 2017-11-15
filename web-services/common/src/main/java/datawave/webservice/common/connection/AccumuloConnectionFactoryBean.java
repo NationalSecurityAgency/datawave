@@ -332,7 +332,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      */
     @GET
     @Path("/stats")
-    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @RolesAllowed({"Administrator", "JBossAdministrator", "InternalUser"})
     public ConnectionFactoryResponse getConnectionFactoryMetrics() {
         ConnectionFactoryResponse response = new ConnectionFactoryResponse();
         ArrayList<ConnectionPool> connectionPools = new ArrayList<>();
@@ -401,6 +401,31 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         }
         response.setConnectionPools(connectionPools);
         return response;
+    }
+    
+    @PermitAll
+    @JmxManaged
+    public int getConnectionUsagePercent() {
+        double maxPercentage = 0.0;
+        for (Entry<String,Map<Priority,AccumuloConnectionPool>> entry : pools.entrySet()) {
+            for (Entry<Priority,AccumuloConnectionPool> poolEntry : entry.getValue().entrySet()) {
+                // Don't include ADMIN priority connections when computing a usage percentage
+                if (Priority.ADMIN.equals(poolEntry.getKey()))
+                    continue;
+                
+                MutableInt maxActive = new MutableInt();
+                MutableInt numActive = new MutableInt();
+                MutableInt numWaiting = new MutableInt();
+                MutableInt unused = new MutableInt();
+                poolEntry.getValue().getConnectionPoolStats(maxActive, numActive, unused, unused, numWaiting);
+                
+                double percentage = (numActive.doubleValue() + numWaiting.doubleValue()) / maxActive.doubleValue();
+                if (percentage > maxPercentage) {
+                    maxPercentage = percentage;
+                }
+            }
+        }
+        return (int) (maxPercentage * 100);
     }
     
     @Override

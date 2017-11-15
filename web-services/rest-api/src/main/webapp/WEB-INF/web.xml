@@ -46,6 +46,7 @@
             datawave.webservice.common.cache.AccumuloTableCache,
             datawave.webservice.common.connection.AccumuloConnectionFactoryBean,
             datawave.webservice.common.audit.AuditBean,
+            datawave.webservice.common.health.HealthBean,
             datawave.webservice.query.dashboard.DashboardBean,
             <!-- From Security -->
             datawave.security.cache.CredentialsCacheBean,
@@ -73,7 +74,7 @@
             <!-- From Modification -->
             datawave.webservice.modification.ModificationBean,
             datawave.webservice.modification.cache.ModificationCacheBean,
-	    <!-- From Model -->
+            <!-- From Model -->
             datawave.webservice.query.model.ModelBean,
             <!-- From DataDictionary -->
             datawave.webservice.datadictionary.DataDictionaryBean,
@@ -176,8 +177,9 @@
     <security-constraint>
         <web-resource-collection>
             <web-resource-name>UnauthenticatedOps</web-resource-name>
-            <description>Allow unauthenticated users to access static resources and update MapReduceState.</description>
+            <description>Allow unauthenticated users to access static resources, Health info, and update MapReduceState.</description>
             <url-pattern>/MapReduceStatus/updateState</url-pattern>
+            <url-pattern>/Common/Health/*</url-pattern>
             <url-pattern>/screen.css</url-pattern>
             <url-pattern>/jquery*</url-pattern>
             <url-pattern>/ext/*</url-pattern>

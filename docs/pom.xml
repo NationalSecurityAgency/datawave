@@ -272,6 +272,13 @@
                 <groupId>com.webcohesion.enunciate</groupId>
                 <artifactId>enunciate-maven-plugin</artifactId>
                 <version>2.9.1</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jboss.spec.javax.annotation</groupId>
+                        <artifactId>jboss-annotations-api_1.2_spec</artifactId>
+                        <version>1.0.0.Final</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>enunciate-docs</id>

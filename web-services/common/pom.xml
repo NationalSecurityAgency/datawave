@@ -316,7 +316,7 @@
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                         </manifest>
                         <manifestEntries>
-                            <Dependencies>com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider</Dependencies>
+                            <Dependencies>com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider,datawave.webservice.util</Dependencies>
                         </manifestEntries>
                     </archive>
                 </configuration>
