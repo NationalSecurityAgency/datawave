@@ -344,8 +344,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * @return
      */
     protected Range buildIndexRange(Range r) {
-        Key startKey = permuteRangeKey(r.getStartKey());
-        Key endKey = permuteRangeKey(r.getEndKey());
+        Key startKey = permuteRangeKey(r.getStartKey(), r.isStartKeyInclusive());
+        Key endKey = permuteRangeKey(r.getEndKey(), true);
         
         return new Range(startKey, r.isStartKeyInclusive(), endKey, r.isEndKeyInclusive());
     }
@@ -356,7 +356,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      * @param rangeKey
      * @return
      */
-    protected Key permuteRangeKey(Key rangeKey) {
+    protected Key permuteRangeKey(Key rangeKey, boolean inclusive) {
         Key key = null;
         
         if (null != rangeKey) {
@@ -364,7 +364,12 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
             Text term = new Text(valueMinPrefix);
             
             // Build up term\x00type\x00uid for the new columnqualifier
-            Util.appendText(term, rangeKey.getColumnFamily());
+            term = Util.appendText(term, rangeKey.getColumnFamily());
+            
+            // if not inclusive, then add a null byte to the end of the UID to ensure we go to the next one
+            if (!inclusive) {
+                term = Util.appendSuffix(term, (byte) 0);
+            }
             
             key = new Key(rangeKey.getRow(), this.columnFamily, term);
         }

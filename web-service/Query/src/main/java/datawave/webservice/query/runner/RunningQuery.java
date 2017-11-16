@@ -173,6 +173,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.getMetric().setError(e);
             throw e;
         } finally {
+            // update AbstractRunningQuery.lastUsed in case this operation took a long time
+            touch();
             removeNDC();
             if (this.queryMetrics != null) {
                 try {
@@ -185,6 +187,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     }
     
     public ResultsPage next() throws Exception {
+        // update AbstractRunningQuery.lastUsed
         touch();
         long pageStartTime = System.currentTimeMillis();
         List<Object> resultList = new ArrayList<>();
@@ -297,8 +300,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // Update the metric
             long now = System.currentTimeMillis();
             this.getMetric().addPageTime(currentPageCount, now - pageStartTime, pageStartTime, now);
-            // update timestamp in case this operation to a long time.
-            touch();
             this.lastPageNumber++;
             if (resultList.size() > 0) {
                 this.getMetric().setLifecycle(QueryMetric.Lifecycle.RESULTS);
@@ -308,6 +309,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.getMetric().setError(e);
             throw e;
         } finally {
+            // update AbstractRunningQuery.lastUsed in case this operation took a long time
+            touch();
             removeNDC();
             
             if (this.queryMetrics != null) {
