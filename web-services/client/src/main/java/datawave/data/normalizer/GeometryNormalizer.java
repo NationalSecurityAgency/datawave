@@ -4,10 +4,18 @@ import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.WKTReader;
 import mil.nga.giat.geowave.core.geotime.GeometryUtils;
+import mil.nga.giat.geowave.core.geotime.index.dimension.LatitudeDefinition;
+import mil.nga.giat.geowave.core.geotime.index.dimension.LongitudeDefinition;
 import mil.nga.giat.geowave.core.geotime.ingest.SpatialDimensionalityTypeProvider.SpatialIndexBuilder;
 import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.index.NumericIndexStrategy;
+import mil.nga.giat.geowave.core.index.dimension.NumericDimensionDefinition;
+import mil.nga.giat.geowave.core.index.sfc.SFCFactory;
 import mil.nga.giat.geowave.core.index.sfc.data.MultiDimensionalNumericData;
+import mil.nga.giat.geowave.core.index.sfc.tiered.TieredSFCIndexFactory;
+import mil.nga.giat.geowave.core.store.index.BasicIndexModel;
+import mil.nga.giat.geowave.core.store.index.CustomIdIndex;
+import mil.nga.giat.geowave.core.store.index.PrimaryIndex;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.StringUtils;
 
@@ -23,7 +31,24 @@ import java.util.List;
 public class GeometryNormalizer implements Normalizer<datawave.data.type.util.Geometry>, OneToManyNormalizer<datawave.data.type.util.Geometry> {
     private static final long serialVersionUID = 171360806347433135L;
     
-    public static NumericIndexStrategy indexStrategy = new SpatialIndexBuilder().createIndex().getIndexStrategy();
+    private static final int LONGITUDE_BITS = 31;
+    private static final int LATITUDE_BITS = 31;
+    
+    // @formatter:off
+    public static NumericIndexStrategy indexStrategy = TieredSFCIndexFactory.createFullIncrementalTieredStrategy(
+            new NumericDimensionDefinition[]{
+                    new LongitudeDefinition(),
+                    new LatitudeDefinition(
+                            true)
+                    // just use the same range for latitude to make square sfc values in
+                    // decimal degrees (EPSG:4326)
+            },
+            new int[]{
+                    LONGITUDE_BITS,
+                    LATITUDE_BITS
+            },
+            SFCFactory.SFCType.HILBERT);
+    // @formatter:on    
     
     private static final String[] geomTypes = new String[] {"GEOMETRY", "POINT", "LINESTRING", "POLYGON", "MULTIPOINT", "MULTILINESTRING", "MULTIPOLYGON",
             "GEOMETRYCOLLECTION", "CIRCULARSTRING", "COMPOUNDCURVE", "CURVEPOLYGON", "MULTICURVE", "MULTISURFACE", "CURVE", "SURFACE", "POLYHEDRALSURFACE",
