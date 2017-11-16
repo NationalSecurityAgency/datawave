@@ -4,10 +4,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import nsa.datawave.query.rewrite.iterator.Util;
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Iterators;
@@ -27,6 +31,9 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
     private boolean statsEntryReturned = false;
     private Key lastKey = null;
     
+    private static final Text MARKER_TEXT = new Text("\u2735FinalDocument\u2735");
+    private static final ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
+    
     private Range seekRange = null;
     private DocumentSerialization.ReturnType returnType = null;
     private boolean isReducedResponse = false;
@@ -43,6 +50,20 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
         this.isCompressResults = isCompressResults;
         this.querySpanCollector = querySpanCollector;
         this.querySpan = querySpan;
+        
+        // check for the special case where we were torn down just after returning the final document
+        this.statsEntryReturned = isStatsEntryReturned(seekRange);
+    }
+    
+    private boolean isStatsEntryReturned(Range r) {
+        // first check if this is a rebuild key (post teardown)
+        if (!r.isStartKeyInclusive() && r.getStartKey() != null && r.getStartKey().getColumnQualifierData() != null) {
+            ByteSequence bytes = r.getStartKey().getColumnQualifierData();
+            if (bytes.length() >= MARKER_TEXT.getLength()) {
+                return (bytes.subSequence(bytes.length() - MARKER_TEXT.getLength(), bytes.length()).compareTo(MARKER_SEQUENCE) == 0);
+            }
+        }
+        return false;
     }
     
     private Map.Entry<Key,Value> getStatsEntry(Key key) {
@@ -54,6 +75,10 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
                 statsKey = statsKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
             }
         }
+        
+        // now add our marker
+        statsKey = new Key(statsKey.getRow(), statsKey.getColumnFamily(), Util.appendText(statsKey.getColumnQualifier(), MARKER_TEXT),
+                        statsKey.getColumnVisibility(), statsKey.getTimestamp());
         
         HashMap<Key,Document> documentMap = new HashMap();
         
