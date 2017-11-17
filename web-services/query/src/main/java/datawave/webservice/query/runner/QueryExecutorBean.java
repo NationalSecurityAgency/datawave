@@ -769,7 +769,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
-    @Timed(name = "dw.query.defineQuery", absolute = true)
+    @Timed(name = "dw.query.predictQuery", absolute = true)
     public GenericResponse<String> predictQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
                     MultivaluedMap<String,String> queryParameters) {
         
@@ -790,7 +790,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 metric.setQueryType(RunningQuery.class.getSimpleName());
                 
                 Set<Prediction> predictions = predictor.predict(metric);
-                if (predictions != null) {
+                if (predictions != null && !predictions.isEmpty()) {
                     String predictionString = predictions.toString();
                     // now we have a predictions, lets broadcast
                     log.info("Model predictions: " + predictionString);
@@ -814,7 +814,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     throw ((WebApplicationException) t);
                 } else {
                     log.error(t.getMessage(), t);
-                    QueryException qe = new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, t);
+                    QueryException qe = new QueryException(DatawaveErrorCode.QUERY_PREDICTIONS_ERROR, t);
                     response.addException(qe.getBottomQueryException());
                     int statusCode = qe.getBottomQueryException().getStatusCode();
                     throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -1628,7 +1628,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 
                 // pull the predictions out of the query metric
                 Set<Prediction> predictions = query.getMetric().getPredictions();
-                if (predictions != null) {
+                if (predictions != null && !predictions.isEmpty()) {
                     response.setResult(predictions.toString());
                     response.setHasResults(true);
                 }
