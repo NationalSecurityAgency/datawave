@@ -11,12 +11,4 @@
     <properties>
         <datawave.root>${project.parent.parent.basedir}</datawave.root>
     </properties>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 </project>

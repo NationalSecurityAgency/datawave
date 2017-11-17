@@ -201,10 +201,6 @@ another classloader.
                     <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-            </plugin>
         </plugins>
     </build>
 </project>
