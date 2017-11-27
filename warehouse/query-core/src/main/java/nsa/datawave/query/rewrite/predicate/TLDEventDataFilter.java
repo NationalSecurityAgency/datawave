@@ -580,23 +580,28 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     }
     
     /**
-     * Parse the field from an event key, it should always be the value to to the first null in the cq
-     *
+     * Parse the field from an event key, it should always be the value to to the first null in the cq or the first '.' whichever comes first. A '.' would
+     * indicate grouping notation where a null would indicate normal field notation
+     * 
      * @param current
      * @return
      */
     protected String getCurrentField(Key current) {
         final byte[] cq = current.getColumnQualifierData().getBackingArray();
         final int length = cq.length;
-        int nullIndex = -1;
+        int stopIndex = -1;
         for (int i = 0; i < length - 1; i++) {
             if (cq[i] == 0x00) {
-                nullIndex = i;
+                stopIndex = i;
+                break;
+            } else if (cq[i] == 0x2E) {
+                // test for '.' used in grouping notation
+                stopIndex = i;
                 break;
             }
         }
         
-        return new String(cq, 0, nullIndex);
+        return new String(cq, 0, stopIndex);
     }
     
     /**
