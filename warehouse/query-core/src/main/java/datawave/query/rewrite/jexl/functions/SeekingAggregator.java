@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.util.Collection;
 
 public abstract class SeekingAggregator implements FieldIndexAggregator {
-    private int nextCount = 0;
     private int maxNextCount = -1;
     
     public SeekingAggregator(int maxNextCount) {
@@ -44,6 +43,7 @@ public abstract class SeekingAggregator implements FieldIndexAggregator {
                     boolean includeColumnFamilies) throws IOException {
         Key current = itr.getTopKey();
         Text row = current.getRow();
+        int nextCount = 0;
         while (current != null && skip(current, row, pointer)) {
             if (maxNextCount == -1 || nextCount < maxNextCount) {
                 itr.next();
