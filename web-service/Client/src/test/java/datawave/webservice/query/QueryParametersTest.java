@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.UUID;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang.time.DateUtils;
@@ -25,6 +26,7 @@ public class QueryParametersTest {
     private QueryPersistence persistenceMode;
     private String query;
     private String queryName;
+    private MultivaluedMap<String,String> requestHeaders;
     private boolean trace;
     
     private long accumuloDate = 1470528000000l; // Accumulo - Aug 7, 2016
@@ -33,7 +35,10 @@ public class QueryParametersTest {
     private String formatDateCheck = "20160807 000000.000";
     @SuppressWarnings("deprecation")
     private Date parseDateCheck = new Date("Sun Aug 7 00:00:00 GMT 2016");
-    
+
+    private String headerName = "Header-name1";
+    private String headerValue = "headervalue1";
+
     @Before
     public void beforeTests() {
         beginDate = new Date(accumuloDate);
@@ -44,6 +49,8 @@ public class QueryParametersTest {
         persistenceMode = QueryPersistence.PERSISTENT;
         query = "WHEREIS:Waldo";
         queryName = "myQueryForTests";
+        requestHeaders = new MultivaluedHashMap<String,String>();
+        requestHeaders.add(headerName, headerValue);
         trace = true;
         
         // Build initial QueryParameters
@@ -61,6 +68,7 @@ public class QueryParametersTest {
         qpBuilder.setPersistenceMode(persistenceMode);
         qpBuilder.setQuery(query);
         qpBuilder.setQueryName(queryName);
+        qpBuilder.setRequestHeaders(requestHeaders);
         qpBuilder.setTrace(trace);
         
         return qpBuilder;
@@ -79,6 +87,7 @@ public class QueryParametersTest {
         Assert.assertEquals(persistenceMode, qp.getPersistenceMode());
         Assert.assertEquals(query, qp.getQuery());
         Assert.assertEquals(queryName, qp.getQueryName());
+        Assert.assertEquals(requestHeaders, qp.getRequestHeaders());
         Assert.assertEquals(trace, qp.isTrace());
         
         // Store results of hashCode() method, pre-clear
@@ -142,6 +151,7 @@ public class QueryParametersTest {
         Assert.assertEquals(QueryPersistence.TRANSIENT, qp.getPersistenceMode());
         Assert.assertEquals(null, qp.getQuery());
         Assert.assertEquals(null, qp.getQueryName());
+        Assert.assertEquals(null, qp.getRequestHeaders());
         Assert.assertEquals(false, qp.isTrace());
         
         // Reset a few variables so hashCode() doesn't blow up, then
