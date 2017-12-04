@@ -548,9 +548,8 @@ public class QueryExecutorBean implements QueryExecutor {
         } catch (DatawaveWebApplicationException e) {
             throw e;
         } catch (Exception e) {
-            
+            log.error(e.getMessage(), e);
             QueryException qe = new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
-            log.error(qe);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
