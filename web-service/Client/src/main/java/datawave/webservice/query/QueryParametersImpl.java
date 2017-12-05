@@ -401,17 +401,17 @@ public class QueryParametersImpl implements QueryParameters {
     public void setLogicName(String logicName) {
         this.logicName = logicName;
     }
-
+    
     @Override
-    public MultivaluedMap<String, String> getRequestHeaders() {
+    public MultivaluedMap<String,String> getRequestHeaders() {
         return requestHeaders;
     }
-
+    
     @Override
-    public void setRequestHeaders(MultivaluedMap<String, String> requestHeaders) {
+    public void setRequestHeaders(MultivaluedMap<String,String> requestHeaders) {
         this.requestHeaders = requestHeaders;
     }
-
+    
     @Override
     public MultivaluedMap<String,String> getUnknownParameters(MultivaluedMap<String,String> allQueryParameters) {
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();

@@ -398,7 +398,7 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      * This method will provide some initial query validation for the define and create query calls.
      */
-    private QueryData validateQuery(String queryLogicName, MultivaluedMap<String,String> queryParameters) {
+    private QueryData validateQuery(String queryLogicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
         QueryData qd = new QueryData();
         
         log.debug(queryParameters);
@@ -506,7 +506,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
         
-        QueryData qd = validateQuery(queryLogicName, queryParameters);
+        QueryData qd = validateQuery(queryLogicName, queryParameters, httpHeaders);
         
         GenericResponse<String> response = new GenericResponse<>();
         
@@ -599,12 +599,8 @@ public class QueryExecutorBean implements QueryExecutor {
     public GenericResponse<String> createQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
                     MultivaluedMap<String,String> queryParameters, @Context HttpHeaders httpHeaders) {
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
-        log.debug(queryParameters);
-        qp.clear();
-        qp.setRequestHeaders(httpHeaders != null ? httpHeaders.getRequestHeaders() : null);
-        qp.validate(queryParameters);
-
-        QueryData qd = validateQuery(queryLogicName, queryParameters);
+        
+        QueryData qd = validateQuery(queryLogicName, queryParameters, httpHeaders);
         
         GenericResponse<String> response = new GenericResponse<>();
         
@@ -779,7 +775,7 @@ public class QueryExecutorBean implements QueryExecutor {
         
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
         
-        QueryData qd = validateQuery(queryLogicName, queryParameters);
+        QueryData qd = validateQuery(queryLogicName, queryParameters, null);
         
         GenericResponse<String> response = new GenericResponse<>();
         
