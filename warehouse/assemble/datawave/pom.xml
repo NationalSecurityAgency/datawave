@@ -316,26 +316,6 @@
                                     <outputDirectory>${project.build.directory}/archive-tmp</outputDirectory>
                                 </configuration>
                             </execution>
-                            <!-- For the NGA Geometry code -->
-                            <execution>
-                                <id>geowave-dependencies</id>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>datawave</groupId>
-                                            <artifactId>assemble-geowave</artifactId>
-                                            <classifier>dist</classifier>
-                                            <type>tar.gz</type>
-                                        </artifactItem>
-                                    </artifactItems>
-                                    <includes>**/*.jar</includes>
-                                    <outputDirectory>${project.build.directory}/archive/accumulo-warehouse/lib/ext</outputDirectory>
-                                </configuration>
-                            </execution>
                             <execution>
                                 <id>copy-dependencies</id>
                                 <goals>
@@ -632,6 +612,43 @@
                                 <goals>
                                     <goal>rpm</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>geoserver</id>
+            <activation>
+                <property>
+                    <name>geoserver</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <!-- In support of GeoWave tables created by the GeoWaveDataTypeHandler -->
+                            <execution>
+                                <id>geowave-dependencies</id>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>datawave</groupId>
+                                            <artifactId>assemble-geowave</artifactId>
+                                            <classifier>dist</classifier>
+                                            <type>tar.gz</type>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <includes>**/*.jar</includes>
+                                    <outputDirectory>${project.build.directory}/archive/accumulo-geowave/lib/ext</outputDirectory>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
