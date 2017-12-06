@@ -7,10 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Splitter;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.google.common.base.Preconditions;
@@ -56,7 +58,9 @@ public class AuditParameters implements ParameterValidator {
                     this.query = values.get(0);
                     break;
                 case QUERY_AUTHORIZATIONS:
-                    this.auths = values.get(0);
+                    // ensure that auths are comma separated with no empty values or spaces
+                    Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
+                    this.auths = StringUtils.join(splitter.splitToList(values.get(0)), ",");
                     break;
                 case QUERY_AUDIT_TYPE:
                     this.auditType = AuditType.valueOf(values.get(0));
@@ -104,7 +108,9 @@ public class AuditParameters implements ParameterValidator {
     }
     
     public void setAuths(String auths) {
-        this.auths = auths;
+        // ensure that auths are comma separated with no empty values or spaces
+        Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
+        this.auths = StringUtils.join(splitter.splitToList(auths), ",");
     }
     
     public AuditType getAuditType() {
