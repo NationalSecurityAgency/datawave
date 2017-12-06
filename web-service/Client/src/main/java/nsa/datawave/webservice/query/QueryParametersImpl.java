@@ -9,6 +9,7 @@ import java.util.List;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import com.google.common.base.Splitter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -54,7 +55,9 @@ public class QueryParametersImpl implements QueryParameters {
             } else if (QUERY_PAGESIZE.equals(param)) {
                 this.pagesize = Integer.parseInt(values.get(0));
             } else if (QUERY_AUTHORIZATIONS.equals(param)) {
-                this.auths = values.get(0);
+                // ensure that auths are comma separated with no empty values or spaces
+                Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
+                this.auths = StringUtils.join(splitter.splitToList(values.get(0)), ",");
             } else if (QUERY_EXPIRATION.equals(param)) {
                 try {
                     this.expirationDate = parseEndDate(values.get(0));
@@ -247,7 +250,9 @@ public class QueryParametersImpl implements QueryParameters {
             p.putSingle(QueryParameters.QUERY_END, formatDate(endDate));
         }
         if (queryAuthorizations != null) {
-            p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+            // ensure that auths are comma separated with no empty values or spaces
+            Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
+            p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, StringUtils.join(splitter.splitToList(queryAuthorizations), ","));
         }
         if (expirationDate != null) {
             p.putSingle(QueryParameters.QUERY_EXPIRATION, formatDate(expirationDate));
