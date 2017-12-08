@@ -1,8 +1,8 @@
 package nsa.datawave.webservice.common.audit;
 
-import com.vividsolutions.jts.util.Assert;
 import datawave.webservice.common.audit.AuditParameters;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -43,8 +43,8 @@ public class TestAuditParameters {
             try {
                 this.auditParameters.validate(this.paramsMap);
             } catch (Exception e) {
-                Assert.equals(IllegalArgumentException.class.getName(), e.getClass().getName());
-                Assert.equals("Required parameter " + p + " not found", e.getMessage());
+                Assert.assertEquals(IllegalArgumentException.class.getName(), e.getClass().getName());
+                Assert.assertEquals("Required parameter " + p + " not found", e.getMessage());
             }
         }
     }
@@ -57,8 +57,8 @@ public class TestAuditParameters {
             try {
                 this.auditParameters.validate(this.paramsMap);
             } catch (Exception e) {
-                Assert.equals(IllegalArgumentException.class.getName(), e.getClass().getName());
-                Assert.equals("Required parameter " + p + " only accepts one value", e.getMessage());
+                Assert.assertEquals(IllegalArgumentException.class.getName(), e.getClass().getName());
+                Assert.assertEquals("Required parameter " + p + " only accepts one value", e.getMessage());
             }
         }
     }
@@ -68,7 +68,7 @@ public class TestAuditParameters {
         this.paramsMap.remove(AuditParameters.QUERY_AUTHORIZATIONS);
         this.paramsMap.putSingle(AuditParameters.QUERY_AUTHORIZATIONS, "AUTH1, AUTH2, AUTH3");
         this.auditParameters.validate(this.paramsMap);
-        Assert.equals("AUTH1,AUTH2,AUTH3", this.auditParameters.getAuths());
+        Assert.assertEquals("AUTH1,AUTH2,AUTH3", this.auditParameters.getAuths());
     }
     
     @Test
@@ -76,6 +76,6 @@ public class TestAuditParameters {
         this.paramsMap.remove(AuditParameters.QUERY_AUTHORIZATIONS);
         this.paramsMap.putSingle(AuditParameters.QUERY_AUTHORIZATIONS, "AUTH1,,AUTH2,,AUTH3");
         this.auditParameters.validate(this.paramsMap);
-        Assert.equals("AUTH1,AUTH2,AUTH3", this.auditParameters.getAuths());
+        Assert.assertEquals("AUTH1,AUTH2,AUTH3", this.auditParameters.getAuths());
     }
 }
