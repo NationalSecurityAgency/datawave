@@ -2,17 +2,20 @@ package datawave.ingest.data;
 
 import java.util.Arrays;
 
+import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.RecordReader;
 
 public class Type implements Comparable<Type> {
     // This is the name of the type which is used to match types, pull appropriate configuration, determine data handlers
     private String name = null, outputName = null;
+    private IngestHelperInterface helper;
     private Class<? extends IngestHelperInterface> helperClass;
     private Class<? extends RecordReader<?,?>> readerClass;
     private String[] defaultDataTypeHandlers;
@@ -72,6 +75,27 @@ public class Type implements Comparable<Type> {
     
     public Class<? extends RecordReader<?,?>> getReaderClass() {
         return readerClass;
+    }
+    
+    public IngestHelperInterface getIngestHelper(Configuration conf) {
+        if (helper == null && helperClass != null) {
+            synchronized (helperClass) {
+                if (helper == null) {
+                    helper = newIngestHelper(conf);
+                }
+            }
+        }
+        return helper;
+    }
+    
+    public IngestHelperInterface newIngestHelper(Configuration conf) {
+        IngestHelperInterface helper = newIngestHelper();
+        if (helper != null) {
+            conf = new Configuration(conf);
+            conf.set(DataTypeHelper.Properties.DATA_NAME, typeName());
+            helper.setup(conf);
+        }
+        return helper;
     }
     
     public IngestHelperInterface newIngestHelper() {

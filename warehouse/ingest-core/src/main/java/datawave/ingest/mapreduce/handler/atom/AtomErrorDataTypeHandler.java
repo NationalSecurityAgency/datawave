@@ -56,8 +56,7 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
     public void setup(TaskAttemptContext context) {
         super.setup(context);
         
-        this.errorHelper = (ErrorShardedIngestHelper) (TypeRegistry.getType("error").newIngestHelper());
-        this.errorHelper.setup(context.getConfiguration());
+        this.errorHelper = (ErrorShardedIngestHelper) (TypeRegistry.getType("error").getIngestHelper(context.getConfiguration()));
         
         this.conf = context.getConfiguration();
         markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
@@ -75,8 +74,9 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
                     throws IOException, InterruptedException {
         int count = 0;
         
-        if (!helpers.containsKey(record.getDataType()))
+        if (getHelper(record.getDataType()) == null) {
             return count;
+        }
         
         // write out the event into a value before we muck with it
         DataOutputBuffer buffer = new DataOutputBuffer();

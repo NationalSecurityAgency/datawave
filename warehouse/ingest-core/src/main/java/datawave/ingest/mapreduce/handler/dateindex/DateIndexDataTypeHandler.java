@@ -15,7 +15,6 @@ import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
@@ -93,7 +92,6 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
     protected int dateIndexNumShards = 10;
     protected Map<String,Multimap<String,String>> dataTypeToTypeToFields = null;
     protected Configuration conf = null;
-    protected Map<String,IngestHelperInterface> helpers = null;
     protected DateNormalizer dateNormalizer = new DateNormalizer();
     protected ShardIdFactory shardIdFactory = null;
     protected TaskAttemptContext taskAttemptContext = null;
@@ -162,9 +160,6 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         this.dateIndexNumShards = conf.getInt(DATEINDEX_NUM_SHARDS, this.dateIndexNumShards);
         
         TypeRegistry registry = TypeRegistry.getInstance(conf);
-        
-        // instantiate ingest helpers for each type
-        this.setupIngestHelpers(context, registry); // fills out helpers Map
         
         // instantiate the mapping of types to fields
         // now get the dates to be index for this datatype
@@ -382,37 +377,11 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      */
     @Override
     public IngestHelperInterface getHelper(Type type) {
-        return helpers.get(type.typeName());
+        return type.getIngestHelper(conf);
     }
     
     @Override
     public void close(TaskAttemptContext context) {}
-    
-    private void setupIngestHelpers(TaskAttemptContext context, TypeRegistry registry) {
-        /**
-         * Set up the ingest helpers for the known datatypes.
-         */
-        helpers = new HashMap<>();
-        for (Type t : registry.values()) {
-            String typeName = t.typeName();
-            IngestHelperInterface helper = t.newIngestHelper();
-            // Just ignore if we don't find an ingest helper for this datatype. We will get an NPE
-            // if anyone looks for the helper for typeName later on, but we shouldn't be getting any
-            // events for that datatype. If we did, then we'll get an NPE and the job will fail,
-            // but previously the job would fail anyway even if the helper came back as null here.
-            if (helper != null) {
-                // Clone the configuration and set the type.
-                Configuration conf = new Configuration(this.taskAttemptContext.getConfiguration());
-                conf.set(DataTypeHelper.Properties.DATA_NAME, typeName);
-                try {
-                    helper.setup(conf);
-                    helpers.put(typeName, helper);
-                } catch (IllegalArgumentException e) {
-                    log.warn("Configuration not correct for type " + t.typeName() + ". Will not process edges for this type", e);
-                }
-            }
-        }
-    }
     
     /**
      * This is the metadata which will store the cached date index keys.

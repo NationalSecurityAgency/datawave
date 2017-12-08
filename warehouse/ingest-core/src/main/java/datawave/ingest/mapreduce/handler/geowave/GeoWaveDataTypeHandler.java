@@ -103,15 +103,11 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
     private GeoWaveMetadata metadata = null;
     
     private Configuration conf = null;
-    private final Map<String,IngestHelperInterface> ingestHelpersCache = new HashMap<String,IngestHelperInterface>();
     
     @Override
     public void setup(final TaskAttemptContext context) {
         final TypeRegistry registry = TypeRegistry.getInstance(context.getConfiguration());
         final Type type = registry.get(context.getConfiguration().get(DataTypeHelperImpl.Properties.DATA_NAME));
-        final IngestHelperInterface helper = type.newIngestHelper();
-        helper.setup(context.getConfiguration());
-        ingestHelpersCache.put(type.typeName(), helper);
         
         conf = context.getConfiguration();
         
@@ -490,21 +486,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
     
     @Override
     public IngestHelperInterface getHelper(final Type datatype) {
-        final String typeName = datatype.typeName();
-        if (ingestHelpersCache.containsKey(typeName)) {
-            return ingestHelpersCache.get(typeName);
-        } else {
-            IngestHelperInterface ingestHelper = null;
-            try {
-                log.info("getting ingest helper for type: " + typeName);
-                ingestHelper = TypeRegistry.getType(typeName).getHelperClass().newInstance();
-                ingestHelper.setup(conf);
-                ingestHelpersCache.put(typeName, ingestHelper);
-            } catch (final Exception e) {
-                log.error("Unable to get an instance of ingest helper class for datatype: " + typeName, e);
-            }
-            return ingestHelper;
-        }
+        return datatype.getIngestHelper(conf);
     }
     
     @Override

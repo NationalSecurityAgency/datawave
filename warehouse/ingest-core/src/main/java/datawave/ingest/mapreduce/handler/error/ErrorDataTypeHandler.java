@@ -3,7 +3,6 @@ package datawave.ingest.mapreduce.handler.error;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 import com.google.common.collect.Multimap;
@@ -17,7 +16,6 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
@@ -111,8 +109,6 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
     
     private String tableName = null;
     
-    private Map<Type,IngestHelperInterface> helpers = null;
-    
     private Configuration conf = null;
     
     // Initialize a default (hash-based) UID builder
@@ -130,31 +126,8 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
         IngestConfiguration ingestConfiguration = IngestConfigurationFactory.getIngestConfiguration();
         markingsHelper = ingestConfiguration.getMarkingsHelper(context.getConfiguration(), TypeRegistry.getType(TypeRegistry.ERROR_PREFIX));
         tableName = ConfigurationHelper.isNull(context.getConfiguration(), ERROR_TABLE_NAME, String.class);
-        helpers = new HashMap<>();
         
         this.conf = context.getConfiguration();
-        
-        TypeRegistry registry = TypeRegistry.getInstance(context.getConfiguration());
-        // Set up the ingest helpers for the known datatypes.
-        for (Type t : registry.values()) {
-            // Just ignore if we don't find an ingest helper for this datatype. We will get an NPE
-            // if anyone looks for the helper for typeName later on, but we shouldn't be getting any
-            // events for that datatype. If we did, then we'll get an NPE and the job will fail,
-            // but previously the job would fail anyway even if the helper came back as null here.
-            IngestHelperInterface helper = t.newIngestHelper();
-            if (helper != null) {
-                // Clone the configuration and set the type.
-                Configuration conf = new Configuration(context.getConfiguration());
-                conf.set(DataTypeHelper.Properties.DATA_NAME, t.typeName());
-                try {
-                    helper.setup(conf);
-                    helpers.put(t, helper);
-                } catch (IllegalArgumentException e) {
-                    log.error("Configuration not correct for type " + t.typeName() + ".");
-                    throw e;
-                }
-            }
-        }
         
         try {
             Map<String,String> defaultMarkings = markingsHelper.getDefaultMarkings();
@@ -345,15 +318,7 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
     
     @Override
     public IngestHelperInterface getHelper(Type datatype) {
-        IngestHelperInterface helper = helpers.get(datatype);
-        if (null == helper) {
-            Configuration conf = new Configuration(this.conf);
-            conf.set(DataTypeHelper.Properties.DATA_NAME, datatype.typeName());
-            helper = datatype.newIngestHelper();
-            helper.setup(conf);
-            helpers.put(datatype, helper);
-        }
-        return helper;
+        return datatype.getIngestHelper(this.conf);
     }
     
     @Override

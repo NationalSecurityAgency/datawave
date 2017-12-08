@@ -34,8 +34,7 @@ public class AbstractColumnBasedHandler<KEYIN> extends ShardedDataTypeHandler<KE
         super.setup(context);
         TypeRegistry registry = TypeRegistry.getInstance(context.getConfiguration());
         Type type = registry.get(context.getConfiguration().get(DataTypeHelper.Properties.DATA_NAME));
-        helper = type.newIngestHelper();
-        helper.setup(context.getConfiguration());
+        helper = type.getIngestHelper(context.getConfiguration());
         log.info(this.getClass().getSimpleName() + " configured.");
     }
     
