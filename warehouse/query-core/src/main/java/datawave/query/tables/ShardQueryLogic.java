@@ -1,63 +1,54 @@
 package datawave.query.tables;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Function;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
+import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
+import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ShardQueryConfigurationFactory;
 import datawave.query.enrich.DataEnricher;
 import datawave.query.enrich.EnrichingMaster;
 import datawave.query.index.lookup.CreateUidsIterator;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.UidIntersector;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
-import datawave.query.planner.QueryPlanner;
-import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfigurationFactory;
-import datawave.query.iterator.QueryOptions;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
+import datawave.query.planner.QueryPlanner;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
-import datawave.query.transformer.DocumentTransformer;
-import datawave.query.transformer.GroupingDocumentTransformer;
-import datawave.query.util.QueryStopwatch;
-import datawave.util.time.TraceStopwatch;
 import datawave.query.tables.stats.ScanSessionStats;
+import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
-import datawave.query.cardinality.CardinalityConfiguration;
+import datawave.query.transformer.GroupingDocumentTransformer;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.query.util.QueryStopwatch;
 import datawave.util.StringUtils;
+import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -81,14 +72,22 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <h1>Overview</h1> QueryTable implementation that works with the JEXL grammar. This QueryTable uses the DATAWAVE metadata, global index, and sharded event
@@ -379,6 +378,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     protected boolean dataQueryExpressionFilterEnabled = false;
     
+    protected boolean sortGeoWaveQueryRanges = false;
+    
+    protected int numRangesToBuffer = 0;
+    
+    protected long rangeBufferTimeoutMillis = 0;
+    
+    protected long rangeBufferPollMillis = 100;
+    
     public ShardQueryLogic() {
         super();
         setBaseIteratorPriority(100);
@@ -503,6 +510,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setUnsortedUIDsEnabled(other.getUnsortedUIDsEnabled());
         this.setDebugMultithreadedSources(other.isDebugMultithreadedSources());
         this.setDataQueryExpressionFilterEnabled(other.isDataQueryExpressionFilterEnabled());
+        this.setSortGeoWaveQueryRanges(other.isSortGeoWaveQueryRanges());
+        this.setNumRangesToBuffer(other.getNumRangesToBuffer());
+        this.setRangeBufferTimeoutMillis(other.getRangeBufferTimeoutMillis());
+        this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
         this.setMaxDocScanTimeout(other.maxDocScanTimeout);
         this.setConfiguredProfiles(other.configuredProfiles);
         if (other.eventQueryDataDecoratorTransformer != null) {
@@ -2326,6 +2337,38 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
         this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
+    }
+    
+    public boolean isSortGeoWaveQueryRanges() {
+        return sortGeoWaveQueryRanges;
+    }
+    
+    public void setSortGeoWaveQueryRanges(boolean sortGeoWaveQueryRanges) {
+        this.sortGeoWaveQueryRanges = sortGeoWaveQueryRanges;
+    }
+    
+    public int getNumRangesToBuffer() {
+        return numRangesToBuffer;
+    }
+    
+    public void setNumRangesToBuffer(int numRangesToBuffer) {
+        this.numRangesToBuffer = numRangesToBuffer;
+    }
+    
+    public long getRangeBufferTimeoutMillis() {
+        return rangeBufferTimeoutMillis;
+    }
+    
+    public void setRangeBufferTimeoutMillis(long rangeBufferTimeoutMillis) {
+        this.rangeBufferTimeoutMillis = rangeBufferTimeoutMillis;
+    }
+    
+    public long getRangeBufferPollMillis() {
+        return rangeBufferPollMillis;
+    }
+    
+    public void setRangeBufferPollMillis(long rangeBufferPollMillis) {
+        this.rangeBufferPollMillis = rangeBufferPollMillis;
     }
     
     public long getBeginDateCap() {

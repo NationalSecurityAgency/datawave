@@ -1,7 +1,7 @@
 package datawave.query.config;
 
-import datawave.query.QueryParameters;
 import datawave.query.Constants;
+import datawave.query.QueryParameters;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -177,6 +177,11 @@ public class ShardQueryConfigurationFactory {
         config.setStatsdHost(configuredLogic.getStatsdHost());
         config.setStatsdPort(configuredLogic.getStatsdPort());
         config.setStatsdMaxQueueSize(configuredLogic.getStatsdMaxQueueSize());
+        
+        config.setSortGeoWaveQueryRanges(configuredLogic.isSortGeoWaveQueryRanges());
+        config.setNumRangesToBuffer(configuredLogic.getNumRangesToBuffer());
+        config.setRangeBufferTimeoutMillis(configuredLogic.getRangeBufferTimeoutMillis());
+        config.setRangeBufferPollMillis(configuredLogic.getRangeBufferPollMillis());
         
         return config;
     }

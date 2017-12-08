@@ -1,19 +1,24 @@
 package datawave.query.config;
 
-import com.google.common.collect.*;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
-import datawave.query.QueryParameters;
-import datawave.query.model.QueryModel;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
+import datawave.query.QueryParameters;
 import datawave.query.UnindexType;
 import datawave.query.iterator.PowerSet;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.model.QueryModel;
 import datawave.query.tld.TLDQueryIterator;
-import datawave.query.util.QueryStopwatch;
 import datawave.query.util.CompositeNameAndIndex;
+import datawave.query.util.QueryStopwatch;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -22,8 +27,16 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -306,6 +319,26 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
      */
     protected boolean dataQueryExpressionFilterEnabled = false;
     
+    /**
+     * Used to enable sorting query ranges from most to least granular for queries which contain geowave fields in ThreadedRangeBundler
+     */
+    protected boolean sortGeoWaveQueryRanges = false;
+    
+    /**
+     * Used to determine how many ranges the ThreadedRangeBundler should buffer before returning a range to the caller
+     */
+    protected int numRangesToBuffer = 0;
+    
+    /**
+     * Used to determine how long to allow the ThreadedRangeBundler to buffer ranges before returning a range to the caller
+     */
+    protected long rangeBufferTimeoutMillis = 0;
+    
+    /**
+     * Used to determine the poll interval when buffering ranges in ThreadedRangeBundler
+     */
+    protected long rangeBufferPollMillis = 100;
+    
     public ShardQueryConfiguration() {
         query = new QueryImpl();
     }
@@ -528,6 +561,38 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
         this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
+    }
+    
+    public boolean isSortGeoWaveQueryRanges() {
+        return sortGeoWaveQueryRanges;
+    }
+    
+    public void setSortGeoWaveQueryRanges(boolean sortGeoWaveQueryRanges) {
+        this.sortGeoWaveQueryRanges = sortGeoWaveQueryRanges;
+    }
+    
+    public int getNumRangesToBuffer() {
+        return numRangesToBuffer;
+    }
+    
+    public void setNumRangesToBuffer(int numRangesToBuffer) {
+        this.numRangesToBuffer = numRangesToBuffer;
+    }
+    
+    public long getRangeBufferTimeoutMillis() {
+        return rangeBufferTimeoutMillis;
+    }
+    
+    public void setRangeBufferTimeoutMillis(long rangeBufferTimeoutMillis) {
+        this.rangeBufferTimeoutMillis = rangeBufferTimeoutMillis;
+    }
+    
+    public long getRangeBufferPollMillis() {
+        return rangeBufferPollMillis;
+    }
+    
+    public void setRangeBufferPollMillis(long rangeBufferPollMillis) {
+        this.rangeBufferPollMillis = rangeBufferPollMillis;
     }
     
     public Boolean getUseFilters() {
@@ -1504,6 +1569,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.setDebugMultithreadedSources(copy.isDebugMultithreadedSources());
         
         this.setDataQueryExpressionFilterEnabled(copy.isDataQueryExpressionFilterEnabled());
+        
+        this.setSortGeoWaveQueryRanges(copy.isSortGeoWaveQueryRanges());
+        this.setNumRangesToBuffer(copy.getNumRangesToBuffer());
+        this.setRangeBufferTimeoutMillis(copy.getRangeBufferTimeoutMillis());
+        this.setRangeBufferPollMillis(copy.getRangeBufferPollMillis());
         
         this.setSortedUIDs(copy.isSortedUIDs());
     }
