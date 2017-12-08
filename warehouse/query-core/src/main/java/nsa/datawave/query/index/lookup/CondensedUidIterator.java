@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import nsa.datawave.query.rewrite.Constants;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -212,6 +213,11 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
         Range seekRange = range;
         if (!range.isStartKeyInclusive()) {
             seekRange = skipKey(range);
+            if (seekRange == null) {
+                // skipKey() resulted in a Key beyond the current end Key, reset to ensure hasNext() = false and return
+                tk = null;
+                return;
+            }
         }
         
         src.seek(seekRange, columnFamilies, inclusive);
@@ -222,13 +228,18 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
     /**
      * Method that ensures if we have to skip the current key, we do so with the contract provided by the create UID iterator.
      * 
-     * @param startKey
+     * @param range
+     *            the seek range
+     * @return the new seek range or null if no range is possible
      */
     protected Range skipKey(Range range) {
         Key startKey = range.getStartKey();
-        Key newKey = new Key(startKey.getRow(), startKey.getColumnFamily(), new Text(startKey.getColumnQualifier() + "\u0000\uffff"));
-        return new Range(newKey, true, range.getEndKey(), range.isEndKeyInclusive());
+        Key newKey = new Key(startKey.getRow(), startKey.getColumnFamily(), new Text(startKey.getColumnQualifier() + Constants.MAX_UNICODE_STRING));
+        if (range.getEndKey().compareTo(newKey) <= 0) {
+            return null;
+        }
         
+        return new Range(newKey, true, range.getEndKey(), range.isEndKeyInclusive());
     }
     
     @Override
