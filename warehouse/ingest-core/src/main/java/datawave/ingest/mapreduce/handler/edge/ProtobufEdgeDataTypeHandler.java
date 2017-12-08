@@ -10,7 +10,6 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.PrimitiveSink;
 import datawave.data.normalizer.DateNormalizer;
-import datawave.data.type.LcNoDiacriticsType;
 import datawave.edge.protobuf.EdgeData.MetadataValue.Metadata;
 import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeKey.EDGE_FORMAT;
@@ -19,10 +18,8 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.EventMapper;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
@@ -136,7 +133,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected boolean enableMetadata = false;
     protected MarkingFunctions markingFunctions;
     
-    private Map<String,IngestHelperInterface> helpers = null;
     protected Map<String,EdgeDefinitionConfigurationHelper> edges = null;
     
     protected TaskAttemptContext taskAttemptContext = null;
@@ -342,9 +338,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             log.info("Blacklisting of edges is disabled.");
         }
         
-        // instantiate ingest helpers for each type
-        this.setupIngestHelpers(this.taskAttemptContext, registry); // fills out helpers Map
-        
         log.info("Found edge definitions for " + edges.keySet().size() + " data types.");
         
         StringBuffer sb = new StringBuffer();
@@ -451,33 +444,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             return this.blacklistValueLookup.get(EDGE_DEFAULT_DATA_TYPE).contains(fieldValue);
         }
         return false;
-    }
-    
-    protected void setupIngestHelpers(TaskAttemptContext context, TypeRegistry registry) {
-        /**
-         * Set up the ingest helpers for the known datatypes.
-         */
-        helpers = new HashMap<>();
-        for (Type t : registry.values()) {
-            String typeName = t.typeName();
-            IngestHelperInterface helper = t.newIngestHelper();
-            // Just ignore if we don't find an ingest helper for this datatype. We will get an NPE
-            // if anyone looks for the helper for typeName later on, but we shouldn't be getting any
-            // events for that datatype. If we did, then we'll get an NPE and the job will fail,
-            // but previously the job would fail anyway even if the helper came back as null here.
-            if (helper != null) {
-                // Clone the configuration and set the type.
-                Configuration conf = new Configuration(this.taskAttemptContext.getConfiguration());
-                conf.set(DataTypeHelper.Properties.DATA_NAME, typeName);
-                conf.set(t + BaseIngestHelper.DEFAULT_TYPE, LcNoDiacriticsType.class.getName());
-                try {
-                    helper.setup(conf);
-                    helpers.put(typeName, helper);
-                } catch (IllegalArgumentException e) {
-                    log.warn("Configuration not correct for type " + t.typeName() + ". Will not process edges for this type", e);
-                }
-            }
-        }
     }
     
     // used so we don't write duplicate stats entries for events with multiple field values;
@@ -1168,7 +1134,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     @Override
     public IngestHelperInterface getHelper(Type datatype) {
-        return helpers.get(datatype.typeName());
+        return datatype.newIngestHelper(taskAttemptContext.getConfiguration());
     }
     
     /**

@@ -6,7 +6,6 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.DataTypeHelper.Properties;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
@@ -56,7 +55,6 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
     
     protected String tableName = null;
     protected String categoryTableName = null;
-    protected HashMap<Type,IngestHelperInterface> helpers = null;
     protected String[] fieldNames = null;
     protected String[] fieldAliases = null;
     protected String[] fieldOverrides = null;
@@ -64,42 +62,19 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
     protected String[] sCategories = null;
     protected MarkingFunctions markingFunctions;
     
+    protected Configuration conf;
+    
     @Override
     public void setup(TaskAttemptContext context) {
+        conf = context.getConfiguration();
         tableName = ConfigurationHelper.isNull(context.getConfiguration(), ATOM_TABLE_NAME, String.class);
         categoryTableName = tableName + "Categories";
-        helpers = new HashMap<>();
         subCategories = new HashMap<>();
         markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
         
         TypeRegistry.getInstance(context.getConfiguration());
         String[] types = ConfigurationHelper.isNull(context.getConfiguration(), ATOM_TYPES_TO_PROCESS, String[].class);
         // Set up the ingest helpers for the known datatypes.
-        
-        for (String type : types) {
-            Type t = TypeRegistry.getType(type);
-            if (null == t) {
-                log.error("Unknown type: " + type + ".");
-                throw new IllegalArgumentException("Unknown type for registry: " + type);
-            }
-            // Just ignore if we don't find an ingest helper for this datatype. We will get an NPE
-            // if anyone looks for the helper for typeName later on, but we shouldn't be getting any
-            // events for that datatype. If we did, then we'll get an NPE and the job will fail,
-            // but previously the job would fail anyway even if the helper came back as null here.
-            IngestHelperInterface helper = t.newIngestHelper();
-            if (helper != null) {
-                // Clone the configuration and set the type.
-                Configuration conf = new Configuration(context.getConfiguration());
-                conf.set(Properties.DATA_NAME, t.typeName());
-                try {
-                    helper.setup(conf);
-                    helpers.put(t, helper);
-                } catch (IllegalArgumentException e) {
-                    log.error("Configuration not correct for type " + t.typeName() + ".");
-                    throw e;
-                }
-            }
-        }
         
         fieldNames = ConfigurationHelper.isNull(context.getConfiguration(), ATOM_FIELD_NAMES, String[].class);
         // Configuration.getStrings() eats empty values, we don't want to do that. Split it ourselves.
@@ -162,7 +137,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
     
     @Override
     public IngestHelperInterface getHelper(Type datatype) {
-        return helpers.get(datatype);
+        return datatype.getIngestHelper(this.conf);
     }
     
     @Override
@@ -179,8 +154,9 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
                     throws IOException, InterruptedException {
         int count = 0;
         
-        if (!helpers.containsKey(event.getDataType()))
+        if (getHelper(event.getDataType()) == null) {
             return count;
+        }
         
         Text tname = new Text(tableName);
         Set<Key> categories = new HashSet<>();

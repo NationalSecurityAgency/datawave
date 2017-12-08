@@ -4,13 +4,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import datawave.data.hash.UID;
 import datawave.ingest.config.IngestConfiguration;
@@ -21,8 +16,6 @@ import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.MarkingsHelper;
-import datawave.ingest.data.config.DataTypeHelper.Properties;
-import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.ErrorShardedIngestHelper;
@@ -38,7 +31,6 @@ import datawave.marking.MarkingFunctionsFactory;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.DataOutputBuffer;
@@ -128,8 +120,6 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
     
     private byte[] defaultVisibility = null;
     
-    private Map<Type,IngestHelperInterface> helpers = null;
-    
     private Configuration conf = null;
     
     @Override
@@ -140,8 +130,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         
         super.setup(context);
         
-        this.errorHelper = (ErrorShardedIngestHelper) (TypeRegistry.getType("error").newIngestHelper());
-        this.errorHelper.setup(context.getConfiguration());
+        this.errorHelper = (ErrorShardedIngestHelper) (TypeRegistry.getType("error").getIngestHelper(context.getConfiguration()));
         this.errorHelper.setDelegateHelper(this.helper);
         this.helper = this.errorHelper;
         
@@ -165,30 +154,6 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         }
         tableName = conf.get(ERROR_PROP_PREFIX + SHARD_DINDX_NAME);
         setShardDictionaryIndexTableName(tableName == null ? null : new Text(tableName));
-        
-        helpers = new HashMap<>();
-        
-        TypeRegistry registry = TypeRegistry.getInstance(conf);
-        // Set up the ingest helpers for the known datatypes.
-        for (Type t : registry.values()) {
-            // Just ignore if we don't find an ingest helper for this datatype. We will get an NPE
-            // if anyone looks for the helper for typeName later on, but we shouldn't be getting any
-            // events for that datatype. If we did, then we'll get an NPE and the job will fail,
-            // but previously the job would fail anyway even if the helper came back as null here.
-            IngestHelperInterface tHelper = t.newIngestHelper();
-            if (tHelper != null) {
-                // Clone the configuration and set the type.
-                Configuration conf = new Configuration(context.getConfiguration());
-                conf.set(Properties.DATA_NAME, t.typeName());
-                try {
-                    tHelper.setup(conf);
-                    helpers.put(t, tHelper);
-                } catch (IllegalArgumentException e) {
-                    log.error("Configuration not correct for type " + t.typeName() + ".");
-                    throw e;
-                }
-            }
-        }
         
         try {
             defaultVisibility = flatten(markingFunctions.translateToColumnVisibility(markingsHelper.getDefaultMarkings()));
@@ -394,14 +359,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
     
     @Override
     public IngestHelperInterface getHelper(Type datatype) {
-        IngestHelperInterface helper = helpers.get(datatype);
-        if (null == helper) {
-            Configuration conf = new Configuration(this.conf);
-            conf.set(Properties.DATA_NAME, datatype.typeName());
-            helper = datatype.newIngestHelper();
-            helper.setup(conf);
-            helpers.put(datatype, helper);
-        }
+        IngestHelperInterface helper = datatype.getIngestHelper(conf);
         this.errorHelper.setDelegateHelper(helper);
         return this.errorHelper;
     }
