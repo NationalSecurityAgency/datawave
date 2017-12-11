@@ -164,7 +164,7 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
             return key;
         }
     }
-
+    
     @Override
     public Object transform(Object input) {
         if (null == input)
