@@ -824,7 +824,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     }
     
     public Range rangeForTerm(String term, String field, Date start, Date end) {
-        return new Range(new Key(term, field, DateHelper.format(start) + "_"), false, new Key(term, field, DateHelper.format(end) + "_" + '\uffff'), false);
+        return new Range(new Key(term, field, DateHelper.format(start) + "_"), true, new Key(term, field, DateHelper.format(end) + "_" + '\uffff'), false);
     }
     
     public static IteratorSetting makeDataTypeFilter(RefactoredShardQueryConfiguration config, int stackPosition) {

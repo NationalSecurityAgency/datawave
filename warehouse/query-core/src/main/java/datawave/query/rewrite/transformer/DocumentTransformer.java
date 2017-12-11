@@ -53,6 +53,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
@@ -149,6 +150,21 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
         return additionalValues;
     }
     
+    // When a single Ivarator is used during a query on the teserver, we save time by not sorting the UIDs (not necessary for further comparisons).
+    // To ensure that returned keys appear to be in sorted order on the way back we prpend a one-up number to the colFam.
+    // In this edge case, the prepended number needs to be removed.
+    static protected Key correctKey(Key key) {
+        String colFam = key.getColumnFamily().toString();
+        String[] colFamParts = StringUtils.split(colFam, '\0');
+        if (colFamParts.length == 3) {
+            // skip part 0 and return a key with parts 1 & 2 as the colFam
+            return new Key(key.getRow(), new Text(colFamParts[1] + '\0' + colFamParts[2]), key.getColumnQualifier(), key.getColumnVisibility(),
+                            key.getTimestamp());
+        } else {
+            return key;
+        }
+    }
+    
     @Override
     public Object transform(Object input) {
         if (null == input)
@@ -167,7 +183,7 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
             
             Entry<Key,Document> documentEntry = deserializer.apply(entry);
             
-            documentKey = documentEntry.getKey();
+            documentKey = correctKey(documentEntry.getKey());
             
             document = documentEntry.getValue();
             extractMetrics(document, documentKey);
@@ -177,9 +193,9 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
             
             document.debugDocumentSize(documentKey);
             
-            String row = entry.getKey().getRow().toString();
+            String row = documentKey.getRow().toString();
             
-            String colf = entry.getKey().getColumnFamily().toString();
+            String colf = documentKey.getColumnFamily().toString();
             
             int index = colf.indexOf("\0");
             Preconditions.checkArgument(-1 != index);
@@ -189,7 +205,7 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
             
             // We don't have to consult the Document to rebuild the Visibility, the key
             // should have the correct top-level visibility
-            ColumnVisibility eventCV = new ColumnVisibility(entry.getKey().getColumnVisibility());
+            ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
             
             try {
                 
