@@ -50,6 +50,11 @@
             <outputDirectory>accumulo-metrics</outputDirectory>
             <fileMode>0444</fileMode>
         </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/archive/accumulo-geowave</directory>
+            <outputDirectory>accumulo-geowave</outputDirectory>
+            <fileMode>0444</fileMode>
+        </fileSet>
     </fileSets>
     <!--
         The following dependency sets are where you should place any dependencies
