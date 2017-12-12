@@ -1,4 +1,4 @@
-package nsa.datawave.webservice.common.audit;
+package datawave.webservice.common.audit;
 
 import datawave.webservice.common.audit.AuditParameters;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;

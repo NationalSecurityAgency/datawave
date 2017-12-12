@@ -1,4 +1,4 @@
-package nsa.datawave.mr.bulk;
+package datawave.mr.bulk;
 
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.RecordIterator;
