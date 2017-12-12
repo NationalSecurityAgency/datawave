@@ -148,6 +148,14 @@
                   <include>org.springframework:spring-context</include>
                   <include>org.springframework:spring-context-support</include>
                   <include>org.springframework:spring-expression</include>
+                  <!-- For the NGA Geometry code -->
+                  <include>mil.nga.giat:geowave-adapter-vector</include>
+                  <include>mil.nga.giat:geowave-core-geotime</include>
+                  <include>mil.nga.giat:geowave-core-store</include>
+                  <include>mil.nga.giat:geowave-core-index</include>
+                  <include>mil.nga.giat:geowave-core-ingest</include>
+                  <include>com.vividsolutions:jts</include>
+                  <include>com.google.uzaygezen:uzaygezen-core</include>
             </includes>
         </dependencySet>
     </dependencySets>
