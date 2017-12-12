@@ -573,6 +573,14 @@
                                             <include>com.clearspring.analytics:stream</include>
                                             <include>org.apache.lucene:lucene-core</include>
                                             <include>com.timgroup:java-statsd-client</include>
+                                            <!-- For the NGA Geometry code -->
+                                            <include>mil.nga.giat:geowave-adapter-vector</include>
+                                            <include>mil.nga.giat:geowave-core-geotime</include>
+                                            <include>mil.nga.giat:geowave-core-store</include>
+                                            <include>mil.nga.giat:geowave-core-index</include>
+                                            <include>mil.nga.giat:geowave-core-ingest</include>
+                                            <include>com.vividsolutions:jts</include>
+                                            <include>com.google.uzaygezen:uzaygezen-core</include>
                                             <!-- for dependency injection -->
                                             <include>org.springframework:spring-aop</include>
                                             <include>org.springframework:spring-core</include>
