@@ -9,14 +9,18 @@ import org.apache.accumulo.core.client.IteratorSetting;
 public class SeekingQueryPlanner extends DefaultQueryPlanner {
     public static final String MAX_FIELD_HITS_BEFORE_SEEK = "SeekingFilter.maxFieldHitsBeforeSeek";
     public static final String MAX_KEYS_BEFORE_SEEK = "SeekingFilter.maxKeysBeforeSeek";
+    public static final String MAX_KEYS_BEFORE_DATATYPE_SEEK = "SeekingFilter.maxKeysBeforeDataTypeSeek";
     
-    private int maxFieldsBeforeSeek;
-    private int maxKeysBeforeSeek;
+    // default to disabled
+    private int maxFieldsBeforeSeek = -1;
+    private int maxKeysBeforeSeek = -1;
+    private int maxKeysBeforeDataTypeSeek = -1;
     
     @Override
     protected void configureAdditionalOptions(RefactoredShardQueryConfiguration config, IteratorSetting cfg) {
         addOption(cfg, MAX_FIELD_HITS_BEFORE_SEEK, Integer.toString(maxFieldsBeforeSeek), false);
         addOption(cfg, MAX_KEYS_BEFORE_SEEK, Integer.toString(maxKeysBeforeSeek), false);
+        addOption(cfg, MAX_KEYS_BEFORE_DATATYPE_SEEK, Integer.toString(maxKeysBeforeDataTypeSeek), false);
     }
     
     @Override
@@ -24,6 +28,7 @@ public class SeekingQueryPlanner extends DefaultQueryPlanner {
         SeekingQueryPlanner clone = new SeekingQueryPlanner();
         clone.setMaxFieldHitsBeforeSeek(maxFieldsBeforeSeek);
         clone.setMaxKeysBeforeSeek(maxKeysBeforeSeek);
+        clone.setMaxKeysBeforeDataTypeSeek(maxKeysBeforeDataTypeSeek);
         
         return clone;
     }
@@ -34,5 +39,9 @@ public class SeekingQueryPlanner extends DefaultQueryPlanner {
     
     public void setMaxKeysBeforeSeek(int maxKeysBeforeSeek) {
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
+    }
+    
+    public void setMaxKeysBeforeDataTypeSeek(int maxKeysBeforeDataTypeSeek) {
+        this.maxKeysBeforeDataTypeSeek = maxKeysBeforeDataTypeSeek;
     }
 }
