@@ -20,6 +20,16 @@
         <dependency>
             <groupId>mil.nga.giat</groupId>
             <artifactId>geowave-datastore-accumulo</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.accumulo</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     <build>
@@ -55,6 +65,7 @@
                         <phase>prepare-package</phase>
                         <configuration>
                             <outputDirectory>${project.build.outputDirectory}/geowave-deps</outputDirectory>
+                            <includeScope>compile</includeScope>
                         </configuration>
                     </execution>
                 </executions>
