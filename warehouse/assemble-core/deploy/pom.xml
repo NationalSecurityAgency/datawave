@@ -342,26 +342,6 @@
                                     <outputDirectory>${project.build.directory}/archive-tmp</outputDirectory>
                                 </configuration>
                             </execution>
-                            <!-- For the NGA Geometry code -->
-                            <execution>
-                                <id>geowave-dependencies</id>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>nsa.datawave</groupId>
-                                            <artifactId>deploy-geowave</artifactId>
-                                            <classifier>dist</classifier>
-                                            <type>tar.gz</type>
-                                        </artifactItem>
-                                    </artifactItems>
-                                    <includes>**/*.jar</includes>
-                                    <outputDirectory>${project.build.directory}/archive/accumulo-warehouse/lib/ext</outputDirectory>
-                                </configuration>
-                            </execution>
                             <execution>
                                 <id>copy-dependencies</id>
                                 <goals>
@@ -615,6 +595,14 @@
                                             <include>com.clearspring.analytics:stream</include>
                                             <include>org.apache.lucene:lucene-core</include>
                                             <include>com.timgroup:java-statsd-client</include>
+                                            <!-- For the NGA Geometry code -->
+                                            <include>mil.nga.giat:geowave-adapter-vector</include>
+                                            <include>mil.nga.giat:geowave-core-geotime</include>
+                                            <include>mil.nga.giat:geowave-core-store</include>
+                                            <include>mil.nga.giat:geowave-core-index</include>
+                                            <include>mil.nga.giat:geowave-core-ingest</include>
+                                            <include>com.vividsolutions:jts</include>
+                                            <include>com.google.uzaygezen:uzaygezen-core</include>
                                             <!-- for dependency injection -->
                                             <include>org.springframework:spring-aop</include>
                                             <include>org.springframework:spring-core</include>
@@ -658,6 +646,43 @@
                                 <goals>
                                     <goal>rpm</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>geoserver</id>
+            <activation>
+                <property>
+                    <name>geoserver</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <!-- In support of GeoWave tables created by the GeoWaveDataTypeHandler -->
+                            <execution>
+                                <id>geowave-dependencies</id>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>nsa.datawave</groupId>
+                                            <artifactId>deploy-geowave</artifactId>
+                                            <classifier>dist</classifier>
+                                            <type>tar.gz</type>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <includes>**/*.jar</includes>
+                                    <outputDirectory>${project.build.directory}/archive/accumulo-geowave/lib/ext</outputDirectory>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
