@@ -5,6 +5,8 @@ import java.util.Arrays;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -15,12 +17,13 @@ import org.apache.hadoop.mapreduce.RecordReader;
 public class Type implements Comparable<Type> {
     // This is the name of the type which is used to match types, pull appropriate configuration, determine data handlers
     private String name = null, outputName = null;
-    private IngestHelperInterface helper;
     private Class<? extends IngestHelperInterface> helperClass;
     private Class<? extends RecordReader<?,?>> readerClass;
     private String[] defaultDataTypeHandlers;
     private String[] defaultDataTypeFilters;
     private int filterPriority;
+    
+    private static final Map<Type,IngestHelperInterface> helpers = new HashMap<>();
     
     public Type(String name, Class<? extends IngestHelperInterface> helperClass, Class<? extends RecordReader<?,?>> readerClass,
                     String[] defaultDataTypeHandlers, int filterPriority, String[] defaultDataTypeFilters) {
@@ -78,16 +81,25 @@ public class Type implements Comparable<Type> {
     }
     
     public IngestHelperInterface getIngestHelper(Configuration conf) {
-        if (helper == null && helperClass != null) {
-            synchronized (helperClass) {
-                if (helper == null) {
-                    helper = newIngestHelper(conf);
+        if (!helpers.containsKey(this) && helperClass != null) {
+            synchronized (helpers) {
+                if (!helpers.containsKey(this)) {
+                    helpers.put(this, newIngestHelper(conf));
                 }
             }
         }
-        return helper;
+        return helpers.get(this);
     }
     
+    public void clearIngestHelper() {
+        synchronized (helpers) {
+            helpers.remove(this);
+        }
+    }
+    
+    /**
+     * @deprecated
+     */
     public IngestHelperInterface newIngestHelper(Configuration conf) {
         IngestHelperInterface helper = newIngestHelper();
         if (helper != null) {
@@ -98,6 +110,9 @@ public class Type implements Comparable<Type> {
         return helper;
     }
     
+    /**
+     * @deprecated
+     */
     public IngestHelperInterface newIngestHelper() {
         IngestHelperInterface helper = null;
         if (helperClass != null) {
