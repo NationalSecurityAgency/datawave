@@ -40,14 +40,9 @@ public class FieldIndexKeyDataTypeFilter implements Predicate<Key>, SeekingFilte
     protected int maxNextBeforeSeek = -1;
     
     /**
-     * The number of failed keys since the dataType hash was changed, or a key was accepted
+     * The number of failed keys since a key was accepted
      */
     private int nextCount = 0;
-    
-    /**
-     * The last dataType hash
-     */
-    private int lastHash;
     
     public FieldIndexKeyDataTypeFilter(@SuppressWarnings("rawtypes") Iterable datatypes) {
         this(datatypes, -1);
@@ -95,17 +90,11 @@ public class FieldIndexKeyDataTypeFilter implements Predicate<Key>, SeekingFilte
         
         // manage tracking the nextCount if necessary
         if (maxNextBeforeSeek != -1) {
-            int currentHash = bb.hashCode();
             if (applied) {
                 // reset the count on a match
                 nextCount = 0;
-            } else if (currentHash == lastHash) {
-                // same pattern as last time and not a match
-                nextCount++;
             } else {
-                // pattern changed but not a hit, reset the count
-                nextCount = 0;
-                lastHash = currentHash;
+                nextCount++;
             }
         }
         return applied;
