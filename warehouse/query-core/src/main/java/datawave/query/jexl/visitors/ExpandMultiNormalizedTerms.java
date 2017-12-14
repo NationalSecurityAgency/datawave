@@ -277,7 +277,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(fieldName));
             
             try {
-                if (this.helper.getIndexedFields(config.getDatatypeFilter()).contains(fieldName) == false
+                if (dataTypes.isEmpty() && this.helper.getIndexedFields(config.getDatatypeFilter()).contains(fieldName) == false
                                 && this.helper.getAllNormalized().contains(fieldName) == false) {
                     // this is not indexed, so make sure we add a noop type for the query to match against the event value
                     dataTypes.add(new NoOpType());
