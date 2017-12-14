@@ -276,15 +276,6 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(fieldName));
             dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(fieldName));
             
-            try {
-                if (dataTypes.isEmpty() && this.helper.getIndexedFields(config.getDatatypeFilter()).contains(fieldName) == false
-                                && this.helper.getAllNormalized().contains(fieldName) == false) {
-                    // this is not indexed, so make sure we add a noop type for the query to match against the event value
-                    dataTypes.add(new NoOpType());
-                }
-            } catch (Exception ex) {
-                throw new RuntimeException("got exception when using MetadataHelper to get indexed fields ", ex);
-            }
             // Catch the case of the user entering FIELD == null
             if (!dataTypes.isEmpty() && null != literal) {
                 try {

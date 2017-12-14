@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -128,10 +129,12 @@ public class FetchDataTypesVisitor extends BaseVisitor {
                         log.trace("Unindexed numeric field, adding NumberType for " + fieldName);
                     }
                 } else {
-                    // also add the LcNoDiacritics
+                    // add LcNoDiacritics and NoOpType to ensure that we
+                    // query against both forms of the string
                     dataTypes.put(fieldName, new LcNoDiacriticsType());
+                    dataTypes.put(fieldName, new NoOpType());
                     if (log.isTraceEnabled()) {
-                        log.trace("Unindexed field, adding LcNoDiacriticsType for " + fieldName);
+                        log.trace("Unindexed field, adding LcNoDiacriticsType and NoOpType for " + fieldName);
                     }
                 }
             }
