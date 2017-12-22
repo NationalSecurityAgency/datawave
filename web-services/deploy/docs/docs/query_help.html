@@ -1,12 +1,12 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<title>(U) DataWave Web Service Query Documentation - Version ###version###</title>
+	<title>DataWave Web Service Query Documentation - Version ###version###</title>
     <link rel='stylesheet' type='text/css' href='/screen.css' media='screen' />
 </head>
 <body>
-	<h2>(U) Query Overview</h2>
-	<p class="left">(U) The web service allows users to query the warehouse in several different ways. The <a href="apidocs/jaxrsdocs/Query/overview-summary.html">Query</a>
+	<h2>Query Overview</h2>
+	<p class="left">The web service allows users to query the warehouse in several different ways. The <a href="apidocs/jaxrsdocs/Query/overview-summary.html">Query</a>
 	api presents a single set of methods for starting, using, and closing a query. The web service hosts different types of 
 	<a href="/DataWave/Query/listQueryLogic">query logic</a> each with their own response type. Each query has the same lifecycle:
 	<ol class="left">
@@ -17,8 +17,8 @@
 		<li>When the user receives a HTTP 204 response code (No Content), then there are no more results. The user should release the resources associated
 		with their query by calling Query/{queryId}/close</li>
 	</ol>
-	<h3>(U) JEXL Query Syntax</h3>
-	<p class="left">(U) Query logic classes will use different types of syntax for the query string. Most of the queries that retrieve raw events will accept JEXL (default)
+	<h3>JEXL Query Syntax</h3>
+	<p class="left">Query logic classes will use different types of syntax for the query string. Most of the queries that retrieve raw events will accept JEXL (default)
 	or our modified LUCENE syntax. We support a subset of the language elements in the Apache Commons JEXL syntax and we have implemented some of our own
 	custom functions. We support the following JEXL operators:
 	<ul class="left">
@@ -31,18 +31,18 @@
 		<li>=~ (regex)</li>
 		<li>!~ (negative regex)</li>
 	</ul>
-	<p class="left">(U) We have created the following functions, see the examples section below to see their usage:
+	<p class="left">We have created the following functions, see the examples section below to see their usage:
 	<ul class="left">
 		<li>Content functions: phrase(), adjacent(), and within()</li>
 		<li>Geo Functions: within_bounding_box() and within_circle()</li>
 		<li>GeoWave Functions: intersects_bounding_box(), intersects_radius_km(), contains(), covers(), coveredBy(), crosses(), intersects(), overlaps(), and within()
 		<li>Utility Functions: between() and length()</li>
 	</ul>
-	<p class="left">(U) Since JEXL is an expression language and not a text query language, we also added support for unfielded queries. For most of the query
+	<p class="left">Since JEXL is an expression language and not a text query language, we also added support for unfielded queries. For most of the query
 	logic types that query raw events, we have provided the capability to search on any <i>indexed</i> field. To achieve this, the user should
 	submit their query with the field name: <b>_ANYFIELD_</b>. See the examples below for its usage.
-	<h3>(U) LUCENE Query Syntax</h3>
-	<p class="left">(U) We have modified the LUCENE syntax such that the NOT operator is not unary, AND's are not fuzzy, and the implicit operator is the AND not the OR.
+	<h3>LUCENE Query Syntax</h3>
+	<p class="left">We have modified the LUCENE syntax such that the NOT operator is not unary, AND's are not fuzzy, and the implicit operator is the AND not the OR.
 	Our LUCENE syntax has the following form:
 	<pre class="left">
 		ModClause ::= DisjQuery [NOT DisjQuery]*
@@ -63,8 +63,8 @@
 			"quick brown dog"~20 |
 			#FUNCTION(ARG1, ARG2)
 	</pre>
-	<p class="left">(U) Note that to search for punctuation characters within a term, you need to escape it with a backslash.
-	<p class="left">(U) We have also modified the LUCENE syntax to provide support for the JEXL syntax that LUCENE does not support. The table below maps the
+	<p class="left">Note that to search for punctuation characters within a term, you need to escape it with a backslash.
+	<p class="left">We have also modified the LUCENE syntax to provide support for the JEXL syntax that LUCENE does not support. The table below maps the
 	JEXL operators to the supported LUCENE syntax:
 	<br />
 	<table>
@@ -78,25 +78,25 @@
 		<tr class="highlight"><td>filter:occurrence(field,operator,count))</td><td>#OCCURRENCE(field,operator,count)</td></tr>
         <tr><td>filter:timeFunction(field1,field2,operator,equivalence,goal)</td><td>#TIME_FUNCTION(field1,field2,operator,equivalence,goal)</td></tr>
 	</table>
-    <p class="left">(U) Notes:
+    <p class="left">Notes:
     <ol class="left">
-        <li>(U) None of these filter functions can be applied against index-only fields.</li>
-        <li>(U) The occurrence function is used to count the number of instances of a field in the event.  Valid operators are '==' (or '='),'>','>=','<','<=', and '!='. </li>
+        <li>None of these filter functions can be applied against index-only fields.</li>
+        <li>The occurrence function is used to count the number of instances of a field in the event.  Valid operators are '==' (or '='),'>','>=','<','<=', and '!='. </li>
     </ol>
-	<p class="left">(U) Some geo functions are supplied as well that may prove useful although the within_bounding_box function may be done with a simple range comparison (i.e. LAT_LON_USER &lt;= &lt;lat1&gt;_&lt;lon1&gt; and LAT_LON_USER &gt;= &lt;lat2&gt;_&lt;lon2&gt;.</p>
+	<p class="left">Some geo functions are supplied as well that may prove useful although the within_bounding_box function may be done with a simple range comparison (i.e. LAT_LON_USER &lt;= &lt;lat1&gt;_&lt;lon1&gt; and LAT_LON_USER &gt;= &lt;lat2&gt;_&lt;lon2&gt;.</p>
 	<table>
 		<tr><th>JEXL Operator</th><th>LUCENE Operator</th></tr>
 		<tr class="highlight"><td>geo:within_bounding_box(latLonField, lowerLeft, upperRight)</td><td>#GEO(bounding_box, latLonField, 'lowerLeft', 'upperRight')</td></tr>
 		<tr><td>geo:within_bounding_box(lonField, latField, minLon, minLat, maxLon, maxLat)</td><td>#GEO(bounding_box, lonField, latField, minLon, minLat, maxLon, maxLat)</td></tr>
 		<tr class="highlight"><td>geo:within_circle(latLonField, center, radius)</td><td>#GEO(circle, latLonField, center, radius)</td></tr>
 	</table>
-	<p class="left">(U) Notes:
+	<p class="left">Notes:
 	<ol class="left">
-		<li>(U) All lat and lon values are in decimal.</li>
-                <li>(U) The lowerLeft, upperRight, and center are of the form &lt;lat&gt;_&lt;lon&gt; and must be surrounded by single quotes.</li>
-                <li>(U) The radius is in decimal degrees as well.</li>
+		<li>All lat and lon values are in decimal.</li>
+                <li>The lowerLeft, upperRight, and center are of the form &lt;lat&gt;_&lt;lon&gt; and must be surrounded by single quotes.</li>
+                <li>The radius is in decimal degrees as well.</li>
 	</ol>
-    <p class="left">(U) New GeoWave geo functions are available as follows:</p>
+    <p class="left">New GeoWave geo functions are available as follows:</p>
     <table>
         <tr><th>JEXL Operator</th><th>LUCENE Operator</th></tr>
         
@@ -123,16 +123,16 @@
         <tr class="highlight">
         <td>geowave:within(geometryField, Well-Known Text)</td><td>#WITHIN(geometryField, Well-Known Text)</td></tr>
     </table>
- 	<p class="left">(U) Notes:
+ 	<p class="left">Notes:
 	<ol class="left">
-			<li>(U) All lat and lon values are in decimal degrees.</li>
-            <li>(U) The lowerLeft, upperRight, and center are of the form &lt;lat&gt;_&lt;lon&gt; and must be surrounded by single quotes.</li>
-            <li>(U) Geometry is represented according to the Open Geospatial Consortium standard for Well-Known Text. It is in decimal degrees longitude for x, amd latitude for y.  For example, a point at New York can be represented as 'POINT (-74.01 40.71)' and a box at New York can be repesented as 'POLYGON(( -74.1 40.75, -74.1 40.69, -73.9 40.69, -73.9 40.75, -74.1 40.75)); </li>
+			<li>All lat and lon values are in decimal degrees.</li>
+            <li>The lowerLeft, upperRight, and center are of the form &lt;lat&gt;_&lt;lon&gt; and must be surrounded by single quotes.</li>
+            <li>Geometry is represented according to the Open Geospatial Consortium standard for Well-Known Text. It is in decimal degrees longitude for x, amd latitude for y.  For example, a point at New York can be represented as 'POINT (-74.01 40.71)' and a box at New York can be repesented as 'POLYGON(( -74.1 40.75, -74.1 40.69, -73.9 40.69, -73.9 40.75, -74.1 40.75)); </li>
 	</ol>
 	
 	
 	
-	<p class="left">(U) There are some additional functions that are supplied to handle dates more smoothly.  It is intended that the need for these functions
+	<p class="left">There are some additional functions that are supplied to handle dates more smoothly.  It is intended that the need for these functions
     may go away in future versions (<b>bolded</b> parameters are literal, other parameters are substituted with appropriate values):
 	<table>
 		<tr><th>JEXL Operator</th><th>LUCENE Operator</th></tr>
@@ -153,12 +153,12 @@
 		<tr class="highlight"><td>filter:beforeLoadDate(<b>LOAD_DATE</b>, date, date format)</td><td>#LOADED(<b>before</b>, date, date format)</td></tr>
                 <tr><td>filter:timeFunction(<b>DOWNTIME</b>, <b>UPTIME</b>, '-', '>', 2522880000000L)</td><td>#TIME_FUNCTION(<b>DOWNTIME</b>, <b>UPTIME</b>, '-', '>', '2522880000000L')</td></tr>
 	</table>
-	<p class="left">(U) Notes:
+	<p class="left">Notes:
 	<ol class="left">
-        <li>(U) None of these filter functions can be applied against index-only fields.</li>
-		<li>(U) Between functions are inclusive, and the other functions are exclusive of the entered dates.</li>
-		<li>(U) Date formats must be entered in the Java SimpleDateFormat object format.</li>
-		<li>(U) If the entered date format is not specified, then the following list of date formats will be tried:</li>
+        <li>None of these filter functions can be applied against index-only fields.</li>
+		<li>Between functions are inclusive, and the other functions are exclusive of the entered dates.</li>
+		<li>Date formats must be entered in the Java SimpleDateFormat object format.</li>
+		<li>If the entered date format is not specified, then the following list of date formats will be tried:</li>
 		<ul>
 		<li>yyyyMMdd:HH:mm:ss:SSSZ</li>
 		<li>yyyyMMdd:HH:mm:ss:SSS</li>
@@ -188,7 +188,7 @@
 		<li>yyyyMMddHH</li>
 		<li>yyyyMMdd</li>
 		</ul>
-		<li>(U) A special date format of 'e' can be supplied to mean milliseconds since epoch.</li>
+		<li>A special date format of 'e' can be supplied to mean milliseconds since epoch.</li>
 	</ol>
 	<br />
 </body>

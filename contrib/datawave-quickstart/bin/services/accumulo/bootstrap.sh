@@ -31,6 +31,7 @@ maxClientCnxns=100"
 # Accumulo config
 
 # You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
+
 DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-http://apache.cs.utah.edu/accumulo/1.8.1/accumulo-1.8.1-bin.tar.gz}"
 DW_ACCUMULO_DIST="$( downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
@@ -40,10 +41,16 @@ DW_ACCUMULO_PASSWORD="${DW_ACCUMULO_PASSWORD:-secret}"
 
 alias ashell="accumulo shell -u root -p ${DW_ACCUMULO_PASSWORD}"
 
-#DW_ACCUMULO_VFS_DATAWAVE_DIR="/accumulo-datawave-classpath"
-DW_ACCUMULO_VFS_DATAWAVE_DIR=""
+# Note that example configuration is provided for setting up VFS classpath for DataWave jars,
+# but it is disabled by default, as it doesn't really buy you anything on a standalone cluster.
+# To enable, set DW_ACCUMULO_VFS_DATAWAVE_ENABLED to true. If enabled, just be aware that
+# writing all the DataWave jars to HDFS will probably slow down your install significantly
+
+DW_ACCUMULO_VFS_DATAWAVE_ENABLED=${DW_ACCUMULO_VFS_DATAWAVE_ENABLED:-false}
+DW_ACCUMULO_VFS_DATAWAVE_DIR="/accumulo-datawave-classpath"
 
 # accumulo-site.xml (Format: <property-name><space><property-value>{<newline>})
+
 DW_ACCUMULO_SITE_CONF="instance.zookeeper.host localhost:2181
 instance.secret ${DW_ACCUMULO_PASSWORD}
 tserver.memory.maps.max 385M
@@ -52,19 +59,8 @@ tserver.cache.data.size 64M
 tserver.cache.index.size 64M
 trace.token.property.password ${DW_ACCUMULO_PASSWORD}
 trace.user root
+general.vfs.context.classpath.datawave ${DW_HADOOP_DFS_URI}${DW_ACCUMULO_VFS_DATAWAVE_DIR}/.*.jar
 general.classpaths \$ACCUMULO_HOME/lib/accumulo-server.jar,\n\$ACCUMULO_HOME/lib/accumulo-core.jar,\n\$ACCUMULO_HOME/lib/accumulo-start.jar,\n\$ACCUMULO_HOME/lib/accumulo-fate.jar,\n\$ACCUMULO_HOME/lib/accumulo-proxy.jar,\n\$ACCUMULO_HOME/lib/[^.].*.jar,\n\$ZOOKEEPER_HOME/zookeeper[^.].*.jar,\n\$HADOOP_CONF_DIR,\n\$HADOOP_PREFIX/share/hadoop/common/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/common/lib/(?!slf4j)[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/hdfs/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/mapreduce/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/yarn/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/yarn/lib/jersey.*.jar"
-
-# Accumulo Site that sets VFS table classpath context, if desired....
-#DW_ACCUMULO_SITE_CONF="instance.zookeeper.host localhost:2181
-#instance.secret ${DW_ACCUMULO_PASSWORD}
-#tserver.memory.maps.max 385M
-#tserver.memory.maps.native.enabled false
-#tserver.cache.data.size 64M
-#tserver.cache.index.size 64M
-#trace.token.property.password ${DW_ACCUMULO_PASSWORD}
-#trace.user root
-#general.vfs.context.classpath.datawave ${DW_HADOOP_DFS_URI}${DW_ACCUMULO_VFS_DATAWAVE_DIR}/.*.jar
-#general.classpaths \$ACCUMULO_HOME/lib/accumulo-server.jar,\n\$ACCUMULO_HOME/lib/accumulo-core.jar,\n\$ACCUMULO_HOME/lib/accumulo-start.jar,\n\$ACCUMULO_HOME/lib/accumulo-fate.jar,\n\$ACCUMULO_HOME/lib/accumulo-proxy.jar,\n\$ACCUMULO_HOME/lib/[^.].*.jar,\n\$ZOOKEEPER_HOME/zookeeper[^.].*.jar,\n\$HADOOP_CONF_DIR,\n\$HADOOP_PREFIX/share/hadoop/common/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/common/lib/(?!slf4j)[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/hdfs/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/mapreduce/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/yarn/[^.].*.jar,\n\$HADOOP_PREFIX/share/hadoop/yarn/lib/jersey.*.jar"
 
 DW_ACCUMULO_CLIENT_CONF="instance.zookeeper.host=localhost:2181"
 
@@ -150,7 +146,7 @@ function accumuloUninstall() {
        info "ZooKeeper not installed. Nothing to do"
     fi
 
-    [ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG}" ] && rm -f "${DW_ACCUMULO_SERVICE_DIR}"/*.tar.gz
+    [[ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}" || "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_SHORT}" ]] && rm -f "${DW_ACCUMULO_SERVICE_DIR}"/*.tar.gz
 }
 
 function accumuloInstall() {

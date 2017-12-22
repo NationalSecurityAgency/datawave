@@ -42,8 +42,10 @@ echo
 echo "       Start command: datawaveWebStart [-d|--debug]"
 echo "        Stop command: datawaveWebStop"
 echo "      Status command: datawaveWebStatus"
-echo "        Test command: datawaveWebTest [-h|--help] [-v|--verbose] [-wf|--whitelist-files t1.test[,t2.test,..]] [-wt|--whitelist-tests id1[,id2,..]] ..."
+echo "        Test command: datawaveWebTest [-h|--help] ..."
+echo "       Build command: datawaveBuild"
 echo "    Redeploy command: datawaveBuildDeploy"
+echo "       Query command: datawaveQuery [-h|--help] ..."
 echo
 info "See \$DW_CLOUD_HOME/bin/services/datawave/bootstrap-web.sh to view/edit commands as needed"
 

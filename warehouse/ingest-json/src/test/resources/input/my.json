@@ -1,0 +1,112 @@
+{
+  "header_date" : "2017-01-01T01:00:00Z",
+  "header_id" : "ID00000000001",
+  "header_number" : 10,
+  "document_visibility" : "BAR&FOO",
+  "header_text_1" : "This is some header text 01-01",
+  "header_text_2" : "This is some more header text 01-02",
+  "extra_uuid_1" : "4e72d29968e345c2aff48d4eae803290",
+  "extra_uuid_2" : "efa5d0348c494af0b5c7464cc0c92d75",
+  "extra_text" : [
+    "Extra text one 01-01",
+    "Extra text two 01-02",
+    "Extra text three 01-03"
+  ],
+  "misc_date" : [
+    "2017-01-01T01:01:01Z",
+    "2017-02-01T02:02:01Z",
+    "2017-03-01T03:03:03Z"
+  ],
+  "misc_text" : "BOOOO",
+  "nested_object" : {
+    "string_array" : [ "A", "B", "C", "D" ],
+    "nested_object" : {
+       "field" : "This nested object and its parent are ignored unless flattening is enabled",
+       "array" : [ "THIS", "ARRAY", "IS", "IN", "A", "NESTED", "OBJECT" ]
+    }
+  }
+}
+{
+  "id" : "ID00000000005",
+  "rootobject":
+  {
+    "sTrInG1": "string1 text",
+    "boolean": true,
+    "number": 101,
+    "string2": "string2 text",
+    "number2": "20000",
+    "date" : [ "2017-01-01T01:01:01Z", "2017-02-01T02:02:01Z", "2017-03-01T03:03:03Z" ],
+    "randomobject":
+    {
+      "boolean": false,
+      "number": "150",
+      "string": "horse"
+    },
+    "properties":
+    {
+      "array":
+      [
+        {
+          "name": "P1Name",
+          "value": "1",
+          "description": "Description for P1Name"
+        },
+        {
+          "name": "P2Name",
+          "value": "Two",
+          "description": "Description for P2Name"
+        },
+        [ { "name": "InnerPName1", "value": "InnerPValue1" }, { "name": "InnerPName2", "value": "InnerPValue2" } ]
+      ]
+    }
+  },
+  "date" : "2017-01-04T01:00:00Z",
+  "number" : 40,
+  "array" : [ "ITEM1", false, 7, { "more" : "nested", "stuff" : "to deal with" } ]
+}
+{
+  "header_date" : "2017-01-02T02:00:00Z",
+  "header_id" : "ID00000000002",
+  "header_number" : 20,
+  "document_visibility" : "FOO",
+  "header_text_1" : "This is some header text 02-01",
+  "header_text_2" : "This is some more header text 02-02",
+  "extra_uuid_1" : "ae8ac090015346f19c537300631a6359",
+  "extra_uuid_2" : "efa5d0348c494af0b5c7464cc0c92d75",
+  "extra_text" : "Extra text 02-01"
+}
+{
+  "header_date" : "2017-01-03T01:00:00Z",
+  "header_id" : "ID00000000003",
+  "header_number" : 30,
+  "document_visibility" : "BAR",
+  "header_text_1" : "Important random header text 03-01",
+  "header_text_2" : "More random header text 03-02",
+  "extra_uuid_1" : "151da899004e4539b466c5869d902d23",
+  "extra_uuid_2" : "5a11407ba03d4a978bcfbd409ce923d3",
+  "extra_text" : [
+    "Some extra text 03-01",
+    "More extra text two 03-02",
+    "Even more extra text three 03-03"
+  ],
+  "misc_date" : [
+    "2017-04-01T01:01:01Z",
+    "2017-05-01T02:02:01Z",
+    "2017-06-01T03:03:03Z"
+  ]
+}
+{
+  "header_date" : "2017-01-04T01:00:00Z",
+  "header_id" : "ID00000000004",
+  "header_number" : 40,
+  "document_visibility" : "BAR&FOO",
+  "header_text_1" : "HEADER-04-01",
+  "header_text_2" : "HEADER-04-02",
+  "extra_uuid_1" : "0120af85e07e4807976ad7aa20a780b5",
+  "extra_uuid_2" : "ea65668a24ac447a97211aa2cb4ac7bc",
+  "extra_text" : [
+    "EXTRA TEXT 04-01",
+    "EXTRA TEXT 04-02"
+  ],
+  "misc_date" : "2017-07-01T01:01:01Z"
+}

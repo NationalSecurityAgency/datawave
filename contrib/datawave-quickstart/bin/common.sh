@@ -1,11 +1,13 @@
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 source "${BIN_DIR}/logging.sh"
+source "${BIN_DIR}/query.sh"
 
 # Upon uninstall, tarballs will be preserved in place by default.
-# To remove them, use DW_UNINSTALL_RM_BINARIES_FLAG
+# To remove them, use DW_UNINSTALL_RM_BINARIES_FLAG_*
 
-DW_UNINSTALL_RM_BINARIES_FLAG="--remove-binaries"
+DW_UNINSTALL_RM_BINARIES_FLAG_LONG="--remove-binaries"
+DW_UNINSTALL_RM_BINARIES_FLAG_SHORT="-rb"
 
 function register() {
    local servicename="$1"
@@ -34,9 +36,21 @@ function register() {
    DW_CLOUD_SERVICES="${DW_CLOUD_SERVICES} ${servicename}"
 }
 
-function resetDataWaveEnvironment() {
-   # This function will re-source all bootstraps and thus re-register all configured services.
+function resetQuickstartEnvironment() {
+
+   if [ "${1}" == "--hard" ] ; then
+       # The nuclear option...
+       # kill -9 all running services
+       allStop ${1}
+       # Uninstall. All will be erased including downloaded tarballs, although you'll
+       # still be able to opt out before the trigger is pulled here...
+       allUninstall ${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}
+   fi
+
+   # Now we can re-source all bootstraps and thus re-register all configured services.
    # To accomplish that, all we need to do is unset DW_CLOUD_SERVICES and then source env.sh
+
+   # Any missing tarballs will be re-downloaded (and/or re-copied if local) and, wrt DataWave tarballs, rebuilt
 
    DW_CLOUD_SERVICES=""
 
@@ -81,8 +95,6 @@ function downloadTarball() {
       fi
    fi
 }
-
-
 
 function writeSiteXml() {
    # Writes *-site.xml files, such as hdfs-site.xml, accumulo-site.xml, etc...
@@ -233,7 +245,7 @@ Continue?" || return 1
          --keep-data)
             keepData=true
             ;;
-         ${DW_UNINSTALL_RM_BINARIES_FLAG})
+         ${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}|${DW_UNINSTALL_RM_BINARIES_FLAG_SHORT})
             removeBinaries=true
             ;;
          *)
@@ -245,7 +257,7 @@ Continue?" || return 1
    local services=(${DW_CLOUD_SERVICES})
    for servicename in "${services[@]}" ; do
       if [ "${removeBinaries}" == true ] ; then
-         ${servicename}Uninstall ${DW_UNINSTALL_RM_BINARIES_FLAG}
+         ${servicename}Uninstall ${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}
       else
          ${servicename}Uninstall
       fi
@@ -291,3 +303,4 @@ function servicesAreRunning() {
    done
    return 1 # Nothing running
 }
+

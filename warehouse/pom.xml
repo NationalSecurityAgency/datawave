@@ -19,6 +19,7 @@
         <module>query-core</module>
         <module>ingest-configuration</module>
         <module>ingest-csv</module>
+        <module>ingest-json</module>
         <module>regression-testing</module>
         <module>ingest-scripts</module>
         <module>assemble</module>

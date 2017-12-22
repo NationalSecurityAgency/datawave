@@ -1,9 +1,8 @@
 # Sourced by env.sh
 
 DW_MAVEN_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 # You may override DW_MAVEN_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_MAVEN_DIST_URI="${DW_MAVEN_DIST_URI:-http://mirrors.advancedhosters.com/apache/maven/maven-3/3.5.0/binaries/apache-maven-3.5.0-bin.tar.gz}"
+DW_MAVEN_DIST_URI="${DW_MAVEN_DIST_URI:-http://mirror.cogentco.com/pub/apache/maven/maven-3/3.5.2/binaries/apache-maven-3.5.2-bin.tar.gz}"
 DW_MAVEN_DIST="$( basename "${DW_MAVEN_DIST_URI}" )"
 DW_MAVEN_BASEDIR="maven-install"
 DW_MAVEN_SYMLINK="maven"
@@ -72,7 +71,7 @@ function mavenUninstall() {
         info "Maven not installed. Nothing to do"
     fi
 
-    [ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG}" ] && rm -f "${DW_MAVEN_SERVICE_DIR}"/*.tar.gz
+    [[ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}" || "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_SHORT}" ]] && rm -f "${DW_MAVEN_SERVICE_DIR}"/*.tar.gz
 }
 
 function mavenIsRunning() {

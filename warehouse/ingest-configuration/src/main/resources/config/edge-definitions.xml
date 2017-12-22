@@ -14,11 +14,11 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
        This spring context demonstrates setting up edge definitions for the various data types that
        are configured for DataWave Ingest
 
-       In this case, we create edge definitions for the data types registered as data.name == 'mycsv'
+       In this case, we create edge definitions for the data types registered as data.name == 'myjson'
        and data.name == 'wikipedia'
 
        During ingest, this config will be utilized by the ProtobufEdgeDataTypeHandler class, which performs
-       the work of creating edge keys from the incoming data, ie, whenever an incoming record contains a
+       the work of creating edge keys from the incoming data, whenever an incoming record contains a
        field name matching a 'selector' in one or more of the edge definitions below
 
        Additionally, for edge keys to be generated at all, ProtobufEdgeDataTypeHandler must be configured
@@ -26,45 +26,1053 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
        or configured as one of the 'all.handler.classes' in the global data type config, 'all-config.xml'
     -->
 
-    <!-- 'mycsv' edge definitions -->
+    <!-- Note that the bean id's here must match a registered 'data.name' within the DataWave Ingest type registry  -->
 
-    <!-- Note that the bean id here must match a known/registered 'data.name' within the DataWave ingest type registry  -->
-    <bean id="mycsv" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper"
+    <!-- 'myjson' edge definitions -->
+
+    <bean id="myjson" class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper"
           scope="prototype">
-        <!-- (data-driven key component) for a given CSV record, use its FOO_FIELD value for this component of the DataWave edge key  -->
-	    <property name="edgeAttribute2" value="FOO_FIELD"/>
-	    <!-- (data-driven key component) for a given CSV record, use its BAR_FIELD value for this component of the DataWave edge key -->
-	    <property name="edgeAttribute3" value="BAR_FIELD"/>
-	    <!-- (data-driven key component) for a given CSV record, use its EVENT_DATE value for the activity date component of the DataWave edge key  -->
-        <property name="activityDateField" value = "EVENT_DATE"/>
+        <property name="edgeAttribute2" value="NAME"/>
+        <property name="edgeAttribute3" value="ID"/>
+        <property name="activityDateField" value = "PREMIERED"/>
         <property name="edges">
             <list>
+
+                <!-- Create bidirectional edges for each pair of costars in a tv show -->
+
                 <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
-                    <!-- (config-driven key component) for a given CSV record, use this literal value for the "edge type" component of the DataWave edge key -->
-                    <property name="edgeType" value="MY_EDGE_TYPE"/>
-                    <!-- for a given CSV record, create a "bi-directional" edge (i.e., generate both the "FROM-TO" edge and its reverse "TO-FROM" edge) -->
+                    <property name="edgeType" value="TV_COSTARS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <!--
+                               'AllPairs', i.e., create an edge between each pair of items in this list, bidirectional in this case
+
+                               With nested data structures that are ingested with 'grouping' context enabled, we can leverage
+                               that context to pinpoint the exact pairings that we want from anywhere within the nested hierarchy.
+                               Unfortunately though, we don't currently have a way to declare a grouping as unbounded. Therefore,
+                               we statically define them here and assume some reasonable upper bound. E.g., here we're assuming that
+                               a TV show cast will not exceed 35 members. Any in excess of 35 will not be in the graph
+                             -->
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_0.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_1.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_2.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_3.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_4.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_5.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_6.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_7.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_8.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_9.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_10.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_11.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_12.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_13.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_14.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_15.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_16.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_17.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_18.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_19.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_20.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_21.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_22.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_23.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_24.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_25.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_26.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_27.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_28.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_29.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_30.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_31.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_32.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_33.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_34.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+
+                <!--
+
+                 Create bidirectional edges for the tv show's cast. That is, an edge for each show-name/person pair and an edge for each
+                 show-id/person pair
+
+                -->
+
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_SHOW_CAST"/>
+                    <property name="direction" value="bi"/>
+                    <property name="groupPairs">
+                        <!--
+                           'groupPairs', i.e., create an edge between each item in group1 and each item in group 2, bidirectional in this case
+                        -->
+                        <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeGroup">
+                            <property name="group1">
+                                <list>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="NAME"/>
+                                        <property name="relationship" value="SHOW"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="ID"/>
+                                        <property name="relationship" value="SHOW"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                </list>
+                            </property>
+                            <property name="group2">
+                                <list>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_0.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_1.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_2.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_3.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_4.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_5.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_6.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_7.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_8.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_9.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_10.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_11.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_12.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_13.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_14.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_15.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_16.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_17.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_18.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_19.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_20.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_21.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_22.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_23.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_24.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_25.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_26.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_27.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_28.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_29.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_30.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_31.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_32.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_33.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                    <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                        <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_34.PERSON_0.NAME_0"/>
+                                        <property name="relationship" value="PERSON"/>
+                                        <property name="collection" value="TVMAZE_METADATA"/>
+                                    </bean>
+                                </list>
+                            </property>
+                        </bean>
+                    </property>
+                </bean>
+
+                <!-- Create person/character edges -->
+
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
                     <property name="direction" value="bi"/>
                     <property name="AllPairs">
                         <list>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
-                                <property name="selector" value="EDGE_VERTEX_FROM"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex, 
-                                     defined by 'protobufedge.table.relationships' bean below -->
-                                <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource, 
-                                     defined by 'protobufedge.table.collections' bean below-->
-                                <property name="collection" value="CSV_METADATA"/>
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_0.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
-                                <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
-                                <property name="selector" value="EDGE_VERTEX_TO"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex, 
-                                     defined by 'protobufedge.table.relationships' bean below -->
-                                <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource, 
-                                     defined by 'protobufedge.table.collections' bean below-->
-                                <property name="collection" value="CSV_METADATA"/>
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_0.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_1.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_1.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_2.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_2.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_3.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_3.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_4.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_4.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_5.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_5.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_6.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_6.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_7.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_7.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_8.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_8.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_9.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_9.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_10.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_10.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_11.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_11.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_12.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_12.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_13.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_13.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_14.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_14.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_15.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_15.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_16.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_16.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_17.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_17.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_18.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_18.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_19.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_19.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_20.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_20.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_21.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_21.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_22.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_22.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_23.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_23.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_24.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_24.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_25.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_25.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_26.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_26.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_27.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_27.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_28.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_28.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_29.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_29.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_30.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_30.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_31.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_31.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_32.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_32.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_33.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_33.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition">
+                    <property name="edgeType" value="TV_CHARACTERS"/>
+                    <property name="direction" value="bi"/>
+                    <property name="AllPairs">
+                        <list>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_34.PERSON_0.NAME_0"/>
+                                <property name="relationship" value="PERSON"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
+                            </bean>
+                            <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
+                                <property name="selector" value="EMBEDDED_CAST_CHARACTER_NAME.EMBEDDED_0.CAST_34.CHARACTER_0.NAME_0"/>
+                                <property name="relationship" value="CHARACTER"/>
+                                <property name="collection" value="TVMAZE_METADATA"/>
                             </bean>
                         </list>
                     </property>
@@ -233,6 +1241,9 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
         <property name="targetSetClass" value="java.util.HashSet"/>
         <property name="sourceSet">
             <set>
+                <value>PERSON</value>
+                <value>CHARACTER</value>
+                <value>SHOW</value>
                 <value>TO</value>
                 <value>FROM</value>
                 <value>EQUIVALENCE</value>
@@ -257,6 +1268,7 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
         <property name="sourceSet">
             <set>
                 <value>CSV_METADATA</value>
+                <value>TVMAZE_METADATA</value>
                 <value>WIKI_PAGE_METADATA</value>
             </set>
         </property>

@@ -5,19 +5,33 @@
 
     <property>
         <name>file.input.format</name>
-        <value>datawave.ingest.input.reader.raw.RawInputFormat</value>
+        <value>datawave.ingest.csv.mr.input.CSVFileInputFormat</value>
     </property>
 
     <property>
         <name>data.name</name>
         <value>mycsv</value>
-        <description>This is the name of the type of data</description>
+        <description>This is the name of the datatype, which distinguishes it from other types for the purposes of ingest
+            processing and perhaps even for dataflow/transport concerns. As such, this can be used to denote a subtype of
+            some common data format, like CSV files for example, which could originate from any number of sources
+        </description>
     </property>
 
     <property>
         <name>mycsv.output.name</name>
         <value>csv</value>
-        <description>This is the name to use on the data in Accumulo</description>
+        <description>This is the name to use on the data in Accumulo. If not specified, 'data.name' is used by default
+        </description>
+    </property>
+
+    <property>
+        <name>mycsv.ingest.policy.enforcer.class</name>
+        <value>datawave.policy.ExampleIngestPolicyEnforcer</value>
+        <description>Name of the class to use for record-level policy enforcement.
+            (1) datawave.policy.IngestPolicyEnforcer$NoOpIngestPolicyEnforcer will assume all records are valid.
+            (2) datawave.policy.ExampleIngestPolicyEnforcer will perform some validations that you'd probably want
+            to enforce in a production deployment
+        </description>
     </property>
 
     <property>
@@ -319,36 +333,6 @@
     <property>
         <name>mycsv.date.index.type.to.field.map</name>
         <value>MY_DATE_TYPE=MY_DATE</value>
-    </property>
-    
-    <property>
-        <name>mycsv.event.data.type.keys</name>
-        <value>K1,K2</value>
-        <description>DATA_TYPE matching value</description>
-    </property>
-    
-    <property>
-        <name>mycsv.event.data.type.values</name>
-        <value>V1,V2</value>
-        <description>Event type value (compare to position in mycsv.event.data.type.keys)</description>
-    </property>
-    
-    <property>
-        <name>mycsv.data.category.index.tokenize.whitelist.subtype.map</name>
-        <description>
-            Format:
-              datatype=field_1,field_2,field3,field4;
-
-            ONLY USE IN CONJUNCTION WITH A TOKENIZATION BLACKLIST
-
-            If we are using a tokenization blacklist but want to include-only certain fields from specific subtypes we
-            can declare that here.  For example, if  we only want one field tokenized from a subtype, we'd need to
-            enumerate all of the fields we don't want in the blacklist... this could be a lot of fields.  Instead we can
-            do a whitelist on a per subtype basis.
-
-            If the datatype=; is empty, then no fields will be tokenized
-        </description>
-        <value></value>
     </property>
     
 </configuration>

@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+QUICKSTART_DIR="$( dirname "${THIS_DIR}" )"
+
+source "${QUICKSTART_DIR}/bin/logging.sh"
+
 function usage() {
-    echo "  Usage: $( basename ${BASH_SOURCE[0]} ) <image tag name> < -it|-d > [<COMMAND>]"
+    echo "  $( printGreen "Usage:" ) $( basename ${BASH_SOURCE[0]} ) $( printGreen "<image tag name>" ) $( printGreen "< -it|-d >" ) [ $( printGreen "<OPTIONAL-COMMAND>" ) ]"
     echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -it"
     echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -it /bin/bash"
     echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -it datawave-bootstrap.sh --ingest --bash"
     echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -d datawave-bootstrap.sh --ingest --web"
 }
 
-[ -z "$1" ] && usage && exit 1
+[[ -z "$1" || "$1" == "--help" || "$1" == "-h" ]] && usage && exit 0
 
 [ -z "$2" ] && usage && exit 1
 

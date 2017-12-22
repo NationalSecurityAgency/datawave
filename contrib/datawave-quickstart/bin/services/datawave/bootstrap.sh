@@ -17,7 +17,7 @@ DW_DATAWAVE_SOURCE_DIR="$( cd "${DW_DATAWAVE_SERVICE_DIR}/../../../../.." && pwd
 # Accumulo root user with a dynamically generated accumulo-shell script during the DataWave install. Override the
 # default list as needed for whatever your test data requires
 
-DW_DATAWAVE_ACCUMULO_AUTHS="${DW_DATAWAVE_ACCUMULO_AUTHS:-PUBLIC,PRIVATE}"
+DW_DATAWAVE_ACCUMULO_AUTHS="${DW_DATAWAVE_ACCUMULO_AUTHS:-PUBLIC,PRIVATE,FOO,BAR,DEF}"
 
 # Comma-delimited list of web service and Accumulo authorizations to grant the test user. This list will be used to
 # auto-generate the appropriate TestAuthorizationServiceConfiguration.xml entries for the web service. Concatenates
@@ -40,7 +40,7 @@ DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
 
 DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install}"
 
-# Home of any temp data and *.property overrides for this instance of DataWave
+# Home of any temp data and *.properties file overrides for this instance of DataWave
 
 DW_DATAWAVE_DATA_DIR="${DW_CLOUD_DATA}/datawave"
 
@@ -65,7 +65,7 @@ DW_DATAWAVE_TRUSTSTORE_TYPE="${DW_DATAWAVE_TRUSTSTORE_TYPE:-JKS}"
 # Accumulo shell script for initializing whatever we may need in Accumulo for DataWave
 
 DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT:-
-#config -s table.classpath.context=datawave
+config -s table.classpath.context=datawave
 createtable QueryMetrics_m
 setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}
 quit
@@ -223,14 +223,14 @@ function setBuildPropertiesSymlink() {
 
 function generateTestAuthorizationServiceConfig() {
 
-   # The goal here is to write to BUILD_PROPERTIES_FILE all the props required to configure TestAuthorizationService
+   # The goal here is to write to BUILD_PROPERTIES_FILE all the props required to configure TestDatawaveUserService
    # for the 'testUser.p12' cert/user, or whichever cert/user is currently configured.
 
-   # TestAuthorizationService implements datawave.security.authorization.AuthorizationService and retrieves DataWave
-   # user roles/auths from a local file, i.e., Spring bean context 'TestAuthorizationServiceConfiguration.xml', rather
+   # TestDatawaveUserService implements datawave.microservice.authorization.AuthorizationService and retrieves DataWave
+   # user roles/auths from a local file, i.e., Spring bean context 'TestDatawaveUserServiceConfiguration.xml', rather
    # than from an external service
 
-   # We dynamically generate the auth entries for TestAuthorizationServiceConfiguration.xml from $DW_DATAWAVE_USER_AUTHS
+   # We dynamically generate the auth entries for TestDatawaveUserServiceConfiguration.xml from $DW_DATAWAVE_USER_AUTHS
    # and map those entries to the DN given by DW_DATAWAVE_USER_DN
 
    OLD_IFS="$IFS"
@@ -243,7 +243,6 @@ function generateTestAuthorizationServiceConfig() {
    done
 
    echo "security.use.testauthservice=true" >> ${BUILD_PROPERTIES_FILE}
-   echo "security.cdi.alternatives=<class>datawave.security.authorization.TestAuthorizationService</class>"  >> ${BUILD_PROPERTIES_FILE}
    echo "security.testauthservice.context.entry=<value>classpath*:datawave/security/TestDatawaveUserServiceConfiguration.xml</value>" >> ${BUILD_PROPERTIES_FILE}
 
    # TODO: We've transitioned from XML to JSON for auth and role config, so I need to transition loop above
@@ -257,17 +256,18 @@ function generateTestAuthorizationServiceConfig() {
    echo "\\n                 \"issuerDN\": \"${DW_DATAWAVE_ISSUER_DN}\" \\"  >> ${BUILD_PROPERTIES_FILE}
    echo "\\n        }, \\"                                                   >> ${BUILD_PROPERTIES_FILE}
    echo "\\n        \"userType\": \"USER\",\\"                               >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        \"auths\": [ \"PRIVATE\", \"PUBLIC\" ], \\"              >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        \"roles\": [ \"PRIVATE\", \"PUBLIC\", \"Administrator\", \"AuthorizedUser\", \"JBossAdministrator\" ], \\" >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        \"auths\": [ \"PRIVATE\", \"PUBLIC\", \"FOO\", \"BAR\" ], \\"  >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n        \"roles\": [ \"PRIVATE\", \"PUBLIC\", \"FOO\", \"BAR\", \"Administrator\", \"AuthorizedUser\", \"JBossAdministrator\" ], \\" >> ${BUILD_PROPERTIES_FILE}
    echo "\\n        \"roleToAuthMapping\": { \\"                             >> ${BUILD_PROPERTIES_FILE}
    echo "\\n             \"PRIVATE\": [ \"PRIVATE\" ], \\"                   >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n             \"PUBLIC\": [ \"PUBLIC\" ] \\"                      >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n             \"PUBLIC\": [ \"PUBLIC\" ], \\"                      >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n             \"FOO\": [ \"FOO\" ], \\"                            >> ${BUILD_PROPERTIES_FILE}
+   echo "\\n             \"BAR\": [ \"BAR\" ] \\"                            >> ${BUILD_PROPERTIES_FILE}
    echo "\\n            }, \\"                                               >> ${BUILD_PROPERTIES_FILE}
    echo "\\n        \"creationTime\": -1, \\"                                >> ${BUILD_PROPERTIES_FILE}
    echo "\\n        \"expirationTime\": -1 \\"                               >> ${BUILD_PROPERTIES_FILE}
    echo "\\n        } \\"                                                    >> ${BUILD_PROPERTIES_FILE}
    echo "\\n        ]]></value>"                                             >> ${BUILD_PROPERTIES_FILE}
-
 }
 
 function buildRequiredPlugins() {
@@ -315,7 +315,12 @@ function buildDataWave() {
 }
 
 function getDataWaveTarball() {
-   local tarballPattern="$1"
+   # Looks for a DataWave tarball matching the specified pattern and, if found, sets the global 'tarball'
+   # variable to its basename for the caller as expected.
+
+   # If no tarball is found matching the specified pattern, then the DataWave build is kicked off
+
+   local tarballPattern="${1}"
    tarball=""
 
    # Check if the tarball already exists in the plugin directory.
@@ -332,28 +337,32 @@ function getDataWaveTarball() {
 
    ! buildDataWave --verbose && error "Please correct this issue before continuing" && return 1
 
-   # Try to find it after building datawave
+   # Build succeeded. Set global 'tarball' variable for the specified pattern and copy all tarballs into place
+
    tarballPath="$( find "${DW_DATAWAVE_SOURCE_DIR}" -path "${tarballPattern}" -type f | tail -1 )"
-   [ -z "${tarballPath}" ] && error "Failed to find ingest tar file after build" && return 1
+   [ -z "${tarballPath}" ] && error "Failed to find '${tarballPattern}' tar file after build" && return 1
 
    tarball="$( basename "${tarballPath}" )"
-   # Copy tar file to the tarball directory
-   ( cp "${tarballPath}" "${DW_DATAWAVE_SERVICE_DIR}" ) || error "Failed to copy tar file"
 
-   # Go ahead and copy the *other* tarball into place as well
-   copyOtherTarball "${tarballPattern}"
+   # Current caller (ie, either bootstrap-web.sh or bootstrap-ingest.sh) only cares about current $tarball,
+   # but go ahead and copy both tarballs into datawave service dir to satisfy next caller as well
+
+   ! copyDataWaveTarball "${DW_DATAWAVE_INGEST_TARBALL}" && error "Failed to copy DataWave Ingest tarball" && return 1
+   ! copyDataWaveTarball "${DW_DATAWAVE_WEB_TARBALL}" && error "Failed to copy DataWave Web tarball" && return 1
+
+   return 0
 }
 
-function copyOtherTarball() {
-   local tarballPattern="$1"
-   # Specified tarballPattern will have already been copied into place, so just get the other one
-   if [ "${tarballPattern}" == "${DW_DATAWAVE_INGEST_TARBALL}" ] ; then
-      local webserviceTarball="$( find "${DW_DATAWAVE_SOURCE_DIR}" -path "${DW_DATAWAVE_WEB_TARBALL}" -type f | tail -1 )";
-      ( cp "${webserviceTarball}" "${DW_DATAWAVE_SERVICE_DIR}" ) || error "Failed to copy web service tar file"
+function copyDataWaveTarball() {
+   local pattern="${1}"
+   local dwTarball="$( find "${DW_DATAWAVE_SOURCE_DIR}" -path "${pattern}" -type f | tail -1 )";
+   if [ -n "${dwTarball}" ] ; then
+       ! cp "${dwTarball}" "${DW_DATAWAVE_SERVICE_DIR}" && error "Failed to copy '${dwTarball}'" && return 1
    else
-      local ingestTarball="$( find "${DW_DATAWAVE_SOURCE_DIR}" -path "${DW_DATAWAVE_INGEST_TARBALL}" -type f | tail -1 )";
-      ( cp "${ingestTarball}" "${DW_DATAWAVE_SERVICE_DIR}" ) || error "Failed to copy ingest tar file"
+       error "No tar file found matching '${pattern}'"
+       return 1
    fi
+   return 0
 }
 
 # Bootstrap DW ingest and webservice components as needed
@@ -392,7 +401,7 @@ function datawaveUninstall() {
    datawaveIngestUninstall
    datawaveWebUninstall
 
-   [ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG}" ] && rm -f "${DW_DATAWAVE_SERVICE_DIR}"/*.tar.gz
+   [[ "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_LONG}" || "${1}" == "${DW_UNINSTALL_RM_BINARIES_FLAG_SHORT}" ]] && rm -f "${DW_DATAWAVE_SERVICE_DIR}"/*.tar.gz
 }
 
 function datawaveInstall() {
@@ -418,12 +427,16 @@ function datawavePidList() {
 
 function datawaveBuildDeploy() {
    datawaveIsRunning && info "Stopping all DataWave services" && datawaveStop
-   datawaveIsInstalled && info "Uninstalling DataWave" && datawaveUninstall
+   datawaveIsInstalled && info "Uninstalling DataWave" && datawaveUninstall --remove-binaries
 
-   # Now all we need to do is remove the current DW tarballs and reset the environment
-   rm -f ${DW_DATAWAVE_SERVICE_DIR}/datawave*.tar.gz
-
+   resetQuickstartEnvironment
    export DW_REDEPLOY_IN_PROGRESS=true
-   resetDataWaveEnvironment && datawaveInstall
+   datawaveInstall
    export DW_REDEPLOY_IN_PROGRESS=false
+}
+
+function datawaveBuild() {
+   info "Building DataWave"
+   rm -f "${DW_DATAWAVE_SERVICE_DIR}"/datawave*.tar.gz
+   resetQuickstartEnvironment
 }

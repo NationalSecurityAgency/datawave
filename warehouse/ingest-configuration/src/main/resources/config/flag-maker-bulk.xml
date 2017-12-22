@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Example FlagMaker configuration for  -->
+<!--
+   Example FlagMaker configuration for "bulk" ingest, i.e., for outputting rfiles during the IngestJob reduce phase,
+   for bulk import into DataWave's Accumulo tables
+-->
 <flagMakerConfig>
     <flagCfg>
         <dataName>wikipedia</dataName>
-        <folder>wikipedia</folder>
+        <folder>wikipedia-bulk</folder>
         <ingestPool>bulk</ingestPool>
         <distributionArgs>none</distributionArgs>
         <extraIngestArgs>-data.name.override=wikipedia</extraIngestArgs>
@@ -12,11 +15,20 @@
     </flagCfg>
     <flagCfg>
         <dataName>mycsv</dataName>
-        <folder>mycsv</folder>
+        <folder>mycsv-bulk</folder>
         <ingestPool>bulk</ingestPool>
         <distributionArgs>none</distributionArgs>
         <extraIngestArgs>-data.name.override=mycsv</extraIngestArgs>
         <inputFormat>datawave.ingest.csv.mr.input.CSVFileInputFormat</inputFormat>
+        <lifo>false</lifo>
+    </flagCfg>
+    <flagCfg>
+        <dataName>myjson</dataName>
+        <distributionArgs>none</distributionArgs>
+        <folder>myjson-bulk</folder>
+        <ingestPool>bulk</ingestPool>
+        <extraIngestArgs>-data.name.override=myjson</extraIngestArgs>
+        <inputFormat>datawave.ingest.json.mr.input.JsonInputFormat</inputFormat>
         <lifo>false</lifo>
     </flagCfg>
     <defaultCfg>

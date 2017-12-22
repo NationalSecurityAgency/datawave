@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
 
-<!-- Marker property to indicate that we've supplied configuration for the "ALL" type
-     and the event mapper will pick this up and configure the default type handlers
-     for the "ALL" data type. -->
+<!-- The settings provided by this file will be in effect for ALL registered datatypes during ingest -->
+
 <property>
 	<name>all.use.default.type.handlers</name>
 	<value>true</value>
+    <description>Flag to indicate that we've supplied configuration for the special "ALL" type, which
+        tells the event mapper to apply 'all.handler.classes' to each registered datatype</description>
+</property>
+
+<property>
+    <name>all.handler.classes</name>
+    <value>${ALL_HANDLER_CLASSES}</value>
+    <description>Datatype handlers to be utilized by all registered datatypes (in *addition* to any distinct handlers
+        that they may have set independently via their respective *-config.xml files)</description>
 </property>
 
 <property>
@@ -22,18 +30,15 @@
 <property>
     <name>all.data.category.marking.upstream.error</name>
     <value>SOMEDOMAIN=SOMEMARKING</value>
-    <description>If any data comes into the system already tagged with this security marking, then consider it an upstream error which is considered fatal in this system</description>
-</property>
-
-<property>
-	<name>all.handler.classes</name>
-	<value>${ALL_HANDLER_CLASSES}</value>
+    <description>If any record comes into the system with this security marking, then recognize it as an upstream error
+        which is considered to be FATAL in this system</description>
 </property>
 
 <property>
     <name>all.filter.classes</name>
     <value>${ALL_FILTER_CLASSES}</value>
-    <description>This is the chain of context writers that will receive the output of all handlers and higher prioriy content writers</description>
+    <description>This is the chain of context writers that will receive the output of all handlers and
+        higher prioriy content writers</description>
 </property>
 
 <property>
@@ -49,11 +54,15 @@
 </property>
 
 <!-- Set up the default policy enforcer class here, this will be used system wide -->
-<!-- This can be overridden on a type by type basis in each individual datatype's config file-->
+<!-- Additional enforcers can be enabled for specific data types in their respective config files-->
 <property>
     <name>all.ingest.policy.enforcer.class</name>
-    <value>datawave.policy.ExampleIngestPolicyEnforcer</value>
-    <description>Name of the class to use for policy enforcement</description>
+    <value>datawave.policy.IngestPolicyEnforcer$NoOpIngestPolicyEnforcer</value>
+    <description>Name of the class to use for policy enforcement.
+        (1) datawave.policy.IngestPolicyEnforcer$NoOpIngestPolicyEnforcer will assume all records are valid.
+        (2) datawave.policy.ExampleIngestPolicyEnforcer will perform some validations that you'd probably want
+            to enforce for all data in a production deployment
+    </description>
 </property>
 
 <property>

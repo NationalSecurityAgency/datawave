@@ -4,49 +4,70 @@ DW_DATAWAVE_INGEST_SYMLINK="datawave-ingest"
 
 DW_DATAWAVE_INGEST_HOME="${DW_CLOUD_HOME}/${DW_DATAWAVE_INGEST_SYMLINK}"
 
+# Here we define number of desired 'shards', which controls the # of shard table splits in Accumulo and also the # of bulk
+# ingest reducers. Set to 1 for standalone instance, but typically set to the first prime number that is less than the
+# number of available Accumulo tablet servers...
+
+DW_DATAWAVE_INGEST_NUM_SHARDS=1
+
+# Ingest job logs, etc
+
 DW_DATAWAVE_INGEST_LOG_DIR="${DW_DATAWAVE_INGEST_HOME}/logs"
+
+# Ingest configs
 
 DW_DATAWAVE_INGEST_CONFIG_HOME="${DW_DATAWAVE_INGEST_HOME}/config"
 
+# DataWave ingest utilizes a simple password script file to provide any passwords that
+# may be required by various components, allowing for runtime configuration of any necessary
+# passwords. See datawave-ingest/bin/ingest/ingest-env.sh
+
 DW_DATAWAVE_INGEST_PASSWD_FILE="${DW_DATAWAVE_INGEST_CONFIG_HOME}"/ingest-passwd.sh
 
-DW_DATAWAVE_INGEST_FLAGFILE_DIR="${DW_DATAWAVE_DATA_DIR}/flags"
-
-DW_DATAWAVE_INGEST_LOCKFILE_DIR="${DW_DATAWAVE_DATA_DIR}/ingest-lock-files"
-
-DW_DATAWAVE_INGEST_HDFS_BASEDIR="/Ingest"
-
-DW_DATAWAVE_INGEST_TEST_FILE_WIKI="${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml"
-
-DW_DATAWAVE_INGEST_TEST_FILE_CSV="${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-csv/src/test/resources/input/my.csv"
-
-DW_DATAWAVE_INGEST_FLAGMAKER_CONFIGS="${DW_DATAWAVE_INGEST_CONFIG_HOME}/flag-maker-live.xml"
-
-DW_DATAWAVE_INGEST_FLAGMETRICS_DIR="${DW_DATAWAVE_DATA_DIR}/flagMetrics"
-
-DW_DATAWAVE_INGEST_EDGE_DEFINITIONS="config/edge-definitions.xml"
-
-DW_DATAWAVE_INGEST_BULK_DATA_TYPES=""
-
-DW_DATAWAVE_INGEST_LIVE_DATA_TYPES="wikipedia,mycsv"
-
-DW_DATAWAVE_INGEST_NUM_SHARDS=3
-
-# Adding new '-ingestMetricsDisabled' flag to ingest opts here, so that ingest jobs performed
-# on a standalone dev instance without the benefit of hadoop native libs can terminate
-# cleanly, ie, without this error:
-#      Exception in thread "main" java.lang.IllegalArgumentException: SequenceFile doesn't work with GzipCodec without native-hadoop code!
-#	     at org.apache.hadoop.io.SequenceFile$Writer.<init>(SequenceFile.java:1088)
-#	     at org.apache.hadoop.io.SequenceFile$BlockCompressWriter.<init>(SequenceFile.java:1442)
-#	     at org.apache.hadoop.io.SequenceFile.createWriter(SequenceFile.java:275)
-#	     at datawave.ingest.mapreduce.job.IngestJob.writeStats(IngestJob.java:1558)
-DW_DATAWAVE_MAPRED_INGEST_OPTS="-useInlineCombiner -ingestMetricsDisabled"
+# Password script definition...
 
 DW_DATAWAVE_INGEST_PASSWD_SCRIPT="
 export PASSWORD="${DW_ACCUMULO_PASSWORD}"
 export TRUSTSTORE_PASSWORD="${DW_ACCUMULO_PASSWORD}"
 export KEYSTORE_PASSWORD="${DW_ACCUMULO_PASSWORD}"
 "
+
+# Directory to persist *.flag files, when automating ingest job processing via the FlagMaker process
+
+DW_DATAWAVE_INGEST_FLAGFILE_DIR="${DW_DATAWAVE_DATA_DIR}/flags"
+
+# Configuration for the FlagMaker process(es)
+
+DW_DATAWAVE_INGEST_FLAGMAKER_CONFIGS="${DW_DATAWAVE_INGEST_CONFIG_HOME}/flag-maker-live.xml"
+
+# Dir for ingest-related 'pid' files
+
+DW_DATAWAVE_INGEST_LOCKFILE_DIR="${DW_DATAWAVE_DATA_DIR}/ingest-lock-files"
+
+# Base dir for any ingest-related HDFS IO
+
+DW_DATAWAVE_INGEST_HDFS_BASEDIR="/Ingest"
+
+# Example raw data files
+
+DW_DATAWAVE_INGEST_TEST_FILE_WIKI="${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml"
+DW_DATAWAVE_INGEST_TEST_FILE_CSV="${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-csv/src/test/resources/input/my.csv"
+DW_DATAWAVE_INGEST_TEST_FILE_JSON="${DW_DATAWAVE_SOURCE_DIR}/warehouse/ingest-json/src/test/resources/input/tvmaze-api.json"
+DW_DATAWAVE_INGEST_FLAGMETRICS_DIR="${DW_DATAWAVE_DATA_DIR}/flagMetrics"
+
+# Spring bean config defining edges to be created during ingest, for building large, Accumulo-based graph via DataWave
+
+DW_DATAWAVE_INGEST_EDGE_DEFINITIONS="config/edge-definitions.xml"
+
+# Configured data types to be ingested via "live" ingest, ie via low-latency batch mutations into Accumulo tables
+
+DW_DATAWAVE_INGEST_LIVE_DATA_TYPES="wikipedia,mycsv,myjson"
+
+# Configured data types to be ingested via "bulk" ingest, ie via bulk import of RFiles into Accumulo tables
+
+DW_DATAWAVE_INGEST_BULK_DATA_TYPES=""
+
+DW_DATAWAVE_MAPRED_INGEST_OPTS="-useInlineCombiner -ingestMetricsDisabled"
 
 getDataWaveTarball "${DW_DATAWAVE_INGEST_TARBALL}"
 DW_DATAWAVE_INGEST_DIST="${tarball}"
@@ -73,6 +94,7 @@ function datawaveIngestStart() {
 
 function datawaveIngestStop() {
     datawaveIngestIsRunning && eval "${DW_DATAWAVE_INGEST_CMD_STOP}" || echo "DataWave Ingest is already stopped"
+    rm -f "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}"/*.LCK
 }
 
 function datawaveIngestStatus() {
@@ -115,17 +137,19 @@ function datawaveIngestLoadJobCache() {
 
 function datawaveIngestWikipedia() {
 
+   # Uses example ingest config: wikipedia-ingest-config.xml
+
    local wikipediaRawFile="${1}"
    local extraOpts="${2}"
 
-   # Here we launch an ingest M/R job directly, via 'bin/ingest/live-ingest.sh', so that we don't have to
+   # Here we launch an ingest M/R job directly via 'bin/ingest/live-ingest.sh', so that we don't have to
    # rely on the DataWave flag maker and other processes to kick it off for us. Thus, the InputFormat class and
    # other options, which are typically configured via the flag maker config (see flag-maker-live.xml)
    # and others, are hardcoded below.
 
    # Alternatively, to accomplish the same thing, you could start up DataWave Ingest with 'datawaveIngestStart'
    # and simply write the raw file(s) to '${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/wikipedia'. However, you'd have to
-   # wait around for the flag maker to pick up and process the raw file(s).
+   # wait for the flag maker to pick up and process the raw file(s).
 
    # Moreover, we use 'live-ingest.sh' here because it offers the least amount of latency, in terms of the time it
    # takes to make the data available for queries. It instructs our 'IngestJob' class to execute a map-only job, which
@@ -151,6 +175,8 @@ function datawaveIngestWikipedia() {
 
 function datawaveIngestCsv() {
 
+   # Uses example ingest config: mycsv-ingest-config.xml
+
    # Same as with datawaveIngestWikipedia, we use live-ingest.sh, but this time to ingest some CSV data.
    # Note that the sample file, my.csv, has records that intentionally generate errors to demonstrate
    # ingest into DataWave's 'error*' tables, which may be used to easily discover and troubleshoot 
@@ -172,19 +198,94 @@ function datawaveIngestCsv() {
    launchIngestJob "${csvRawFile}"
 }
 
+function datawaveIngestJson() {
+
+   # Uses example ingest config: myjson-ingest-config.xml
+
+   # Again we use live-ingest.sh, but this time to ingest some JSON data
+
+   local jsonRawFile="${1}"
+   local extraOpts="${2}"
+
+   [ -z "${jsonRawFile}" ] && error "Missing raw file argument" && return 1
+   [ ! -f "${jsonRawFile}" ] && error "File not found: ${jsonRawFile}" && return 1
+
+   local jsonHdfsDir="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/myjson"
+   local jsonHdfsFile="${jsonHdfsDir}/$( basename ${jsonRawFile} )"
+   local putFileCommand="hdfs dfs -copyFromLocal ${jsonRawFile} ${jsonHdfsDir}"
+
+   local inputFormat="datawave.ingest.json.mr.input.JsonInputFormat"
+   local jobCommand="${DW_DATAWAVE_INGEST_HOME}/bin/ingest/live-ingest.sh ${jsonHdfsFile} ${DW_DATAWAVE_INGEST_NUM_SHARDS} -inputFormat ${inputFormat} -data.name.override=myjson ${extraOpts}"
+
+   launchIngestJob "${jsonRawFile}"
+}
+
 function launchIngestJob() {
 
-   # Should only be invoked by datawaveIngestCsv, datawaveIngestWikipedia, ...
+   # Should only be invoked by datawaveIngestCsv, datawaveIngestWikipedia, datawaveIngestJson...
 
    echo
    info "Initiating DataWave Ingest job for '${1}'"
    info "Loading raw data into HDFS: '${putFileCommand}'"
    ! eval "${putFileCommand}" && error "Failed to load raw data into HDFS" && return 1
    info "Submitting M/R job: '${jobCommand}'"
-   ! eval "${jobCommand}" && warn "Job encountered one or more errors. See job log for details"
-   echo
-   info "You may view M/R job UI here: http://localhost:8088/cluster"
-   echo
+
+   eval "${jobCommand}"
+   DW_LAST_INGEST_JOB_STATUS=$?
+
+   checkForIngestJobErrors
+
+   return ${DW_LAST_INGEST_JOB_STATUS}
+}
+
+function checkForIngestJobErrors() {
+
+    # If possible, drop some helpful hints about any errors encountered and where
+    # to go for more information regarding the ingest job that just completed
+
+    if [ ${DW_LAST_INGEST_JOB_STATUS} != 0 ] ; then
+       warn "The IngestJob class encountered errors (exit status: ${DW_LAST_INGEST_JOB_STATUS}). See job log above for details"
+    else
+       info "The IngestJob class terminated with normal exit status"
+    fi
+
+    echo
+    info "You may view M/R job UI here: http://localhost:8088/cluster"
+    echo
+
+    if [[ -n "${csvRawFile}" && ${DW_LAST_INGEST_JOB_STATUS} == 251 ]] ; then
+
+       # Job had processing errors. If the CSV ingested was our test file, then display some info on the known errors...
+
+       local testCsvMd5=$( md5sum "${DW_DATAWAVE_INGEST_TEST_FILE_CSV}" | cut -d ' ' -f1 )
+       local currentMd5=$( md5sum "${csvRawFile}" | cut -d ' ' -f1 )
+
+       if [ "${testCsvMd5}" == "${currentMd5}" ] ; then
+          local TEST_CSV="$( basename "${DW_DATAWAVE_INGEST_TEST_FILE_CSV}" )"
+          local MISSING_DATA_ERROR="$( printYellow "MISSING_DATA_ERROR" )"
+          local EVENT_FATAL_ERROR="$( printYellow "EVENT_FATAL_ERROR" )"
+          local SUCCEEDED="$( printGreen "SUCCEEDED" )"
+          local EXAMPLE_POLICY_ENFORCER="$( printGreen "datawave.policy.ExampleIngestPolicyEnforcer" )"
+          info "NOTE: Regarding the [$( printYellow "DW-WARN" )] message above and associated errors..."
+          echo
+          echo "    By design, the test file '${TEST_CSV}' should have generated 1 ${EVENT_FATAL_ERROR} and 1"
+          echo "    ${MISSING_DATA_ERROR}, both of which should be reflected in the 'counters' section of the job"
+          echo "    log above. Both are due to one 'bad' CSV record having a null SECURITY_MARKING field. For"
+          echo "    demonstration purposes, we've forced the missing-data error via the class configured to be"
+          echo "    our IngestPolicyEnforcer, which handles record-level validations..."
+          echo
+          echo "    In 'mycsv-ingest-config.xml', note our policy enforcer: ${EXAMPLE_POLICY_ENFORCER}."
+          echo "    As a result, CSV records found to be flagged with ${MISSING_DATA_ERROR} will be evicted and"
+          echo "    will not be written to DataWave's primary data schema, i.e., the 'shard*' tables"
+          echo
+          echo "    Thus, the M/R job's 'FinalApplicationStatus' should still be ${SUCCEEDED}, but as a result"
+          echo "    of the errors, you should find that DataWave's 'error*' tables were populated with metadata"
+          echo "    from the invalid record. For more details, scan the 'errorShard' table with Accumulo Shell,"
+          echo "    or query the error schema with DataWave's Query API (see test-web/tests/ErrorEventQuery.test)"
+          echo
+       fi
+   fi
+
 }
 
 function datawaveIngestCreateTableSplits() {
