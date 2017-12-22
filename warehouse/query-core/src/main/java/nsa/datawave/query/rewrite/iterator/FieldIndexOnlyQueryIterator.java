@@ -18,6 +18,7 @@ import nsa.datawave.query.rewrite.iterator.profile.EvaluationTrackingFunction;
 import nsa.datawave.query.rewrite.iterator.profile.QuerySpan;
 import nsa.datawave.query.rewrite.iterator.profile.SourceTrackingIterator;
 import nsa.datawave.query.rewrite.jexl.visitors.SatisfactionVisitor;
+import nsa.datawave.query.rewrite.planner.SeekingQueryPlanner;
 import nsa.datawave.query.util.TypeMetadata;
 import nsa.datawave.util.StringUtils;
 import nsa.datawave.query.rewrite.DocumentSerialization.ReturnType;
@@ -154,7 +155,12 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             if (filterCsv != null && !filterCsv.isEmpty()) {
                 HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
-                this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed);
+                if (options.containsKey(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)) {
+                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, Integer.parseInt(options
+                                    .get(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)));
+                } else {
+                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed);
+                }
                 this.eventEntryKeyDataTypeFilter = new EventKeyDataTypeFilter(tformed);
             } else {
                 this.fieldIndexKeyDataTypeFilter = KeyIdentity.Function;
