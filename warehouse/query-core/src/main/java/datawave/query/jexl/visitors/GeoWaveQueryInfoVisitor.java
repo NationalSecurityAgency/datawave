@@ -79,7 +79,7 @@ public class GeoWaveQueryInfoVisitor extends BaseVisitor {
         
         String literal = op.getLiteralValue().toString();
         
-        // GeoWave terms are hex encoded strings, where the 
+        // GeoWave terms are hex encoded strings, where the
         // first two characters represent the numeric tier
         if (geoFields.contains(fieldName) && literal.length() >= 2)
             queryInfo.addTier(Integer.parseInt(literal.substring(0, 2), 16));

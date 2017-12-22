@@ -12,6 +12,8 @@ import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.predicate.TimeFilter;
+import datawave.query.predicate.SeekingFilter;
+import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
@@ -58,8 +60,10 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     protected Document document;
     protected boolean buildDocument = false;
     protected Predicate<Key> datatypeFilter;
+    protected SeekingFilter dataTypeSeekingFilter;
     protected final FieldIndexAggregator aggregation;
     protected TimeFilter timeFilter;
+    protected SeekingFilter timeSeekingFilter;
     
     /**
      * A convenience constructor that allows all keys to pass through unmodified from the source.
@@ -78,9 +82,15 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         valueMinPrefix = Util.minPrefix(value);
         
         this.datatypeFilter = datatypeFilter;
+        if (datatypeFilter instanceof SeekingFilter) {
+            dataTypeSeekingFilter = (SeekingFilter) datatypeFilter;
+        }
         
         this.source = source;
         this.timeFilter = timeFilter;
+        if (timeFilter instanceof SeekingFilter) {
+            timeSeekingFilter = (SeekingFilter) timeFilter;
+        }
         
         // Build the cf: fi\x00FIELD_NAME
         this.columnFamily = new Text(Constants.FI_PREFIX);
@@ -238,7 +248,13 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                 if (log.isTraceEnabled()) {
                     log.trace("Ignoring key due to not occuring within time filter: " + top);
                 }
-                source.next();
+                Range newRange;
+                if (timeSeekingFilter != null
+                                && (newRange = timeSeekingFilter.getSeekRange(top, this.scanRange.getEndKey(), this.scanRange.isEndKeyInclusive())) != null) {
+                    source.seek(newRange, seekColumnFamilies, includeColumnFamilies);
+                } else {
+                    source.next();
+                }
                 continue;
             }
             
@@ -246,7 +262,13 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                 if (log.isTraceEnabled()) {
                     log.trace("Ignoring key due to not occuring within datatype filter: " + top);
                 }
-                source.next();
+                Range newRange;
+                if (dataTypeSeekingFilter != null
+                                && (newRange = dataTypeSeekingFilter.getSeekRange(top, this.scanRange.getEndKey(), this.scanRange.isEndKeyInclusive())) != null) {
+                    source.seek(newRange, seekColumnFamilies, includeColumnFamilies);
+                } else {
+                    source.next();
+                }
                 continue;
             }
             

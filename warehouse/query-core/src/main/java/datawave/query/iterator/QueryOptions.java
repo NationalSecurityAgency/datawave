@@ -39,6 +39,10 @@ import datawave.query.jexl.HitListArithmetic;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
+import datawave.query.DocumentSerialization.ReturnType;
+import datawave.query.jexl.DefaultArithmetic;
+import datawave.query.planner.SeekingQueryPlanner;
+import datawave.query.predicate.TimeFilter;
 import datawave.query.util.CompositeMetadata;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataProvider;
@@ -1071,7 +1075,12 @@ public class QueryOptions implements OptionDescriber {
                 HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
                 
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
-                this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed);
+                if (options.containsKey(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)) {
+                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, Integer.parseInt(options
+                                    .get(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)));
+                } else {
+                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed);
+                }
                 this.eventEntryKeyDataTypeFilter = new EventKeyDataTypeFilter(tformed);
             } else {
                 this.fieldIndexKeyDataTypeFilter = KeyIdentity.Function;

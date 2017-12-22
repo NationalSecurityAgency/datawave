@@ -1134,7 +1134,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     @Override
     public IngestHelperInterface getHelper(Type datatype) {
-        return datatype.newIngestHelper(taskAttemptContext.getConfiguration());
+        return datatype.getIngestHelper(taskAttemptContext.getConfiguration());
     }
     
     /**

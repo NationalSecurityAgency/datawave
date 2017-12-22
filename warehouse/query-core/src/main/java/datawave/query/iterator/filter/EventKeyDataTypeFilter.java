@@ -3,6 +3,7 @@ package datawave.query.iterator.filter;
 import java.nio.ByteBuffer;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
 
 public class EventKeyDataTypeFilter extends FieldIndexKeyDataTypeFilter {
     
@@ -29,4 +30,15 @@ public class EventKeyDataTypeFilter extends FieldIndexKeyDataTypeFilter {
         return apply(input.getColumnFamily(textBuffer.get()));
     }
     
+    @Override
+    public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
+        // not implemented
+        return null;
+    }
+    
+    @Override
+    public int getMaxNextCount() {
+        // not implemented
+        return -1;
+    }
 }

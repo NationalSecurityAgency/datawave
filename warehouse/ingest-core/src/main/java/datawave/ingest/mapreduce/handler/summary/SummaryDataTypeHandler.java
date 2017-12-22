@@ -1,10 +1,6 @@
 package datawave.ingest.mapreduce.handler.summary;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.google.common.collect.Multimap;
-
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
@@ -25,7 +21,6 @@ import org.apache.log4j.Logger;
 public abstract class SummaryDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
     private static final Logger log = ThreadConfigurableLogger.getLogger(SummaryDataTypeHandler.class);
     
-    private Map<String,IngestHelperInterface> mIngestHelpersCache = null;
     private Configuration mConf = null;
     
     protected abstract Multimap<BulkIngestKey,Value> createEntries(RawRecordContainer record, Multimap<String,NormalizedContentInterface> fields,
@@ -34,7 +29,6 @@ public abstract class SummaryDataTypeHandler<KEYIN> implements DataTypeHandler<K
     @Override
     public void setup(TaskAttemptContext context) {
         Configuration conf = context.getConfiguration();
-        mIngestHelpersCache = new HashMap<>(10);
         TypeRegistry.getInstance(conf);
         mConf = conf;
     }
@@ -56,21 +50,7 @@ public abstract class SummaryDataTypeHandler<KEYIN> implements DataTypeHandler<K
     
     @Override
     public IngestHelperInterface getHelper(Type datatype) {
-        final String typeName = datatype.typeName();
-        if (mIngestHelpersCache.containsKey(typeName)) {
-            return mIngestHelpersCache.get(typeName);
-        } else {
-            IngestHelperInterface ingestHelper = null;
-            try {
-                ingestHelper = TypeRegistry.getType(typeName).getHelperClass().newInstance();
-                ingestHelper.setup(mConf);
-                mIngestHelpersCache.put(typeName, ingestHelper);
-            } catch (Exception e) {
-                log.error("Unable to get an instance of ingest helper class for datatype: " + typeName, e);
-            }
-            return ingestHelper;
-        }
-        
+        return datatype.getIngestHelper(mConf);
     }
     
     @Override

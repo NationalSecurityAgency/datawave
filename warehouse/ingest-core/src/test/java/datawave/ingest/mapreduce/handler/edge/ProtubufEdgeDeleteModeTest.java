@@ -152,6 +152,9 @@ public class ProtubufEdgeDeleteModeTest {
         // Have the data type helper handle our delete configuration...
         //
         
+        // clear out the cached ingest helper
+        type.clearIngestHelper();
+        
         conf.set(BaseIngestHelper.INGEST_MODE_DELETE, "true");
         
         edgeHandler = new ProtobufEdgeDataTypeHandler<>();
