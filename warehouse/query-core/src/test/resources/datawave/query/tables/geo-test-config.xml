@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+    <property>
+        <name>${DATA_TYPE_NAME}.data.category.index</name>
+        <value>${FIELD_NAME}</value>
+    </property>
+
+    <property>
+        <name>${DATA_TYPE_NAME}.${FIELD_NAME}.data.field.type.class</name>
+        <value>datawave.data.type.GeometryType</value>
+    </property>
+
+    <property>
+        <name>${DATA_TYPE_NAME}.ingest.policy.enforcer.class</name>
+        <value>datawave.policy.ExampleIngestPolicyEnforcer</value>
+    </property>
+
+    <property>
+        <name>data.name</name>
+        <value>${DATA_TYPE_NAME}</value>
+    </property>
+
+    <property>
+        <name>ingest.data.types</name>
+        <value>${DATA_TYPE_NAME}</value>
+    </property>
+
+    <property>
+        <name>${DATA_TYPE_NAME}.ingest.helper.class</name>
+        <value>${INGEST_HELPER_CLASS}</value>
+    </property>
+
+    <property>
+        <name>metadata.table.name</name>
+        <value>${METADATA_TABLE_NAME}</value>
+    </property>
+
+    <property>
+        <name>num.shards</name>
+        <value>${NUM_SHARDS}</value>
+    </property>
+
+    <property>
+        <name>sharded.table.names</name>
+        <value>${SHARD_TABLE_NAME},${KNOWLEDGE_SHARD_TABLE_NAME},${ERROR_SHARD_TABLE_NAME}</value>
+        <description>Comma-separated list of tables that need to pull splits from accumulo</description>
+    </property>
+
+    <property>
+        <name>shard.table.name</name>
+        <value>${SHARD_TABLE_NAME}</value>
+    </property>
+
+    <property>
+        <name>shard.table.loader.priority</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>${SHARD_TABLE_NAME}.table.config.class</name>
+        <value>datawave.ingest.table.config.ShardTableConfigHelper</value>
+    </property>
+
+    <property>
+        <name>shard.table.locality.groups</name>
+        <value>fullcontent:d,termfrequency:tf</value>
+        <description>The list of locality groups in the form groupname:columnfamily, comma separated</description>
+    </property>
+
+    <property>
+        <name>shard.global.index.table.name</name>
+        <value>${SHARD_INDEX_TABLE_NAME}</value>
+    </property>
+
+    <property>
+        <name>shard.global.index.table.loader.priority</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>${SHARD_INDEX_TABLE_NAME}.table.config.class</name>
+        <value>datawave.ingest.table.config.ShardTableConfigHelper</value>
+    </property>
+
+    <property>
+        <name>shard.global.rindex.table.name</name>
+        <value>${SHARD_REVERSE_INDEX_TABLE_NAME}</value>
+    </property>
+
+    <property>
+        <name>shard.global.rindex.table.loader.priority</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>${SHARD_REVERSE_INDEX_TABLE_NAME}.table.config.class</name>
+        <value>datawave.ingest.table.config.ShardTableConfigHelper</value>
+    </property>
+
+    <property>
+        <name>markings.setup.iterator.enabled</name>
+        <value>false</value>
+    </property>
+
+    <property>
+        <name>markings.setup.iterator.config</name>
+        <value></value>
+    </property>
+
+    <property>
+        <name>partitioner.category.shardedTables</name>
+        <value>datawave.ingest.mapreduce.partition.BalancedShardPartitioner</value>
+    </property>
+
+    <property>
+        <name>partitioner.category.member.${SHARD_TABLE_NAME}</name>
+        <value>shardedTables</value>
+    </property>
+</configuration>

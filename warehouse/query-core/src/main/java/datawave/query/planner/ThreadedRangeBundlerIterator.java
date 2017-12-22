@@ -1,18 +1,16 @@
 package datawave.query.planner;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
-
+import com.google.common.collect.Lists;
+import datawave.common.util.concurrent.BoundedBlockingQueue;
+import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.query.CloseableIterable;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
+import datawave.common.util.MultiComparator;
 import datawave.query.tld.TLDQueryIterator;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.QueryData;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -20,12 +18,18 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Lists;
-
-import datawave.core.iterators.ColumnQualifierRangeIterator;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * 
@@ -39,7 +43,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     private final long maxRanges;
     private final Query settings;
     
-    private final ArrayBlockingQueue<QueryPlan> rangeQueue;
+    private final BlockingQueue<QueryPlan> rangeQueue;
     
     private QueryData next = null;
     private Object producerLock = new Object();
@@ -49,57 +53,58 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     
     private int producerCount = 0;
     private long rangesProcessed = 0;
-    private int docsToCombine = -1;
+    private int docsToCombine;
     
     private final Text holder = new Text();
     private long eventRanges = 0, shardDatatypeRanges = 0, shardRanges = 0, dayRanges = 0;
     
     private ASTJexlScript queryTree;
     
-    private boolean docSpecificLimitOverride = false;
+    private boolean docSpecificLimitOverride;
     
     protected boolean isTld = false;
     
-    public ThreadedRangeBundlerIterator(QueryData original, ASTJexlScript queryTree, CloseableIterable<QueryPlan> ranges, final long maxRanges,
-                    long maxWaitValue, TimeUnit maxWaitUnit, Query settings, boolean docSpecificLimitOverride) {
-        this(original, queryTree, ranges, maxRanges, -1, maxWaitValue, maxWaitUnit, settings, docSpecificLimitOverride);
-    }
+    protected int numRangesToBuffer;
+    protected long rangeBufferTimeoutMillis;
+    protected long rangeBufferPollMillis;
+    protected long startTimeMillis;
     
-    /**
-     * @param original
-     * @param queryTree
-     * @param ranges
-     * @param maxRanges
-     * @param docToCombine
-     * @param maxWaitValue
-     * @param maxWaitUnit
-     * @param settings
-     * @param docSpecificLimitOverride
-     */
-    public ThreadedRangeBundlerIterator(QueryData original, ASTJexlScript queryTree, CloseableIterable<QueryPlan> ranges, final long maxRanges,
-                    final int docToCombine, long maxWaitValue, TimeUnit maxWaitUnit, Query settings, boolean docSpecificLimitOverride) {
+    private ThreadedRangeBundlerIterator(Builder builder) {
         
-        this.original = original;
+        this.original = builder.getOriginal();
         
         if (isTld(this.original.getSettings())) {
             isTld = true;
         }
-        this.maxRanges = maxRanges;
-        this.settings = settings;
-        this.queryTree = queryTree;
+        this.maxRanges = builder.getMaxRanges();
+        this.settings = builder.getSettings();
+        this.queryTree = builder.getQueryTree();
         
-        this.docsToCombine = docToCombine;
+        this.docsToCombine = builder.getDocsToCombine();
         
-        this.maxWaitValue = maxWaitValue;
-        this.maxWaitUnit = maxWaitUnit;
+        this.maxWaitValue = builder.getMaxWaitValue();
+        this.maxWaitUnit = builder.getMaxWaitUnit();
         
-        this.docSpecificLimitOverride = docSpecificLimitOverride;
+        this.docSpecificLimitOverride = builder.isDocSpecificLimitOverride();
         
         // TODO Make this smarter based on num-concurrent queries, 'max' size of
         // a range, etc
-        rangeQueue = new ArrayBlockingQueue<QueryPlan>((int) maxRanges > 0 ? (int) maxRanges : 1000);
+        int maxCapacity = (int) maxRanges > 0 ? (int) maxRanges : 1000;
+        if (builder.getQueryPlanComparators() != null && !builder.getQueryPlanComparators().isEmpty()) {
+            Comparator<QueryPlan> comparator = (builder.getQueryPlanComparators().size() > 1) ? new MultiComparator<QueryPlan>(
+                            builder.getQueryPlanComparators()) : builder.getQueryPlanComparators().iterator().next();
+            
+            PriorityBlockingQueue<QueryPlan> nonblockingRangeQueue = new PriorityBlockingQueue<>(maxCapacity, comparator);
+            rangeQueue = new BoundedBlockingQueue<QueryPlan>(maxCapacity, nonblockingRangeQueue);
+        } else {
+            rangeQueue = new ArrayBlockingQueue<QueryPlan>(maxCapacity);
+        }
         
-        rangeConsumer = new RangeConsumer(ranges);
+        this.numRangesToBuffer = builder.getNumRangesToBuffer();
+        this.rangeBufferTimeoutMillis = builder.getRangeBufferTimeoutMillis();
+        this.rangeBufferPollMillis = builder.getRangeBufferPollMillis();
+        
+        rangeConsumer = new RangeConsumer(builder.getRanges());
         rangeConsumerThread = new Thread(rangeConsumer);
         if (settings.getId() != null)
             rangeConsumerThread.setName("RangeBundlerIterator for " + settings.getId().toString());
@@ -107,6 +112,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             rangeConsumerThread.setName("RangeBundlerIterator for ");
         rangeConsumerThread.setUncaughtExceptionHandler(settings.getUncaughtExceptionHandler());
         
+        this.startTimeMillis = System.currentTimeMillis();
         rangeConsumerThread.start();
         
     }
@@ -128,6 +134,14 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                     if (log.isTraceEnabled())
                         log.trace(" has next " + rangeQueue.isEmpty() + " is stopped? " + rangeConsumer.isStopped() + " isalive "
                                         + rangeConsumerThread.isAlive());
+                    
+                    // wait until we have a minimum number of ranges buffered OR the buffer is full OR the specified
+                    // amount of time to wait has elapsed OR we have processed all of our ranges before continuing
+                    while (this.rangeQueue.size() < numRangesToBuffer && this.rangeQueue.remainingCapacity() > 0
+                                    && (startTimeMillis + rangeBufferTimeoutMillis) > System.currentTimeMillis() && !rangeConsumer.isStopped()) {
+                        Thread.sleep(rangeBufferPollMillis);
+                    }
+                    
                     QueryPlan plan = this.rangeQueue.poll(this.maxWaitValue, this.maxWaitUnit);
                     if (null == plan) {
                         if (!rangeConsumer.isStopped()) {
@@ -534,6 +548,143 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                 rangeConsumer.stop();
             }
             running = false;
+        }
+    }
+    
+    public static class Builder {
+        protected QueryData original;
+        protected ASTJexlScript queryTree;
+        protected CloseableIterable<QueryPlan> ranges;
+        protected long maxRanges;
+        protected int docsToCombine = -1;
+        protected long maxWaitValue;
+        protected TimeUnit maxWaitUnit;
+        protected Query settings;
+        protected boolean docSpecificLimitOverride = false;
+        protected Collection<Comparator<QueryPlan>> queryPlanComparators = null;
+        protected int numRangesToBuffer = 0;
+        protected long rangeBufferTimeoutMillis = 0;
+        protected long rangeBufferPollMillis = 100;
+        
+        public QueryData getOriginal() {
+            return original;
+        }
+        
+        public Builder setOriginal(QueryData original) {
+            this.original = original;
+            return this;
+        }
+        
+        public ASTJexlScript getQueryTree() {
+            return queryTree;
+        }
+        
+        public Builder setQueryTree(ASTJexlScript queryTree) {
+            this.queryTree = queryTree;
+            return this;
+        }
+        
+        public CloseableIterable<QueryPlan> getRanges() {
+            return ranges;
+        }
+        
+        public Builder setRanges(CloseableIterable<QueryPlan> ranges) {
+            this.ranges = ranges;
+            return this;
+        }
+        
+        public long getMaxRanges() {
+            return maxRanges;
+        }
+        
+        public Builder setMaxRanges(long maxRanges) {
+            this.maxRanges = maxRanges;
+            return this;
+        }
+        
+        public int getDocsToCombine() {
+            return docsToCombine;
+        }
+        
+        public Builder setDocsToCombine(int docsToCombine) {
+            this.docsToCombine = docsToCombine;
+            return this;
+        }
+        
+        public long getMaxWaitValue() {
+            return maxWaitValue;
+        }
+        
+        public Builder setMaxWaitValue(long maxWaitValue) {
+            this.maxWaitValue = maxWaitValue;
+            return this;
+        }
+        
+        public TimeUnit getMaxWaitUnit() {
+            return maxWaitUnit;
+        }
+        
+        public Builder setMaxWaitUnit(TimeUnit maxWaitUnit) {
+            this.maxWaitUnit = maxWaitUnit;
+            return this;
+        }
+        
+        public Query getSettings() {
+            return settings;
+        }
+        
+        public Builder setSettings(Query settings) {
+            this.settings = settings;
+            return this;
+        }
+        
+        public boolean isDocSpecificLimitOverride() {
+            return docSpecificLimitOverride;
+        }
+        
+        public Builder setDocSpecificLimitOverride(boolean docSpecificLimitOverride) {
+            this.docSpecificLimitOverride = docSpecificLimitOverride;
+            return this;
+        }
+        
+        public Collection<Comparator<QueryPlan>> getQueryPlanComparators() {
+            return queryPlanComparators;
+        }
+        
+        public Builder setQueryPlanComparators(Collection<Comparator<QueryPlan>> queryPlanComparators) {
+            this.queryPlanComparators = queryPlanComparators;
+            return this;
+        }
+        
+        public int getNumRangesToBuffer() {
+            return numRangesToBuffer;
+        }
+        
+        public Builder setNumRangesToBuffer(int numRangesToBuffer) {
+            this.numRangesToBuffer = numRangesToBuffer;
+            return this;
+        }
+        
+        public long getRangeBufferTimeoutMillis() {
+            return rangeBufferTimeoutMillis;
+        }
+        
+        public Builder setRangeBufferTimeoutMillis(long rangeBufferTimeoutMillis) {
+            this.rangeBufferTimeoutMillis = rangeBufferTimeoutMillis;
+            return this;
+        }
+        
+        public long getRangeBufferPollMillis() {
+            return rangeBufferPollMillis;
+        }
+        
+        public Builder setRangeBufferPollMillis(long rangeBufferPollMillis) {
+            this.rangeBufferPollMillis = rangeBufferPollMillis;
+            return this;
+        }
+        
+        public ThreadedRangeBundlerIterator build() {
+            return new ThreadedRangeBundlerIterator(this);
         }
     }
 }

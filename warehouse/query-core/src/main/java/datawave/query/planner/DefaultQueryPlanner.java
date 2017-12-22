@@ -10,40 +10,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.PatternSyntaxException;
 import datawave.core.iterators.querylock.QueryLock;
+import datawave.data.type.GeometryType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
-import datawave.query.QueryParameters;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.index.lookup.IndexStream.StreamContext;
-import datawave.query.index.lookup.RangeStream;
-import datawave.query.model.QueryModel;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
+import datawave.query.QueryParameters;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
@@ -51,6 +25,8 @@ import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
+import datawave.query.index.lookup.IndexStream.StreamContext;
+import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
@@ -73,6 +49,7 @@ import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.Negations;
 import datawave.query.jexl.visitors.ParallelIndexExpansion;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -84,20 +61,22 @@ import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.RangeCoalescingVisitor;
 import datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
-import datawave.query.jexl.visitors.Negations;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
+import datawave.query.model.QueryModel;
+import datawave.query.planner.comparator.DefaultQueryPlanComparator;
+import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
 import datawave.query.planner.pushdown.PushDownVisitor;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
-import datawave.query.util.QueryStopwatch;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.QueryStopwatch;
 import datawave.query.util.Tuple2;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -124,6 +103,32 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Random;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.PatternSyntaxException;
 
 public class DefaultQueryPlanner extends QueryPlanner {
     
@@ -175,7 +180,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     /**
      * Number of documents to combine for concurrent evaluation
-     * 
+     *
      */
     protected int docsToCombineForEvaluation = -1;
     
@@ -416,8 +421,43 @@ public class DefaultQueryPlanner extends QueryPlanner {
         // docsToCombineForEvaluation is only enabled when threading is used
         if (config.getMaxEvaluationPipelines() == 1)
             docsToCombineForEvaluation = -1;
-        return new ThreadedRangeBundler(queryData, queryTree, queryRanges.first(), maxRangesPerQueryPiece(), docsToCombineForEvaluation, settings,
-                        docSpecificOverride, maxRangeWaitMillis);
+        
+        // add the geo query comparator to sort by geo range granularity if this is a geo query
+        List<Comparator<QueryPlan>> queryPlanComparators = null;
+        if (config.isSortGeoWaveQueryRanges()) {
+            List<String> geoFields = new ArrayList<String>();
+            for (String fieldName : config.getIndexedFields()) {
+                for (Type type : config.getQueryFieldsDatatypes().get(fieldName)) {
+                    if (type instanceof GeometryType) {
+                        geoFields.add(fieldName);
+                        break;
+                    }
+                }
+            }
+            
+            if (!geoFields.isEmpty()) {
+                queryPlanComparators = new ArrayList<>();
+                queryPlanComparators.add(new GeoWaveQueryPlanComparator(geoFields));
+                queryPlanComparators.add(new DefaultQueryPlanComparator());
+            }
+        }
+        
+        // @formatter:off
+        return new ThreadedRangeBundler.Builder()
+                .setOriginal(queryData)
+                .setQueryTree(queryTree)
+                .setRanges(queryRanges.first())
+                .setMaxRanges(maxRangesPerQueryPiece())
+                .setDocsToCombine(docsToCombineForEvaluation)
+                .setSettings(settings)
+                .setDocSpecificLimitOverride(docSpecificOverride)
+                .setMaxRangeWaitMillis(maxRangeWaitMillis)
+                .setQueryPlanComparators(queryPlanComparators)
+                .setNumRangesToBuffer(config.getNumRangesToBuffer())
+                .setRangeBufferTimeoutMillis(config.getRangeBufferTimeoutMillis())
+                .setRangeBufferPollMillis(config.getRangeBufferPollMillis())
+                .build();
+        // @formatter:on
     }
     
     private void configureIterator(ShardQueryConfiguration config, IteratorSetting cfg, String newQueryString, boolean isFullTable)
@@ -1094,9 +1134,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     /**
      * Load the metadata information.
-     * 
+     *
      * @param fieldToDatatypeMap
-     * 
+     *
      * @param indexedFields
      * @param normalizedFields
      * @param config
@@ -1219,7 +1259,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     /**
      * this is method-injected in QueryLogicFactory.xml to provide a new prototype bean This method's implementation should never be called in production
-     * 
+     *
      * @return
      */
     public QueryModelProvider.Factory getQueryModelProviderFactory() {
@@ -1273,7 +1313,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     /**
      * Adding date filters if the query parameters specify that the dates are to be other than the default
-     * 
+     *
      * @param queryTree
      * @param scannerFactory
      * @param metadataHelper
@@ -1342,7 +1382,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     /**
      * If configured, cap the start of the date range. If configured, throw an exception if the start AND end dates are outside the valid date range.
-     * 
+     *
      * @param config
      */
     protected void capDateRange(ShardQueryConfiguration config) throws DatawaveQueryException {
@@ -1367,7 +1407,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     /**
      * Create a date filter function node:
-     * 
+     *
      * @param dateType
      * @param field
      * @param begin
@@ -1417,7 +1457,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     /**
      * Extend to further configure QueryIterator
-     * 
+     *
      * @param config
      * @param cfg
      */
@@ -1589,7 +1629,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     /**
      * Load the common iterator options for both the optimized and non-optimized query paths. Said options include: enrichers, filters (post-processing and
      * index), unevaluatedExpressions, begin/end datetimes, indexed fields and their normalizers, non-event key column families, and the query string
-     * 
+     *
      * @param config
      * @param cfg
      * @throws DatawaveQueryException
@@ -1704,7 +1744,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     /**
      * Performs a lookup in the global index / reverse index and returns a RangeCalculator
-     * 
+     *
      * @param config
      * @param queryTree
      * @return range calculator
@@ -1735,7 +1775,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     /**
      * Returns a Tuple2&lt;Iterable&lt;Range&gt;,Boolean&gt; whose elements represent the Ranges to use for querying the shard table and whether or not this is
      * a "full-table-scan" query.
-     * 
+     *
      * @param scannerFactory
      * @param metadataHelper
      * @param config
@@ -1837,7 +1877,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     /**
      * Initializes the range stream, whether it is configured to be a different class than the Default Range stream or not.
-     * 
+     *
      * @param config
      * @param scannerFactory
      * @param metadataHelper
@@ -1878,7 +1918,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
     /**
      * Allows us to disable the bounded range and regex conversion. If you only have discrete terms, this is an unncessary step. Provisions have been put into
      * place to allow this to be automated in a future release.
-     * 
+     *
      * @param disableBoundedLookup
      */
     public final void setDisableBoundedLookup(boolean disableBoundedLookup) {
