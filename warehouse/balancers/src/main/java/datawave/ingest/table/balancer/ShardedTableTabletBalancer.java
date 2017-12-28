@@ -5,6 +5,7 @@ import com.google.common.collect.Iterables;
 import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.master.thrift.TabletServerStatus;
 import org.apache.accumulo.core.util.Pair;
+import org.apache.accumulo.server.master.balancer.GroupBalancer;
 import org.apache.accumulo.server.master.state.TServerInstance;
 import org.apache.accumulo.server.master.state.TabletMigration;
 import org.apache.hadoop.io.Text;
