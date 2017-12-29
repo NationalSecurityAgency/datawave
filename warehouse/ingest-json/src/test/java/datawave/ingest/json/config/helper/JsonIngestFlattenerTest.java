@@ -37,8 +37,8 @@ public class JsonIngestFlattenerTest {
         JsonElement jsonElement = parser.parse(json);
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
         
-        //printJson(json);
-        //printMap(fieldMap);
+        // printJson(json);
+        // printMap(fieldMap);
         
         Assert.assertEquals(74, fieldMap.keySet().size());
         Assert.assertEquals(74, fieldMap.values().size());
@@ -57,8 +57,8 @@ public class JsonIngestFlattenerTest {
         JsonElement jsonElement = parser.parse(json);
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
         
-        //printJson(json);
-        //printMap(fieldMap);
+        // printJson(json);
+        // printMap(fieldMap);
         
         Assert.assertEquals(74, fieldMap.keySet().size());
         Assert.assertEquals(74, fieldMap.values().size());
