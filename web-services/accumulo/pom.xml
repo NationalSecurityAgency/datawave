@@ -84,6 +84,14 @@
             <artifactId>accumulo-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.htrace</groupId>
             <artifactId>htrace-core4</artifactId>
         </dependency>
@@ -151,8 +159,24 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>datawave</groupId>
+            <artifactId>in-memory-accumulo</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-auth</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -2,20 +2,18 @@ package datawave.webservice.operations.user;
 
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.exception.AccumuloWebApplicationException;
-import datawave.webservice.exception.UnauthorizedException;
 import datawave.webservice.response.StatsProperties;
 import datawave.webservice.response.StatsResponse;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.log4j.Logger;
-import org.jboss.resteasy.client.ClientRequest;
-import org.jboss.resteasy.client.ClientResponse;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.XMLFilterImpl;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -37,7 +35,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.UnmarshallerHandler;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.StringReader;
-import java.util.List;
 import java.util.Map;
 
 @Path("/Accumulo")
@@ -54,45 +51,46 @@ public class StatsBean {
     @EJB
     private AccumuloConnectionFactory connectionFactory;
     
-    private ZooKeeperInstance instance = null;
     private String accumuloStatsURL = null;
     
     public StatsBean() {
         
     }
     
-    @PermitAll
-    public StatsResponse stats() {
-        
-        if (this.accumuloStatsURL == null) {
-            Connector connection = null;
-            AccumuloConnectionFactory.Priority priority = AccumuloConnectionFactory.Priority.ADMIN;
-            try {
-                Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-                connection = connectionFactory.getConnection(priority, trackingMap);
-                this.instance = (ZooKeeperInstance) connection.getInstance();
-                this.accumuloStatsURL = getStatsURL(instance.getMasterLocations());
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-            } finally {
-                if (connection != null) {
-                    try {
-                        connectionFactory.returnConnection(connection);
-                    } catch (Exception e) {
-                        log.error(e.getMessage(), e);
-                    }
-                }
-            }
-        }
-        
-        StatsResponse response = new StatsResponse();
+    @PostConstruct
+    public void retrieveAccumuloStatsURL() {
         Connector connection = null;
         AccumuloConnectionFactory.Priority priority = AccumuloConnectionFactory.Priority.ADMIN;
-        
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             connection = connectionFactory.getConnection(priority, trackingMap);
             
+            ZooKeeperInstance instance = (ZooKeeperInstance) connection.getInstance();
+            accumuloStatsURL = new AccumuloMonitorLocator().getUrl(instance);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        } finally {
+            if (connection != null) {
+                try {
+                    connectionFactory.returnConnection(connection);
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+        }
+    }
+    
+    @PermitAll
+    public StatsResponse stats() {
+        
+        // Keep re-trying for the stats URL if we couldn't locate it at startup
+        if (this.accumuloStatsURL == null) {
+            retrieveAccumuloStatsURL();
+        }
+        
+        StatsResponse response = new StatsResponse();
+        
+        try {
             Client client = ClientBuilder.newClient();
             WebTarget target = client.target(this.accumuloStatsURL);
             
@@ -124,21 +122,10 @@ public class StatsBean {
                 clientResponse.close();
             }
             
-        } catch (AccumuloSecurityException e) {
-            log.error(e.getMessage(), e);
-            response.addException(e);
-            throw new UnauthorizedException(e, response);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             response.addException(e);
             throw new AccumuloWebApplicationException(e, response);
-        } finally {
-            try {
-                connectionFactory.returnConnection(connection);
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-                response.addException(e);
-            }
         }
     }
     
@@ -154,48 +141,6 @@ public class StatsBean {
     @GET
     public StatsResponse accumuloStats() {
         return stats();
-    }
-    
-    private String getStatsURL(List<String> masterLocations) {
-        String statsURL = null;
-        
-        if (masterLocations.size() == 1) {
-            String s = masterLocations.get(0);
-            int x = s.indexOf(":");
-            if (x >= 0) {
-                s = s.substring(0, x);
-            }
-            statsURL = "http://" + s + ":50095/xml";
-        } else if (masterLocations.size() > 1) {
-            for (String s : masterLocations) {
-                int x = s.indexOf(":");
-                if (x >= 0) {
-                    s = s.substring(0, x);
-                }
-                statsURL = "http://" + s + ":50095/xml";
-                
-                ClientRequest request = new ClientRequest(statsURL);
-                ClientResponse<String> clientResponse = null;
-                
-                int httpStatusCode = 0;
-                try {
-                    clientResponse = request.get(String.class);
-                    Response.Status status = clientResponse.getResponseStatus();
-                    httpStatusCode = status.getStatusCode();
-                } catch (Exception e) {
-                    statsURL = null;
-                } finally {
-                    if (clientResponse != null) {
-                        clientResponse.releaseConnection();
-                    }
-                }
-                
-                if (httpStatusCode != 200) {
-                    continue;
-                }
-            }
-        }
-        return statsURL;
     }
     
     private static class NamespaceFilter extends XMLFilterImpl {
