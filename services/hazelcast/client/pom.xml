@@ -13,6 +13,10 @@
             <artifactId>hazelcast-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-kubernetes</artifactId>
+        </dependency>
+        <dependency>
             <groupId>datawave.microservice</groupId>
             <artifactId>hazelcast-common</artifactId>
         </dependency>

@@ -12,6 +12,10 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-kubernetes</artifactId>
+        </dependency>
+        <dependency>
             <groupId>datawave.microservice</groupId>
             <artifactId>common</artifactId>
         </dependency>

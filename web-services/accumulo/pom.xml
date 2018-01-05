@@ -160,7 +160,7 @@
         </dependency>
         <dependency>
             <groupId>datawave</groupId>
-            <artifactId>in-memory-accumulo</artifactId>
+            <artifactId>datawave-in-memory-accumulo</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
