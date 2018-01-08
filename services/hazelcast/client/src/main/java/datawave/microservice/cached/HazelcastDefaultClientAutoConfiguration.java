@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.ByteArrayInputStream;
@@ -22,6 +23,7 @@ import java.io.ByteArrayInputStream;
 @Configuration
 @ConditionalOnProperty(name = "hazelcast.client.enabled", matchIfMissing = true)
 @ConditionalOnMissingBean(ClientConfig.class)
+@Conditional(HazelcastCacheCondition.class)
 @AutoConfigureBefore(HazelcastAutoConfiguration.class)
 @AutoConfigureAfter({HazelcastDiscoveryClientAutoConfiguration.class, HazelcastK8sClientAutoConfiguration.class,
         HazelcastDiscoveryServiceAutoConfiguration.class})

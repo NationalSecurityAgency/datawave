@@ -14,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
@@ -25,6 +26,7 @@ import java.io.ByteArrayInputStream;
 @Configuration
 @Profile("k8s")
 @ConditionalOnProperty(name = "hazelcast.client.enabled", matchIfMissing = true)
+@Conditional(HazelcastCacheCondition.class)
 @AutoConfigureBefore({HazelcastAutoConfiguration.class, HazelcastDefaultClientAutoConfiguration.class})
 @AutoConfigureAfter(HazelcastDiscoveryServiceAutoConfiguration.class)
 @EnableConfigurationProperties(HazelcastClientProperties.class)
