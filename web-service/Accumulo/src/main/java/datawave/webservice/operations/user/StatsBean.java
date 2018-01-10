@@ -92,7 +92,7 @@ public class StatsBean {
         
         try {
             Client client = ClientBuilder.newClient();
-            WebTarget target = client.target(this.accumuloStatsURL);
+            WebTarget target = client.target("http://" + this.accumuloStatsURL + "/xml");
             
             Response clientResponse = target.request().get();
             try {
