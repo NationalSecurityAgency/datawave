@@ -72,7 +72,7 @@ public class DatawavePrincipal implements Principal, Serializable {
     }
     
     public String[] getDNs() {
-        return proxiedUsers.stream().map(DatawaveUser::getDn).map(SubjectIssuerDNPair::toString).toArray(String[]::new);
+        return proxiedUsers.stream().map(DatawaveUser::getDn).map(SubjectIssuerDNPair::subjectDN).toArray(String[]::new);
     }
     
     public long getCreationTime() {
