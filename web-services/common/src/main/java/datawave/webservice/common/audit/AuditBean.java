@@ -60,6 +60,6 @@ public class AuditBean {
     }
     
     public void audit(AuditParameters msg) throws Exception {
-        auditor.audit(auditParameters);
+        auditor.audit(msg);
     }
 }
