@@ -35,6 +35,21 @@ Configuration:
           max: 10
         PatternLayout:
           pattern: "${LOG_PATTERN}"
+      - name: QueryFile
+        fileName: "${sys:logDir}/all-query-audit.log"
+        filePattern: "${sys:logDir}/all-query-audit.log.%d{yyyy-MM-dd}-%i.gz"
+        append: true
+        bufferedIO: true
+        bufferSize: 8192
+        Policies:
+          TimeBasedTriggeringPolicy:
+            interval: 1
+          SizeBasedTriggeringPolicy:
+            size: 250MB
+        DefaultRolloverStrategy:
+          max: 10
+        PatternLayout:
+          pattern: "${LOG_PATTERN}"
 
   Loggers:
     Root:
@@ -44,3 +59,12 @@ Configuration:
           level: info
         - ref: File
           level: trace
+    Logger:
+      - name: datawave.microservice.audit.log.LogAuditor
+        level: info
+        AppenderRef:
+          - ref: Consol
+            level: info
+          - ref: File
+            level: info
+
