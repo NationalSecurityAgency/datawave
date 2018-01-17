@@ -1529,7 +1529,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 if (null == query) {
                     List<Query> queries = persister.findById(id);
                     if (queries == null || queries.size() != 1) {
-                        throw new NotFoundQueryException(DatawaveErrorCode.INVALID_QUERY_ID, MessageFormat.format("{0}", id));
+                        throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, MessageFormat.format("{0}", id));
                     }
                 }
                 
@@ -1614,7 +1614,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 if (null == query) {
                     List<Query> queries = persister.findById(id);
                     if (queries == null || queries.size() != 1) {
-                        throw new NotFoundQueryException(DatawaveErrorCode.INVALID_QUERY_ID, MessageFormat.format("{0}", id));
+                        throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, MessageFormat.format("{0}", id));
                     }
                 }
                 
@@ -1748,7 +1748,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 if (null == query) {
                     List<Query> queries = persister.findById(id);
                     if (queries == null || queries.size() != 1) {
-                        throw new NotFoundQueryException(DatawaveErrorCode.INVALID_QUERY_ID, MessageFormat.format("{0}", id));
+                        throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, MessageFormat.format("{0}", id));
                     }
                 }
                 
