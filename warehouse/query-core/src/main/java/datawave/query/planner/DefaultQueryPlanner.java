@@ -89,6 +89,8 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
+import io.protostuff.LinkedBuffer;
+import io.protostuff.ProtobufIOUtil;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -114,6 +116,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -129,6 +133,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
+
+import static datawave.query.iterator.QueryOptions.FIELD_INDEX_FILTER_ENABLED;
+import static datawave.query.iterator.QueryOptions.FIELD_INDEX_FILTER_MAPPING;
+import static datawave.query.iterator.QueryOptions.FIELD_INDEX_FILTER_MAPPING_SCHEMA;
 
 public class DefaultQueryPlanner extends QueryPlanner {
     
@@ -242,6 +250,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * Maximum number of sources to open per query.
      */
     protected long sourceLimit = -1;
+    
+    /**
+     * Used to serialize the field index filter mapping so that it can be passed to the QueryIterator
+     */
+    protected LinkedBuffer linkedBuffer;
     
     protected QueryModelProvider.Factory queryModelProviderFactory = new MetadataHelperQueryModelProvider.Factory();
     
@@ -1664,6 +1677,18 @@ public class DefaultQueryPlanner extends QueryPlanner {
             }
         }
         
+        if (config.isFieldIndexFilterEnabled()) {
+            try {
+                String configString = encodeFieldIndexFilterMapping(metadataHelper.getFieldIndexFilterMapByType(), config.getQueryFieldsDatatypes().keySet());
+                if (configString != null && !configString.isEmpty()) {
+                    addOption(cfg, FIELD_INDEX_FILTER_ENABLED, Boolean.toString(config.isFieldIndexFilterEnabled()), false);
+                    addOption(cfg, FIELD_INDEX_FILTER_MAPPING, configString, false);
+                }
+            } catch (TableNotFoundException e) {
+                log.error("Unable to acquire the field index filter mapping from the metadata helper");
+            }
+        }
+        
         // Whitelist and blacklist projection are mutually exclusive. You can't
         // have both.
         if (null != config.getProjectFields() && !config.getProjectFields().isEmpty()) {
@@ -1740,6 +1765,45 @@ public class DefaultQueryPlanner extends QueryPlanner {
         addOption(cfg, QueryOptions.ALLOW_FIELD_INDEX_EVALUATION, Boolean.toString(config.isAllowFieldIndexEvaluation()), false);
         addOption(cfg, QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP, Boolean.toString(config.isAllowTermFrequencyLookup()), false);
         addOption(cfg, QueryOptions.COMPRESS_SERVER_SIDE_RESULTS, Boolean.toString(config.isCompressServerSideResults()), false);
+    }
+    
+    /**
+     * Generates an encoded string which represents a mapping of ingest type to a multimap of fields to filter fields, but only for the fields which are present
+     * for thie query.
+     *
+     * @param fieldIndexFilterMapByType
+     * @param queryFields
+     * @return protobuf encoded representation of the field index filter mapping
+     */
+    protected String encodeFieldIndexFilterMapping(Map<String,Multimap<String,String>> fieldIndexFilterMapByType, Collection<String> queryFields) {
+        String configString = null;
+        Map<String,Multimap<String,String>> generatedMapping = new HashMap<>();
+        for (String ingestType : fieldIndexFilterMapByType.keySet()) {
+            Multimap<String,String> fieldMapping = fieldIndexFilterMapByType.get(ingestType);
+            for (String queryField : queryFields) {
+                if (fieldMapping.containsKey(queryField)) {
+                    Set<String> mappedFields = new HashSet<>(fieldMapping.get(queryField));
+                    mappedFields.retainAll(queryFields);
+                    if (!mappedFields.isEmpty()) {
+                        if (generatedMapping.containsKey(ingestType)) {
+                            generatedMapping.get(ingestType).putAll(queryField, mappedFields);
+                        } else {
+                            Multimap<String,String> fieldMap = HashMultimap.create();
+                            fieldMap.putAll(queryField, mappedFields);
+                            generatedMapping.put(ingestType, fieldMap);
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (!generatedMapping.isEmpty()) {
+            if (linkedBuffer == null)
+                linkedBuffer = LinkedBuffer.allocate();
+            configString = new String(ProtobufIOUtil.toByteArray(generatedMapping, FIELD_INDEX_FILTER_MAPPING_SCHEMA, linkedBuffer));
+            linkedBuffer.clear();
+        }
+        return configString;
     }
     
     /**

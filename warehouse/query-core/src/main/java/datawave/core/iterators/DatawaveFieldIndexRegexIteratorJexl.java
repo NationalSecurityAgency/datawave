@@ -1,13 +1,11 @@
 package datawave.core.iterators;
 
 import com.google.common.base.Predicate;
-import java.io.IOException;
-import java.util.List;
-import java.util.regex.Pattern;
 import datawave.core.iterators.querylock.QueryLock;
+import datawave.query.Constants;
+import datawave.query.iterator.filter.field.index.FieldIndexFilter;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.Constants;
 import datawave.query.predicate.TimeFilter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -18,6 +16,10 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * 
@@ -56,14 +58,15 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
                     long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir,
                     QueryLock queryLock, boolean allowDirReuse) throws JavaRegexParseException {
         this(fieldName, fieldRegex, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
+                        queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true, null);
     }
     
     public DatawaveFieldIndexRegexIteratorJexl(Text fieldName, Text fieldRegex, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
                     long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplits, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs) throws JavaRegexParseException {
+                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs, FieldIndexFilter fieldIndexFilter)
+                    throws JavaRegexParseException {
         super(fieldName, fieldRegex, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplits, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse, returnKeyType, sortedUIDs);
+                        queryLock, allowDirReuse, returnKeyType, sortedUIDs, fieldIndexFilter);
         this.regex = fieldRegex.toString();
         // now fix the fValue to be the part we use for ranges
         JavaRegexAnalyzer analyzer = new JavaRegexAnalyzer(this.regex);

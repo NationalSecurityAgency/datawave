@@ -1,18 +1,10 @@
 package datawave.ingest.metadata;
 
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.IdentityDataType;
 import datawave.TestBaseIngestHelper;
+import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -28,6 +20,16 @@ import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 
 // currently this only tests LoadDate counts
 public class EventMetadataTest {
@@ -115,6 +117,35 @@ public class EventMetadataTest {
         EasyMock.verify(event);
     }
     
+    @Test
+    public void testCreatesFieldIndexFilterEntries() throws IOException {
+        setupMocks();
+        
+        Collection<String> mappedFields = new ArrayList<>();
+        mappedFields.addAll(Arrays.asList("here", "are", "some", "fake", "fields"));
+        
+        helper.addIndexedField(FIELD_NAME_TO_COUNT);
+        helper.addFieldIndexFilterFieldMapping(FIELD_NAME_TO_COUNT, mappedFields);
+        RawRecordMetadata eventMetadata = new EventMetadata(null, METADATA_TABLE_NAME, LOADDATES_TABLE_NAME, INDEX_TABLE_NAME, RINDEX_TABLE_NAME, true);
+        eventMetadata.addEvent(helper, event, createEventFields(), getLoadDateAsMillis());
+        
+        Collection<BulkIngestKey> bulkIngestKeys = getCorrespondingBulkIngestKeys(eventMetadata, METADATA_TABLE_NAME, ColumnFamilyConstants.COLF_FIF);
+        
+        Assert.assertEquals(mappedFields.size(), bulkIngestKeys.size());
+        for (BulkIngestKey bik : bulkIngestKeys) {
+            Assert.assertEquals(METADATA_TABLE_NAME, bik.getTableName());
+            String mappedField = bik.getKey().getRow().toString();
+            Assert.assertTrue(mappedFields.remove(mappedField));
+            String colQual = bik.getKey().getColumnQualifier().toString();
+            String fieldName = colQual.substring(colQual.indexOf('\0') + 1);
+            Assert.assertEquals(FIELD_NAME_TO_COUNT, fieldName);
+        }
+        
+        Assert.assertTrue(mappedFields.isEmpty());
+        
+        EasyMock.verify(event);
+    }
+    
     private void assertFieldNameCountEquals(long expectedCount, Text tableName, String fieldName, RawRecordMetadata eventMetadata) {
         assertCountEquals(expectedCount, tableName, fieldName, eventMetadata, "FIELD_NAME");
     }
@@ -147,6 +178,17 @@ public class EventMetadataTest {
             }
         }
         return null;
+    }
+    
+    private Collection<BulkIngestKey> getCorrespondingBulkIngestKeys(RawRecordMetadata eventMetadata, Text tableName, Text columnFamily) {
+        Collection<BulkIngestKey> bulkIngestKeys = new ArrayList<>();
+        Multimap<BulkIngestKey,Value> bulkMetadata = eventMetadata.getBulkMetadata();
+        for (BulkIngestKey actualBulkIngestKey : bulkMetadata.keySet()) {
+            if (actualBulkIngestKey.getTableName().equals(tableName) && actualBulkIngestKey.getKey().getColumnFamily().equals(columnFamily)) {
+                bulkIngestKeys.add(actualBulkIngestKey);
+            }
+        }
+        return bulkIngestKeys;
     }
     
     private void setupMocks() {

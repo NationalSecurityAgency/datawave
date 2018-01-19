@@ -1,11 +1,12 @@
 package datawave.query.iterator.builder;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import datawave.query.iterator.NestedIterator;
+import org.apache.commons.jexl2.parser.JexlNode;
+
 import java.util.LinkedList;
 import java.util.List;
-
-import datawave.query.iterator.NestedIterator;
-
-import com.google.common.collect.HashMultimap;
 
 /**
  * Provides semantics for adding sources to a nested iterator but deferring the creation of iterator. This is meant to be used in a visitor.
@@ -78,6 +79,14 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
     
     public String getValue() {
         return this.value;
+    }
+    
+    protected Multimap<String,JexlNode> fieldIndexFilterNodes;
+    
+    public void addFieldIndexFilterNode(String fieldName, JexlNode node) {
+        if (fieldIndexFilterNodes == null)
+            fieldIndexFilterNodes = HashMultimap.create();
+        fieldIndexFilterNodes.put(fieldName, node);
     }
     
     /**

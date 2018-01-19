@@ -1,42 +1,32 @@
 package datawave.query.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.CharacterCodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
-
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.cache.Cache;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Sets;
+import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.Type;
 import datawave.iterators.EdgeMetadataCombiner;
 import datawave.iterators.filter.EdgeMetadataCQStrippingIterator;
 import datawave.marking.MarkingFunctions;
-import datawave.query.model.QueryModel;
 import datawave.query.iterator.PowerSet;
+import datawave.query.model.QueryModel;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.util.time.TraceStopwatch;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -66,20 +56,28 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-import com.google.common.cache.Cache;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.SetMultimap;
-import com.google.common.collect.Sets;
-import com.google.protobuf.InvalidProtocolBufferException;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.CharacterCodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
 
 /**
  * <p>
@@ -1141,6 +1139,37 @@ public class MetadataHelper implements ApplicationContextAware {
             }
         }
         return Collections.unmodifiableSet(fields);
+    }
+    
+    /**
+     * Get the field index filter fields for the given ingest type and field.
+     *
+     * @param fieldName
+     * @return
+     * @throws TableNotFoundException
+     */
+    public Collection<String> getFieldIndexFilterFields(String ingestType, String fieldName) throws TableNotFoundException {
+        return this.allFieldMetadataHelper.loadFieldIndexFilterMapByType().get(ingestType).get(fieldName);
+    }
+    
+    /**
+     * Get a mapping of all fields to field index filter fields for the given ingest type.
+     *
+     * @return
+     * @throws TableNotFoundException
+     */
+    public Multimap<String,String> getFieldIndexFilterMap(String ingestType) throws TableNotFoundException {
+        return this.allFieldMetadataHelper.loadFieldIndexFilterMapByType().get(ingestType);
+    }
+    
+    /**
+     * Get a mapping of all fields to field index filter fields for the given ingest type.
+     *
+     * @return
+     * @throws TableNotFoundException
+     */
+    public Map<String,Multimap<String,String>> getFieldIndexFilterMapByType() throws TableNotFoundException {
+        return this.allFieldMetadataHelper.loadFieldIndexFilterMapByType();
     }
     
     /**

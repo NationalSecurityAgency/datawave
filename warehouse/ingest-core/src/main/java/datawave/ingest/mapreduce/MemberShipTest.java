@@ -1,14 +1,12 @@
 package datawave.ingest.mapreduce;
 
+import com.google.common.hash.BloomFilter;
+import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import org.apache.accumulo.core.data.Value;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
-
-import org.apache.accumulo.core.data.Value;
-
-import com.google.common.hash.BloomFilter;
 
 public class MemberShipTest {
     
@@ -24,7 +22,7 @@ public class MemberShipTest {
         return filter;
     }
     
-    public static Value toValue(BloomFilter<?> filter) {
+    public static byte[] toBytes(BloomFilter<?> filter) {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         ObjectOutputStream objOutStream;
         try {
@@ -33,10 +31,17 @@ public class MemberShipTest {
             objOutStream.writeObject(filter);
             objOutStream.close();
             byteStream.close();
-            return new Value(byteStream.toByteArray());
+            return byteStream.toByteArray();
         } catch (IOException e) {
-            return DataTypeHandler.NULL_VALUE;
+            return new byte[] {};
         }
-        
+    }
+    
+    public static Value toValue(BloomFilter<?> filter) {
+        byte[] bloomFilterBytes = toBytes(filter);
+        if (bloomFilterBytes.length > 0)
+            return new Value(bloomFilterBytes);
+        else
+            return DataTypeHandler.NULL_VALUE;
     }
 }

@@ -1,5 +1,13 @@
 package datawave.query.iterator.logic;
 
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
+import datawave.query.attributes.Document;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.Util;
+import datawave.query.iterator.filter.field.index.FieldIndexFilterer;
+import org.apache.commons.jexl2.parser.JexlNode;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -11,12 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.query.iterator.Util;
-import datawave.query.attributes.Document;
-import datawave.query.iterator.NestedIterator;
-
-import com.google.common.collect.TreeMultimap;
-
 /**
  * Performs a deduping merge of iterators.
  *
@@ -24,7 +26,7 @@ import com.google.common.collect.TreeMultimap;
  * 
  * @param <T>
  */
-public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
+public class OrIterator<T extends Comparable<T>> implements NestedIterator<T>, FieldIndexFilterer {
     // temporary stores of uninitialized streams of iterators
     private List<NestedIterator<T>> includes, excludes;
     
@@ -256,4 +258,10 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         return sb.toString();
     }
     
+    @Override
+    public void addFieldIndexFilterNodes(Multimap<String,JexlNode> fieldIndexFilterNodes) {
+        for (NestedIterator include : includes)
+            if (include instanceof FieldIndexFilterer)
+                ((FieldIndexFilterer) include).addFieldIndexFilterNodes(fieldIndexFilterNodes);
+    }
 }

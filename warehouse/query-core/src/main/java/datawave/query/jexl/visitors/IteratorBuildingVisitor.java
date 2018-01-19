@@ -4,30 +4,12 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Set;
 import datawave.core.iterators.SourcePool;
 import datawave.core.iterators.ThreadLocalPooledSource;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.Constants;
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.Constants;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -47,23 +29,26 @@ import datawave.query.iterator.builder.IvaratorBuilder;
 import datawave.query.iterator.builder.NegationBuilder;
 import datawave.query.iterator.builder.OrIteratorBuilder;
 import datawave.query.iterator.builder.TermFrequencyIndexBuilder;
+import datawave.query.iterator.filter.field.index.FieldIndexFilter;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.jexl.ArithmeticJexlEngines;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.LiteralRange.NodeOperand;
-import datawave.query.jexl.DatawaveJexlEngine;
+import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.parser.JavaRegexAnalyzer;
+import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.Filter;
 import datawave.query.predicate.TimeFilter;
-import datawave.query.iterator.SourceManager;
-import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -83,8 +68,12 @@ import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTMethodNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
@@ -100,6 +89,20 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.text.MessageFormat;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -140,6 +143,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected int ivaratorCount = 0;
     
     protected TypeMetadata typeMetadata;
+    protected TypeMetadata typeMetadataWithNonIndexed;
+    protected JexlArithmetic arithmetic = new DefaultArithmetic();
     protected EventDataQueryFilter attrFilter;
     protected Set<String> fieldsToAggregate = Collections.<String> emptySet();
     protected Set<String> termFrequencyFields = Collections.<String> emptySet();
@@ -174,6 +179,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     // SatisfactionVisitor can be changed to accomodate the conditions that
     // caused it.
     protected boolean isQueryFullySatisfied;
+    
+    protected boolean fieldIndexFilterEnabled = false;
+    protected Map<String,Multimap<String,String>> fieldIndexFilterMapByType;
     
     /**
      * Keep track of the iterator environment since we are deep copying
@@ -560,6 +568,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             }
         }
         
+        if (fieldIndexFilterEnabled && data instanceof AndIteratorBuilder)
+            addFieldIndexFilter(node, (AndIteratorBuilder) data);
+        
         return null;
     }
     
@@ -610,6 +621,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
         builder.canBuildDocument(!limitLookup && this.isQueryFullySatisfied);
+        
+        if (fieldIndexFilterEnabled)
+            builder.setFieldIndexFilter(createFieldIndexFilter());
+        
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
@@ -644,6 +659,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                     log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
                 }
             }
+            
+            if (fieldIndexFilterEnabled && data instanceof AndIteratorBuilder)
+                addFieldIndexFilter(node, (AndIteratorBuilder) data);
         }
         
         return null;
@@ -862,6 +880,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
         
+        if (fieldIndexFilterEnabled)
+            builder.setFieldIndexFilter(createFieldIndexFilter());
+        
         return builder.build();
     }
     
@@ -893,6 +914,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
+        
+        if (fieldIndexFilterEnabled)
+            builder.setFieldIndexFilter(createFieldIndexFilter());
         
         node.childrenAccept(this, builder);
         
@@ -976,6 +1000,75 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setValue(node.image);
         
         return null;
+    }
+    
+    @Override
+    public Object visit(ASTGTNode node, Object data) {
+        if (fieldIndexFilterEnabled && data instanceof AndIteratorBuilder)
+            addFieldIndexFilter(node, (AndIteratorBuilder) data);
+        return null;
+    }
+    
+    @Override
+    public Object visit(ASTLTNode node, Object data) {
+        if (fieldIndexFilterEnabled && data instanceof AndIteratorBuilder)
+            addFieldIndexFilter(node, (AndIteratorBuilder) data);
+        return null;
+    }
+    
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        if (fieldIndexFilterEnabled && data instanceof AndIteratorBuilder)
+            addFieldIndexFilter(node, (AndIteratorBuilder) data);
+        return null;
+    }
+    
+    @Override
+    public Object visit(ASTLENode node, Object data) {
+        if (fieldIndexFilterEnabled && data instanceof AndIteratorBuilder)
+            addFieldIndexFilter(node, (AndIteratorBuilder) data);
+        return null;
+    }
+    
+    @Override
+    public Object visit(ASTERNode node, Object data) {
+        if (fieldIndexFilterEnabled && data instanceof AndIteratorBuilder)
+            addFieldIndexFilter(node, (AndIteratorBuilder) data);
+        return null;
+    }
+    
+    @Override
+    public Object visit(ASTNRNode node, Object data) {
+        if (fieldIndexFilterEnabled && data instanceof AndIteratorBuilder)
+            addFieldIndexFilter(node, (AndIteratorBuilder) data);
+        return null;
+    }
+    
+    public void addFieldIndexFilter(JexlNode node, AndIteratorBuilder aib) {
+        JexlASTHelper.IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
+        if (op == null)
+            return;
+        
+        final String fieldName = op.deconstructIdentifier();
+        
+        // only add a filter node if this is a filter field
+        if (fieldIndexFilterMapByType != null) {
+            // @formatter:off
+            Collection<String> fieldMatches = fieldIndexFilterMapByType.values()
+                    .stream()
+                    .map(Multimap::values)
+                    .flatMap(Collection::stream)
+                    .filter(java.util.function.Predicate.isEqual(fieldName))
+                    .collect(Collectors.toList());
+            // @formatter:on
+            if (!fieldMatches.isEmpty())
+                aib.addFieldIndexFilterNode(fieldName, node);
+        }
+    }
+    
+    protected FieldIndexFilter createFieldIndexFilter() {
+        JexlArithmetic jexlArithmetic = (this.arithmetic instanceof StatefulArithmetic) ? ((StatefulArithmetic) this.arithmetic).clone() : this.arithmetic;
+        return new FieldIndexFilter(fieldIndexFilterMapByType, typeMetadataWithNonIndexed, jexlArithmetic);
     }
     
     private boolean isUsable(Path path) throws IOException {
@@ -1239,6 +1332,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);
         
+        if (fieldIndexFilterEnabled)
+            builder.setFieldIndexFilter(createFieldIndexFilter());
+        
         // We have no parent already defined
         if (data == null) {
             // Make this EQNode the root
@@ -1367,6 +1463,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
+    public IteratorBuildingVisitor setTypeMetadataWithNonIndexed(TypeMetadata typeMetadataWithNonIndexed) {
+        this.typeMetadataWithNonIndexed = typeMetadataWithNonIndexed;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setArithmetic(JexlArithmetic arithmetic) {
+        this.arithmetic = arithmetic;
+        return this;
+    }
+    
     public IteratorBuildingVisitor setIsQueryFullySatisfied(boolean isQueryFullySatisfied) {
         this.isQueryFullySatisfied = isQueryFullySatisfied;
         return this;
@@ -1478,4 +1584,21 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
     
+    public boolean isFieldIndexFilterEnabled() {
+        return fieldIndexFilterEnabled;
+    }
+    
+    public IteratorBuildingVisitor setFieldIndexFilterEnabled(boolean fieldIndexFilterEnabled) {
+        this.fieldIndexFilterEnabled = fieldIndexFilterEnabled;
+        return this;
+    }
+    
+    public Map<String,Multimap<String,String>> getFieldIndexFilterMapByType() {
+        return fieldIndexFilterMapByType;
+    }
+    
+    public IteratorBuildingVisitor setFieldIndexFilterMapByType(Map<String,Multimap<String,String>> fieldIndexFilterMapByType) {
+        this.fieldIndexFilterMapByType = fieldIndexFilterMapByType;
+        return this;
+    }
 }

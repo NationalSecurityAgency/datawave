@@ -13,40 +13,39 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
-import java.net.MalformedURLException;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
+import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
+import datawave.query.attributes.Document;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.Equality;
 import datawave.query.function.GetStartKey;
 import datawave.query.function.PrefixEquality;
 import datawave.query.iterator.filter.EventKeyDataTypeFilter;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
-import datawave.query.jexl.DefaultArithmetic;
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.Constants;
-import datawave.query.attributes.Document;
 import datawave.query.iterator.filter.KeyIdentity;
 import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.functions.FieldIndexAggregator;
+import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.predicate.ConfiguredPredicate;
+import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
-import datawave.query.DocumentSerialization.ReturnType;
-import datawave.query.jexl.DefaultArithmetic;
-import datawave.query.planner.SeekingQueryPlanner;
-import datawave.query.predicate.TimeFilter;
 import datawave.query.util.CompositeMetadata;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataProvider;
+import datawave.util.MultimapSchema;
 import datawave.util.StringUtils;
+import io.protostuff.ProtobufIOUtil;
+import io.protostuff.StringMapSchema;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -56,12 +55,14 @@ import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
@@ -76,7 +77,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 public class QueryOptions implements OptionDescriber {
     private static final Logger log = Logger.getLogger(QueryOptions.class);
@@ -209,6 +209,13 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String DATA_QUERY_EXPRESSION_FILTER_ENABLED = "query.data.expression.filter.enabled";
     
+    public static final String FIELD_INDEX_FILTER_ENABLED = "field.index.filter.enabled";
+    
+    public static final String FIELD_INDEX_FILTER_MAPPING = "field.index.filter.mapping";
+    
+    public static final StringMapSchema<Multimap<String,String>> FIELD_INDEX_FILTER_MAPPING_SCHEMA = new StringMapSchema<Multimap<String,String>>(
+                    new MultimapSchema());
+    
     protected Map<String,String> options;
     
     protected String query;
@@ -333,6 +340,10 @@ public class QueryOptions implements OptionDescriber {
     
     protected boolean dataQueryExpressionFilterEnabled = false;
     
+    protected boolean fieldIndexFilterEnabled = false;
+    
+    protected Map<String,Multimap<String,String>> fieldIndexFilterMapByType;
+    
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -436,6 +447,9 @@ public class QueryOptions implements OptionDescriber {
         this.debugMultithreadedSources = other.debugMultithreadedSources;
         
         this.dataQueryExpressionFilterEnabled = other.dataQueryExpressionFilterEnabled;
+        
+        this.fieldIndexFilterEnabled = other.fieldIndexFilterEnabled;
+        this.fieldIndexFilterMapByType = other.fieldIndexFilterMapByType;
     }
     
     public String getQuery() {
@@ -835,6 +849,22 @@ public class QueryOptions implements OptionDescriber {
         this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
     }
     
+    public boolean isFieldIndexFilterEnabled() {
+        return fieldIndexFilterEnabled;
+    }
+    
+    public void setFieldIndexFilterEnabled(boolean fieldIndexFilterEnabled) {
+        this.fieldIndexFilterEnabled = fieldIndexFilterEnabled;
+    }
+    
+    public Map<String,Multimap<String,String>> getFieldIndexFilterMapByType() {
+        return fieldIndexFilterMapByType;
+    }
+    
+    public void setFieldIndexFilterMapByType(Map<String,Multimap<String,String>> fieldIndexFilterMapByType) {
+        this.fieldIndexFilterMapByType = fieldIndexFilterMapByType;
+    }
+    
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -910,6 +940,9 @@ public class QueryOptions implements OptionDescriber {
         
         options.put(DEBUG_MULTITHREADED_SOURCES, "If provided, the SourceThreadTrackingIterator will be used");
         options.put(DATA_QUERY_EXPRESSION_FILTER_ENABLED, "If true, the EventDataQueryExpression filter will be used when performing TLD queries");
+        
+        options.put(FIELD_INDEX_FILTER_ENABLED, "If true, filtering against the field index value will be applied when iterating against the field index");
+        options.put(FIELD_INDEX_FILTER_MAPPING, "A map of ingest type to multimap which maps field names to filter field names");
         
         options.put(METADATA_TABLE_NAME, this.metadataTableName);
         
@@ -1308,6 +1341,23 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(DATA_QUERY_EXPRESSION_FILTER_ENABLED)) {
             this.dataQueryExpressionFilterEnabled = Boolean.parseBoolean(options.get(DATA_QUERY_EXPRESSION_FILTER_ENABLED));
+        }
+        
+        if (options.containsKey(FIELD_INDEX_FILTER_ENABLED) && options.containsKey(FIELD_INDEX_FILTER_MAPPING)) {
+            this.fieldIndexFilterEnabled = Boolean.parseBoolean(options.get(FIELD_INDEX_FILTER_ENABLED));
+            
+            if (this.fieldIndexFilterEnabled) {
+                String fieldIndexFilterMapping = options.get(FIELD_INDEX_FILTER_MAPPING);
+                
+                try {
+                    fieldIndexFilterMapByType = new HashMap<>();
+                    ProtobufIOUtil.mergeFrom(fieldIndexFilterMapping.getBytes(), fieldIndexFilterMapByType, FIELD_INDEX_FILTER_MAPPING_SCHEMA);
+                } catch (Exception e) {
+                    log.warn("Could not parse the field index filter mapping.", e);
+                    this.fieldIndexFilterEnabled = false;
+                    this.fieldIndexFilterMapByType = null;
+                }
+            }
         }
         
         return true;

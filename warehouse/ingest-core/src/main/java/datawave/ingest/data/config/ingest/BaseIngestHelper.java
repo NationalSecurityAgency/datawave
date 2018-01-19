@@ -1,18 +1,11 @@
 package datawave.ingest.data.config.ingest;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
@@ -28,16 +21,21 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
@@ -105,6 +103,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public static final String INDEX_ONLY_FIELDS = ".data.category.index.only";
     
     /**
+     * Configuration parameter which maps an indexed field to a set of fields which can be used for filtering purposes. The intent here is to use the filtered
+     * field mapping to determine what data should be stored for filtering within the field index value.
+     */
+    public static final String FIELD_INDEX_FILTER_MAPPING = ".data.category.field.index.filter.mapping";
+    
+    /**
      * When data is getting stored in CF or CQ as Text objects should malformed UTF8 input be silently replaced (true) OR should it fail (false)?
      */
     public static final String REPLACE_MALFORMED_CHAR = ".data.replace.malformed.utf8";
@@ -140,6 +144,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     protected Set<String> indexOnlyFields = Sets.newHashSet();
     
     protected Set<String> compositeFields = Sets.newHashSet();
+    
+    protected Multimap<String,String> fieldIndexFilterMapping = HashMultimap.create();
     
     protected Set<String> indexedFields = Sets.newHashSet();
     protected Map<String,Pattern> indexedPatterns = Maps.newHashMap();
@@ -365,6 +371,17 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 } else {
                     failedFieldPolicy.put(fieldName, policy);
                 }
+            } else if (property.getKey().endsWith(FIELD_INDEX_FILTER_MAPPING)) {
+                if ((fieldName = getFieldName(property.getKey(), FIELD_INDEX_FILTER_MAPPING)) == null) {
+                    continue;
+                }
+                
+                try {
+                    fieldIndexFilterMapping.putAll(fieldName, Splitter.on(',').splitToList(property.getValue()));
+                } catch (Exception e) {
+                    log.error("Unable to parse field index filter mapping for " + fieldName + ":[" + property.getValue() + "]", e);
+                    throw new IllegalArgumentException("Unable to parse field index filter mapping for " + fieldName + ":[" + property.getValue() + "]", e);
+                }
             }
         }
         
@@ -575,6 +592,21 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     @Override
     public void addCompositeField(String fieldName) {
         this.compositeFields.add(fieldName);
+    }
+    
+    @Override
+    public boolean isFieldIndexFilterField(String fieldName) {
+        return this.fieldIndexFilterMapping.containsKey(fieldName);
+    }
+    
+    @Override
+    public Collection<String> getFieldIndexFilterMapping(String fieldName) {
+        return this.fieldIndexFilterMapping.get(fieldName);
+    }
+    
+    @Override
+    public void addFieldIndexFilterFieldMapping(String fieldName, Collection<String> mappedFields) {
+        this.fieldIndexFilterMapping.putAll(fieldName, mappedFields);
     }
     
     @Override

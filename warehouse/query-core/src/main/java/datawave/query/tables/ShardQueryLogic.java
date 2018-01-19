@@ -378,6 +378,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     protected boolean dataQueryExpressionFilterEnabled = false;
     
+    protected boolean fieldIndexFilterEnabled = false;
+    
     protected boolean sortGeoWaveQueryRanges = false;
     
     protected int numRangesToBuffer = 0;
@@ -510,6 +512,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setUnsortedUIDsEnabled(other.getUnsortedUIDsEnabled());
         this.setDebugMultithreadedSources(other.isDebugMultithreadedSources());
         this.setDataQueryExpressionFilterEnabled(other.isDataQueryExpressionFilterEnabled());
+        this.setFieldIndexFilterEnabled(other.isFieldIndexFilterEnabled());
         this.setSortGeoWaveQueryRanges(other.isSortGeoWaveQueryRanges());
         this.setNumRangesToBuffer(other.getNumRangesToBuffer());
         this.setRangeBufferTimeoutMillis(other.getRangeBufferTimeoutMillis());
@@ -2337,6 +2340,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
         this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
+    }
+    
+    public boolean isFieldIndexFilterEnabled() {
+        return fieldIndexFilterEnabled;
+    }
+    
+    public void setFieldIndexFilterEnabled(boolean fieldIndexFilterEnabled) {
+        this.fieldIndexFilterEnabled = fieldIndexFilterEnabled;
     }
     
     public boolean isSortGeoWaveQueryRanges() {

@@ -2,11 +2,11 @@ package datawave.query.iterator.builder;
 
 import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
 import datawave.query.iterator.DocumentIterator;
-import datawave.query.iterator.logic.DocumentAggregatingIterator;
-import datawave.query.predicate.Filter;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.logic.DocumentAggregatingIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.predicate.Filter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.hadoop.fs.Path;
@@ -74,7 +74,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                                 range.getLower().toString()), range.isLowerInclusive(), new Text(range.getUpper().toString()), range.isUpperInclusive(),
                                 this.timeFilter, this.datatypeFilter, false, ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout,
                                 ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles, hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true,
-                                PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
+                                PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs, fieldIndexFilter);
                 if (collectTimingDetails) {
                     rangeIterator.setCollectTimingDetails(true);
                     rangeIterator.setQuerySpanCollector(this.querySpanCollector);
@@ -104,6 +104,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
             timeFilter = null;
             hdfsFileSystem = null;
             ivaratorCacheDirURI = null;
+            fieldIndexFilter = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

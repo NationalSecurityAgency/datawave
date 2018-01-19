@@ -1,15 +1,12 @@
 package datawave.query.iterator.logic;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-
-import datawave.query.attributes.PreNormalizedAttributeFactory;
+import com.google.common.collect.Multimap;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.iterator.DocumentIterator;
+import datawave.query.iterator.filter.field.index.FieldIndexFilterer;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -17,11 +14,16 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
+import org.apache.commons.jexl2.parser.JexlNode;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * This iterator is a regex ivarator that enables datatype filtering, time filtering, and field index document aggregation
  */
-public class DocumentAggregatingIterator extends WrappingIterator implements DocumentIterator {
+public class DocumentAggregatingIterator extends WrappingIterator implements DocumentIterator, FieldIndexFilterer {
     
     protected Range seekRange;
     protected Collection<ByteSequence> seekColumnFamilies;
@@ -132,4 +134,9 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
         seek(new Range(pointer, true, seekRange.getEndKey(), seekRange.isEndKeyInclusive()), seekColumnFamilies, seekInclusive);
     }
     
+    @Override
+    public void addFieldIndexFilterNodes(Multimap<String,JexlNode> fieldIndexFilterNodes) {
+        if (getSource() instanceof FieldIndexFilterer)
+            ((FieldIndexFilterer) getSource()).addFieldIndexFilterNodes(fieldIndexFilterNodes);
+    }
 }

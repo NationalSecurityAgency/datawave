@@ -1,10 +1,7 @@
 package datawave.ingest.metadata;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -18,15 +15,16 @@ import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Object that summarizes the events that are processed by the EventMapper. This object extracts metadata about the events (i.e. fields, indexed fields, field
@@ -87,6 +85,7 @@ import com.google.common.collect.Multimap;
 public class EventMetadata implements RawRecordMetadata {
     
     private MetadataWithMostRecentDate compositeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CI);
+    private MetadataWithMostRecentDate fieldIndexFilterInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_FIF);
     private MetadataWithMostRecentDate dataTypeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_T);
     private MetadataWithMostRecentDate normalizedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_N);
     
@@ -193,6 +192,11 @@ public class EventMetadata implements RawRecordMetadata {
                 update(map.get(fieldName), event, fields.get(fieldName), "", 0, null, this.compositeFieldsInfo, null);
             }
             
+            if (helper.isFieldIndexFilterField(fieldName)) {
+                Collection<String> filterFields = helper.getFieldIndexFilterMapping(fieldName);
+                update(filterFields.toArray(new String[filterFields.size()]), event, fields.get(fieldName), "", 0, null, this.fieldIndexFilterInfo, null, false);
+            }
+            
         }
         
         addTokenizedContent(helper, event, fields, countDelta, loadDateStr);
@@ -260,20 +264,27 @@ public class EventMetadata implements RawRecordMetadata {
     
     protected void update(String[] names, RawRecordContainer event, Collection<NormalizedContentInterface> norms,
                     @SuppressWarnings("UnusedParameters") String tokenDesignator, long countDelta, String loadDate,
-                    MetadataWithMostRecentDate mostRecentDatesByIdentifier, MetadataCounterGroup counts) {
+                    MetadataWithMostRecentDate mostRecentDatesByIdentifier, MetadataCounterGroup counts, boolean useCounter) {
         Type dataType = event.getDataType();
         long eventDate = event.getDate();
         for (NormalizedContentInterface norm : norms) {
             int counter = 0;
             for (String name : names) {
                 // mostRecentDatesByIdentifier.createOrUpdate(norm.getIndexedFieldName() + tokenDesignator, dataType.outputName(), name, eventDate);
-                mostRecentDatesByIdentifier.createOrUpdate(name, dataType.outputName(), norm.getIndexedFieldName() + "," + counter++, eventDate);
+                mostRecentDatesByIdentifier.createOrUpdate(name, dataType.outputName(),
+                                (useCounter) ? norm.getIndexedFieldName() + "," + counter++ : norm.getIndexedFieldName(), eventDate);
                 if (null != loadDate) {
                     // updateLoadDateCounters(counts, event, norm.getIndexedFieldName() + tokenDesignator, countDelta, loadDate);
                     updateLoadDateCounters(counts, event, name, countDelta, loadDate);
                 }
             }
         }
+    }
+    
+    protected void update(String[] names, RawRecordContainer event, Collection<NormalizedContentInterface> norms,
+                    @SuppressWarnings("UnusedParameters") String tokenDesignator, long countDelta, String loadDate,
+                    MetadataWithMostRecentDate mostRecentDatesByIdentifier, MetadataCounterGroup counts) {
+        update(names, event, norms, tokenDesignator, countDelta, loadDate, mostRecentDatesByIdentifier, counts, true);
     }
     
     protected void update(RawRecordContainer event, Collection<NormalizedContentInterface> norms, String tokenDesignator, long countDelta, String loadDate,
@@ -365,6 +376,8 @@ public class EventMetadata implements RawRecordMetadata {
         
         addIndexedFieldToMetadata(bulkData, this.compositeFieldsInfo);
         
+        addIndexedFieldToMetadata(bulkData, fieldIndexFilterInfo);
+        
         addToLoadDates(bulkData, this.indexedFieldsLoadDateCounts);
         addToLoadDates(bulkData, this.reverseIndexedFieldsLoadDateCounts);
         
@@ -423,5 +436,7 @@ public class EventMetadata implements RawRecordMetadata {
         
         this.reverseIndexedFieldsInfo.clear();
         this.reverseIndexedFieldsLoadDateCounts.clear();
+        
+        this.fieldIndexFilterInfo.clear();
     }
 }

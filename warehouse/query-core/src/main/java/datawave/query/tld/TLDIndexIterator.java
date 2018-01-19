@@ -1,10 +1,12 @@
 package datawave.query.tld;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import datawave.query.iterator.filter.field.index.FieldIndexFilter;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -12,18 +14,15 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-
 public class TLDIndexIterator extends IndexIterator {
     
     public TLDIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter) {
-        this(field, value, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new TLDFieldIndexAggregator(null, null));
+        this(field, value, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new TLDFieldIndexAggregator(null, null), null);
     }
     
     public TLDIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
-        super(field, value, source, timeFilter, typeMetadata, buildDocument, datatypeFilter, aggregator);
+                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator, FieldIndexFilter fieldIndexFilter) {
+        super(field, value, source, timeFilter, typeMetadata, buildDocument, datatypeFilter, aggregator, fieldIndexFilter);
     }
     
     @Override

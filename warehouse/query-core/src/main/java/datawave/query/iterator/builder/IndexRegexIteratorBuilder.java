@@ -1,22 +1,21 @@
 package datawave.query.iterator.builder;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import datawave.core.iterators.DatawaveFieldIndexRegexIteratorJexl;
-import datawave.query.iterator.logic.DocumentAggregatingIterator;
-import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.iterator.DocumentIterator;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.logic.DocumentAggregatingIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
-
+import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * A convenience class that aggregates a field, regex, source iterator, normalizer mappings, index only fields, data type filter and key transformer when
@@ -62,7 +61,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                 DatawaveFieldIndexRegexIteratorJexl regexIterator = new DatawaveFieldIndexRegexIteratorJexl(new Text(field), new Text(value), this.timeFilter,
                                 this.datatypeFilter, negated, ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, ivaratorCacheBufferSize,
                                 maxRangeSplit, ivaratorMaxOpenFiles, hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true,
-                                PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
+                                PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs, fieldIndexFilter);
                 if (collectTimingDetails) {
                     regexIterator.setCollectTimingDetails(true);
                     regexIterator.setQuerySpanCollector(this.querySpanCollector);
@@ -97,6 +96,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
             timeFilter = null;
             hdfsFileSystem = null;
             ivaratorCacheDirURI = null;
+            fieldIndexFilter = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

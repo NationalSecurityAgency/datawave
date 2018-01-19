@@ -1,5 +1,15 @@
 package datawave.query.iterator.logic;
 
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
+import datawave.query.attributes.Document;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.Util;
+import datawave.query.iterator.Util.Transformer;
+import datawave.query.iterator.filter.field.index.FieldIndexFilterer;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,19 +22,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 
-import datawave.query.iterator.Util.Transformer;
-import org.apache.log4j.Logger;
-
-import datawave.query.attributes.Document;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.Util;
-
-import com.google.common.collect.TreeMultimap;
-
 /**
  * Performs a merge join of the child iterators. It is expected that all child iterators return values in sorted order.
  */
-public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
+public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, FieldIndexFilterer {
     // temporary stores of uninitialized streams of iterators
     private List<NestedIterator<T>> includes, excludes;
     
@@ -181,7 +182,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     /**
      * Advances all iterators associated with the supplied key and adds them back into the sorted multimap. If any of the sub-trees returns false, this method
      * immediately returns false to indicate that a sub-tree has been exhausted.
-     * 
+     *
      * @param key
      * @return
      */
@@ -203,7 +204,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     /**
      * Similar to <code>advanceIterators</code>, but instead of calling <code>next</code> on each sub-tree, this calls <code>move</code> with the supplied
      * <code>to</code> parameter.
-     * 
+     *
      * @param key
      * @param to
      * @return
@@ -225,7 +226,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     /**
      * Creates a sorted mapping of values to iterators.
-     * 
+     *
      * @param subtree
      * @param sources
      * @return
@@ -264,5 +265,12 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
     
     public Document document() {
         return prevDocument;
+    }
+    
+    @Override
+    public void addFieldIndexFilterNodes(Multimap<String,JexlNode> fieldIndexFilterNodes) {
+        for (NestedIterator include : includes)
+            if (include instanceof FieldIndexFilterer)
+                ((FieldIndexFilterer) include).addFieldIndexFilterNodes(fieldIndexFilterNodes);
     }
 }
