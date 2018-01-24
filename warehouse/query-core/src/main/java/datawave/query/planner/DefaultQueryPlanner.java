@@ -1323,7 +1323,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
      */
     public ASTJexlScript addDateFilters(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     ShardQueryConfiguration config, Query settings) throws TableNotFoundException, DatawaveQueryException {
-        String dateType = DateIndexUtil.ACQUISITION_DATE_TYPE;
+        String dateType = DateIndexUtil.EVENT_DATE_TYPE;
         Parameter dateTypeParameter = settings.findParameter(QueryParameters.DATE_RANGE_TYPE);
         if (dateTypeParameter != null && dateTypeParameter.getParameterValue() != null) {
             String parm = dateTypeParameter.getParameterValue().trim();
@@ -1332,9 +1332,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
             }
         }
         
-        // if we are using something other than the default of ACQUISITION date
+        // if we are using something other than the default of EVENT date
         // time, then we need to modify the query
-        if (!dateType.equals(DateIndexUtil.ACQUISITION_DATE_TYPE)) {
+        if (!dateType.equals(DateIndexUtil.EVENT_DATE_TYPE)) {
             log.info("Using the date index for " + dateType);
             // if no date index helper configured, then we are in error
             if (dateIndexHelper == null) {
@@ -1366,7 +1366,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
             // now lets update the query parameters with the correct start and
             // end dates
-            log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to ACQUISITION dates "
+            log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
                             + dateIndexData.getBeginDate() + "," + dateIndexData.getEndDate());
             
             // reset the dates in the configuration, no need to reset then in

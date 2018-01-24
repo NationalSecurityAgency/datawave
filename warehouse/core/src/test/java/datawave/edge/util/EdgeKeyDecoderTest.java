@@ -20,7 +20,7 @@ public class EdgeKeyDecoderTest {
         edgeKeyBuilder.setFormat(EdgeKey.EDGE_FORMAT.STANDARD).setSourceData("SOURCE").setSinkData("SINK").setType("TYPE").setSourceRelationship("SOURCEREL")
                         .setSinkRelationship("SINKREL").setYyyymmdd("YYYYMMDD").setSourceAttribute1("SOURCECATEGORY").setSinkAttribute1("SINKCATEGORY")
                         .setColvis(new Text("ALL")).setTimestamp(814l).setDeleted(false).setAttribute2("ATTRIBUTE2").setAttribute3("ATTRIBUTE3")
-                        .setDateType(EdgeKey.DATE_TYPE.ACQUISITION_ONLY);
+                        .setDateType(EdgeKey.DATE_TYPE.EVENT_ONLY);
     }
     
     @Test

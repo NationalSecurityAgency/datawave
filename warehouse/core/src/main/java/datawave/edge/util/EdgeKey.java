@@ -138,7 +138,7 @@ public class EdgeKey {
             attribute2 = "";
             attribute3 = "";
             yyyymmdd = "";
-            dateType = DATE_TYPE.OLD_ACQUISITION;
+            dateType = DATE_TYPE.OLD_EVENT;
             colvis.clear();
             timestamp = Long.MAX_VALUE;
             return this;
@@ -516,7 +516,7 @@ public class EdgeKey {
     }
     
     public static enum DATE_TYPE {
-        ACTIVITY_ONLY("C"), ACQUISITION_ONLY("A"), ACTIVITY_AND_ACQUISITION("B"), OLD_ACQUISITION("");
+        ACTIVITY_ONLY("C"), EVENT_ONLY("A"), ACTIVITY_AND_EVENT("B"), OLD_EVENT("");
         
         String abbreviation;
         
@@ -898,7 +898,7 @@ public class EdgeKey {
      * @return a key for the Datawave edge table
      */
     public Key encode() {
-        if (this.getDateType() == DATE_TYPE.OLD_ACQUISITION) {
+        if (this.getDateType() == DATE_TYPE.OLD_EVENT) {
             return encodeLegacyProtobufKey();
         } else {
             if (this.getFormat() == EDGE_FORMAT.STATS) {
@@ -1170,12 +1170,12 @@ public class EdgeKey {
     }
     
     /**
-     * Determine if an edge is based on acquisition date.
+     * Determine if an edge is based on event date.
      * 
      * @param k
      *            edge key
-     * @return True if this is edge date (YYYYMMDD) is based on acquisition date.
-     * @note An edge can be both an acquisition and and activity edge. Hence, do not test for acquisition edge by doing !isActivityEdge(k).
+     * @return True if this is edge date (YYYYMMDD) is based on event date.
+     * @note An edge can be both an event and and activity edge. Hence, do not test for event edge by doing !isActivityEdge(k).
      */
     
     /**
@@ -1195,7 +1195,7 @@ public class EdgeKey {
         } else if (version == EDGE_VERSION.DATE_PROTOBUF) {
             return DATE_TYPE.parse(parts.get(6));
         } else {
-            return DATE_TYPE.OLD_ACQUISITION;
+            return DATE_TYPE.OLD_EVENT;
         }
     }
 }

@@ -367,7 +367,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     /**
-     * Create iterator to filter on acquisition/activity date in the column qualifier or the load date in the value.
+     * Create iterator to filter on event/activity date in the column qualifier or the load date in the value.
      * 
      * @param beginDate
      *            lower bound for date range filter
@@ -376,7 +376,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @param priority
      *            priority to associate with this iterator
      * @param dateFilterType
-     *            type of filtering (ACQUISITION, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
+     *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterator (or null if no iterator needed, i.e. dates not specified)
      */
     public static IteratorSetting getDateFilter(Date beginDate, Date endDate, int priority, EdgeQueryConfiguration.dateType dateFilterType) {
@@ -384,7 +384,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     /**
-     * Create iterator to filter on acquisition/activity date in the column qualifier or the load date in the value.
+     * Create iterator to filter on event/activity date in the column qualifier or the load date in the value.
      *
      * @param beginDate
      *            lower bound for date range filter
@@ -395,7 +395,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @param skipLimit
      *            amount of keys for the iterator to skip before calling seek
      * @param dateFilterType
-     *            type of filtering (ACQUISITION, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
+     *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterator (or null if no iterator needed, i.e. dates not specified)
      */
     public static IteratorSetting getDateFilter(Date beginDate, Date endDate, int priority, int skipLimit, EdgeQueryConfiguration.dateType dateFilterType) {
@@ -404,7 +404,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             log.debug("Creating daterange filter: " + beginDate + " " + endDate);
             Key beginDateKey = new Key(DateHelper.format(beginDate));
             Key endDateKey = new Key(DateHelper.format(endDate) + Constants.MAX_UNICODE_STRING);
-            if ((dateFilterType == EdgeQueryConfiguration.dateType.ACQUISITION) || (dateFilterType == EdgeQueryConfiguration.dateType.ACTIVITY)
+            if ((dateFilterType == EdgeQueryConfiguration.dateType.EVENT) || (dateFilterType == EdgeQueryConfiguration.dateType.ACTIVITY)
                             || (dateFilterType == EdgeQueryConfiguration.dateType.ANY)) {
                 setting = new IteratorSetting(priority, ColumnQualifierRangeIterator.class.getName() + "." + priority, ColumnQualifierRangeIterator.class);
             } else if ((dateFilterType == EdgeQueryConfiguration.dateType.LOAD) || (dateFilterType == EdgeQueryConfiguration.dateType.ACTIVITY_LOAD)
@@ -434,7 +434,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @param priority
      *            priority to associate with this iterator
      * @param dateFilterType
-     *            type of filtering (ACQUISITION, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
+     *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterator
      */
     public static IteratorSetting getDateTypeFilter(int priority, EdgeQueryConfiguration.dateType dateFilterType) {
@@ -465,7 +465,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if ((iter == null)
                         || ((dateFilterType != EdgeQueryConfiguration.dateType.LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ACTIVITY_LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD))) {
             if ((dateFilterType != EdgeQueryConfiguration.dateType.ANY) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD)) {
-                // of the edges remaining we only want the correct type (activity date or acquisition date)
+                // of the edges remaining we only want the correct type (activity date or event date)
                 iter = getDateTypeFilter(priority, dateFilterType);
                 if (iter != null) {
                     settings.add(iter);
@@ -487,14 +487,14 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @param priority
      *            priority to associate with the first created iterator; subsequent iterators will have increasing 1-up values
      * @param dateFilterType
-     *            type of filtering (ACQUISITION, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
+     *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterators
      *
      *         There can now be one or more edges with matching keys other than a date type distinction in the column qualifier. Old-style edges have no date
-     *         type marking but always used acquisition date. New-style edges may indicate an acquisition date-based edge, both, or activity date-based edge.
-     *         Hence, based on whether the query is for acquisition date-based edges or activity date-based edges the appropriate types of edges must be
-     *         returned. Additionally, the results should combine like-type edges that only differ in the date type. Consequently, this function creates one or
-     *         more iterators to perform the appropriate filtering/combining.
+     *         type marking but always used event date. New-style edges may indicate an event date-based edge, both, or activity date-based edge. Hence, based
+     *         on whether the query is for event date-based edges or activity date-based edges the appropriate types of edges must be returned. Additionally,
+     *         the results should combine like-type edges that only differ in the date type. Consequently, this function creates one or more iterators to
+     *         perform the appropriate filtering/combining.
      */
     public static List<IteratorSetting> getDateBasedIterators(Date beginDate, Date endDate, int priority, EdgeQueryConfiguration.dateType dateFilterType) {
         List<IteratorSetting> settings = Lists.newArrayList();
@@ -514,7 +514,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if ((iter == null)
                         || ((dateFilterType != EdgeQueryConfiguration.dateType.LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ACTIVITY_LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD))) {
             if ((dateFilterType != EdgeQueryConfiguration.dateType.ANY) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD)) {
-                // of the edges remaining we only want the correct type (activity date or acquisition date)
+                // of the edges remaining we only want the correct type (activity date or event date)
                 iter = getDateTypeFilter(priority, dateFilterType);
                 if (iter != null) {
                     settings.add(iter);

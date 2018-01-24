@@ -126,6 +126,6 @@ public class EdgeTableTestKeyHelper {
     }
     
     public void verifyDateType(EdgeKey edgeKey) {
-        assertEquals(EdgeKey.DATE_TYPE.ACQUISITION_ONLY, edgeKey.getDateType());
+        assertEquals(EdgeKey.DATE_TYPE.EVENT_ONLY, edgeKey.getDateType());
     }
 }

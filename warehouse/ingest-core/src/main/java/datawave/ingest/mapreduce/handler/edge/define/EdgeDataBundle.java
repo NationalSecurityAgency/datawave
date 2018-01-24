@@ -183,13 +183,13 @@ public class EdgeDataBundle {
         EdgeValueBuilder builder = datawave.edge.util.EdgeValue.newBuilder();
         int hour = -1;
         
-        if (date_type == EdgeKey.DATE_TYPE.ACTIVITY_ONLY || date_type == EdgeKey.DATE_TYPE.ACTIVITY_AND_ACQUISITION) {
+        if (date_type == EdgeKey.DATE_TYPE.ACTIVITY_ONLY || date_type == EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT) {
             hour = getHour(activityDate);
         } else {
             hour = getHour(eventDate);
         }
         
-        if (date_type == EdgeKey.DATE_TYPE.ACQUISITION_ONLY) {
+        if (date_type == EdgeKey.DATE_TYPE.EVENT_ONLY) {
             if (validActivityDate) {
                 builder.setBadActivityDate(false);
             } else {
@@ -227,13 +227,13 @@ public class EdgeDataBundle {
         EdgeValueBuilder builder = datawave.edge.util.EdgeValue.newBuilder();
         int hour = -1;
         
-        if (date_type == EdgeKey.DATE_TYPE.ACTIVITY_ONLY || date_type == EdgeKey.DATE_TYPE.ACTIVITY_AND_ACQUISITION) {
+        if (date_type == EdgeKey.DATE_TYPE.ACTIVITY_ONLY || date_type == EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT) {
             hour = getHour(activityDate);
         } else {
             hour = getHour(eventDate);
         }
         
-        if (date_type == EdgeKey.DATE_TYPE.ACQUISITION_ONLY) {
+        if (date_type == EdgeKey.DATE_TYPE.EVENT_ONLY) {
             if (validActivityDate) {
                 builder.setBadActivityDate(false);
             } else {
@@ -511,7 +511,7 @@ public class EdgeDataBundle {
     public String toString() {
         return "EdgeValue [source=" + source + ", sink=" + sink + ", edgeDefinition=" + edgeDefinition + ", edgeDirection=" + edgeDirection
                         + ", requiresMasking=" + requiresMasking + ", isDeleting=" + isDeleting + ", edgeType=" + edgeType + ", enrichedValue=" + enrichedValue
-                        + ", yyyyMMdd=" + getYyyyMMdd(EdgeKey.DATE_TYPE.ACQUISITION_ONLY) + ", hour=" + getHour(eventDate) + ", eventDate=" + eventDate
+                        + ", yyyyMMdd=" + getYyyyMMdd(EdgeKey.DATE_TYPE.EVENT_ONLY) + ", hour=" + getHour(eventDate) + ", eventDate=" + eventDate
                         + ", validActivityDate=" + validActivityDate + ", activityDate=" + activityDate + ", helper=" + helper + ", markings=" + markings
                         + ", maskedVisibility=" + maskedVisibility + ", forceMaskedVisibility=" + forceMaskedVisibility + ", durationValue=" + durationValue
                         + ", loadDate=" + loadDate + "]";

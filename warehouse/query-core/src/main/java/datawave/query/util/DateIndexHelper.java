@@ -53,10 +53,10 @@ import java.util.TreeMap;
  * </tr>
  * <tr>
  * <td>date index</td>
- * <td>mapping date to acquisition date/time or shard</td>
+ * <td>mapping date to event date/time or shard</td>
  * <td>date (yyyyMMdd)</td>
  * <td>type (e.g. ACTIVITY)</td>
- * <td>date\0datatype\0field (yyyyMMdd acquisition time \0 datatype \0 field name)</td>
+ * <td>date\0datatype\0field (yyyyMMdd event time \0 datatype \0 field name)</td>
  * <td>shard bit string (see java.util.BitSet)</td>
  * </tr>
  * </table>
@@ -308,7 +308,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                 String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
                 String date = parts[0];
                 
-                // If the acquisition date is more than one day before the event actually happened,
+                // If the event date is more than one day before the event actually happened,
                 // then skip it, unless time-travel has been enabled.
                 String[] columnFamilyParts = StringUtils.split(k.getColumnFamily().toString(), '\0');
                 if (timeTravel == false && columnFamilyParts.length > 0 && columnFamilyParts[0].equals("ACTIVITY")) {

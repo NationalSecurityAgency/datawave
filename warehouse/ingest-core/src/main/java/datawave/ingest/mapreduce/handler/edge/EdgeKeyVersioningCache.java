@@ -124,7 +124,7 @@ public class EdgeKeyVersioningCache {
         if (versionDates.size() == 0) {
             /*
              * If no key versions were found, then we're most likely initializing a new system. Therefore seeding with epoch date, which should prevent the
-             * "old" edge key from being created...that is, with EdgeKey.DATE_TYPE.OLD_ACQUISITION (See ProtobufEdgeDataTypeHandler.writeEdges)
+             * "old" edge key from being created...that is, with EdgeKey.DATE_TYPE.OLD_EVENT (See ProtobufEdgeDataTypeHandler.writeEdges)
              */
             Date then = new Date(0);
             log.warn("Could not find any edge key version entries in the " + metadataTableName + " table. Automatically seeding with date: " + then.toString());

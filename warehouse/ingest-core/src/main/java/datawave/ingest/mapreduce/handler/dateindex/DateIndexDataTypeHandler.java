@@ -59,10 +59,10 @@ import com.google.common.collect.Multimap;
  * </tr>
  * <tr>
  * <td>date index</td>
- * <td>mapping date to acquisition date/time or shard</td>
+ * <td>mapping date to event date/time or shard</td>
  * <td>date (yyyyMMdd)</td>
  * <td>type (e.g. ACTIVITY)</td>
- * <td>date\0datatype\0field (yyyyMMdd acquisition time \0 datatype \0 field name)</td>
+ * <td>date\0datatype\0field (yyyyMMdd event time \0 datatype \0 field name)</td>
  * <td>shard bit string (see java.util.BitSet)</td>
  * </tr>
  * </table>
@@ -295,7 +295,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         // the colf is the type (e.g. LOAD or ACTIVITY)
         String colf = type;
         
-        // the colq is the acquisition date yyyyMMdd \0 the datatype \0 the field name
+        // the colq is the event date yyyyMMdd \0 the datatype \0 the field name
         String colq = shardDate + '\0' + dataType + '\0' + dateField;
         
         // the value is a bitset denoting the shard

@@ -12,7 +12,7 @@ import java.text.SimpleDateFormat;
  */
 public class DateIndexUtil {
     
-    public static final String ACQUISITION_DATE_TYPE = "ACQUISITION";
+    public static final String EVENT_DATE_TYPE = "EVENT";
     public static final String LOADED_DATE_TYPE = "LOADED";
     public static final String ACTIVITY_DATE_TYPE = "ACTIVITY";
     public static final ThreadLocal<SimpleDateFormat> format = new ThreadLocal<SimpleDateFormat>() {

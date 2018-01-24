@@ -121,7 +121,7 @@ public class EdgeQueryTransformer extends BaseQueryLogicTransformer implements C
             edge.setEdgeRelationship(edgeKey.getRelationship());
             edge.setEdgeAttribute1Source(edgeKey.getAttribute1());
             
-            if (edgeKey.getDateType() == EdgeKey.DATE_TYPE.ACTIVITY_ONLY || edgeKey.getDateType() == EdgeKey.DATE_TYPE.ACTIVITY_AND_ACQUISITION) {
+            if (edgeKey.getDateType() == EdgeKey.DATE_TYPE.ACTIVITY_ONLY || edgeKey.getDateType() == EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT) {
                 edge.setActivityDate(edgeKey.getYyyymmdd());
             }
             edge.setDate(DateHelper.format(entry.getKey().getTimestamp())); // the aquisition time is always in the key timestamp field
