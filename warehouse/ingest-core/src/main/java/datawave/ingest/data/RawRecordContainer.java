@@ -11,8 +11,8 @@ import java.util.Date;
 import java.util.Map;
 
 /**
- * Generic container used to hold raw source data. It is used in various parts of the ingest framework and is typically
- * persisted as an "event" within DW's shard table schema
+ * Generic container used to hold raw source data. It is used in various parts of the ingest framework and is typically persisted as an "event" within DW's
+ * shard table schema
  */
 public interface RawRecordContainer {
     
@@ -31,24 +31,26 @@ public interface RawRecordContainer {
     Type getDataType();
     
     void setDataType(Type dataType);
-
+    
     /**
      * Gets the primary date associated with the record, a.k.a the "event date"
+     * 
      * @return the date for this raw record
      */
     long getDate();
-
+    
     /**
-     * In the DW data model, this date is often referred to as "event date" and represents the primary date value for the
-     * record. At ingest time, it is typically encoded as part of the Accumulo row id (in YYYYMMDD format) for the record's
-     * associated shard table entries. Clients may attach any semantics they wish to this date, but should be aware that it
-     * directly impacts the sort order of their data in Accumulo.
+     * In the DW data model, this date is often referred to as "event date" and represents the primary date value for the record. At ingest time, it is
+     * typically encoded as part of the Accumulo row id (in YYYYMMDD format) for the record's associated shard table entries. Clients may attach any semantics
+     * they wish to this date, but should be aware that it directly impacts the sort order of their data in Accumulo.
      *
-     * <p>Thus, this date is typically leveraged by DW's query api as the basis for 'begin' / 'end' date ranges for user queries.
-     * However, DW also has the ability to leverage other dates within your records at query time, if needed. So, for date filtering
-     * concerns, you're not necessarily stuck with your choice of 'event' date in this regard
+     * <p>
+     * Thus, this date is typically leveraged by DW's query api as the basis for 'begin' / 'end' date ranges for user queries. However, DW also has the ability
+     * to leverage other dates within your records at query time, if needed. So, for date filtering concerns, you're not necessarily stuck with your choice of
+     * 'event' date in this regard
      *
-     * @param date primary date to be associated with the record, a.k.a. the "event date"
+     * @param date
+     *            primary date to be associated with the record, a.k.a. the "event date"
      */
     void setDate(long date);
     
