@@ -33,7 +33,7 @@ public class EdgeKeyTest {
         refBuilder.setFormat(EdgeKey.EDGE_FORMAT.STANDARD).setSourceData("SOURCE").setSinkData("SINK").setType("TYPE").setSourceRelationship("SOURCEREL")
                         .setSinkRelationship("SINKREL").setYyyymmdd("YYYYMMDD").setSourceAttribute1("SOURCECATEGORY").setSinkAttribute1("SINKCATEGORY")
                         .setColvis(new Text("ALL")).setTimestamp(814l).setDeleted(false).setAttribute2("ATTRIBUTE2").setAttribute3("ATTRIBUTE3")
-                        .setDateType(EdgeKey.DATE_TYPE.ACQUISITION_ONLY);
+                        .setDateType(EdgeKey.DATE_TYPE.EVENT_ONLY);
         
         Text statsRow = new Text("SOURCE");
         Text standardRow = new Text("SOURCE" + '\0' + "SINK");
@@ -202,7 +202,7 @@ public class EdgeKeyTest {
         assertEquals(err, edgeKey.getSinkAttribute1(), "SINKCATEGORY");
         assertEquals(err, edgeKey.getAttribute2(), "ATTRIBUTE2");
         assertEquals(err, edgeKey.getAttribute3(), "ATTRIBUTE3");
-        assertEquals(err, edgeKey.getDateType(), EdgeKey.DATE_TYPE.ACQUISITION_ONLY);
+        assertEquals(err, edgeKey.getDateType(), EdgeKey.DATE_TYPE.EVENT_ONLY);
         assertEquals(err, edgeKey.getColvis().toString(), "ALL");
         assertTrue(err, (edgeKey.getTimestamp() == 814l));
         assertFalse(err, edgeKey.isDeleted());
@@ -318,8 +318,8 @@ public class EdgeKeyTest {
         
         Key k3 = new Key(new Text("A\0B"), new Text("type/relationA-relationB"), new Text("19700101/attr1-attr1/attr2/attr3/H"));
         
-        Assert.assertEquals(EdgeKey.getDateType(k1), EdgeKey.DATE_TYPE.ACQUISITION_ONLY);
-        Assert.assertEquals(EdgeKey.getDateType(k2), EdgeKey.DATE_TYPE.OLD_ACQUISITION);
+        Assert.assertEquals(EdgeKey.getDateType(k1), EdgeKey.DATE_TYPE.EVENT_ONLY);
+        Assert.assertEquals(EdgeKey.getDateType(k2), EdgeKey.DATE_TYPE.OLD_EVENT);
         Assert.assertEquals(EdgeKey.getDateType(k3), null);
     }
     
@@ -328,26 +328,26 @@ public class EdgeKeyTest {
         Key k1 = new Key(new Text("A\0B"), new Text("type/relationA-relationB"), new Text("19700101/attr1-attr1/attr2/attr3/"));
         Key statsk1 = new Key(new Text("A"), new Text("STATS/ACTIVITY/type/relationA"), new Text("19700101/attr1/attr2/attr3/"));
         
-        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_ACQUISITION, EdgeKey.getDateType(k1));
-        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_ACQUISITION, EdgeKey.getDateType(statsk1));
+        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(k1));
+        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(statsk1));
         
         Key k2 = new Key(new Text("A\0B"), new Text("type/relationA-relationB"), new Text("19700101/attr1-attr1/attr2/attr3/B"));
         Key statsk2 = new Key(new Text("A"), new Text("STATS/ACTIVITY/type/relationA"), new Text("19700101/attr1/attr2/attr3/B"));
         
-        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_ACQUISITION, EdgeKey.getDateType(k2));
-        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_ACQUISITION, EdgeKey.getDateType(statsk2));
+        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(k2));
+        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(statsk2));
         
         Key k3 = new Key(new Text("A\0B"), new Text("type/relationA-relationB"), new Text("19700101/attr1-attr1///B"));
         Key statsk3 = new Key(new Text("A"), new Text("STATS/ACTIVITY/type/relationA"), new Text("19700101/attr1///B"));
         
-        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_ACQUISITION, EdgeKey.getDateType(k3));
-        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_ACQUISITION, EdgeKey.getDateType(statsk3));
+        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(k3));
+        Assert.assertEquals(EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT, EdgeKey.getDateType(statsk3));
         
         Key k4 = new Key(new Text("A\0B"), new Text("type/relationA-relationB"), new Text("19700101/attr1-attr1///"));
         Key statsk4 = new Key(new Text("A"), new Text("STATS/ACTIVITY/type/relationA"), new Text("19700101/attr1///"));
         
-        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_ACQUISITION, EdgeKey.getDateType(k4));
-        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_ACQUISITION, EdgeKey.getDateType(statsk4));
+        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(k4));
+        Assert.assertEquals(EdgeKey.DATE_TYPE.OLD_EVENT, EdgeKey.getDateType(statsk4));
         
     }
     

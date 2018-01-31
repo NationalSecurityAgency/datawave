@@ -460,7 +460,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         long edgesCreated = 0;
         long activityDate = -1;
         boolean validActivityDate = false;
-        boolean activityEqualsAcquisition = false;
+        boolean activityEqualsEvent = false;
         String edgeAttribute2 = null, edgeAttribute3 = null;
         
         String loadDateStr = null;
@@ -553,9 +553,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             }
         }
         
-        // If the activity date is valid check to see if it is on the same day as the acquisition date
+        // If the activity date is valid check to see if it is on the same day as the event date
         if (validActivityDate) {
-            activityEqualsAcquisition = compareActivityAndAcquisition(activityDate, event.getDate());
+            activityEqualsEvent = compareActivityAndEvent(activityDate, event.getDate());
         }
         
         // Track metadata for this event
@@ -651,7 +651,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                                 
                                 // have to write out the keys as the edge values are generated, so counters get updated
                                 // and the system doesn't timeout.
-                                edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsAcquisition, event.getDate());
+                                edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsEvent, event.getDate());
                                 
                                 if (this.enableMetadata) {
                                     registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPreconditions);
@@ -675,7 +675,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                                     
                                     // have to write out the keys as the edge values are generated, so counters get updated
                                     // and the system doesn't timeout.
-                                    edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsAcquisition, event.getDate());
+                                    edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsEvent, event.getDate());
                                     
                                     if (this.enableMetadata) {
                                         registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPreconditions);
@@ -909,22 +909,22 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      * This part makes the determination as to what type of edge key to build
      */
     protected long writeEdges(EdgeDataBundle value, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
-                    ContextWriter<KEYOUT,VALUEOUT> contextWriter, boolean validActivtyDate, boolean sameActivityDate, long acquisitionDate) throws IOException,
+                    ContextWriter<KEYOUT,VALUEOUT> contextWriter, boolean validActivtyDate, boolean sameActivityDate, long eventDate) throws IOException,
                     InterruptedException {
         
         long edgesCreated = 0;
-        if (acquisitionDate < newFormatStartDate) {
-            edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.OLD_ACQUISITION);
+        if (eventDate < newFormatStartDate) {
+            edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.OLD_EVENT);
         } else {
             if (validActivtyDate) {
                 if (sameActivityDate) {
-                    edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.ACTIVITY_AND_ACQUISITION);
+                    edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT);
                 } else {
                     edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.ACTIVITY_ONLY);
-                    edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.ACQUISITION_ONLY);
+                    edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.EVENT_ONLY);
                 }
             } else {
-                edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.ACQUISITION_ONLY);
+                edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.EVENT_ONLY);
             }
         }
         
@@ -1035,7 +1035,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     private Key createMetadataEdgeKey(EdgeDataBundle edgeValue, VertexValue source, String sourceValue, VertexValue sink, String sinkValue, Text visibility) {
         long truncatedEventDate = edgeValue.getEventDate() / ONE_DAY * ONE_DAY;
-        return createEdgeKey(edgeValue, source, sourceValue, sink, sinkValue, visibility, truncatedEventDate, EdgeKey.DATE_TYPE.OLD_ACQUISITION);
+        return createEdgeKey(edgeValue, source, sourceValue, sink, sinkValue, visibility, truncatedEventDate, EdgeKey.DATE_TYPE.OLD_EVENT);
     }
     
     protected Key createEdgeKey(EdgeDataBundle edgeValue, VertexValue source, String sourceValue, VertexValue sink, String sinkValue, Text visibility,
@@ -1275,13 +1275,13 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      * validates the activity date using the past and future delta configured variables both past and future deltas are expected to be positive numbers (in
      * milliseconds)
      */
-    protected boolean validateActivityDate(long activityTime, long acquisitionTime) {
+    protected boolean validateActivityDate(long activityTime, long eventTime) {
         
-        if (acquisitionTime - activityTime > pastDelta) {
-            // if activity > acquisition then number is negative and will be checked in the next else if statement
+        if (eventTime - activityTime > pastDelta) {
+            // if activity > event then number is negative and will be checked in the next else if statement
             return false;
-        } else if (activityTime - acquisitionTime > futureDelta) {
-            // if activity < acquisition then number is negative and would have been checked by the previous if statement
+        } else if (activityTime - eventTime > futureDelta) {
+            // if activity < event then number is negative and would have been checked by the previous if statement
             return false;
         } else {
             return true;
@@ -1289,11 +1289,11 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     }
     
     /*
-     * Compares activity and acquisition time. Returns true if they are both on the same day. Eg. both result in the same yyyyMMdd string
+     * Compares activity and event time. Returns true if they are both on the same day. Eg. both result in the same yyyyMMdd string
      */
-    protected boolean compareActivityAndAcquisition(long activityDate, long acquisitionDate) {
+    protected boolean compareActivityAndEvent(long activityDate, long eventDate) {
         // The date toString() returns dates in the format yyyy-mm-dd
-        if (DateHelper.format(activityDate).equals(DateHelper.format(acquisitionDate))) {
+        if (DateHelper.format(activityDate).equals(DateHelper.format(eventDate))) {
             return true;
         } else {
             return false;

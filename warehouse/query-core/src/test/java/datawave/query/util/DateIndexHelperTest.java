@@ -87,7 +87,7 @@ public class DateIndexHelperTest {
         // the colf is the type (e.g. LOAD or ACTIVITY)
         String colf = type;
         
-        // the colq is the acquisition date yyyyMMdd \0 the datatype \0 the field name
+        // the colq is the event date yyyyMMdd \0 the datatype \0 the field name
         String colq = shardDate + '\0' + dataType + '\0' + dateField;
         
         // the value is a bitset denoting the shard

@@ -205,7 +205,7 @@ public class EdgeCombiner extends Combiner {
     
     private void combineBadActivityDate(EdgeValueBuilder builder, EdgeData.EdgeValue protoEdgeValue) {
         // Only set the bad activity flag if one of the edges to be combined contains the bad activity flag.
-        // This should only happen with the new ACQUISITION_ONLY date type edges
+        // This should only happen with the new EVENT_ONLY date type edges
         if (protoEdgeValue.hasBadActivity()) {
             if (builder.badActivityDateSet()) {
                 // If one of the activity dates is good then the edge will be treated as good

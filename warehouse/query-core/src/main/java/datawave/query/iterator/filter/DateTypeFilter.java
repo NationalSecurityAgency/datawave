@@ -15,7 +15,7 @@ import datawave.edge.util.EdgeKey;
  *
  */
 public class DateTypeFilter extends Filter {
-    protected EdgeQueryConfiguration.dateType dateType = EdgeQueryConfiguration.dateType.ACQUISITION;
+    protected EdgeQueryConfiguration.dateType dateType = EdgeQueryConfiguration.dateType.EVENT;
     
     protected boolean[] state;
     
@@ -40,8 +40,8 @@ public class DateTypeFilter extends Filter {
             dateType = EdgeQueryConfiguration.dateType.ACTIVITY;
         } else if (EdgeQueryConfiguration.dateType.ANY.name().equals(e) || EdgeQueryConfiguration.dateType.ANY_LOAD.name().equals(e)) {
             dateType = EdgeQueryConfiguration.dateType.ANY;
-        } else { // we default to acquisition
-            dateType = EdgeQueryConfiguration.dateType.ACQUISITION;
+        } else { // we default to event
+            dateType = EdgeQueryConfiguration.dateType.EVENT;
         }
     }
     
@@ -57,18 +57,18 @@ public class DateTypeFilter extends Filter {
             state[i] = true;
         }
         
-        if (dateType == EdgeQueryConfiguration.dateType.ACQUISITION) {
+        if (dateType == EdgeQueryConfiguration.dateType.EVENT) {
             state[EdgeKey.DATE_TYPE.ACTIVITY_ONLY.ordinal()] = false;
         } else if (dateType == EdgeQueryConfiguration.dateType.ACTIVITY) {
-            state[EdgeKey.DATE_TYPE.ACQUISITION_ONLY.ordinal()] = false;
-            state[EdgeKey.DATE_TYPE.OLD_ACQUISITION.ordinal()] = false;
+            state[EdgeKey.DATE_TYPE.EVENT_ONLY.ordinal()] = false;
+            state[EdgeKey.DATE_TYPE.OLD_EVENT.ordinal()] = false;
         }
     }
     
     /**
      * Determines if the edge key matches the desired date type.<br>
-     * <strong>note:</strong> Some edges qualify as both an acquisition and an activity edge. Hence, can't simply negate the return value of isAcquisitionEdge
-     * or isActivityEdge.
+     * <strong>note:</strong> Some edges qualify as both an event and an activity edge. Hence, can't simply negate the return value of isEventEdge or
+     * isActivityEdge.
      *
      * @param k
      * @param V

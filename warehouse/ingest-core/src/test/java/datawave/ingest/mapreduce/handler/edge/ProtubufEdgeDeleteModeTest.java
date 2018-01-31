@@ -237,7 +237,7 @@ public class ProtubufEdgeDeleteModeTest {
             long edgesCreated = 0;
             long activityDate = -1;
             boolean validActivityDate = false;
-            boolean activityEqualsAcquisition = false;
+            boolean activityEqualsEvent = false;
             String edgeAttribute2 = null, edgeAttribute3 = null;
             
             String loadDateStr = null;
@@ -293,9 +293,9 @@ public class ProtubufEdgeDeleteModeTest {
                 }
             }
             
-            // If the activity date is valid check to see if it is on the same day as the acquisition date
+            // If the activity date is valid check to see if it is on the same day as the event date
             if (validActivityDate) {
-                activityEqualsAcquisition = compareActivityAndAcquisition(activityDate, event.getDate());
+                activityEqualsEvent = compareActivityAndEvent(activityDate, event.getDate());
             }
             
             // Track metadata for this event
@@ -356,7 +356,7 @@ public class ProtubufEdgeDeleteModeTest {
                                     
                                     // have to write out the keys as the edge values are generated, so counters get updated
                                     // and the system doesn't timeout.
-                                    edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsAcquisition, event.getDate());
+                                    edgesCreated += writeEdges(edgeValue, context, contextWriter, validActivityDate, activityEqualsEvent, event.getDate());
                                     
                                     if (this.enableMetadata) {
                                         registerEventMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPreconditions);

@@ -16,23 +16,22 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
     private static final long serialVersionUID = -2795330785878662313L;
     
     // We originally had the two choices:
-    // ACQUISITION => apply date range to edges generated using acquisition date
-    // LOAD => apply date range to load date in value of edges generated using acquisition date
+    // EVENT => apply date range to edges generated using event date
+    // LOAD => apply date range to load date in value of edges generated using event date
     // Then we added edges generated using activity date. So, we've added:
     // ACTIVITY => apply date range to edges generated using activity date
     // ACTIVITY_LOAD => apply date range to load date in value of edges generated using activity date
     // ANY => apply date range to regardless of date type
     // ANY_LOAD => apply date range to load date in value of edges generated using any date
     public static enum dateType {
-        ACQUISITION, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD
+        EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD
     };
     
     public static final String INCLUDE_STATS = "stats";
     
     public static final String DATE_RANGE_TYPE = "date.type";
     
-    public static final String LOAD = "LOAD", ACQUISITION = "ACQUISITION", ACTIVITY = "ACTIVITY", ACTIVITY_LOAD = "ACTIVITY_LOAD", ANY = "ANY",
-                    ANY_LOAD = "ANY_LOAD";
+    public static final String LOAD = "LOAD", EVENT = "EVENT", ACTIVITY = "ACTIVITY", ACTIVITY_LOAD = "ACTIVITY_LOAD", ANY = "ANY", ANY_LOAD = "ANY_LOAD";
     
     public static final String SUMMARIZE = "summarize";
     
@@ -51,8 +50,8 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
     private long maxQueryTerms = 10000;
     private long maxPrefilterValues = 100000;
     
-    // default will be acquisition date
-    private dateType dateRangeType = dateType.ACQUISITION;
+    // default will be event date
+    private dateType dateRangeType = dateType.EVENT;
     
     // Use to aggregate results will be false by default
     private boolean aggregateResults = false;
@@ -121,8 +120,8 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
                     case LOAD:
                         this.dateRangeType = dateType.LOAD;
                         break;
-                    case ACQUISITION:
-                        this.dateRangeType = dateType.ACQUISITION;
+                    case EVENT:
+                        this.dateRangeType = dateType.EVENT;
                         break;
                     case ACTIVITY:
                         this.dateRangeType = dateType.ACTIVITY;

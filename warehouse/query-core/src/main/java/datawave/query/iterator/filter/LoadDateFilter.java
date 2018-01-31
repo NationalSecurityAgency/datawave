@@ -88,10 +88,10 @@ public class LoadDateFilter extends DateTypeFilter {
             if (value.hasLoadDate()) {
                 loadDate = value.getLoadDate();
             } else {
-                loadDate = extractAcquisitionDate(k);
+                loadDate = extractEventDate(k);
             }
         } catch (InvalidProtocolBufferException e) {
-            loadDate = extractAcquisitionDate(k);
+            loadDate = extractEventDate(k);
         }
         
         Key dateKey = new Key(loadDate);
@@ -103,15 +103,15 @@ public class LoadDateFilter extends DateTypeFilter {
         }
     }
     
-    // @note old-style edges always used acquisition date in the column qualifier.
+    // @note old-style edges always used event date in the column qualifier.
     // However, we now have edges that may contain the activity date in the
     // column qualifier. Even though we know that any edge without a load date
-    // must be an edge with acquisition date in the column qualifier (since the
+    // must be an edge with event date in the column qualifier (since the
     // activity date change came after the load date change) we have the issue
     // of dealing with the InvalidProtocolBufferException case above. That case
-    // can't assume an acquisition date edge. Therefore, we now extract the
-    // acquisition date from the timestamp value rather than the column qualifier.
-    private String extractAcquisitionDate(Key k) {
+    // can't assume an event date edge. Therefore, we now extract the
+    // event date from the timestamp value rather than the column qualifier.
+    private String extractEventDate(Key k) {
         
         return DateHelper.format(k.getTimestamp());
     }
