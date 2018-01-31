@@ -57,7 +57,12 @@ public class AuditBeanTest {
         AuditParameters actual = new AuditParameters();
         actual.validate(AuditParameters.parseMessage(auditor.params));
 
-        assertEquals(expected, actual);
+        assertEquals(expected.getUserDn(), actual.getUserDn());
+        assertEquals(expected.getQuery(), actual.getQuery());
+        assertEquals(expected.getSelectors(), actual.getSelectors());
+        assertEquals(expected.getAuths(), actual.getAuths());
+        assertEquals(expected.getAuditType(), actual.getAuditType());
+        assertEquals(expected.getColviz(), actual.getColviz());
     }
 
     @Test
@@ -69,7 +74,12 @@ public class AuditBeanTest {
         AuditParameters actual = new AuditParameters();
         actual.validate(AuditParameters.parseMessage(auditor.params));
 
-        assertEquals(auditParams, actual);
+        assertEquals(auditParams.getUserDn(), actual.getUserDn());
+        assertEquals(auditParams.getQuery(), actual.getQuery());
+        assertEquals(auditParams.getSelectors(), actual.getSelectors());
+        assertEquals(auditParams.getAuths(), actual.getAuths());
+        assertEquals(auditParams.getAuditType(), actual.getAuditType());
+        assertEquals(auditParams.getColviz(), actual.getColviz());
     }
 
     private static class TestAuditor implements Auditor {
