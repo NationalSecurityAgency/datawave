@@ -167,8 +167,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     }
     
     public CloseableIterable<QueryPlan> streamPlans(JexlNode script) {
-        // try {
-        
         JexlNode node = TreeFlatteningRebuildingVisitor.flatten(script);
         
         tree = node;
