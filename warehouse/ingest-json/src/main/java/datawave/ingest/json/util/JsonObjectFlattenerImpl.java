@@ -38,14 +38,22 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     protected final Set<String> mapKeyWhitelist;
     protected final Set<String> mapKeyBlacklist;
     protected final String occurrenceDelimiter;
+    protected final boolean addArrayIndexToFieldName;
     
     protected JsonObjectFlattenerImpl(String pathDelimiter, Set<String> mapKeyWhitelist, Set<String> mapKeyBlacklist, FlattenMode flattenMode,
-                    String occurrenceDelimiter, JsonElementNameNormalizer nameNormalizer, MapKeyValueNormalizer keyValueNormalizer) {
+                    String occurrenceDelimiter, boolean addArrayIndexToFieldName, JsonElementNameNormalizer nameNormalizer,
+                    MapKeyValueNormalizer keyValueNormalizer) {
         this.pathDelimiter = pathDelimiter;
         this.mapKeyWhitelist = mapKeyWhitelist != null ? new HashSet<>(mapKeyWhitelist) : null;
         this.mapKeyBlacklist = mapKeyBlacklist != null ? new HashSet<>(mapKeyBlacklist) : null;
         this.flattenMode = flattenMode;
         this.occurrenceDelimiter = occurrenceDelimiter;
+        
+        // If a GROUPED* mode is enabled, then we force addArrayIndexToFieldName to false, since the additional
+        // context is redundant in those cases. The property is really only relevant for NORMAL mode usage
+        
+        this.addArrayIndexToFieldName = (this.flattenMode == FlattenMode.GROUPED || this.flattenMode == FlattenMode.GROUPED_AND_NORMAL) ? false
+                        : addArrayIndexToFieldName;
         
         if (this.flattenMode == FlattenMode.GROUPED) {
             if (this.pathDelimiter.equals(this.occurrenceDelimiter)) {
@@ -144,15 +152,10 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
                     mapPut(currentPath, jsonArray.get(i).getAsString(), map, occurrenceCounts);
                 } else {
                     
-                    switch (this.flattenMode) {
-                        case SIMPLE:
-                        case NORMAL:
-                            addKeysToMap(currentPath + this.pathDelimiter + i, jsonArray.get(i), map, occurrenceCounts);
-                            break;
-                        case GROUPED:
-                        case GROUPED_AND_NORMAL:
-                            addKeysToMap(currentPath, jsonArray.get(i), map, occurrenceCounts);
-                            break;
+                    if (this.addArrayIndexToFieldName) {
+                        addKeysToMap(currentPath + this.pathDelimiter + i, jsonArray.get(i), map, occurrenceCounts);
+                    } else {
+                        addKeysToMap(currentPath, jsonArray.get(i), map, occurrenceCounts);
                     }
                 }
             }
@@ -279,6 +282,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         protected Set<String> fieldNameBlacklist = null;
         protected JsonElementNameNormalizer nameNormalizer = null;
         protected MapKeyValueNormalizer keyValueNormalizer = null;
+        protected boolean addArrayIndexToFieldName = true;
         protected FlattenMode flattenMode = FlattenMode.NORMAL;
         protected String occurrenceDelimiter = DEFAULT_OCCURRENCE_DELIMITER;
         
@@ -315,6 +319,12 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         }
         
         @Override
+        public Builder addArrayIndexToFieldName(boolean addArrayIndexToFieldName) {
+            this.addArrayIndexToFieldName = addArrayIndexToFieldName;
+            return this;
+        }
+        
+        @Override
         public Builder mapKeyValueNormalizer(MapKeyValueNormalizer normalizer) {
             Preconditions.checkNotNull(normalizer, "normalizer cannot be null");
             this.keyValueNormalizer = normalizer;
@@ -330,8 +340,8 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         
         @Override
         public JsonObjectFlattener build() {
-            return new JsonObjectFlattenerImpl(pathDelimiter, fieldNameWhitelist, fieldNameBlacklist, flattenMode, occurrenceDelimiter, nameNormalizer,
-                            keyValueNormalizer);
+            return new JsonObjectFlattenerImpl(pathDelimiter, fieldNameWhitelist, fieldNameBlacklist, flattenMode, occurrenceDelimiter,
+                            addArrayIndexToFieldName, nameNormalizer, keyValueNormalizer);
         }
     }
 }

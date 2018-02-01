@@ -169,7 +169,7 @@
         (4) 'GROUPED_AND_NORMAL' mode:
 
                 Retains the fully-qualified 'NORMAL' mode field name as the prefix, and appends the full context suffix
-                as defined by 'GROUPED' mode above, for mximum flexibility
+                as defined by 'GROUPED' mode above, for maximum flexibility
 
                 E.g., GRANDPARENT_PARENT_FIELDNAME.grandparent_0.parent_2.fieldname_0
 
@@ -259,7 +259,10 @@
         <name>myjson.data.default.normalization.failure.policy</name>
         <value>FAIL</value>
         <description>For field normalization failures: DROP, LEAVE, FAIL.
-            FAIL will cause the entire record to be dropped and written to the error schema in Accumulo</description>
+             FAIL: the entire event/document will be dropped, and possibly written to the error schema in Accumulo.
+            LEAVE: the non-normalized value will be kept as-is.
+             DROP: the failed field will be dropped, and everything else retained
+        </description>
     </property>
 
     <property>

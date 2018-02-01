@@ -1,44 +1,21 @@
-# Building Datawave
+<p align="center">
+   <img src="https://github.com/NationalSecurityAgency/datawave-new/blob/master/datawave-readme.png" /> 
+</p>
 
-To perform a full (non-release) 'dev' build  without unit tests:
+[![Apache License][li]][ll]
 
-```bash
-mvn -Pdev -Ddeploy -Dtar -DskipTests -DskipITs clean install
-```
+DataWave is a Java-based ingest and query framework that leverages [Apache Accumulo](http://accumulo.apache.org/) to provide fast, secure access to your data. DataWave supports a wide variety of use cases, including but not limited to...
 
-This command will produce the following deployment archives:
+* Data fusion across structured and unstructured datasets
+* Construction and analysis of distributed graphs
+* Multi-tenant data architectures, with tenants having distinct security requirements and data access patterns
+* Fine-grained control over data access, integrated easily with existing user-authorization services and PKI
 
-1. Web Service: `./web-services/deploy/application/target/datawave-ws-deploy-application-${project.version}-dev.tar.gz`
-2. Ingest: `./warehouse/assemble/datawave/target/datawave-dev-${project.version}-dist.tar.gz`
+The easiest way to get started is the [DataWave Quickstart](contrib/datawave-quickstart/README.md)
 
-### Building A Release
+Documentation is located [here](https://nationalsecurityagency.github.io/datawave/)
 
-In order to build a release, you must also define the dist variable by adding `-Ddist` to the command-line as follows:
+Basic build instructions are [here](BUILDME.md)
 
-```bash
-mvn -Pdev -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
-```
-
-Note that this will build javadocs and source jars.
-
-### Prerequisites
-
-Note that, currently, you may have to install the read-properties and assert-properties plugins before you are able
-to build:
-
-```bash
-# Build ReadProperties
-pushd contrib/read-properties
-mvn clean install
-popd
-
-# Now build AssertProperties
-pushd contrib/assert-properties
-mvn clean install
-popd
-```
-
-## Quickstart
-
-See **contrib/datawave-quickstart** to quickly deploy a standalone DataWave cluster
-including ingest and web service components
+[li]: http://img.shields.io/badge/license-ASL-blue.svg
+[ll]: https://www.apache.org/licenses/LICENSE-2.0

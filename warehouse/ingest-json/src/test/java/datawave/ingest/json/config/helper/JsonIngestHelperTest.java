@@ -65,8 +65,8 @@ public class JsonIngestHelperTest {
         
         Assert.assertEquals(12, fieldMap.keySet().size());
         Assert.assertEquals(16, fieldMap.values().size());
-        Assert.assertTrue(fieldMap.containsKey("EXTRA_TEXT_3_NESTED"));
-        Assert.assertTrue(fieldMap.get("EXTRA_TEXT_3_NESTED").iterator().next().getEventFieldValue().equals("Extra text 4, nested"));
+        Assert.assertTrue(fieldMap.containsKey("EXTRATEXT_NESTED"));
+        Assert.assertTrue(fieldMap.get("EXTRATEXT_NESTED").iterator().next().getEventFieldValue().equals("Extra text 4, nested"));
         
         for (NormalizedContentInterface field : fieldMap.values()) {
             Assert.assertFalse(((NormalizedFieldAndValue) field).isGrouped());

@@ -75,6 +75,33 @@ public class JsonIngestFlattenerTest {
         
     }
     
+    @Test
+    public void testTester() throws IOException {
+        
+        String jsonFile = JsonIngestFlattenerTest.class.getResource("/input/tvmaze-seinfeld.json").getFile();
+        String configFile1 = JsonIngestFlattenerTest.class.getResource("/config/ingest/tvmaze-ingest-config.xml").getFile();
+        
+        // Add all-config.xml only for its *.ingest.policy.enforcer.class declaration. Without it, DataTypeHelperImpl will complain
+        String configFile2 = JsonIngestFlattenerTest.class.getResource("/config/ingest/all-config.xml").getFile();
+        
+        JsonIngestFlattener.Test.main(new String[] {"--file", jsonFile, "--config", configFile1 + "," + configFile2});
+        
+    }
+    
+    @Test(expected = java.lang.IllegalStateException.class)
+    public void testTesterNullArgs() throws IOException {
+        
+        JsonIngestFlattener.Test.main(null);
+        
+    }
+    
+    @Test(expected = java.lang.IllegalStateException.class)
+    public void testTesterJsonFileDoesNotExist() throws IOException {
+        
+        JsonIngestFlattener.Test.main(new String[] {"--file", "/this/file/definitely/does/not/exist.json"});
+        
+    }
+    
     private void printMap(Multimap<String,String> fieldMap) {
         TreeMultimap<String,String> sorted = TreeMultimap.create(fieldMap);
         for (String key : sorted.keySet()) {

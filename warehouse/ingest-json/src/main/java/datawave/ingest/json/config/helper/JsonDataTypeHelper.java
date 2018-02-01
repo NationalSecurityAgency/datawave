@@ -17,9 +17,6 @@ import java.util.Set;
  */
 public class JsonDataTypeHelper extends CSVHelper {
     
-    private static final String UNDERSCORE = "_";
-    private static final String PERIOD = ".";
-    
     public interface Properties extends CSVHelper.Properties {
         
         String COLUMN_VISIBILITY_FIELD = ".data.category.marking.visibility.field";
@@ -30,8 +27,6 @@ public class JsonDataTypeHelper extends CSVHelper {
     protected String columnVisibilityField = null;
     protected boolean processExtraFields = false;
     protected FlattenMode jsonObjectFlattenMode = FlattenMode.NORMAL;
-    protected String jsonObjectPathDelimiter = UNDERSCORE;
-    protected String jsonPropertyOccurrenceDelimiter = UNDERSCORE;
     
     @Override
     public void setup(Configuration config) throws IllegalArgumentException {
@@ -39,19 +34,6 @@ public class JsonDataTypeHelper extends CSVHelper {
         setProcessExtraFields(super.processExtraFields());
         this.setJsonObjectFlattenModeByName(config.get(this.getType().typeName() + Properties.FLATTENER_MODE, FlattenMode.NORMAL.name()));
         this.setColumnVisibilityField(config.get(this.getType().typeName() + Properties.COLUMN_VISIBILITY_FIELD));
-        switch (getJsonObjectFlattenMode()) {
-            case GROUPED:
-            case GROUPED_AND_NORMAL:
-                setJsonObjectPathDelimiter(PERIOD);
-                setJsonPropertyOccurrenceDelimiter(UNDERSCORE);
-                break;
-            case NORMAL:
-            case SIMPLE:
-                setJsonObjectPathDelimiter(UNDERSCORE);
-                break;
-            default:
-                throw new IllegalStateException("Unrecognized FlattenMode: " + getJsonObjectFlattenMode().name());
-        }
     }
     
     public String getColumnVisibilityField() {
@@ -83,22 +65,6 @@ public class JsonDataTypeHelper extends CSVHelper {
         this.jsonObjectFlattenMode = mode;
     }
     
-    public String getJsonObjectPathDelimiter() {
-        return jsonObjectPathDelimiter;
-    }
-    
-    public void setJsonObjectPathDelimiter(String jsonObjectPathDelimiter) {
-        this.jsonObjectPathDelimiter = jsonObjectPathDelimiter;
-    }
-    
-    public String getJsonPropertyOccurrenceDelimiter() {
-        return jsonPropertyOccurrenceDelimiter;
-    }
-    
-    public void setJsonPropertyOccurrenceDelimiter(String jsonPropertyOccurrenceDelimiter) {
-        this.jsonPropertyOccurrenceDelimiter = jsonPropertyOccurrenceDelimiter;
-    }
-    
     public JsonObjectFlattener newFlattener() {
         
         // Set flattener's whitelist and blacklist according to current state of the helper
@@ -127,7 +93,6 @@ public class JsonDataTypeHelper extends CSVHelper {
         }
         
         return new JsonIngestFlattener.Builder().jsonDataTypeHelper(this).mapKeyWhitelist(whitelistFields).mapKeyBlacklist(blacklistFields)
-                        .flattenMode(getJsonObjectFlattenMode()).occurrenceInGroupDelimiter(getJsonPropertyOccurrenceDelimiter())
-                        .pathDelimiter(getJsonObjectPathDelimiter()).build();
+                        .flattenMode(getJsonObjectFlattenMode()).addArrayIndexToFieldName(false).build();
     }
 }

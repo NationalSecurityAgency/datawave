@@ -1,64 +1,65 @@
 <!doctype html>
 <html class="no-js" lang="en" dir="ltr">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Datawave Docs</title>
+    <title>DataWave Docs</title>
     <link rel="stylesheet" href="css/foundation.css">
     <link rel="stylesheet" href="css/app.css">
     <link rel="stylesheet" href="css/dwdocs.css">
-  </head>
-  <body>
+</head>
+<body>
     <div class="top-bar">
         <div class="top-bar-left">
-        	<ul class="dropdown menu" data-dropdown-menu>
-				<li><img src="images/dwdocs_logo.png" width="50%" height="50%" style="padding-left: 10px; padding-right: 40px; padding-top: 10px;padding-bottom: 20px"></li>
-        			<li>
-        				<a href="#"> API Documents</a>
-            					<ul class="menu">
-                					<li><a href="javadocs/index.html">Javadoc</a></li>
-        	        				<li><a href="apidocs/index.html">API Docs</a></li>
-                					<li><a href="../js_api">JS_API</a></li>
-                					<li><a href="http://docs.jboss.org/hornetq/2.4.0.Final/docs/user-manual/html/rest.html">JBOSS HornetQ</a></li>
-                					<li><a href="http://docs.jboss.org/reseteasy/docs/3.0.9.Final/javadocs/index.html">JBOSS RestEasy</a></li>                		
-            					</ul>
-	            		</li>
+            <ul class="dropdown menu" data-dropdown-menu>
+                <li><img src="images/dwdocs_logo.png" width="50%" height="50%"
+                         style="padding-left: 10px; padding-right: 40px; padding-top: 10px;padding-bottom: 20px"></li>
+                <li>
+                    <a href="#">API Documents</a>
+                    <ul class="menu">
+                        <li><a href="javadocs/index.html">Javadoc</a></li>
+                        <li><a href="apidocs/index.html">API Docs</a></li>
+                    </ul>
+                </li>
 
-                                <li>
-                                        <a href="#">DataWave</a>
-                                        	<ul class="menu">
-                                                	<li><a href="/DataWave/DataDictionary">Data Dictionary</a></li>
-	                                                <li><a href="/DataWave/EdgeDictionary">Edge Dictionary</a></li>
-        	                                        <li><a href="/DataWave/Query/listQueryLogic">Deployed Query Logic</a></li>
-                	                                <li><a href="/DataWave/Security/User/listEffectiveAuthorizations">My Effective Authorizations</a></li>
-                        	                        <li><a href="/DataWave/Security/Admin/Credentials/listDNs">My Cached Credentials</a></li>
-                                	        </ul>
-                                </li>
+                <li>
+                    <a href="#">DataWave</a>
+                    <ul class="menu">
+                        <li><a href="/DataWave/DataDictionary">Data Dictionary</a></li>
+                        <li><a href="/DataWave/EdgeDictionary">Edge Dictionary</a></li>
+                        <li><a href="/DataWave/Query/listQueryLogic">Deployed Query Logics</a></li>
+                        <li><a href="/DataWave/Security/User/listEffectiveAuthorizations">My Effective Authorizations</a>
+                        </li>
+                        <li><a href="/DataWave/Security/Admin/Credentials/listDNs">Cached Credentials</a></li>
+                    </ul>
+                </li>
 
-		            	<li><a href="#">Release Notes</a></li>
+                <li><a href="#">Release Notes</a></li>
 
-		            	${datawave.docs.menu.extras}
-	           </ul>
-</div>
+                ${datawave.docs.menu.extras}
+            </ul>
+        </div>
     </div>
     <div style="background-color: #3c3c3c">
         <h1 align="center" style="color: white">Welcome to DataWave</h1>
-        <p align="center" style="color: white; font-size: 12pt; padding: 5px">Home to DataWave API Docs, User Docs, and More</p>
     </div>
 
     <div class="row" align="center">
         <div class="small-4 columns">
-            <a href="apidocs/index.html"><img src="images/api_icon_finished.png" width="50%" style="alignment-adjust:central;padding: 20px"></a>
-            <p align="center"  style="padding-bottom: 30%">API Documents</p></a>
+            <a href="apidocs/index.html"><img src="images/api_icon_finished.png" width="50%"
+                                              style="alignment-adjust:central;padding: 20px"></a>
+            <p align="center" style="padding-bottom: 30%">API Documents</p></a>
         </div>
         <div class="small-4 columns">
-            <a href="query_help.html"><img src="images/userGuide_icon.png" width="50%" style="alignment-adjust:central;padding: 20px"></a>
-            <p align="center"  style="padding-bottom: 30%">Query Help</p>
+            <a href="query_help.html"><img src="images/userGuide_icon.png" width="50%"
+                                           style="alignment-adjust:central;padding: 20px"></a>
+            <p align="center" style="padding-bottom: 30%">Query Help</p>
         </div>
         <div class="small-4 columns">
-            <a href="releaseNotes.html"><img src="images/releaseNotes_icon.png" width="50%" style="alignment-adjust:central;padding: 20px">
-            <p align="center"  style="padding-bottom: 30%">Release Notes</p>
+            <a href="releaseNotes.html"><img src="images/releaseNotes_icon.png" width="50%"
+                                             style="alignment-adjust:central;padding: 20px"></a>
+                <p align="center" style="padding-bottom: 30%">Release Notes</p>
         </div>
     </div>
 
@@ -67,14 +68,17 @@
     <script src="js/vendor/what-input.js"></script>
     <script src="js/vendor/foundation.js"></script>
     <script src="js/app.js"></script>
-  </body>
-  <footer>
-      <div class="top-bar" style="background-color: #3c3c3c">
-		  <p align="center" style="color:white">
-	          ${git.build.user.email}<br/>
-        	  ${git.branch}<br/>
-    	      ${git.commit.id@${git.build.time}
-          </p>
-      </div>
-  </footer>
+</body>
+<footer>
+    <div class="top-bar" style="background-color: #3c3c3c">
+        <p align="center" style="color:white">
+            Built By: ${git.build.user.email}<br/>
+            Branch: ${git.branch}<br/>
+            Commit: ${git.commit.id}<br/>
+            Date/Time: ${git.build.time}
+        </p>
+    </div>
+</footer>
 </html>
+
+

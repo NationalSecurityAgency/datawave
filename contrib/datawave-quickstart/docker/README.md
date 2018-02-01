@@ -5,9 +5,9 @@
 * Provide a containerized, standalone DataWave environment to jumpstart the learning process for new users
 
 * Provide a fully-configured dev environment for developers to use for experimentation, debugging, etc. 
-  The Docker container retains all the functionality of the non-containerized quickstart environment (see 
-  datawave-quickstart/README.md). For convenience, the container includes Maven for rebuilding DataWave, 
-  Git for source code management, etc
+  The Docker container retains all the functionality of the [non-containerized quickstart environment](../README.md)
+
+* For convenience, the container includes Maven for rebuilding DataWave, Git for source code management, etc
 
 * Enable streamlined testing and integration workflows for various CI/CD needs 
 
@@ -34,20 +34,20 @@
 
 ### Scripts
 
-##### docker-build.sh 
+#### [docker-build.sh](docker-build.sh) 
 
-* Uses Dockerfile to create a Docker image that mirrors the current DataWave source tree under an /opt/datawave root 
+* Uses [Dockerfile](Dockerfile) to create a Docker image that mirrors the current DataWave source tree under an /opt/datawave root 
   directory, including a fully-initialized deployment of DataWave under /opt/datawave/contrib/datawave-quickstart
 
-##### docker-run-example.sh
+#### [docker-run-example.sh](docker-run-example.sh)
 
 * Example ` docker run ... ` wrapper script, including set up for volumes, port mapping, etc
 
-##### docker-entrypoint.sh
+#### [docker-entrypoint.sh](docker-entrypoint.sh)
 
 * ENTRYPOINT script for the Docker container
 
-##### datawave-bootstrap.sh
+#### [datawave-bootstrap.sh](datawave-bootstrap.sh)
 
 * Helper script for starting up DataWave ingest and web service components in the container, via 
   ` --ingest ` and ` --web ` flags respectively. When invoked with the ` --bash ` flag, the script

@@ -77,7 +77,7 @@ public class JsonObjectFlattenerImplTest {
     @Test
     public void testFlattenAndForceLowerCaseKeys() throws Exception {
         
-        JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().pathDelimiter(".").mapKeyValueNormalizer(noOpNormalizer).build();
+        JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().pathDelimiter(".").mapKeyValueNormalizer(toLowerCaseNormalizer).build();
         
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(json);
@@ -89,6 +89,7 @@ public class JsonObjectFlattenerImplTest {
         Assert.assertEquals(25, fieldMap.keySet().size());
         Assert.assertEquals(29, fieldMap.values().size());
         Assert.assertEquals(3, fieldMap.get("rootobject.date").size());
+        Assert.assertEquals(1, fieldMap.get("rootobject.string1").size());
     }
     
     @Test
