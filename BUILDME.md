@@ -3,7 +3,7 @@
 To perform a full (non-release) 'dev' build  without unit tests:
 
 ```bash
-mvn -Pdev -Ddeploy -Dtar -DskipTests -DskipITs clean install
+mvn -Pdev -Ddeploy -Dtar -DskipTests clean install
 ```
 
 This command will produce the following deployment archives:
@@ -16,7 +16,7 @@ This command will produce the following deployment archives:
 In order to build a release, you must also define the dist variable by adding `-Ddist` to the command-line as follows:
 
 ```bash
-mvn -Pdev -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
+mvn -Pdev -Ddeploy -Dtar -Ddist -DskipTests clean install
 ```
 
 Note that this will build javadocs and source jars.
