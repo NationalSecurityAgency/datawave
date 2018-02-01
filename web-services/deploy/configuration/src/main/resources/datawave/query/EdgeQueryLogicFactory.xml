@@ -45,8 +45,8 @@
             </list>
         </property>
         <property name="queryThreads" value="16" />
-        <property name="auditType" value="ACTIVE" />
-        <property name="logicDescription" value="Edge query" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Retrieve graph edges matching the search term(s)" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
         <property name="listSelectorExtractor" ref="SplitSelectorExtractorParamDefaultNull" />

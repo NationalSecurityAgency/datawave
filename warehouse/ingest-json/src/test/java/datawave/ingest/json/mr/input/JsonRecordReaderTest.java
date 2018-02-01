@@ -69,8 +69,8 @@ public class JsonRecordReaderTest {
     }
     
     @Test
-    public void testOneRecordHeaderFieldsOnlyNORMAL() throws Exception {
-        JsonRecordReader reader = init(true, FlattenMode.NORMAL);
+    public void testOneRecordHeaderFieldsOnlySIMPLE() throws Exception {
+        JsonRecordReader reader = init(true, FlattenMode.SIMPLE);
         reader.setInputDate(System.currentTimeMillis());
         Assert.assertTrue(reader.nextKeyValue());
         Assert.assertNotNull(reader.getEvent());
@@ -92,7 +92,7 @@ public class JsonRecordReaderTest {
         // Record 2
         Assert.assertTrue(reader.nextKeyValue());
         Assert.assertNotNull(reader.getEvent());
-        Assert.assertEquals(25, reader.getCurrentFields().keySet().size());
+        Assert.assertEquals(18, reader.getCurrentFields().keySet().size());
         Assert.assertEquals(29, reader.getCurrentFields().values().size());
         // Record 3
         Assert.assertTrue(reader.nextKeyValue());

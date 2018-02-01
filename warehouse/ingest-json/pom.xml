@@ -123,6 +123,41 @@
     <build>
         <plugins>
             <plugin>
+                <!-- 
+                     To ease the burden of setting java classpath when testing JsonIngestFlattener. E.g.,
+
+                     $ cd warehouse/ingest-json
+                     $ java -cp lib/*:target/datawave-ingest-json-<version>.jar datawave.ingest.json.config.helper.JsonIngestFlattener\$Test -f /test/data/raw.json -c /test/ingest/my-config.xml
+                -->
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <outputDirectory>lib</outputDirectory>
+                            <includeArtifactIds>commons-collections,
+                                commons-io,
+                                commons-lang,
+                                commons-logging,
+                                datawave-core,
+                                datawave-ingest-configuration,
+                                datawave-ingest-core,
+                                datawave-ws-common-util,
+                                gson,
+                                guava,
+                                hadoop-common,
+                                hadoop-mapreduce-client-core,
+                                log4j,
+                                slf4j-api</includeArtifactIds>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <executions>

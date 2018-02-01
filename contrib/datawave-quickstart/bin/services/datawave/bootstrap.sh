@@ -13,24 +13,17 @@ DW_DATAWAVE_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 DW_DATAWAVE_SOURCE_DIR="$( cd "${DW_DATAWAVE_SERVICE_DIR}/../../../../.." && pwd )"
 
-# Comma-delimited list of Accumulo authorizations to grant the root user. These will be automatically assigned to the
-# Accumulo root user with a dynamically generated accumulo-shell script during the DataWave install. Override the
-# default list as needed for whatever your test data requires
+# Comma-delimited list of Accumulo authorizations to grant DataWave's Accumulo user. These will be automatically
+# assigned to that user with a dynamically generated accumulo-shell script during the DataWave install. Override the
+# default list as needed for whatever auths your test data requires. Defaults to authorizations known to exist on our
+# canned example data. Should be exhaustive for any and all known/required auths. Otherwise, you will not be able to
+# view the data in Accumulo Shell
 
 DW_DATAWAVE_ACCUMULO_AUTHS="${DW_DATAWAVE_ACCUMULO_AUTHS:-PUBLIC,PRIVATE,FOO,BAR,DEF}"
 
-# Comma-delimited list of web service and Accumulo authorizations to grant the test user. This list will be used to
-# auto-generate the appropriate TestAuthorizationServiceConfiguration.xml entries for the web service. Concatenates
-# DW_DATAWAVE_ACCUMULO_AUTHS by default, since you'll most likely want your test user to be able to see everything
-# in Accumulo. Override the default list as needed for whatever your user-based testing requires
+# Import DataWave Web test user configuration
 
-DW_DATAWAVE_USER_AUTHS="${DW_DATAWAVE_USER_AUTHS:-AuthorizedUser,Administrator,JBossAdministrator,${DW_DATAWAVE_ACCUMULO_AUTHS}}"
-
-# Test user's client cert subject DN and issuer DN. Defaults to DN's from testUser.p12 cert
-
-DW_DATAWAVE_USER_DN="${DW_DATAWAVE_USER_DN:-cn=test a. user, ou=my department, o=my company, st=some-state, c=us}"
-
-DW_DATAWAVE_ISSUER_DN="${DW_DATAWAVE_ISSUER_DN:-cn=test ca, ou=my department, o=my company, st=some-state, c=us}"
+source "${DW_DATAWAVE_SERVICE_DIR}/bootstrap-user.sh"
 
 # Selected Maven profile for the DataWave build
 
@@ -167,7 +160,7 @@ function setBuildPropertyOverrides() {
    echo "hdfs.site.config.urls=file://${HADOOP_CONF_DIR}/core-site.xml,file://${HADOOP_CONF_DIR}/hdfs-site.xml" >> ${BUILD_PROPERTIES_FILE}
    echo "NUM_SHARDS=${DW_DATAWAVE_INGEST_NUM_SHARDS}" >> ${BUILD_PROPERTIES_FILE}
 
-   generateTestAuthorizationServiceConfig
+   generateTestDatawaveUserServiceConfig
 
    # Apply DW_JAVA_HOME_OVERRIDE, if needed...
    # We can override the JAVA_HOME location for the DataWave deployment, if necessary. E.g., if we're deploying
@@ -219,55 +212,6 @@ function setBuildPropertiesSymlink() {
        error "Override for ${BUILD_PROPERTIES_BASENAME} failed"
        return 1
    fi
-}
-
-function generateTestAuthorizationServiceConfig() {
-
-   # The goal here is to write to BUILD_PROPERTIES_FILE all the props required to configure TestDatawaveUserService
-   # for the 'testUser.p12' cert/user, or whichever cert/user is currently configured.
-
-   # TestDatawaveUserService implements datawave.microservice.authorization.AuthorizationService and retrieves DataWave
-   # user roles/auths from a local file, i.e., Spring bean context 'TestDatawaveUserServiceConfiguration.xml', rather
-   # than from an external service
-
-   # We dynamically generate the auth entries for TestDatawaveUserServiceConfiguration.xml from $DW_DATAWAVE_USER_AUTHS
-   # and map those entries to the DN given by DW_DATAWAVE_USER_DN
-
-   OLD_IFS="$IFS"
-   IFS=","
-   local userAuths=( ${DW_DATAWAVE_USER_AUTHS} )
-   IFS="$OLD_IFS"
-   local authXmlEntries=""
-   for auth in "${userAuths[@]}" ; do
-      authXmlEntries="${authXmlEntries}<value>${auth}</value>"
-   done
-
-   echo "security.use.testauthservice=true" >> ${BUILD_PROPERTIES_FILE}
-   echo "security.testauthservice.context.entry=<value>classpath*:datawave/security/TestDatawaveUserServiceConfiguration.xml</value>" >> ${BUILD_PROPERTIES_FILE}
-
-   # TODO: We've transitioned from XML to JSON for auth and role config, so I need to transition loop above
-   #       and parameterize below config accordingly
-
-   echo "security.testauthservice.users= \\"                                 >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        <value><![CDATA[ \\"                                     >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        { \\"                                                    >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n            \"dn\": { \\"                                        >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n                 \"subjectDN\": \"${DW_DATAWAVE_USER_DN}\", \\"  >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n                 \"issuerDN\": \"${DW_DATAWAVE_ISSUER_DN}\" \\"  >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        }, \\"                                                   >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        \"userType\": \"USER\",\\"                               >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        \"auths\": [ \"PRIVATE\", \"PUBLIC\", \"FOO\", \"BAR\" ], \\"  >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        \"roles\": [ \"PRIVATE\", \"PUBLIC\", \"FOO\", \"BAR\", \"Administrator\", \"AuthorizedUser\", \"JBossAdministrator\" ], \\" >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        \"roleToAuthMapping\": { \\"                             >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n             \"PRIVATE\": [ \"PRIVATE\" ], \\"                   >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n             \"PUBLIC\": [ \"PUBLIC\" ], \\"                      >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n             \"FOO\": [ \"FOO\" ], \\"                            >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n             \"BAR\": [ \"BAR\" ] \\"                            >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n            }, \\"                                               >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        \"creationTime\": -1, \\"                                >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        \"expirationTime\": -1 \\"                               >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        } \\"                                                    >> ${BUILD_PROPERTIES_FILE}
-   echo "\\n        ]]></value>"                                             >> ${BUILD_PROPERTIES_FILE}
 }
 
 function buildRequiredPlugins() {

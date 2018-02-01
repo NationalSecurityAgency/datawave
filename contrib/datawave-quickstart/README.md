@@ -11,8 +11,12 @@ ZooKeeper, etc, and provides convenience methods for testing DataWave's
 ingest and query components
 
 * For simplicity, all cluster services are downloaded/installed automatically,
-they are extracted and installed under the quickstart home diriectory, and all
+they are extracted and installed under the quickstart home directory, and all
 are owned/executed by the current user
+
+* Docker alternative: rather than installing and running services locally, you may prefer
+to run the entire [quickstart environment as a Docker container](docker/README.md). This will
+provide the exact same capabilities described below, but hosted on a CentOS 7 base image.
 
 ---
 
@@ -45,32 +49,31 @@ Linux with at least Bash 4x will probably suffice
 The quickstart is comprised primarily of ` ../{serviceName}/boostrap.sh ` scripts. These define supporting bash variables
 and bash functions, encapsulating both configuration and key functionality for each service in a consistent manner.
 
-All boostrap scripts are sourced in your environment via ` bin/env.sh `, which itself should be sourced in your
+All boostrap scripts are sourced into your environment via [bin/env.sh](bin/env.sh), which itself should be sourced in your
 ` ~/.bashrc ` as described below. 
 
-Note that the bash commands in **Step 1** below will complete the entire setup process, but first you may want to read through 
-subsequent sections to better understand how the setup works, how to customize it for your own preferences, etc
+Note that the four bash commands shown in **Step 1** below will complete the entire setup process, but first you may want to read through subsequent sections to better understand how the setup works and how to customize it for your own preferences
  
 1. Update your ` ~/.bashrc ` as indicated below and then run the commands that follow to bootstrap and install all services...
 
     ```bash
-    $ echo 'source /path/to/datawave-quickstart/bin/env.sh' >> ~/.bashrc
-    $ source ~/.bashrc
-    $ allInstall
-    $ datawaveWebStart && datawaveWebTest
+    $ echo "source /path/to/datawave-quickstart/bin/env.sh" >> ~/.bashrc  # Step 1
+    $ source ~/.bashrc                                                    # Step 2
+    $ allInstall                                                          # Step 3
+    $ datawaveWebStart && datawaveWebTest                                 # Step 4
     # Setup is now complete
     ```
     If you happen to update ` ~/.bashrc ` via some other method, such as with **vi** or other, beware that the
     ` source /path/to/datawave-quickstart/bin/env.sh ` line should be placed **after** any existing Hadoop-, Accumulo-, 
-    Wildfly-, or ZooKeeper-related variables you may have defined in order to prevent those existing configs from 
-    interfering with the quickstart install. Making it the last line in the file will mitigate most potential conflicts
+    Wildfly-, or ZooKeeper-related variables you may have defined, in order to prevent those existing configs from 
+    interfering with the quickstart install. Making it the last line in the file will mitigate most conflicts
 
-2. After executing ` source ~/.bashrc ` above in **Step 1**, tarballs for any registered services (Hadoop, 
+2. After executing ` source ~/.bashrc ` as shown above, tarballs for registered services (Hadoop, 
    Accumulo, ZooKeeper, Wildfly, etc) will begin downloading automatically, and the DataWave build will be started 
-   automatically in turn. This can take a while to complete, so good time for a coffee break
+   automatically in turn. This can take a while to complete, so this is a good time for a coffee break
 
     * It's also easy to affect which version of a binary gets downloaded/installed for a given service. Just override 
-    the default ` DW_**_DIST_URI ` value defined in the service's ` bootstrap.sh ` prior to performing ` source ~/.bashrc `
+    the default ` DW_**_DIST_URI ` value defined in the service's ` bootstrap.sh ` before performing this step
       
       For example...
       ```bash
@@ -88,26 +91,24 @@ subsequent sections to better understand how the setup works, how to customize i
       $ source ~/.bashrc
       ``` 
 
-    * Either way, in the case of DataWave's ingest and web service binaries, a Maven build is kicked
-      off automatically and the respective tarballs are moved into place upon conclusion of the build
+    * As for DataWave's ingest and web service binaries, a Maven build is kicked off automatically and the
+      respective tarballs will be moved into place upon conclusion of the build
       
-    * The ` DW_DATAWAVE_BUILD_COMMAND ` variable in datawave/bootstrap.sh defines the Maven command used
-      for the build. It may also be overridden in ` ~/.bashrc ` or from the command line as needed 
+    * The ` DW_DATAWAVE_BUILD_COMMAND ` variable in [datawave/bootstrap.sh](bin/services/datawave/bootstrap.sh) defines
+      the Maven command used for the build. It may be overridden in ` ~/.bashrc ` or from the command line as needed
       
 3.  When tarball downloads are finished and the DataWave build has completed, the ` allInstall ` command
-    from **Step 1** will initialize and configure all services...
+    will initialize and configure all services...
       
     * Alternatively, individual services may be installed one at a time, if desired, using ` {serviceName}Install `
 
-    * All binaries are extracted/installed under ` /path/to/datawave-quickstart/bin/services/* `
+    * All binaries are extracted/installed under [datawave-quickstart/bin/services](bin/services)
     
-    * As part of the installation of DataWave Ingest, sample data will be ingested automatically via M/R for demonstration purposes
+    * As part of the installation of DataWave Ingest, example data will be ingested automatically via M/R for demonstration purposes
     
     * Example datasets in JSON, CSV, and XML formats are among those ingested automatically
       
-4. Lastly, ` datawaveWebStart && datawaveWebTest ` from **Step 1** above will start up DataWave Web and run preconfigured tests 
-   against DataWave's REST API. If all goes well, then all web service tests will pass. Otherwise, note any test failures
-   and check logs for error messages as needed.
+4. Lastly, ` datawaveWebStart && datawaveWebTest ` will start up DataWave Web and run preconfigured [tests](bin/services/datawave/test-web/tests) against DataWave's REST API. Note any test failures, if present, and check logs for error messages.
    
     * Troubleshooting help:
     
@@ -120,7 +121,7 @@ subsequent sections to better understand how the setup works, how to customize i
     * Note that an individual service may be started at any time with its associated ` {serviceName}Start ` command
     
     * Moreover, using a DataWave-specific command, such as ` datawaveWebStart ` for starting DataWave web services 
-      in Wildfly, will automatically start up any dependencies, if necessary, such as Hadoop, Accumulo, ZooKeeper, etc
+      in Wildfly, will automatically start up service dependencies, if necessary, such as Hadoop, Accumulo, ZooKeeper, etc
 
     * Alternatively, you may execute the ` allStart ` command to bring up all services in the proper order
 
@@ -128,7 +129,7 @@ subsequent sections to better understand how the setup works, how to customize i
 
    * Execute the ` allStatus ` command or use ` {serviceName}Status ` for a given service to display its associated PID(s)
    
-   * Try out the following queries from the command line, and inspect the results...
+   * Try out the following queries from the command line and inspect the results...
    ```bash
    # Find some Wikipedia data based on page title, with --verbose flag to see the CURL command used...
 
@@ -136,9 +137,9 @@ subsequent sections to better understand how the setup works, how to customize i
 
    # TV show data from API.TVMAZE.COM (graph edge queries)
 
-   $ datawaveQuery --logic EdgeQuery --syntax JEXL --query "SOURCE == 'kevin bacon' && TYPE == 'TV_COSTARS'"
-   $ datawaveQuery --logic EdgeQuery --syntax JEXL --query "SOURCE == 'william shatner' && TYPE == 'TV_CHARACTERS'" 
-   $ datawaveQuery --logic EdgeQuery --syntax JEXL --query "SOURCE == 'westworld' && TYPE == 'TV_SHOW_CAST'"
+   $ datawaveQuery --logic EdgeQuery --syntax JEXL --query "SOURCE == 'kevin bacon' && TYPE == 'TV_COSTARS'" --pagesize 30
+   $ datawaveQuery --logic EdgeQuery --syntax JEXL --query "SOURCE == 'william shatner' && TYPE == 'TV_CHARACTERS'"
+   $ datawaveQuery --logic EdgeQuery --syntax JEXL --query "SOURCE == 'westworld' && TYPE == 'TV_SHOW_CAST'"  --pagesize 20
 
    # Check out all 'datawaveQuery' function options, inspect default parameter values, etc...
 
@@ -173,10 +174,14 @@ subsequent sections to better understand how the setup works, how to customize i
 
 ### Convenience functions implemented for DataWave Web and DataWave Ingest
 
-See `bin/services/datawave/bootstrap*.sh ` and also ` bin/query.sh ` 
+DataWave-specific functions are implemented in a variety scripts. For example...
+* [bin/query.sh](bin/query.sh): Query-related functions for interacting with DataWave Web's REST API
+* [datawave/bootstrap.sh](bin/services/datawave/bootstrap.sh): Common functions. Parent wrapper for the DataWave Web and DataWave Ingest bootstraps
+* [datawave/bootstrap-web.sh](bin/services/datawave/bootstrap-web.sh): Bootstrap for DataWave Web and associated functions
+* [datawave/bootstrap-ingest.sh](bin/services/datawave/bootstrap-ingest.sh): Bootstrap for DataWave Ingest and associated functions
+* [datawave/bootstrap-user.sh](bin/services/datawave/bootstrap-user.sh): User-specific configs/functions for your DataWave Web test user
 
-* ` datawaveBuild ` and ` datawaveBuildDeploy ` 
-    * Rebuild and/or redeploy DataWave as needed (i.e., after the initial install/deploy)
+The functions below are a small subset of those implemented for DataWave, but will likely be the most commonly used
     
 * ` datawaveWebStart [ --debug ] `
     * Start up DataWave's web services in Wildfly. Pass the `--debug` flag to start Wildfly in debug mode
@@ -185,36 +190,38 @@ See `bin/services/datawave/bootstrap*.sh ` and also ` bin/query.sh `
     * Submit queries on demand and inspect results 
     * Supports several options, use the ` --help ` flag for more info
     * After installation, try ` datawaveQuery --query "PAGE_TITLE:AccessibleComputing OR PAGE_TITLE:Anarchism" ` to view some Wikipedia search results
-    * Also see ` bin/query.sh ` for more details
+    * Also see [bin/query.sh](bin/query.sh) for more details
     * Query syntax guidance: <http://localhost:8443/DataWave/doc/query_help.html>
     
 * ` datawaveWebTest `
-    * Wrapper function for the ` services/datawave/test-web/run.sh ` script, for executing pre-configured, curl-based tests against DataWave's REST API
+    * Wrapper function for the [datawave/test-web/run.sh](bin/services/datawave/test-web/run.sh) script, for executing pre-configured, curl-based tests against DataWave's REST API
     * Supports several options, use the ` --help ` flag for more information
     
 * ` datawaveIngestJson /path/to/local/file.json`
     * Kick off M/R job to ingest raw JSON file
-    * Ingest config file: ` warehouse/ingest-configuration/src/main/resources/config/myjson-ingest-config.xml `
-    * Raw file ingested by quickstart install (ie, datawave/install-ingest.sh): ` warehouse/ingest-json/src/test/resources/input/tvmaze-api.json `
-    * Try out ` datawave/ingest-examples/ingest-tv-shows.sh ` to download and ingest a JSON dataset dynamically via <http://tvmaze.com/api>
+    * Ingest config file: [myjson-ingest-config.xml](../../warehouse/ingest-configuration/src/main/resources/config/myjson-ingest-config.xml)
+    * Raw file [ingested automatically](bin/services/datawave/install-ingest.sh) by the quickstart install: [tvmaze-api.json](../../warehouse/ingest-json/src/test/resources/input/tvmaze-api.json)
+    * Execute the [ingest-tv-shows.sh](bin/services/datawave/ingest-examples/ingest-tv-shows.sh) script to download and ingest a JSON dataset dynamically via <http://tvmaze.com/api>
         * Upon completion, you should be able to execute queries related to cast and characters for several TV shows...
         * Shard query: ` datawaveQuery --query "EMBEDDED_CAST_PERSON_NAME == 'bryan cranston'" --syntax JEXL `
-        * Edge query: ` datawaveQuery --logic EdgeQuery --syntax JEXL --query "SOURCE == 'don knotts' && TYPE == 'TV_COSTARS'" `
+        * Edge query: ` datawaveQuery --logic EdgeQuery --syntax JEXL --query "SOURCE == 'don knotts' && TYPE == 'TV_COSTARS'" --pagesize 30 `
         * Edge-to-Shard query: ` datawaveQuery --logic EdgeEventQuery --syntax JEXL --query "SOURCE == 'don knotts' && SINK == 'andy griffith' && RELATION == 'PERSON-PERSON' &&  TYPE == 'TV_COSTARS'" `
     
 * ` datawaveIngestWikipedia /path/to/local/enwiki*.xml `
-    * Kick off M/R job to ingest a raw Wikipedia file. Any standard enwiki-flavored (raw XML) should suffice 
-    * Ingest config file: ` warehouse/ingest-configuration/src/main/resources/config/wikipedia-ingest-config.xml `
-    * Raw file ingested by quickstart install (ie, datawave/install-ingest.sh): ` warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml `
+    * Kick off M/R job to ingest a raw Wikipedia file. Any standard enwiki-flavored (raw XML) should suffice
+    * Ingest config file: [wikipedia-ingest-config.xml](../../warehouse/ingest-configuration/src/main/resources/config/wikipedia-ingest-config.xml)
+    * Raw file [ingested automatically](bin/services/datawave/install-ingest.sh) by the quickstart install: [enwiki-20130305-pages-articles-brief.xml](../../warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml)
     * Example shard query: ` datawaveQuery --query "PAGE_TITLE:AccessibleComputing OR PAGE_TITLE:Anarchism" `
     * Example edge query: ` datawaveQuery --logic EdgeQuery --syntax JEXL --query "SOURCE == 'computer accessibility' && TYPE == 'REDIRECT'" `
     
 * ` datawaveIngestCsv /path/to/local/file.csv `
     * Kick off M/R job to ingest a raw CSV file
-    * Ingest config file: ` warehouse/ingest-configuration/src/main/resources/config/mycsv-ingest-config.xml `
-    * Raw file ingested by quickstart install (ie, datawave/install-ingest.sh): ` warehouse/ingest-csv/src/test/resources/input/my.csv `
+    * Ingest config file: [mycsv-ingest-config.xml](../../warehouse/ingest-configuration/src/main/resources/config/mycsv-ingest-config.xml)
+    * Raw file [ingested automatically](bin/services/datawave/install-ingest.sh) by the quickstart install: [my.csv](../../warehouse/ingest-csv/src/test/resources/input/my.csv)
     * Example query: ` datawaveQuery --query "FOO_FIELD:myfoo" `
 
+* ` datawaveBuild ` and ` datawaveBuildDeploy ` 
+    * Rebuild and/or redeploy DataWave as needed (i.e., after the initial install/deploy)
 ---
 
 ### Functions implemented by all service bootstraps
@@ -237,7 +244,7 @@ Where ` {servicename} ` is one of ` hadoop `, ` accumulo `, ` zookeeper `, ` dat
 
 ### Common functions implemented for convenience
 
-See ` bin/common.sh `
+See [bin/common.sh](bin/common.sh)
 
 | | |
 |---------------:|:------------- |
@@ -252,16 +259,16 @@ See ` bin/common.sh `
 
 ### PKI Notes
     
-* Note that DataWave Web is PKI enabled and by default uses the following self-signed materials from
-`{source-root}/web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/`
-
-    * Server Truststore [JKS]: ca.jks
-    * Server Keystore [PKCS12]: testServer.p12
-    * Client Cert [PKCS12]: testUser.p12
+* Note that DataWave Web is PKI enabled and by default uses the following self-signed materials
+    * Server Truststore [JKS]: [ca.jks](../../web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/ca.jks)
+    * Server Keystore [PKCS12]: [testServer.p12](../../web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testServer.p12)
+    * Client Cert [PKCS12]: [testUser.p12](../../web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testUser.p12)
         
 * Passwords for all of the above: `secret`
 
-* If you'd like to test with your own certs, update the PKI config in ` bin/services/datawave/bootstrap.sh `
+* If you'd like to test with your own certs, override the PKI config in [datawave/bootstrap.sh](bin/services/datawave/bootstrap.sh)
   prior to downloading and installing services
+
+* For configuration of user-specific roles and associated Accumulo authorizations for DataWave Web, see [datawave/bootstrap-user.sh](bin/services/datawave/bootstrap-user.sh)
 
 ---

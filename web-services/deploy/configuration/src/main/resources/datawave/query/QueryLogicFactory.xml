@@ -72,15 +72,6 @@
             </util:list>
         </property>
     </bean>
-    
-        <!-- Edge table query -->
-    <bean id="FacetedQueryPlanner" scope="prototype" class="datawave.query.planner.FacetedQueryPlanner" />
-        
-    <bean id="FacetedQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.facets.FacetedQueryLogic">
-        <property name="modelTableName" value="DatawaveMetadata" />
-        <property name="modelName" value="DATAWAVE" />
-        <property name="queryPlanner" ref="FacetedQueryPlanner" />
-    </bean>
 
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="compressOptionMappings" value="true" />
@@ -174,8 +165,8 @@
             <util:set>
             </util:set>
         </property>
-        <property name="auditType" value="ACTIVE" />
-        <property name="logicDescription" value="Event query with rewritten logic" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Retrieve sharded events/documents, leveraging the global index tables as needed" />
         <!-- Determines how many events in the global index lookup will be
         aggregated into a day range -->
         <property name="eventPerDayThreshold" value="40000" />
@@ -256,16 +247,6 @@
         <property name="modelName" value="DATAWAVE" />
     </bean>
 
-    <!-- Query logic not referenced in map
-    <bean id="BooleanPartitionedQueryTable" scope="prototype"  cladatawave.query.tables.PartitionedQueryTableable" parent="BaseModelEventQuery">
-        <property name="chunker">
-            <bean class="datawave.query.tables.chunk.BooleanChunker" />
-        </property>
-        <property name="queryPlanner" ref="BooleanChunkingQueryPlanner" />
-        <property name="delegateQueryPlanner" ref="DefaultQueryPlanner" />
-    </bean>
-    -->
-
     <bean id="EventQueryDataDecoratorTransformer" scope="prototype" class="datawave.query.transformer.EventQueryDataDecoratorTransformer">
         <property name="dataDecorators">
             <map key-type="java.lang.String"
@@ -319,7 +300,7 @@
             <util:set>
             </util:set>
         </property>
-        <property name="auditType" value="ACTIVE" />
+        <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value." />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
@@ -333,7 +314,7 @@
             <util:set>
             </util:set>
         </property>
-        <property name="auditType" value="PASSIVE" />
+        <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Query that returns a document given the document identifier" />
     </bean>
 
@@ -354,14 +335,14 @@
             <util:set>
             </util:set>
         </property>
-        <property name="auditType" value="ACTIVE" />
+        <property name="auditType" value="NONE" />
         <property name="logicDescription" value="FieldIndex count query (experimental)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
 
     <!-- Query logic that returns events from the error table -->
     <bean id="ErrorEventQuery" scope="prototype" parent="BaseEventQuery">
-        <property name="logicDescription" value="Errored Event query" />
+        <property name="logicDescription" value="Retrieve events/documents that encountered one or more errors during ingest" />
         <property name="tableName" value="${error.shard.table.name}" />
         <property name="metadataTableName" value="${error.metadata.table.name}" />
         <property name="dateIndexTableName" value="" />
@@ -370,26 +351,14 @@
         <property name="includeHierarchyFields" value="false" />
     </bean>
 
-<!-- Query Logic that returns events based on Jexl query
-    <bean id="LuceneUUIDEventQuery" scope="prototype"  parent="BaseEventQuery">
-        <property name="auditType" value="PASSIVE" />
-        <property name="logicDescription" value="Lucene event query for Event UUIDs" />
-        <property name="mandatoryQuerySyntax">
-            <util:set>
-                <value>LUCENE-UUID</value>
-            </util:set>
-        </property>
-    </bean>
--->
-
     <bean id="LuceneUUIDEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.webservice.query.logic.composite.CompositeQueryLogic">
-      <property name="logicDescription" value="Composite query logic that runs the UUID queries against the Event and Error tables" />
-      <property name="auditType" value="PASSIVE" />
+      <property name="logicDescription" value="Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml" />
+      <property name="auditType" value="NONE" />
       <property name="queryLogics">
         <list value-type="datawave.webservice.query.logic.BaseQueryLogic">
           <bean scope="prototype" parent="BaseEventQuery">
-            <property name="auditType" value="PASSIVE" />
-            <property name="logicDescription" value="Lucene event query for Event UUIDs" />
+            <property name="auditType" value="NONE" />
+            <property name="logicDescription" value="Lucene query for event/document UUIDs" />
             <property name="mandatoryQuerySyntax">
                 <util:set>
                     <value>LUCENE-UUID</value>
@@ -403,8 +372,8 @@
             <property name="metadataTableName" value="${error.metadata.table.name}" />
             <property name="indexTableName" value="${error.index.table.name}" />
             <property name="reverseIndexTableName" value="${error.rindex.table.name}" />
-            <property name="auditType" value="PASSIVE" />
-            <property name="logicDescription" value="Lucene event query for Event UUIDs" />
+            <property name="auditType" value="NONE" />
+            <property name="logicDescription" value="Lucene query for event/document UUIDs for events that encountered errors at ingest time" />
             <property name="mandatoryQuerySyntax">
                 <util:set>
                     <value>LUCENE-UUID</value>
@@ -420,25 +389,15 @@
     <!-- Bean configurations for DATAWAVE query table objects. These are
     used in the TableManagerFactory setup and set as the logic class for the
     bridge tables -->
-    <bean id="KnowledgeQuery" scope="prototype"  parent="BaseEventQuery">
-        <property name="tableName" value="${knowledge.shard.table.name}" />
-        <property name="dateIndexTableName" value="" />
-        <property name="metadataTableName" value="${knowledge.metadata.table.name}" />
-        <property name="indexTableName" value="${knowledge.index.table.name}" />
-        <property name="reverseIndexTableName" value="${knowledge.rindex.table.name}" />
-        <property name="auditType" value="PASSIVE" />
-        <property name="logicDescription" value="Tasking information query" />
-        <property name="includeHierarchyFields" value="false" />
-    </bean>
 
 
     <bean id="IndexStatsQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.shard.IndexStatsQueryLogic">
-        <property name="auditType" value="PASSIVE" />
+        <property name="auditType" value="NONE" />
         <property name="selectorExtractor"><null/></property>
     </bean>
 
 	<bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.metrics.QueryMetricQueryLogic">
-	    <property name="logicDescription" value="Query Metrics query" />
+	    <property name="logicDescription" value="Retrieve query metrics based on the given search term(s)" />
 	    <property name="includeHierarchyFields" value="false" />
 	    <property name="modelTableName" value="${query.metrics.table.basename}_m" />
 	    <property name="modelName" value="NONE" />
@@ -451,34 +410,12 @@
 	    <property name="auditType" value="NONE" />
 	</bean>
 
-    <bean id="DashboardQueryLogic" scope="prototype"  parent="QueryMetricsQuery" class="datawave.query.dashboard.DashboardQueryLogic">
-        <property name="logicDescription" value="Query metrics summaries for high-level dashboard"/>
-    </bean>
-
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
-        <property name="logicDescription" value="Event query" />
-    </bean>
-
-    <bean id="TLDEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
-        <property name="collapseUids" value="${query.tld.collapse.uids}" />
-        <property name="indexFilteringClassNames">
-            <list value-type="java.lang.String">
-                ${event.query.filters.index.classnames}
-            </list>
-        </property>
-        <property name="dataQueryExpressionFilterEnabled" value="${query.tld.query.expression.filter.enabled}"/>
-    </bean>
-
-    <bean id="ParentEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.ParentQueryLogic">
-        <property name="dataQueryExpressionFilterEnabled" value="${query.parent.query.expression.filter.enabled}"/>
-    </bean>
-
-    <bean id="AncestorEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.AncestorQueryLogic">
-        <property name="dataQueryExpressionFilterEnabled" value="${query.ancestor.query.expression.filter.enabled}"/>
+        <property name="logicDescription" value="Query the sharded event/document schema, leveraging the global index tables as needed" />
     </bean>
 
     <bean id="CountQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.CountingShardQueryLogic">
-        <property name="logicDescription" value="Count Query"/>
+        <property name="logicDescription" value="Retrieve event/document counts based on your search criteria"/>
     </bean>
 
     <!-- Query Logic that implements a discovery type query over the index -->
@@ -497,7 +434,7 @@
             <util:set>
             </util:set>
         </property>
-        <property name="auditType" value="ACTIVE" />
+        <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Discovery query that returns information from the index about the supplied term(s)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
@@ -519,13 +456,13 @@
             <util:set>
             </util:set>
         </property>
-        <property name="auditType" value="ACTIVE" />
+        <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Discovery query that returns information from the ingest errors index about the supplied term(s)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
 
     <bean id="ErrorCountQuery" scope="prototype"  parent="BaseCountQuery">
-        <property name="logicDescription" value="Count query of errored events" />
+        <property name="logicDescription" value="Retrieve counts of errored events based on your search criteria" />
         <property name="tableName" value="${error.shard.table.name}" />
         <property name="metadataTableName" value="${error.metadata.table.name}" />
         <property name="indexTableName" value="${error.index.table.name}" />
@@ -548,8 +485,8 @@
             <util:set>
             </util:set>
         </property>
-        <property name="auditType" value="ACTIVE" />
-        <property name="logicDescription" value="Fast boolean query over indexed fields only returning fields queried on" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Fast boolean query over indexed fields, only returning fields queried on" />
         <!-- Determines how many events in the global index lookup will be
         aggregated into a day range -->
         <property name="eventPerDayThreshold" value="40000" />
@@ -626,7 +563,7 @@
     </bean>
 
     <bean id="EdgeEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.edge.DefaultEdgeEventQueryLogic">
-        <property name="logicDescription" value="Use results of an EdgeQuery to obtain events that created the edge." />
+        <property name="logicDescription" value="Use results of an EdgeQuery to obtain events/documents that created the given edge" />
         <property name="edgeQueryModel" ref="edgeEventQueryModel" />
         <property name="edgeModelName" value="DATAWAVE_EDGE" />
         <property name="modelTableName" value="DatawaveMetadata" />

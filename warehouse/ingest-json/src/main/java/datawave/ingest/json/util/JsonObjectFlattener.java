@@ -21,7 +21,7 @@ public interface JsonObjectFlattener {
     
     /**
      * <p>
-     * Supported modes: {@link #SIMPLE}, {@link #NORMAL}, {@link #GROUPED}
+     * Supported modes: {@link #SIMPLE}, {@link #NORMAL}, {@link #GROUPED}, {@link #GROUPED_AND_NORMAL}
      */
     enum FlattenMode {
         /**
@@ -49,7 +49,7 @@ public interface JsonObjectFlattener {
          * Same as {@link #NORMAL} mode, but instead we append the hierarchical context onto 'FIELDNAME' as a suffix, with additional information to identify
          * the distinct occurrence. For example,
          *
-         * <blockquote> <b>fieldname.greatgrandparent_0.grandparent_1.parent_3.fieldname_0 = value</b> </blockquote>
+         * <blockquote> <b>FIELDNAME.greatgrandparent_0.grandparent_1.parent_3.fieldname_0 = value</b> </blockquote>
          * <p>
          * ...where '_#' denotes the specific occurrence of the element within the given level of the hierarchy.
          *
@@ -63,7 +63,11 @@ public interface JsonObjectFlattener {
         /**
          * <p>
          * Creates both {@link #NORMAL} and {@link #GROUPED} keys for maximum flexibility in terms of indexing and query options, at the expense of greater
-         * storage cost
+         * storage cost.
+         *
+         * <p>
+         * Implementors may decide to emit two distinct keys in the map, one {@code NORMAL} key and one {@code GROUPED} key, or a single key with the
+         * {@link #NORMAL} mode field name applied as a prefix concatenated with the suffix from {@link #GROUPED} mode
          */
         GROUPED_AND_NORMAL;
     }
@@ -265,6 +269,16 @@ public interface JsonObjectFlattener {
          * @return builder instance
          */
         Builder<T> jsonElementNameNormalizer(JsonElementNameNormalizer normalizer);
+        
+        /**
+         * Set to true if you want an element's array index to be added to the flattened field name, for uniqueness. If set to false, then all array element
+         * values will be added to the Multimap under the same key
+         * 
+         * @param addArrayIndexToFieldName
+         *            true or false
+         * @return builder instance
+         */
+        Builder<T> addArrayIndexToFieldName(boolean addArrayIndexToFieldName);
         
         /**
          * Creates the flattener instance
