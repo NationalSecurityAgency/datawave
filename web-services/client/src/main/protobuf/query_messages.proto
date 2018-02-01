@@ -1,0 +1,24 @@
+package datawave.webservice.query;
+
+option optimize_for = LITE_RUNTIME;
+option java_package = "datawave.webservice.query";
+
+message QueryImpl {
+	required string query_logic_name = 1;
+	required string id = 2;
+	optional string query_name = 3;
+	required string user_DN = 4;
+	required string query = 5;
+	required string query_visibility = 6;
+	optional int64 begin_date = 7;
+	optional int64 end_date = 8;
+	required string query_authorizations = 9;
+	required int64 expiration_date = 10;
+	required uint32 pagesize = 11 [default=0];
+	repeated Parameter parameters = 12;
+	
+	message Parameter {
+		required string parameter_name = 1;
+		required string parameter_value = 2;
+	}	
+}

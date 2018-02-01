@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Model xmlns="http://webservice.datawave/v1" name="CARDINALITY_MODEL">
+    <Mappings>
+        <Mapping fieldName="FIELD_1" modelFieldName="UUID" direction="FORWARD"  indexOnly="false" />
+        <Mapping fieldName="FIELD_1" modelFieldName="UUID" direction="REVERSE"  indexOnly="false" />
+
+        <Mapping fieldName="FIELD_2" modelFieldName="FIELD_2A" direction="FORWARD"  indexOnly="false"/>
+        <Mapping fieldName="FIELD_2" modelFieldName="FIELD_2A" direction="REVERSE"  indexOnly="false"/>
+        <Mapping fieldName="FIELD_2" modelFieldName="FIELD_2B" direction="FORWARD"  indexOnly="false"/>
+        <Mapping fieldName="FIELD_2" modelFieldName="FIELD_2C" direction="FORWARD"  indexOnly="false"/>
+
+        <Mapping fieldName="FIELD_3" modelFieldName="FIELD_3A" direction="FORWARD"  indexOnly="false"/>
+        <Mapping fieldName="FIELD_3" modelFieldName="FIELD_3B" direction="FORWARD"  indexOnly="false"/>
+        <Mapping fieldName="FIELD_3" modelFieldName="FIELD_3C" direction="FORWARD"  indexOnly="false"/>
+        <Mapping fieldName="FIELD_3" modelFieldName="FIELD_3C" direction="REVERSE"  indexOnly="false"/>
+
+        <Mapping fieldName="FIELD_4" modelFieldName="FIELD_4A" direction="FORWARD"  indexOnly="false"/>
+        <Mapping fieldName="FIELD_4" modelFieldName="FIELD_4A" direction="REVERSE"  indexOnly="false"/>
+        <Mapping fieldName="FIELD_4" modelFieldName="FIELD_4B" direction="FORWARD"  indexOnly="false"/>
+    </Mappings>
+</Model>

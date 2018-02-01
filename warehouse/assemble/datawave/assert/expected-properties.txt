@@ -1,0 +1,73 @@
+ALL_HANDLER_CLASSES, CSV of DataTypeHandler class names to be applied to every datatype.
+BIN_DIR_FOR_FLAGS, path on local disk to bin directory inside DATAWAVE_INGEST_HOME.
+BULK_CHILD_MAP_MAX_MEMORY_MB, Amount of Java heap for bulk child ingest tasks.
+BULK_CHILD_REDUCE_MAX_MEMORY_MB, Amount of Java heap for bulk child ingest tasks.
+BULK_INGEST_DATA_TYPES, CSV list of datatypes to run in the bulk ingest slot.
+#BULK_INGEST_GROUPING, String to use for grouping files for a bulk ingest job based on dates ("yyyy/MM/dd", "yyyy/MM", "yyyy", or "none").
+BULK_INGEST_REDUCERS, Number of reducers for the bulk ingest slot.
+CHILD_INGEST_OPTS, Java options to be passed to child mapreduce tasks.
+CONFIGURATION, Logical name for this configuration
+DATAWAVE_CACHE_PORT, Port to use for the DATAWAVE Infinispan cache.
+DEFAULT_SHARD_HANDLER_CLASSES, CSV of DatatypeHandler class names to be applied to a given datatype.
+DUMPER_HOSTS, Hosts used to pull data from a stream-based data delivery system.
+EDGE_TABLE_NAME, Name of the DATAWAVE edge table.
+EVENT_DISCARD_INTERVAL, Time in milliseconds to retain events, affecting ingest and ageoff.
+FLAG_DIR, Path on local disk on the ingest master where flag files should be stored.
+#FLAG_METRICS_DIR, Directory on HDFS to store metrics from the FlagMaker.
+#FLAG_MAKER_CONFIG, Flag maker configs to run.
+HADOOP_HOME, Hadoop installation directory on local disk.
+HADOOP_INGEST_OPTS, Options to be passed to HADOOP_OPTS for ingest scripts.
+HDFS_BASE_DIR, Base directory to use in HDFS for ingest.
+INGEST_ACCUMULO_HOME, Path to the Accumulo installation for the ingest cluster.
+INGEST_BULK_MAPPERS, Minimum number of mappers to target for a bulk ingest job.
+INGEST_HADOOP_CONF, Hadoop configuration directory for the ingest cluster.
+INGEST_HOST, The host to use for running the DATAWAVE ingest processes.
+INGEST_INSTANCE_NAME, Accumulo instance name for the ingest cluster.
+INGEST_JOBTRACKER_NODE, Hadoop jobtracker for the ingest cluster.
+INGEST_LIVE_MAPPERS, Minimum number of mappers to target for a live ingest job.
+INGEST_MAX_BULK_BLOCKS_PER_JOB, Maximum number of HDFS blocks to include in a bulk ingest job.
+INGEST_MAX_LIVE_BLOCKS_PER_JOB, Maximum number of HDFS blocks to include in a live ingest job.
+INGEST_ZOOKEEPERS, CSV of ZooKeeper hosts for the ingest cluster.
+JAVA_HOME, Path on local disk to Java home.
+LIVE_CHILD_MAP_MAX_MEMORY_MB, Amount of Java heap for live child ingest tasks.
+LIVE_CHILD_REDUCE_MAX_MEMORY_MB, Amount of Java heap for live child ingest tasks.
+LIVE_INGEST_DATA_TYPES, CSV list of datatypes to run in the live ingest slot.
+#LIVE_INGEST_GROUPING, String to use for grouping files for a live ingest job based on dates ("yyyy/MM/dd", "yyyy/MM", "yyyy", or "none").
+LIVE_INGEST_REDUCERS, Number of reducers for the live ingest slot.
+LOG_DIR, Log directory on local disk on the DATAWAVE ingest master.
+MAPRED_INGEST_OPTS, Options to be passed to ingest jobs.
+METADATA_TABLE_NAME, Name for the DATAWAVE metadata table, usually 'DatawaveMetadata'.
+MONITOR_SERVER_HOST, Name of the host to run the "real-time" ingest monitor server.
+NUM_MAP_LOADERS, Number of map-file-loaders to run.
+NUM_SHARDS, Number of shards to create per day.
+PROTOBUF_EDGE_TABLE_NAME,  Name of the DATAWAVE protocol buffer enabled edge table
+PYTHON, Path to Python executable.
+RCPT_TO, CSV list of email address to mail for various messages.
+ROLLUP_HOST, Host to launch DATAWAVE analytic rollup jobs from.
+SHARD_INDEX_TABLE_NAME, Name of the DATAWAVE global forward index, usually 'shardIndex'.
+SHARD_REVERSE_INDEX_TABLE_NAME, Name of the DATAWAVE global reverse index, usually 'shardReverseIndex'.
+SHARD_TABLE_NAME, Name of the DATAWAVE date-partitioned, with in-partition index, table, usually 'shard'.
+DATE_INDEX_TABLE_NAME, Name of the DATAWAVE date index table, usually 'dateIndex'.
+SHARD_INDEX_STATS_TABLE_NAME, Name of the Accumulo table used for keeping statistics about the global forward index, usually 'shardIndexStats'
+USERNAME, Accumulo user name, currently the same across warehouse and ingest clusters.
+WAREHOUSE_ACCUMULO_HOME, Local installation of Accumulo for the warehouse cluster.
+WAREHOUSE_HADOOP_CONF, Path on local disk to Hadoop configuration for the warehouse cluster.
+WAREHOUSE_INSTANCE_NAME, Accumulo instance name for the warehouse cluster.
+WAREHOUSE_JOBTRACKER_NODE, Hadoop jobtracker for the warehouse cluster.
+WAREHOUSE_ZOOKEEPERS, CSV list of ZooKeepers to use for the Warehouse Accumulo instance.
+ZOOKEEPER_HOME, Path on local disk to ZooKeeper.
+rpm.file.owner, unix user to own the files installed by the RPM
+rpm.file.group, unix group for files installed by the RPM
+rpm.file.accumulo.owner, unix user to own files installed by the RPM into the Accumulo folders
+rpm.file.accumulo.group, unix group for files installed by the RPM into the Accumulo folders
+COMPOSITE_INGEST_DATA_TYPES, list of types polled as a single type but then have their datatype rewritten as they are pushed into sequence files
+hornetq.host,HornetQ server hosts (<host>:<host>[:<host>])
+hornetq.port,HornetQ port (likely 5445)
+cache.accumulo.username, RAMCLOUD Accumulo username
+cache.accumulo.password, RAMCLOUD Accumulo password
+cache.accumulo.zookeepers, RAMCLOUD Accumulo instance zookeepers
+cache.accumulo.instance, instance name for the RAMCLOUD Accumulo instance
+KEYSTORE, server keystore
+KEYSTORE_TYPE, server keystore type
+TRUSTSTORE, server truststore
+TRUSTSTORE_TYPE, server truststore type

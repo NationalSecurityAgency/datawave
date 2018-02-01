@@ -1,0 +1,21 @@
+// compile with protoc --java_out ../java
+//      classpath for compile command should include ../../../target/classes and protobuf-java-2.2.0.jar
+
+package datawave.ingest.protobuf;
+
+option java_package = "datawave.ingest.protobuf";
+option optimize_for = SPEED;
+
+message Data {
+        optional uint64 date = 1;
+        optional string dataType = 2;
+        optional string uid = 3;
+        repeated string errors = 4;
+        optional bytes visibility = 5;
+        optional string rawFileName = 6;
+        optional uint64 rawRecordNumber = 7;
+        repeated string uuids = 8;
+        optional bytes rawData = 9;
+        optional bool requiresMasking = 10;
+        optional uint64 rawFileTimeStamp = 11;
+}

@@ -1,0 +1,104 @@
+accumulo.instance.name, name of the Accumulo instance
+accumulo.admin.defaultpool.size, number of Accumulo connections in the admin priority connection pool
+accumulo.high.defaultpool.size, number of Accumulo connections in the high priority connection pool
+accumulo.low.defaultpool.size, number of Accumulo connections in the low priority connection pool
+accumulo.normal.defaultpool.size, number of Accumulo connections in the normal/medium priority connection pool
+accumulo.admin.uuidpool.size, number of Accumulo connections in the admin priority connection pool
+accumulo.high.uuidpool.size, number of Accumulo connections in the high priority connection pool
+accumulo.low.uuidpool.size, number of Accumulo connections in the low priority connection pool
+accumulo.normal.uuidpool.size, number of Accumulo connections in the normal/medium priority connection pool
+accumulo.user.name, name of the Accumulo user for the connection pools
+accumulo.user.password, password for the Accumulo user -- SET IN PRIVATE MAVEN SETTINGS
+atom.table.name, name of the table that contains the Atom entries created by the AtomDataTypeHandler
+atom.connection.pool.name, name of the configured connection pool where the Atom table resides
+cached_results.daysToLive, number of days that tables/views should remain in CachedResults store
+cached_results.rows.per.batch, JDBC batch size for inserting into CachedResults store
+cached.results.hdfs.uri, HDFS for storing exports of CachedResults
+cached.results.export.dir, directory in HFDS for storing exports of CachedResults
+security.testauthservice.users,
+event.query.data.decorators,
+event.query.max.results,
+external.host.name, external hostname for the web service
+external.port.number, external port number for the web service
+extra.connection.factory.entries, additional connection pool definitions
+hornetq.cluster.password, password for HORNETQ servers to join the cluster -- SET IN PRIVATE MAVEN SETTINGS
+hornetq.cluster.username, username for HORNETQ servers to join the cluster
+hornetq.datasource.max.pool.size, number of JMS connections to HORNETQ for the HORNETQ jms datasource
+hornetq.system.password, password for connections to HORNETQ by MDBs and other clients. -- SET IN PRIVATE MAVEN SETTINGS
+hornetq.system.username, username for connections to HORNETQ by MDBs and other clients.
+issuer.dn, issuer DN of the server cert
+jboss.ejb3.connector.time.out, Number of ms before the remote ejb connections will time out
+jboss.java.opts, extra JVM arguments
+jboss.jmx.password, Admin Console and JMX Console username -- SET IN PRIVATE MAVEN SETTINGS
+jboss.jmx.username, Admin Console and JMX Console user password
+jboss.jvm.heap.size, jvm heap size to use, will be set in bin/run.conf
+jboss.cms.initiating.occupancy.fraction, start a garbage collection if the tenured generation exceeds this fraction, jvm default is 92, datawave uses 75
+jboss.mdb.pool.max.size, maximum number of Message Driven Bean instances in each pool
+jboss.mdb.pool.timeout, Timeout (ms) before throwing an exception when waiting to get a Message Driven Bean instance from the pool
+jboss.partition.name, name of the JBoss cluster
+jboss.run.conf.extras, extra stuff to append to the end of run.conf
+jboss.slsb.pool.max.size, Maximum number of Stateless Session Bean instances in each pool
+jboss.slsb.pool.timeout, Timeout (ms) before throwing an exception when waiting to get a Stateless Session Bean instance from the pool
+jboss.transaction.time.out, Number of seconds before transactions will time out
+jboss.web.accept.count, Number of requests to queue up for available thread. When queue is full then connection refused errors will be returned to the caller
+jboss.web.max.threads, Number of threads for accepting HTTP requests, defaults to 200
+jboss.log.hdfs.uri, hdfs instance where the JBoss logs should be placed
+jboss.log.hdfs.dir, hdfs directory where the JBoss logs should be placed
+jboss.log.dir, log directory name on the local server
+lookup.uuid.beginDate,
+lookup.uuid.uuidTypes,
+mapReduce.hdfs.base.dir, Base directory name to use in HDFS for the MapReduce service results
+mapReduce.hdfs.uri, HDFS uri
+mapReduce.http.port,
+mapReduce.inputFormat.restrict, restrict input formats to the named input formats in the config file (true/false)
+mapReduce.job.tracker, MapReduce job tracker (host:port)
+mysql.dbname, dbname of the MySQL database for the CachedResults-ds.xml file
+mysql.host, hostname of the MySQL database for the CachedResults-ds.xml file
+mysql.pool.min.size, minimum number of connections to keep in the connection pool
+mysql.pool.max.size, maximum number of connections to keep in the connection pool
+mysql.user.name, username of the MySQL database for the CachedResults-ds.xml file
+mysql.user.password, password of the MySQL database for the CachedResults-ds.xml file -- SET IN PRIVATE MAVEN SETTINGS
+datawave.webservice.namespace,
+num.shards, number of partitions per day in the sharded event table
+port.definition.set,
+resteasy.async.job.service.base.path,
+resteasy.async.job.service.max.job.results,
+resteasy.async.job.service.max.wait,
+resteasy.async.job.service.thread.pool.size,
+server.cert.basename,
+server.dn,
+server.keystore.password, SET IN PRIVATE MAVEN SETTINGS
+server.truststore.password,
+table.name.edge,
+table.name.knowledge.metadata,
+table.name.knowledge.shard,
+table.name.knowledge.shardIndex,
+table.name.knowledge.shardReverseIndex,
+table.name.metadata,
+table.name.shard,
+table.name.shardIndex,
+table.name.shardReverseIndex,
+table.name.date.index,
+table.name.error.metadata,
+table.name.error.shard,
+table.name.error.shardIndex,
+table.name.error.shardReverseIndex,
+webapp.transport.guarantee, CONFIDENTIAL for SSL or empty for non-SSL
+trusted.header.login, true or false (true = expect subject and issuer DNs of the user to appear in request headers, false = normal SSL connection)
+zookeeper.hosts, list of ZOOKEEPER hosts for the Accumulo instance
+query.expiration.minutes, Number of minutes that a query can be idle before the connection is closed
+query.page.shortcircuit.minutes, Number of minutes after which the page will be returned iff it contains results.
+query.page.size.shortcircuit.minutes, Number of minutes after which the page size velocity will be checked to potentially short circuit the next() call
+query.default.page.size, The default page size if not specified by the user
+query.max.page.size, The max page size that a user can request
+query.page.byte.trigger, The number of bytes at which a page will be forced to be returned, even if the pagesize has not yet been attained
+include.hierarchy.fields,
+cluster.name, name of the cluster. used in the http response headers
+rpm.file.owner, unix user to own the files installed by the RPM
+rpm.file.group, unix group for files installed by the RPM
+jboss.extra.java.opts, Additional JAVA_OPTS to load in bin/run.conf
+jboss.runas.user, User JBoss should run as
+hdfs.site.config.urls, For Ivarator, should be file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml
+id.translation.return.fields, fields returned by IdTranslator endpoint
+querymetrics.policy.enforcer.class, Needed for ingesting querymetrics since the all-config.xml filtered file does not get loaded.  See QueryMetrics.xml
+query.tokenized.fields, Needed for configuring a list of fields which gets tokenizers applied during query.    See QueryLogicFactory.xml

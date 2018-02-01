@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+
+<property>
+	<name>metadata.ingest.helper.class</name>
+	<value>datawave.ingest.data.config.ingest.MetaDataIngestHelper</value>
+</property>
+
+<property>
+	<name>metadata.reader.class</name>
+	<value></value>
+</property>
+
+<property>
+	<name>metadata.handler.classes</name>
+	<value></value>
+</property>
+
+<property>
+  <name>metadata.table.name</name>
+  <value>${METADATA_TABLE_NAME}</value>
+</property>
+
+<property>
+  <name>metadata.table.loader.priority</name>
+  <value>30</value>
+</property>
+
+<property>
+  <name>${METADATA_TABLE_NAME}.table.config.class</name>
+  <value>datawave.ingest.table.config.MetadataTableConfigHelper</value>
+</property>
+
+<property>
+  <name>metadata.loaddates.enabled</name>
+  <value>${LOADDATES_TABLE_ENABLED}</value>
+</property>
+
+<property>
+  <name>metadata.loaddates.table.name</name>
+  <value>${LOADDATES_TABLE_NAME}</value>
+</property>
+
+<property>
+  <name>metadata.loaddates.table.loader.priority</name>
+  <value>30</value>
+</property>
+
+<property>
+    <name>metadata.loaddates.table.locality.groups</name>
+    <value>LACS:LAC\u0000shard;LAC\u0000protobufEdge;LAC\u0000knowledgeShard;LAC\u0000errorShard</value>
+    <description>The list of locality groups.  Groups are comma separated.  Column families are semicolon separated, e.g. groupName1:colFamily1;colFamily2,groupName2:colFamily3</description>
+</property>
+
+<property>
+  <name>LoadDates.table.config.class</name>
+  <value>datawave.ingest.table.config.LoadDateTableConfigHelper</value>
+</property>
+
+<property>
+  <name>metadata.term.frequency.enabled</name>
+  <value>true</value>
+</property>
+
+</configuration>

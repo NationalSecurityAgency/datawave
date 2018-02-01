@@ -1,0 +1,23 @@
+jms-streamed-client example
+
+This example is meant to be used the view messages put in a jms queue by the
+Streamed API.
+
+To use this example, you must first update the jndi.properties so it points to
+the datawave-query instance you want to hit.  Modify the
+'java.naming.provider.url' property of the jndi.properties file found in
+src/main/resources.
+
+Then build the project by running
+
+mvn clean package
+
+At that point, you can use the provided script to run the project.  From the
+command line run the following
+
+./bin/run.sh
+
+This will launch the client and ask you to input the stream name.  
+
+Use the -h option on run.sh to get more info.  You can attach a remote debugger if you would
+like to step through the client

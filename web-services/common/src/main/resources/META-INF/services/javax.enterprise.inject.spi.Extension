@@ -1,0 +1,2 @@
+datawave.configuration.spring.SpringCDIExtension
+datawave.configuration.RefreshableScopeExtension

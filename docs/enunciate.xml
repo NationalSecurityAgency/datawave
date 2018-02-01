@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<enunciate
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="http://enunciate.webcohesion.com/schemas/enunciate-2.9.1.xsd">
+    <api-classes>
+      <exclude pattern="datawave.webservice.atom.AtomServiceBean"/>
+    </api-classes>
+    <modules>
+        <docs includeApplicationPath="true" apiRelativePath="/" />
+
+        <!-- Note that we must include the application path for both the jaxrs and swagger modules. -->
+		<jaxrs>
+			<application path="/DataWave" />
+		</jaxrs>
+        <swagger basePath="/DataWave" />
+        <jackson honorJaxb="true" />
+		<jackson1 disabled="true"/>
+		<jaxws disabled="true"/>
+		<spring-web disabled="true"/>
+
+        <idl disabled="false"/>
+
+        <!-- Client Library Generation-->
+        <java-json-client disabled="false"/>
+        <javascript-client disabled="false"/>
+        <gwt-json-overlay disabled="false"/>
+        <php-json-client disabled="false"/>
+        <ruby-json-client disabled="false"/>
+        <!--
+            The C, C#, and Obj-C client libraries are disabled since generation produces warnings
+            saying that the behavior will be confusing to users (list serialization won't happen
+            and items that should be a list will be strings that need to be parsed)
+        -->
+        <c-xml-client disabled="true"/>
+        <csharp-xml-client disabled="true"/>
+        <obj-c-xml-client disabled="true"/>
+        <!--
+            These 2 XML clients are disabled, since Enunciate can't build them directly
+            (it incorrectly reports JAX-B errors in our source
+        -->
+        <java-xml-client disabled="true"/>
+        <php-xml-client disabled="true"/>
+    </modules>
+</enunciate>

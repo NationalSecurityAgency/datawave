@@ -1,0 +1,49 @@
+server:
+  context-path: /datawave
+  port: 8443
+  non-secure-port: 8080
+  ssl:
+    key-store: 'classpath:/testKeystore.jks'
+    key-store-type: JKS
+    key-store-password: 'ChangeIt'
+    key-password: 'LetMeIn'
+    key-alias: 'configkey'
+
+management:
+  context-path: /mgmt
+  security:
+    roles: Administrator,JBossAdministrator
+
+endpoints:
+  health:
+    sensitive: false
+
+security:
+  sessions: STATELESS
+  enable-csrf: true
+  user.password: passwordNotUsed
+  jwt.ttl: 86400
+  enforce-allowed-callers: false
+  issuers-required: true
+
+spring:
+  # Enable service discovery using Consul
+  cloud:
+    discovery:
+      enabled: true
+    consul:
+      enabled: true
+      host: consul
+      discovery:
+        port: ${server.non-secure-port}
+        health-check-path: ${server.context-path}${management.context-path}/health
+        health-check-interval: 15s
+        instance-id: ${spring.application.name}:${vcap.application.instance_id:${spring.application.instance_id:${random.value}}}
+      # Allow a long time for the Consul agent to become available.
+      retry:
+        max-attempts: 120
+  # Use discovery to find the RabbitMQ server
+  rabbitmq:
+    discovery:
+      enabled: true
+      failFast: true

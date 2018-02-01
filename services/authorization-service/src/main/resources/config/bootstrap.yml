@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: authorization
+  cloud:
+    config:
+      # Disable consul-first config by default. We'll turn it back on in the consul profile if that profile is enabled.
+      discovery:
+        enabled: false
+      # Always fail fast so we can retry if the config server is not up yet
+      failFast: true
+      # Give the config server time to start up if it hasn't already
+      retry:
+        max-attempts: 60
+      uri: '${CONFIG_SERVER_URL:http://configuration:8888}'
+
+---
+
+# For the dev profile, check localhost for the config server by default
+spring:
+  profiles: 'dev'
+  cloud:
+    config:
+      uri: '${CONFIG_SERVER_URL:http://localhost:8888}'
+
+---
+
+spring:
+  profiles: 'consul'
+  cloud:
+    config:
+      # Use Consul to locate the configuration server and bootstrap app config.
+      discovery:
+        enabled: true
+      # Give the config server a long time to come up and register itself in Consul
+      retry:
+        max-attempts: 120
+    # Allow the default Consul host to be overridden via an environment variable
+    consul:
+      host: ${CONSUL_HOST:localhost}
+
+---
+
+# For the "No Messaging" profile, we need to disable the AMQP bus, our custom RabbitMQ discovery, and the RabbitMQ health indicator.
+spring:
+  profiles: 'nomessaging'
+  cloud:
+    bus:
+      enabled: false
+  rabbitmq:
+    discovery:
+      enabled: false
+
+management:
+  health:
+    rabbit:
+      enabled: false

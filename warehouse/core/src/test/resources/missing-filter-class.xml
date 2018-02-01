@@ -1,0 +1,14 @@
+<ageoffConfiguration>
+    <rules>
+        <rule>
+            <filterClass>datawave.ingest.util.cache.watch.TestFilter</filterClass>
+            <ttl units="ms">10</ttl>
+            <matchPattern>1</matchPattern>
+            <myTagName ttl="1234"/>
+        </rule>
+        <rule>
+            <matchPattern>G</matchPattern>
+            <ttl units="d">50</ttl>
+        </rule>
+    </rules>
+</ageoffConfiguration>

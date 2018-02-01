@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+
+    <property>
+        <name>protobufedge.table.name</name>
+        <value>${PROTOBUF_EDGE_TABLE_NAME}</value>
+    </property>
+
+    <property>
+        <name>protobufedge.id.table.name</name>
+        <value>${PROTOBUF_ID_EDGE_TABLE_NAME}</value>
+    </property>
+
+    <property>
+        <name>protobufedge.table.loader.priority</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>protobufedge.table.config.class</name>
+        <value>datawave.ingest.table.config.ProtobufEdgeTableConfigHelper</value>
+    </property>
+
+    <property>
+        <name>protobufedge.id.table.config.class</name>
+        <value>datawave.ingest.table.config.ProtobufEdgeIdTableConfigHelper</value>
+    </property>
+
+    <property>
+        <name>protobufedge.table.metadata.enable</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>protobufedge.table.blacklist.enable</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>protobufedge.spring.config</name>
+        <value>${EDGE_DEFINITION_FILE}</value>
+    </property>
+
+    <property>
+        <name>protobufedge.setup.default.failurepolicy</name>
+        <value>FAIL_JOB</value>
+    </property>
+
+    <property>
+        <name>protobufedge.process.default.failurepolicy</name>
+        <value>FAIL_JOB</value>
+    </property>
+
+    <!--24 hours in milliseconds -->
+    <property>
+        <name>protobufedge.valid.activitytime.future.delta</name>
+        <value>86400000</value>
+    </property>
+
+    <!--10 years in milliseconds -->
+    <property>
+        <name>protobufedge.valid.activitytime.past.delta</name>
+        <value>315360000000</value>
+    </property>
+
+</configuration>
+

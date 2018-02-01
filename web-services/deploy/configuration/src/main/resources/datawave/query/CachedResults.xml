@@ -1,0 +1,34 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd">
+
+    <!--context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" /-->
+    <context:property-placeholder location="classpath*:/datawave/query/CachedResults.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="100"/>
+	
+	<bean id="CachedResultsConfiguration" class="datawave.webservice.results.cached.CachedResultsConfiguration">
+        <!-- The default pagesize (must be smaller than the max page records) -->
+        <property name="defaultPageSize" value="${query.default.page.size}" />
+
+        <!-- The max number of records (max pagesize value) -->
+        <property name="maxPageSize" value="${query.max.page.size}" />
+
+        <!-- The number of bytes at which a page will be forced to be returned, even if the pagesize has not yet been attained -->
+        <property name="pageByteTrigger" value="${query.page.byte.trigger}" />
+
+		<property name="parameters">
+			<map key-type="java.lang.String" value-type="java.lang.String">
+				<entry key="TEMPLATE_TABLE" value="${TEMPLATE}" />
+				<entry key="CREATE_TABLE" value="${CREATE_TABLE}" />
+				<entry key="DROP_TABLE" value="${DROP_TABLE}" />
+				<entry key="DROP_VIEW" value="${DROP_VIEW}"/>
+				<entry key="INSERT" value="${INSERT}" />
+				<entry key="ROWS_PER_BATCH" value="${cached_results.rows.per.batch}" />
+				<entry key="HDFS_URI" value="${cached.results.hdfs.uri}" />
+				<entry key="HDFS_DIR" value="${cached.results.export.dir}" />
+			</map>
+		</property>		
+	</bean>	
+
+</beans>

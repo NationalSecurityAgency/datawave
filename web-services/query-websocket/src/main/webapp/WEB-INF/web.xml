@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="
+            http://xmlns.jcp.org/xml/ns/javaee
+            http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
+
+    <!--
+        Use the custom DATAWAVE authentication mechanism. This mechanism handles the X-ProxiedEntitiesChain/X-ProxiedIssuersChain headers
+        and is also set up to handle "trusted header" authentication where a load balancer terminates the SSL session and passes the
+        client certificate information along in controlled headers.
+    -->
+    <login-config>
+        <auth-method>DATAWAVE-AUTH</auth-method>
+        <realm-name>DATAWAVE Web Services</realm-name>
+    </login-config>
+
+    <security-constraint>
+        <!--  some browsers, like Firefox, will not send SSL certs on the preflight request.  This breaks CORS
+               in those browsers, so we need to open up the OPTIONS calls.  This is only exposing
+               the documented endpoints  -->
+        <web-resource-collection>
+            <web-resource-name>UnauthenticatedOps</web-resource-name>
+            <description>Allow unauthenticated users to access OPTIONS calls for CORS preflight</description>
+            <url-pattern>/*</url-pattern>
+            <http-method>OPTIONS</http-method>
+        </web-resource-collection>
+        <!-- transport-guarantee of NONE ensures we don't attempt any authentication on this request and don't
+             look for a client certificate that won't be there -->
+        <user-data-constraint>
+            <transport-guarantee>NONE</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>CatchAll</web-resource-name>
+            <description>Most services use this constraint. Authorized users, or servers not proxying for a user.</description>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>AuthorizedUser</role-name>
+            <role-name>AuthorizedQueryServer</role-name> <!-- A server, NOT proxying for a user, but the server is listed in a group authorizing it to run queries -->
+        </auth-constraint>
+        <!--
+         Define the transport guarantee for this webapp. Note that this value is not substituted at compile
+         time, but instead will be substituted at runtime by the container.
+        -->
+        <user-data-constraint>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <!-- Declare the security roles we use in security constraints. -->
+    <security-role>
+        <role-name>AuthorizedUser</role-name>
+    </security-role>
+
+    <security-role>
+        <role-name>AuthorizedQueryServer</role-name>
+    </security-role>
+</web-app>

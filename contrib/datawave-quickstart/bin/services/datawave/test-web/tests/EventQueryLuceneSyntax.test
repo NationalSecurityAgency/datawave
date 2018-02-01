@@ -1,0 +1,141 @@
+
+################################################################
+# Test /Query/EventQuery/create endpoint
+
+# Set the $DATA variable for the 'curl -d' args to specify the query expression,
+# and other required params...
+
+setCurlData query=anarchy \
+        queryName=EventQueryTestLucene \
+        begin=20130301 \
+        end=20130401 \
+        pagesize=1 \
+        auths=PUBLIC \
+        columnVisibility=PRIVATE \
+        query.syntax=LUCENE
+
+TEST_ID="EventQueryCreateLuceneUnfielded"
+TEST_DESCRIPTION="Creates a valid, unfielded EventQuery w/ LUCENE query syntax"
+TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create"
+EXPECTED_RESPONSE_TYPE="application/xml"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+# We run the above test here (rather than in run.sh), so that we can guarantee proper execution order,
+# as we need to parse out the dynamic query-id to configure follow-on tests below
+
+runTest
+
+################################################################
+# Test /Query/${DW_QUERY_ID}/next endpoint
+
+setQueryIdFromResponseXml "${ACTUAL_RESPONSE_BODY}"
+
+[ -z "${DW_QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
+
+TEST_ID="EventQueryNextLuceneUnfielded"
+TEST_DESCRIPTION="Gets the first page of results for the EventQueryCreate test"
+TEST_URL_OPTS="-X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next"
+EXPECTED_RESPONSE_TYPE="application/xml"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+################################################################
+# Test /Query/${DW_QUERY_ID}/close endpoint
+
+TEST_ID="EventQueryCloseLuceneUnfielded"
+TEST_DESCRIPTION="Closes the query as necessary"
+TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${DW_QUERY_ID}/close"
+EXPECTED_RESPONSE_TYPE="application/xml"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+    ################################################################
+######################### LUCENE Fielded Query Tests ####################
+    ################################################################
+
+################################################################
+# Test /Query/EventQuery/create endpoint, FIELDED query this time
+# Should have two events returned...
+
+setCurlData query=$( urlencode "PAGE_TITLE:anarchism OR PAGE_TITLE:accessiblecomputing" ) \
+        queryName=EventQueryTestLuceneFielded \
+        begin=20130301 \
+        end=20130401 \
+        pagesize=1 \
+        auths=PUBLIC \
+        columnVisibility=PRIVATE \
+        query.syntax=LUCENE
+
+TEST_ID="EventQueryCreateLuceneFielded"
+TEST_DESCRIPTION="Creates a valid, fielded EventQuery w/ LUCENE query syntax"
+TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create"
+EXPECTED_RESPONSE_TYPE="application/xml"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+setQueryIdFromResponseXml "${ACTUAL_RESPONSE_BODY}"
+[ -z "${DW_QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
+
+################################################################
+# Get 1st page from /Query/${DW_QUERY_ID}/next, in JSON format this time
+
+TEST_ID="EventQueryNextLuceneFieldedJsonPage1"
+TEST_DESCRIPTION="Gets the 1st page of results for the EventQueryCreateLuceneFielded test in JSON format"
+TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next"
+EXPECTED_RESPONSE_TYPE="application/json"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+################################################################
+# Get 2nd page from /Query/${DW_QUERY_ID}/next, in JSON format
+
+TEST_ID="EventQueryNextLuceneFieldedJsonPage2"
+TEST_DESCRIPTION="Gets the 2nd page of results for the EventQueryCreateLuceneFielded test in JSON format"
+TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next"
+EXPECTED_RESPONSE_TYPE="application/json"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+################################################################
+# Try to get another page from /Query/${DW_QUERY_ID}/next. Should be 204 / No content
+#
+# If this test fails, it's probably b/c the number of enwiki articles in the shard table != 2.
+#
+# If you're not sure why the failure occurred, check your ingest M/R job logs under datawave-ingest/logs/
+# or datawave-ingest/logs/archive/ to see if the HDFS file /Ingest/wikipedia/enwiki-20130305-pages-articles-brief.xml
+# was ingested. The file was left there intentionally to demonstrate DataWave Ingest FlagMaker usage. So, if
+# you've started up ingest at any point, then it was probably picked up by the FlagMaker process and ingested
+# automatically
+#
+
+TEST_ID="EventQueryNextLuceneFielded204"
+TEST_DESCRIPTION="Returns 204 code signaling no-more-data for the EventQueryCreateLuceneFielded test"
+TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next"
+EXPECTED_RESPONSE_TYPE=""
+EXPECTED_RESPONSE_CODE=204
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+runTest
+
+################################################################
+# Close fielded query with /Query/${DW_QUERY_ID}/close endpoint
+
+TEST_ID="EventQueryCloseLuceneFielded"
+TEST_DESCRIPTION="Closes the query as necessary"
+TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${DW_QUERY_ID}/close"
+EXPECTED_RESPONSE_TYPE="application/xml"
+EXPECTED_RESPONSE_CODE=200
+EXPECTED_RESPONSE_BODY_ASSERTION=false
+
+# This last test is executed by run.sh, as usual

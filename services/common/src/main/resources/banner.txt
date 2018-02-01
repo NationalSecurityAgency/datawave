@@ -1,0 +1,11 @@
+${AnsiColor.MAGENTA}                                                                         ______________________
+${AnsiColor.MAGENTA}                                                                        ((__((__(((___(((___(((.
+${AnsiColor.MAGENTA}                                                                      (((__(((_(_(_(__(##(__(,###
+${AnsiColor.MAGENTA} _____             _                                                 ((__(__(_,##(__(_,##(_(_,####
+${AnsiColor.MAGENTA}|  ___ \         _| |_                                              ((_(_,    ###(_,#####(_,'#####
+${AnsiColor.MAGENTA}| |   \ \  ___ _(_   _)___ _ __      __  ___ _ __    __ ____          (_(_,' #####(_,'#############
+${AnsiColor.MAGENTA}| |    )  / __' | | | / __' |\ \    / / / __' |\ \  / // --- \            #########################
+${AnsiColor.MAGENTA}| |___/ /| (__| | | || (__| | \ \/\/ / | (__| | \ \/ /| |----'         #############################
+${AnsiColor.MAGENTA}|______/  \____,_||_| \____,_| \/  \/   \____,_| \__/  \_\___,  ########################################
+${AnsiColor.DEFAULT}========================================================================================================
+:: ${AnsiColor.YELLOW}DATAWAVE Microservices${AnsiColor.DEFAULT} ::                                                            ${AnsiStyle.FAINT}${AnsiColor.WHITE}${application.formatted-version}${AnsiColor.DEFAULT}${AnsiStyle.NORMAL}

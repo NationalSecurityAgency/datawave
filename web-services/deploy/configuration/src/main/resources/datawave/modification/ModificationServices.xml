@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+	    http://www.springframework.org/schema/context 
+	    http://www.springframework.org/schema/context/spring-context-4.1.xsd">
+
+    <context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" />
+
+	<!-- Database properties are retrieved from the database.properties file but can be overridden by system properties
+	<bean id="modificationPropertyPlaceholderConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location">
+			<value>classpath:/datawave/query/database.properties</value>
+		</property>
+		<property name="systemPropertiesModeName">
+			<value>SYSTEM_PROPERTIES_MODE_OVERRIDE</value>
+		</property>
+	</bean>
+	-->
+
+    <bean id="metadataHelperFactory" class="datawave.query.util.MetadataHelperFactory" >
+        <lookup-method name="createMetadataHelper" bean="metadataHelper" />
+    </bean>
+
+	<bean id="ModificationConfiguration" class="datawave.webservice.modification.configuration.ModificationConfiguration">
+		<property name="tableName" value="${metadata.table.name}" />
+        <property name="poolName" value="WAREHOUSE" />
+		<property name="configurations"> 
+			<map key-type="java.lang.String" value-type="datawave.webservice.modification.ModificationServiceConfiguration">
+				<entry key="MutableMetadataUUIDService">
+					<bean class="datawave.webservice.modification.MutableMetadataUUIDHandler">
+						<property name="authorizedRoles">
+							<list value-type="java.lang.String">
+								<value>AuthorizedUser</value>
+							</list>
+						</property>
+						<!--property name="queryService" ref="QueryExecutorBean"/-->
+						<property name="metadataHelperFactory" ref="metadataHelperFactory" />
+						<property name="eventTableName" value="${shard.table.name}" />
+						<property name="metadataTableName" value="${metadata.table.name}" />
+						<property name="indexTableName" value="${index.table.name}" />
+						<property name="reverseIndexTableName" value="${rindex.table.name}" />
+						<property name="markingFunctions" ref="markingFunctions" />
+						<property name="securityMarkingExemptFields">
+							<list value-type="java.lang.String">
+								${mutableMetadata.securityMarkingExemptFields}
+							</list>
+						</property>
+						<property name="requiresAudit" value="false" />
+						<property name="indexOnlyMap">
+							<!-- A map of event fields to index only/derived fields to enable appropriate deleting of event fiels and all derivitives.
+							                      The value is a comma delimited set of index-only fields. -->
+							<map key-type="java.lang.String" value-type="java.lang.String">
+								    ${mutable.metadata.index.only.mapping}
+							</map>
+						</property>
+						<property name="indexOnlySuffixes">
+							<set value-type="java.lang.String">
+								${mutable.metadata.index.only.suffixes}
+							</set>
+						</property>
+						<property name="contentFields">
+							<set value-type="java.lang.String">
+								${mutable.metadata.index.only.suffixes}
+							</set>
+						</property>
+					</bean>
+				</entry>
+				<entry key="MutableMetadataService">
+					<bean class="datawave.webservice.modification.MutableMetadataHandler">
+						<!-- Description specified in the class
+						<property name="description" value="" />
+						 -->
+						<property name="authorizedRoles">
+							<list value-type="java.lang.String">
+								<value>AuthorizedUser</value>
+							</list>
+						</property>
+						<property name="eventTableName" value="${shard.table.name}" />
+						<property name="metadataTableName" value="${metadata.table.name}" />
+						<property name="metadataHelperFactory" ref="metadataHelperFactory" />
+						<property name="indexTableName" value="${index.table.name}" />
+						<property name="reverseIndexTableName" value="${rindex.table.name}" />							
+						<property name="markingFunctions" ref="markingFunctions" />
+						<property name="requiresAudit" value="false" />
+						<property name="indexOnlyMap">
+							<!-- A map of event fields to index only/derived fields to enable appropriate deleting of event fiels and all derivitives.
+							                      The value is a comma delimited set of index-only fields. -->
+							<map key-type="java.lang.String" value-type="java.lang.String">
+								${mutable.metadata.index.only.mapping}
+							</map>
+						</property>
+						<property name="indexOnlySuffixes">
+							<set value-type="java.lang.String">
+								${mutable.metadata.index.only.suffixes}
+							</set>
+						</property>
+						<property name="contentFields">
+							<set value-type="java.lang.String">
+								${mutable.metadata.index.only.suffixes}
+							</set>
+						</property>
+						<!-- Required Properties specified in the class
+						<property name="requiredRuntimeParameters">
+							<map key-type="java.lang.String" value-type="java.lang.Class">
+							</map>
+						</property>
+						 -->
+						 <!-- Optional Properties specified in the class
+						<property name="optionalRuntimeParameters">
+							<map key-type="java.lang.String" value-type="java.lang.Class">
+							</map>
+						</property>
+						 -->
+					</bean>
+				</entry>
+			</map>
+		</property>			
+	</bean>
+
+</beans>

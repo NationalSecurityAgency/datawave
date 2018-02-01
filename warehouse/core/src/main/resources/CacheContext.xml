@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+     http://www.springframework.org/schema/beans 
+     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+     
+    <bean id="cacheManager" class="org.springframework.cache.guava.GuavaCacheManager" primary="true" >
+    	<property name="cacheBuilder" ref="cacheBuilder" />
+    </bean>
+
+    <bean id="collectionSafeKeyGenerator" class="datawave.cache.CollectionSafeKeyGenerator">
+    </bean>
+    
+    <bean id="cacheBuilder" class="com.google.common.cache.CacheBuilder" factory-method="from">
+    	<constructor-arg value="maximumSize=1000, expireAfterAccess=24h, expireAfterWrite=24h" />
+    </bean>
+
+    <bean id="metadataHelperCacheManager" class="org.springframework.cache.guava.GuavaCacheManager" >
+    	<property name="cacheBuilder" ref="metadataHelperCacheBuilder" />
+    </bean>
+
+    <bean id="metadataHelperCacheBuilder" class="com.google.common.cache.CacheBuilder" factory-method="from">
+    	<constructor-arg value="maximumSize=100, expireAfterAccess=24h, expireAfterWrite=24h" />
+    </bean>
+
+    <bean id="dateIndexHelperCacheManager" class="org.springframework.cache.guava.GuavaCacheManager" >
+        <property name="cacheBuilder" ref="dateIndexHelperCacheBuilder" />
+    </bean>
+
+    <bean id="dateIndexHelperCacheBuilder" class="com.google.common.cache.CacheBuilder" factory-method="from">
+        <constructor-arg value="maximumSize=1000, expireAfterAccess=24h, expireAfterWrite=24h" />
+    </bean>
+
+
+</beans>

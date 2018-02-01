@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd" default-autowire="no">
+
+    <bean class="org.springframework.context.support.ClassPathXmlApplicationContext" autowire="no">
+        <constructor-arg>
+            <list>
+                <value>classpath*:CDIProcessor.xml</value>
+                <value>classpath*:/datawave/query/EventQueryLogicFactory.xml</value>
+                <value>classpath*:/MarkingFunctionsContext.xml</value>
+                <value>classpath*:/ResponseObjectFactoryContext.xml</value>
+                <value>classpath*:/MetadataHelperContext.xml</value>
+                <value>classpath*:/JexlFunctionNamespaceRegistryContext.xml</value>
+                <value>classpath*:/CacheContext.xml</value>
+            </list>
+        </constructor-arg>
+    </bean>
+</beans>

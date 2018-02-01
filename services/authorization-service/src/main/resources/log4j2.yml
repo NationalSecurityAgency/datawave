@@ -1,0 +1,46 @@
+Configuration:
+  status: warn
+  monitorInterval: 60
+
+  Properties:
+    Property:
+      - name: logDir
+        value: "logs/"
+      - name: PID
+        value: "????"
+      - name: LOG_PATTERN
+        value: "%clr{%d{yyyy-MM-dd HH:mm:ss.SSS}}{faint} %clr{%5p} %clr{${sys:PID}}{magenta} %clr{---}{faint} %clr{[%15.15t]}{faint} %clr{%-40.40c{1.}}{cyan} %clr{:}{faint} %m%n%wEx"
+
+  Appenders:
+    Console:
+      name: Console
+      target: SYSTEM_OUT
+      follow: true
+      PatternLayout:
+        pattern: "${LOG_PATTERN}"
+
+    RollingFile:
+      - name: File
+        fileName: "${sys:logDir}/authorization-service.log"
+        filePattern: "${sys:logDir}/authorization-service.log.%d{yyyy-MM-dd}-%i.gz"
+        append: true
+        bufferedIO: true
+        bufferSize: 8192
+        Policies:
+          TimeBasedTriggeringPolicy:
+            interval: 1
+          SizeBasedTriggeringPolicy:
+            size: 250MB
+        DefaultRolloverStrategy:
+          max: 10
+        PatternLayout:
+          pattern: "${LOG_PATTERN}"
+
+  Loggers:
+    Root:
+      level: info
+      AppenderRef:
+        - ref: Console
+          level: info
+        - ref: File
+          level: trace

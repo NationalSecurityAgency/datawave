@@ -1,0 +1,27 @@
+spring:
+  profiles: enabled
+
+audit:
+  accumulo:
+    enabled: true
+    tableName: "test"
+    accumuloConfig:
+      zookeepers: "test"
+      instanceName: "test"
+      username: "test"
+      password: "test"
+
+---
+
+spring:
+  profiles: disabled
+
+audit:
+  accumulo:
+    enabled: false
+
+---
+
+spring:
+  profiles: missing
+

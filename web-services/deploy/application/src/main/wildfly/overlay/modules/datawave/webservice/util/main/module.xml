@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Include com.sun.management package so we can get access to OperatingSystemMXBean...
+  -->
+<module xmlns="urn:jboss:module:1.3" name="datawave.webservice.util">
+    <dependencies>
+        <system export="true">
+            <paths>
+                <path name="com/sun/management"/>
+            </paths>
+        </system>
+    </dependencies>
+</module>

@@ -1,0 +1,70 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans
+                http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                http://www.springframework.org/schema/context
+                http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+	<context:property-placeholder system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="100"/>
+
+	<bean id="MapReduceConfiguration" class="datawave.webservice.mr.configuration.MapReduceConfiguration">
+	
+		<property name="callbackServletURL" value="http://localhost:8080/DataWave/MapReduceStatus/updateState"/>
+		<property name="mapReduceBaseDirectory" value="/MapReduceService"/>
+		<property name="restrictInputFormats" value="true" />
+		<property name="validInputFormats">
+			<list value-type="java.lang.Class">
+				<value>org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat</value>
+			</list>
+		</property>
+		
+		<property name="jobConfiguration">
+			<map key-type="java.lang.String" value-type="datawave.webservice.mr.configuration.MapReduceJobConfiguration">
+				<entry key="TestJob">
+					<bean class="datawave.webservice.mr.configuration.MapReduceJobConfiguration">
+						<property name="description" value="MapReduce job that runs a query and either puts the results into a table or files in HDFS" />
+						<property name="hdfsUri" value="hdfs://localhost/"/>
+						<property name="jobTracker" value="hdfs://localhost:8021"/>
+						<property name="requiredRoles">
+							<list value-type="java.lang.String">
+								<value>AuthorizedUser</value>
+							</list>
+						</property>
+						<property name="classpathJarFiles">
+							<list value-type="java.lang.String">
+								<value>vfs:/content/datawave-web-service.ear/Query.jar</value>
+								<value>vfs:/content/datawave-web-service.ear/MapReduce.jar</value>
+								<value>vfs:/content/datawave-web-service.ear/lib/xercesImpl-2.11.0.jar</value>
+								<value>vfs:/content/datawave-web-service.ear/lib/jaxrs-api.jar</value>
+								<!--
+								I am using Infinispan Base64 class here instead of commons-codec because of jar issues in Hadoop. 0.20.2 uses
+								commons-codec-1.3 and CDH3U3 uses commons-codec-1.4. We are using 1.5.
+								 -->
+								<value>vfs:/content/datawave-web-service.ear/lib/infinispan-commons.jar</value>
+							</list>
+						</property>
+						<property name="requiredRuntimeParameters">
+							<map key-type="java.lang.String" value-type="java.lang.Class">
+								<entry key="queryId" value="java.lang.String" />
+								<entry key="format" value="java.lang.String" />
+							</map>
+						</property>
+						<property name="optionalRuntimeParameters">
+							<map key-type="java.lang.String" value-type="java.lang.Class">
+								<entry key="outputTableName" value="java.lang.String" />
+							</map>
+						</property>
+						<property name="jobConfigurationProperties">
+							<map key-type="java.lang.String" value-type="java.lang.String">
+								<entry key="mapred.map.tasks.speculative.execution" value="false" />
+							</map>
+						</property>
+						<property name="jobJarName" value="MapReduce.jar"/>
+					</bean>
+				</entry>
+			</map>
+		</property>
+	</bean>
+
+</beans>

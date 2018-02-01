@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+<property>
+  <name>file.input.format</name>
+  <value>datawave.ingest.mapreduce.job.IngestJobTest$TestRecordReader</value>
+</property>
+
+<property>
+  <name>data.name</name>
+  <value>ingest-test</value>
+  <description>This is the type of data being ingested.</description>
+</property>
+
+<property>
+  <name>ingest.data.types</name>
+  <value>ingest-test</value>
+  <description>This is the type of data being ingested.</description>
+</property>
+
+<property>
+	<name>ingest-test.ingest.helper.class</name>
+	<value>datawave.ingest.mapreduce.job.IngestJobTest$TestIngestHelper</value>
+</property>
+
+<property>
+	<name>ingest-test.reader.class</name>
+	<value>datawave.ingest.mapreduce.job.IngestJobTest$TestReader</value>
+</property>
+
+<property>
+	<name>ingest-test.handler.classes</name>
+	<value>datawave.ingest.mapreduce.job.IngestJobTest$TestAbstractColumnBasedHandler</value>
+</property>
+
+<property>
+  <name>ingest-test.data.default.type.class</name>
+  <value>datawave.data.type.LcNoDiacriticsType</value>
+</property>
+
+</configuration>

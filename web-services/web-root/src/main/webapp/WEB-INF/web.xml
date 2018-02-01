@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="
+            http://xmlns.jcp.org/xml/ns/javaee
+            http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
+
+    <!--
+        Use the custom DATAWAVE authentication mechanism. This mechanism handles the X-ProxiedEntitiesChain/X-ProxiedIssuersChain headers
+        and is also set up to handle "trusted header" authentication where a load balancer terminates the SSL session and passes the
+        client certificate information along in controlled headers.
+    -->
+    <login-config>
+        <auth-method>DATAWAVE-AUTH</auth-method>
+        <realm-name>DATAWAVE Web Services</realm-name>
+    </login-config>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Everything</web-resource-name>
+            <description>Allow unauthenticated users to view everything.</description>
+            <url-pattern>*</url-pattern>
+        </web-resource-collection>
+        <!--
+         Define the transport guarantee for this webapp. Note that this value is not substituted at compile
+         time, but instead will be substituted at runtime by the container.
+        -->
+        <user-data-constraint>
+            <transport-guarantee>${dw.transport.guarantee}</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+</web-app>

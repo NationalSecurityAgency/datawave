@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jboss-deployment-structure xmlns="urn:jboss:deployment-structure:1.2">
+    <!-- share classpath across all sub-deployments -->
+    <ear-subdeployments-isolated>false</ear-subdeployments-isolated>
+
+    <deployment>
+        <dependencies>
+            <module name="datawave.webservice.configuration" export="true" />
+            <module name="org.apache.hadoop.common" export="true" />
+
+            <!--
+                Workaround for WFLY-4884: export the JDK javax.sql.rowset package since the
+                jboss-javax-sql-api_7.0_spec jar doesn't include any of the resources, but it
+                defines the classes there. The introduction of this jar is a response to
+                WFCORE-561.
+            -->
+            <system export="true">
+                <paths>
+                    <path name="javax/sql/rowset"/>
+                </paths>
+            </system>
+        </dependencies>
+    </deployment>
+</jboss-deployment-structure>

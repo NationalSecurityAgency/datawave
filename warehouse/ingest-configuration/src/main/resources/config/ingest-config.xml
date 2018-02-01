@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+
+<!-- Used by ingest job to precreate tables and get split information. -->
+<property>
+  <name>ingest.data.types</name>
+  <value>${BULK_INGEST_DATA_TYPES},${LIVE_INGEST_DATA_TYPES},${COMPOSITE_INGEST_DATA_TYPES},${DEPRECATED_INGEST_DATA_TYPES}</value>
+  <description>The list of datatypes to be processed by the system.</description>
+</property>
+
+<property>
+  <name>ingest.tables.timestamp_to_day</name>
+  <value>${SHARD_INDEX_TABLE_NAME},${SHARD_REVERSE_INDEX_TABLE_NAME},${EDGE_TABLE_NAME},protobufedge,shardTermDictionary</value>
+</property>
+
+<property>
+  <name>event.multi.threaded</name>
+  <value>false</value>
+</property>
+
+<property>
+  <name>ingest.uid.include.time.component</name>
+  <value>${INCLUDE_UID_TIME_COMPONENT}</value>
+</property>
+
+<property>
+  <name>event.discard.interval</name>
+  <value>${EVENT_DISCARD_INTERVAL}</value>
+</property>
+
+<property>
+  <name>snowflake.zookeepers</name>
+  <value>${SNOWFLAKE_ZOOKEEPERS}</value>
+  <description>List of zookeepers for caching snowflake timestamps if enabled</description>
+</property>
+
+<property>
+  <name>snowflake.zookeeper.enabled</name>
+  <value>${SNOWFLAKE_ZOOKEEPER_ENABLED}</value>
+</property>
+
+<property>
+   <name>shard.table.index.bloom.enable</name>
+   <value>false</value>
+</property>
+
+<property>
+  <name>ingest.fatal.errors</name>
+  <value>EVENT_DATE_MISSING,ERROR_METRIC,UPSTREAM_ERROR</value>
+  <description>This is the list of comma delimited RawDataError enumerations that we consider fatal.
+	EVENT_DATE_MISSING: Event date for the event record was not parsed out successfully
+	ERROR_METRIC: This is a record containing metrics information about an error upstream
+	UPSTREAM_ERROR: This is an record that contained an error discovered upstream
+  </description>
+</property>
+
+<property>
+  <name>ingest.value.dedup.by.timestamp</name>
+  <value>${EDGE_TABLE_NAME}</value>
+  <description>
+     These parameters determine how and if deduping will be done
+
+     dedup by timestamp uses the timestamp the to ms to remove duplicate
+     counts.  This is mainly done for the edgetable.  If A:B is seen more than 
+     once with the exact same time stamp it is deemed a dup. 
+  </description>
+</property>
+
+<property>
+  <name>ingest.value.dedup.aggregation</name>
+  <value>${SHARD_TABLE_NAME},${SHARD_INDEX_TABLE_NAME},${SHARD_REVERSE_INDEX_TABLE_NAME},${METADATA_TABLE_NAME},${DATE_INDEX_TABLE_NAME}</value>
+  <description>
+     These parameters determine how and if deduping will be done
+
+     dedup.aggregation bypasses the timestamp dedup, because the objets being counted 
+     can be uniqued via other methods
+  </description>
+</property>
+
+<property>
+  <name>ingest.ignorable.error.helpers</name>
+  <value></value>
+</property>
+
+<property>
+  <name>partitioner.default.delegate</name>
+  <value>datawave.ingest.mapreduce.partition.MultiTableRRRangePartitioner</value>
+</property>
+</configuration>

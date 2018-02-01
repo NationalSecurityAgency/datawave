@@ -1,0 +1,5 @@
+*.java text eol=lf
+*.xml text eol=lf
+*.py text eol=lf
+*.conf text eol=lf
+*.sh text eol=lf

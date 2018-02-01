@@ -1,0 +1,28 @@
+package datawave.webservice.query.metric;
+
+option optimize_for = LITE_RUNTIME;
+option java_package = "datawave.webservice.query.metric";
+
+import "exception_messages.proto";
+
+message PageMetric {
+	required uint64 pagesize = 1 [default=0];
+	required uint64 return_time = 2 [default=0];
+}
+
+message QueryMetric {
+	optional string query_type = 1;
+	optional string user = 2;
+	optional int64 create_date = 3;
+	optional string query_id = 4;
+	optional uint64 setup_time = 5;
+	repeated PageMetric page_times = 6;
+}
+
+message QueryMetricListResponse {
+	required uint64 operation_time_ms = 1 [default=0];
+	repeated string messages = 2;
+	repeated datawave.webservice.query.exception.QueryExceptionType exceptions = 3;
+	repeated QueryMetric result = 4;
+	required int32 num_results = 5 [default=0];
+}

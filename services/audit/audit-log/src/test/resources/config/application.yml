@@ -1,0 +1,21 @@
+spring:
+  profiles: enabled
+
+audit:
+  log:
+    enabled: true
+
+---
+
+spring:
+  profiles: disabled
+
+audit:
+  log:
+    enabled: false
+
+---
+
+spring:
+  profiles: missing
+

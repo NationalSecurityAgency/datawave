@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:util="http://www.springframework.org/schema/util"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans 
+        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context-4.0.xsd
+        http://www.springframework.org/schema/util 
+        http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+	<bean id="QueryExpirationConfiguration" class="datawave.webservice.query.cache.QueryExpirationConfiguration">
+		<!-- minutes that a running query can be idle before it is closed and the connection returned to the pool -->		
+		<property name="idleTime" value="${query.expiration.minutes}" />
+        <!-- minutes that a call to create or next can sit before the query is canceled and evicted from the cache -->
+        <property name="callTime" value="${query.max.call.time.minutes}" />
+        
+        <!-- minutes after which the page size velocity will be checked to determine if partial results should be returned (usually between 50% and 90% of the callTime) -->
+        <property name="pageSizeShortCircuitCheckTime" value="${query.page.size.shortcircuit.minutes}" />
+        <!-- minutes after which the partial results should be returned iff there are results (usually a couple minutes less than the callTime) -->
+        <property name="pageShortCircuitTimeout" value="${query.page.shortcircuit.minutes}" />
+	</bean>
+
+</beans>

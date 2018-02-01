@@ -1,0 +1,38 @@
+{
+  "rootobject":
+  {
+    "sTrInG1": "string1 text",
+    "boolean": true,
+    "number": 101,
+    "string2": "string2 text",
+    "number2": "20000",
+    "date" : [ "2017-01-01T01:01:01Z", "2017-02-01T02:02:01Z", "2017-03-01T03:03:03Z" ],
+    "randomobject":
+    {
+      "boolean": false,
+      "number": "150",
+      "string": "horse"
+    },
+    "properties":
+    {
+      "array":
+      [
+        {
+          "name": "P1Name",
+          "value": "1",
+          "description": "Description for P1Name"
+        },
+        {
+          "name": "P2Name",
+          "value": "Two",
+          "description": "Description for P2Name"
+        },
+        [ { "name": "InnerPName1", "value": "InnerPValue1" }, { "name": "InnerPName2", "value": "InnerPValue2" } ]
+      ]
+    }
+  },
+  "rootdate" : "2017-01-04T01:00:00Z",
+  "rootid" : "ID00000000004",
+  "rootnumber" : 40,
+  "rootarray" : [ "ITEM1", false, 7, { "more" : "nested", "stuff" : "to deal with" } ]
+}

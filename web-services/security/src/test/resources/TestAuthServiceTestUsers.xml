@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.1.xsd">
+    <!--
+        Define one value per canned entry you want in the test DatawaveUser service. This value is a JSON-encoded DatawaveUser,
+        wrapped in a CDATA block. You must define the roles, computed authorizations, and the mapping between. See below for an
+        example of a user and a server. The "auths" array should contain Accumulo authorizations assigned to the user. The "roles"
+        array should contain any roles returned from the backend authorization service, along with any additional mapped roles you
+        wish to add, such as AuthorizedUser or Administrator. The "roleToAuthMapping" contains the mapping of values in the "roles"
+        array to values in the "auths" array. A single role can map to multiple auths.
+
+        NOTE: other than filtering auths again the Accumulo user authorizations, no other computation is performed on the supplied
+        DatawaveUser objects. It is up to whoever creates the entries to specify the necessary roles for EJB method access, as well
+        auths required to see specific data. Note that query logics may make assumptions about the role values and their mapping to
+        auth values, and you should follow the convention assumed by deployed query logics.
+
+        <value>
+            <![CDATA[
+                {
+                    "dn": {
+                        "subjectDN": "cn=test a. user, ou=my department, o=my company, st=some-state, c=us",
+                        "issuerDN": "cn=my company ca, o=my company, st=some-state, c=us"
+                    },
+                    "userType": "USER",
+                    "auths": [ "PRIVATE", "PUBLIC" ],
+                    "roles": [ "PVT", "PUB", "Administrator", "AuthorizedUser" ],
+                    "roleToAuthMapping": {
+                        "PRIVATE": [ "PVT" ],
+                        "PUBLIC": [ "PUB" ]
+                    },
+                    "creationTime": -1,
+                    "expirationTime": -1
+                }
+            ]]>
+        </value>
+        <value>
+            <![CDATA[
+                {
+                    "dn": {
+                        "subjectDN": "cn=test a. user, ou=my department, o=my company, st=some-state, c=us",
+                        "issuerDN": "cn=my company ca, o=my company, st=some-state, c=us"
+                    },
+                    "userType": "SERVER",
+                    "auths": [ "PRIVATE", "PUBLIC" ],
+                    "roles": [ "PVT", "PUB", "AuthorizedServer", "AuthorizedQueryServer" ],
+                    "roleToAuthMapping": {
+                        "PRIVATE": [ "PVT" ],
+                        "PUBLIC": [ "PUB" ]
+                    },
+                    "creationTime": -1,
+                    "expirationTime": -1
+                }
+            ]]>
+        </value>
+
+         -->
+    <util:set id="testAuthDatawaveUsers" value-type="java.lang.String">
+        <value>
+            <![CDATA[
+            {
+                "dn": {
+                    "subjectDN": "cn=user1, ou=my department, o=my company, st=some-state, c=us",
+                    "issuerDN": "cn=my company ca, o=my company, st=some-state, c=us"
+                },
+                "userType": "USER",
+                "auths": [ "PVT", "PUB" ],
+                "roles": [ "PRIVATE", "PUBLIC", "Administrator", "AuthorizedUser" ],
+                "roleToAuthMapping": {
+                    "PRIVATE": [ "PVT" ],
+                    "PUBLIC": [ "PUB" ]
+                },
+                "creationTime": -1,
+                "expirationTime": -1
+            }
+            ]]>
+        </value>
+        <value>
+            <![CDATA[
+            {
+                "dn": {
+                    "subjectDN": "cn=server1, ou=my department, o=my company, st=some-state, c=us",
+                    "issuerDN": "cn=my company ca, o=my company, st=some-state, c=us"
+                },
+                "userType": "SERVER",
+                "auths": [ "PVT", "PUB" ],
+                "roles": [ "PRIVATE", "PUBLIC", "AuthorizedServer" ],
+                "roleToAuthMapping": {
+                    "PRIVATE": [ "PVT" ],
+                    "PUBLIC": [ "PUB" ]
+                },
+                "creationTime": -1,
+                "expirationTime": -1
+            }
+            ]]>
+        </value>
+    </util:set>
+
+</beans>

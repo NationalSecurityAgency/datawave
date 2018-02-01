@@ -1,0 +1,145 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+<property>
+  <name>file.input.format</name>
+  <value>datawave.ingest.wikipedia.WikipediaInputFormat</value>
+</property>
+
+<property>
+  <name>data.name</name>
+  <value>wikipedia</value>
+  <description>This is the type of data being ingested.
+  </description>
+</property>
+
+<property>
+	<name>wikipedia.ingest.helper.class</name>
+	<value>datawave.ingest.wikipedia.WikipediaIngestHelper</value>
+</property>
+
+<property>
+	<name>wikipedia.reader.class</name>
+	<value>datawave.ingest.wikipedia.WikipediaRecordReader</value>
+</property>
+
+<property>
+	<name>wikipedia.handler.classes</name>
+    <value>datawave.ingest.wikipedia.WikipediaDataTypeHandler</value>
+</property>
+
+<property>
+<name>wikipedia.data.replace.malformed.utf8</name>
+<value>false</value>
+</property>
+
+<!--  ********************************************
+                   Ingest Helper Rules
+      ******************************************** -->
+<property>
+  <name>wikipedia.data.category.token.fieldname.designator</name>
+  <value>_TOKEN</value>
+</property>
+
+<property>
+  <name>wikipedia.ingest.basis.enabled</name>
+  <value>false</value>
+  <description>Enable the use of Basis Technologies Rosette Linguistics Processor.  
+             BT_ROOT must be set as an environment variable. BT_ROOT defines 
+             the location of Rosette Language Platform.
+  </description>
+</property>
+
+<property>
+  <name>wikipedia.token.synonyms.create</name>
+  <value>true</value>
+</property>
+
+<!--  ********************************************
+                   Indexing
+      ******************************************** -->
+
+<property>
+  <name>wikipedia.data.category.index</name>
+  <value>CONTRIBUTOR_USERNAME,CONTRIBUTOR_ID,PAGE_ID,PAGE_NAMESPACE,PAGE_RESTRICTIONS,PAGE_TITLE,REVISION_COMMENT_TERM_COUNT,REVISION_COMMENT_TOKEN,REVISION_ID,REVISION_MINOR,REVISION_PARENTID,REVISION_SHA1,REVISION_TEXT_TERM_COUNT,REVISION_TEXT_TOKEN,REVISION_TIMESTAMP</value>
+  <description>These are the fields to index (delimited by first separator).
+  </description>
+</property>
+
+<property>
+  <name>wikipedia.data.category.index.reverse</name>
+  <value>CONTRIBUTOR_USERNAME,PAGE_TITLE,PAGE_RESTRICTIONS,REVISION_TEXT_TOKEN,REVISION_COMMENT_TOKEN</value>
+</property>
+
+<property>
+  <name>wikipedia.data.category.index.only</name>
+  <value>REVISION_TEXT_TOKEN,REVISION_COMMENT_TOKEN</value>
+</property>
+
+<property>
+  <name>wikipedia.content.index.fields</name>
+  <value>REVISION_TEXT_TOKEN,REVISION_COMMENT_TOKEN</value>
+</property>
+<!--  ********************************************
+                   Virtual Fields
+      ******************************************** -->
+
+<property>
+  <name>wikipedia.data.combine.start.separator</name>
+  <value>&lt;</value>
+</property> 
+<property>
+  <name>wikipedia.data.combine.end.separator</name>
+  <value>&gt;</value>
+</property> 
+
+
+<!--  ********************************************
+                   Normalization
+      ******************************************** -->
+
+<property>
+  <name>wikipedia.data.default.type.class</name>
+  <value>datawave.data.type.LcNoDiacriticsType</value>
+</property>
+
+<property>
+  <name>wikipedia.PAGE_NAMESPACE.data.field.type.class</name>
+  <value>datawave.data.type.NumberType</value>
+</property>
+<property>
+  <name>wikipedia.PAGE_ID.data.field.type.class</name>
+  <value>datawave.data.type.NumberType</value>
+</property>
+<property>
+  <name>wikipedia.REVISION_ID.data.field.type.class</name>
+  <value>datawave.data.type.NumberType</value>
+</property>
+<property>
+  <name>wikipedia.REVISION_PARENTID.data.field.type.class</name>
+  <value>datawave.data.type.NumberType</value>
+</property>
+<property>
+  <name>wikipedia.CONTRIBUTOR_ID.data.field.type.class</name>
+  <value>datawave.data.type.NumberType</value>
+</property>
+<property>
+  <name>wikipedia.*_TERM_COUNT.data.field.type.class</name>
+  <value>datawave.data.type.NumberType</value>
+</property>
+<!-- The WikipediaRecordReader will automatically set ColumnVisibility to PUBLIC unless the property below is set-->
+<!-- So using the property below is the only way to set the Column Visibility to something other than PUBLIC -->
+<!--     <property> -->
+<!--         <name>wikipedia.data.category.marking.default</name> -->
+<!--         <value>PROTECTED</value> -->
+<!--         <description>Default ColumnVisibility to be applied to fields/records if none provided in the data</description> -->
+<!--     </property> -->
+
+<property>
+  <name>wikipedia.data.default.normalization.failure.policy</name>
+  <value>LEAVE</value>
+</property>
+
+</configuration>

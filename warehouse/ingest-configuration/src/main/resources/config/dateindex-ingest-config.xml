@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+
+<property>
+  <name>date.index.table.name</name>
+  <value>${DATE_INDEX_TABLE_NAME}</value>
+</property>
+
+<property>
+  <name>date.index.table.loader.priority</name>
+  <value>30</value>
+</property>
+
+<property>
+	<name>${DATE_INDEX_TABLE_NAME}.table.config.class</name>
+	<value>datawave.ingest.table.config.DateIndexTableConfigHelper</value>
+</property>
+
+<property>
+    <name>date.index.table.locality.groups</name>
+    <value>activity:ACTIVITY,loaded:LOADED</value>
+    <description>The list of locality groups in the form groupname:columnfamily, comma separated</description>
+</property>
+
+<property>
+    <name>partitioner.dedicated.dateIndex</name>
+    <value>datawave.ingest.mapreduce.partition.LimitedKeyPartitioner</value>
+</property>
+
+<property>
+    <name>date.index.num.shards</name>
+    <value>${NUM_DATE_INDEX_SHARDS}</value>
+</property>
+
+<property>
+    <name>dateIndex.partition.limiter.max</name>
+    <value>3</value>
+</property>
+
+</configuration>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:cache="http://www.springframework.org/schema/cache"
+    xsi:schemaLocation="
+     http://www.springframework.org/schema/beans 
+     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+     http://www.springframework.org/schema/cache 
+     http://www.springframework.org/schema/cache/spring-cache-4.0.xsd">
+     
+    <cache:annotation-driven cache-manager="markings-cache-manager"/>
+
+     <!-- bean id="markings-cache-manager" class="org.infinispan.spring.provider.SpringEmbeddedCacheManagerFactoryBean" /> -->
+     <!--    p:configuration-file-location="classpath:/markings-infinispanConfig.xml"/> -->
+    
+    <bean id="markings-cache-manager" class="org.springframework.cache.guava.GuavaCacheManager" />
+
+	<!-- only properties that you want re-mapped or excluded need to be included in the map -->
+	<!-- mapping to empty string will exclude that property from the markingFunctions results -->
+    <bean id="markingFunctions" class="datawave.marking.MarkingFunctions$NoOp" />
+<!--     <bean id="marking" class="datawave.marking.ColumnVisibilitySecurityMarking" /> -->
+
+</beans>

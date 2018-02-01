@@ -1,0 +1,2 @@
+security:
+  use-trusted-subject-headers: true

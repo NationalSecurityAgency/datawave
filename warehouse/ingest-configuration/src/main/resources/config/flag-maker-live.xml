@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+   Example FlagMaker configuration for "live" ingest, i.e., for writing batch mutations directly into DataWave's
+   Accumulo tables during the IngestJob map phase
+-->
+<flagMakerConfig>
+   <flagCfg>
+        <dataName>wikipedia</dataName>
+        <distributionArgs>none</distributionArgs>
+        <extraIngestArgs></extraIngestArgs>
+        <folder>wikipedia</folder>
+        <extraIngestArgs>-data.name.override=wikipedia</extraIngestArgs>
+        <inputFormat>datawave.ingest.wikipedia.WikipediaEventInputFormat</inputFormat>
+        <ingestPool>live</ingestPool>
+   </flagCfg>
+   <flagCfg>
+        <dataName>mycsv</dataName>
+        <distributionArgs>none</distributionArgs>
+        <folder>mycsv</folder>
+        <ingestPool>live</ingestPool>
+        <extraIngestArgs>-data.name.override=mycsv</extraIngestArgs>
+        <inputFormat>datawave.ingest.csv.mr.input.CSVFileInputFormat</inputFormat>
+        <lifo>false</lifo>
+   </flagCfg>
+   <flagCfg>
+        <dataName>myjson</dataName>
+        <distributionArgs>none</distributionArgs>
+        <folder>myjson</folder>
+        <ingestPool>live</ingestPool>
+        <extraIngestArgs>-data.name.override=myjson</extraIngestArgs>
+        <inputFormat>datawave.ingest.json.mr.input.JsonInputFormat</inputFormat>
+        <lifo>false</lifo>
+   </flagCfg>
+   <defaultCfg>
+        <reducers>${LIVE_INGEST_REDUCERS}</reducers>
+        <maxFlags>${INGEST_MAX_LIVE_BLOCKS_PER_JOB}</maxFlags>
+        <script>bin/ingest/live-ingest.sh</script>
+   </defaultCfg>
+   <baseHDFSDir>${HDFS_BASE_DIR}</baseHDFSDir>
+   <distributorType>simple</distributorType>
+   <!-- No dot "." files, and no files ending with punctuation, etc -->
+   <filePattern>[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>
+   <hdfs>${INGEST_HDFS_NAME_NODE}</hdfs>
+   <socketPort>20000</socketPort>
+   <datawaveHome>${DATAWAVE_INGEST_HOME}</datawaveHome>
+   <flagFileDirectory>${FLAG_DIR}</flagFileDirectory>
+   <setFlagFileTimestamp>false</setFlagFileTimestamp>
+   <useFolderTimestamp>false</useFolderTimestamp>
+</flagMakerConfig>

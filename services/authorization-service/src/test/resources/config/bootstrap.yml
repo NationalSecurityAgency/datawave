@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: authorization-test
+  cloud:
+    bus:
+      enabled: false
+    discovery:
+      enabled: false
+    consul:
+      enabled: false
+    config:
+      enabled: false
+      discovery:
+        enabled: false

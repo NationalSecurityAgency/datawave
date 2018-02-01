@@ -1,0 +1,19 @@
+package datawave.webservice.results.cached.result;
+
+option optimize_for = LITE_RUNTIME;
+option java_package = "datawave.webservice.results.cached.result";
+
+message ColumnVisibility {
+	required string visibility = 1;
+}
+
+message Attribute {
+	required string name = 1;
+}
+
+message Description {
+	required string view = 1;
+	repeated Attribute attributes = 2;
+	repeated ColumnVisibility visibilities = 3;
+}
+

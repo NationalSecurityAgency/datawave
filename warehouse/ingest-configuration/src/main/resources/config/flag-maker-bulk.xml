@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Example FlagMaker configuration for "bulk" ingest, i.e., for outputting rfiles during the IngestJob reduce phase,
+   for bulk import into DataWave's Accumulo tables
+-->
+<flagMakerConfig>
+    <flagCfg>
+        <dataName>wikipedia</dataName>
+        <folder>wikipedia-bulk</folder>
+        <ingestPool>bulk</ingestPool>
+        <distributionArgs>none</distributionArgs>
+        <extraIngestArgs>-data.name.override=wikipedia</extraIngestArgs>
+        <inputFormat>datawave.ingest.wikipedia.WikipediaEventInputFormat</inputFormat>
+        <lifo>false</lifo>
+    </flagCfg>
+    <flagCfg>
+        <dataName>mycsv</dataName>
+        <folder>mycsv-bulk</folder>
+        <ingestPool>bulk</ingestPool>
+        <distributionArgs>none</distributionArgs>
+        <extraIngestArgs>-data.name.override=mycsv</extraIngestArgs>
+        <inputFormat>datawave.ingest.csv.mr.input.CSVFileInputFormat</inputFormat>
+        <lifo>false</lifo>
+    </flagCfg>
+    <flagCfg>
+        <dataName>myjson</dataName>
+        <distributionArgs>none</distributionArgs>
+        <folder>myjson-bulk</folder>
+        <ingestPool>bulk</ingestPool>
+        <extraIngestArgs>-data.name.override=myjson</extraIngestArgs>
+        <inputFormat>datawave.ingest.json.mr.input.JsonInputFormat</inputFormat>
+        <lifo>false</lifo>
+    </flagCfg>
+    <defaultCfg>
+        <!-- currently only require a few of the params for the default config -->
+        <maxFlags>${INGEST_MAX_BULK_BLOCKS_PER_JOB}</maxFlags>
+        <reducers>${BULK_INGEST_REDUCERS}</reducers>
+        <script>bin/ingest/bulk-ingest.sh</script>
+        <fileListMarker>***FILE_LIST***</fileListMarker>
+    </defaultCfg>
+    <sleepMilliSecs>5000</sleepMilliSecs>
+    <timeoutMilliSecs>${BULK_FLAG_TIMEOUT_MS}</timeoutMilliSecs>
+    <baseHDFSDir>${HDFS_BASE_DIR}</baseHDFSDir>
+    <distributorType>simple</distributorType>
+    <!-- No dot "." files, and no files ending with punctuation, etc -->
+    <filePattern>[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>
+    <hdfs>${INGEST_HDFS_NAME_NODE}</hdfs>
+    <socketPort>20001</socketPort>
+    <datawaveHome>${DATAWAVE_INGEST_HOME}</datawaveHome>
+    <flagFileDirectory>${FLAG_DIR}</flagFileDirectory>
+    <setFlagFileTimestamp>true</setFlagFileTimestamp>
+    <useFolderTimestamp>false</useFolderTimestamp>
+</flagMakerConfig>

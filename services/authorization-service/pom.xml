@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>datawave-external-services</artifactId>
+        <groupId>datawave.microservice</groupId>
+        <version>2.1.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>authorization-service</artifactId>
+    <description>DATAWAVE Authorization Microservice</description>
+    <properties>
+        <start-class>datawave.microservice.authorization.AuthorizationService</start-class>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>datawave.microservice</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>datawave.microservice</groupId>
+            <artifactId>hazelcast-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>datawave.webservices</groupId>
+            <artifactId>datawave-ws-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
+        <profile>
+            <id>docker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

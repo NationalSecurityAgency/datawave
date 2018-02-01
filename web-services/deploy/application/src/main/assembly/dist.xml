@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly>
+    <id>${build.env}</id>
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}</directory>
+            <outputDirectory>ear</outputDirectory>
+            <includes>
+                <include>${project.build.finalName}-${build.env}.ear</include>
+            </includes>
+            <fileMode>0640</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/wildfly</directory>
+            <outputDirectory>/</outputDirectory>
+            <excludes>
+                <exclude>*.sh</exclude>
+            </excludes>
+            <fileMode>0640</fileMode>
+            <filtered>false</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/wildfly</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>*.sh</include>
+            </includes>
+            <fileMode>0750</fileMode>
+            <filtered>false</filtered>
+        </fileSet>
+    </fileSets>
+</assembly>

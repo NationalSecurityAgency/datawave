@@ -1,0 +1,11 @@
+spring:
+  cloud:
+    consul:
+      discovery:
+        register-health-check: false
+        tags:
+          hzPort=${hazelcast.cluster.port}, hzHost=${hazelcast.cluster.host}
+
+management:
+  security:
+    enabled: false
