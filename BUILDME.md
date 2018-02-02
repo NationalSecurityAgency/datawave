@@ -1,3 +1,20 @@
+### Prior to Building
+
+Before you can build Datawave, you must install the read-properties and assert-properties packages. This only needs to be 
+performed once:
+
+```bash
+# Build ReadProperties
+pushd contrib/read-properties
+mvn clean install
+popd
+
+# Now build AssertProperties
+pushd contrib/assert-properties
+mvn clean install
+popd
+```
+
 # Building Datawave
 
 To perform a full (non-release) 'dev' build  without unit tests:
@@ -20,21 +37,3 @@ mvn -Pdev -Ddeploy -Dtar -Ddist -DskipTests clean install
 ```
 
 Note that this will build javadocs and source jars.
-
-### Prerequisites
-
-Note that, currently, you may have to install the read-properties and assert-properties plugins before you are able
-to build:
-
-```bash
-# Build ReadProperties
-pushd contrib/read-properties
-mvn clean install
-popd
-
-# Now build AssertProperties
-pushd contrib/assert-properties
-mvn clean install
-popd
-```
-
