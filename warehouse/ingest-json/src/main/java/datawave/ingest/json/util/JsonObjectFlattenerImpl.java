@@ -40,20 +40,18 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     protected final String occurrenceDelimiter;
     protected final boolean addArrayIndexToFieldName;
     
-    protected JsonObjectFlattenerImpl(String pathDelimiter, Set<String> mapKeyWhitelist, Set<String> mapKeyBlacklist, FlattenMode flattenMode,
-                    String occurrenceDelimiter, boolean addArrayIndexToFieldName, JsonElementNameNormalizer nameNormalizer,
-                    MapKeyValueNormalizer keyValueNormalizer) {
-        this.pathDelimiter = pathDelimiter;
-        this.mapKeyWhitelist = mapKeyWhitelist != null ? new HashSet<>(mapKeyWhitelist) : null;
-        this.mapKeyBlacklist = mapKeyBlacklist != null ? new HashSet<>(mapKeyBlacklist) : null;
-        this.flattenMode = flattenMode;
-        this.occurrenceDelimiter = occurrenceDelimiter;
+    protected JsonObjectFlattenerImpl(Builder builder) {
+        this.pathDelimiter = builder.pathDelimiter;
+        this.mapKeyWhitelist = builder.fieldNameWhitelist != null ? new HashSet<>(builder.fieldNameWhitelist) : null;
+        this.mapKeyBlacklist = builder.fieldNameBlacklist != null ? new HashSet<>(builder.fieldNameBlacklist) : null;
+        this.flattenMode = builder.flattenMode;
+        this.occurrenceDelimiter = builder.occurrenceDelimiter;
         
         // If a GROUPED* mode is enabled, then we force addArrayIndexToFieldName to false, since the additional
         // context is redundant in those cases. The property is really only relevant for NORMAL mode usage
         
         this.addArrayIndexToFieldName = (this.flattenMode == FlattenMode.GROUPED || this.flattenMode == FlattenMode.GROUPED_AND_NORMAL) ? false
-                        : addArrayIndexToFieldName;
+                        : builder.addArrayIndexToFieldName;
         
         if (this.flattenMode == FlattenMode.GROUPED) {
             if (this.pathDelimiter.equals(this.occurrenceDelimiter)) {
@@ -61,7 +59,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
             }
         }
         
-        if (null == nameNormalizer) {
+        if (null == builder.nameNormalizer) {
             this.nameNormalizer = new JsonElementNameNormalizer() {
                 @Override
                 public String normalizeElementName(String elementName, String parentKey) throws IllegalStateException {
@@ -69,10 +67,10 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
                 }
             };
         } else {
-            this.nameNormalizer = nameNormalizer;
+            this.nameNormalizer = builder.nameNormalizer;
         }
         
-        if (null == keyValueNormalizer) {
+        if (null == builder.keyValueNormalizer) {
             this.keyValueNormalizer = new MapKeyValueNormalizer() {
                 @Override
                 public String normalizeMapKey(String key, String value) throws IllegalStateException {
@@ -85,8 +83,9 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
                 }
             };
         } else {
-            this.keyValueNormalizer = keyValueNormalizer;
+            this.keyValueNormalizer = builder.keyValueNormalizer;
         }
+        
     }
     
     @Override
@@ -340,8 +339,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         
         @Override
         public JsonObjectFlattener build() {
-            return new JsonObjectFlattenerImpl(pathDelimiter, fieldNameWhitelist, fieldNameBlacklist, flattenMode, occurrenceDelimiter,
-                            addArrayIndexToFieldName, nameNormalizer, keyValueNormalizer);
+            return new JsonObjectFlattenerImpl(this);
         }
     }
 }
