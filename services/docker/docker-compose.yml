@@ -1,10 +1,10 @@
 version: '2.2'
 services:
   discovery:
-    image: consul:0.9.3
+    image: consul:1.0.3
     hostname: discovery
     environment:
-      - 'CONSUL_LOCAL_CONFIG={"datacenter": "demo_dc"}'
+      - 'CONSUL_LOCAL_CONFIG={"datacenter": "demo_dc", "disable_update_check": true}'
       - CONSUL_BIND_INTERFACE=eth0
     ports:
       - "8400:8400"
@@ -14,48 +14,36 @@ services:
       - demo
 
   messaging:
-    image: pivotalrabbitmq/rabbitmq-autocluster:3.6.12
+    image: rabbitmq:3.7.2-alpine
+    volumes:
+      - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
     environment:
       - TCP_PORTS=15672, 5672
-      - AUTOCLUSTER_TYPE=consul
-      - AUTOCLUSTER_DELAY=60
-      - CONSUL_HOST=discovery
-      - CONSUL_SVC_ADDR_AUTO=true
-      - AUTOCLUSTER_CLEANUP=true
-      - CLEANUP_WARN_ONLY=false
-      - CONSUL_DEREGISTER_AFTER=60
+      - RABBITMQ_ERLANG_COOKIE="mycookie"
     ports:
       - "15672:15672"
     expose:
       - 5672
       - 5671
       - 15671
+      - 15672
     networks:
       - demo
     depends_on:
       discovery:
         condition: service_started
 
-  cache:
-    image: datawave/hazelcast-server
-    scale: 3
-    command:
-      - --spring.output.ansi.enabled=ALWAYS
-      - --spring.cloud.consul.host=discovery
-    ports:
-      - "5701"
-      - "8080"
-      - "8443"
-    networks:
-      - demo
-
   configuration:
     image: datawave/config-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=dev,consul,native
+      - --spring.profiles.active=consul,native
       - --spring.cloud.consul.host=discovery
       - --spring.cloud.config.server.native.searchLocations=file:///microservice-config
+    environment:
+      - 'KEYSTORE_LOCATION=classpath:/testServer.p12'
+      - KEYSTORE_PASSWORD=ChangeIt
+      - KEY_ALIAS=certificate
     ports:
       - "8888:8888"
     volumes:
@@ -65,6 +53,42 @@ services:
     depends_on:
       messaging:
         condition: service_started
+
+  cache:
+    image: datawave/hazelcast-server
+    scale: 3
+    command:
+      - --spring.proiles.active=consul
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.cloud.consul.host=discovery
+    ports:
+      - "5701-5703"
+      - "8080"
+      - "8443"
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/cache/mgmt/health
+    depends_on:
+      configuration:
+        condition: service_started
+
+  authorization:
+    image: datawave/authorization-service
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,mock
+      - --spring.cloud.consul.host=discovery
+    ports:
+      - "8080"
+      - "8443"
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/authorization/mgmt/health
+    depends_on:
+      cache:
+        condition: service_healthy
 
   audit:
     image: datawave/audit-service
@@ -78,10 +102,10 @@ services:
     networks:
       - demo
     healthcheck:
-      test: curl -f http://localhost:8080/datawave/mgmt/health
+      test: curl -f http://localhost:8080/audit/mgmt/health
     depends_on:
-      messaging:
-        condition: service_started
+      authorization:
+        condition: service_healthy
 
 networks:
   demo:

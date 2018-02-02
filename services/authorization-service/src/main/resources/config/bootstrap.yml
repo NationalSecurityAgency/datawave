@@ -11,7 +11,7 @@ spring:
       # Give the config server time to start up if it hasn't already
       retry:
         max-attempts: 60
-      uri: '${CONFIG_SERVER_URL:http://configuration:8888}'
+      uri: '${CONFIG_SERVER_URL:http://configuration:8888/configserver}'
 
 ---
 
@@ -20,7 +20,7 @@ spring:
   profiles: 'dev'
   cloud:
     config:
-      uri: '${CONFIG_SERVER_URL:http://localhost:8888}'
+      uri: '${CONFIG_SERVER_URL:http://localhost:8888/configserver}'
 
 ---
 
@@ -38,19 +38,3 @@ spring:
     consul:
       host: ${CONSUL_HOST:localhost}
 
----
-
-# For the "No Messaging" profile, we need to disable the AMQP bus, our custom RabbitMQ discovery, and the RabbitMQ health indicator.
-spring:
-  profiles: 'nomessaging'
-  cloud:
-    bus:
-      enabled: false
-  rabbitmq:
-    discovery:
-      enabled: false
-
-management:
-  health:
-    rabbit:
-      enabled: false

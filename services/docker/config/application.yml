@@ -1,13 +1,15 @@
 server:
-  context-path: /datawave
+  context-path: /${spring.application.name}
   port: 8443
   non-secure-port: 8080
   ssl:
-    key-store: 'classpath:/testKeystore.jks'
-    key-store-type: JKS
+    client-auth: WANT
+    trust-store: 'classpath:/testCA.p12'
+    trust-store-type: PKCS12
+    trust-store-password: 'ChangeIt'
+    key-store: 'classpath:/testServer.p12'
+    key-store-type: PKCS12
     key-store-password: 'ChangeIt'
-    key-password: 'LetMeIn'
-    key-alias: 'configkey'
 
 management:
   context-path: /mgmt
@@ -20,11 +22,11 @@ endpoints:
 
 security:
   sessions: STATELESS
-  enable-csrf: true
+  enable-csrf: false
   user.password: passwordNotUsed
   jwt.ttl: 86400
-  enforce-allowed-callers: false
   issuers-required: true
+  enforce-allowed-callers: false
 
 spring:
   # Enable service discovery using Consul
@@ -33,7 +35,7 @@ spring:
       enabled: true
     consul:
       enabled: true
-      host: consul
+      host: discovery
       discovery:
         port: ${server.non-secure-port}
         health-check-path: ${server.context-path}${management.context-path}/health

@@ -1,5 +1,6 @@
 server:
   port: 8888
+  context-path: '/${spring.application.name}'
 
 management:
   context-path: '/mgmt'
@@ -21,6 +22,8 @@ spring:
       discovery:
         enabled: false
       server:
+        health:
+          enabled: false
         git:
           uri: '${CONFIG_GIT_URL}'
           # Longer timeout since connections might be a bit slow during docker VM startup
@@ -59,10 +62,9 @@ spring:
 encrypt:
   failOnError: true
   key-store:
-    location: 'classpath:/testKeystore.jks'
+    location: 'classpath:/testServer.p12'
     password: 'ChangeIt'
-    alias: 'configKey'
-    secret: 'LetMeIn'
+    alias: '${KEY_ALIAS:certificate}'
 
 ---
 
@@ -77,8 +79,13 @@ spring:
       # Allow the default Consul host to be overridden via an environment variable
       host: ${CONSUL_HOST:localhost}
       discovery:
-        healthCheckPath: ${management.context-path}/health
+        healthCheckPath: ${server.context-path}${management.context-path}/health
         healthCheckInterval: 15s
+        # We need the configPath tag in Consul to match our context path so that when
+        # clients auto-discover the config server, they will know how to build a full
+        # path to the config service.
+        tags:
+          configPath=${server.context-path}
       # Allow a long time for the Consul agent to become available.
       retry:
         max-attempts: 120
