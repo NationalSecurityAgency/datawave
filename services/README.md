@@ -10,7 +10,12 @@ and [Spring Boot](https://docs.spring.io/spring-boot/docs/1.5.9.RELEASE/referenc
 ## Why Microservices?
 
 The Wildfly DATAWAVE web service has become a monolith over time, and for
-production use, it becomes difficult to update components independently as
+production use, different components of the service evolve at different
+rates. However, given the monolithic nature of the service and impact of
+outages, deployments aren't as frequent as they could be. Splitting the
+web service into microservices will allow components to evolve at different
+rates. It will also allow components to be scaled independently as the
+need arises.
 
 
 ## Features
