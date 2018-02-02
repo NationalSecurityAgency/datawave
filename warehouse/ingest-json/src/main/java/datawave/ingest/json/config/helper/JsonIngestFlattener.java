@@ -46,11 +46,9 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
     
     protected final JsonDataTypeHelper jsonDataTypeHelper;
     
-    protected JsonIngestFlattener(String pathDelimiter, Set<String> mapKeyWhitelist, Set<String> mapKeyBlacklist, FlattenMode flattenMode,
-                    String occurrenceDelimiter, boolean addArrayIndexToFieldName, JsonElementNameNormalizer nameNormalizer,
-                    MapKeyValueNormalizer keyValueNormalizer, JsonDataTypeHelper jsonDataTypeHelper) {
-        super(pathDelimiter, mapKeyWhitelist, mapKeyBlacklist, flattenMode, occurrenceDelimiter, addArrayIndexToFieldName, nameNormalizer, keyValueNormalizer);
-        this.jsonDataTypeHelper = jsonDataTypeHelper;
+    protected JsonIngestFlattener(Builder builder) {
+        super(builder);
+        this.jsonDataTypeHelper = builder.jsonDataTypeHelper;
     }
     
     @Override
@@ -134,12 +132,12 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
             
             if (this.flattenMode == FlattenMode.GROUPED || this.flattenMode == FlattenMode.GROUPED_AND_NORMAL) {
                 // Force pathDelimiter and occurrenceDelimiter per DW's grouping requirements
-                return new JsonIngestFlattener(PERIOD, this.fieldNameWhitelist, this.fieldNameBlacklist, this.flattenMode, UNDERSCORE,
-                                this.addArrayIndexToFieldName, this.nameNormalizer, this.keyValueNormalizer, this.jsonDataTypeHelper);
+                this.pathDelimiter = PERIOD;
+                this.occurrenceDelimiter = UNDERSCORE;
+                return new JsonIngestFlattener(this);
             }
-            
-            return new JsonIngestFlattener(UNDERSCORE, this.fieldNameWhitelist, this.fieldNameBlacklist, this.flattenMode, this.occurrenceDelimiter,
-                            this.addArrayIndexToFieldName, this.nameNormalizer, this.keyValueNormalizer, this.jsonDataTypeHelper);
+            this.pathDelimiter = UNDERSCORE;
+            return new JsonIngestFlattener(this);
         }
     }
     
