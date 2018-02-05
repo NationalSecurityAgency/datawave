@@ -339,6 +339,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
      */
     protected long rangeBufferPollMillis = 100;
     
+    /**
+     * Used to determine the maximum number of query ranges to generate per tier when performing a geowave query.
+     */
+    protected int geoWaveMaxExpansion = 800;
+    
+    /**
+     * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
+     */
+    protected int geoWaveMaxEnvelopes = 4;
+    
     public ShardQueryConfiguration() {
         query = new QueryImpl();
     }
@@ -593,6 +603,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     public void setRangeBufferPollMillis(long rangeBufferPollMillis) {
         this.rangeBufferPollMillis = rangeBufferPollMillis;
+    }
+    
+    public int getGeoWaveMaxExpansion() {
+        return geoWaveMaxExpansion;
+    }
+    
+    public void setGeoWaveMaxExpansion(int geoWaveMaxExpansion) {
+        this.geoWaveMaxExpansion = geoWaveMaxExpansion;
+    }
+    
+    public int getGeoWaveMaxEnvelopes() {
+        return geoWaveMaxEnvelopes;
+    }
+    
+    public void setGeoWaveMaxEnvelopes(int geoWaveMaxEnvelopes) {
+        this.geoWaveMaxEnvelopes = geoWaveMaxEnvelopes;
     }
     
     public Boolean getUseFilters() {
@@ -1574,6 +1600,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.setNumRangesToBuffer(copy.getNumRangesToBuffer());
         this.setRangeBufferTimeoutMillis(copy.getRangeBufferTimeoutMillis());
         this.setRangeBufferPollMillis(copy.getRangeBufferPollMillis());
+        
+        this.setGeoWaveMaxExpansion(copy.getGeoWaveMaxExpansion());
+        this.setGeoWaveMaxEnvelopes(copy.getGeoWaveMaxEnvelopes());
         
         this.setSortedUIDs(copy.isSortedUIDs());
     }
