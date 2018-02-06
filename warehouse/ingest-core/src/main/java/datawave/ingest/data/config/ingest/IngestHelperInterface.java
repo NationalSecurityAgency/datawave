@@ -26,7 +26,17 @@ public interface IngestHelperInterface extends DataTypeHelper {
     
     void setup(Configuration conf);
     
+    /**
+     * @deprecated use isShardExcluded(..) instead
+     */
+    @Deprecated
     Set<String> getShardExclusions();
+    
+    /**
+     * @param fieldName
+     * @return true if the filed should be excluded from the shard table.
+     */
+    boolean isShardExcluded(String fieldName);
     
     /**
      * Fully parse the raw record and return a map of field names and values.
