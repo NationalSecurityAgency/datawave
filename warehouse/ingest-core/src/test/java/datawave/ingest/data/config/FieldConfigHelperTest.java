@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FieldConfigHelperTest {
     
-    final BaseIngestHelper ingestHelper = new TestBaseIngestHelper();
+    private final BaseIngestHelper ingestHelper = new TestBaseIngestHelper();
     
     @Before
     public void setUp() {
@@ -104,8 +104,8 @@ public class FieldConfigHelperTest {
     public void testBadTag() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
-                        + "    <default indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                        + "    <nomatch indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n"
                         + "    <orange name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
@@ -117,8 +117,8 @@ public class FieldConfigHelperTest {
     public void testDuplicateField() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
-                        + "    <default indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                        + "    <nomatch indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
@@ -130,7 +130,7 @@ public class FieldConfigHelperTest {
     public void testMissingDefault() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
-                        + "    <nomatch indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <field name=\"A\" indexed=\"true\"/>\n" + "</fieldConfig>";
         
         FieldConfigHelper helper = new FieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
@@ -140,8 +140,8 @@ public class FieldConfigHelperTest {
     public void testIncompleteDefault() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
-                        + "    <default reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                        + "    <nomatch indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <default stored=\"true\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
                         + "    <field name=\"A\" indexed=\"true\"/>\n" +
                         
@@ -150,10 +150,11 @@ public class FieldConfigHelperTest {
         FieldConfigHelper helper = new FieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
     }
     
+    @Test
     public void testMissingNomatch() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
-                        + "    <default indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
         
@@ -165,8 +166,8 @@ public class FieldConfigHelperTest {
     public void testIncompleteNomatch() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
-                        + "    <default indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                        + "    <nomatch reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <nomatch stored=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
         
@@ -177,7 +178,7 @@ public class FieldConfigHelperTest {
     public void testMultiType() throws Exception {
         String input = "<?xml version=\"1.0\"?>\n"
                         + "<fieldConfig>\n"
-                        + "    <default indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType,datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
         
@@ -193,10 +194,20 @@ public class FieldConfigHelperTest {
         FieldConfigHelper helper = new FieldConfigHelper(in, ingestHelper);
         
         // this is whitelist behavior
+        assertFalse(helper.isNoMatchStored());
         assertFalse(helper.isNoMatchIndexed());
         assertFalse(helper.isNoMatchReverseIndexed());
         assertFalse(helper.isNoMatchTokenized());
         assertFalse(helper.isNoMatchReverseTokenized());
+        
+        assertTrue(helper.isStoredField("A"));
+        assertTrue(helper.isStoredField("B"));
+        assertTrue(helper.isStoredField("C"));
+        assertTrue(helper.isStoredField("D"));
+        assertTrue(helper.isStoredField("E"));
+        assertFalse(helper.isStoredField("F"));
+        assertFalse(helper.isStoredField("G"));
+        assertTrue(helper.isStoredField("H"));
         
         assertFalse(helper.isIndexedField("A"));
         assertTrue(helper.isIndexedField("B"));
@@ -261,10 +272,20 @@ public class FieldConfigHelperTest {
         FieldConfigHelper helper = new FieldConfigHelper(in, ingestHelper);
         
         // this is blacklist behavior
+        assertTrue(helper.isNoMatchStored());
         assertTrue(helper.isNoMatchIndexed());
         assertTrue(helper.isNoMatchReverseIndexed());
         assertTrue(helper.isNoMatchTokenized());
         assertTrue(helper.isNoMatchReverseTokenized());
+        
+        assertFalse(helper.isStoredField("A"));
+        assertFalse(helper.isStoredField("B"));
+        assertFalse(helper.isStoredField("C"));
+        assertFalse(helper.isStoredField("D"));
+        assertFalse(helper.isStoredField("E"));
+        assertFalse(helper.isStoredField("F"));
+        assertTrue(helper.isStoredField("G"));
+        assertTrue(helper.isStoredField("H"));
         
         assertTrue(helper.isIndexedField("A"));
         assertFalse(helper.isIndexedField("B"));

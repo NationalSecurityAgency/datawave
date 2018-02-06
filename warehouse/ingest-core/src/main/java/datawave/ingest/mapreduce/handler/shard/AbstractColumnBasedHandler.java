@@ -52,7 +52,7 @@ public class AbstractColumnBasedHandler<KEYIN> extends ShardedDataTypeHandler<KE
             
             // Prune the fields to remove any fields which should not be included in
             // the shard table or shard Index tables
-            if (helper.getShardExclusions().contains(e.getValue().getIndexedFieldName())) {
+            if (helper.isShardExcluded(e.getValue().getIndexedFieldName())) {
                 continue;
             }
             
