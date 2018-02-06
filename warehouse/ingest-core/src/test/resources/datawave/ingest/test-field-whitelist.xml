@@ -2,8 +2,8 @@
 <fieldConfig>
     <!-- fields not listed here are not indexed or tokenized. By default fields listed here are indexed
          (forward and reverse) but >not< tokenized unless explicitly stated as such. This is a whitelist -->
-    <default indexed="true" reverseIndexed="true" tokenized="false" reverseTokenized="false" indexType="nsa.datawave.data.type.LcNoDiacriticsType"/>
-    <nomatch indexed="false" reverseIndexed="false" tokenized="false"  reverseTokenized="false" indexType="nsa.datawave.data.type.HexStringType"/>
+    <default stored="true" indexed="true" reverseIndexed="true" tokenized="false" reverseTokenized="false" indexType="nsa.datawave.data.type.LcNoDiacriticsType"/>
+    <nomatch stored="false" indexed="false" reverseIndexed="false" tokenized="false"  reverseTokenized="false" indexType="nsa.datawave.data.type.HexStringType"/>
     <fieldPattern pattern="*J" indexed="true" indexType="nsa.datawave.data.type.MacAddressType"/>
     <fieldPattern pattern="*K" indexed="false"/>
     <field name="A" indexed="false"/>
@@ -11,6 +11,6 @@
     <field name="C" tokenized="true"/>
     <field name="D" reverseTokenized="true"/>
     <field name="E" indexed="false" reverseIndexed="false"/>
-    <field name="F" tokenized="true" reverseTokenized="true" indexType="nsa.datawave.data.type.DateType"/>
+    <field name="F" stored="false" tokenized="true" reverseTokenized="true" indexType="nsa.datawave.data.type.DateType"/>
     <field name="H"/>
 </fieldConfig>

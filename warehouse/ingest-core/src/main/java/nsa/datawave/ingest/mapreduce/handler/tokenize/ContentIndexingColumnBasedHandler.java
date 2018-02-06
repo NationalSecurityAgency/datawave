@@ -258,7 +258,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                 }
                 
                 // Skip any fields that should not be included in the shard table.
-                if (helper.getShardExclusions().contains(nci.getIndexedFieldName())) {
+                if (helper.isShardExcluded(nci.getIndexedFieldName())) {
                     continue;
                 }
                 
