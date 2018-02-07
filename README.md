@@ -1,5 +1,5 @@
 <p align="center">
-   <img src="https://github.com/NationalSecurityAgency/datawave-new/blob/master/datawave-readme.png" /> 
+   <img src="datawave-readme.png" />
 </p>
 
 [![Apache License][li]][ll]
