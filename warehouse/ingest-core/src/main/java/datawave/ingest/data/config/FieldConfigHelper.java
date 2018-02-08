@@ -21,30 +21,33 @@ import java.util.Set;
 import java.util.regex.Matcher;
 
 /** Helper class to read XML based Field Configurations */
-public class FieldConfigHelper {
+public final class FieldConfigHelper {
     
     private static final Logger log = Logger.getLogger(FieldConfigHelper.class);
     
     /** be explicit and use Apache Xerces-J here instead of relying on java to plug in the proper parser */
     private static final SAXParserFactory parserFactory = SAXParserFactoryImpl.newInstance();
     
-    boolean noMatchIndexed = false;
-    boolean noMatchReverseIndexed = false;
-    boolean noMatchTokenized = false;
-    boolean noMatchReverseTokenized = false;
-    String noMatchFieldType = null;
+    private boolean noMatchStored = true;
+    private boolean noMatchIndexed = false;
+    private boolean noMatchReverseIndexed = false;
+    private boolean noMatchTokenized = false;
+    private boolean noMatchReverseTokenized = false;
+    private String noMatchFieldType = null;
     
-    final Set<String> knownFields = new HashSet<>();
+    private final Set<String> knownFields = new HashSet<>();
     
-    final Set<String> indexedFields = new HashSet<>();
-    final Set<String> reverseIndexedFields = new HashSet<>();
-    final Set<String> tokenizedFields = new HashSet<>();
-    final Set<String> reverseTokenizedFields = new HashSet<>();
+    private final Set<String> storedFields = new HashSet<>();
+    private final Set<String> indexedFields = new HashSet<>();
+    private final Set<String> reverseIndexedFields = new HashSet<>();
+    private final Set<String> tokenizedFields = new HashSet<>();
+    private final Set<String> reverseTokenizedFields = new HashSet<>();
     
-    final Set<Matcher> indexedFieldPatterns = new HashSet<>();
-    final Set<Matcher> reverseIndexedFieldPatterns = new HashSet<>();
-    final Set<Matcher> tokenizedFieldPatterns = new HashSet<>();
-    final Set<Matcher> reverseTokenizedFieldPatterns = new HashSet<>();
+    private final Set<Matcher> storedFieldPatterns = new HashSet<>();
+    private final Set<Matcher> indexedFieldPatterns = new HashSet<>();
+    private final Set<Matcher> reverseIndexedFieldPatterns = new HashSet<>();
+    private final Set<Matcher> tokenizedFieldPatterns = new HashSet<>();
+    private final Set<Matcher> reverseTokenizedFieldPatterns = new HashSet<>();
     
     /**
      * Attempt to load the field config fieldHelper from the specified file, which is expected to be found on the classpath.
@@ -91,10 +94,10 @@ public class FieldConfigHelper {
     }
     
     public String toString() {
-        return "[FieldConfigHelper: " + knownFields.size() + " known fields, " + indexedFields.size() + " indexed fields, " + reverseIndexedFields.size()
-                        + " reverse indexed fields, " + tokenizedFields.size() + " tokenized fields, " + reverseTokenizedFields.size()
-                        + " reverse tokenized fields; " + "nomatch, indexed:" + noMatchIndexed + " reverseIndexed:" + noMatchReverseIndexed + " tokenized:"
-                        + noMatchTokenized + " reverseTokenized:" + noMatchReverseTokenized + "]";
+        return "[FieldConfigHelper: " + knownFields.size() + " known fields, " + storedFields.size() + " stored fields, " + indexedFields.size()
+                        + " indexed fields, " + reverseIndexedFields.size() + " reverse indexed fields, " + tokenizedFields.size() + " tokenized fields, "
+                        + reverseTokenizedFields.size() + " reverse tokenized fields; " + "nomatch, indexed:" + noMatchIndexed + " reverseIndexed:"
+                        + noMatchReverseIndexed + " tokenized:" + noMatchTokenized + " reverseTokenized:" + noMatchReverseTokenized + "]";
         
     }
     
@@ -113,6 +116,26 @@ public class FieldConfigHelper {
     
     public void setNoMatchFieldType(String fieldType) {
         this.noMatchFieldType = fieldType;
+    }
+    
+    public boolean isStoredField(String fieldName) {
+        if (knownFields.contains(fieldName)) {
+            return this.storedFields.contains(fieldName);
+        }
+        
+        if (findMatchingPattern(fieldName, this.storedFieldPatterns)) {
+            return true;
+        }
+        
+        return isNoMatchStored();
+    }
+    
+    public void addStoredField(String fieldName) {
+        this.storedFields.add(fieldName);
+    }
+    
+    public void addStoredFieldPattern(String pattern) {
+        this.storedFieldPatterns.add(BaseIngestHelper.compileFieldNamePattern(pattern));
     }
     
     public boolean isIndexedField(String fieldName) {
@@ -195,6 +218,14 @@ public class FieldConfigHelper {
         this.reverseTokenizedFieldPatterns.add(BaseIngestHelper.compileFieldNamePattern(pattern));
     }
     
+    public boolean isNoMatchStored() {
+        return noMatchStored;
+    }
+    
+    public void setNoMatchStored(boolean noMatchStored) {
+        this.noMatchStored = noMatchStored;
+    }
+    
     public boolean isNoMatchIndexed() {
         return noMatchIndexed;
     }
@@ -228,7 +259,7 @@ public class FieldConfigHelper {
     }
     
     /** Return true if any of the specified patterns matches the field name provided */
-    protected boolean findMatchingPattern(String fieldName, Collection<Matcher> patterns) {
+    private boolean findMatchingPattern(String fieldName, Collection<Matcher> patterns) {
         for (Matcher m : patterns) {
             if (m.reset(fieldName).matches()) {
                 return true;
@@ -237,7 +268,8 @@ public class FieldConfigHelper {
         return false;
     }
     
-    static class FieldConfigHandler extends DefaultHandler {
+    static final class FieldConfigHandler extends DefaultHandler {
+        public static final String STORED = "stored";
         public static final String INDEXED = "indexed";
         public static final String REVERSE_INDEXED = "reverseIndexed";
         public static final String INDEX_TYPE = "indexType";
@@ -249,6 +281,7 @@ public class FieldConfigHelper {
         
         static {
             Set<String> attr = new HashSet<>();
+            attr.add(STORED);
             attr.add(INDEXED);
             attr.add(REVERSE_INDEXED);
             attr.add(TOKENIZED);
@@ -261,16 +294,17 @@ public class FieldConfigHelper {
         private final FieldConfigHelper fieldHelper;
         private final BaseIngestHelper ingestHelper;
         
-        protected boolean defaultsComplete = false;
+        boolean defaultsComplete = false;
         
-        protected boolean defaultIndexed = false;
-        protected boolean defaultReverseIndexed = false;
-        protected boolean defaultTokenized = false;
-        protected boolean defaultReverseTokenized = false;
+        boolean defaultStored = true;
+        boolean defaultIndexed = false;
+        boolean defaultReverseIndexed = false;
+        boolean defaultTokenized = false;
+        boolean defaultReverseTokenized = false;
         
-        protected String defaultFieldType = LcNoDiacriticsType.class.getCanonicalName();
+        String defaultFieldType = LcNoDiacriticsType.class.getCanonicalName();
         
-        public FieldConfigHandler(FieldConfigHelper fieldHelper, BaseIngestHelper ingestHelper) {
+        FieldConfigHandler(FieldConfigHelper fieldHelper, BaseIngestHelper ingestHelper) {
             this.fieldHelper = fieldHelper;
             this.ingestHelper = ingestHelper;
         }
@@ -292,7 +326,7 @@ public class FieldConfigHelper {
             }
         }
         
-        protected void startDefault(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        void startDefault(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             final int sz = attributes.getLength();
             final Set<String> seenAttr = new HashSet<>(expectedDefaultAttributes);
             
@@ -300,7 +334,10 @@ public class FieldConfigHelper {
                 final String qn = attributes.getQName(i);
                 final String lv = attributes.getValue(i);
                 
-                if (INDEXED.equals(qn)) {
+                if (STORED.equals(qn)) {
+                    this.defaultStored = Boolean.parseBoolean(lv);
+                    seenAttr.remove(STORED);
+                } else if (INDEXED.equals(qn)) {
                     this.defaultIndexed = Boolean.parseBoolean(lv);
                     seenAttr.remove(INDEXED);
                 } else if (REVERSE_INDEXED.equals(qn)) {
@@ -327,7 +364,7 @@ public class FieldConfigHelper {
             }
         }
         
-        protected void startNoMatch(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        void startNoMatch(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             final int sz = attributes.getLength();
             final Set<String> seenAttr = new HashSet<>(expectedDefaultAttributes);
             
@@ -335,7 +372,10 @@ public class FieldConfigHelper {
                 final String qn = attributes.getQName(i);
                 final String lv = attributes.getValue(i);
                 
-                if (INDEXED.equals(qn)) {
+                if (STORED.equals(qn)) {
+                    fieldHelper.setNoMatchStored(Boolean.parseBoolean(lv));
+                    seenAttr.remove(STORED);
+                } else if (INDEXED.equals(qn)) {
                     fieldHelper.setNoMatchIndexed(Boolean.parseBoolean(lv));
                     seenAttr.remove(INDEXED);
                 } else if (REVERSE_INDEXED.equals(qn)) {
@@ -364,7 +404,7 @@ public class FieldConfigHelper {
             }
         }
         
-        protected void startField(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        void startField(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             
             if (!defaultsComplete) {
                 throw new IllegalStateException("Can't define a field without defaults - expected default tag before field tag");
@@ -373,6 +413,7 @@ public class FieldConfigHelper {
             final int sz = attributes.getLength();
             
             String name = null;
+            boolean stored = this.defaultStored;
             boolean indexed = this.defaultIndexed;
             boolean reverseIndexed = this.defaultReverseIndexed;
             boolean tokenized = this.defaultTokenized;
@@ -383,7 +424,9 @@ public class FieldConfigHelper {
                 final String qn = attributes.getQName(i);
                 final String lv = attributes.getValue(i);
                 
-                if (INDEXED.equals(qn)) {
+                if (STORED.equals(qn)) {
+                    stored = Boolean.parseBoolean(lv);
+                } else if (INDEXED.equals(qn)) {
                     indexed = Boolean.parseBoolean(lv);
                 } else if (REVERSE_INDEXED.equals(qn)) {
                     reverseIndexed = Boolean.parseBoolean(lv);
@@ -405,6 +448,10 @@ public class FieldConfigHelper {
             } else if (!this.fieldHelper.addKnownField(name)) {
                 throw new IllegalArgumentException("Field " + name
                                 + " was already seen, check configuration file for duplicate entries (among fieldPattern, field tags)");
+            }
+            
+            if (stored) {
+                this.fieldHelper.addStoredField(name);
             }
             
             if (indexed) {
@@ -432,7 +479,7 @@ public class FieldConfigHelper {
             }
         }
         
-        protected void startFieldPattern(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        void startFieldPattern(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             
             if (!defaultsComplete) {
                 throw new IllegalStateException("Can't define a fieldPattern without defaults - expected default tag before field tag");
@@ -441,6 +488,7 @@ public class FieldConfigHelper {
             final int sz = attributes.getLength();
             
             String pattern = null;
+            boolean stored = this.defaultStored;
             boolean indexed = this.defaultIndexed;
             boolean reverseIndexed = this.defaultReverseIndexed;
             boolean tokenized = this.defaultTokenized;
@@ -451,7 +499,9 @@ public class FieldConfigHelper {
                 final String qn = attributes.getQName(i);
                 final String lv = attributes.getValue(i);
                 
-                if (INDEXED.equals(qn)) {
+                if (STORED.equals(qn)) {
+                    stored = Boolean.parseBoolean(lv);
+                } else if (INDEXED.equals(qn)) {
                     indexed = Boolean.parseBoolean(lv);
                 } else if (REVERSE_INDEXED.equals(qn)) {
                     reverseIndexed = Boolean.parseBoolean(lv);
@@ -475,6 +525,10 @@ public class FieldConfigHelper {
                                 + " is already known, check configuration file for duplicates (among fieldPattern, field tag)");
             }
             
+            if (stored) {
+                this.fieldHelper.addStoredFieldPattern(pattern);
+            }
+            
             if (indexed) {
                 this.fieldHelper.addIndexedFieldPattern(pattern);
             }
@@ -494,7 +548,7 @@ public class FieldConfigHelper {
             if (fieldType != null) {
                 if (this.ingestHelper != null) {
                     this.ingestHelper.updateDatawaveTypes(pattern, fieldType);
-                } else if (fieldType != this.defaultFieldType) {
+                } else if (!fieldType.equals(this.defaultFieldType)) {
                     log.warn("No BaseIngestHelper set, ignoring type information for " + pattern + " in configuration file");
                 }
             }

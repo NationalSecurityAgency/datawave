@@ -111,8 +111,16 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
         return mfHelper;
     }
     
+    /**
+     * @deprecated use isShardExcluded(..) instead
+     */
+    @Deprecated
     public Set<String> getShardExclusions() {
         return shardExclusions;
+    }
+    
+    public boolean isShardExcluded(String fieldName) {
+        return shardExclusions.contains(fieldName);
     }
     
     protected void setHasIndexBlacklist(boolean hasIndexBlacklist) {
