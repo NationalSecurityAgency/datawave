@@ -21,6 +21,13 @@
         <bean class="datawave.query.language.functions.jexl.GetAllMatches"/>
         <bean class="datawave.query.language.functions.jexl.MatchesAtLeastCountOf"/>
         <bean class="datawave.query.language.functions.jexl.TimeFunction"/>
+        <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
+        <bean class="datawave.query.language.functions.jexl.Geowave.CoveredBy"/>
+        <bean class="datawave.query.language.functions.jexl.Geowave.Covers"/>
+        <bean class="datawave.query.language.functions.jexl.Geowave.Crosses"/>
+        <bean class="datawave.query.language.functions.jexl.Geowave.Intersects"/>
+        <bean class="datawave.query.language.functions.jexl.Geowave.Overlaps"/>
+        <bean class="datawave.query.language.functions.jexl.Geowave.Within"/>
     </util:list>
 
     <bean id="DatawaveSelectorExtractor" scope="prototype" class="datawave.audit.DatawaveSelectorExtractor" />

@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * This is the descriptor class for performing geowave functions. Its supprts basic spatial relationships, and decomposes the bounding box of the relationship
+ * This is the descriptor class for performing geowave functions. It supports basic spatial relationships, and decomposes the bounding box of the relationship
  * geometry into a set of geowave ranges. It currently caps this range decomposition to 800 ranges and in practice should be considerably less.
  *
  */
@@ -63,7 +63,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             int maxExpansion = Math.max(1, config.getGeoWaveMaxExpansion());
             int maxEnvelopes = Math.max(1, config.getGeoWaveMaxEnvelopes());
             if (isSpatialRelationship(name)) {
-                Geometry geom = GeometryNormalizer.getGeometryFromWKT(args.get(1).image);
+                Geometry geom = GeometryNormalizer.parseGeometry(args.get(1).image);
                 List<Envelope> envelopes = getSeparateEnvelopes(geom, maxEnvelopes);
                 if (!envelopes.isEmpty())
                     return (envelopes.size() == 1) ? getIndexNode(args.get(0), envelopes.get(0), maxExpansion) : getIndexNode(args.get(0), envelopes,
@@ -180,8 +180,8 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
     protected static void verify(String name, int numArgs) {
         if (isSpatialRelationship(name)) {
             // two arguments in the form <spatial_relation_function>(fieldName,
-            // geometryWellKnownText
-            verify(name, numArgs, new String[] {"fieldName", "geometryWellKnownText"});
+            // geometryString
+            verify(name, numArgs, new String[] {"fieldName", "geometryString"});
         } else {
             throw new IllegalArgumentException("Unknown GeoWave function: " + name);
         }

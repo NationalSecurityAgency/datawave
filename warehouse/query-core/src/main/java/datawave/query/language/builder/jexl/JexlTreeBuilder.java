@@ -6,6 +6,13 @@ import datawave.query.language.functions.jexl.AtomValuesMatchFunction;
 import datawave.query.language.functions.jexl.DateFunction;
 import datawave.query.language.functions.jexl.Exclude;
 import datawave.query.language.functions.jexl.GeoFunction;
+import datawave.query.language.functions.jexl.Geowave.Contains;
+import datawave.query.language.functions.jexl.Geowave.CoveredBy;
+import datawave.query.language.functions.jexl.Geowave.Covers;
+import datawave.query.language.functions.jexl.Geowave.Crosses;
+import datawave.query.language.functions.jexl.Geowave.Intersects;
+import datawave.query.language.functions.jexl.Geowave.Overlaps;
+import datawave.query.language.functions.jexl.Geowave.Within;
 import datawave.query.language.functions.jexl.GetAllMatches;
 import datawave.query.language.functions.jexl.Include;
 import datawave.query.language.functions.jexl.IsNotNull;
@@ -38,8 +45,9 @@ import com.google.common.collect.ImmutableList;
 public class JexlTreeBuilder extends QueryTreeBuilder {
     
     public static final JexlQueryFunction[] DEFAULT_ALLOWED_FUNCTIONS = {new IsNull(), new IsNotNull(), new Include(), new Exclude(), new GeoFunction(),
-            new Loaded(), new DateFunction(), new OccurrenceFunction(), new MatchesInGroupFunction(), new MatchesInGroupLeft(), new GetAllMatches(),
-            new MatchesAtLeastCountOf(), new Jexl(), new TimeFunction(), new AtomValuesMatchFunction()};
+            new Contains(), new CoveredBy(), new Covers(), new Crosses(), new Intersects(), new Overlaps(), new Within(), new Loaded(), new DateFunction(),
+            new OccurrenceFunction(), new MatchesInGroupFunction(), new MatchesInGroupLeft(), new GetAllMatches(), new MatchesAtLeastCountOf(), new Jexl(),
+            new TimeFunction(), new AtomValuesMatchFunction()};
     
     public static final List<JexlQueryFunction> DEFAULT_ALLOWED_FUNCTION_LIST;
     
