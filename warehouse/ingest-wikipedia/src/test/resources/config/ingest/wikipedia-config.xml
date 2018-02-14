@@ -71,7 +71,7 @@
 
 <property>
         <name>wikipedia.data.category.index.aliases.enabled</name>
-        <value>false</value>
+        <value>true</value>
 </property>
 
 <property>
