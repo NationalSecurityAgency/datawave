@@ -11,6 +11,7 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 public interface TableConfigHelper {
     
     public static final String TABLE_CONFIG_CLASS_SUFFIX = ".table.config.class";
+    public static final String TABLE_CONFIG_PREFIX = ".table.config.prefix";
     
     /**
      * Performs property validation and setup
