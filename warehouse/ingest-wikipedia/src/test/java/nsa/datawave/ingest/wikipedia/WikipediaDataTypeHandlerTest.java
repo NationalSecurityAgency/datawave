@@ -2,9 +2,11 @@ package nsa.datawave.ingest.wikipedia;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import nsa.datawave.ingest.data.RawRecordContainer;
 import nsa.datawave.ingest.data.config.NormalizedContentInterface;
+import nsa.datawave.ingest.data.config.ingest.VirtualIngest;
 import nsa.datawave.ingest.mapreduce.job.BulkIngestKey;
 import nsa.datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import nsa.datawave.poller.manager.mapreduce.StandaloneStatusReporter;
@@ -69,6 +71,13 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         helper.setup(conf);
         
         Multimap<String,NormalizedContentInterface> eventFields = helper.getEventFields(e);
+
+        VirtualIngest vHelper = (VirtualIngest) helper;
+        Multimap<String, NormalizedContentInterface> virtualFields = vHelper.getVirtualFields(eventFields);
+        for(Entry<String, NormalizedContentInterface> v : virtualFields.entries()){
+                eventFields.put(v.getKey(), v.getValue());
+        }
+
         // create a context writer that stores up the results
         MyCachingContextWriter contextWriter = new MyCachingContextWriter();
         
@@ -88,12 +97,12 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
             tableToKey.put(biKey.getTableName().toString(), biKey);
         }
         
-        Assert.assertEquals(76, tableToKey.get("shard").size());
-        Assert.assertEquals(34, tableToKey.get("shardIndex").size());
+        Assert.assertEquals(80, tableToKey.get("shard").size());
+        Assert.assertEquals(38, tableToKey.get("shardIndex").size());
         Assert.assertEquals(25, tableToKey.get("shardReverseIndex").size());
         
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
-        int numberOfLoadDateEntries = 6;
+        int numberOfLoadDateEntries = 14;
         int numberOfDatawaveMetadataEntries = 18;
         Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get("DatawaveMetadata").size());
         
@@ -108,7 +117,11 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         e = reader.getEvent();
         
         eventFields = helper.getEventFields(e);
-        
+        virtualFields = vHelper.getVirtualFields(eventFields);
+        for(Entry<String, NormalizedContentInterface> v : virtualFields.entries()){
+                eventFields.put(v.getKey(), v.getValue());
+        }
+
         // Call the Handler
         handler.process(new Text("2"), e, eventFields, ctx, contextWriter);
         try {
@@ -127,8 +140,8 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
             tableToKey.put(biKey.getTableName().toString(), biKey);
         }
         
-        Assert.assertEquals(9797, tableToKey.get("shard").size());
-        Assert.assertEquals(4895, tableToKey.get("shardIndex").size());
+        Assert.assertEquals(9801, tableToKey.get("shard").size());
+        Assert.assertEquals(4899, tableToKey.get("shardIndex").size());
         Assert.assertEquals(4886, tableToKey.get("shardReverseIndex").size());
         
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
