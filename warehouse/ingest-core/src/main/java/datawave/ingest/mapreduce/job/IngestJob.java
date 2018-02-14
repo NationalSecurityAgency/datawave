@@ -1191,20 +1191,7 @@ public class IngestJob implements Tool {
         Map<String,TableConfigHelper> helperMap = new HashMap<>(tableNames.length);
         
         for (String table : tableNames) {
-            String prop = table + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX;
-            String className = conf.get(prop, null);
-            TableConfigHelper tableHelper = null;
-            if (className != null) {
-                try {
-                    @SuppressWarnings("unchecked")
-                    Class<? extends TableConfigHelper> tableHelperClass = (Class<? extends TableConfigHelper>) Class.forName(className.trim());
-                    tableHelper = tableHelperClass.newInstance();
-                    tableHelper.setup(table, conf, log);
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
-                    throw new IllegalArgumentException(e);
-                }
-            }
-            helperMap.put(table, tableHelper);
+            helperMap.put(table, TableConfigHelperFactory.create(table, conf, log));
         }
         
         return helperMap;
