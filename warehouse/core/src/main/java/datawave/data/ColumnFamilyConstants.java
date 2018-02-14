@@ -62,6 +62,11 @@ public interface ColumnFamilyConstants {
     Text COLF_CI = new Text("ci");
     
     /**
+     * a colf of 'fif' denotes a field whose field index value can be used for filtering, and what fields can be filtered against
+     */
+    Text COLF_FIF = new Text("fif");
+    
+    /**
      * a colf of 'count' denotes term counts (cardinality)
      */
     Text COLF_COUNT = new Text("count");

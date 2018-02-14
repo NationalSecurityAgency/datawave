@@ -1,25 +1,18 @@
 package datawave.query.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -39,15 +32,20 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
-import com.google.common.collect.TreeMultimap;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
  */
@@ -799,6 +797,52 @@ public class AllFieldMetadataHelper {
         }
         
         return Multimaps.unmodifiableMultimap(fields);
+    }
+    
+    /**
+     * Fetch the mapping of ingest type to multimap of field names to field index filter field names, {@link ColumnFamilyConstants#COLF_FIF}. Returns a map of
+     * ingest type to multimap of field name to filter field name
+     *
+     * @return
+     * @throws TableNotFoundException
+     */
+    @Cacheable(value = "loadFieldIndexFilterMapByType", key = "{#root.target.auths,#root.target.metadataTableName}",
+                    cacheManager = "metadataHelperCacheManager")
+    public Map<String,Multimap<String,String>> loadFieldIndexFilterMapByType() throws TableNotFoundException {
+        log.debug("cache fault for loadFieldIndexFilterMapByType(" + this.auths + "," + this.metadataTableName + ")");
+        
+        Map<String,Multimap<String,String>> fieldIndexFilterMapByType = new HashMap<>();
+        
+        Scanner bs = ScannerHelper.createScanner(connector, metadataTableName, auths);
+        
+        bs.setRange(new Range());
+        bs.fetchColumnFamily(ColumnFamilyConstants.COLF_FIF);
+        
+        if (log.isTraceEnabled())
+            log.trace("loadFieldIndexFilterMapByType from table: " + metadataTableName);
+        
+        for (Entry<Key,Value> entry : bs) {
+            String ingestType = getDatatype(entry.getKey());
+            String mappedField = entry.getKey().getColumnQualifier().toString();
+            int index = mappedField.indexOf('\0');
+            if (index >= 0) {
+                mappedField = mappedField.substring(index + 1);
+                if (fieldIndexFilterMapByType.containsKey(ingestType)) {
+                    fieldIndexFilterMapByType.get(ingestType).put(mappedField, entry.getKey().getRow().toString());
+                } else {
+                    Multimap<String,String> fieldIndexFilterMap = HashMultimap.create();
+                    fieldIndexFilterMap.put(mappedField, entry.getKey().getRow().toString());
+                    fieldIndexFilterMapByType.put(ingestType, fieldIndexFilterMap);
+                }
+            }
+        }
+        
+        for (String ingestType : fieldIndexFilterMapByType.keySet()) {
+            Multimap<String,String> mutableMap = fieldIndexFilterMapByType.remove(ingestType);
+            fieldIndexFilterMapByType.put(ingestType, Multimaps.unmodifiableMultimap(mutableMap));
+        }
+        
+        return Collections.unmodifiableMap(fieldIndexFilterMapByType);
     }
     
     /**

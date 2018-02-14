@@ -1,23 +1,5 @@
 package datawave.ingest.mapreduce.handler.shard;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.StringUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Counter;
-import org.apache.hadoop.mapreduce.StatusReporter;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
-
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -26,7 +8,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;
-
 import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.data.RawRecordContainer;
@@ -48,6 +29,25 @@ import datawave.ingest.util.DiskSpaceStarvationStrategy;
 import datawave.marking.MarkingFunctions;
 import datawave.util.TextUtil;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import io.protostuff.LinkedBuffer;
+import io.protostuff.ProtobufIOUtil;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.StatusReporter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -133,6 +133,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                                                                                                                       // mapred.task.timeout) before n-grams
                                                                                                                       // will stop being added to a bloom filter
     public static final String SHARD_ININDEX_BLOOM_OPTIMUM_MAX_FILTER_SIZE = "shard.table.index.bloom.optimum.max.filter.size"; // Bytes
+    public static final String SHARD_FIELD_INDEX_FILTER_ENABLED = "shard.table.field.index.filter.enabled";
     public static final String SHARD_STATS_TNAME = "shard.stats.table.name";
     public static final String SHARD_GIDX_TNAME = "shard.global.index.table.name";
     public static final String SHARD_GRIDX_TNAME = "shard.global.rindex.table.name";
@@ -204,6 +205,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Determines whether or not the bloom filter is enabled.
      */
     private boolean bloomFiltersEnabled = false;
+    
+    /**
+     * Determines whether or not the field index filter is enabled.
+     */
+    private boolean fieldIndexFilterEnabled = false;
+    protected LinkedBuffer linkedBuffer;
     
     boolean isReindexEnabled;
     private Collection<String> requestedFieldsForReindex;
@@ -279,6 +286,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             this.bloomFilteringTimeoutThreshold = conf.getFloat(SHARD_ININDEX_BLOOM_TIMEOUT_THRESHOLD, 0.0f);
             this.bloomFilteringOptimumMaxFilterSize = conf.getInt(SHARD_ININDEX_BLOOM_OPTIMUM_MAX_FILTER_SIZE, -1);
         }
+        
+        this.fieldIndexFilterEnabled = conf.getBoolean(SHARD_FIELD_INDEX_FILTER_ENABLED, false);
+        if (this.fieldIndexFilterEnabled || this.bloomFiltersEnabled)
+            this.linkedBuffer = LinkedBuffer.allocate(4096);
         
         // Event key suppression
         this.suppressEventKeys = conf.getBoolean(SUPPRESS_EVENT_KEYS, false);
@@ -526,9 +537,22 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         
         String fieldName = value.getIndexedFieldName();
         String fieldValue = value.getIndexedFieldValue();
+        
+        FieldIndexFilterData fieldIndexFilterData = null;
+        if (this.fieldIndexFilterEnabled)
+            fieldIndexFilterData = createFieldIndexFilter(helper, event, fields, value, visibility);
+        
+        byte[] bloomFilterBytes = null;
+        if (this.bloomFiltersEnabled)
+            bloomFilterBytes = createBloomFilter(event, fields, reporter);
+        
+        Value fiValue = DataTypeHandler.NULL_VALUE;
+        if (fieldIndexFilterData != null || bloomFilterBytes != null) {
+            fiValue = new Value(ProtobufIOUtil.toByteArray(new FieldIndexData(fieldIndexFilterData, bloomFilterBytes), FieldIndexData.SCHEMA, linkedBuffer));
+            linkedBuffer.clear();
+        }
         // produce field index.
-        values.putAll(createShardFieldIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        createBloomFilter(event, fields, reporter)));
+        values.putAll(createShardFieldIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, fiValue));
         
         // produce index column
         values.putAll(createTermIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
@@ -579,8 +603,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * @param fields
      * @param reporter
      */
-    protected Value createBloomFilter(RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, StatusReporter reporter) {
-        Value filterValue = DataTypeHandler.NULL_VALUE;
+    protected byte[] createBloomFilter(RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, StatusReporter reporter) {
+        byte[] bloomFilterBytes = null;
         if (this.bloomFiltersEnabled) {
             
             try {
@@ -591,7 +615,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 // Create the bloom filter, which may involve NGram expansion
                 final BloomFilterWrapper result = this.createBloomFilter(fields);
                 final BloomFilter<String> bloomFilter = result.getFilter();
-                filterValue = MemberShipTest.toValue(bloomFilter);
+                bloomFilterBytes = MemberShipTest.toBytes(bloomFilter);
                 
                 // Stop the stopwatch
                 stopWatch.stop();
@@ -604,7 +628,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     
                     final Counter sizeCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterSize");
                     if (null != sizeCounter) {
-                        sizeCounter.increment(filterValue.getSize());
+                        sizeCounter.increment(bloomFilterBytes.length);
                     }
                     
                     final Counter fieldsCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterAppliedFields");
@@ -631,14 +655,29 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 if (null != reporter) {
                     final Counter errorCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterError");
                     if (null != errorCounter) {
-                        errorCounter.increment(filterValue.getSize());
+                        errorCounter.increment(bloomFilterBytes.length);
                     }
                 }
             }
         }
         
-        return filterValue;
+        return bloomFilterBytes;
         
+    }
+    
+    protected FieldIndexFilterData createFieldIndexFilter(IngestHelperInterface helper, RawRecordContainer event,
+                    Multimap<String,NormalizedContentInterface> fields, NormalizedContentInterface value, byte[] visibility) {
+        FieldIndexFilterData filterData = null;
+        if (this.fieldIndexFilterEnabled) {
+            Multimap<String,String> fieldValueMap = HashMultimap.create();
+            for (String field : helper.getFieldIndexFilterMapping(value.getIndexedFieldName()))
+                for (NormalizedContentInterface nci : fields.get(field))
+                    if (Arrays.equals(getVisibility(event, nci), visibility))
+                        fieldValueMap.put(field, nci.getEventFieldValue());
+            
+            filterData = new FieldIndexFilterData(fieldValueMap);
+        }
+        return filterData;
     }
     
     /**
@@ -1427,6 +1466,15 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     public float getBloomFilteringTimeoutThreshold() {
         return this.bloomFilteringTimeoutThreshold;
+    }
+    
+    /**
+     * Return a value indicating whether or not the field index filter is enabled, which is determined during setup.
+     *
+     * @return true if the field index filter is enabled
+     */
+    public boolean isFieldIndexFilterEnabled() {
+        return this.fieldIndexFilterEnabled;
     }
     
     /**

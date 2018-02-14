@@ -1,19 +1,18 @@
 package datawave.ingest.data.config.ingest;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.collect.Multimap;
 import datawave.data.type.Type;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
-
 import org.apache.hadoop.conf.Configuration;
 
-import com.google.common.collect.Multimap;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
@@ -101,6 +100,12 @@ public interface IngestHelperInterface extends DataTypeHelper {
     boolean isCompositeField(String fieldName);
     
     void addCompositeField(String fieldName);
+    
+    boolean isFieldIndexFilterField(String fieldName);
+    
+    Collection<String> getFieldIndexFilterMapping(String fieldName);
+    
+    void addFieldIndexFilterFieldMapping(String fieldName, Collection<String> mappedFields);
     
     boolean isNormalizedField(String fieldName);
     

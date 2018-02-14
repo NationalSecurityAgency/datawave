@@ -320,6 +320,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     protected boolean dataQueryExpressionFilterEnabled = false;
     
     /**
+     * Used to enable field index filtering when iterating across the field index
+     */
+    protected boolean fieldIndexFilterEnabled = false;
+    
+    /**
      * Used to enable sorting query ranges from most to least granular for queries which contain geowave fields in ThreadedRangeBundler
      */
     protected boolean sortGeoWaveQueryRanges = false;
@@ -561,6 +566,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
         this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
+    }
+    
+    public boolean isFieldIndexFilterEnabled() {
+        return fieldIndexFilterEnabled;
+    }
+    
+    public void setFieldIndexFilterEnabled(boolean fieldIndexFilterEnabled) {
+        this.fieldIndexFilterEnabled = fieldIndexFilterEnabled;
     }
     
     public boolean isSortGeoWaveQueryRanges() {
@@ -1569,6 +1582,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.setDebugMultithreadedSources(copy.isDebugMultithreadedSources());
         
         this.setDataQueryExpressionFilterEnabled(copy.isDataQueryExpressionFilterEnabled());
+        
+        this.setFieldIndexFilterEnabled(copy.isFieldIndexFilterEnabled());
         
         this.setSortGeoWaveQueryRanges(copy.isSortGeoWaveQueryRanges());
         this.setNumRangesToBuffer(copy.getNumRangesToBuffer());

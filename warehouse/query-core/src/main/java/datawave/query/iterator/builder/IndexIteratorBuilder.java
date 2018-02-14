@@ -1,21 +1,20 @@
 package datawave.query.iterator.builder;
 
-import java.util.Set;
-
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.filter.field.index.FieldIndexFilter;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
+import java.util.Set;
 
 /**
  * A convenience class that aggregates a field, value, source iterator, normalizer mappings, index only fields, data type filter and key transformer when
@@ -26,10 +25,12 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
     
     protected SortedKeyValueIterator<Key,Value> source;
     protected TypeMetadata typeMetadata;
+    protected TypeMetadata typeMetadataWithNonIndexed;
     protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
     protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
     protected FieldIndexAggregator keyTform;
     protected Set<String> fieldsToAggregate;
+    protected FieldIndexFilter fieldIndexFilter;
     
     public void setSource(final SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
@@ -41,6 +42,14 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
     
     public void setTypeMetadata(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
+    }
+    
+    public TypeMetadata getTypeMetadataWithNonIndexed() {
+        return typeMetadataWithNonIndexed;
+    }
+    
+    public void setTypeMetadataWithNonIndexed(TypeMetadata typeMetadataWithNonIndexed) {
+        this.typeMetadataWithNonIndexed = typeMetadataWithNonIndexed;
     }
     
     public Set<String> getFieldsToAggregate() {
@@ -75,9 +84,17 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
         this.keyTform = keyTform;
     }
     
+    public FieldIndexFilter getFieldIndexFilter() {
+        return fieldIndexFilter;
+    }
+    
+    public void setFieldIndexFilter(FieldIndexFilter fieldIndexFilter) {
+        this.fieldIndexFilter = fieldIndexFilter;
+    }
+    
     public IndexIterator newIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
-        return new IndexIterator(field, value, source, timeFilter, typeMetadata, buildDocument, datatypeFilter, aggregator);
+                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator, FieldIndexFilter fieldIndexFilter) {
+        return new IndexIterator(field, value, source, timeFilter, typeMetadata, buildDocument, datatypeFilter, aggregator, fieldIndexFilter);
     }
     
     @SuppressWarnings("unchecked")
@@ -89,13 +106,14 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
                 canBuildDocument = true;
             }
             IndexIteratorBridge itr = new IndexIteratorBridge(newIndexIterator(new Text(field), new Text(value), source, this.timeFilter, this.typeMetadata,
-                            canBuildDocument, this.datatypeFilter, this.keyTform));
+                            canBuildDocument, this.datatypeFilter, this.keyTform, this.fieldIndexFilter));
             field = null;
             value = null;
             source = null;
             timeFilter = null;
             datatypeFilter = null;
             keyTform = null;
+            fieldIndexFilter = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

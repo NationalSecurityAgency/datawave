@@ -178,6 +178,8 @@ public class ShardQueryConfigurationFactory {
         config.setStatsdPort(configuredLogic.getStatsdPort());
         config.setStatsdMaxQueueSize(configuredLogic.getStatsdMaxQueueSize());
         
+        config.setFieldIndexFilterEnabled(configuredLogic.isFieldIndexFilterEnabled());
+        
         config.setSortGeoWaveQueryRanges(configuredLogic.isSortGeoWaveQueryRanges());
         config.setNumRangesToBuffer(configuredLogic.getNumRangesToBuffer());
         config.setRangeBufferTimeoutMillis(configuredLogic.getRangeBufferTimeoutMillis());

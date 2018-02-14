@@ -53,17 +53,19 @@ public class GeoWaveFunctions {
     }
     
     private static Geometry getGeometryFromFieldValue(Object fieldValue) {
-        if (fieldValue instanceof Geometry) {
-            return (Geometry) fieldValue;
-        } else if (fieldValue instanceof String) {
-            return GeometryNormalizer.getGeometryFromWKT((String) fieldValue);
-        } else if (fieldValue instanceof ValueTuple) {
+        if (fieldValue instanceof ValueTuple) {
             ValueTuple t = (ValueTuple) fieldValue;
             Object o = t.second();
             if (o instanceof GeometryType) {
                 GeometryType gt = (GeometryType) o;
                 return gt.getDelegate().getJTSGeometry();
             }
+        } else if (fieldValue instanceof Geometry) {
+            return (Geometry) fieldValue;
+        } else if (fieldValue instanceof String) {
+            return GeometryNormalizer.getGeometryFromWKT((String) fieldValue);
+        } else if (fieldValue instanceof GeometryType) {
+            return ((GeometryType) fieldValue).getDelegate().getJTSGeometry();
         }
         throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a geometry");
     }

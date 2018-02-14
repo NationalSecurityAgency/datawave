@@ -16,8 +16,8 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.config.ShardQueryConfigurationFactory;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.metrics.MockStatusReporter;
 import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
+import datawave.query.metrics.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.Query;
@@ -93,7 +93,7 @@ public class GeoSortedQueryDataTest {
     private static final SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
     
     private static final String BEGIN_DATE = "20000101 000000.000";
-    private static final String END_DATE = "20500101 000000.000";
+    private static final String END_DATE = "20010101 000000.000";
     
     private static final String USER = "testcorp";
     private static final String USER_DN = "cn=test.testcorp.com, ou=datawave, ou=development, o=testcorp, c=us";
@@ -117,20 +117,20 @@ public class GeoSortedQueryDataTest {
             "POLYGON((90 90, -90 90, -90 -90, 90 -90, 90 90))",
             "POLYGON((180 90, 0 90, 0 -90, 180 -90, 180 90))",
             "POLYGON((90 0, -90 0, -90 -180, 90 -180, 90 0))"};
-    
+
     private static final long[] dates = {
             0,
             TimeUnit.DAYS.toMillis(90),
             TimeUnit.DAYS.toMillis(180),
-    
+
             0,
             TimeUnit.DAYS.toMillis(90),
             TimeUnit.DAYS.toMillis(180),
-    
+
             0,
             TimeUnit.DAYS.toMillis(90),
             TimeUnit.DAYS.toMillis(180),
-    
+
             0,
             TimeUnit.DAYS.toMillis(90),
             TimeUnit.DAYS.toMillis(180)};
@@ -263,7 +263,8 @@ public class GeoSortedQueryDataTest {
             final BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
                 final Mutation mutation = new Mutation(biKey.getKey().getRow());
-                mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(), val);
+                mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(), biKey.getKey()
+                                .getTimestamp(), val);
                 writer.addMutation(mutation);
             }
             writer.close();
