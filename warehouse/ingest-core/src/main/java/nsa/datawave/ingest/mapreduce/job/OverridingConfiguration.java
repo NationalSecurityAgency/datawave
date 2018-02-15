@@ -7,9 +7,9 @@ import java.util.TreeMap;
 
 /**
  * A Hadoop configuration that "overrides" properties by removing the given prefix from any configurations that start with it.
- * <p/>
+ *
  * Example: If created with the prefix of "test", then the property "test.table.name" would be changed to "table.name".
- * <p/>
+ *
  * This is used for overriding configurations in ingest components.
  */
 public class OverridingConfiguration extends Configuration {
