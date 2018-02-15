@@ -63,6 +63,15 @@ public class AbstractColumnBasedHandler<KEYIN> extends ShardedDataTypeHandler<KE
             if (createGlobalIndexTerms) {
                 if (helper.isIndexedField(e.getValue().getIndexedFieldName())) {
                     index.put(e.getValue().getIndexedFieldName(), e.getValue());
+                    
+                    if (helper.isAliasedIndexField(e.getValue().getIndexedFieldName())) {
+                        for (String alias : helper.getAliasesForIndexedField(e.getValue().getIndexedFieldName())) {
+                            NormalizedContentInterface value = (NormalizedContentInterface) e.getValue().clone();
+                            value.setFieldName(alias);
+                            fields.put(alias, value);
+                            index.put(alias, value);
+                        }
+                    }
                 }
             }
             
