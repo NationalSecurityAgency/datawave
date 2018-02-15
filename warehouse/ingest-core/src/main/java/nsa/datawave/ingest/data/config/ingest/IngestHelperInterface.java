@@ -1,5 +1,6 @@
 package nsa.datawave.ingest.data.config.ingest;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -102,6 +103,10 @@ public interface IngestHelperInterface extends DataTypeHelper {
     boolean isNormalizedField(String fieldName);
     
     void addNormalizedField(String fieldName);
+
+    boolean isAliasedIndexField(String fieldName);
+
+    HashSet<String> getAliasesForIndexedField( String fieldName);
     
     boolean isDataTypeField(String fieldName);
     

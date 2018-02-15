@@ -70,13 +70,23 @@
 </property>
 
 <property>
+        <name>wikipedia.data.category.index.aliases.enabled</name>
+        <value>true</value>
+</property>
+
+<property>
+        <name>wikipedia.data.category.index.aliases</name>
+        <value>CONTRIBUTOR_USERNAME:CONTRIBUTOR;CONTRIBUTOR_ID:CoNTrIBUtOR;CONTRIBUTOR_PAGE_ID:CP_ID</value>
+</property>
+
+<property>
   <name>wikipedia.data.category.index.reverse</name>
   <value>CONTRIBUTOR_USERNAME,PAGE_TITLE,PAGE_RESTRICTIONS,REVISION_TEXT_TOKEN,REVISION_COMMENT_TOKEN</value>
 </property>
 
 <property>
   <name>wikipedia.data.category.index.only</name>
-  <value>REVISION_TEXT_TOKEN,REVISION_COMMENT_TOKEN</value>
+  <value>REVISION_TEXT_TOKEN,REVISION_COMMENT_TOKEN,CONTRIBUTOR,CP_ID,CONTRIBUTOR_PAGE_ID</value>
 </property>
 
 <property>
@@ -87,6 +97,16 @@
 <!--  ********************************************
                    Virtual Fields
       ******************************************** -->
+
+<property>
+        <name>wikipedia.data.combine.name</name>
+        <value>CONTRIBUTOR_PAGE_ID</value>
+</property>
+
+<property>
+        <name>wikipedia.data.combine.fields</name>
+        <value>CONTRIBUTOR_ID.PAGE_ID</value>
+</property>
 
 <property>
   <name>wikipedia.data.combine.start.separator</name>
