@@ -28,10 +28,9 @@ public class FieldNameAliaserNormalizer {
      * 
      */
     public static final String FIELD_ALIASES = ".data.category.field.aliases";
-
-    public static final String INDEX_ALIASES_ENABLE = ".data.category.index.aliases.enabled";
+    
+    public static final String INDEX_ALIASES_ENABLED = ".data.category.index.aliases.enabled";
     public static final String INDEX_ALIASES = ".data.category.index.aliases";
-
     
     private Map<String,String> _fieldNameAliases = null;
     protected Map<String,String> _canonicalFieldNameAliases = null;
@@ -41,23 +40,23 @@ public class FieldNameAliaserNormalizer {
     public void setAliases(Map<String,String> aliases) {
         _fieldNameAliases = aliases;
     }
-
-    public void setIndexAliases(Map<String, HashSet<String>> aliases){
+    
+    public void setIndexAliases(Map<String,HashSet<String>> aliases) {
         _indexNameAliases = aliases;
     }
     
     public Map<String,String> getAliases() {
         return _fieldNameAliases;
     }
-
-    public Map<String, HashSet<String>> getIndexAliases(){
+    
+    public Map<String,HashSet<String>> getIndexAliases() {
         return _indexNameAliases;
     }
-
-    public HashSet<String> getIndexAliases(String fieldName){
+    
+    public HashSet<String> getIndexAliases(String fieldName) {
         return _indexNameAliases.get(fieldName);
     }
-
+    
     public void setup(Type type, Configuration config) {
         // Process the field aliases
         _fieldNameAliases = new HashMap<>();
@@ -73,20 +72,19 @@ public class FieldNameAliaserNormalizer {
         }
         _indexNameAliases = new HashMap<>();
         Boolean indexAliasesAllowed = config.getBoolean(type.typeName() + INDEX_ALIASES_ENABLED, false);
-        if (indexAliasesAllowed){
-            String indexAliasesConfig = config.get(type.typName() + INDEX_ALIASES, null);
+        if (indexAliasesAllowed) {
+            String indexAliasesConfig = config.get(type.typeName() + INDEX_ALIASES, null);
             if (null != indexAliasesConfig) {
-                for (String indexAliasStr : StringUtils.split(indexAliasesConfig, ';')){
-                    if (indexAliasStr.length() > 0 ){
+                for (String indexAliasStr : StringUtils.split(indexAliasesConfig, ';')) {
+                    if (indexAliasStr.length() > 0) {
                         String[] parts = StringUtils.split(indexAliasStr, ':');
-                        if (parts.length == 2){
+                        if (parts.length == 2) {
                             HashSet<String> aliases = new HashSet<String>();
-                            for (String alias : StringUtils.split(parts[1], ',')){
-                                aliases.add(canonicalizeFieldName(alias, FIELD_NAME));
+                            for (String alias : StringUtils.split(parts[1], ',')) {
+                                aliases.add(canonicalizeFieldName(alias, FIELD.NAME));
                             }
                             _indexNameAliases.put(parts[0], aliases);
-                        }
-                        else {
+                        } else {
                             throw new IllegalArgumentException("Improperly formatted index alias");
                         }
                     }

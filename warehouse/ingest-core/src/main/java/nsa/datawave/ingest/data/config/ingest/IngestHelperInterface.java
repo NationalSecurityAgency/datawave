@@ -103,10 +103,10 @@ public interface IngestHelperInterface extends DataTypeHelper {
     boolean isNormalizedField(String fieldName);
     
     void addNormalizedField(String fieldName);
-
+    
     boolean isAliasedIndexField(String fieldName);
-
-    HashSet<String> getAliasesForIndexedField( String fieldName);
+    
+    HashSet<String> getAliasesForIndexedField(String fieldName);
     
     boolean isDataTypeField(String fieldName);
     

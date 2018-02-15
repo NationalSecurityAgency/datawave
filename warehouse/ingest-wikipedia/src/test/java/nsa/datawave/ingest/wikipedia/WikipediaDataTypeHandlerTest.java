@@ -71,13 +71,13 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         helper.setup(conf);
         
         Multimap<String,NormalizedContentInterface> eventFields = helper.getEventFields(e);
-
+        
         VirtualIngest vHelper = (VirtualIngest) helper;
-        Multimap<String, NormalizedContentInterface> virtualFields = vHelper.getVirtualFields(eventFields);
-        for(Entry<String, NormalizedContentInterface> v : virtualFields.entries()){
-                eventFields.put(v.getKey(), v.getValue());
+        Multimap<String,NormalizedContentInterface> virtualFields = vHelper.getVirtualFields(eventFields);
+        for (Entry<String,NormalizedContentInterface> v : virtualFields.entries()) {
+            eventFields.put(v.getKey(), v.getValue());
         }
-
+        
         // create a context writer that stores up the results
         MyCachingContextWriter contextWriter = new MyCachingContextWriter();
         
@@ -118,10 +118,10 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         
         eventFields = helper.getEventFields(e);
         virtualFields = vHelper.getVirtualFields(eventFields);
-        for(Entry<String, NormalizedContentInterface> v : virtualFields.entries()){
-                eventFields.put(v.getKey(), v.getValue());
+        for (Entry<String,NormalizedContentInterface> v : virtualFields.entries()) {
+            eventFields.put(v.getKey(), v.getValue());
         }
-
+        
         // Call the Handler
         handler.process(new Text("2"), e, eventFields, ctx, contextWriter);
         try {

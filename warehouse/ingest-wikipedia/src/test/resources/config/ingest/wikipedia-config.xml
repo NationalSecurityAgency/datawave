@@ -63,13 +63,6 @@
       ******************************************** -->
 
 <property>
-  <name>wikipedia.data.category.index</name>
-  <value>CONTRIBUTOR_USERNAME,CONTRIBUTOR_ID,PAGE_ID,PAGE_NAMESPACE,PAGE_RESTRICTIONS,PAGE_TITLE,REVISION_COMMENT_TERM_COUNT,REVISION_COMMENT_TOKEN,REVISION_ID,REVISION_MINOR,REVISION_PARENTID,REVISION_SHA1,REVISION_TEXT_TERM_COUNT,REVISION_TEXT_TOKEN,REVISION_TIMESTAMP</value>
-  <description>These are the fields to index (delimited by first separator).
-  </description>
-</property>
-
-<property>
         <name>wikipedia.data.category.index.aliases.enabled</name>
         <value>true</value>
 </property>
@@ -77,6 +70,13 @@
 <property>
         <name>wikipedia.data.category.index.aliases</name>
         <value>CONTRIBUTOR_USERNAME:CONTRIBUTOR;CONTRIBUTOR_ID:CoNTrIBUtOR;CONTRIBUTOR_PAGE_ID:CP_ID</value>
+</property>
+
+<property>
+  <name>wikipedia.data.category.index</name>
+  <value>CONTRIBUTOR_PAGE_ID,CONTRIBUTOR_USERNAME,CONTRIBUTOR_ID,PAGE_ID,PAGE_NAMESPACE,PAGE_RESTRICTIONS,PAGE_TITLE,REVISION_COMMENT_TERM_COUNT,REVISION_COMMENT_TOKEN,REVISION_ID,REVISION_MINOR,REVISION_PARENTID,REVISION_SHA1,REVISION_TEXT_TERM_COUNT,REVISION_TEXT_TOKEN,REVISION_TIMESTAMP</value>
+  <description>These are the fields to index (delimited by first separator).
+  </description>
 </property>
 
 <property>

@@ -489,15 +489,14 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public Set<String> getNormalizedFields() {
         return normalizedFields;
     }
-
-    public boolean isAliasedIndexField(String fieldName){
+    
+    public boolean isAliasedIndexField(String fieldName) {
         return (null != aliaser.getIndexAliases(fieldName));
     }
-
-    public HashSet<String> getAliasesForIndexedField(String feildName){
+    
+    public HashSet<String> getAliasesForIndexedField(String fieldName) {
         return aliaser.getIndexAliases(fieldName);
     }
-
     
     /**
      * Get a field name from a property name given the pattern. Returns null if not an actually match
