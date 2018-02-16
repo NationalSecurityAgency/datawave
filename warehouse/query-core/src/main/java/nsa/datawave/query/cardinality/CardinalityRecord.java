@@ -80,7 +80,7 @@ public class CardinalityRecord implements Serializable {
         }
     }
     
-    protected List<String> assembleValues(String field, Map<String,List<String>> valueMap) {
+    public List<String> assembleValues(String field, Map<String,List<String>> valueMap) {
         
         List<String> values = new ArrayList<>();
         List<List<String>> valueLists = new ArrayList<>();
