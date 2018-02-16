@@ -153,16 +153,18 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
     // When a single Ivarator is used during a query on the teserver, we save time by not sorting the UIDs (not necessary for further comparisons).
     // To ensure that returned keys appear to be in sorted order on the way back we prpend a one-up number to the colFam.
     // In this edge case, the prepended number needs to be removed.
-    static protected Key correctKey(Key key) {
-        String colFam = key.getColumnFamily().toString();
-        String[] colFamParts = StringUtils.split(colFam, '\0');
-        if (colFamParts.length == 3) {
-            // skip part 0 and return a key with parts 1 & 2 as the colFam
-            return new Key(key.getRow(), new Text(colFamParts[1] + '\0' + colFamParts[2]), key.getColumnQualifier(), key.getColumnVisibility(),
-                            key.getTimestamp());
-        } else {
-            return key;
+    static protected Key correctKey(Key origKey) {
+        Key key = origKey;
+        if (key != null) {
+            String colFam = key.getColumnFamily().toString();
+            String[] colFamParts = StringUtils.split(colFam, '\0');
+            if (colFamParts.length == 3) {
+                // skip part 0 and return a key with parts 1 & 2 as the colFam
+                key = new Key(key.getRow(), new Text(colFamParts[1] + '\0' + colFamParts[2]), key.getColumnQualifier(), key.getColumnVisibility(),
+                                key.getTimestamp());
+            }
         }
+        return key;
     }
     
     @Override
@@ -184,13 +186,12 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
             Entry<Key,Document> documentEntry = deserializer.apply(entry);
             
             documentKey = correctKey(documentEntry.getKey());
-            
             document = documentEntry.getValue();
-            extractMetrics(document, documentKey);
             
             if (null == documentKey || null == document)
-                throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
+                throw new IllegalArgumentException("Null key or value. Key:" + documentKey + ", Value: " + entry.getValue());
             
+            extractMetrics(document, documentKey);
             document.debugDocumentSize(documentKey);
             
             String row = documentKey.getRow().toString();
