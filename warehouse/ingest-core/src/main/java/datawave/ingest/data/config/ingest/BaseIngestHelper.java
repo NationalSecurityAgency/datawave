@@ -788,6 +788,14 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
     
     @Override
+    public boolean isShardExcluded(String fieldname) {
+        if (fieldHelper != null) {
+            return !fieldHelper.isStoredField(fieldname);
+        }
+        return super.isShardExcluded(fieldname);
+    }
+    
+    @Override
     public boolean isIndexedField(String fieldName) {
         if (fieldHelper != null) {
             return fieldHelper.isIndexedField(fieldName);
