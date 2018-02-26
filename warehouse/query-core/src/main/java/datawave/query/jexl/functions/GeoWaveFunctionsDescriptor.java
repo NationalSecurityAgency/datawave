@@ -4,9 +4,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
-import mil.nga.giat.geowave.core.geotime.GeometryUtils;
-import mil.nga.giat.geowave.core.index.ByteArrayRange;
-import mil.nga.giat.geowave.core.index.sfc.data.MultiDimensionalNumericData;
+import com.vividsolutions.jts.geom.GeometryCollection;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.ArithmeticJexlEngines;
@@ -15,14 +14,24 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.*;
+import mil.nga.giat.geowave.core.geotime.GeometryUtils;
+import mil.nga.giat.geowave.core.index.ByteArrayRange;
+import mil.nga.giat.geowave.core.index.sfc.data.MultiDimensionalNumericData;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * This is the descriptor class for performing geowave functions. Its supprts basic spatial relationships, and decomposes the bounding box of the relationship
@@ -37,7 +46,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
      */
     protected static final String[] SPATIAL_RELATION_OPERATIONS = new String[] {"contains", "covers", "covered_by", "crosses", "intersects", "overlaps",
             "within"};
-    public static final int MAX_EXPANSION = 800;
+    
     private static final Logger LOGGER = Logger.getLogger(GeoWaveFunctionsDescriptor.class);
     
     public static class GeoWaveJexlArgumentDescriptor implements JexlArgumentDescriptor {
@@ -51,64 +60,71 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         
         @Override
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
+            int maxExpansion = Math.max(1, config.getGeoWaveMaxExpansion());
+            int maxEnvelopes = Math.max(1, config.getGeoWaveMaxEnvelopes());
             if (isSpatialRelationship(name)) {
                 Geometry geom = GeometryNormalizer.getGeometryFromWKT(args.get(1).image);
-                return getIndexNode(args.get(0), geom.getEnvelopeInternal());
+                List<Envelope> envelopes = getSeparateEnvelopes(geom, maxEnvelopes);
+                if (!envelopes.isEmpty())
+                    return (envelopes.size() == 1) ? getIndexNode(args.get(0), envelopes.get(0), maxExpansion) : getIndexNode(args.get(0), envelopes,
+                                    maxExpansion);
             }
             // return the true node if unable to parse arguments
             return TRUE_NODE;
         }
         
-        protected static JexlNode getIndexNode(JexlNode node, Envelope env) {
+        protected static JexlNode getIndexNode(JexlNode node, Envelope env, int maxExpansion) {
             if (node.jjtGetNumChildren() > 0) {
                 List<JexlNode> list = Lists.newArrayList();
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     JexlNode kid = node.jjtGetChild(i);
                     if (kid.image != null) {
-                        list.add(getIndexNode(kid.image, env));
+                        list.add(getIndexNode(kid.image, env, maxExpansion));
                     }
                 }
                 if (list.size() > 0) {
                     return JexlNodeFactory.createOrNode(list);
                 }
             } else if (node.image != null) {
-                return getIndexNode(node.image, env);
+                return getIndexNode(node.image, env, maxExpansion);
             }
             return node;
         }
         
-        protected static JexlNode getIndexNode(JexlNode node, List<Envelope> envs) {
+        protected static JexlNode getIndexNode(JexlNode node, List<Envelope> envs, int maxExpansion) {
             if (node.jjtGetNumChildren() > 0) {
                 List<JexlNode> list = Lists.newArrayList();
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     JexlNode kid = node.jjtGetChild(i);
                     if (kid.image != null) {
-                        list.add(getIndexNode(kid.image, envs));
+                        list.add(getIndexNode(kid.image, envs, maxExpansion));
                     }
                 }
                 if (list.size() > 0) {
                     return JexlNodeFactory.createOrNode(list);
                 }
             } else if (node.image != null) {
-                return getIndexNode(node.image, envs);
+                return getIndexNode(node.image, envs, maxExpansion);
             }
             return node;
         }
         
-        protected static JexlNode getIndexNode(String fieldName, Envelope env) {
+        protected static JexlNode getIndexNode(String fieldName, Envelope env, int maxExpansion) {
             List<Envelope> envs = new ArrayList<Envelope>();
             envs.add(env);
-            return getIndexNode(fieldName, envs);
+            return getIndexNode(fieldName, envs, maxExpansion);
         }
         
-        protected static JexlNode getIndexNode(String fieldName, List<Envelope> envs) {
+        protected static JexlNode getIndexNode(String fieldName, List<Envelope> envs, int maxExpansion) {
             List<ByteArrayRange> allRanges = new ArrayList<ByteArrayRange>();
-            int maxRanges = MAX_EXPANSION / envs.size();
+            int maxRanges = maxExpansion / envs.size();
             for (Envelope env : envs) {
                 for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(env).getIndexConstraints(GeometryNormalizer.indexStrategy)) {
-                    allRanges.addAll(Lists.reverse(GeometryNormalizer.indexStrategy.getQueryRanges(range, maxRanges)));
+                    allRanges.addAll(GeometryNormalizer.indexStrategy.getQueryRanges(range, maxRanges));
                 }
             }
+            allRanges = ByteArrayRange.mergeIntersections(allRanges, ByteArrayRange.MergeOperation.UNION);
+            
             Iterable<JexlNode> rangeNodes = Iterables.transform(allRanges, new ByteArrayRangeToJexlNode(fieldName));
             
             // now link em up
@@ -219,4 +235,53 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         
     }
     
+    protected static List<Geometry> getAllEnvelopeGeometries(Geometry geom) {
+        List<Geometry> geometries = new ArrayList<>();
+        if (geom.getNumGeometries() > 1)
+            for (int geoIdx = 0; geoIdx < geom.getNumGeometries(); geoIdx++)
+                geometries.addAll(getAllEnvelopeGeometries(geom.getGeometryN(geoIdx)));
+        else
+            geometries.add(geom.getEnvelope());
+        return geometries;
+    }
+    
+    protected static boolean combineIntersectedGeometries(List<Geometry> geometries, List<Geometry> combinedGeometries, int maxEnvelopes) {
+        while (!geometries.isEmpty() && combinedGeometries.size() < maxEnvelopes)
+            combinedGeometries.add(findIntersectedGeoms(geometries.remove(0), geometries));
+        return geometries.isEmpty();
+    }
+    
+    protected static Geometry findIntersectedGeoms(Geometry srcGeom, List<Geometry> geometries) {
+        List<Geometry> intersected = new ArrayList<>();
+        
+        // find all geometries which intersect with with srcGeom
+        Iterator<Geometry> geomIter = geometries.iterator();
+        while (geomIter.hasNext()) {
+            Geometry geom = geomIter.next();
+            if (geom.intersects(srcGeom)) {
+                geomIter.remove();
+                intersected.add(geom);
+            }
+        }
+        
+        // compute the envelope for the intersected geometries and the source geometry, and look for more intersections
+        if (!intersected.isEmpty()) {
+            intersected.add(srcGeom);
+            Geometry mergedGeom = new GeometryCollection(intersected.toArray(new Geometry[intersected.size()]), new GeometryFactory()).getEnvelope();
+            return findIntersectedGeoms(mergedGeom, geometries);
+        }
+        
+        return srcGeom;
+    }
+    
+    protected static List<Envelope> getSeparateEnvelopes(Geometry geom, int maxEnvelopes) {
+        if (geom.getNumGeometries() > 0) {
+            List<Geometry> geometries = getAllEnvelopeGeometries(geom);
+            List<Geometry> intersectedGeometries = new ArrayList<>();
+            
+            if (combineIntersectedGeometries(geometries, intersectedGeometries, maxEnvelopes))
+                return intersectedGeometries.stream().map(Geometry::getEnvelopeInternal).collect(Collectors.toList());
+        }
+        return Arrays.asList(geom.getEnvelopeInternal());
+    }
 }
