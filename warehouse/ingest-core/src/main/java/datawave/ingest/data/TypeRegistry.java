@@ -189,6 +189,7 @@ public class TypeRegistry extends HashMap<String,Type> {
             String[] handlerClassNames = null;
             try {
                 String[] handlerClasses = StringUtils.trimAndRemoveEmptyStrings(ConfigurationHelper.isNull(config, typeName + HANDLER_CLASSES, String[].class));
+                handlerClasses = StringUtils.deDupStringArray(handlerClasses);
                 handlerClassNames = expandVariables(handlerClasses);
                 
                 Collection<String> exclusions = Arrays.asList(StringUtils.trimAndRemoveEmptyStrings(ConfigurationHelper.isNull(config,

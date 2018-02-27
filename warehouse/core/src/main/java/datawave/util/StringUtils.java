@@ -1,10 +1,6 @@
 package datawave.util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * A class for general String utilities
@@ -429,4 +425,22 @@ public class StringUtils {
             return values;
         }
     }
+    
+    /**
+     * Remove the strings that are empty
+     *
+     * @param values
+     * @return the new string array
+     */
+    public static String[] deDupStringArray(String[] values) {
+        if (values == null)
+            return null;
+        Set<String> stringArraySet = new HashSet<>(Arrays.asList(values));
+        
+        if (stringArraySet.size() == values.length)
+            return values;
+        
+        return stringArraySet.toArray(new String[stringArraySet.size()]);
+    }
+    
 }
