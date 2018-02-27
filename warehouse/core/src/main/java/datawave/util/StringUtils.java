@@ -433,7 +433,7 @@ public class StringUtils {
     }
     
     /**
-     * Remove the strings that are empty
+     * Remove duplicate entries in the array
      *
      * @param values
      * @return the new string array
