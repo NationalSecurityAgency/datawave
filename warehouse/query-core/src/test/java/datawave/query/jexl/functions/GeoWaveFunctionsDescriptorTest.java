@@ -74,7 +74,7 @@ public class GeoWaveFunctionsDescriptorTest {
         // @formatter:on
         
         List<Envelope> envelopes = (List<Envelope>) Whitebox.invokeMethod(GeoWaveFunctionsDescriptor.class, "getSeparateEnvelopes",
-                        GeometryNormalizer.getGeometryFromWKT(wkt), 4);
+                        GeometryNormalizer.parseGeometry(wkt), 4);
         
         Assert.assertEquals(3, envelopes.size());
         

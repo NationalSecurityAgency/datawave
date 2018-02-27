@@ -6,7 +6,7 @@ import com.google.common.collect.Multimap;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.io.ParseException;
-import com.vividsolutions.jts.io.WKTReader;
+import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.type.DateType;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -311,7 +311,6 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
         final Set<SimpleFeature> features = new HashSet<>();
         final SimpleFeatureType simpleFeatureType = builder.getFeatureType();
         final AttributeDescriptor geomAttrib = simpleFeatureType.getGeometryDescriptor();
-        final WKTReader wktReader = new WKTReader();
         
         // make sure we have geometries to work with, otherwise we quit now
         if (geomAttrib == null || !fields.containsKey(geomAttrib.getLocalName()) || fields.get(geomAttrib.getLocalName()).size() == 0)
@@ -369,7 +368,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
                         }
                     }
                 } else if (Geometry.class.isAssignableFrom(binding)) {
-                    builder.set(attrib.getName(), wktReader.read(stringValue));
+                    builder.set(attrib.getName(), GeometryNormalizer.parseGeometry(stringValue));
                 } else {
                     log.error("Unable to map field [" + attrib.getLocalName() + "] to desired type [" + binding.getName() + "]");
                 }
@@ -379,7 +378,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
                 } else if (Geometry.class.isAssignableFrom(binding)) {
                     final ArrayList<Geometry> geomList = new ArrayList<Geometry>(stringValues.size());
                     for (final String stringValue : stringValues)
-                        geomList.add(wktReader.read(stringValue));
+                        geomList.add(GeometryNormalizer.parseGeometry(stringValue));
                     builder.set(attrib.getName(), new GeometryFactory().createGeometryCollection(geomList.toArray(new Geometry[geomList.size()])));
                 } else {
                     log.warn("Multi-value support for field [" + attrib.getLocalName() + "] with type [" + binding.getName()
@@ -396,14 +395,14 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
             // create a unique feature per geometry
             for (final String geomValue : geomValues) {
                 builder.init(baseFeature);
-                builder.set(geomAttrib.getName(), wktReader.read(geomValue));
+                builder.set(geomAttrib.getName(), GeometryNormalizer.parseGeometry(geomValue));
                 features.add(builder.buildFeature(Joiner.on(";").skipNulls().join(baseFeature.getID(), (geomValues.size() == 1) ? null : geomValue)));
             }
         } else {
             // create a single feature with all geometries
             final ArrayList<Geometry> geomList = new ArrayList<Geometry>(geomValues.size());
             for (final String geomValue : geomValues)
-                geomList.add(wktReader.read(geomValue));
+                geomList.add(GeometryNormalizer.parseGeometry(geomValue));
             builder.set(geomAttrib.getName(), new GeometryFactory().createGeometryCollection(geomList.toArray(new Geometry[geomList.size()])));
             features.add(builder.buildFeature(baseFeature.getID()));
         }
