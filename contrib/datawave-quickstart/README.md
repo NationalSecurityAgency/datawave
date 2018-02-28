@@ -272,4 +272,28 @@ See [bin/common.sh](bin/common.sh)
 
 * If you'd like to test with your own certificate materials, see [datawave/bootstrap.sh](bin/services/datawave/bootstrap.sh) and override the trustore/keystore variables there prior to performing Step 2 of the install process above
 
+#### Importing Client Certificate Into Firefox
+
+* Open the Firefox Menu by clicking the three-bar icon.
+* Select the 'Preferences' option.
+* Click 'Privacy & Security' left-hand menu option.
+* Click 'View Certificates' under the 'Certficates' section.
+* Click 'Your Certificates' tab.
+* Click 'Import' button.
+* Select 'web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testUser.p12', then click 'Open' button.
+* Enter the 'secret' password, then click 'Ok'.
+* Click 'Ok' to close the 'Certificate Manager' window.
+
+#### Importing Client Certificate Into Chrome
+
+* Open the Chrome Menu by clicking the three-bar icon.
+* Select the 'Settings' option.
+* Click 'Advanced' at the bottom of the page to open more setting options.
+* Click 'Manage Certificates'
+* Click 'IMPORT'
+* Select 'web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testUser.p12', then click 'Open' button.
+* Enter the 'secret' password, then click 'Ok'.
+* Click 'Ok' to close the 'Certificate Manager' window.
+* Close the 'Settings' tab.
+
 ---
