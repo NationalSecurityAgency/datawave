@@ -266,7 +266,7 @@ See [bin/common.sh](bin/common.sh)
         
 * Passwords for all of the above: `secret`
 
-* This purpose of this PKI setup is to demonstrate DataWave's ability to be integrated easily into an organization's existing private key infrastructure and user athorization services. See [datawave/bootstrap-user.sh](bin/services/datawave/bootstrap-user.sh) for more information on configuration of the test user's roles and associated Accumulo authorizations
+* This purpose of this PKI setup is to demonstrate DataWave's ability to be integrated easily into an organization's existing private key infrastructure and user authorization services. See [datawave/bootstrap-user.sh](bin/services/datawave/bootstrap-user.sh) for more information on configuration of the test user's roles and associated Accumulo authorizations
 
 * To access DataWave Web endpoints in a browser, you'll need to import the client cert into the browser's certificate store
 
