@@ -109,7 +109,7 @@ public class EventDataQueryExpressonVisitorTest {
         assertFalse(f.apply(k3));
         assertFalse(f.apply(k4));
     }
-
+    
     @Test
     public void test() throws Exception {
         String originalQuery = "FOO == 'abc'";
@@ -144,43 +144,43 @@ public class EventDataQueryExpressonVisitorTest {
         
         assertNull(filter.get("BAR"));
     }
-
+    
     @Test
     public void testNotNull() throws Exception {
         String originalQuery = "FOO != null";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         assertNotNull(filter.get("FOO"));
-
+        
         Key p1 = createKey("FOO", "abc");
         Key n1 = createKey("FOO", "def");
-
+        
         assertNotNull(filter.get("FOO"));
         assertTrue(filter.get("FOO").apply(p1));
         assertFalse(filter.get("FOO").apply(n1));
         assertFalse(filter.get("FOO").apply(p1));
-
+        
         assertNull(filter.get("BAR"));
     }
-
+    
     @Test
     public void testNull() throws Exception {
         String originalQuery = "FOO == null";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         assertNotNull(filter.get("FOO"));
-
+        
         Key p1 = createKey("FOO", "abc");
         Key n1 = createKey("FOO", "def");
-
+        
         assertNotNull(filter.get("FOO"));
         assertTrue(filter.get("FOO").apply(p1));
         assertFalse(filter.get("FOO").apply(n1));
         assertFalse(filter.get("FOO").apply(p1));
-
+        
         assertNull(filter.get("BAR"));
     }
-
+    
     @Test
     public void testAndNegation() throws Exception {
         String originalQuery = "FOO != 'abc' && BAR == 'def'";
@@ -200,45 +200,45 @@ public class EventDataQueryExpressonVisitorTest {
         assertFalse(filter.get("BAR").apply(p2));
         assertTrue(filter.get("BAR").apply(n2));
     }
-
+    
     @Test
     public void testAndNull() throws Exception {
         String originalQuery = "FOO == 'abc' && BAR == null";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
-
+        
         Key p1 = createKey("FOO", "abc");
         Key n1 = createKey("FOO", "def");
         Key p2 = createKey("BAR", "abc");
         Key n2 = createKey("BAR", "def");
-
+        
         assertNotNull(filter.get("FOO"));
         assertTrue(filter.get("FOO").apply(p1));
         assertFalse(filter.get("FOO").apply(n1));
         assertTrue(filter.get("FOO").apply(p1));
-
+        
         assertNotNull(filter.get("BAR"));
         assertTrue(filter.get("BAR").apply(p2));
         assertFalse(filter.get("BAR").apply(n2));
         assertFalse(filter.get("BAR").apply(p2));
     }
-
+    
     @Test
     public void testAndNullSameField() throws Exception {
         String originalQuery = "FOO != 'abc' && FOO == null";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
-
+        
         Key p1 = createKey("FOO", "abc");
         Key n1 = createKey("FOO", "def");
-
+        
         assertNotNull(filter.get("FOO"));
         assertTrue(filter.get("FOO").apply(n1));
         assertTrue(filter.get("FOO").apply(p1));
         assertFalse(filter.get("FOO").apply(n1));
         assertTrue(filter.get("FOO").apply(p1));
     }
-
+    
     @Test
     public void testAndNegationTwo() throws Exception {
         String originalQuery = "FOO == 'abc' && !(BAR == 'def')";
