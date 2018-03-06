@@ -261,14 +261,14 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
                 event.addError(RawDataErrorNames.INVALID_XML);
             }
             
-            if (event instanceof Configurable) {
-                event.setId(UID.builder(((Configurable) event).getConf()).newId(data.getBytes(), new Date()));
-            } else {
-                event.setId(UID.builder().newId(data.getBytes(), new Date()));
-            }
-            
             updateEventTypeInformation(event);
             updateEventDate(event);
+            
+            if (event instanceof Configurable) {
+                event.setId(UID.builder(((Configurable) event).getConf()).newId(data.getBytes(), event.getTimeForUID()));
+            } else {
+                event.generateId(null);
+            }
             
             if (eventFixer != null) {
                 if (event instanceof Configurable) {

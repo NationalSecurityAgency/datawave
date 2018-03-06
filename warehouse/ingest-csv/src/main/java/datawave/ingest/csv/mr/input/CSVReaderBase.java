@@ -157,14 +157,18 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
         // decorate with additional data (used by overriding classes)
         decorateEvent();
         
-        event.setRawDataAndGenerateId(rawEventRecordStr.getBytes());
-        enforcePolicy(event);
+        event.setRawData(rawEventRecordStr.getBytes());
         
         // Check to see if we need to override the UID. The use case for this is that some of the hashes are "enrichment" and the same
         // values will be loaded over and over again. By default, the UID is calculated on the raw byte[]
         final UID newUID = uidOverride(event);
-        if (newUID != null)
+        if (newUID != null) {
             event.setId(newUID);
+        } else {
+            event.generateId(null);
+        }
+        
+        enforcePolicy(event);
         
         if (header.length > rawEventFields.length) {
             event.addError(RawDataErrorNames.NOT_ENOUGH_FIELDS);

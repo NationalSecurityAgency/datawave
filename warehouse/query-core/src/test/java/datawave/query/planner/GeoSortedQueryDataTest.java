@@ -183,7 +183,8 @@ public class GeoSortedQueryDataTest {
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
             record.setDate(formatter.parse(BEGIN_DATE).getTime() + dates[i]);
-            record.setRawDataAndGenerateId(wktData[i].getBytes("UTF8"));
+            record.setRawData(wktData[i].getBytes("UTF8"));
+            record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
             
             final Multimap<String,NormalizedContentInterface> fields = ingestHelper.getEventFields(record);

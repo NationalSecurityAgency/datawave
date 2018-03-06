@@ -58,7 +58,8 @@ public class JsonIngestHelperTest {
         
         RawRecordContainer event = new RawRecordContainerImpl();
         event.setDate((new Date()).getTime());
-        event.setRawDataAndGenerateId(testRecord);
+        event.setRawData(testRecord);
+        event.generateId(null);
         Assert.assertNotNull(ingestHelper.getEmbeddedHelper());
         
         Multimap<String,NormalizedContentInterface> fieldMap = ingestHelper.getEventFields(event);
@@ -79,7 +80,8 @@ public class JsonIngestHelperTest {
         
         RawRecordContainer event = new RawRecordContainerImpl();
         event.setDate((new Date()).getTime());
-        event.setRawDataAndGenerateId(testRecord);
+        event.setRawData(testRecord);
+        event.generateId(null);
         Assert.assertNotNull(ingestHelper.getEmbeddedHelper());
         
         Multimap<String,NormalizedContentInterface> fieldMap = ingestHelper.getEventFields(event);
@@ -100,7 +102,8 @@ public class JsonIngestHelperTest {
         
         RawRecordContainer event = new RawRecordContainerImpl();
         event.setDate((new Date()).getTime());
-        event.setRawDataAndGenerateId(testRecord);
+        event.setRawData(testRecord);
+        event.generateId(null);
         Assert.assertNotNull(ingestHelper.getEmbeddedHelper());
         
         Multimap<String,NormalizedContentInterface> fieldMap = ingestHelper.getEventFields(event);

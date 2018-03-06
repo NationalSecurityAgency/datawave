@@ -8,6 +8,8 @@ import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.Date;
 
@@ -197,7 +199,9 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable 
         
         // Create a builder based on the configured Snowflake type and machine ID, if applicable
         final String type = (null != config) ? config.get(CONFIG_UID_TYPE_KEY) : null;
-        if (SnowflakeUID.class.getSimpleName().equals(type)) {
+        if (type == null || HashUID.class.getSimpleName().equals(type)) {
+            builder = (UIDBuilder) ((null != time) ? HashUID.newBuilder(time) : HashUID.builder());
+        } else if (SnowflakeUID.class.getSimpleName().equals(type)) {
             int machineId = config.getInt(CONFIG_MACHINE_ID_KEY, -1);
             if (machineId >= 0) {
                 if (config.getBoolean("snowflake.zookeeper.enabled", false)) {
@@ -212,10 +216,25 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable 
                                 + " property key in order to build " + SnowflakeUID.class.getSimpleName() + "s";
                 throw new IllegalArgumentException(message);
             }
-        }
-        // Otherwise, default to the hash-based builder
-        else {
-            builder = (UIDBuilder) ((null != time) ? HashUID.newBuilder(time) : HashUID.builder());
+        } else {
+            try {
+                Class typeClass = Class.forName(type);
+                if (null != time) {
+                    Method m = typeClass.getMethod("builder", time.getClass());
+                    builder = (UIDBuilder) m.invoke(typeClass, time);
+                } else {
+                    Method m = typeClass.getMethod("builder");
+                    builder = (UIDBuilder) m.invoke(typeClass);
+                }
+            } catch (ClassNotFoundException e) {
+                throw new IllegalArgumentException("Unable to load class for " + type, e);
+            } catch (NoSuchMethodException e) {
+                throw new IllegalArgumentException("Unable to find appropriate builder method for " + type, e);
+            } catch (InvocationTargetException e) {
+                throw new IllegalArgumentException("Unable to invoke builder method on " + type, e);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Unable to access builder method on " + type, e);
+            }
         }
         
         // Return the builder

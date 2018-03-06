@@ -72,31 +72,43 @@ public class RawRecordContainerImplTest {
     @Test
     public void testPopulateAll() {
         ValidatingRawRecordContainerImpl event = create();
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         assertTrue(event.getErrors().size() == 0);
         
         event = create();
         event.setVisibility("TESTVIS1&TESTVIS2");
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         assertTrue(event.getErrors().size() == 0);
     }
     
     @Test
     public void testEquals() {
         ValidatingRawRecordContainerImpl e1 = create();
-        e1.validate(csv.getBytes());
+        e1.setRawData(csv.getBytes());
+        e1.generateId(null);
+        e1.validate();
         
         ValidatingRawRecordContainerImpl e2 = create();
-        e2.validate(csv.getBytes());
+        e2.setRawData(csv.getBytes());
+        e2.generateId(null);
+        e2.validate();
         
         assertTrue(e1.equals(e2));
         assertTrue(e2.equals(e1));
         
         e1 = create();
-        e1.validate(csv.getBytes());
+        e1.setRawData(csv.getBytes());
+        e1.generateId(null);
+        e1.validate();
         
         e2 = create();
-        e2.validate(csv.getBytes());
+        e2.setRawData(csv.getBytes());
+        e2.generateId(null);
+        e2.validate();
         
         assertTrue(e1.equals(e2));
         assertTrue(e2.equals(e1));
@@ -105,18 +117,22 @@ public class RawRecordContainerImplTest {
     @Test
     public void testNotEquals() {
         ValidatingRawRecordContainerImpl e1 = create();
-        e1.validate(csv.getBytes());
-        e1.setUid(UID.builder().newId(e1.getRawData(), e1.getTimeForUID(), field1));
+        e1.setRawData(csv.getBytes());
+        e1.generateId(field1);
+        e1.validate();
         
         ValidatingRawRecordContainerImpl e2 = create();
-        e2.validate(csv.getBytes());
-        e2.setUid(UID.builder().newId(e2.getRawData(), e2.getTimeForUID(), field2));
+        e2.setRawData(csv.getBytes());
+        e2.generateId(field2);
+        e2.validate();
         
         assertTrue(!e1.equals(e2));
         assertTrue(!e2.equals(e1));
         
         e2 = create();
-        e2.validate(csv.getBytes());
+        e2.setRawData(csv.getBytes());
+        e2.generateId(null);
+        e2.validate();
         
         assertTrue(!e1.equals(e2));
         assertTrue(!e2.equals(e1));
@@ -129,7 +145,9 @@ public class RawRecordContainerImplTest {
         
         // Write out the event
         ValidatingRawRecordContainerImpl e1 = create();
-        e1.validate(csv.getBytes());
+        e1.setRawData(csv.getBytes());
+        e1.generateId(null);
+        e1.validate();
         e1.write(out);
         
         out.close();
@@ -152,7 +170,9 @@ public class RawRecordContainerImplTest {
         
         // Write out the event
         e1 = create();
-        e1.validate(csv.getBytes());
+        e1.setRawData(csv.getBytes());
+        e1.generateId(null);
+        e1.validate();
         e1.write(out);
         
         out.close();
@@ -180,7 +200,9 @@ public class RawRecordContainerImplTest {
         event.setDataType(dataType);
         event.setRawFileName(rawFileName);
         event.getIds().add(uuid);
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         assertFalse(event.fatalError());
         assertTrue(event.ignorableError());
         Collection<String> errors = event.getErrors();
@@ -192,13 +214,17 @@ public class RawRecordContainerImplTest {
     public void testMissingUuids() {
         ValidatingRawRecordContainerImpl event = create();
         event.getIds().clear();
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         assertTrue(event.fatalError());
         assertFalse(event.ignorableError());
         Collection<String> errors = event.getErrors();
         assertTrue(errors.contains(RawDataErrorNames.UUID_MISSING));
         
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         assertTrue(event.fatalError());
         errors = event.getErrors();
         assertFalse(errors.isEmpty());
@@ -208,7 +234,9 @@ public class RawRecordContainerImplTest {
     @Test
     public void testCopy() {
         ValidatingRawRecordContainerImpl event = create();
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         RawRecordContainerImpl copy = event.copy();
         assertTrue(event.equals(copy));
     }
@@ -216,31 +244,41 @@ public class RawRecordContainerImplTest {
     @Test
     public void testUID() {
         ValidatingRawRecordContainerImpl event = create();
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         UID uid = event.getUid();
         assertEquals(-1, uid.getTime());
         
         conf.set(RawRecordContainerImpl.USE_TIME_IN_UID, "true");
         event.reloadConfiguration();
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         uid = event.getUid();
         assertNotSame(-1, uid.getTime());
         
         conf.set(RawRecordContainerImpl.USE_TIME_IN_UID, "false");
         event.reloadConfiguration();
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         uid = event.getUid();
         assertEquals(-1, uid.getTime());
         
         conf.set(event.getDataType().typeName() + '.' + RawRecordContainerImpl.USE_TIME_IN_UID, "false");
         event.reloadConfiguration();
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         uid = event.getUid();
         assertEquals(-1, uid.getTime());
         
         conf.set(event.getDataType().typeName() + '.' + RawRecordContainerImpl.USE_TIME_IN_UID, "true");
         event.reloadConfiguration();
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         uid = event.getUid();
         assertNotSame(-1, uid.getTime());
     }
@@ -249,7 +287,9 @@ public class RawRecordContainerImplTest {
     public void testCopiedObjectAfterClear() {
         // Create original
         RawRecordContainerImpl event = create();
-        ((ValidatingRawRecordContainerImpl) event).validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        ((ValidatingRawRecordContainerImpl) event).validate();
         // Create copy
         RawRecordContainerImpl copy = event.copy();
         assertTrue(event.equals(copy));
@@ -273,7 +313,9 @@ public class RawRecordContainerImplTest {
         event.setRawFileName(rawFileName);
         event.setRawRecordNumber(rawRecordNumber);
         event.getIds().add(uuid);
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         assertTrue(event.fatalError());
         assertFalse(event.ignorableError());
         
@@ -284,25 +326,33 @@ public class RawRecordContainerImplTest {
         event.setRawFileName(rawFileName);
         event.setRawRecordNumber(rawRecordNumber);
         event.getIds().add(uuid);
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         assertFalse(event.fatalError());
         assertTrue(event.ignorableError());
         
         event.clearErrors();
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         assertFalse(event.fatalError());
         assertTrue(event.ignorableError());
         
         event.clearErrors();
         // Need to create the type directly as we cannot generate this type from the registry
         event.setDataType(TypeRegistry.getType("samplecsv"));
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         assertFalse(event.fatalError());
         assertTrue(event.ignorableError());
         
         event.reloadConfiguration();
         event.getIds().clear();
-        event.validate(csv.getBytes());
+        event.setRawData(csv.getBytes());
+        event.generateId(null);
+        event.validate();
         assertTrue(event.ignorableError());
     }
     
@@ -318,11 +368,7 @@ public class RawRecordContainerImplTest {
             }
         }
         
-        public void validate(byte[] rawData) {
-            validate(rawData, null);
-        }
-        
-        public void validate(byte[] rawData, String uidExtra) {
+        public void validate() {
             if (getAltIds() == null || getAltIds().size() == 0) {
                 addError(RawDataErrorNames.UUID_MISSING);
             }
@@ -352,9 +398,6 @@ public class RawRecordContainerImplTest {
             if (getSecurityMarkings() == null) {
                 addError(RawDataErrorNames.MISSING_DATA_ERROR);
             }
-            
-            // Set rawData & Calculate the UID
-            setRawDataAndGenerateUid(rawData, uidExtra);
         }
         
         @Override
