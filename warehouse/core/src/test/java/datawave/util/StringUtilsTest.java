@@ -1,6 +1,8 @@
 package datawave.util;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -155,5 +157,39 @@ public class StringUtilsTest {
             verify(strings[i], withEmpties[i], StringUtils.split(strings[i], ',', true));
             verify(strings[i], withEmpties[i], Iterables.toArray(Splitter.on(',').split(strings[i]), String.class));
         }
+    }
+    
+    @Test
+    public void testDeDupStringArray() {
+        String[] strings = new String[] {"string 1", "string 2", "string 3", "string 2", "string 1"};
+        String[] stringsNoDups = new String[] {"string 1", "string 2", "string 3"};
+        
+        // check deDup functionality
+        strings = StringUtils.deDupStringArray(strings);
+        Set<String> stringsSet = new HashSet<>(Arrays.asList(strings));
+        Set<String> stringsNoSupSet = new HashSet<>(Arrays.asList(stringsNoDups));
+        assertTrue("String array was not deduped. Expected: " + Arrays.asList(stringsNoDups) + " But have: " + Arrays.asList(strings) + ".",
+                        stringsSet.equals(stringsNoSupSet));
+        
+        // Check null array
+        strings = null;
+        assertNull(StringUtils.deDupStringArray(strings));
+        
+        // Check empty array
+        strings = new String[] {};
+        assertEquals(0, StringUtils.deDupStringArray(strings).length);
+        
+        // Check array with empty strings
+        strings = new String[] {"", "string 1", ""};
+        String[] deDupedStrings = StringUtils.deDupStringArray(strings);
+        assertEquals("String array with empty string was not deduped. Expected: " + Arrays.asList(deDupedStrings) + " But have: " + Arrays.asList(strings)
+                        + ".", strings.length - 1, deDupedStrings.length);
+        
+        // Check array with string that only have case differences
+        String[] stringsWithCaseDifferences = new String[] {"string 1", "string 2", "String 2"};
+        deDupedStrings = StringUtils.deDupStringArray(stringsWithCaseDifferences);
+        assertEquals("String array with strings that only have case differences should not have been deduped. Expected: "
+                        + Arrays.asList(stringsWithCaseDifferences) + " But have: " + Arrays.asList(deDupedStrings) + ".", stringsWithCaseDifferences.length,
+                        deDupedStrings.length);
     }
 }
