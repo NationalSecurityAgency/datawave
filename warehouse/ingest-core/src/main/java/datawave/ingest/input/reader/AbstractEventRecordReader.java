@@ -163,6 +163,9 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
         this.inputDate = time;
     }
     
+    /**
+     * This implementation of getEvent is not complete. This only creates an initial event that should be modified futher and validated.
+     */
     @Override
     public RawRecordContainer getEvent() {
         event.clear();

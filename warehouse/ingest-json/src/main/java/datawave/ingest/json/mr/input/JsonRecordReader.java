@@ -227,19 +227,21 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
         
         decorateEvent();
         
-        event.setRawDataAndGenerateId(currentJsonObj.toString().getBytes());
-        
-        UID newUID = uidOverride(event);
-        if (null != newUID) {
-            event.setId(newUID);
-        }
-        
-        checkSecurityMarkings();
-        enforcePolicy(event);
+        event.setRawData(currentJsonObj.toString().getBytes());
         
         if (0 == event.getDate()) {
             event.setDate(System.currentTimeMillis());
         }
+        
+        UID newUID = uidOverride(event);
+        if (null != newUID) {
+            event.setId(newUID);
+        } else {
+            event.generateId(null);
+        }
+        
+        checkSecurityMarkings();
+        enforcePolicy(event);
         
         return event;
     }

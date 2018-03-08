@@ -196,7 +196,9 @@ public class DateIndexDataTypeHandlerTest {
         event.setDate(getTime(data));
         event.setRawFileName("DateIndexDataTypeHandlerTest.data");
         event.setRawRecordNumber(1l);
-        event.validate(data.getBytes());
+        event.setRawData(data.getBytes());
+        event.generateId(null);
+        event.validate();
         return event;
     }
     
