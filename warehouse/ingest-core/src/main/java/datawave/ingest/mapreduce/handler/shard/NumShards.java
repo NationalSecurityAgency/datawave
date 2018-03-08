@@ -167,7 +167,7 @@ public class NumShards {
     public String readMultipleNumShardsConfig() {
         if (isCacheValid()) {
             log.info(String.format("Loading the numshards cache (@ '%s')...", this.numShardsCachePath.toUri().toString()));
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(conf).open(this.numShardsCachePath)))) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(this.numShardsCachePath.getFileSystem(this.conf).open(this.numShardsCachePath)))) {
                 return in.lines().collect(Collectors.joining(","));
             } catch (IOException ioe) {
                 throw new RuntimeException("Could not read numshards cache file. See documentation for using generateMultipleNumShardsCache.sh");
@@ -180,7 +180,7 @@ public class NumShards {
     public boolean isCacheValid() {
         FileStatus fileStatus = null;
         try {
-            fileStatus = FileSystem.get(this.conf).getFileStatus(this.numShardsCachePath);
+            fileStatus = this.numShardsCachePath.getFileSystem(this.conf).getFileStatus(this.numShardsCachePath);
         } catch (IOException ioe) {
             log.warn("Clould not get the FileStatus of the multiple numShards file");
         }
