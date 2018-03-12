@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -83,7 +84,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
     
     protected String tokenRegex;
     
-    protected OffsetQueue tokenOffsetCache = null;
+    protected OffsetQueue<Integer> tokenOffsetCache = null;
     
     protected Identity hasher = new Identity();
     
@@ -126,7 +127,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         searchUtilReverse = TokenSearch.Factory.newInstance(DefaultTokenSearch.class.getCanonicalName(), tokenHelper.getStopWords(), true);
         tokenHelper.configureSearchUtil(searchUtilReverse);
         
-        tokenOffsetCache = new BoundedOffsetQueue(tokenHelper.getTokenOffsetCacheMaxSize());
+        tokenOffsetCache = new BoundedOffsetQueue<>(tokenHelper.getTokenOffsetCacheMaxSize());
         
         // Conditionally create an NGrams factory
         if (this.getBloomFiltersEnabled()) {
@@ -154,7 +155,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         if (tokenOffsetCache != null) {
             int termCount = 0;
             try {
-                for (OffsetList offsets : tokenOffsetCache.offsets()) {
+                for (OffsetList<Integer> offsets : tokenOffsetCache.offsets()) {
                     // no need to normalize as that was already done
                     // upon insertion into the token offset cache
                     NormalizedFieldAndValue nfv = new NormalizedFieldAndValue(offsets.termAndZone.zone, offsets.termAndZone.term);
@@ -546,10 +547,10 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
      * @throws InterruptedException
      */
     protected void createTermFrequencyIndex(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, byte[] shardId, NormalizedFieldAndValue nfv,
-                    int[] offsets, byte[] visibility) throws IOException, InterruptedException {
+                    List<Integer> offsets, byte[] visibility) throws IOException, InterruptedException {
         
         TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
-        for (int offset : offsets) {
+        for (Integer offset : offsets) {
             builder.addTermOffset(offset);
         }
         Value value = new Value(builder.build().toByteArray());

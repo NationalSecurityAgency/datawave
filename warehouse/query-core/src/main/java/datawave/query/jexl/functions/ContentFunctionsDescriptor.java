@@ -240,9 +240,19 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 } else if (ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME.equals(funcName)) {
                     JexlNode firstArg = args.next();
                     
+                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode) {
+                        // firstArg is max score value, skip
+                        firstArg = args.next();
+                    }
+                    
                     // we override the zones if the first argument is a string
                     if (firstArg instanceof ASTStringLiteral) {
                         fields = Collections.singleton(firstArg.image);
+                        
+                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode) {
+                            args.next(); // max score not needed for fields and terms
+                        }
+                        
                         termOffsetMap = args.next();
                     } else {
                         JexlNode nextArg = args.peek();

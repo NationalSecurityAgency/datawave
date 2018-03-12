@@ -2,6 +2,7 @@ package datawave.query.jexl.functions;
 
 import java.util.*;
 
+import datawave.ingest.protobuf.TermWeightPosition;
 import org.apache.log4j.Logger;
 
 /**
@@ -25,16 +26,14 @@ import org.apache.log4j.Logger;
  * </li>
  * </ul>
  *
- * 
- * 
- * 
- *
+ * @deprecated This class was replaced by ContentOrderEvaluatorTreeSet, it adds in functionality to properly evaluate the previous skips.
  */
+@Deprecated
 public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
     private static final Logger log = Logger.getLogger(ContentOrderedEvaluator.class);
     
-    public ContentOrderedEvaluator(Set<String> fields, int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
-        super(fields, distance, termOffsetMap, terms);
+    public ContentOrderedEvaluator(Set<String> fields, int distance, float maxScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+        super(fields, distance, maxScore, termOffsetMap, terms);
     }
     
     /**
@@ -42,17 +41,17 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      * and then search forward and backward for ascending and descending offsets.
      */
     @Override
-    protected boolean evaluate(List<List<Integer>> offsets) {
+    protected List<Integer> evaluate(List<List<TermWeightPosition>> offsets) {
         // Quick short-circuit -- if we have fewer offsets than terms in the phrase/adjacency/within
         // we're evaluating, we know there are no results
         if (this.terms.length > offsets.size()) {
-            return false;
+            return null;
         }
         
         // first lets prune the lists by the maximum first offset and the minimum last offset
         offsets = prune(offsets);
         if (offsets == null) {
-            return false;
+            return null;
         }
         
         // find the minimum length list
@@ -75,7 +74,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
         
         // Quick short-circuit -- if we have an empty offset list then no results
         if (minLength == 0) {
-            return false;
+            return null;
         }
         
         final String[] terms = this.terms;
@@ -88,7 +87,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                     // if we can find a descending sequence going backward
                     if (traverseAndPrune(terms, offsets, minLengthIndex, i, 0, distance, -1, -1)) {
                         // then we have a matching sequence!
-                        return true;
+                        return new ArrayList<>();
                     }
                 }
             }
@@ -100,13 +99,13 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                     // if we can find a descending sequence going backward
                     if (traverseAndPrune(terms, offsets, minLengthIndex, i, 0, distance, 1, offsets.size())) {
                         // then we have a matching sequence!
-                        return true;
+                        return new ArrayList<>();
                     }
                 }
             }
         }
         
-        return false;
+        return null;
     }
     
     /**
@@ -130,23 +129,24 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      * @param direction
      * @return true if a sequence if found
      */
-    private static final boolean traverseAndPrune(final String[] terms, final List<List<Integer>> offsets, final int termIndex, final int offsetIndex,
-                    final int rangeMin, final int rangeMax, final int direction, final int pruneIndex) {
+    private static final boolean traverseAndPrune(final String[] terms, final List<List<TermWeightPosition>> offsets, final int termIndex,
+                    final int offsetIndex, final int rangeMin, final int rangeMax, final int direction, final int pruneIndex) {
         // if already at the end, then we have success
         if (termIndex == (direction == 1 ? offsets.size() - 1 : 0)) {
             return true;
         }
         
         // get the offset in the current list
-        int offset = offsets.get(termIndex).get(offsetIndex);
+        TermWeightPosition position = offsets.get(termIndex).get(offsetIndex);
+        Integer offset = position.getOffset();
         
         // find the range of offsets that meet our criteria in the next list
-        List<Integer> nextList = offsets.get(termIndex + direction);
+        List<TermWeightPosition> nextList = offsets.get(termIndex + direction);
         
         // If we are not accepting multiple of the same term matching at the same offset,
         // then adjust rangeMin from 0 to 1 if terms[termIndex] and terms[termIndex+direction]
         // are equal
-        int startOffset = offset + (rangeMin * direction);
+        int startOffset = position.getOffset() + (rangeMin * direction);
         int endOffset = offset + (rangeMax * direction);
         if (rangeMin == 0 && terms[termIndex].equals(terms[termIndex + direction])) {
             startOffset = offset + direction;
@@ -194,18 +194,18 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      * @param offsets
      *            , null if this results in
      */
-    private List<List<Integer>> prune(List<List<Integer>> offsets) {
+    private List<List<TermWeightPosition>> prune(List<List<TermWeightPosition>> offsets) {
         // first find the max offset of the initial offset in each list and the min offset of the last offset in each list (O(n))
-        List<Integer> list = offsets.get(0);
-        int maxFirstOffset = list.get(0);
-        int minLastOffset = list.get(list.size() - 1);
+        List<TermWeightPosition> list = offsets.get(0);
+        int maxFirstOffset = list.get(0).getOffset();
+        int minLastOffset = list.get(list.size() - 1).getOffset();
         for (int i = 1; i < offsets.size(); i++) {
             list = offsets.get(i);
-            int first = list.get(0);
+            int first = list.get(0).getOffset();
             if (first > maxFirstOffset) {
                 maxFirstOffset = first;
             }
-            int last = list.get(list.size() - 1);
+            int last = list.get(list.size() - 1).getOffset();
             if (last < minLastOffset) {
                 minLastOffset = last;
             }
@@ -221,10 +221,10 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
         
         // now prune the offsets from each end (O(n))
         // TODO: take the maxFirstOffsetIndex and the minLastOffsetIndex into account when computing the prune points
-        List<List<Integer>> newOffsets = new ArrayList<List<Integer>>(offsets.size());
+        List<List<TermWeightPosition>> newOffsets = new ArrayList<>(offsets.size());
         for (int i = 0; i < offsets.size(); i++) {
             // defensive copy because we will be modifying these later.
-            list = new ArrayList<Integer>(offsets.get(i));
+            list = new ArrayList<>(offsets.get(i));
             
             newOffsets.add(pruneByValue(list, maxFirstOffset - maxOverallDistance, minLastOffset + maxOverallDistance));
         }
@@ -239,7 +239,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      * @param minLastOffset
      * @return the sublist
      */
-    private List<Integer> pruneByValue(List<Integer> offsets, int maxFirstOffset, int minLastOffset) {
+    private List<TermWeightPosition> pruneByValue(List<TermWeightPosition> offsets, int maxFirstOffset, int minLastOffset) {
         final int start, end;
         
         if (maxFirstOffset <= minLastOffset) {
@@ -253,7 +253,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
         return offsets.subList(start, end + 1);
     }
     
-    private static final List<Integer> pruneByIndex(final List<Integer> offsets, final int fromIndex, final int direction) {
+    private static final List<TermWeightPosition> pruneByIndex(final List<TermWeightPosition> offsets, final int fromIndex, final int direction) {
         if (direction == 1) {
             return offsets.subList(fromIndex, offsets.size());
         } else {
@@ -261,27 +261,16 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
         }
     }
     
-    /**
-     * @param offsets
-     *            list of offsets to search
-     * @return an int[]
-     */
-    /*
-     * private static final int[] findIndexRange(final List<Integer> offsets,final int fromOffset,final int toOffset) { final int start, end; if (fromOffset <=
-     * toOffset) { start = findFirst(offsets, fromOffset); end = scanForLast(offsets, start, toOffset); } else { start = findLast(offsets, fromOffset); end =
-     * scanForFirst(offsets, start, toOffset); } return new int[] {start, end}; }
-     */
-    
-    private static final int findFirst(final List<Integer> offsets, final int offset) {
-        int index = Collections.binarySearch(offsets, offset);
+    private static final int findFirst(final List<TermWeightPosition> offsets, final int offset) {
+        int index = Collections.binarySearch(offsets, new TermWeightPosition.Builder().setOffset(offset).build());
         if (index < 0) { // invert the index from negative to find the appropriate starting postion for a missing offset value.
             index = (index + 1) * -1;
         }
         return index;
     }
     
-    private static final int findLast(final List<Integer> offsets, final int offset) {
-        int index = Collections.binarySearch(offsets, offset);
+    private static final int findLast(final List<TermWeightPosition> offsets, final int offset) {
+        int index = Collections.binarySearch(offsets, new TermWeightPosition.Builder().setOffset(offset).build());
         if (index < 0) { // invert the index from negative to find the appropriate starting postion for a missing offset value.
             index = (index + 2) * -1;
         }
@@ -289,18 +278,18 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
     }
     
     /** Scan for index of the term position that is not greater than toOffset */
-    private static final int scanForLast(final List<Integer> offsets, final int startIndex, final int toOffset) {
+    private static final int scanForLast(final List<TermWeightPosition> offsets, final int startIndex, final int toOffset) {
         for (int i = startIndex; i < offsets.size(); i++) {
-            if (offsets.get(i) > toOffset) {
+            if (offsets.get(i).getOffset() > toOffset) {
                 return i - 1;
             }
         }
         return offsets.size() - 1;
     }
     
-    private static final int scanForFirst(final List<Integer> offsets, final int startIndex, final int toOffset) {
+    private static final int scanForFirst(final List<TermWeightPosition> offsets, final int startIndex, final int toOffset) {
         for (int i = startIndex; i >= 0; i--) {
-            if (offsets.get(i) < toOffset) {
+            if (offsets.get(i).getOffset() < toOffset) {
                 return i + 1;
             }
         }

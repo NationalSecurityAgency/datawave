@@ -4,6 +4,7 @@ import java.util.TreeSet;
 
 import datawave.ingest.protobuf.TermWeight;
 
+import datawave.ingest.protobuf.TermWeightPosition;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
 
@@ -19,20 +20,32 @@ import com.google.protobuf.InvalidProtocolBufferException;
 public class TextIndexAggregator extends PropogatingCombiner {
     private static final Logger log = Logger.getLogger(TextIndexAggregator.class);
     
-    private TreeSet<Integer> offsets = new TreeSet<Integer>();
+    private TreeSet<TermWeightPosition> offsets = new TreeSet<>();
     private TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
     
     @Override
     public Value aggregate() {
-        for (Integer offset : offsets) {
-            builder.addTermOffset(offset);
+        for (TermWeightPosition offset : offsets) {
+            builder.addTermOffset(offset.getOffset());
+            if (null != offset.getPrevSkips() && offset.getPrevSkips() >= 0) {
+                builder.addPrevSkips(offset.getPrevSkips());
+            }
+            
+            if (null != offset.getScore()) {
+                builder.addScore(offset.getScore());
+            }
+            
+            // If the zeroOffset has been set and the termweight is still default(true)
+            if (null != offset.getZeroOffsetMatch() && builder.getZeroOffsetMatch()) {
+                builder.setZeroOffsetMatch(offset.getZeroOffsetMatch());
+            }
         }
         
         return new Value(builder.build().toByteArray());
     }
     
     /**
-     * Determines whether or not to propogate the key depending on the result of the value
+     * Determines whether or not to propagate the key depending on the result of the value
      *
      * @return
      */
@@ -57,8 +70,10 @@ public class TextIndexAggregator extends PropogatingCombiner {
         }
         
         // Add each offset into the list maintaining sorted order
-        for (int offset : info.getTermOffsetList()) {
-            offsets.add(offset);
+        for (int i = 0; i < info.getTermOffsetCount(); i++) {
+            TermWeightPosition.Builder builder = new TermWeightPosition.Builder();
+            builder.setTermWeightOffsetInfo(info, i);
+            offsets.add(builder.build());
         }
     }
     

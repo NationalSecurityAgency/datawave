@@ -2,6 +2,7 @@ package datawave.query.jexl.functions;
 
 import java.util.*;
 
+import datawave.ingest.protobuf.TermWeightPosition;
 import org.apache.log4j.Logger;
 
 /**
@@ -30,8 +31,8 @@ import org.apache.log4j.Logger;
 public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
     private static final Logger log = Logger.getLogger(ContentUnorderedEvaluator.class);
     
-    public ContentUnorderedEvaluator(Set<String> fields, int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
-        super(fields, distance, termOffsetMap, terms);
+    public ContentUnorderedEvaluator(Set<String> fields, int distance, float maxScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+        super(fields, distance, maxScore, termOffsetMap, terms);
     }
     
     /**
@@ -41,24 +42,49 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
      * @return true if we found an unordered list within the specified distance for the specified set of offsets.
      */
     @Override
-    public boolean evaluate(List<List<Integer>> offsets) {
+    public List<Integer> evaluate(List<List<TermWeightPosition>> offsets) {
         MultiOffsetMatcher mlIter = new MultiOffsetMatcher(distance, terms, offsets);
-        return mlIter.findMatch();
+        int match = mlIter.findMatch();
+        if (match > -1) {
+            List<Integer> results = new ArrayList<>(1);
+            results.add(match);
+            return results;
+        }
+        
+        return null;
+    }
+    
+    private void filterOffsets(List<List<TermWeightPosition>> offsets) {
+        // if max score is maximum possible value short circuit
+        if (maxScore == DEFAULT_MAX_SCORE) {
+            return;
+        }
+        
+        for (List<TermWeightPosition> offset : offsets) {
+            Iterator<TermWeightPosition> twpIter = offset.iterator();
+            while (twpIter.hasNext()) {
+                Integer score = twpIter.next().getScore();
+                if (null == score || score > maxScore) {
+                    twpIter.remove();
+                }
+            }
+        }
     }
     
     private static class OffsetList implements Comparable<OffsetList> {
         private final String term;
-        private final List<Integer> offsets;
+        private final List<TermWeightPosition> offsets;
         private int minOffset;
         private int maxOffset = -1;
         
-        public OffsetList(String term, List<Integer> o) {
+        public OffsetList(String term, List<TermWeightPosition> o) {
             this.term = term;
             this.offsets = o;
             
             // as long as there is at least one term, grab the last item for a max
             if (!o.isEmpty()) {
-                maxOffset = offsets.get(offsets.size() - 1);
+                // offsets with skip words will sort based on min so for max we need to loop over all offsets
+                maxOffset = Collections.max(offsets, new TermWeightPosition.MaxOffsetComparator()).getOffset();
             }
             
             nextOffset();
@@ -80,7 +106,8 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
             if (offsets.isEmpty()) {
                 this.minOffset = -1;
             } else {
-                minOffset = offsets.remove(0);
+                TermWeightPosition position = offsets.remove(0);
+                minOffset = position.getLowOffset();
             }
             return minOffset;
         }
@@ -125,7 +152,7 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
          * @throws IllegalArgumentException
          *             if the number of terms does not match the number of offset lists.
          */
-        public MultiOffsetMatcher(int distance, String[] terms, Collection<List<Integer>> termOffsets) {
+        public MultiOffsetMatcher(int distance, String[] terms, Collection<List<TermWeightPosition>> termOffsets) {
             this.distance = distance;
             this.terms = terms;
             
@@ -139,15 +166,15 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
             int termPos = 0;
             
             // holds the (canonical) offset list for of each term
-            final Map<String,List<Integer>> termsSeen = new HashMap<String,List<Integer>>();
+            final Map<String,List<TermWeightPosition>> termsSeen = new HashMap<>();
             
-            for (List<Integer> offsetList : termOffsets) {
+            for (List<TermWeightPosition> offsetList : termOffsets) {
                 String term = terms[termPos++];
                 
                 if (offsetList != null) {
                     if (!termsSeen.containsKey(term)) {
                         // new term, create a defensive copy that's safe to modify.
-                        offsetList = new LinkedList<Integer>(offsetList);
+                        offsetList = new LinkedList<>(offsetList);
                         termsSeen.put(term, offsetList);
                     } else {
                         // already seen term, all matching terms should reference the same list.
@@ -172,27 +199,27 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
             }
         }
         
-        public boolean findMatch() {
+        public int findMatch() {
             // Quick short-circuit -- if we have fewer offsets than terms in the phrase/adjacency/within
             // we're evaluating, we know there are no results
             if (terms.length > offsetQueue.size()) {
-                return false;
+                return -1;
             }
             
             while (true) {
                 OffsetList o = offsetQueue.remove();
                 if (maxOffset - o.getMinOffset() <= distance) {
-                    return true;
+                    return o.getMinOffset();
                 }
                 
                 // if the maxOffset is more than distance from the largest value in this list, there is no way to satisfy
                 if (maxOffset - o.getMaxOffset() > distance) {
-                    return false;
+                    return -1;
                 }
                 
                 int nextOffset = o.nextOffset();
                 if (nextOffset < 0) { // no more offsets from this list
-                    return false;
+                    return -1;
                 }
                 
                 if (nextOffset > maxOffset) {

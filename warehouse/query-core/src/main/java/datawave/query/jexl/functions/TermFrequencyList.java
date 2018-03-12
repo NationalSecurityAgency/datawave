@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import datawave.ingest.protobuf.TermWeightPosition;
 import org.apache.accumulo.core.data.Key;
 
 import com.google.common.base.Predicate;
@@ -94,23 +95,23 @@ public class TermFrequencyList {
         return eventId.toString();
     }
     
-    protected final TreeMultimap<Zone,Integer> offsetsPerField;
+    protected final TreeMultimap<Zone,TermWeightPosition> offsetsPerField;
     
-    public TermFrequencyList(TreeMultimap<Zone,Integer> offsetsByField) {
+    public TermFrequencyList(TreeMultimap<Zone,TermWeightPosition> offsetsByField) {
         checkNotNull(offsetsByField);
         
         this.offsetsPerField = offsetsByField;
     }
     
-    public TermFrequencyList(Entry<Zone,Iterable<Integer>> offsetsPerField) {
+    public TermFrequencyList(Entry<Zone,Iterable<TermWeightPosition>> offsetsPerField) {
         this(Collections.singleton(offsetsPerField));
     }
     
-    public TermFrequencyList(Entry<Zone,Iterable<Integer>>... offsetsPerField) {
+    public TermFrequencyList(Entry<Zone,Iterable<TermWeightPosition>>... offsetsPerField) {
         this(Arrays.asList(offsetsPerField));
     }
     
-    public TermFrequencyList(Iterable<Entry<Zone,Iterable<Integer>>> offsetsPerField) {
+    public TermFrequencyList(Iterable<Entry<Zone,Iterable<TermWeightPosition>>> offsetsPerField) {
         checkNotNull(offsetsPerField);
         
         this.offsetsPerField = TreeMultimap.create();
@@ -119,34 +120,34 @@ public class TermFrequencyList {
     }
     
     public static TermFrequencyList merge(TermFrequencyList list1, TermFrequencyList list2) {
-        TreeMultimap<Zone,Integer> offsetsPerField = TreeMultimap.create();
+        TreeMultimap<Zone,TermWeightPosition> offsetsPerField = TreeMultimap.create();
         offsetsPerField.putAll(list1.offsetsPerField);
         offsetsPerField.putAll(list2.offsetsPerField);
         return new TermFrequencyList(offsetsPerField);
     }
     
-    public void addOffsets(Zone field, Iterable<Integer> offsets) {
+    public void addOffsets(Zone field, Iterable<TermWeightPosition> offsets) {
         checkNotNull(field);
         checkNotNull(offsets);
         
         this.offsetsPerField.putAll(field, offsets);
     }
     
-    public void addOffsets(Entry<Zone,Iterable<Integer>> offsetForField) {
+    public void addOffsets(Entry<Zone,Iterable<TermWeightPosition>> offsetForField) {
         checkNotNull(offsetForField);
         
         addOffsets(offsetForField.getKey(), offsetForField.getValue());
     }
     
-    public void addOffsets(Iterable<Entry<Zone,Iterable<Integer>>> offsetsForFields) {
+    public void addOffsets(Iterable<Entry<Zone,Iterable<TermWeightPosition>>> offsetsForFields) {
         checkNotNull(offsetsForFields);
         
-        for (Entry<Zone,Iterable<Integer>> offsetForField : offsetsForFields) {
+        for (Entry<Zone,Iterable<TermWeightPosition>> offsetForField : offsetsForFields) {
             addOffsets(offsetForField);
         }
     }
     
-    public void addOffsets(TreeMultimap<Zone,Integer> offsetsForFields) {
+    public void addOffsets(TreeMultimap<Zone,TermWeightPosition> offsetsForFields) {
         checkNotNull(offsetsForFields);
         
         for (Zone field : offsetsForFields.keySet()) {
@@ -159,7 +160,7 @@ public class TermFrequencyList {
      * 
      * @return
      */
-    public TreeMultimap<Zone,Integer> fetchOffsets() {
+    public TreeMultimap<Zone,TermWeightPosition> fetchOffsets() {
         return this.offsetsPerField;
     }
     
@@ -169,10 +170,10 @@ public class TermFrequencyList {
      * @param fields
      * @return
      */
-    public TreeMultimap<Zone,Integer> fetchOffsets(Set<Zone> fields) {
+    public TreeMultimap<Zone,TermWeightPosition> fetchOffsets(Set<Zone> fields) {
         checkNotNull(fields);
         
-        return (TreeMultimap<Zone,Integer>) Multimaps.filterKeys(this.offsetsPerField, new FieldFilterPredicate(fields));
+        return (TreeMultimap<Zone,TermWeightPosition>) Multimaps.filterKeys(this.offsetsPerField, new FieldFilterPredicate(fields));
     }
     
     /**
@@ -182,7 +183,7 @@ public class TermFrequencyList {
         if (this.offsetsPerField.isEmpty()) {
             return Collections.<String> emptySet();
         } else {
-            Set<String> fields = new HashSet<String>();
+            Set<String> fields = new HashSet<>();
             for (Zone zone : this.offsetsPerField.keySet()) {
                 fields.add(zone.getZone());
             }
@@ -197,7 +198,7 @@ public class TermFrequencyList {
         if (this.offsetsPerField.isEmpty()) {
             return Collections.<String> emptySet();
         } else {
-            Set<String> eventIds = new HashSet<String>();
+            Set<String> eventIds = new HashSet<>();
             for (Zone zone : this.offsetsPerField.keySet()) {
                 eventIds.add(zone.getEventId());
             }
