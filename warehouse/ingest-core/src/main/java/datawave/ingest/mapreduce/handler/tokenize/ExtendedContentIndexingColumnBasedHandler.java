@@ -459,7 +459,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         String fieldName = nFV.getEventFieldName();
         String fieldValue = nFV.getEventFieldValue();
         
-        if (this.ingestHelper.isIndexOnlyField(fieldName) || this.ingestHelper.isCompositeField(fieldName))
+        if (this.ingestHelper.isIndexOnlyField(fieldName) || (this.ingestHelper.isCompositeField(fieldName) && !helper.isOverloadedCompositeField(fieldName)))
             return;
         
         if (StringUtils.isEmpty(fieldValue))

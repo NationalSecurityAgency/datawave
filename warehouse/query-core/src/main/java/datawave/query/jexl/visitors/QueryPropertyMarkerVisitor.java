@@ -10,6 +10,7 @@ import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTCompositePredicate;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -37,6 +38,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     static {
         TYPE_IDENTIFIERS = new HashSet<>();
         TYPE_IDENTIFIERS.add(IndexHoleMarkerJexlNode.class.getSimpleName());
+        TYPE_IDENTIFIERS.add(ASTCompositePredicate.class.getSimpleName());
         TYPE_IDENTIFIERS.add(ASTDelayedPredicate.class.getSimpleName());
         TYPE_IDENTIFIERS.add(ExceededValueThresholdMarkerJexlNode.class.getSimpleName());
         TYPE_IDENTIFIERS.add(ExceededTermThresholdMarkerJexlNode.class.getSimpleName());

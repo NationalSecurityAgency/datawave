@@ -1,18 +1,11 @@
 package datawave.ingest.data.config.ingest;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.NoOpType;
 import datawave.data.type.OneToManyNormalizerType;
@@ -28,16 +21,23 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
+import java.text.ParseException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
@@ -140,6 +140,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     protected Set<String> indexOnlyFields = Sets.newHashSet();
     
     protected Set<String> compositeFields = Sets.newHashSet();
+    protected Set<String> fixedLengthFields = Sets.newHashSet();
+    protected Map<String,Date> fieldTransitionDateMap = Maps.newHashMap();
     
     protected Set<String> indexedFields = Sets.newHashSet();
     protected Map<String,Pattern> indexedPatterns = Maps.newHashMap();
@@ -426,10 +428,33 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 if (!fieldName.isEmpty()) {
                     
                     this.compositeFields.add(fieldName);
-                } else {
+                }
+            }
+        }
+        
+        String fixedLengthFields = config.get(this.getType().typeName() + CompositeIngest.COMPOSITE_FIELDS_FIXED_LENGTH);
+        if (null != fixedLengthFields) {
+            for (String s : fixedLengthFields.split(",")) {
+                
+                String fieldName = s.trim();
+                
+                if (!fieldName.isEmpty()) {
                     
-                    // TODO: Possibly add warning to indicated a potentially
-                    // questionable configuration file...
+                    this.fixedLengthFields.add(fieldName);
+                }
+            }
+        }
+        
+        String transitionedCompositeFields = config.get(this.getType().typeName() + CompositeIngest.COMPOSITE_FIELDS_TRANSITION_DATES);
+        if (null != transitionedCompositeFields) {
+            for (String s : transitionedCompositeFields.split(",")) {
+                try {
+                    if (!s.isEmpty()) {
+                        String[] kv = s.split("\\|");
+                        this.fieldTransitionDateMap.put(kv[0], CompositeIngest.CompositeFieldNormalizer.formatter.parse(kv[1]));
+                    }
+                } catch (ParseException e) {
+                    log.trace("Unable to parse composite field transition date", e);
                 }
             }
         }
@@ -576,8 +601,31 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
     
     @Override
+    public boolean isOverloadedCompositeField(String fieldName) {
+        return CompositeIngest.isOverloadedCompositeField(getCompositeFieldDefinitions(), fieldName);
+    }
+    
+    @Override
     public boolean isCompositeField(String fieldName) {
         return this.compositeFields.contains(fieldName);
+    }
+    
+    @Override
+    public boolean isFixedLengthCompositeField(String fieldName) {
+        return fixedLengthFields != null && fixedLengthFields.contains(fieldName);
+    }
+    
+    @Override
+    public boolean isTransitionedCompositeField(String fieldName) {
+        return fieldTransitionDateMap != null && fieldTransitionDateMap.containsKey(fieldName);
+    }
+    
+    @Override
+    public Date getCompositeFieldTransitionDate(String fieldName) {
+        Date transitionDate = null;
+        if (isTransitionedCompositeField(fieldName))
+            transitionDate = fieldTransitionDateMap.get(fieldName);
+        return transitionDate;
     }
     
     @Override
@@ -1068,11 +1116,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
     
     @Override
-    public Map<String,String[]> getCompositeNameAndIndex(String fieldName) {
-        return getCompositeIngest().getCompositeNameAndIndex(fieldName);
-    }
-    
-    @Override
     public Map<String,String[]> getCompositeFieldDefinitions() {
         return getCompositeIngest().getCompositeFieldDefinitions();
     }
@@ -1080,16 +1123,6 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     @Override
     public void setCompositeFieldDefinitions(Map<String,String[]> compositeFieldDefinitions) {
         getCompositeIngest().setCompositeFieldDefinitions(compositeFieldDefinitions);
-    }
-    
-    @Override
-    public String getDefaultCompositeFieldSeparator() {
-        return getCompositeIngest().getDefaultCompositeFieldSeparator();
-    }
-    
-    @Override
-    public void setDefaultCompositeFieldSeparator(String sep) {
-        getCompositeIngest().setDefaultCompositeFieldSeparator(sep);
     }
     
     @Override

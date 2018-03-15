@@ -1,40 +1,5 @@
 package datawave.query.jexl;
 
-import java.io.StringReader;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.text.MessageFormat;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import datawave.data.normalizer.NormalizationException;
-import datawave.data.type.Type;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.index.lookup.RangeStream;
-import datawave.query.index.stats.IndexStatsClient;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.visitors.RebuildingVisitor;
-import datawave.query.postprocessing.tf.Function;
-import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
-import datawave.query.Constants;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.visitors.BaseVisitor;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.NotFoundQueryException;
-import datawave.webservice.query.exception.QueryException;
-
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.*;
-import org.apache.commons.jexl2.parser.JexlNode.Literal;
-import org.apache.log4j.Logger;
-
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -42,6 +7,76 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.data.normalizer.NormalizationException;
+import datawave.data.type.Type;
+import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.index.lookup.RangeStream;
+import datawave.query.index.stats.IndexStatsClient;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.visitors.BaseVisitor;
+import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.query.postprocessing.tf.Function;
+import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
+import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTAssignment;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFalseNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl2.parser.ASTMethodNode;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.ASTNotNode;
+import org.apache.commons.jexl2.parser.ASTNullLiteral;
+import org.apache.commons.jexl2.parser.ASTNumberLiteral;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.ASTSizeMethod;
+import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl2.parser.ASTTrueNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNode.Literal;
+import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl2.parser.Parser;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.log4j.Logger;
+
+import java.io.StringReader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  *
@@ -601,6 +636,27 @@ public class JexlASTHelper {
     
     /**
      * Get the bounded ranges (index only terms).
+     *
+     * @param root
+     *            The root and node
+     * @param helper
+     *            The metadata helper
+     * @param otherNodes
+     *            If not null, then this is filled with all nodes not used to make the ranges (minimal node list, minimal tree depth)
+     * @param maxDepth
+     *            The maximum depth to traverse the tree. -1 represents unlimited depth.
+     * @return The ranges, all bounded.
+     */
+    @SuppressWarnings("rawtypes")
+    public static Map<LiteralRange<?>,List<JexlNode>> getBoundedRanges(JexlNode root, Set<String> datatypeFilterSet, MetadataHelper helper,
+                    List<JexlNode> otherNodes, boolean includeDelayed, int maxDepth) {
+        List<JexlNode> nonIndexedRangeNodes = new ArrayList<>();
+        List<JexlNode> rangeNodes = getIndexRangeOperatorNodes(root, datatypeFilterSet, helper, nonIndexedRangeNodes, otherNodes, includeDelayed, maxDepth);
+        return getBoundedRanges(rangeNodes, nonIndexedRangeNodes, otherNodes);
+    }
+    
+    /**
+     * Get the bounded ranges (index only terms).
      * 
      * @param root
      *            The root and node
@@ -614,23 +670,40 @@ public class JexlASTHelper {
     public static Map<LiteralRange<?>,List<JexlNode>> getBoundedRanges(JexlNode root, Set<String> datatypeFilterSet, MetadataHelper helper,
                     List<JexlNode> otherNodes, boolean includeDelayed) {
         List<JexlNode> nonIndexedRangeNodes = new ArrayList<>();
-        List<JexlNode> rangeNodes = getIndexRangeOperatorNodes(root, datatypeFilterSet, helper, nonIndexedRangeNodes, otherNodes, includeDelayed);
+        List<JexlNode> rangeNodes = getIndexRangeOperatorNodes(root, datatypeFilterSet, helper, nonIndexedRangeNodes, otherNodes, includeDelayed, -1);
         return getBoundedRanges(rangeNodes, nonIndexedRangeNodes, otherNodes);
+    }
+    
+    /**
+     * Get the bounded ranges.
+     *
+     * @param root
+     *            The root node
+     * @param otherNodes
+     *            If not null, then this is filled with all nodes not used to make the ranges (minimal node list, minimal tree depth)
+     * @param maxDepth
+     *            The maximum depth to traverse the tree. -1 represents unlimited depth.
+     * @return The ranges, all bounded.
+     */
+    @SuppressWarnings("rawtypes")
+    public static Map<LiteralRange<?>,List<JexlNode>> getBoundedRangesIndexAgnostic(JexlNode root, List<JexlNode> otherNodes, boolean includeDelayed,
+                    int maxDepth) {
+        List<JexlNode> rangeNodes = getRangeOperatorNodes(root, otherNodes, includeDelayed, maxDepth);
+        return JexlASTHelper.getBoundedRanges(rangeNodes, null, otherNodes);
     }
     
     /**
      * Get the bounded ranges.
      * 
      * @param root
-     *            The root and node
+     *            The root node
      * @param otherNodes
      *            If not null, then this is filled with all nodes not used to make the ranges (minimal node list, minimal tree depth)
      * @return The ranges, all bounded.
      */
     @SuppressWarnings("rawtypes")
-    public static Map<LiteralRange<?>,List<JexlNode>> getBoundedRangesIndexAgnostic(ASTAndNode root, List<JexlNode> otherNodes, boolean includeDelayed) {
-        List<JexlNode> rangeNodes = getRangeOperatorNodes(root, otherNodes, includeDelayed);
-        return JexlASTHelper.getBoundedRanges(rangeNodes, null, otherNodes);
+    public static Map<LiteralRange<?>,List<JexlNode>> getBoundedRangesIndexAgnostic(JexlNode root, List<JexlNode> otherNodes, boolean includeDelayed) {
+        return getBoundedRangesIndexAgnostic(root, otherNodes, includeDelayed, -1);
     }
     
     protected static Map<LiteralRange<?>,List<JexlNode>> getBoundedRanges(List<JexlNode> rangeNodes, List<JexlNode> nonIndexedRangeNodes,
@@ -959,25 +1032,25 @@ public class JexlASTHelper {
     }
     
     protected static List<JexlNode> getIndexRangeOperatorNodes(JexlNode root, Set<String> datatypeFilterSet, MetadataHelper helper,
-                    List<JexlNode> nonIndexedRangeNodes, List<JexlNode> otherNodes, boolean includeDelayed) {
+                    List<JexlNode> nonIndexedRangeNodes, List<JexlNode> otherNodes, boolean includeDelayed, int maxDepth) {
         List<JexlNode> nodes = Lists.newArrayList();
         
         Class<?> clz = root.getClass();
         
         if (root.jjtGetNumChildren() > 0) {
-            getRangeOperatorNodes(root, clz, nodes, otherNodes, datatypeFilterSet, helper, nonIndexedRangeNodes, includeDelayed);
+            getRangeOperatorNodes(root, clz, nodes, otherNodes, datatypeFilterSet, helper, nonIndexedRangeNodes, includeDelayed, maxDepth);
         }
         
         return nodes;
     }
     
-    protected static List<JexlNode> getRangeOperatorNodes(JexlNode root, List<JexlNode> otherNodes, boolean includeDelayed) {
+    protected static List<JexlNode> getRangeOperatorNodes(JexlNode root, List<JexlNode> otherNodes, boolean includeDelayed, int maxDepth) {
         List<JexlNode> nodes = Lists.newArrayList();
         
         Class<?> clz = root.getClass();
         
         if (root.jjtGetNumChildren() > 0) {
-            getRangeOperatorNodes(root, clz, nodes, otherNodes, null, null, null, includeDelayed);
+            getRangeOperatorNodes(root, clz, nodes, otherNodes, null, null, null, includeDelayed, maxDepth);
         }
         
         return nodes;
@@ -1004,10 +1077,13 @@ public class JexlASTHelper {
      * @param helper
      *            Required if mustBeIndexed
      * @param nonIndexedRangeNodes
+     * @param maxDepth
+     *            The maximum depth to traverse the tree. -1 represents unlimited depth.
+     *
      */
     protected static void getRangeOperatorNodes(JexlNode root, Class<?> clz, List<JexlNode> nodes, List<JexlNode> otherNodes, Set<String> datatypeFilterSet,
-                    MetadataHelper helper, List<JexlNode> nonIndexedRangeNodes, boolean includeDelayed) {
-        if (!includeDelayed && isDelayedPredicate(root)) {
+                    MetadataHelper helper, List<JexlNode> nonIndexedRangeNodes, boolean includeDelayed, int maxDepth) {
+        if ((!includeDelayed && isDelayedPredicate(root)) || maxDepth == 0) {
             return;
         }
         for (int i = 0; i < root.jjtGetNumChildren(); i++) {
@@ -1017,7 +1093,7 @@ public class JexlASTHelper {
             if (child.getClass().equals(clz) || child.getClass().equals(ASTReferenceExpression.class) || child.getClass().equals(ASTReference.class)) {
                 // ignore getting range nodes out of delayed expressions as they have already been processed
                 if (includeDelayed || !isDelayedPredicate(child)) {
-                    getRangeOperatorNodes(child, clz, nodes, otherNodes, datatypeFilterSet, helper, nonIndexedRangeNodes, includeDelayed);
+                    getRangeOperatorNodes(child, clz, nodes, otherNodes, datatypeFilterSet, helper, nonIndexedRangeNodes, includeDelayed, maxDepth - 1);
                 } else if (otherNodes != null) {
                     otherNodes.add(child);
                 }

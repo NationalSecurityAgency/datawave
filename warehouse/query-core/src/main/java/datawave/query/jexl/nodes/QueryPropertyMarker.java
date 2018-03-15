@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 
 import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
@@ -16,11 +15,14 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.Parser;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.log4j.Logger;
 
 /**
  * This is a node that can be put in place of an underlying reference node to place a property on an underlying query sub-tree (e.g. ExceededValueThreshold)
  */
 public class QueryPropertyMarker extends ASTReference {
+    
+    private static final Logger log = Logger.getLogger(QueryPropertyMarker.class);
     
     public QueryPropertyMarker() {
         this(ParserTreeConstants.JJTREFERENCE);
@@ -74,7 +76,7 @@ public class QueryPropertyMarker extends ASTReference {
      * A routine to determine whether an and node is actually a specific instance of a query marker. The reason for this routine is that if the query is
      * serialized and deserialized, then only the underlying assignment will persist. Any node within the tree originally created except for a sibling of the
      * source can be used here.
-     * 
+     *
      * @param node
      * @param type
      *            The type to look for
@@ -86,7 +88,7 @@ public class QueryPropertyMarker extends ASTReference {
     
     /**
      * A routine to determine the node which is the source of the query property (i.e. the one passed into the constructor of this class)
-     * 
+     *
      * @param node
      * @param type
      *            The type to look for

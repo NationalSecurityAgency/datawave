@@ -62,6 +62,16 @@ public interface ColumnFamilyConstants {
     Text COLF_CI = new Text("ci");
     
     /**
+     * a colf of 'cifl' denotes whether a composite field is of fixed length
+     */
+    Text COLF_CIFL = new Text("cifl");
+    
+    /**
+     * a colf of 'citd' denotes whether a composite field has a transition date
+     */
+    Text COLF_CITD = new Text("citd");
+    
+    /**
      * a colf of 'count' denotes term counts (cardinality)
      */
     Text COLF_COUNT = new Text("count");

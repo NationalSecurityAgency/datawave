@@ -335,7 +335,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
         if (this.ingestHelper.isIndexOnlyField(fieldName))
             return;
         
-        if (this.ingestHelper.isCompositeField(fieldName))
+        if (this.ingestHelper.isCompositeField(fieldName) && !this.ingestHelper.isOverloadedCompositeField(fieldName))
             return;
         
         if (StringUtils.isEmpty(fieldValue))

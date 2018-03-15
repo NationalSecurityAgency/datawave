@@ -1,17 +1,10 @@
 package datawave.query.iterator.builder;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Set;
-
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.query.iterator.DocumentIterator;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.logic.DocumentAggregatingIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.hadoop.fs.FileSystem;
@@ -19,6 +12,12 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Set;
 
 /**
  * A convenience class that aggregates a field, a list of values, source iterator, normalizer mappings, index only fields, data type filter and key transformer
@@ -99,12 +98,14 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                 if (values != null) {
                     listIterator = new DatawaveFieldIndexListIteratorJexl(new Text(field), values, this.timeFilter, this.datatypeFilter, negated,
                                     ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles,
-                                    hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
+                                    hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs,
+                                    createCompositePredicateFilters(field));
                 } else {
                     FST fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstURI), hdfsFileCompressionCodec, fstHdfsFileSystem);
                     listIterator = new DatawaveFieldIndexListIteratorJexl(new Text(field), fst, this.timeFilter, this.datatypeFilter, negated,
                                     ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles,
-                                    hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs);
+                                    hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs,
+                                    createCompositePredicateFilters(field));
                 }
                 if (collectTimingDetails) {
                     listIterator.setCollectTimingDetails(true);

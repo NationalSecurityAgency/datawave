@@ -36,6 +36,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         TLDIndexIteratorBuilder builder = new TLDIndexIteratorBuilder();
         builder.setSource(source.deepCopy(env));
         builder.setTypeMetadata(typeMetadata);
+        builder.setCompositeMetadata(compositeMetadata);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
@@ -132,6 +133,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
+        builder.setCompositeMetadata(compositeMetadata);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);

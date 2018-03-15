@@ -1,30 +1,32 @@
 package datawave.query.ancestor;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import datawave.query.iterator.filter.composite.CompositePredicateFilter;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
+import java.util.Map;
 
 public class AncestorIndexIterator extends IndexIterator {
     
     public AncestorIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter) {
-        this(field, value, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new IdentityAggregator(null, null));
+        this(field, value, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new IdentityAggregator(null, null), null);
     }
     
     public AncestorIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
-        super(field, value, source, timeFilter, typeMetadata, buildDocument, datatypeFilter, aggregator);
+                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator,
+                    Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters) {
+        super(field, value, source, timeFilter, typeMetadata, buildDocument, datatypeFilter, aggregator, compositePredicateFilters);
     }
     
     @Override

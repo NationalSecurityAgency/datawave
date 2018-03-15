@@ -3,6 +3,7 @@ package datawave.core.iterators;
 import com.google.common.base.Predicate;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
+import datawave.query.iterator.filter.composite.CompositePredicateFilter;
 import datawave.query.predicate.Filter;
 import datawave.query.predicate.TimeFilter;
 import org.apache.accumulo.core.data.Key;
@@ -17,6 +18,7 @@ import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 
@@ -51,16 +53,16 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
                     boolean upperInclusive, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg, long scanThreshold, long scanTimeout,
                     int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock, boolean allowDirReuse) {
         this(fieldName, filter, lowerBound, lowerInclusive, upperBound, upperInclusive, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout,
-                        bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir, queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
+                        bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir, queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true, null);
     }
     
     @SuppressWarnings("hiding")
     public DatawaveFieldIndexFilterIteratorJexl(Text fieldName, Filter filter, Text lowerBound, boolean lowerInclusive, Text upperBound,
                     boolean upperInclusive, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg, long scanThreshold, long scanTimeout,
                     int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock, boolean allowDirReuse,
-                    PartialKey returnKeyType, boolean sortedUIDs) {
+                    PartialKey returnKeyType, boolean sortedUIDs, Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters) {
         super(fieldName, lowerBound, lowerInclusive, upperBound, upperInclusive, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize,
-                        maxRangeSplit, maxOpenFiles, fs, uniqueDir, queryLock, allowDirReuse, returnKeyType, sortedUIDs);
+                        maxRangeSplit, maxOpenFiles, fs, uniqueDir, queryLock, allowDirReuse, returnKeyType, sortedUIDs, compositePredicateFilters);
         this.filter = filter;
     }
     
