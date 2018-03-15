@@ -324,8 +324,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             int fieldnameIndex = cq.indexOf('\0');
             if (fieldnameIndex >= 0) {
                 String cf = startKey.getColumnFamily().toString();
-                lastFiKey = new Key(startKey.getRow().toString(), "fi\0" + cq.substring(0, fieldnameIndex), cq.substring(fieldnameIndex + 1) + '\0' + cf,
-                                startKey.getColumnVisibility().toString(), startKey.getTimestamp());
+                lastFiKey = new Key(startKey.getRow().toString(), "fi\0" + cq.substring(0, fieldnameIndex), cq.substring(fieldnameIndex + 1) + '\0' + cf + '\0');
             }
         }
         
