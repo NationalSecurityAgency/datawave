@@ -14,27 +14,54 @@ import org.apache.commons.jexl2.parser.*;
 import org.apache.log4j.Logger;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * The EventDataQueryExpressionVisitor traverses the query parse tree and generates a series of ExpressionFilters that will be used to determine if Keys
+ * traversed during a scan need to be retained in order to properly evaluate a query. In some cases a given field may have a large number of values, and it is
+ * wasteful to load these into memory of they are not necessary for query evaluation.
+ */
 public class EventDataQueryExpressionVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(EventDataQueryExpressionVisitor.class);
     
+    /**
+     * ExpressionFilter is used to select those Keys that are required in order to evaluate a query.
+     *
+     * Each instance of this class corresponds to a single field and may contain a set of literal values, patterns, ranges or a nullValueFlag. These are
+     * populated by the EventDataQueryExpressionVisitor as it traverses the query parse tree.
+     *
+     * When traversing tables at query time, the apply method is called for the keys encountered. If the field value embedded in the key matches the literal,
+     * pattern or range, the key is kept indicating that the key is necessary for evaluating that portion of the query.
+     *
+     * The null value flag is a bit of an unusual case and is generated in cases where a null (or non-null) comparison is performed for a field. It indicates
+     * that at least one key for a field must be kept regardless of value. As such, this flag is set to false once its predicate has be satisfied.
+     */
     public static class ExpressionFilter implements Predicate<Key> {
         final AttributeFactory attributeFactory;
-        final String fieldName;
-        final Set<String> fieldValues;
-        final Set<Matcher> fieldPatterns;
-        final Set<LiteralRange> fieldRanges;
-        final boolean isWhitelist;
         
-        public ExpressionFilter(AttributeFactory attributeFactory, String fieldName, boolean isWhitelist) {
+        /** The field this filter apples to */
+        final String fieldName;
+        /** fieldValues contains a set of literal values for which we need to keep data in order to satisfy the query */
+        final Set<String> fieldValues;
+        /** fieldPatterns contains a set of patterns for which we need to keep data in order to satisfy the query */
+        final Set<Matcher> fieldPatterns;
+        /** fieldRanges contains a set of ranges for which we need to keep data in order to satisfy the query */
+        final Set<LiteralRange<?>> fieldRanges;
+        /**
+         * nullValueFlag indicates that we need to capture at least one instance of the field in order to satisfy a null value check in the query. It reset to
+         * false once a single instance of the field is collected.
+         */
+        final AtomicBoolean nullValueFlag;
+        
+        public ExpressionFilter(AttributeFactory attributeFactory, String fieldName) {
             this.attributeFactory = attributeFactory;
             this.fieldName = fieldName;
-            this.isWhitelist = isWhitelist;
-            this.fieldValues = new HashSet<String>();
-            this.fieldPatterns = new HashSet<Matcher>();
-            this.fieldRanges = new HashSet<LiteralRange>();
+            this.fieldValues = new HashSet<>();
+            this.fieldPatterns = new HashSet<>();
+            this.fieldRanges = new HashSet<>();
+            this.nullValueFlag = new AtomicBoolean(false);
         }
         
         public String getFieldName() {
@@ -49,6 +76,10 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             fieldValues.add(value);
         }
         
+        public void setNullValueFlag() {
+            nullValueFlag.set(true);
+        }
+        
         public void addFieldPattern(String pattern) {
             Pattern p = Pattern.compile(pattern);
             Matcher m = p.matcher("");
@@ -59,42 +90,68 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             fieldRanges.add(range);
         }
         
+        /**
+         *
+         * @param key
+         *            the key to evaluate, must be parsable by DatawaveKey
+         * @return true if the key should be kept in order to evaluare the query, false otherwise
+         */
         public boolean apply(Key key) {
             final DatawaveKey datawaveKey = new DatawaveKey(key);
             final String keyFieldName = JexlASTHelper.deconstructIdentifier(datawaveKey.getFieldName(), false);
-            final String keyFieldValue = datawaveKey.getFieldValue();
-            final Set<String> normalizedFieldValues = EventDataQueryExpressionVisitor.extractNormalizedAttributes(attributeFactory, keyFieldName,
-                            keyFieldValue, key);
             
-            for (String normalizedFieldValue : normalizedFieldValues) {
-                if (fieldName.equals(keyFieldName)) {
+            if (fieldName.equals(keyFieldName)) {
+                
+                final String keyFieldValue = datawaveKey.getFieldValue();
+                final Set<String> normalizedFieldValues = EventDataQueryExpressionVisitor.extractNormalizedAttributes(attributeFactory, keyFieldName,
+                                keyFieldValue, key);
+                
+                for (String normalizedFieldValue : normalizedFieldValues) {
                     if (fieldValues.contains(normalizedFieldValue)) {
-                        // field name matches and field value matches, keep if whitelist, reject if blacklist.
-                        return isWhitelist;
+                        // field name matches and field value matches, keep.
+                        nullValueFlag.set(false);
+                        return true;
                     }
                     
                     for (Matcher m : fieldPatterns) {
                         m.reset(normalizedFieldValue);
                         if (m.matches()) {
-                            // field name matches and field pattern matches, keep if whitelist, reject if blacklist.
-                            return isWhitelist;
+                            // field name matches and field pattern matches, keep.
+                            nullValueFlag.set(false);
+                            return true;
                         }
                     }
                     
                     for (LiteralRange r : fieldRanges) {
                         if (r.contains(normalizedFieldValue)) {
-                            // field name patches and value is within range, keep if whitelist, reject if blacklist.
-                            return isWhitelist;
+                            // field name patches and value is within range, keep.
+                            nullValueFlag.set(false);
+                            return true;
                         }
+                    }
+                    
+                    if (nullValueFlag.compareAndSet(true, false)) {
+                        // field name has a nullValueFlag, keep one and only one instance
+                        // of this field. (The fact of its presence will be sufficient
+                        // to satisfy the null check condition assuming all other conditions are met
+                        return true;
                     }
                 }
             }
             
-            // field name does not match, reject if whitelist, keep if blacklist
-            return !isWhitelist;
+            // field name does not match any of the rules above, reject this key.
+            return false;
         }
     }
     
+    /**
+     *
+     * @param script
+     *            The query that will be used to generate the set of expression filters
+     * @param factory
+     *            An AttributeFactory used when generating normalized attributes.
+     * @return A Map of field name to ExpressionFilter, suitable for selecting a set of Keys necessary to evaluate a query.
+     */
     public static Map<String,ExpressionFilter> getExpressionFilters(ASTJexlScript script, AttributeFactory factory) {
         final EventDataQueryExpressionVisitor v = new EventDataQueryExpressionVisitor(factory);
         
@@ -103,8 +160,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         return v.getFilterMap();
     }
     
-    final AttributeFactory attributeFactory;
-    final Map<String,ExpressionFilter> filterMap;
+    private final AttributeFactory attributeFactory;
+    private final Map<String,ExpressionFilter> filterMap;
     
     private EventDataQueryExpressionVisitor(AttributeFactory factory) {
         this.attributeFactory = factory;
@@ -176,24 +233,32 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     protected void generateValueFilter(JexlASTHelper.IdentifierOpLiteral iol, boolean isPattern) {
         if (iol != null) {
             final String fieldName = JexlASTHelper.deconstructIdentifier(iol.getIdentifier().image, false);
-            final String fieldValue = iol.getLiteralValue().toString();
             ExpressionFilter f = filterMap.get(fieldName);
             if (f == null) {
                 filterMap.put(fieldName, f = createExpressionFilter(fieldName));
             }
             
-            if (isPattern) {
-                f.addFieldPattern(fieldValue);
+            final Object fieldValue = iol.getLiteralValue();
+            
+            if (fieldValue != null) {
+                final String fieldStr = fieldValue.toString();
+                
+                if (isPattern) {
+                    f.addFieldPattern(fieldStr);
+                } else {
+                    f.addFieldValue(fieldStr);
+                }
             } else {
-                f.addFieldValue(fieldValue);
+                f.setNullValueFlag();
             }
+            
         } else {
             throw new NullPointerException("Null IdentifierOpLiteral");
         }
     }
     
     protected ExpressionFilter createExpressionFilter(String fieldName) {
-        return new ExpressionFilter(attributeFactory, fieldName, true);
+        return new ExpressionFilter(attributeFactory, fieldName);
     }
     
     private static String print(JexlASTHelper.IdentifierOpLiteral iol) {
