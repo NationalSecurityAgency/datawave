@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.rewrite.iterator.builder.AbstractIteratorBuilder;
-import nsa.datawave.query.rewrite.iterator.builder.NegationBuilder;
 import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
 import nsa.datawave.query.rewrite.jexl.JexlASTHelper.IdentifierOpLiteral;
 import nsa.datawave.query.rewrite.jexl.visitors.IteratorBuildingVisitor;
@@ -125,12 +124,10 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     @Override
     public Object visit(ASTEQNode node, Object data) {
         TLDIndexIteratorBuilder builder = new TLDIndexIteratorBuilder();
-        boolean isNegation = (null != data && data instanceof NegationBuilder);
+        boolean isNegation = false;
         if (data instanceof AbstractIteratorBuilder) {
             AbstractIteratorBuilder oib = (AbstractIteratorBuilder) data;
-            if (oib.isInANot()) {
-                isNegation = true;
-            }
+            isNegation = oib.isInANot();
         }
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
