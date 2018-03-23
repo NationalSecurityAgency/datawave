@@ -8,6 +8,10 @@ import datawave.query.rewrite.iterator.NestedIterator;
  */
 public class NegationBuilder extends AbstractIteratorBuilder {
     
+    public NegationBuilder() {
+        this.setInANot(true);
+    }
+    
     @Override
     public <T> NestedIterator<T> build() {
         throw new UnsupportedOperationException();
