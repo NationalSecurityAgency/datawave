@@ -277,7 +277,7 @@ public class DatawaveInterpreter extends Interpreter {
         if (evaluation != null) {
             return evaluation;
         }
-        
+
         FunctionalSet leftFunctionalSet = null;
         FunctionalSet rightFunctionalSet = null;
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
@@ -314,10 +314,15 @@ public class DatawaveInterpreter extends Interpreter {
                 rightFunctionalSet = new FunctionalSet();
             rightFunctionalSet.addAll((Collection) right);
         }
-        if (leftFunctionalSet != null && rightFunctionalSet != null) { // intersect left and right
-            FunctionalSet functionalSet = new FunctionalSet(leftFunctionalSet);
-            functionalSet.retainAll(rightFunctionalSet);
-            return functionalSet;
+        // return union of left and right iff they are both non-null & non-empty
+        if (leftFunctionalSet != null && rightFunctionalSet != null) {
+            if (!leftFunctionalSet.isEmpty() && !rightFunctionalSet.isEmpty()){
+                FunctionalSet functionalSet = new FunctionalSet(leftFunctionalSet);
+                functionalSet.addAll(rightFunctionalSet);
+                return functionalSet;
+            } else {
+                return Boolean.FALSE;
+            }
         } else {
             return getBooleanAnd(left, right);
         }
@@ -331,7 +336,7 @@ public class DatawaveInterpreter extends Interpreter {
             return Integer.valueOf(0);
         }
     }
-    
+
     // this handles the case where one side is a boolean and the other is a collection
     private boolean getBooleanAnd(Object left, Object right) {
         if (left instanceof Collection) {
