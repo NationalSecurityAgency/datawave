@@ -6,7 +6,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class TreeFlatteningRebuildingVisitorTest {
-
+    
     @Test
     public void dontFlattenASTDelayedPredicateTest() throws Exception {
         String query = "((ASTDelayedPredicate = true) && (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))) && GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' && GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
