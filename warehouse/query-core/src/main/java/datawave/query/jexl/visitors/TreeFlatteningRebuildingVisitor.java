@@ -80,7 +80,7 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
-                        || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+                        || ExceededOrThresholdMarkerJexlNode.instanceOf(node) || ASTDelayedPredicate.instanceOf(node)) {
             return super.visit(node, data);
         } else {
             ASTAndNode andNode = JexlNodes.newInstanceOfType(node);
