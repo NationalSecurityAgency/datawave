@@ -422,6 +422,12 @@ public class QueryExecutorBean implements QueryExecutor {
             GenericResponse<String> response = new GenericResponse<>();
             throwBadRequest(DatawaveErrorCode.INVALID_EXPIRATION_DATE, response);
         }
+
+        // Ensure begin date does not occur after the end date
+        if (qp.getBeginDate().after(qp.getEndDate())) {
+            GenericResponse<String> response = new GenericResponse<>();
+            throwBadRequest(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE, response);
+        }
         
         // Pull "params" values into individual query parameters for validation on the query logic.
         // This supports the deprecated "params" value (both on the old and new API). Once we remove the deprecated

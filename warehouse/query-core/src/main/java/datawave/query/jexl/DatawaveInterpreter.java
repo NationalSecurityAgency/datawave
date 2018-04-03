@@ -319,10 +319,15 @@ public class DatawaveInterpreter extends Interpreter {
                 rightFunctionalSet = new FunctionalSet();
             rightFunctionalSet.addAll((Collection) right);
         }
-        if (leftFunctionalSet != null && rightFunctionalSet != null) { // intersect left and right
-            FunctionalSet functionalSet = new FunctionalSet(leftFunctionalSet);
-            functionalSet.retainAll(rightFunctionalSet);
-            return functionalSet;
+        // return union of left and right iff they are both non-null & non-empty
+        if (leftFunctionalSet != null && rightFunctionalSet != null) {
+            if (!leftFunctionalSet.isEmpty() && !rightFunctionalSet.isEmpty()) {
+                FunctionalSet functionalSet = new FunctionalSet(leftFunctionalSet);
+                functionalSet.addAll(rightFunctionalSet);
+                return functionalSet;
+            } else {
+                return Boolean.FALSE;
+            }
         } else {
             return getBooleanAnd(left, right);
         }
