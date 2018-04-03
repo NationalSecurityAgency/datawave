@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.query.Constants;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.nodes.TreeHashNode;
 import datawave.query.jexl.visitors.TreeHashVisitor;
@@ -70,6 +71,10 @@ public class DatawaveInterpreter extends Interpreter {
             return result;
         }
         result = super.visit(node, data);
+        
+        if (node.jjtGetChild(0).image.equals(Constants.CONTENT_FUNCTION_NAMESPACE)) {
+            this.context.set(Constants.CONTENT_TERM_POSITION_KEY, result);
+        }
         
         if (this.arithmetic instanceof HitListArithmetic) {
             HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;

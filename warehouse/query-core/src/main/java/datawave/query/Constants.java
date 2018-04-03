@@ -66,8 +66,7 @@ public class Constants {
     public static final String CONTENT_ADJACENT_FUNCTION_NAME = "adjacent";
     public static final String CONTENT_PHRASE_FUNCTION_NAME = "phrase";
     
-    public static final String CONTENT_TERM_TIMESTAMP_KEY = "TERM_TIMESTAMP";
-    public static final String CONTENT_TERM_POSITION_KEY = CONTENT_TERM_TIMESTAMP_KEY + ":POSITION";
+    public static final String CONTENT_TERM_POSITION_KEY = "TERM_POSITION";
     
     // RangeStream, temporary move
     public static final String SHARD_DAY_HINT = "SHARDS_AND_DAYS";

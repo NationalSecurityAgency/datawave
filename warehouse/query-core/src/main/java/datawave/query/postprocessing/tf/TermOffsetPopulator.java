@@ -142,7 +142,6 @@ public class TermOffsetPopulator {
         }
         
         Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();
-        TreeSet<Integer> timestampKeys = new TreeSet<>();
         
         while (tfSource.hasTop()) {
             Key key = tfSource.getTopKey();
@@ -170,7 +169,6 @@ public class TermOffsetPopulator {
                 
                 for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
                     TermWeightPosition.Builder position = new TermWeightPosition.Builder();
-                    timestampKeys.add(twInfo.getTermOffset(i));
                     position.setTermWeightOffsetInfo(twInfo, i);
                     offsets.put(twZone, position.build());
                 }
@@ -202,7 +200,6 @@ public class TermOffsetPopulator {
         // Load the actual map into map that will be put into the JexlContext
         Map<String,Object> map = new HashMap<>();
         map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
-        map.put(Constants.CONTENT_TERM_POSITION_KEY, timestampKeys);
         
         return map;
     }

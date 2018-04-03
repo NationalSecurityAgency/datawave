@@ -18,6 +18,17 @@ public class TermWeightPosition implements Comparable<TermWeightPosition> {
         zeroOffsetMatch = builder.zeroOffsetMatch;
     }
     
+    public TermWeightPosition(TermWeightPosition other) {
+        offset = other.offset;
+        prevSkips = other.prevSkips;
+        score = other.score;
+        zeroOffsetMatch = other.zeroOffsetMatch;
+    }
+    
+    public TermWeightPosition clone() {
+        return new TermWeightPosition(this);
+    }
+    
     public static class MaxOffsetComparator implements Comparator<TermWeightPosition> {
         @Override
         public int compare(TermWeightPosition o1, TermWeightPosition o2) {

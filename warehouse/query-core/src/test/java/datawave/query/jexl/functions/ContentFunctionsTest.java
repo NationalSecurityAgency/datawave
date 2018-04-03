@@ -156,7 +156,7 @@ public class ContentFunctionsTest {
         
         List<TermWeightPosition> list1, list2;
         list1 = asList(Arrays.asList(1, 2, 3), Arrays.asList(0, 0, 0));
-        list2 = asList(Arrays.asList(5, 6, 7), Arrays.asList(0, 0, 3)); // match (7-3_ should match (3+1)
+        list2 = asList(Arrays.asList(5, 6, 7), Arrays.asList(0, 2, 0)); // match (6-2) should match (3+1)
         
         termOffSetMap.put("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.put("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
@@ -272,6 +272,24 @@ public class ContentFunctionsTest {
     }
     
     @Test
+    public void testEvaluationWithSkips() {
+        String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
+        Expression expr = engine.createExpression(query);
+        
+        List<TermWeightPosition> list1, list2;
+        list1 = asList(Arrays.asList(4), Arrays.asList(1));
+        list2 = asList(Arrays.asList(2), Arrays.asList(1)); // (10-6) = (3+1)
+        
+        termOffSetMap.put("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
+        termOffSetMap.put("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+        
+        Assert.assertTrue(expect(o, true));
+    }
+    
+    @Test
     public void testEvaluationEmptyOffsetList() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
         Expression expr = engine.createExpression(query);
@@ -362,7 +380,7 @@ public class ContentFunctionsTest {
         List<TermWeightPosition> list1, list2, list3;
         list1 = asList(1, 5, 10);
         list2 = asList(2, 4, 20);
-        list3 = asList(5, 8, 15);
+        list3 = asList(6, 8, 15);
         
         termOffSetMap.put("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.put("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
@@ -841,6 +859,22 @@ public class ContentFunctionsTest {
         
         List<TermWeightPosition> list1;
         list1 = asList(1, 3);
+        
+        termOffSetMap.put("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
+        
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+        
+        Assert.assertTrue(expect(o, true));
+    }
+    
+    @Test
+    public void testEvaluationAdjacencySameTermWithSkipsSuccessTest() {
+        String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "2", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'", "'cat'");
+        Expression expr = engine.createExpression(query);
+        
+        List<TermWeightPosition> list1;
+        list1 = asList(Arrays.asList(1, 4), Arrays.asList(0, 1));
         
         termOffSetMap.put("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
         
