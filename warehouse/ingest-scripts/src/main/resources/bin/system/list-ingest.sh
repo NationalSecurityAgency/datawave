@@ -26,7 +26,7 @@ else
   trap 'rm -f "$ingestHost"; exit $?' INT TERM EXIT
   echo $INGEST_HOST > $ingestHost
 
-  pssh -p 1 -i -h ${ingestHost} "$INGEST_BIN/ingest/listIngest.sh" < /dev/null | grep -v 'SUCCESS'
+  pdsh -f 1 -d -w ^${ingestHost} "$INGEST_BIN/ingest/listIngest.sh" < /dev/null | grep -v 'SUCCESS'
 
   rm $ingestHost
   trap - INT TERM EXIT
