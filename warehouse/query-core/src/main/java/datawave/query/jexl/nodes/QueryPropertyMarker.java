@@ -7,6 +7,7 @@ import java.util.List;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 
+import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
@@ -80,98 +81,7 @@ public class QueryPropertyMarker extends ASTReference {
      * @return true if this and node is a query marker
      */
     public static boolean instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type) {
-        if (!_instanceOf(node, type, 0, null)) {
-            // this could be the source node..so lets unwrap up to the parent AND
-            int count = 0;
-            // unwrap a max of two reference/reference expression parents
-            while ((count < 2) && (node.jjtGetParent() != null)
-                            && ((node.jjtGetParent() instanceof ASTReferenceExpression) || (node.jjtGetParent() instanceof ASTReference))
-                            && (node.jjtGetParent().jjtGetNumChildren() == 1)) {
-                node = node.jjtGetParent();
-                count++;
-            }
-            
-            // and now look for the and node
-            if ((node.jjtGetParent() instanceof ASTAndNode) && (node.jjtGetParent().jjtGetNumChildren() == 2)) {
-                node = node.jjtGetParent();
-                return _instanceOf(node.jjtGetChild(0), type, 3, null);
-            } else {
-                return false;
-            }
-        } else {
-            return true;
-        }
-    }
-    
-    /**
-     * A routine to determine whether an and node is actually a specific instance of a query marker. The reason for this routine is that if the query is
-     * serialized and deserialized, then only the underlying assignment will persist. This routine only searches downward for the marker. Hence any node within
-     * the tree originally created except for anything under and including the reference node two notches above the source.
-     * 
-     * @param node
-     * @param type
-     *            The type to look for
-     * @param depth
-     *            The depth searched thus far
-     * @return true if this and node is a query marker
-     */
-    private static boolean _instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type, int depth, List<JexlNode> sourceReturn) {
-        if (node == null) {
-            return false;
-        }
-        
-        // if we are too deep and we have not found the assignment node yet, then false
-        if (depth > 5) {
-            return false;
-        }
-        // first check the simple case
-        if (depth == 0) {
-            if (type == null) {
-                if (node instanceof QueryPropertyMarker) {
-                    if (sourceReturn != null) {
-                        sourceReturn.add(node.jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0));
-                    }
-                    return true;
-                }
-            } else {
-                if (type.isInstance(node)) {
-                    if (sourceReturn != null) {
-                        sourceReturn.add(node.jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0));
-                    }
-                    return true;
-                }
-            }
-        }
-        
-        if (node instanceof ASTReference && node.jjtGetNumChildren() == 1 && node.jjtGetChild(0) instanceof ASTReferenceExpression) {
-            return _instanceOf(node.jjtGetChild(0), type, depth + 1, sourceReturn);
-        }
-        if (node instanceof ASTReferenceExpression && node.jjtGetNumChildren() == 1
-                        && (node.jjtGetChild(0) instanceof ASTAndNode || node.jjtGetChild(0) instanceof ASTAssignment)) {
-            return _instanceOf(node.jjtGetChild(0), type, depth + 1, sourceReturn);
-        }
-        if (node instanceof ASTAndNode && node.jjtGetNumChildren() == 2) {
-            return _instanceOf(node.jjtGetChild(0), type, depth + 1, sourceReturn);
-        }
-        if (node instanceof ASTAssignment) {
-            List<ASTIdentifier> ids = JexlASTHelper.getIdentifiers(node.jjtGetChild(0));
-            if (ids.size() == 1) {
-                if ((node.jjtGetParent() instanceof ASTReferenceExpression) && (node.jjtGetParent().jjtGetParent() instanceof ASTReference)
-                                && (node.jjtGetParent().jjtGetParent().jjtGetParent() instanceof ASTAndNode)
-                                && (node.jjtGetParent().jjtGetParent().jjtGetParent().jjtGetNumChildren() == 2)
-                                && (node.jjtGetParent().jjtGetParent().jjtGetParent().jjtGetChild(1) instanceof ASTReference)
-                                && (node.jjtGetParent().jjtGetParent().jjtGetParent().jjtGetChild(1).jjtGetChild(0) instanceof ASTReferenceExpression)) {
-                    if (type == null || type.getSimpleName().equalsIgnoreCase(JexlASTHelper.deconstructIdentifier(ids.get(0)))) {
-                        if (sourceReturn != null) {
-                            // go up 3 to the AndNode, and then go down 3 to the source node
-                            sourceReturn.add(node.jjtGetParent().jjtGetParent().jjtGetParent().jjtGetChild(1).jjtGetChild(0).jjtGetChild(0));
-                        }
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return QueryPropertyMarkerVisitor.instanceOf(node, type, null);
     }
     
     /**
@@ -183,33 +93,14 @@ public class QueryPropertyMarker extends ASTReference {
      * @return the source node or null if not an a query property marker
      */
     public static JexlNode getQueryPropertySource(JexlNode node, Class<? extends QueryPropertyMarker> type) {
-        List<JexlNode> sourceReturn = new ArrayList<>();
-        if (!_instanceOf(node, type, 0, sourceReturn) || sourceReturn.isEmpty()) {
-            // this could be the source node..so lets unwrap up to the parent AND
-            int count = 0;
-            // unwrap a max of two reference/reference expression parents
-            while ((count < 2) && (node.jjtGetParent() != null)
-                            && ((node.jjtGetParent() instanceof ASTReferenceExpression) || (node.jjtGetParent() instanceof ASTReference))
-                            && (node.jjtGetParent().jjtGetNumChildren() == 1)) {
-                node = node.jjtGetParent();
-                count++;
-            }
-            
-            // and now look for the and node
-            if ((node.jjtGetParent() instanceof ASTAndNode) && (node.jjtGetParent().jjtGetNumChildren() == 2)) {
-                node = node.jjtGetParent();
-                if (_instanceOf(node.jjtGetChild(0), type, 2, sourceReturn)) {
-                    // now we should definitely have a source node
-                    return sourceReturn.get(0);
-                } else {
-                    return null;
-                }
-            } else {
-                return null;
-            }
-        } else {
-            return sourceReturn.get(0);
+        List<JexlNode> sourceNodes = new ArrayList<>();
+        if (QueryPropertyMarkerVisitor.instanceOf(node, type, sourceNodes) && !sourceNodes.isEmpty()) {
+            if (sourceNodes.size() == 1)
+                return sourceNodes.get(0);
+            else
+                return JexlNodeFactory.createUnwrappedAndNode(sourceNodes);
         }
+        
+        return null;
     }
-    
 }
