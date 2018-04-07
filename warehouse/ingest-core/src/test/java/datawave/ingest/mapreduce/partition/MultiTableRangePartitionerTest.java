@@ -33,19 +33,19 @@ public class MultiTableRangePartitionerTest {
     
     @Test
     public void testGoodSplitsFile() throws IOException, URISyntaxException {
-        mockContextForLocalCacheFile(createUrl("trimmed_splits.txt"));
+        mockContextForLocalCacheFile(createUrl("TRIMMEDBYNUMBERsplits.txt"));
         Assert.assertEquals(5, getPartition());
     }
     
     @Test(expected = RuntimeException.class)
     public void testEmptySplitsThrowsException() throws IOException, URISyntaxException {
-        mockContextForLocalCacheFile(createUrl("trimmed_empty_splits.txt"));
+        mockContextForLocalCacheFile(createUrl("emptyTRIMMEDBYNUMBERsplits.txt"));
         getPartition();
     }
     
     @Test(expected = RuntimeException.class)
     public void testProblemGettingLocalCacheFiles() throws IOException, URISyntaxException {
-        final URL url = createUrl("trimmed_splits.txt");
+        final URL url = createUrl("TRIMMEDBYNUMBERsplits.txt");
         
         MultiTableRangePartitioner.setContext(new MapContextImpl<Key,Value,Text,Mutation>(configuration, new TaskAttemptID(), null, null, null, null, null) {
             @Override

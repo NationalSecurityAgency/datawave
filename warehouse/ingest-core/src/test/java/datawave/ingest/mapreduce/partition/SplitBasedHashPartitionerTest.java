@@ -15,8 +15,8 @@ import org.junit.Test;
 import java.io.IOException;
 
 public class SplitBasedHashPartitionerTest {
-    private static final String TEST_FILE_LOCATION = "datawave/ingest/mapreduce/job/full_splits.txt";
-    private static final String TABLE_NAME = "someTableName"; // matches entry in test file: full_splits.txt
+    private static final String TEST_FILE_LOCATION = "datawave/ingest/mapreduce/job/" + "UNTRIMMEDsplits.txt";
+    private static final String TABLE_NAME = "someTableName"; // matches entry in test file: UNTRIMMEDsplits.txt
     
     @Before
     public void before() {
