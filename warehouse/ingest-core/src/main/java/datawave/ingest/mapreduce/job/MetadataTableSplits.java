@@ -18,15 +18,19 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.impl.ClientContext;
+import org.apache.accumulo.core.data.impl.KeyExtent;
+import org.apache.accumulo.core.metadata.MetadataServicer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.GlobFilter;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * This class encapsulates the split points found in the accumulo.metadata table. Methods are also supplied to distribute the split points via a distributed job
@@ -49,6 +53,20 @@ public class MetadataTableSplits {
     private AccumuloHelper cbHelper = null;
     private Path splitsPath = null;
     private Map<String,List<Text>> splits = null;
+    private Map<String,Map<Text,String>> splitLocations = null;
+
+    private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        SortedMap<KeyExtent,String> tabletLocations = new TreeMap<>();
+        SortedMap<Text,String> tabletLocationsByEndRow = new TreeMap<>();
+
+        MetadataServicer.forTableName(new ClientContext(this.cbHelper.getInstance(), this.cbHelper.getCredentials(), this.cbHelper.getZookeeperConfig()), table).getTabletLocations(tabletLocations);
+        for (Map.Entry<KeyExtent,String> entry : tabletLocations.entrySet()){
+            if(entry.getKey().getEndRow() != null){
+                tabletLocationsByEndRow.put(entry.getKey().getEndRow(), entry.getValue());
+            }
+        }
+        return tabletLocationsByEndRow;
+    }
     
     /**
      * @param tableSplits
@@ -203,16 +221,19 @@ public class MetadataTableSplits {
         }
         Set<String> tableNames = getIngestTableNames();
         Map<String,Integer> splitsPerTable = new HashMap<>();
+        Map<String,Map<Text,String>> tmpSplitLocations = new HashMap<>();
         if (tops != null) {
             try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpSplitsFile)))) {
                 this.splits = new HashMap<>();
                 // gather the splits and write to PrintStream
                 for (String table : tableNames) {
+                    Map<Text,String> splitLocations = getSplitsWithLocation(table);
                     List<Text> splits = new ArrayList<>(tops.listSplits(table));
                     this.splits.put(table, splits);
                     splitsPerTable.put(table, splits.size());
+                    tmpSplitLocations.put(table, splitLocations);
                     for (Text split : splits) {
-                        out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
+                        out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())) + "\t" + splitLocations.get(split));
                     }
                 }
             } catch (IOException | AccumuloSecurityException | AccumuloException | TableNotFoundException ex) {
@@ -244,7 +265,7 @@ public class MetadataTableSplits {
     
     private Map<String,Integer> getCurrentSplitsPerTable() {
         Map<String,Integer> currentSplitsPerTable = new HashMap<>();
-        if (null == this.splits)
+        if (null == this.splits || null == splitLocations)
             try {
                 read();
             } catch (IOException ex) {
@@ -278,18 +299,25 @@ public class MetadataTableSplits {
      */
     private void readCache(BufferedReader in) throws IOException {
         this.splits = new HashMap<>();
+        this.splitLocations = new HashMap<>();
         String line;
         String tableName = null;
         List<Text> splits = null;
+        SortedMap<Text,String> tmpSplitLocations = null;
         while ((line = in.readLine()) != null) {
             String[] parts = StringUtils.split(line, '\t');
             if (tableName == null || !tableName.equals(parts[0])) {
                 tableName = parts[0];
                 splits = new ArrayList<>();
+                tmpSplitLocations = new TreeMap<>();
                 this.splits.put(tableName, splits);
+                this.splitLocations.put(tableName, tmpSplitLocations);
             }
             if (parts.length > 1) {
                 splits.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
+            }
+            if (parts.length > 2) {
+                tmpSplitLocations.put(new Text(Base64.decodeBase64(parts[1].getBytes())), parts[2]);
             }
         }
         in.close();
@@ -332,5 +360,29 @@ public class MetadataTableSplits {
             read();
         return new HashMap<>(splits);
     }
-    
+
+    /**
+     *
+     * @param table
+     * @return map of splits to tablet locations for the table
+     * @throws IOException
+     */
+    public Map<Text,String> getSplitsAndLocationByTable(String table) throws IOException {
+        Map<Text,String> tableSplitsAndLocations;
+        if(null == this.splitLocations)
+            read();
+        tableSplitsAndLocations = this.splitLocations.get(table) == null ? new HashMap<>() : this.splitLocations.get(table);
+        return tableSplitsAndLocations;
+    }
+
+    /**
+     * @return map of splits to table name to map of splits to table locations for the table
+     * @throws java.io.IOException
+     */
+    public Map<String,Map<Text,String>> getSplitsAndLocation() throws IOException {
+        if(null == this.splitLocations)
+            read();
+        return splitLocations;
+    }
+
 }

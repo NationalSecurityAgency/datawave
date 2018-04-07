@@ -27,7 +27,6 @@ public class NonShardedSplitsFile {
         private final Path workDirPath;
         private final String[] tableNames;
         private final List<String> shardedTableNames;
-        private final boolean isTrimmed;
         private final Configuration conf;
         private final FileSystem fs;
         
@@ -51,21 +50,20 @@ public class NonShardedSplitsFile {
          */
         public Writer(Configuration conf, int reduceTasks, Path workDirPath, FileSystem outputFs, String[] tableNames) throws TableNotFoundException,
                         IOException, TableExistsException, URISyntaxException {
-            this(conf, reduceTasks, workDirPath, outputFs, tableNames, true);
+            this(conf, reduceTasks, workDirPath, outputFs, tableNames, SplitsFileType.TRIMMEDBYNUMBER);
         }
         
-        public Writer(Configuration conf, int reduceTasks, Path workDirPath, FileSystem fs, String[] tableNames, boolean isTrimmed)
+        public Writer(Configuration conf, int reduceTasks, Path workDirPath, FileSystem fs, String[] tableNames, SplitsFileType splitsFileType)
                         throws TableNotFoundException, IOException, TableExistsException, URISyntaxException {
             this.conf = conf;
             this.reduceTasks = reduceTasks;
             this.workDirPath = workDirPath;
             this.fs = fs;
             this.tableNames = tableNames;
-            this.isTrimmed = isTrimmed;
             this.shardedTableNames = Arrays.asList(ConfigurationHelper.isNull(conf, ShardedDataTypeHandler.SHARDED_TNAMES, String[].class));
         }
         
-        public void createFile(boolean isTrimmed) {
+        public void createFile(SplitsFileType splitsFileType) {
             try {
                 MetadataTableSplits splits = new MetadataTableSplits(conf);
                 if (MetadataTableSplits.shouldRefreshSplits(conf) && !MetadataTableSplitsCacheStatus.isCacheValid(conf))
@@ -73,39 +71,50 @@ public class NonShardedSplitsFile {
                 else if (!MetadataTableSplits.shouldRefreshSplits(conf) && !MetadataTableSplitsCacheStatus.isCacheValid(conf)) {
                     throw new Exception("Splits cache is invalid");
                 }
-                writeSplitsToFile(splits);
-                uri = new URI(workDirPath + "/" + createFileName(isTrimmed));
+                writeSplitsToFile(splits, splitsFileType);
+                uri = new URI(workDirPath + "/" + createFileName(splitsFileType));
             } catch (Exception e) {
                 throw new RuntimeException("Could not create splits file for the job. See documentation for using generateSplitsFile.sh", e);
             }
         }
         
-        private void writeSplitsToFile(MetadataTableSplits splits) throws IOException {
-            PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(new Path(workDirPath, createFileName(isTrimmed)))));
-            outputSplitsForNonShardTables(splits, out);
+        private void writeSplitsToFile(MetadataTableSplits splits, SplitsFileType splitsFileType) throws IOException {
+            PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(new Path(workDirPath, createFileName(splitsFileType)))));
+            outputSplitsForNonShardTables(splits, out, splitsFileType);
             out.close();
         }
         
-        private void outputSplitsForNonShardTables(MetadataTableSplits splits, PrintStream out) throws IOException {
+        private void outputSplitsForNonShardTables(MetadataTableSplits splits, PrintStream out, SplitsFileType splitsFileType) throws IOException {
             for (String table : tableNames) {
                 if (null != shardedTableNames && shardedTableNames.contains(table)) {
                     continue;
                 }
-                outputSplitsForTable(splits, out, table);
+                outputSplitsForTable(splits, out, table, splitsFileType);
             }
         }
         
-        private void outputSplitsForTable(MetadataTableSplits splits, PrintStream out, String table) throws IOException {
-            Collection<Text> tableSplits;
-            if (isTrimmed) {
+        private void outputSplitsForTable(MetadataTableSplits splits, PrintStream out, String table, SplitsFileType splitsFileType) throws IOException {
+            Collection<Text> tableSplits = null;
+            Map<Text, String> tableSplitsAndLocations;
+            if (splitsFileType.equals(SplitsFileType.TRIMMEDBYNUMBER)) {
                 tableSplits = splits.getSplits(table, reduceTasks - 1);
-            } else {
+            } else if (splitsFileType.equals(SplitsFileType.UNTRIMMED)) {
                 tableSplits = splits.getSplits(table);
+            } else if (splitsFileType.equals(SplitsFileType.UNTRIMMED)) {
+                tableSplitsAndLocations = splits.getSplitsAndLocationByTable(table);
+                for (Text splitAndLocation : tableSplitsAndLocations.keySet()) {
+                    out.println(table + "\t" + new String(Base64.encodeBase64(splitAndLocation.getBytes())) + "\t" + tableSplitsAndLocations.get(splitAndLocation));
+                    if (log.isTraceEnabled()) {
+                        log.trace(table + " split: " + splitAndLocation);
+                    }
+                }
             }
-            for (Text split : tableSplits) {
-                out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
-                if (log.isTraceEnabled()) {
-                    log.trace(table + " split: " + split);
+            if (tableSplits != null) {
+                for (Text split : tableSplits) {
+                    out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
+                    if (log.isTraceEnabled()) {
+                        log.trace(table + " split: " + split);
+                    }
                 }
             }
         }
@@ -115,12 +124,12 @@ public class NonShardedSplitsFile {
         }
     }
     
-    private static String createFileName(boolean isTrimmed) {
-        return (isTrimmed ? "trimmed_" : "full_") + SPLITS_FILE_NAME_PROPERTY_VALUE;
+    private static String createFileName(SplitsFileType splitsFileType) {
+        return (splitsFileType) + SPLITS_FILE_NAME_PROPERTY_VALUE;
     }
     
-    public static Path findSplitsFile(Configuration conf, Path[] filesToCheck, boolean isTrimmed) {
-        String fileName = createFileName(isTrimmed);
+    public static Path findSplitsFile(Configuration conf, Path[] filesToCheck, SplitsFileType splitsFileType) {
+        String fileName = createFileName(splitsFileType);
         if (filesToCheck != null) {
             for (Path cacheFile : filesToCheck) {
                 if (matchesFileName(fileName, cacheFile)) {
@@ -137,49 +146,72 @@ public class NonShardedSplitsFile {
     
     public static class Reader {
         private Map<String,Text[]> splits;
+        private Map<String, Map<Text,String>> splitsAndLocations;
         
-        public Reader(Configuration conf, Path[] filesToCheck, boolean isTrimmed) throws IOException {
-            Path cacheFile = findSplitsFile(conf, filesToCheck, isTrimmed);
+        public Reader(Configuration conf, Path[] filesToCheck, SplitsFileType splitsFileType) throws IOException {
+            Path cacheFile = findSplitsFile(conf, filesToCheck, splitsFileType);
             if (null == cacheFile) {
                 throw new RuntimeException("Could not find cut point file");
             }
             
             splits = new HashMap<>();
+            splitsAndLocations = new HashMap<>();
             ArrayList<Text> cutPoints = new ArrayList<>();
+            SortedMap<Text,String> cutPointsAndLocations = new TreeMap<>();
             String previousTableName = null;
+            boolean isFirstLine = true;
+            boolean isSameTable;
+            boolean hasSplits = false;
+            boolean hasLocations = false;
+
             try (BufferedReader in = new BufferedReader(new FileReader(cacheFile.toString()))) {
                 String line;
                 while ((line = in.readLine()) != null) {
                     String[] parts = line.split("\\t");
-                    if (parts[0].equals(previousTableName)) {
-                        if (parts.length > 1)
-                            cutPoints.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
-                    } else if (previousTableName == null) {
+                    isSameTable = parts[0].equals(previousTableName);
+                    hasSplits = parts.length > 1;
+                    hasLocations = parts.length > 2;
+
+                    if (isFirstLine) {
                         previousTableName = parts[0];
-                        if (parts.length > 1)
-                            cutPoints.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
-                    } else {
-                        Collections.sort(cutPoints);
-                        splits.put(previousTableName, cutPoints.toArray(new Text[cutPoints.size()]));
-                        log.info("Adding cut points for table: " + previousTableName);
+                        isFirstLine = false;
+                    }
+                    if (!isSameTable) {
+                        saveLastSplitForTable(cutPoints, cutPointsAndLocations, splits, splitsAndLocations, previousTableName, hasSplits, hasLocations);
                         previousTableName = parts[0];
                         cutPoints.clear();
-                        if (parts.length > 1)
-                            cutPoints.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
+                        cutPointsAndLocations.clear();
+                    }
+                    if (hasLocations) {
+                        cutPointsAndLocations.put(new Text(Base64.decodeBase64(parts[1].getBytes())), parts[2]);
+                    } else if (hasSplits) {
+                        cutPoints.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
                     }
                 }
             } finally {
-                if (null != previousTableName) {
-                    // Add the last batch.
-                    Collections.sort(cutPoints);
-                    splits.put(previousTableName, cutPoints.toArray(new Text[cutPoints.size()]));
-                    log.info("Adding cut points for table: " + previousTableName);
-                }
+                //Add the last batch
+                saveLastSplitForTable(cutPoints, cutPointsAndLocations, splits, splitsAndLocations, previousTableName, hasSplits, hasLocations);
             }
         }
         
         public Map<String,Text[]> getSplitsByTable() {
             return splits;
+        }
+
+        public Map<String,Map<Text,String>> getSplitsAndLocationsByTable() {
+            return splitsAndLocations;
+        }
+
+        private void saveLastSplitForTable(ArrayList<Text> cutPoints, SortedMap<Text, String> cutPointsAndLocations, Map<String,Text[]> splits, Map<String,Map<Text,String>> splitsAndLocations, String previousTableName, boolean hasSplits, boolean hasLocations) {
+            Collections.sort(cutPoints);
+            if (hasLocations) {
+                splitsAndLocations.put(previousTableName, cutPointsAndLocations);
+                log.info("Adding cut points and locations for the table: " + previousTableName);
+                splits.put(previousTableName, cutPointsAndLocations.keySet().toArray(new Text[cutPointsAndLocations.size()]));
+            }else if (hasSplits) {
+                splits.put(previousTableName, cutPoints.toArray(new Text[cutPoints.size()]));
+                log.info("Adding cut points for table: " + previousTableName);
+            }
         }
     }
 }

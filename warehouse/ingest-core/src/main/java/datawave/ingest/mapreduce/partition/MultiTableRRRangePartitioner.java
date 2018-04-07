@@ -1,22 +1,14 @@
 package datawave.ingest.mapreduce.partition;
 
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
 
-import datawave.ingest.mapreduce.job.MetadataTableSplits;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
+import datawave.ingest.mapreduce.job.SplitsFileType;
+
 import org.apache.log4j.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MultiTableRRRangePartitioner extends MultiTableRangePartitioner {
     
@@ -32,7 +24,7 @@ public class MultiTableRRRangePartitioner extends MultiTableRangePartitioner {
             int i = cutPointArrayLength;
             int reducer = numPartitions - 1;
             Map<Integer,Integer> tempSplitReducerMap = new HashMap<>();
-            // start with the indice that represents a value greater than all values in the cutPointArray, start filling in the mapping of indices to reducers
+            // start with the index that represents a value greater than all values in the cutPointArray, start filling in the mapping of indices to reducers
             tempSplitReducerMap.put(i, reducer);
             tempSplitReducerMap.put(-i - 1, reducer);
             i--;
@@ -62,7 +54,7 @@ public class MultiTableRRRangePartitioner extends MultiTableRangePartitioner {
     }
     
     @Override
-    protected boolean isTrimmed() {
-        return false;
+    protected SplitsFileType getSplitsFileType() {
+        return SplitsFileType.UNTRIMMED;
     }
 }

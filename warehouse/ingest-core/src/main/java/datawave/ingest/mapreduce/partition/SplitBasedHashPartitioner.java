@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.NonShardedSplitsFile;
+import datawave.ingest.mapreduce.job.SplitsFileType;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Value;
@@ -73,7 +74,7 @@ public class SplitBasedHashPartitioner extends MultiTableRangePartitioner implem
     }
     
     @Override
-    protected boolean isTrimmed() {
-        return false;
+    protected SplitsFileType getSplitsFileType() {
+        return SplitsFileType.UNTRIMMED;
     }
 }
