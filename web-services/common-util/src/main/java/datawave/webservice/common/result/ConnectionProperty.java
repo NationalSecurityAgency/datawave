@@ -3,7 +3,6 @@ package datawave.webservice.common.result;
 import com.google.common.base.Objects;
 
 import java.io.Serializable;
-import java.util.HashMap;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -12,7 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
-public class ConnectionProperty extends HashMap<String,String> implements Serializable, Comparable<ConnectionProperty> {
+public class ConnectionProperty implements Serializable, Comparable<ConnectionProperty> {
     
     private static final long serialVersionUID = 1L;
     
