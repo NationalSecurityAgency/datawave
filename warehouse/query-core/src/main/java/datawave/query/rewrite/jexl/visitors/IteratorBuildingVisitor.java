@@ -1056,6 +1056,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setFstHdfsFileSystem(hdfsFileSystem.getFileSystem(builder.getFstURI()));
         }
         
+        // If this is actually negated, then this will be added to excludes. Do not negate in the ivarator
+        builder.setNegated(false);
         builder.canBuildDocument(!limitLookup && this.isQueryFullySatisfied);
         
         ivarate(builder, source, data);
