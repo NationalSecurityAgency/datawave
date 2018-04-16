@@ -13,6 +13,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 class ContentFunctionArguments {
     private List<String> terms;
     private int distance;
+    private float minScore;
     private List<String> zone = null;
     
     public List<String> terms() {
@@ -101,6 +102,16 @@ class ContentFunctionArguments {
             // Pull off the zone if it's the zone phrase function
             if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(JexlASTHelper.dereference(args.get(currentArg)).image)) {
                 zone = constructZone(args.get(currentArg++));
+                if (zone.isEmpty()) {
+                    currentArg--;
+                }
+            }
+            
+            Float minScoreArg = readMinScore(JexlASTHelper.dereference(args.get(currentArg++)).image.trim());
+            if (null != minScoreArg) {
+                minScore = minScoreArg.floatValue();
+            } else { // Rollback the current arg if it is not the min score
+                currentArg--;
             }
             
             // Ensure the next term is the termOffsetMap variable
@@ -137,5 +148,13 @@ class ContentFunctionArguments {
             }
         }
         return zones;
+    }
+    
+    private Float readMinScore(String arg) {
+        try {
+            return Float.parseFloat(arg);
+        } catch (NumberFormatException nfe) {
+            return null;
+        }
     }
 }

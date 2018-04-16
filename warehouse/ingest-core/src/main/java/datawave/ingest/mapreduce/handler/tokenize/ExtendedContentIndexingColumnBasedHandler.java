@@ -128,7 +128,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     protected ExtendedContentDataTypeHelper dataTypeHelper = null;
     
     protected ContentIndexCounters counters = null;
-    protected OffsetQueue tokenOffsetCache = null;
+    protected OffsetQueue<Integer> tokenOffsetCache = null;
     protected Set<String> zones = new HashSet<>();
     
     protected boolean eventReplaceMalformedUTF8 = false;
@@ -203,7 +203,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         }
         // The tokens offsets queue is a bounded priority queue that will allow us to cache the
         // highest cardinality offsets up to a predetermined max size
-        tokenOffsetCache = new BoundedOffsetQueue(tokenHelper.getTokenOffsetCacheMaxSize());
+        tokenOffsetCache = new BoundedOffsetQueue<>(tokenHelper.getTokenOffsetCacheMaxSize());
         
         stopWords = tokenHelper.getStopWords();
         
@@ -352,7 +352,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
             
             // Now add the offset to the token offset queue, and if we overflow then output the overflow
             if (tokenOffsetCache != null) {
-                OffsetList overflow = tokenOffsetCache.addOffset(indexedTermAndZone, position);
+                OffsetList<Integer> overflow = tokenOffsetCache.addOffset(indexedTermAndZone, position);
                 if (overflow != null) {
                     // no need to normalize as that was already done upon insertion into the token offset cache
                     NormalizedFieldAndValue overflowNfv = new NormalizedFieldAndValue(overflow.termAndZone.zone, overflow.termAndZone.term);
@@ -362,10 +362,10 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                     createTermFrequencyIndex(event, contextWriter, context, this.shardId, overflowNfv, overflow.offsets, overflowFieldVisibility,
                                     this.ingestHelper.getDeleteMode());
                     counters.increment(ContentIndexCounters.TOKENIZER_OFFSET_CACHE_OVERFLOWS, reporter);
-                    counters.incrementValue(ContentIndexCounters.TOKENIZER_OFFSET_CACHE_POSITIONS_OVERFLOWED, overflow.offsets.length, reporter);
+                    counters.incrementValue(ContentIndexCounters.TOKENIZER_OFFSET_CACHE_POSITIONS_OVERFLOWED, overflow.offsets.size(), reporter);
                 }
             } else {
-                createTermFrequencyIndex(event, contextWriter, context, this.shardId, nfv, new int[] {position}, fieldVisibility,
+                createTermFrequencyIndex(event, contextWriter, context, this.shardId, nfv, Arrays.asList(position), fieldVisibility,
                                 this.ingestHelper.getDeleteMode());
             }
         }
@@ -721,10 +721,10 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
      */
     protected void createTermFrequencyIndex(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, byte[] shardId, NormalizedFieldAndValue nfv,
-                    int[] offsets, byte[] visibility, boolean deleteMode) throws IOException, InterruptedException {
+                    List<Integer> offsets, byte[] visibility, boolean deleteMode) throws IOException, InterruptedException {
         
         TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
-        for (int offset : offsets) {
+        for (Integer offset : offsets) {
             builder.addTermOffset(offset);
         }
         Value value = new Value(builder.build().toByteArray());

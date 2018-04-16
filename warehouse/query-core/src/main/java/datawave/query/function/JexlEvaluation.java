@@ -1,5 +1,6 @@
 package datawave.query.function;
 
+import datawave.query.Constants;
 import datawave.query.attributes.Attributes;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DefaultArithmetic;
@@ -18,6 +19,8 @@ import datawave.query.attributes.Document;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.util.Tuple3;
+
+import java.util.Collection;
 
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {
     private static final Logger log = Logger.getLogger(JexlEvaluation.class);
@@ -66,6 +69,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     public boolean apply(Tuple3<Key,Document,DatawaveJexlContext> input) {
         
         Object o = script.execute(input.third());
+        Document document = input.second();
         
         if (log.isTraceEnabled()) {
             log.trace("Evaluation of " + query + " against " + input.third() + " returned " + o);
@@ -73,10 +77,19 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         
         boolean matched = isMatched(o);
         
+        if (input.third().has(Constants.CONTENT_TERM_POSITION_KEY)) {
+            Object oPosition = input.third().get(Constants.CONTENT_TERM_POSITION_KEY);
+            if (null != oPosition && oPosition instanceof Collection) {
+                for (Integer termPosition : (Collection<Integer>) oPosition) {
+                    Content content = new Content(Integer.toString(termPosition), document.getMetadata(), document.isToKeep());
+                    document.put(Constants.CONTENT_TERM_POSITION_KEY, content);
+                }
+            }
+        }
+        
         if (arithmetic instanceof HitListArithmetic) {
             HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
             if (matched) {
-                Document document = input.second();
                 
                 Attributes attributes = new Attributes(input.second().isToKeep());
                 
