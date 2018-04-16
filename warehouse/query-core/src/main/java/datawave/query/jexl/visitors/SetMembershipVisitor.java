@@ -371,12 +371,6 @@ public class SetMembershipVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         if (traverse(data, fullTraversal)) {
-            // apply it to the index query first
-            JexlArgumentDescriptor d = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-            JexlNode tree = d.getIndexQuery(this.config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
-            data = tree.jjtAccept(this, data);
-            
-            // and then apply it to the args directory
             int i = 0;
             while (traverse(data, fullTraversal) && i < node.jjtGetNumChildren()) {
                 data = node.jjtGetChild(i).jjtAccept(this, data);
