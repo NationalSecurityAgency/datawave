@@ -40,6 +40,7 @@ import nsa.datawave.query.rewrite.predicate.ConfiguredPredicate;
 import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
 import nsa.datawave.query.rewrite.predicate.TimeFilter;
 import nsa.datawave.query.rewrite.statsd.QueryStatsDClient;
+import nsa.datawave.query.tables.async.Scan;
 import nsa.datawave.query.util.CompositeMetadata;
 import nsa.datawave.query.util.TypeMetadata;
 import nsa.datawave.query.util.TypeMetadataProvider;
@@ -84,6 +85,7 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String DEBUG_MULTITHREADED_SOURCES = "debug.multithreaded.sources";
     
+    public static final String SCAN_ID = Scan.SCAN_ID;
     public static final String DISABLE_EVALUATION = "disable.evaluation";
     public static final String DISABLE_FIELD_INDEX_EVAL = "disable.fi";
     public static final String LIMIT_OVERRIDE = "disable.fi.override";
@@ -208,6 +210,7 @@ public class QueryOptions implements OptionDescriber {
     
     protected Map<String,String> options;
     
+    protected String scanId;
     protected String query;
     protected String queryId;
     protected boolean disableEvaluation = false;
@@ -334,6 +337,7 @@ public class QueryOptions implements OptionDescriber {
         this.options = other.options;
         this.query = other.query;
         this.queryId = other.queryId;
+        this.scanId = other.scanId;
         this.disableEvaluation = other.disableEvaluation;
         this.disableIndexOnlyDocuments = other.disableIndexOnlyDocuments;
         this.typeMetadata = other.typeMetadata;
@@ -449,6 +453,14 @@ public class QueryOptions implements OptionDescriber {
     
     public void setQueryId(String queryId) {
         this.queryId = queryId;
+    }
+    
+    public String getScanId() {
+        return scanId;
+    }
+    
+    public void setScanId(String scanId) {
+        this.scanId = scanId;
     }
     
     public boolean isDisableEvaluation() {
@@ -958,6 +970,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(QUERY_ID)) {
             this.queryId = options.get(QUERY_ID);
+        }
+        
+        if (options.containsKey(SCAN_ID)) {
+            this.scanId = options.get(SCAN_ID);
         }
         
         if (options.containsKey(QUERY_MAPPING_COMPRESS)) {
