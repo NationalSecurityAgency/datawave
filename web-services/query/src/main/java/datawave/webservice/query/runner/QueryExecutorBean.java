@@ -422,7 +422,7 @@ public class QueryExecutorBean implements QueryExecutor {
             GenericResponse<String> response = new GenericResponse<>();
             throwBadRequest(DatawaveErrorCode.INVALID_EXPIRATION_DATE, response);
         }
-
+        
         // Ensure begin date does not occur after the end date
         if (qp.getBeginDate().after(qp.getEndDate())) {
             GenericResponse<String> response = new GenericResponse<>();

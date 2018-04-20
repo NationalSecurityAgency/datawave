@@ -434,7 +434,7 @@ public class QueryExecutorBeanTest {
     public void testListWithPost() {
         
     }
-
+    
     @Test
     public void testBeginDateAfterEndDate() throws Exception {
         String queryName = "Something";
@@ -446,8 +446,8 @@ public class QueryExecutorBeanTest {
         final String[] auths = new String[2];
         auths[0] = "PUBLIC";
         auths[1] = "PRIVATE";
-
-        final MultivaluedMap<String, String> queryParameters = new MultivaluedMapImpl<>();
+        
+        final MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persist.name());
@@ -455,21 +455,22 @@ public class QueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
         queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
-
+        
         final Thread createQuery = new Thread(() -> {
             try {
                 bean.createQuery("EventQueryLogic", queryParameters);
                 fail(); // If doesn't throw exception, should fail
-            } catch (BadRequestException e) {
-                assertEquals(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE.toString(), e.getCause().getMessage());
-            }
-        });
-
+                    } catch (BadRequestException e) {
+                        assertEquals(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE.toString(), e.getCause().getMessage());
+                    }
+                });
+        
         try {
             createQuery.start();
             createQuery.join();
         } finally {
-            if (null != createQuery && createQuery.isAlive()) createQuery.interrupt();
+            if (null != createQuery && createQuery.isAlive())
+                createQuery.interrupt();
         }
     }
     
