@@ -19,30 +19,28 @@ import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedC
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
+import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
+import datawave.query.attributes.Document;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.Equality;
 import datawave.query.function.GetStartKey;
 import datawave.query.function.PrefixEquality;
 import datawave.query.iterator.filter.EventKeyDataTypeFilter;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
-import datawave.query.jexl.DefaultArithmetic;
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.Constants;
-import datawave.query.attributes.Document;
 import datawave.query.iterator.filter.KeyIdentity;
 import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.functions.FieldIndexAggregator;
+import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.predicate.ConfiguredPredicate;
+import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
-import datawave.query.DocumentSerialization.ReturnType;
-import datawave.query.jexl.DefaultArithmetic;
-import datawave.query.planner.SeekingQueryPlanner;
-import datawave.query.predicate.TimeFilter;
+import datawave.query.tables.async.Scan;
 import datawave.query.util.CompositeMetadata;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataProvider;
@@ -87,6 +85,7 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String DEBUG_MULTITHREADED_SOURCES = "debug.multithreaded.sources";
     
+    public static final String SCAN_ID = Scan.SCAN_ID;
     public static final String DISABLE_EVALUATION = "disable.evaluation";
     public static final String DISABLE_FIELD_INDEX_EVAL = "disable.fi";
     public static final String LIMIT_OVERRIDE = "disable.fi.override";
@@ -211,6 +210,7 @@ public class QueryOptions implements OptionDescriber {
     
     protected Map<String,String> options;
     
+    protected String scanId;
     protected String query;
     protected String queryId;
     protected boolean disableEvaluation = false;
@@ -337,6 +337,7 @@ public class QueryOptions implements OptionDescriber {
         this.options = other.options;
         this.query = other.query;
         this.queryId = other.queryId;
+        this.scanId = other.scanId;
         this.disableEvaluation = other.disableEvaluation;
         this.disableIndexOnlyDocuments = other.disableIndexOnlyDocuments;
         this.typeMetadata = other.typeMetadata;
@@ -452,6 +453,14 @@ public class QueryOptions implements OptionDescriber {
     
     public void setQueryId(String queryId) {
         this.queryId = queryId;
+    }
+    
+    public String getScanId() {
+        return scanId;
+    }
+    
+    public void setScanId(String scanId) {
+        this.scanId = scanId;
     }
     
     public boolean isDisableEvaluation() {
@@ -961,6 +970,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(QUERY_ID)) {
             this.queryId = options.get(QUERY_ID);
+        }
+        
+        if (options.containsKey(SCAN_ID)) {
+            this.scanId = options.get(SCAN_ID);
         }
         
         if (options.containsKey(QUERY_MAPPING_COMPRESS)) {
