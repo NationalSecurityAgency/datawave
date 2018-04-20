@@ -1133,7 +1133,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                         .setFieldsToAggregate(this.getNonEventFields()).setAttrFilter(this.getEvaluationFilter())
                         .setDatatypeFilter(this.getFieldIndexKeyDataTypeFilter()).setFiAggregator(this.fiAggregator)
                         .setHdfsFileSystem(this.getFileSystemCache()).setQueryLock(this.getQueryLock())
-                        .setIvaratorCacheDirURIAlternatives(this.getIvaratorCacheBaseURIsAsList()).setQueryId(this.getQueryId())
+                        .setIvaratorCacheDirURIAlternatives(this.getIvaratorCacheBaseURIsAsList()).setQueryId(this.getQueryId()).setScanId(this.getScanId())
                         .setIvaratorCacheSubDirPrefix(this.getHdfsCacheSubDirPrefix()).setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec())
                         .setIvaratorCacheBufferSize(this.getIvaratorCacheBufferSize())
                         .setIvaratorCacheScanPersistThreshold(this.getIvaratorCacheScanPersistThreshold())

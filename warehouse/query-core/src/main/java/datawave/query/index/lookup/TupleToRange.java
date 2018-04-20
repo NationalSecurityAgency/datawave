@@ -100,7 +100,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
                 myNode = ii.getNode();
             }
             
-            Range myRange = new Range(tuple.first(), true, tuple.first() + MAX_UNICODE_STRING, false);
+            Range myRange = new Range(tuple.first() + "_0", true, tuple.first() + MAX_UNICODE_STRING, false);
             if (log.isTraceEnabled())
                 log.trace("Building day" + myRange + " from " + (null == myNode ? "NoQueryNode" : JexlStringBuildingVisitor.buildQuery(myNode)));
             return Collections.singleton(new QueryPlan(myNode, myRange)).iterator();
