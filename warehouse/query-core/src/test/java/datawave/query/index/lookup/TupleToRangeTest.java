@@ -24,14 +24,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class TupleToRangeTest {
-
+    
     protected JexlNode queryNode = null;
-
+    
     @Before
     public void setup() throws ParseException {
         queryNode = JexlASTHelper.parseJexlQuery("true==true");
     }
-
+    
     @Test
     public void test() {
         IndexInfo info = new IndexInfo(Lists.newArrayList(new IndexMatch("a"), new IndexMatch("b"), new IndexMatch("c"), new IndexMatch("d")));
@@ -48,7 +48,7 @@ public class TupleToRangeTest {
         assertEquals(makeTestRange("s", "d"), ranges.next().getRanges().iterator().next());
         assertFalse(ranges.hasNext());
     }
-
+    
     @Test
     public void testTld() {
         IndexInfo info = new IndexInfo(Lists.newArrayList(new IndexMatch("a"), new IndexMatch("b"), new IndexMatch("c"), new IndexMatch("d")));
@@ -67,7 +67,7 @@ public class TupleToRangeTest {
         assertEquals(makeTldTestRange("s", "d"), ranges.next().getRanges().iterator().next());
         assertFalse(ranges.hasNext());
     }
-
+    
     @Test
     public void testShards() {
         IndexInfo info = new IndexInfo();
@@ -78,7 +78,7 @@ public class TupleToRangeTest {
         assertEquals(makeShardedRange("20130101_0"), ranges.next().getRanges().iterator().next());
         assertFalse(ranges.hasNext());
     }
-
+    
     @Test
     public void testDays() {
         IndexInfo info = new IndexInfo();
@@ -89,20 +89,22 @@ public class TupleToRangeTest {
         assertEquals(makeDayRange("20130101"), ranges.next().getRanges().iterator().next());
         assertFalse(ranges.hasNext());
     }
-
+    
     public static Range makeTestRange(String r, String c) {
         Key s = new Key(r, c), e = s.followingKey(PartialKey.ROW_COLFAM);
         return new Range(s, true, e, false);
     }
-
+    
     public static Range makeTldTestRange(String r, String c) {
         Key s = new Key(r, c), e = new Key(r, c + TupleToRange.MAX_UNICODE_STRING);
         return new Range(s, true, e, false);
     }
+    
     public static Range makeShardedRange(String r) {
         Key s = new Key(r), e = new Key(r + TupleToRange.NULL_BYTE_STRING);
         return new Range(s, true, e, false);
     }
+    
     public static Range makeDayRange(String r) {
         Key s = new Key(r + "_0"), e = new Key(r + TupleToRange.MAX_UNICODE_STRING);
         return new Range(s, true, e, false);
