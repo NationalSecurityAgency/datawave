@@ -662,26 +662,22 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch.stop();
         
-        Set<String> indexOnlyFields;
-        Set<String> termFrequencyFields;
+        Set<String> nonEventFields;
         try {
-            indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
-            termFrequencyFields = metadataHelper.getTermFrequencyFields(config.getDatatypeFilter());
+            nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
             throw new DatawaveFatalQueryException(qe);
-        } catch (ExecutionException e) {
-            throw new DatawaveFatalQueryException(e);
         }
         if (disableBoundedLookup) {
             // protection mechanism. If we disable bounded ranges and have a
             // LT,GT or ER node, we should expand it
-            if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, metadataHelper, indexOnlyFields, termFrequencyFields, queryTree))
+            if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, metadataHelper, queryTree))
                 disableBoundedLookup = false;
         }
-        if (!indexOnlyFields.isEmpty()) {
+        if (!nonEventFields.isEmpty()) {
             // rebuild the query tree
-            queryTree = RegexFunctionVisitor.expandRegex(config, metadataHelper, indexOnlyFields, termFrequencyFields, queryTree);
+            queryTree = RegexFunctionVisitor.expandRegex(config, metadataHelper, nonEventFields, queryTree);
         }
         
         queryTree = processTree(queryTree, config, settings, metadataHelper, scannerFactory, queryData, timers, queryModel);
@@ -690,24 +686,24 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Determine if query contains index-only fields");
         
-        // Figure out if the query contained any index-only terms so we know
+        // Figure out if the query contained any non-event terms so we know
         // if we have to force it down the field-index path with event-specific
         // ranges
-        boolean containsIndexOnly = false;
-        if (!indexOnlyFields.isEmpty() && !disableBoundedLookup) {
+        boolean containsNonEventFields = false;
+        if (!nonEventFields.isEmpty() && !disableBoundedLookup) {
             // rebuild the query tree
-            queryTree = RegexFunctionVisitor.expandRegex(config, metadataHelper, indexOnlyFields, termFrequencyFields, queryTree);
+            queryTree = RegexFunctionVisitor.expandRegex(config, metadataHelper, nonEventFields, queryTree);
             boolean functionsEnabled = config.isIndexOnlyFilterFunctionsEnabled();
-            containsIndexOnly = !SetMembershipVisitor.getMembers(indexOnlyFields, config, metadataHelper, dateIndexHelper, queryTree, functionsEnabled)
+            containsNonEventFields = !SetMembershipVisitor.getMembers(nonEventFields, config, metadataHelper, dateIndexHelper, queryTree, functionsEnabled)
                             .isEmpty();
         }
         
         // Print the nice log message
         if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Computed that the query " + (containsIndexOnly ? " contains " : " does not contain any ") + " index-only field(s)");
+            logQuery(queryTree, "Computed that the query " + (containsNonEventFields ? " contains " : " does not contain any ") + " non-event field(s)");
         }
         
-        config.setContainsIndexOnlyTerms(containsIndexOnly);
+        config.setContainsIndexOnlyTerms(containsNonEventFields);
         
         stopwatch.stop();
         
@@ -762,6 +758,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
         // Figure out if the query contained any term frequency terms so we know
         // if we may use the term frequencies instead of the fields index in some cases
         Set<String> queryTfFields = Collections.<String> emptySet();
+        Set<String> termFrequencyFields;
+        try {
+            termFrequencyFields = metadataHelper.getTermFrequencyFields(config.getDatatypeFilter());
+        } catch (TableNotFoundException e) {
+            stopwatch.stop();
+            QueryException qe = new QueryException(DatawaveErrorCode.TERM_FREQUENCY_FIELDS_RETRIEVAL_ERROR, e);
+            throw new DatawaveFatalQueryException(qe);
+        }
         if (!termFrequencyFields.isEmpty()) {
             queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config, metadataHelper, dateIndexHelper, queryTree);
             
@@ -971,11 +975,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         // lets precomputed the indexed fields and index only fields for the specific datatype if needed below
         Set<String> indexedFields = null;
-        Set<String> indexOnlyFields = null;
+        Set<String> nonEventFields = null;
         if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
             try {
                 indexedFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
-                indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
+                nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
             } catch (TableNotFoundException te) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, te);
                 throw new DatawaveFatalQueryException(qe);
@@ -995,8 +999,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (log.isDebugEnabled()) {
                 debugOutput = new ArrayList<String>(32);
             }
-            if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, metadataHelper, debugOutput)) {
-                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
+            if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, nonEventFields, debugOutput, metadataHelper)) {
+                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, nonEventFields,
                                 metadataHelper);
                 if (log.isDebugEnabled()) {
                     logDebug(debugOutput, "Executable state after pushing low-selective terms:");
@@ -1036,8 +1040,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 
                 // Unless config.isExandAllTerms is true, this may set some of
                 // the terms to be delayed.
-                if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, metadataHelper, debugOutput)) {
-                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, config, indexedFields, indexOnlyFields,
+                if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, nonEventFields, debugOutput, metadataHelper)) {
+                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, config, indexedFields, nonEventFields,
                                     metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges:");
@@ -1064,8 +1068,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 if (log.isDebugEnabled()) {
                     debugOutput.clear();
                 }
-                if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, metadataHelper, debugOutput)) {
-                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
+                if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, nonEventFields, debugOutput, metadataHelper)) {
+                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, nonEventFields,
                                     metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges and regex again:");

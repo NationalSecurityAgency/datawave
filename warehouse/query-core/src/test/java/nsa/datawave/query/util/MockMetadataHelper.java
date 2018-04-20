@@ -212,7 +212,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException {
+    public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         return getMetadata().getTermFrequencyFields();
     }
     

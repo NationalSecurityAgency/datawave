@@ -473,6 +473,23 @@ public class MetadataHelper implements ApplicationContextAware {
     }
     
     /**
+     * Get the fields that have values not in the same form as the event (excluding normalization). This would include index only fields, term frequency fields
+     * (as the index may contain tokens), and composite fields.
+     * 
+     * @param ingestTypeFilter
+     * @return the non-event fields
+     */
+    public Set<String> getNonEventFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        
+        Set<String> fields = new HashSet<>();
+        fields.addAll(getIndexOnlyFields(ingestTypeFilter));
+        fields.addAll(getTermFrequencyFields(ingestTypeFilter));
+        fields.addAll(getCompositeMetadata(ingestTypeFilter).keySet());
+        
+        return Collections.unmodifiableSet(fields);
+    }
+    
+    /**
      * Fetch the {@link Set} of index-only fields.
      * 
      * @return
@@ -1095,7 +1112,7 @@ public class MetadataHelper implements ApplicationContextAware {
      * @throws TableNotFoundException
      * @throws ExecutionException
      */
-    public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException {
+    public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
         Multimap<String,String> termFrequencyFields = loadTermFrequencyFields();
         
