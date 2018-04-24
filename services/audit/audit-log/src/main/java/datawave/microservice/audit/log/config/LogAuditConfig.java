@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.SubscribableChannel;
 
+import javax.annotation.Resource;
 import java.util.Map;
 
 @Configuration
@@ -19,9 +20,12 @@ import java.util.Map;
 @ConditionalOnProperty(name = "audit.log.enabled", havingValue = "true")
 public class LogAuditConfig {
     
+    @Resource(name = "msgHandlerAuditParams")
+    private AuditParameters msgHandlerAuditParams;
+    
     @Bean
-    public AuditMessageHandler logAuditMessageHandler(AuditParameters auditParameters, Auditor logAuditor) {
-        return new AuditMessageHandler(auditParameters, logAuditor) {
+    public AuditMessageHandler logAuditMessageHandler(Auditor logAuditor) {
+        return new AuditMessageHandler(msgHandlerAuditParams, logAuditor) {
             @Override
             @StreamListener(LogAuditBinding.NAME)
             public void onMessage(Map<String,String> msg) throws Exception {

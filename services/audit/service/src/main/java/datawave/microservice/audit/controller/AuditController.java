@@ -25,12 +25,13 @@ import javax.annotation.security.RolesAllowed;
 public class AuditController {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
-    private AuditParameters auditParameters;
+    private AuditParameters restAuditParams;
     
     private MessageChannel messageChannel;
     
-    public AuditController(AuditParameters auditParameters, @Qualifier(AuditServiceConfig.AuditSourceBinding.NAME) MessageChannel messageChannel) {
-        this.auditParameters = auditParameters;
+    public AuditController(@Qualifier("restAuditParams") AuditParameters restAuditParams,
+                    @Qualifier(AuditServiceConfig.AuditSourceBinding.NAME) MessageChannel messageChannel) {
+        this.restAuditParams = restAuditParams;
         this.messageChannel = messageChannel;
     }
     
@@ -43,9 +44,9 @@ public class AuditController {
     public VoidResponse audit(@RequestParam MultiValueMap<String,String> parameters) {
         VoidResponse response = new VoidResponse();
         try {
-            auditParameters.clear();
-            auditParameters.validate(parameters);
-            sendMessage(auditParameters);
+            restAuditParams.clear();
+            restAuditParams.validate(parameters);
+            sendMessage(restAuditParams);
             return response;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.AUDITING_ERROR, e);

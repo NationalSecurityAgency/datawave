@@ -12,19 +12,18 @@ public class AuditMessageHandler {
     
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
-    private AuditParameters auditParameters;
+    private AuditParameters msgHandlerAuditParams;
     
     private Auditor auditor;
     
     public AuditMessageHandler(AuditParameters auditParameters, Auditor auditor) {
-        this.auditParameters = auditParameters;
+        this.msgHandlerAuditParams = auditParameters;
         this.auditor = auditor;
     }
     
     public void onMessage(Map<String,String> msg) throws Exception {
         try {
-            auditParameters.clear();
-            AuditParameters ap = auditParameters.fromMap(msg);
+            AuditParameters ap = msgHandlerAuditParams.fromMap(msg);
             if (!ap.getAuditType().equals(AuditType.NONE)) {
                 auditor.audit(ap);
             }
