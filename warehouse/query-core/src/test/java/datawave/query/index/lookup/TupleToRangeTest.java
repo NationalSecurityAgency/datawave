@@ -9,9 +9,6 @@ import datawave.query.rewrite.jexl.JexlASTHelper;
 import datawave.query.rewrite.planner.QueryPlan;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
@@ -19,6 +16,7 @@ import org.junit.Test;
 
 import java.util.Iterator;
 
+import static datawave.common.test.utils.query.RangeFactory.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -88,25 +86,5 @@ public class TupleToRangeTest {
         assertTrue(ranges.hasNext());
         assertEquals(makeDayRange("20130101"), ranges.next().getRanges().iterator().next());
         assertFalse(ranges.hasNext());
-    }
-    
-    public static Range makeTestRange(String r, String c) {
-        Key s = new Key(r, c), e = s.followingKey(PartialKey.ROW_COLFAM);
-        return new Range(s, true, e, false);
-    }
-    
-    public static Range makeTldTestRange(String r, String c) {
-        Key s = new Key(r, c), e = new Key(r, c + TupleToRange.MAX_UNICODE_STRING);
-        return new Range(s, true, e, false);
-    }
-    
-    public static Range makeShardedRange(String r) {
-        Key s = new Key(r), e = new Key(r + TupleToRange.NULL_BYTE_STRING);
-        return new Range(s, true, e, false);
-    }
-    
-    public static Range makeDayRange(String r) {
-        Key s = new Key(r + "_0"), e = new Key(r + TupleToRange.MAX_UNICODE_STRING);
-        return new Range(s, true, e, false);
     }
 }
