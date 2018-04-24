@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.context.annotation.RequestScope;
 
 @EnableDiscoveryClient
 @SpringBootApplication(scanBasePackages = "datawave.microservice")
@@ -16,8 +17,14 @@ import org.springframework.context.annotation.Bean;
 @EnableBinding(AuditServiceConfig.AuditSourceBinding.class)
 public class AuditService {
     
-    @Bean
-    public AuditParameters auditParameters() {
+    @Bean("restAuditParams")
+    @RequestScope
+    public AuditParameters restAuditParams() {
+        return new AuditParameters();
+    }
+    
+    @Bean("msgHandlerAuditParams")
+    public AuditParameters msgHandlerAuditParams() {
         return new AuditParameters();
     }
     
