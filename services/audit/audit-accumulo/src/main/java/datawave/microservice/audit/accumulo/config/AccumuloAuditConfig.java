@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.SubscribableChannel;
 
+import javax.annotation.Resource;
 import java.util.Map;
 
 @Configuration
@@ -34,9 +35,12 @@ public class AccumuloAuditConfig {
     
     private Logger log = Logger.getLogger(this.getClass());
     
+    @Resource(name = "msgHandlerAuditParams")
+    private AuditParameters msgHandlerAuditParams;
+    
     @Bean
-    public AuditMessageHandler accumuloAuditMessageHandler(AuditParameters auditParameters, Auditor accumuloAuditor) {
-        return new AuditMessageHandler(auditParameters, accumuloAuditor) {
+    public AuditMessageHandler accumuloAuditMessageHandler(Auditor accumuloAuditor) {
+        return new AuditMessageHandler(msgHandlerAuditParams, accumuloAuditor) {
             @Override
             @StreamListener(AccumuloAuditBinding.NAME)
             public void onMessage(Map<String,String> msg) throws Exception {
