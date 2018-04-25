@@ -1,0 +1,14 @@
+{% if include.sort_by_name == true %}
+{% assign properties = include.properties | sort: 'name' %}
+{% else %}
+{% assign properties = include.properties %}
+{% endif %}
+<table>
+  <caption>{{ include.caption }}</caption>
+  <thead><tr><th>Property Name</th><th>Description</th></tr></thead>
+  <tbody>
+  {% for property in properties %}
+  <tr><td>{{ property.name }}</td><td>{{ property.description }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>

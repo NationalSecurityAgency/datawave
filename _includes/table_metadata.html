@@ -1,0 +1,44 @@
+<table>
+  <caption>Data Dictionary Table Layout</caption>
+  <thead><tr><th>Row</th><th>Column&nbsp;Family</th><th>Column&nbsp;Qualifier</th><th>Value</th><th>Purpose</th></tr></thead>
+  <tbody>
+
+  {% assign tables = site.data.datawave['data-model'].tables | where:"id","DDT" %}
+
+  {% for entry in tables[0].entries %}
+  <tr>
+    {% for i in (1..4) %}
+        {% assign skip_tooltip = false %}
+        {% if i == 1 %}
+            {% assign td_raw = entry.row %}
+        {% elsif i == 2 %}
+            {% assign td_raw = entry.cf %}
+            {% assign skip_tooltip = true %}
+        {% elsif i == 3 %}
+            {% assign td_raw = entry.cq %}
+            {% if entry.cf =="edge" %}
+                {% assign skip_tooltip = true %}
+            {% endif %}
+        {% elsif i == 4 %}
+            {% assign td_raw = entry.val %}
+            {% if entry.cf =="desc" or entry.cf =="f" %}
+                {% assign skip_tooltip = true %}
+            {% endif %}
+        {% endif %}
+    <td>
+        {% if skip_tooltip == true %}
+            <em>{{ td_raw }}</em>
+        {% else %}
+            {% assign terms = td_raw | split: '+' %}
+            {% include set_table_entry_tooltips.html entry_terms=terms %}
+        {% endif %}
+    </td>
+    {% endfor %}
+    <td>
+        {{ entry.purpose }}
+    </td>
+  </tr>
+  {% endfor %}
+
+  </tbody>
+</table>

@@ -1,0 +1,415 @@
+# Data model terms. Make sure 'id' is unique within the set of terms,
+# and try to keep terms sorted by 'id' just for easier maintenance
+
+terms:
+  - id: CF
+    name: Column Family
+    info: The portion of the Accumulo key representing the column family
+
+  - id: CQ
+    name: Column Qualifier
+    info: The portion of the Accumulo key representing the column qualifier
+
+  - id: D
+    name: Document Column Family
+    info: Column family for document content. Literal string with the value of ' d '
+
+  - id: DC
+    name: Document Content
+    info: Raw document content for the ' d ' column entry. Gzip compressed, then base64 encoded
+
+  - id: DO
+    name: Data Object
+    info: |
+       A real-life object for which field names and field values can be derived. Typically, use of this term will
+       denote an object stored within DataWave's primary data table
+
+  - id: DT
+    name: Data Type
+    info: An identifier that describes some category or facet of the Data Object
+
+  - id: DTN
+    name: Date Type Name
+    info: |
+       A user-specified identifier used as the CF within the Date Index table. E.g., this value may be used as a query
+       parameter to indicate to the Query API that it should leverage the Date Index for date range filtering rather than
+       the default, shard-based date range
+
+  - id: DVN
+    name: Document View Name
+    info: Identifier within the ' d ' column qualifier, which categorizes the content
+
+  - id: EAV
+    name: Edge Attribute Vector
+    info: Three optional, user-supplied attributes which can be appended to the edge key's CQ. These attributes are typically delimited by ' / '
+
+  - id: "ENFV<sub>1</sub>"
+    name: Source Edge Vertex (NFV)
+    info: A Field Value processed by a Normalizer that represents the SOURCE vertex in a unidirectional edge key
+
+  - id: "ENFV<sub>2</sub>"
+    name: Sink Edge Vertex (NFV)
+    info: A Field Value processed by a Normalizer that represents the SINK vertex in a unidirectional edge key
+
+  - id: "EPB<sub>0</sub>"
+    name: Edge Metadata Protocol Buffer
+    info: Protocol Buffer in the Data Dictionary Table that contains a list of Data Object field names, which are mapped to a specific edge table CF
+
+  - id: "EPB<sub>1</sub>"
+    name: Edge Table Protocol Buffer
+    info: Protocol Buffer containing one LONG which is the count of the edge for the day and an INT32 bitmask for hour of the day
+
+  - id: "EPB<sub>2</sub>"
+    name: Edge STATS-ACTIVITY Protocol Buffer
+    info: Protocol Buffer containing one LONG[24] which is the count per hour for each our of the day
+
+  - id: "EPB<sub>3</sub>"
+    name: Edge STATS-DURATION Protocol Buffer
+    info: "Protocol Buffer containing histogram as LONG[7]: [ <10 sec, 10-30 sec, 30-60 sec, 1-5 min, 5-10 min, 10-30 min, >30 min ]"
+
+  - id: EREL
+    name: Edge Relationship
+    info: Two user-provided string values delimited by ' - ' used as part of the edge key CF, for describing the relationship between the respective vertices
+
+  - id: ETYPE
+    name: Edge Type
+    info: User-provided string value used as part of the edge key CF, for categorizing edges
+
+  - id: FI
+    name: Field Index Column Family
+    info: A column family prefix for field index keys. Literal string with the value of ' fi '
+
+  - id: FN
+    name: Field Name
+    info: The name of a field in a Data Object
+
+  - id: FV
+    name: Field Value
+    info: The raw value associated with a particular Field Name
+
+  - id: N
+    name: Normalizer
+    info: An object that transforms data so that it can be sorted lexicographically
+
+  - id: NB
+    name: Null Byte String
+    info: A string with the value of ' \0 ', used as a delimiter
+
+  - id: NCN
+    name: Normalizer Class Name
+    info: The fully qualified name of the Normalizer (N) Java class
+
+  - id: NFN
+    name: Normalized Field Name
+    info: A Field Name (FN) transformed to be compatible with the query code
+
+  - id: NFV
+    name: Normalized Field Value
+    info: A Field Value (FV) that has been processed/transformed by a Normalizer (N)
+
+  - id: NT
+    name: Normalized Term
+    info: An individual term within a document transformed to be compatible with the query code
+
+  - id: "NULL"
+    name: Null Value
+    info: No value is assigned for keys of this type
+
+  - id: PB
+    name: Protocol Buffer
+    info: Google Protocol Buffer
+
+  - id: RNFV
+    name: Reversed Normalized Field Value
+    info: A Field Value (FV) that has been processed/transformed by a Normalizer (N) and then reversed
+
+  - id: SHARD
+    name: Shard ID
+    info: The partition identifier in the form of YYYYMMDD_N, where N is an integer denoting a specific sub-partition within the given day
+
+  - id: TF
+    name: Term Frequency Column Family
+    info: Column family for term frequency keys. Literal string with the value of ' tf '
+
+  - id: TFPB
+    name: Term Frequency Protocol Buffer
+    info: Google Protocol Buffer containing a list of word offsets for the term in the document
+
+  - id: UID
+    name: Unique Identifier
+    info: An internal object identifier generated from the data object, should be deterministic and unique within a partition and Data Type
+
+  - id: ULPB
+    name: Uid.List Protocol Buffer
+    info: A protocol buffer object that contains the number of occurrences of a Field Name / Field Value pair, along with a bounded list of UIDs
+
+  - id: VERT
+    name: Vertex
+    info: A single node within a graph
+
+# Table Schema Definitions...
+
+# Note that string literal components within row, cf, cq, and val entries below should be enclosed in single quotes,
+# as this will signal that those terms should be treated them differently in code.
+# E.g., see _includes/set_table_entry_tooltips.html
+
+tables:
+  - id: PDT
+    name: Primary Data Table
+    info: Accumulo table where Data Objects are stored
+    entries:
+    - row: SHARD
+      cf: DT + NB + UID
+      cq: NFN + NB + FV
+      val: "NULL"
+      purpose: Represents a name/value pair for a given field within the data object
+
+    - row: SHARD
+      cf: FI + NB + NFN
+      cq: NFV + NB + DT + NB + UID
+      val: "NULL"
+      purpose: Provides an in-partition index for objects within the given shard
+
+    - row: SHARD
+      cf: D
+      cq: DT + NB + UID + NB + DVN
+      val: DC
+      purpose: (Optional) Provides a named 'view' of raw content from a given data object
+
+    - row: SHARD
+      cf: TF
+      cq: DT + NB + UID + NT + NFN
+      val: TFPB
+      purpose: (Optional) To enable phrase queries on terms within the given document
+
+  - id: GFIDX
+    name: Global Forward Index Table
+    info: Index table used to map NFN:NFV pairs to partitions within the Primary Data Table where representative objects may be found
+    entries:
+    - row: NFV
+      cf: NFN
+      cq: SHARD + NB + DT
+      val: ULPB
+      purpose: Maps a NFN:NFV pair to a category of data within the given partitions of the primary data table
+
+  - id: GRIDX
+    name: Global Reverse Index Table
+    info: Index table used to map NFN:RNFV pairs to partitions within the Primary Data Table where representative objects may be found
+    entries:
+    - row: RNFV
+      cf: NFN
+      cq: SHARD + NB + DT
+      val: ULPB
+      purpose: Maps a NFN:RNFV pair to a category of data within the given partitions of the primary data table
+
+  - id: DDT
+    name: Data Dictionary Table
+    info: Contains information about data stored in other DataWave tables
+    entries:
+    - row: NFN
+      cf: e
+      cq: DT
+      val: "NULL"
+      purpose: "The <b>e</b> column family denotes that NFN is a field that is contained within the given DT"
+
+    - row: NFN
+      cf: i
+      cq: DT + NB + NCN
+      val: "NULL"
+      purpose: "The <b>i</b> column family denotes that NFN is in the Global Forward Index table and that it is normalized using NCN, for the given DT"
+
+    - row: NFN
+      cf: ri
+      cq: DT + NB + NCN
+      val: "NULL"
+      purpose: "The <b>ri</b> column family denotes that NFN is in the Global Reverse Index table and that it is normalized using NCN, for the given DT"
+
+    - row: NFN
+      cf: f
+      cq: DT + NB + YYYYMMDD
+      val: Integer Count
+      purpose: "The <b>f</b> column family conveys the <b>integer count</b> number of times that NFN has been seen on the given date, within the given DT"
+
+    - row: NFN
+      cf: m
+      cq: DT
+      val: "NULL"
+      purpose: "The <b>m</b> column family denotes that NFN within type DT can be modified"
+
+    - row: NFN
+      cf: desc
+      cq: DT
+      val: Text Description
+      purpose: "The <b>desc</b> column family may be used to supply a <b>text description</b> of the NFN within type DT"
+
+    - row: NFN
+      cf: tf
+      cq: DT
+      val: "NULL"
+      purpose: "The <b>tf</b> column family denotes that NFN within type DT has term frequency CF entries, which enables phrase queries, etc"
+
+    - row: NFN
+      cf: edge
+      cq: CF from an Edge Table entry
+      val: "EPB<sub>0</sub>"
+      purpose: |
+         The <b>edge</b> column family denotes that the given edge CF was formed by the list of field names in the PB object,
+         allowing an Edge Table entry to be mapped back to the original Data Object from which it was derived
+         (e.g., via the <em>EdgeEventQuery</em> query logic)
+
+  - id: EDGE
+    name: Edge Table
+    info: Accumulo table where edge keys are stored, with each key consisting of a pair of Normalized Field Value vertices and other attributes
+    entries:
+    - row: "ENFV<sub>1</sub> + NB + ENFV<sub>2</sub>"
+      cf: ETYPE + ' / ' + EREL
+      cq: YYYYMMDD + NB + EAV
+      val: "EPB<sub>1</sub>"
+      purpose: A unidirectional pair of vertices that expresses some relationship between a pair of Field Value attributes, which originated from a Data Object (DO)
+
+    - row: "ENFV<sub>1</sub>"
+      cf: "'STATS' + NB + 'ACTIVITY' + ETYPE"
+      cq: YYYYMMDD + NB + EAV
+      val: "EPB<sub>2</sub>"
+      purpose: "Provides activity stats for ENFV<sub>1</sub> for the given day"
+
+    - row: "ENFV<sub>1</sub>"
+      cf: "'STATS' + NB + 'DURATION' + ETYPE"
+      cq: YYYYMMDD + NB + EAV
+      val: "EPB<sub>3</sub>"
+      purpose: "Provides duration stats for ENFV<sub>1</sub> for the given day"
+
+  - id: DIDX
+    name: Date Index Table
+    info: Accumulo table that is used to map arbitrary date fields and their values to partitions within the Primary Data Table where the corresponding Data Objects may be found
+    entries:
+    - row: "YYYYMMDD<sub>1</sub>"
+      cf: DTN
+      cq: "YYYYMMDD<sub>2</sub> + NB + DT + NB + NFN"
+      val: BitSet denoting the date's presence within specific shard partitions. E.g., bit 0 is YYYYMMDD_0, and so on
+      purpose: "Maps the date field (given by NFN) and its value (given by YYYYMMDD<sub>1</sub>) to the SHARD partition(s) specified by the YYYYMMDD<sub>2</sub> and BitSet values"
+
+  - id: LDT
+    name: Load Dates Table
+    info: Stores information about which field names were loaded into which tables on a given date
+    entries:
+    - row: NFN
+      cf: "'FIELD_NAME' + NB + Table Name"
+      cq: YYYYMMDD + NB + DT
+      val: Long integer encoded via Accumulo SummingCombiner (VARLEN)
+      purpose: Denotes that NFN from the given DT was loaded into the specified table on the given date
+
+  - id: QMT
+    name: Query Metrics Tables
+    info: |
+       Set of four tables that mirror the schemas defined by PDT, GFIDX, GRIDX, and DDT respectively, but store information
+       related exclusively to user queries. Rather than create redundant table layouts for these four tables, here we'll
+       simply describe the normalized field name (NFN) and field value (FV) entries that comprise the query metrics data
+       model itself
+    entries:
+    - nfn: AUTHORIZATIONS
+      fv: User-specified list of Accumulo auths
+
+    - nfn: BEGIN_DATE
+      fv: User-specified date range start value
+
+    - nfn: END_DATE
+      fv: User-specified date range end value
+
+    - nfn: PARAMETERS
+      fv: User-specified query parameters
+
+    - nfn: QUERY
+      fv: User-specified query expression
+
+    - nfn: QUERY_LOGIC
+      fv: User-specified query logic name
+
+    - nfn: QUERY_NAME
+      fv: User-specified name assigned to the query
+
+    - nfn: CREATE_DATE
+      fv: Query creation date/time YYYYMMDD hhmmss
+
+    - nfn: DOC_RANGES
+      fv: Integer count of document-based table ranges generated by the query
+
+    - nfn: FI_RANGES
+      fv: Integer count of Field Index based table ranges generated by the query
+
+    - nfn: HOST
+      fv: Host name from which the query originated
+
+    - nfn: LAST_UPDATED
+      fv: Date/time of most recent update to the query (YYYYMMDD hhmmss)
+
+    - nfn: LIFECYCLE
+      fv: "One of <em>datawave.webservice.query.metric.BaseQueryMetric.Lifecycle</em>"
+
+    - nfn: NEXT_COUNT
+      fv: Number of times user requested a page of results, or invoked the /Query/{query id}/next endpoint, for the query
+
+    - nfn: NUM_UPDATES
+      fv: Integer count denoting the number of updates that occurred to the query
+
+    - nfn: "PAGE_METRICS.[<em>n</em>]"
+      fv: Metrics metadata for a single page of results, where N is an integer denoting the Nth page
+
+    - nfn: PLAN
+      fv: The final (actual) query expression to be evaluated by DataWave
+
+    - nfn: QUERY_ID
+      fv: UID generated by the system upon query creation, used in subsequent API calls
+
+    - nfn: QUERY_TYPE
+      fv: Name of the internal Java class that was employed to encapsulate the query and its state
+
+    - nfn: CREATE_TIME
+      fv: Amount of time elapsed (in ms) for the creation phase of the query
+
+    - nfn: ELAPSED_TIME
+      fv: Total amount of time elapsed (in ms) between creation and the query's current state
+
+    - nfn: SEEK_COUNT
+      fv: Number of Accumulo Iterator seeks required by the query
+
+    - nfn: SOURCE_COUNT
+      fv: Number of Accumulo Iterator sources required by the query
+
+    - nfn: USER
+      fv: User name associated with the query
+
+    - nfn: USER_DN
+      fv: User's distinguished name from client certificate
+
+  - id: IPET
+    name: Ingest Processing Error Tables
+    info: |
+       Set of four tables that mirror the schemas defined by PDT, GFIDX, GRIDX, and DDT respectively. The only difference
+       is that these tables are intended to store Data Objects that failed to ingest due to one or more errors encountered
+       during the ingest process. Rather than create redundant table layouts for these four tables, here we'll simply describe
+       the normalized field name (NFN) and field value (FV) entries that DataWave uses to convey information about the error(s)
+    entries:
+    - row: SHARD
+      cf: DT + NB + UID
+      cq: "'ERROR' + NB + FV"
+      val: "NULL"
+      purpose: "Denotes the error category, where NFN = ERROR and FV is one of <em>datawave.ingest.data.RawDataErrorNames</em>"
+
+    - row: SHARD
+      cf: DT + NB + UID
+      cq: "'JOB_ID' + NB + FV"
+      val: "NULL"
+      purpose: Identifies the job, where NFN = JOB_ID and FV is the MapReduce Job ID
+
+    - row: SHARD
+      cf: DT + NB + UID
+      cq: "'JOB_NAME' + NB + FV"
+      val: "NULL"
+      purpose: Identifies the job, where NFN = JOB_NAME and FV is the MapReduce Job Name
+
+    - row: SHARD
+      cf: D
+      cq: "DT + NB + UID + NB + 'EVENT'"
+      val: DC
+      purpose: Conveys the raw content of the actual data object that failed via DC, using EVENT as the DVN

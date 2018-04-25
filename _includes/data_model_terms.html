@@ -1,0 +1,17 @@
+<table>
+  <caption>Data Model Terms and Definitions</caption>
+  <thead><tr><th>Name</th><th>Definition</th><th>ID</th></tr></thead>
+  <tbody>
+
+  {% assign sorted = site.data.datawave['data-model'].terms | sort:"id" %}
+
+  {% for term in sorted %}
+  <tr>
+    <td>{{ term.name }}</td>
+    <td>{{ term.info }}</td>
+    <td><b>{{ term.id }}</b></td>
+  </tr>
+  {% endfor %}
+
+  </tbody>
+</table>

@@ -1,0 +1,13 @@
+{% for term in include.entry_terms %}
+{% assign strip_term = term | strip %}
+{% assign first_char = strip_term | slice: 0 %}
+{% if first_char == "'" %}
+{{ strip_term | remove: "'" }}
+{% else %}
+{% assign dictionary_entry = site.data.datawave['data-model'].terms | where:"id",strip_term %}
+<a href="#terms-and-definitions" data-toggle="tooltip" data-original-title="{{ dictionary_entry[0].name }} :: {{ dictionary_entry[0].info }}">{{ strip_term }}</a>
+{% endif %}
+{% unless forloop.last %}
+&nbsp;+
+{% endunless %}
+{% endfor %}

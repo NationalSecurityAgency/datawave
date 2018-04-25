@@ -1,0 +1,146 @@
+# DataWave project repo
+repository_url: https://github.com/NationalSecurityAgency/datawave
+
+# gh-pages site repo. This config property is required when running the site in production mode
+repository: NationalSecurityAgency/datawave
+
+# project default branch
+default_branch: master
+
+# latest minor release
+latest_minor_release: 2.1
+
+# latest release
+latest_release: 2.1.0
+
+# max news posts to display on the home page
+num_home_posts: 8
+
+# org name for the footer
+organization_name: National Security Agency
+
+# org url for the footer
+organization_url: https://github.com/NationalSecurityAgency
+
+# base path to the branch we'll be using for PR's; leaving as gh-pages for now.
+github_editme_path: NationalSecurityAgency/datawave/edit/gh-pages/
+
+# TODO: get google-analytics ID.
+google_analytics:
+
+# these are the files and directories that jekyll will exclude from the build
+exclude:
+  - .idea/
+  - .gitignore
+
+# TODO: establish feedback mechanism...
+feedback_subject_line:
+feedback_email:
+feedback_disable: true
+feedback_text: "Contact Us"
+feedback_link: "http://github.com/NationalSecurityAgency/datawave"
+
+highlighter: rouge
+
+markdown: kramdown
+kramdown:
+ input: GFM
+ auto_ids: true
+ hard_wrap: false
+ syntax_highlighter: rouge
+
+##########################################################
+# Docs collection definitions...
+
+# The "docs-latest" collection renders _docs-latest folder contents to the configured permalink path (e.g., _site/docs/2.1/*).
+
+# As for how we manage doc updates for a new release, the most straightforward approach is probably just to copy the
+# existing _docs-latest to a backup folder, e.g., _docs-2-1, make any necessary updates to _docs-latest content for
+# the new release, and then reconfigure below as needed.
+
+collections:
+  docs-latest:
+    output: true
+    permalink: "/docs/2.1/:path"
+
+# Example of how we might make docs collections available for older versions of DataWave
+# (note: periods not allowed in collection names)...
+#
+# docs-1-0
+#   output: true
+#   permalink: "/docs/1.0/:path"
+
+##########################################################
+# Frontmatter defaults
+
+# Note about sidebar-menu navigation:
+# Sidebar navigation for every page in the project is data- and configuration-driven. See _data/sidebars for
+# example configs, and see _includes/sidebar.html which handles sidebar rendering for any page type below
+# that needs it, via the 'sidebar' metadata property
+
+defaults:
+  -
+    scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "page"
+      skip_title_for_h1: false
+      toc: false
+      topnav: topnav
+  -
+    scope:
+      path: "pages/tags"
+      type: "pages"
+    values:
+      layout: "page"
+      title_prefix: "Site Tag: "
+      toc: false
+      skip_title_for_h1: true
+      topnav: topnav
+  -
+    scope:
+      path: "_posts/news"
+      type: "posts"
+    values:
+      layout: "news"
+      category: "news"
+      permalink: "/:categories/:year/:month/:day/:title"
+      title_prefix: "DataWave News - "
+      skip_title_for_h1: false
+      toc: false
+      topnav: topnav
+  -
+    scope:
+      path: "_posts/release"
+      type: "posts"
+    values:
+      layout: "release"
+      category: "release"
+      permalink: "/:categories/:title/"
+      skip_title_for_h1: false
+      toc: false
+      topnav: topnav
+  -
+    scope:
+      path: ""
+      type: "docs-latest"
+    values:
+      layout: "docs"
+      title_prefix: "DataWave Docs - "
+      sidebar: docs-2-1-sidebar
+      show_summary: true
+      skip_title_for_h1: false
+      toc: true
+      topnav: topnav
+
+
+# this description is used in /feed.xml
+description: "DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data"
+
+# plugins...
+
+whitelist: [jekyll-redirect-from]
+plugins: [jekyll-redirect-from]
+
+exclude: [README.md]

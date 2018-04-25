@@ -1,0 +1,90 @@
+# Tis data file describes *-config.xml files and core data type config settings
+
+properties:
+  - name: data.name
+    description: |
+       This value is effectively an identifier for both the data type and its associated data feed. Therefore, the value
+       must be unique across all data type configs.
+
+       <p>Unless a <em>(data.name).output.name</em> value is specified, this value will also be used as the Data Type (DT)
+       identifier (and Column Family prefix) for all associated objects in the primary data table. If so, then it may be leveraged
+       by query clients for data filtering purposes.</p>
+
+       Note that '<em>(data.name)</em>.' must be used as a prefix for (most of) the data type's remaining property names
+
+  - name: <em>(data.name)</em>.output.name
+    description: |
+       This value will be used to identify the Data Type (DT) and to establish the Column Family prefix for all associated
+       data objects in Accumulo. Thus, query clients may leverage this value for data filtering.
+
+       <p>Unlike <em>data.name</em>, this value does not have to be unique across all configs.</p>
+
+       <p>For example, we might find later on that there is enrichment info related to our original data feed that we'd
+       like to incorporate. Rather than modify the original data feed and its config, we may opt to establish a new feed with
+       its own distinct config. If so, we may find it beneficial to reuse the *.output.name value in the new feed's configuration</p>
+
+       Using the same output name for the new feed allows its data objects in Accumulo to be merged into and collocated
+       with the corresponding data objects from the original feed, provided that both are utilizing compatible
+       sharding and UID creation strategies for their respective objects
+
+  - name: <em>(data.name)</em>.data.category.date
+    description: |
+       A known field name within the data to be used, if present, for the given object's shard row date (a.k.a. "event date"), thus
+       affecting the object's partition assignment within the primary data table
+
+  - name: <em>(data.name)</em>.data.category.date.formats
+    description: |
+       Known/valid date format(s) for the field identified by <em>(data.name).data.category.date</em>. Comma-delimited, if more than one.
+       <p>Examples:</p>
+       yyyy-MM-dd,<br />yyyy-MM-dd'T'HH:mm:ss'Z',<br />yyyy-MM-dd HH:mm:ss
+
+  - name: file.input.format
+    description: Hadoop MapReduce <em>InputFormat</em> implementation. Fully-qualified class name
+
+  - name: <em>(data.name)</em>.reader.class
+    description: |
+       Fully-qualified name of the class implementing Hadoop MapReduce <em>RecordReader</em> and extending <em>datawave.ingest.input.reader.EventRecordReader</em>.
+       As such, this class presents raw data objects (in the form of <em>datawave.ingest.data.RawRecordContainer</em>) as
+       input to the DataWave Ingest mapper, <em>datawave.ingest.mapreduce.EventMapper</em>.
+
+  - name: <em>(data.name)</em>.ingest.helper.class
+    description: |
+       Implements <em>datawave.ingest.data.config.ingest.IngestHelperInterface</em>, for parsing/extracting field name/value pairs
+       from a single raw data object. Fully-qualified class name
+
+  - name: <em>(data.name)</em>.handler.classes
+    description: |
+       Comma-delimited list of classes that will process each data object in order to produce Accumulo key/value pairs in
+       accordance with DataWave's data model. These classes implement <em>datawave.ingest.mapreduce.handler.DataTypeHandler</em>
+       <p>Typically, a data type will configure at least one concrete class here that is derived from <em>datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler</em>,
+       which is a specialized DataTypeHandler abstraction tailored for ingest into the DataWave data model</p>
+
+  - name: <em>(data.name)</em>.data.category.index
+    description: Comma-delimited list of fields names that we want to have <em>forward</em> indexed in order to make them searchable via the query api
+
+  - name: <em>(data.name)</em>.data.category.index.reverse
+    description: Comma-delimited list of fields names that we want to have <em>reverse</em> indexed in order to make them searchable via leading wildcard
+
+  - name: <em>(data.name)</em>.data.category.marking.default
+    description: |
+       The default behavior of DataWave is to interpret this value as the exact Accumulo visibility expression to be applied
+       to each object and data field during ingest. This is due to DataWave's default MarkingsHelper implementation,
+       <em>datawave.ingest.data.config.MarkingsHelper.NoOp</em>
+
+       <p>Example value: <em>PRIVATE|(BAR&amp;FOO)</em></p>
+
+       Thus, security marking behavior is API-driven and may be overridden as needed by implementing a specialized
+       <em>datawave.ingest.data.config.MarkingsHelper</em>, which can then be injected at runtime via the
+       <em>datawave.ingest.config.IngestConfigurationFactory</em> service loader
+
+  - name: <em>(data.name)</em>.<em>(FieldName)</em>.data.field.marking
+    description: |
+       This property may be used to apply distinct security markings to specific fields as needed, overriding
+       the <em>(data.name).data.category.marking.default</em> property for the given field.
+       <p>That is, the configured value here will be used to assign the appropriate security marking to the <em>"FieldName"</em> field</p>
+
+  - name: <em>(data.name)</em>.<em>(FieldName)</em>.data.field.type.class
+    description: |
+       Fully-qualified class name of the DataWave <em>type</em> to be used to interpret and normalize <em>"FieldName"</em> values
+       <p>Example types are <em>datawave.data.type.DateType</em>, <em>datawave.data.type.NumberType</em>, <em>datawave.data.type.GeoType</em>, etc</p>
+

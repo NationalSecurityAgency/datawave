@@ -1,0 +1,27 @@
+## Topnav single links
+## if you want to list an external url, use external_url instead of url. the theme will apply a different link base.
+topnav:
+- title: Topnav
+  items:
+    - title: Documentation
+      url: /docs/2.1/getting-started/overview
+    - title: Tour
+      url: /docs/2.1/tour/getting-started
+    - title: GitHub
+      external_url: https://github.com/nationalsecurityagency/datawave
+    - title: News
+      url: /news
+
+#Topnav dropdowns
+topnav_dropdowns:
+- title: Topnav dropdowns
+  folders:
+    - title: Releases
+      folderitems:
+        - title: DataWave 2.1.0 (Latest)
+          url: /release/datawave-2.1.0
+        - title: Release Archive
+          url: /release/
+        - title: View Releases on GitHub
+          external_url: https://github.com/nationalsecurityagency/datawave/releases
+
