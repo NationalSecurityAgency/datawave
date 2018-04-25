@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.context.annotation.RequestScope;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -161,8 +162,14 @@ public class AccumuloAuditorTest {
     @Profile("AccumuloAuditorTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class AccumuloAuditorTestConfiguration {
-        @Bean
-        public AuditParameters auditParameters() {
+        @Bean("restAuditParams")
+        @RequestScope
+        public AuditParameters restAuditParams() {
+            return new AuditParameters();
+        }
+        
+        @Bean("msgHandlerAuditParams")
+        public AuditParameters msgHandlerAuditParams() {
             return new AuditParameters();
         }
         
