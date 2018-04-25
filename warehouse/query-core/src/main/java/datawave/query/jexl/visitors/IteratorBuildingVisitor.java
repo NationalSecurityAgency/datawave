@@ -129,6 +129,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected QueryLock queryLock;
     protected List<String> ivaratorCacheDirURIs;
     protected String queryId;
+    protected String scanId;
     protected String ivaratorCacheSubDirPrefix = "";
     protected long ivaratorCacheScanPersistThreshold = 100000L;
     protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
@@ -1002,6 +1003,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             for (int i = 0; i < ivaratorCacheDirURIs.size(); i++) {
                 String hdfsCacheDirURI = ivaratorCacheDirURIs.get(i);
                 Path path = new Path(hdfsCacheDirURI, queryId);
+                if (scanId == null) {
+                    log.warn("Running query iterator for " + queryId + " without a scan id.  This could cause ivarator directory conflicts.");
+                } else {
+                    path = new Path(path, scanId);
+                }
                 path = new Path(path, subdirectory);
                 if (isUsable(path)) {
                     return path.toUri();
@@ -1062,6 +1068,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setFstHdfsFileSystem(hdfsFileSystem.getFileSystem(builder.getFstURI()));
         }
         
+        // If this is actually negated, then this will be added to excludes. Do not negate in the ivarator
+        builder.setNegated(false);
         builder.canBuildDocument(!limitLookup && this.isQueryFullySatisfied);
         
         ivarate(builder, source, data);
@@ -1403,6 +1411,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setQueryId(String queryId) {
         this.queryId = queryId;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setScanId(String scanId) {
+        this.scanId = scanId;
         return this;
     }
     

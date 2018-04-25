@@ -8,6 +8,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.impl.ThriftScanner.ScanTimedOutException;
@@ -32,6 +33,7 @@ import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 public class Scan implements Callable<Scan> {
     
     private static final Logger log = Logger.getLogger(Scan.class);
+    public static final String SCAN_ID = "scan.id";
     
     protected ScannerChunk myScan;
     
@@ -225,9 +227,22 @@ public class Scan implements Callable<Scan> {
                     }
                 }
                 
+                String scanId = getNewScanId();
                 if (log.isTraceEnabled()) {
+                    log.trace("Setting " + SCAN_ID + " = " + scanId);
+                }
+                
+                for (IteratorSetting setting : myScan.getOptions().getIterators()) {
+                    myScan.getOptions().updateScanIteratorOption(setting.getName(), SCAN_ID, scanId);
+                }
+                
+                if (log.isTraceEnabled()) {
+                    for (IteratorSetting setting : myScan.getOptions().getIterators()) {
+                        log.trace(setting.getName() + " " + setting.getOptions());
+                    }
                     log.trace("Using " + initializer);
                 }
+                
                 delegatedResource = ResourceFactory.initializeResource(initializer, delegatedResource, localTableName, localAuths, currentRange).setOptions(
                                 myScan.getOptions());
                 
@@ -302,6 +317,13 @@ public class Scan implements Callable<Scan> {
         }
         return this;
         
+    }
+    
+    static final AtomicLong scanIdFactory = new AtomicLong(0);
+    
+    private String getNewScanId() {
+        long scanId = scanIdFactory.incrementAndGet();
+        return Long.toHexString(scanId);
     }
     
     /**
