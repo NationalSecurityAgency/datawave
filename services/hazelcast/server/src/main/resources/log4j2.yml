@@ -21,8 +21,8 @@ Configuration:
 
     RollingFile:
       - name: File
-        fileName: "${sys:logDir}/audit-service.log"
-        filePattern: "${sys:logDir}/audit-service.log.%d{yyyy-MM-dd}-%i.gz"
+        fileName: "${sys:logDir}/cache-service.log"
+        filePattern: "${sys:logDir}/cache-service.log.%d{yyyy-MM-dd}-%i.gz"
         append: true
         bufferedIO: true
         bufferSize: 8192
