@@ -109,11 +109,17 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     
     protected boolean createSequenceFileName = true;
     
+    protected boolean createRawFileName = true;
+    
     public static final String LOAD_DATE_FIELDNAME = "LOAD_DATE";
     
     public static final String SEQUENCE_FILE_FIELDNAME = "ORIG_FILE";
     
     public static final String LOAD_SEQUENCE_FILE_NAME = "ingest.event.mapper.load.seq.filename";
+    
+    public static final String RAW_FILE_FIELDNAME = "RAW_FILE";
+    
+    public static final String LOAD_RAW_FILE_NAME = "ingest.event.mapper.load.raw.filename";
     
     public static final String ID_FILTER_FSTS = "ingest.event.mapper.id.filter.fsts";
     
@@ -178,6 +184,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         
         // default to true, but it can be disabled
         createSequenceFileName = context.getConfiguration().getBoolean(LOAD_SEQUENCE_FILE_NAME, true);
+        
+        createRawFileName = context.getConfiguration().getBoolean(LOAD_RAW_FILE_NAME, true);
         
         Class<? extends KeyValueFilter<K2,V2>> firstFilter = null;
         
@@ -742,9 +750,11 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         loadDateValue.setIndexedFieldValue(dateNormalizer.normalizeDelegateType(new Date(loadDate)));
         newFields.put(LOAD_DATE_FIELDNAME, loadDateValue);
         
+        String seqFileName = null;
+        
         // place the sequence filename into the event
         if (createSequenceFileName) {
-            String seqFileName = NDC.peek();
+            seqFileName = NDC.peek();
             if (null != seqFileName) {
                 StringBuilder seqFile = new StringBuilder(seqFileName);
                 
@@ -756,6 +766,16 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                 
                 newFields.put(SEQUENCE_FILE_FIELDNAME, new NormalizedFieldAndValue(SEQUENCE_FILE_FIELDNAME, seqFile.toString()));
             }
+        }
+        
+        if (createRawFileName && !value.getRawFileName().isEmpty() && !value.getRawFileName().equals(seqFileName)) {
+            String rawFileName = value.getRawFileName();
+            int index = rawFileName.lastIndexOf('/');
+            if (index >= 0) {
+                rawFileName = rawFileName.substring(index + 1);
+            }
+            
+            newFields.put(RAW_FILE_FIELDNAME, new NormalizedFieldAndValue(RAW_FILE_FIELDNAME, rawFileName));
         }
         
         // Also if this helper needs to filter the fields before returning, apply now

@@ -53,6 +53,8 @@ public class EventMapperTest {
         record.setDataType(type);
         record.setDate(eventTime);
         record.setRawDataAndGenerateId("some data".getBytes());
+        record.setRawFileName("/some/filename");
+        
     }
     
     @Test
@@ -62,8 +64,8 @@ public class EventMapperTest {
         
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         
-        // two fields mutations + LOAD_DATE + ORIG_FILE
-        assertEquals(4, written.size());
+        // two fields mutations + LOAD_DATE + ORIG_FILE + RAW_FILE
+        assertEquals(5, written.size());
         
         for (Map.Entry<BulkIngestKey,Value> entry : written.entries()) {
             assertEquals(SimpleDataTypeHandler.TABLE, entry.getKey().getTableName());
@@ -88,8 +90,8 @@ public class EventMapperTest {
         
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         
-        // two fields mutations + LOAD_DATE + ORIG_FILE + one metric
-        assertEquals(5, written.size());
+        // two fields mutations + LOAD_DATE + ORIG_FILE + RAW_FILE + one metric
+        assertEquals(6, written.size());
         
         for (Map.Entry<BulkIngestKey,Value> entry : written.entries()) {
             System.out.println(entry);
@@ -100,15 +102,39 @@ public class EventMapperTest {
         assertNotNull(entry);
         assertEquals(metricsTable, entry.getKey().getTableName().toString());
         assertEquals("fileExtension\u0000gz", entry.getKey().getKey().getColumnQualifier().toString());
+        
+        entry = getRawFileName(written);
+        assertEquals("filename", entry.getKey().getKey().getColumnQualifier().toString());
+    }
+    
+    @Test
+    public void shouldNotWriteRawFile() throws IOException {
+        record.setRawFileName("");
+        driver.setInput(new LongWritable(1), record);
+        driver.run();
+        
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+        
+        // two fields mutations + LOAD_DATE + ORIG_FILE
+        assertEquals(4, written.size());
     }
     
     private Map.Entry<BulkIngestKey,Value> getMetric(Multimap<BulkIngestKey,Value> written) {
+        return getFieldEntry(written, Metric.EVENT_COUNT.toString());
+    }
+    
+    private Map.Entry<BulkIngestKey,Value> getRawFileName(Multimap<BulkIngestKey,Value> written) {
+        return getFieldEntry(written, EventMapper.RAW_FILE_FIELDNAME.toString());
+    }
+    
+    private Map.Entry<BulkIngestKey,Value> getFieldEntry(Multimap<BulkIngestKey,Value> written, String field) {
         for (Map.Entry<BulkIngestKey,Value> entry : written.entries()) {
             String fam = entry.getKey().getKey().getColumnFamily().toString();
-            if (fam.equals(Metric.EVENT_COUNT.toString())) {
+            if (fam.equals(field)) {
                 return entry;
             }
         }
         return null;
     }
+    
 }
