@@ -17,19 +17,16 @@ import org.apache.log4j.Logger;
 
 public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(RegexFunctionVisitor.class);
-    protected Set<String> indexOnlyFields;
-    protected Set<String> termFrequencyFields;
+    protected Set<String> nonEventFields;
     
-    public RegexFunctionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields, Set<String> termFrequencyFields) {
+    public RegexFunctionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> nonEventFields) {
         super(config, metadataHelper, null);
-        this.indexOnlyFields = indexOnlyFields;
-        this.termFrequencyFields = termFrequencyFields;
+        this.nonEventFields = nonEventFields;
     }
     
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields,
-                    Set<String> termFrequencyFields, T script) {
-        RegexFunctionVisitor visitor = new RegexFunctionVisitor(config, metadataHelper, indexOnlyFields, termFrequencyFields);
+    public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> nonEventFields, T script) {
+        RegexFunctionVisitor visitor = new RegexFunctionVisitor(config, metadataHelper, nonEventFields);
         
         return (T) script.jjtAccept(visitor, null);
     }
@@ -102,7 +99,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
     
     private JexlNode buildRegexNode(ASTIdentifier identifier, String functionName, String regex) {
         String field = JexlASTHelper.deconstructIdentifier(identifier.image);
-        if (indexOnlyFields.contains(field.toUpperCase())) {
+        if (nonEventFields.contains(field.toUpperCase())) {
             try {
                 JavaRegexAnalyzer jra = new JavaRegexAnalyzer(regex);
                 if (!jra.isNgram()) {
