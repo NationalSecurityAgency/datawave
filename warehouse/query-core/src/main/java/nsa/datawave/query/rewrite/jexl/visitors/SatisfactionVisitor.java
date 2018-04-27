@@ -89,19 +89,7 @@ public class SatisfactionVisitor extends BaseVisitor {
         if (!ASTDelayedPredicate.instanceOf(node)) {
             super.visit(node, o);
         } else {
-            JexlNode subNode = ASTDelayedPredicate.getQueryPropertySource(node, ASTDelayedPredicate.class);
-            if (subNode instanceof ASTEQNode) {
-                String fn = JexlASTHelper.getIdentifier(subNode);
-                if (nonEventFields.contains(fn) == false) {
-                    isQueryFullySatisfied = false;
-                    return null;
-                } else {
-                    node.jjtGetChild(0).jjtAccept(this, o);
-                }
-                
-            } else {
-                isQueryFullySatisfied = false;
-            }
+            isQueryFullySatisfied = false;
         }
         
         return null;
