@@ -141,13 +141,18 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         setUid(id);
     }
     
+    @Override
+    public void generateId(String uidExtra) {
+        this.uid = uidBuilder.newId(rawData, getTimeForUID(), uidExtra);
+    }
+    
     public UID getUid() {
         return uid;
     }
     
     /**
      * This method is used by the "reverse ingest" process to set the UID object correctly. It is to be used by the "reverse ingest" process" only, because in
-     * the course of the normal ingest process it is set when one calls the validate() method.
+     * the course of the normal ingest process it is set via generateId.
      * 
      * @param uid
      *            {@code UID} object
@@ -262,7 +267,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     }
     
     /**
-     * This method is used by the "reverse ingest" process to clear the error values that are set by the validate() method. This is due to the fact that the
+     * This method is used by the "reverse ingest" process to clear the error values that are set by the generateId() method. This is due to the fact that the
      * Event object is not fully populated in "reverse ingest" process.
      */
     @Override
@@ -374,42 +379,12 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         this.auxData = auxData;
     }
     
-    @Override
-    public void setRawDataAndGenerateId(byte[] rawData) {
-        this.setRawDataAndGenerateUid(rawData);
-    }
-    
-    @Override
-    public void setRawDataAndGenerateId(byte[] rawData, String extra) {
-        this.setRawDataAndGenerateUid(rawData, extra);
-    }
-    
-    public void setRawDataAndGenerateUid(byte[] rawData) {
-        setRawDataAndGenerateUid(rawData, null);
-    }
-    
-    public void setRawDataAndGenerateUid(byte[] rawData, String uidExtra) {
-        this.rawData = rawData;
-        this.uid = uidBuilder.newId(rawData, getTimeForUID(), uidExtra);
-    }
-    
     /**
      * @return Copy of this RwaRecordContainerImpl object.
      */
     @Override
     public RawRecordContainerImpl copy() {
         return copyInto(new RawRecordContainerImpl());
-    }
-    
-    /**
-     * This method should not normally be used. Use with caution
-     * 
-     * @param uid
-     *            - new UID value
-     */
-    
-    public void overrideUid(UID uid) {
-        this.uid = uid;
     }
     
     /*

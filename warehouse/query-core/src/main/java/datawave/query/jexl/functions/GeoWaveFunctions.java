@@ -56,7 +56,7 @@ public class GeoWaveFunctions {
         if (fieldValue instanceof Geometry) {
             return (Geometry) fieldValue;
         } else if (fieldValue instanceof String) {
-            return GeometryNormalizer.getGeometryFromWKT((String) fieldValue);
+            return GeometryNormalizer.parseGeometry((String) fieldValue);
         } else if (fieldValue instanceof ValueTuple) {
             ValueTuple t = (ValueTuple) fieldValue;
             Object o = t.second();
@@ -68,18 +68,18 @@ public class GeoWaveFunctions {
         throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a geometry");
     }
     
-    public static boolean contains(Object fieldValue, String geometryWellKnownText) {
-        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+    public static boolean contains(Object fieldValue, String geoString) {
+        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.contains(otherGeom);
     }
     
-    public static boolean contains(Iterable<?> values, String geometryWellKnownText) {
+    public static boolean contains(Iterable<?> values, String geoString) {
         boolean successfullyParsedAValue = false;
         Exception parseException = null;
         for (Object fieldValue : values) {
             try {
-                if (contains(fieldValue, geometryWellKnownText)) {
+                if (contains(fieldValue, geoString)) {
                     return true;
                 }
                 successfullyParsedAValue = true;
@@ -95,18 +95,18 @@ public class GeoWaveFunctions {
         return false;
     }
     
-    public static boolean covers(Object fieldValue, String geometryWellKnownText) {
-        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+    public static boolean covers(Object fieldValue, String geoString) {
+        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.covers(otherGeom);
     }
     
-    public static boolean covers(Iterable<?> values, String geometryWellKnownText) {
+    public static boolean covers(Iterable<?> values, String geoString) {
         boolean successfullyParsedAValue = false;
         Exception parseException = null;
         for (Object fieldValue : values) {
             try {
-                if (covers(fieldValue, geometryWellKnownText)) {
+                if (covers(fieldValue, geoString)) {
                     return true;
                 }
                 successfullyParsedAValue = true;
@@ -122,18 +122,18 @@ public class GeoWaveFunctions {
         return false;
     }
     
-    public static boolean covered_by(Object fieldValue, String geometryWellKnownText) {
-        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+    public static boolean covered_by(Object fieldValue, String geoString) {
+        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.coveredBy(otherGeom);
     }
     
-    public static boolean covered_by(Iterable<?> values, String geometryWellKnownText) {
+    public static boolean covered_by(Iterable<?> values, String geoString) {
         boolean successfullyParsedAValue = false;
         Exception parseException = null;
         for (Object fieldValue : values) {
             try {
-                if (covered_by(fieldValue, geometryWellKnownText)) {
+                if (covered_by(fieldValue, geoString)) {
                     return true;
                 }
                 successfullyParsedAValue = true;
@@ -149,18 +149,18 @@ public class GeoWaveFunctions {
         return false;
     }
     
-    public static boolean crosses(Object fieldValue, String geometryWellKnownText) {
-        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+    public static boolean crosses(Object fieldValue, String geoString) {
+        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.crosses(otherGeom);
     }
     
-    public static boolean crosses(Iterable<?> values, String geometryWellKnownText) {
+    public static boolean crosses(Iterable<?> values, String geoString) {
         boolean successfullyParsedAValue = false;
         Exception parseException = null;
         for (Object fieldValue : values) {
             try {
-                if (crosses(fieldValue, geometryWellKnownText)) {
+                if (crosses(fieldValue, geoString)) {
                     return true;
                 }
                 successfullyParsedAValue = true;
@@ -176,18 +176,18 @@ public class GeoWaveFunctions {
         return false;
     }
     
-    public static boolean intersects(Object fieldValue, String geometryWellKnownText) {
-        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+    public static boolean intersects(Object fieldValue, String geoString) {
+        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.intersects(otherGeom);
     }
     
-    public static boolean intersects(Iterable<?> values, String geometryWellKnownText) {
+    public static boolean intersects(Iterable<?> values, String geoString) {
         boolean successfullyParsedAValue = false;
         Exception parseException = null;
         for (Object fieldValue : values) {
             try {
-                if (intersects(fieldValue, geometryWellKnownText)) {
+                if (intersects(fieldValue, geoString)) {
                     return true;
                 }
                 successfullyParsedAValue = true;
@@ -203,18 +203,18 @@ public class GeoWaveFunctions {
         return false;
     }
     
-    public static boolean overlaps(Object fieldValue, String geometryWellKnownText) {
-        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+    public static boolean overlaps(Object fieldValue, String geoString) {
+        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.overlaps(otherGeom);
     }
     
-    public static boolean overlaps(Iterable<?> values, String geometryWellKnownText) {
+    public static boolean overlaps(Iterable<?> values, String geoString) {
         boolean successfullyParsedAValue = false;
         Exception parseException = null;
         for (Object fieldValue : values) {
             try {
-                if (overlaps(fieldValue, geometryWellKnownText)) {
+                if (overlaps(fieldValue, geoString)) {
                     return true;
                 }
                 successfullyParsedAValue = true;
@@ -230,18 +230,18 @@ public class GeoWaveFunctions {
         return false;
     }
     
-    public static boolean within(Object fieldValue, String geometryWellKnownText) {
-        Geometry otherGeom = GeometryNormalizer.getGeometryFromWKT(geometryWellKnownText);
+    public static boolean within(Object fieldValue, String geoString) {
+        Geometry otherGeom = GeometryNormalizer.parseGeometry(geoString);
         Geometry thisGeom = getGeometryFromFieldValue(fieldValue);
         return thisGeom.within(otherGeom);
     }
     
-    public static boolean within(Iterable<?> values, String geometryWellKnownText) {
+    public static boolean within(Iterable<?> values, String geoString) {
         boolean successfullyParsedAValue = false;
         Exception parseException = null;
         for (Object fieldValue : values) {
             try {
-                if (within(fieldValue, geometryWellKnownText)) {
+                if (within(fieldValue, geoString)) {
                     return true;
                 }
                 successfullyParsedAValue = true;

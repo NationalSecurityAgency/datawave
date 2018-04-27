@@ -2,29 +2,26 @@ package datawave.data.normalizer;
 
 import com.google.common.collect.Lists;
 import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.io.WKTReader;
+import datawave.data.parser.GeometryParser;
 import mil.nga.giat.geowave.core.geotime.GeometryUtils;
 import mil.nga.giat.geowave.core.geotime.index.dimension.LatitudeDefinition;
 import mil.nga.giat.geowave.core.geotime.index.dimension.LongitudeDefinition;
-import mil.nga.giat.geowave.core.geotime.ingest.SpatialDimensionalityTypeProvider.SpatialIndexBuilder;
 import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.index.NumericIndexStrategy;
 import mil.nga.giat.geowave.core.index.dimension.NumericDimensionDefinition;
 import mil.nga.giat.geowave.core.index.sfc.SFCFactory;
 import mil.nga.giat.geowave.core.index.sfc.data.MultiDimensionalNumericData;
 import mil.nga.giat.geowave.core.index.sfc.tiered.TieredSFCIndexFactory;
-import mil.nga.giat.geowave.core.store.index.BasicIndexModel;
-import mil.nga.giat.geowave.core.store.index.CustomIdIndex;
-import mil.nga.giat.geowave.core.store.index.PrimaryIndex;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.ServiceLoader;
+import java.util.TreeSet;
 
 /**
- * A normalizer that, given a Well-Known Text string representing an arbitrary geometry, will perform GeoWave indexing with a defauls spatial geowave index
+ * A normalizer that, given a parseable geometry string representing an arbitrary geometry, will perform GeoWave indexing with a defauls spatial geowave index
  * configuration
  *
  */
@@ -50,29 +47,28 @@ public class GeometryNormalizer implements Normalizer<datawave.data.type.util.Ge
             SFCFactory.SFCType.HILBERT);
     // @formatter:on    
     
-    private static final String[] geomTypes = new String[] {"GEOMETRY", "POINT", "LINESTRING", "POLYGON", "MULTIPOINT", "MULTILINESTRING", "MULTIPOLYGON",
-            "GEOMETRYCOLLECTION", "CIRCULARSTRING", "COMPOUNDCURVE", "CURVEPOLYGON", "MULTICURVE", "MULTISURFACE", "CURVE", "SURFACE", "POLYHEDRALSURFACE",
-            "TIN", "TRIANGLE"};
-    private static final String[] zGeomTypes = new String[geomTypes.length];
+    private static TreeSet<GeometryParser> geoParsers = new TreeSet();
     
     static {
-        for (int i = 0; i < geomTypes.length; i++)
-            zGeomTypes[i] = geomTypes[i] + " Z";
+        ServiceLoader<GeometryParser> geoParserLoader = ServiceLoader.load(GeometryParser.class);
+        for (GeometryParser geoParser : geoParserLoader)
+            geoParsers.add(geoParser);
     }
     
     /**
-     * Expects to receive an Open Geospatial Consortium compliant Well-Known test string An example for points is of the form:
+     * Expects to receive a parseable geometry string. The default geometry parser accepts Open Geospatial Consortium compliant Well-Known test strings An
+     * example for points is of the form:
      *
      * POINT ([number][space][number])
      */
     @Override
-    public String normalize(String wellKnownText) throws IllegalArgumentException {
-        return normalizeDelegateType(new datawave.data.type.util.Geometry(getGeometryFromWKT(wellKnownText)));
+    public String normalize(String geoString) throws IllegalArgumentException {
+        return normalizeDelegateType(new datawave.data.type.util.Geometry(parseGeometry(geoString)));
     }
     
     @Override
-    public List<String> normalizeToMany(String wellKnownText) throws IllegalArgumentException {
-        return normalizeDelegateTypeToMany(new datawave.data.type.util.Geometry(getGeometryFromWKT(wellKnownText)));
+    public List<String> normalizeToMany(String geoString) throws IllegalArgumentException {
+        return normalizeDelegateTypeToMany(new datawave.data.type.util.Geometry(parseGeometry(geoString)));
     }
     
     /**
@@ -109,12 +105,13 @@ public class GeometryNormalizer implements Normalizer<datawave.data.type.util.Ge
         return Hex.encodeHexString(index.getBytes());
     }
     
-    public static Geometry getGeometryFromWKT(String wellKnownText) throws IllegalArgumentException {
-        try {
-            return new WKTReader().read(StringUtils.replaceEach(wellKnownText, zGeomTypes, geomTypes));
-        } catch (com.vividsolutions.jts.io.ParseException e) {
-            throw new IllegalArgumentException("Cannot parse well-known text", e);
+    public static Geometry parseGeometry(String geoString) throws IllegalArgumentException {
+        for (GeometryParser geoParser : geoParsers) {
+            Geometry geom = geoParser.parseGeometry(geoString);
+            if (geom != null)
+                return geom;
         }
+        throw new IllegalArgumentException("Cannot parse geometry from string [" + geoString + "]");
     }
     
     private static ByteArrayId getSingleIndexFromGeometry(Geometry geometry) {
@@ -138,15 +135,15 @@ public class GeometryNormalizer implements Normalizer<datawave.data.type.util.Ge
     }
     
     @Override
-    public datawave.data.type.util.Geometry denormalize(String wellKnownText) {
+    public datawave.data.type.util.Geometry denormalize(String geoString) {
         // this is assuming the input string is not actually normalized
         // (which oddly is the case with other normalizers)
-        return new datawave.data.type.util.Geometry(getGeometryFromWKT(wellKnownText));
+        return new datawave.data.type.util.Geometry(parseGeometry(geoString));
     }
     
     @Override
-    public Collection<String> expand(String wellKnownText) {
-        List<ByteArrayId> indices = getIndicesFromGeometry(getGeometryFromWKT(wellKnownText));
+    public Collection<String> expand(String geoString) {
+        List<ByteArrayId> indices = getIndicesFromGeometry(parseGeometry(geoString));
         List<String> retVal = new ArrayList<String>(indices.size());
         for (ByteArrayId index : indices) {
             retVal.add(getEncodedStringFromIndexBytes(index));

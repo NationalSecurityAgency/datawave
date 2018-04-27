@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.context.annotation.RequestScope;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -107,8 +108,14 @@ public class LogAuditorTest {
     @Profile("LogAuditorTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class LogAuditorTestConfiguration {
-        @Bean
-        public AuditParameters auditParameters() {
+        @Bean("restAuditParams")
+        @RequestScope
+        public AuditParameters restAuditParams() {
+            return new AuditParameters();
+        }
+        
+        @Bean("msgHandlerAuditParams")
+        public AuditParameters msgHandlerAuditParams() {
             return new AuditParameters();
         }
     }

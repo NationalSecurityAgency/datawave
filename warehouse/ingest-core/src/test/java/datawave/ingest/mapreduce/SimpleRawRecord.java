@@ -65,6 +65,11 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     }
     
     @Override
+    public void generateId(String extra) {
+        setId(uidBuilder.newId(rawData, getTimeForUID(), extra));
+    }
+    
+    @Override
     public Type getDataType() {
         return dataType;
     }
@@ -192,18 +197,6 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     @Override
     public void setAuxData(Object auxData) {
         this.auxData = auxData;
-    }
-    
-    @Override
-    public void setRawDataAndGenerateId(byte[] rawData) {
-        setRawData(rawData);
-        setId(uidBuilder.newId(rawData, getTimeForUID()));
-    }
-    
-    @Override
-    public void setRawDataAndGenerateId(byte[] rawData, String extra) {
-        setRawData(rawData);
-        setId(uidBuilder.newId(rawData, getTimeForUID(), extra));
     }
     
     @Override

@@ -386,6 +386,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     protected long rangeBufferPollMillis = 100;
     
+    protected int geoWaveMaxExpansion = 800;
+    
+    protected int geoWaveMaxEnvelopes = 4;
+    
     public ShardQueryLogic() {
         super();
         setBaseIteratorPriority(100);
@@ -514,6 +518,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setNumRangesToBuffer(other.getNumRangesToBuffer());
         this.setRangeBufferTimeoutMillis(other.getRangeBufferTimeoutMillis());
         this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
+        this.setGeoWaveMaxExpansion(other.getGeoWaveMaxExpansion());
+        this.setGeoWaveMaxEnvelopes(other.getGeoWaveMaxEnvelopes());
         this.setMaxDocScanTimeout(other.maxDocScanTimeout);
         this.setConfiguredProfiles(other.configuredProfiles);
         if (other.eventQueryDataDecoratorTransformer != null) {
@@ -2369,6 +2375,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setRangeBufferPollMillis(long rangeBufferPollMillis) {
         this.rangeBufferPollMillis = rangeBufferPollMillis;
+    }
+    
+    public int getGeoWaveMaxExpansion() {
+        return geoWaveMaxExpansion;
+    }
+    
+    public void setGeoWaveMaxExpansion(int geoWaveMaxExpansion) {
+        this.geoWaveMaxExpansion = geoWaveMaxExpansion;
+    }
+    
+    public int getGeoWaveMaxEnvelopes() {
+        return geoWaveMaxEnvelopes;
+    }
+    
+    public void setGeoWaveMaxEnvelopes(int geoWaveMaxEnvelopes) {
+        this.geoWaveMaxEnvelopes = geoWaveMaxEnvelopes;
     }
     
     public long getBeginDateCap() {

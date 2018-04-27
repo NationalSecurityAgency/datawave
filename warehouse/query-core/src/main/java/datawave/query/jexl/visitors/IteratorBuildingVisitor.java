@@ -129,6 +129,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected QueryLock queryLock;
     protected List<String> ivaratorCacheDirURIs;
     protected String queryId;
+    protected String scanId;
     protected String ivaratorCacheSubDirPrefix = "";
     protected long ivaratorCacheScanPersistThreshold = 100000L;
     protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
@@ -253,20 +254,21 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             
             String identifier = null;
             LiteralRange<?> range = null;
-            boolean negated = false;
+            boolean negatedLocal = false;
             if (source instanceof ASTAndNode) {
                 range = buildLiteralRange(source, null);
                 identifier = range.getFieldName();
             } else {
-                if (source instanceof ASTNRNode)
-                    negated = true;
+                if (source instanceof ASTNRNode || source instanceof ASTNotNode)
+                    negatedLocal = true;
                 range = buildLiteralRange(source);
                 identifier = JexlASTHelper.getIdentifier(source);
             }
+            boolean negatedOverall = negatedLocal;
             if (data instanceof AbstractIteratorBuilder) {
                 AbstractIteratorBuilder oib = (AbstractIteratorBuilder) data;
                 if (oib.isInANot()) {
-                    negated = true;
+                    negatedOverall = !negatedOverall;
                 }
             }
             
@@ -306,14 +308,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                      * This is okay since 1) We are doc specific 2) We are not index only or tf 3) Therefore, we must evaluate against the document for this
                      * expression 4) Return a stubbed range in case we have a disjunction that breaks the current doc.
                      */
-                    if (!limitOverride && (!negated && !(null != data && data instanceof NegationBuilder)))
+                    if (!limitOverride && !negatedOverall)
                         nested = createExceededCheck(identifier, range);
                 }
                 
                 if (null != nested && null != data && data instanceof AbstractIteratorBuilder) {
                     
                     AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
-                    if (negated) {
+                    if (negatedLocal) {
                         iterators.addExclude(nested);
                     } else {
                         iterators.addInclude(nested);
@@ -332,6 +334,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         } else {
             // Create an AndIterator and recursively add the children
             AbstractIteratorBuilder andItr = new AndIteratorBuilder();
+            andItr.negateAsNeeded(data);
             and.childrenAccept(this, andItr);
             
             // If there is no parent
@@ -452,9 +455,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // Create an OrIterator and recursively add the children
             AbstractIteratorBuilder orItr = new OrIteratorBuilder();
             orItr.setSortedUIDs(sortedUIDs);
-            if (data instanceof NegationBuilder) {
-                orItr.setInANot(true);
-            }
+            orItr.negateAsNeeded(data);
             or.childrenAccept(this, orItr);
             
             // If there is no parent
@@ -488,6 +489,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
         
         NegationBuilder stub = new NegationBuilder();
+        stub.negateAsNeeded(data);
         
         // Add all of the children to this negation
         not.childrenAccept(this, stub);
@@ -596,10 +598,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // boolean to tell us if we've overridden our subtree due to
         // a negation or
         boolean isNegation = false;
-        if (data instanceof NegationBuilder) {
-            NegationBuilder nb = (NegationBuilder) data;
-            isNegation = true;
-        } else if (data instanceof AbstractIteratorBuilder) {
+        if (data instanceof AbstractIteratorBuilder) {
             AbstractIteratorBuilder oib = (AbstractIteratorBuilder) data;
             isNegation = oib.isInANot();
         }
@@ -850,8 +849,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             throw new RuntimeException(e);
         }
         
-        // boolean to tell us if we've overridden our subtree due to
-        // a negation or
         IteratorToSortedKeyValueIterator kvIter = new IteratorToSortedKeyValueIterator(getExceededEntry(identifier, range).iterator());
         builder.setSource(kvIter);
         builder.setValue(null != range.getLower() ? range.getLower().toString() : "null");
@@ -885,7 +882,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         
         // boolean to tell us if we've overridden our subtree due to
         // a negation or
-        boolean isNegation = (null != data && data instanceof NegationBuilder);
+        boolean isNegation = (null != data && data instanceof AbstractIteratorBuilder && ((AbstractIteratorBuilder) data).isInANot());
         builder.setSource(getSourceIterator(node, isNegation));
         
         builder.setTimeFilter(getTimeFilter(node));
@@ -1006,6 +1003,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             for (int i = 0; i < ivaratorCacheDirURIs.size(); i++) {
                 String hdfsCacheDirURI = ivaratorCacheDirURIs.get(i);
                 Path path = new Path(hdfsCacheDirURI, queryId);
+                if (scanId == null) {
+                    log.warn("Running query iterator for " + queryId + " without a scan id.  This could cause ivarator directory conflicts.");
+                } else {
+                    path = new Path(path, scanId);
+                }
                 path = new Path(path, subdirectory);
                 if (isUsable(path)) {
                     return path.toUri();
@@ -1032,6 +1034,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                             MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
             throw new DatawaveFatalQueryException(qe);
         }
+        builder.negateAsNeeded(data);
         builder.canBuildDocument(!limitLookup && this.isQueryFullySatisfied);
         ivarate(builder, source, data);
     }
@@ -1044,7 +1047,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      */
     public void ivarateList(JexlNode source, Object data) throws IOException {
         IndexListIteratorBuilder builder = new IndexListIteratorBuilder();
-        builder.setNegated(false);
+        builder.negateAsNeeded(data);
         
         Map<String,Object> parameters;
         try {
@@ -1065,6 +1068,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setFstHdfsFileSystem(hdfsFileSystem.getFileSystem(builder.getFstURI()));
         }
         
+        // If this is actually negated, then this will be added to excludes. Do not negate in the ivarator
+        builder.setNegated(false);
         builder.canBuildDocument(!limitLookup && this.isQueryFullySatisfied);
         
         ivarate(builder, source, data);
@@ -1103,6 +1108,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      */
     public void ivarateRange(JexlNode source, Object data) throws IOException {
         IndexRangeIteratorBuilder builder = new IndexRangeIteratorBuilder();
+        builder.negateAsNeeded(data);
         // index checking has already been done, otherwise we would not have an
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
@@ -1130,6 +1136,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      */
     public void ivarateFilter(JexlNode source, Object data) throws IOException {
         IndexFilterIteratorBuilder builder = new IndexFilterIteratorBuilder();
+        builder.negateAsNeeded(data);
         // index checking has already been done, otherwise we would not have an
         // "ExceededValueThresholdMarker"
         // hence the "IndexAgnostic" method can be used here
@@ -1404,6 +1411,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setQueryId(String queryId) {
         this.queryId = queryId;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setScanId(String scanId) {
+        this.scanId = scanId;
         return this;
     }
     

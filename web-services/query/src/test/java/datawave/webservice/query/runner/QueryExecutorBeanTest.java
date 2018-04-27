@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ejb.EJBContext;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -58,6 +59,7 @@ import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
@@ -431,6 +433,45 @@ public class QueryExecutorBeanTest {
     // @Test
     public void testListWithPost() {
         
+    }
+    
+    @Test
+    public void testBeginDateAfterEndDate() throws Exception {
+        String queryName = "Something";
+        String query = "FOO == BAR";
+        final Date beginDate = new Date(2018, 1, 2);
+        final Date endDate = new Date(2018, 1, 1);
+        Date expirationDate = DateUtils.addDays(new Date(), 1);
+        QueryPersistence persist = QueryPersistence.TRANSIENT;
+        final String[] auths = new String[2];
+        auths[0] = "PUBLIC";
+        auths[1] = "PRIVATE";
+        
+        final MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persist.name());
+        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, StringUtils.join(auths, ","));
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        
+        final Thread createQuery = new Thread(() -> {
+            try {
+                bean.createQuery("EventQueryLogic", queryParameters);
+                fail(); // If doesn't throw exception, should fail
+                    } catch (BadRequestException e) {
+                        assertEquals(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE.toString(), e.getCause().getMessage());
+                    }
+                });
+        
+        try {
+            createQuery.start();
+            createQuery.join();
+        } finally {
+            if (null != createQuery && createQuery.isAlive())
+                createQuery.interrupt();
+        }
     }
     
     @SuppressWarnings("unchecked")

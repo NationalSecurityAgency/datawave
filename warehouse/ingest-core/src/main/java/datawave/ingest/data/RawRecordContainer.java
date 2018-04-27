@@ -28,6 +28,14 @@ public interface RawRecordContainer {
     
     void setId(UID id);
     
+    /**
+     * This method will generate the uid given the current state of the event
+     * 
+     * @param uidExtra
+     *            If not null, this is added into the uid
+     */
+    void generateId(String uidExtra);
+    
     Type getDataType();
     
     void setDataType(Type dataType);
@@ -97,10 +105,6 @@ public interface RawRecordContainer {
     Object getAuxData();
     
     void setAuxData(Object auxData);
-    
-    void setRawDataAndGenerateId(byte[] rawData);
-    
-    void setRawDataAndGenerateId(byte[] rawData, String extra);
     
     RawRecordContainer copy();
     

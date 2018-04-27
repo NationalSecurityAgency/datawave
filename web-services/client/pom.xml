@@ -156,6 +156,7 @@
                 <includes>
                     <include>**/dnutils.properties</include>
                     <include>**/META-INF/beans.xml</include>
+                    <include>**/META-INF/services/*</include>
                 </includes>
             </resource>
             <resource>
@@ -169,6 +170,7 @@
                 <directory>src/test/resources</directory>
                 <includes>
                     <include>**/dnutils.properties</include>
+                    <include>**/META-INF/services/*</include>
                 </includes>
             </testResource>
         </testResources>

@@ -38,6 +38,18 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
         this.inANot = inANot;
     }
     
+    public void negate() {
+        setInANot(!isInANot());
+    }
+    
+    public void negateAsNeeded(Object data) {
+        if (data != null && data instanceof AbstractIteratorBuilder) {
+            if (((AbstractIteratorBuilder) data).isInANot()) {
+                negate();
+            }
+        }
+    }
+    
     protected LinkedList<NestedIterator> includes = new LinkedList<>(), excludes = new LinkedList<>();
     
     protected HashMultimap<String,String> observedFieldValues = HashMultimap.create();

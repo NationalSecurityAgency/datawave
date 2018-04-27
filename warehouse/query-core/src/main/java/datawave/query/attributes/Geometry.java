@@ -7,6 +7,7 @@ import com.vividsolutions.jts.io.ParseException;
 import com.vividsolutions.jts.io.WKBReader;
 import com.vividsolutions.jts.io.WKBWriter;
 import datawave.data.normalizer.GeometryNormalizer;
+import datawave.data.normalizer.Normalizer;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.collections.FunctionalSet;
 import datawave.webservice.query.data.ObjectSizeOf;
@@ -24,17 +25,15 @@ import java.util.Collections;
 public class Geometry extends Attribute<Geometry> implements Serializable {
     private static final long serialVersionUID = 1L;
     
-    private static final GeometryNormalizer NORMALIZER = new GeometryNormalizer();
-    
     private com.vividsolutions.jts.geom.Geometry geometry;
     
     protected Geometry() {
         super(null, true);
     }
     
-    public Geometry(String wellKnownText, Key docKey, boolean toKeep) {
+    public Geometry(String geoString, Key docKey, boolean toKeep) {
         super(docKey, toKeep);
-        setGeometryFromWkt(wellKnownText);
+        setGeometryFromGeoString(geoString);
         validate();
     }
     
@@ -63,8 +62,8 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
         }
     }
     
-    public void setGeometryFromWkt(String wellKnownText) {
-        geometry = NORMALIZER.getGeometryFromWKT(wellKnownText);
+    public void setGeometryFromGeoString(String geoString) {
+        geometry = GeometryNormalizer.parseGeometry(geoString);
     }
     
     @Override
@@ -141,7 +140,7 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
             return Collections.emptySet();
         }
         try {
-            return FunctionalSet.singleton(new ValueTuple(fieldNames, getData(), NORMALIZER
+            return FunctionalSet.singleton(new ValueTuple(fieldNames, getData(), Normalizer.GEOMETRY_NORMALIZER
                             .normalizeDelegateType(new datawave.data.type.util.Geometry(geometry)), this));
         } catch (IllegalArgumentException ne) {
             throw new IllegalArgumentException("Cannot normalize the geometry");

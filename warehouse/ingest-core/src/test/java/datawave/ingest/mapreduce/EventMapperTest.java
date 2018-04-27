@@ -52,9 +52,9 @@ public class EventMapperTest {
         record.setRawFileTimestamp(eventTime);
         record.setDataType(type);
         record.setDate(eventTime);
-        record.setRawDataAndGenerateId("some data".getBytes());
         record.setRawFileName("/some/filename");
-        
+        record.setRawData("some data".getBytes());
+        record.generateId(null);
     }
     
     @Test

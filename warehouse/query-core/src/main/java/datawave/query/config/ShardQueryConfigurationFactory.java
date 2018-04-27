@@ -183,6 +183,9 @@ public class ShardQueryConfigurationFactory {
         config.setRangeBufferTimeoutMillis(configuredLogic.getRangeBufferTimeoutMillis());
         config.setRangeBufferPollMillis(configuredLogic.getRangeBufferPollMillis());
         
+        config.setGeoWaveMaxExpansion(configuredLogic.getGeoWaveMaxExpansion());
+        config.setGeoWaveMaxEnvelopes(configuredLogic.getGeoWaveMaxEnvelopes());
+        
         return config;
     }
 }

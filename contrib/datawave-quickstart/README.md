@@ -259,16 +259,17 @@ See [bin/common.sh](bin/common.sh)
 
 ### PKI Notes
     
-* Note that DataWave Web is PKI enabled and by default uses the following self-signed materials
+* Note that DataWave Web is PKI enabled by default and requires two-way authentication. The following self-signed materials are used for demonstration purposes
     * Server Truststore [JKS]: [ca.jks](../../web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/ca.jks)
     * Server Keystore [PKCS12]: [testServer.p12](../../web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testServer.p12)
     * Client Cert [PKCS12]: [testUser.p12](../../web-services/deploy/application/src/main/wildfly/overlay/standalone/configuration/certificates/testUser.p12)
         
 * Passwords for all of the above: `secret`
 
-* If you'd like to test with your own certs, override the PKI config in [datawave/bootstrap.sh](bin/services/datawave/bootstrap.sh)
-  prior to downloading and installing services
+* This purpose of this PKI setup is to demonstrate DataWave's ability to be integrated easily into an organization's existing private key infrastructure and user authorization services. See [datawave/bootstrap-user.sh](bin/services/datawave/bootstrap-user.sh) for more information on configuration of the test user's roles and associated Accumulo authorizations
 
-* For configuration of user-specific roles and associated Accumulo authorizations for DataWave Web, see [datawave/bootstrap-user.sh](bin/services/datawave/bootstrap-user.sh)
+* To access DataWave Web endpoints in a browser, you'll need to import the client cert into the browser's certificate store
+
+* If you'd like to test with your own certificate materials, see [datawave/bootstrap.sh](bin/services/datawave/bootstrap.sh) and override the trustore/keystore variables there prior to performing Step 2 of the install process above
 
 ---
