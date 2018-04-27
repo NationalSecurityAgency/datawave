@@ -809,23 +809,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         } else {
             JexlNode subNode = ASTDelayedPredicate.getQueryPropertySource(node, ASTDelayedPredicate.class);
             if (subNode instanceof ASTEQNode) {
-                String fn = JexlASTHelper.getIdentifier(subNode);
-                if (fieldsToAggregate.contains(fn)) {
-                    if (limitLookup) {
-                        visitDelayedIndexOnly((ASTEQNode) subNode, o);
-                    } else {
-                        node.jjtGetChild(0).jjtAccept(this, o);
-                    }
-                } else {
-                    delayedEqNodes.add(subNode);
-                    if (isQueryFullySatisfied == true) {
-                        log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                    }
-                }
-            } else {
-                if (isQueryFullySatisfied == true) {
-                    log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
-                }
+                delayedEqNodes.add(subNode);
+            }
+            if (isQueryFullySatisfied == true) {
+                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
             }
             log.warn("Will not process ASTDelayedPredicate.");
         }
