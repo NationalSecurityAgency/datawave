@@ -130,7 +130,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     protected MetadataHelper helper;
     protected boolean forFieldIndex;
     protected Set<String> indexedFields = null;
-    protected Set<String> indexOnlyFields = null;
+    protected Set<String> nonEventFields = null;
     protected RefactoredShardQueryConfiguration config;
     
     public ExecutableDeterminationVisitor(RefactoredShardQueryConfiguration conf, MetadataHelper metadata, boolean forFieldIndex) {
@@ -163,10 +163,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return (STATE) node.jjtAccept(visitor, "");
     }
     
-    public static STATE getState(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+    public static STATE getState(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> nonEventFields,
                     boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
-        ExecutableDeterminationVisitor visitor = new ExecutableDeterminationVisitor(config, metadataHelper, forFieldIndex, debugOutput).setIndexOnlyFields(
-                        indexOnlyFields).setIndexedFields(indexedFields);
+        ExecutableDeterminationVisitor visitor = new ExecutableDeterminationVisitor(config, metadataHelper, forFieldIndex, debugOutput).setNonEventFields(
+                        nonEventFields).setIndexedFields(indexedFields);
         return (STATE) node.jjtAccept(visitor, "");
     }
     
@@ -182,9 +182,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return isExecutable(node, config, helper, false, debugOutput);
     }
     
-    public static boolean isExecutable(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+    public static boolean isExecutable(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> nonEventFields,
                     List<String> debugOutput, MetadataHelper metadataHelper) {
-        return isExecutable(node, config, indexedFields, indexOnlyFields, false, debugOutput, metadataHelper);
+        return isExecutable(node, config, indexedFields, nonEventFields, false, debugOutput, metadataHelper);
     }
     
     public static boolean isExecutable(JexlNode node, RefactoredShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex,
@@ -193,9 +193,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return state == STATE.EXECUTABLE;
     }
     
-    public static boolean isExecutable(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+    public static boolean isExecutable(JexlNode node, RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> nonEventFields,
                     boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
-        STATE state = getState(node, config, indexedFields, indexOnlyFields, forFieldIndex, debugOutput, metadataHelper);
+        STATE state = getState(node, config, indexedFields, nonEventFields, forFieldIndex, debugOutput, metadataHelper);
         return state == STATE.EXECUTABLE;
     }
     
@@ -344,7 +344,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         } else {
             state = unlessAnyNonExecutable(node, data + PREFIX);
         }
-        if (state == STATE.NON_EXECUTABLE && isIndexOnly(node)) {
+        if (state == STATE.NON_EXECUTABLE && isNonEvent(node)) {
             state = STATE.ERROR;
         }
         if (output != null) {
@@ -385,7 +385,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         // if a delayed predicate, then this is not-executable against the index by choice
         else if (ASTDelayedPredicate.instanceOf(node)) {
-            if (isIndexOnly(node)) {
+            if (isNonEvent(node)) {
                 state = STATE.ERROR;
             } else {
                 state = STATE.NON_EXECUTABLE;
@@ -420,7 +420,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTNRNode node, Object data) {
         STATE state;
         // negated regex nodes are in general not-executable against the index
-        if (isIndexOnly(node)) {
+        if (isNonEvent(node)) {
             state = STATE.ERROR;
         } else {
             state = STATE.NON_EXECUTABLE;
@@ -465,10 +465,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return false;
     }
     
-    private boolean isIndexOnly(JexlNode node) {
-        if (this.indexOnlyFields == null) {
+    private boolean isNonEvent(JexlNode node) {
+        if (this.nonEventFields == null) {
             try {
-                this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
+                this.nonEventFields = helper.getNonEventFields(config.getDatatypeFilter());
             } catch (TableNotFoundException e) {
                 log.error("Could not determine whether field is index only", e);
                 throw new RuntimeException("got exception when using MetadataHelper to get index only fields", e);
@@ -476,7 +476,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
-            if (this.indexOnlyFields.contains(JexlASTHelper.deconstructIdentifier(identifier))) {
+            if (this.nonEventFields.contains(JexlASTHelper.deconstructIdentifier(identifier))) {
                 return true;
             }
         }
@@ -494,8 +494,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return false;
     }
     
-    public ExecutableDeterminationVisitor setIndexOnlyFields(Set<String> indexOnlyFields) {
-        this.indexOnlyFields = indexOnlyFields;
+    public ExecutableDeterminationVisitor setNonEventFields(Set<String> nonEventFields) {
+        this.nonEventFields = nonEventFields;
         return this;
     }
     
@@ -511,7 +511,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         // results.
         if (isWithinBoundedRange(node)) {
             state = STATE.EXECUTABLE;
-        } else if (isIndexOnly(node)) {
+        } else if (isNonEvent(node)) {
             state = STATE.ERROR;
         } else {
             state = STATE.NON_EXECUTABLE;
@@ -529,7 +529,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         // results.
         if (isWithinBoundedRange(node)) {
             state = STATE.EXECUTABLE;
-        } else if (isIndexOnly(node)) {
+        } else if (isNonEvent(node)) {
             state = STATE.ERROR;
         } else {
             state = STATE.NON_EXECUTABLE;
@@ -547,7 +547,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         // results.
         if (isWithinBoundedRange(node)) {
             state = STATE.EXECUTABLE;
-        } else if (isIndexOnly(node)) {
+        } else if (isNonEvent(node)) {
             state = STATE.ERROR;
         } else {
             state = STATE.NON_EXECUTABLE;
@@ -565,7 +565,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         // results.
         if (isWithinBoundedRange(node)) {
             state = STATE.EXECUTABLE;
-        } else if (isIndexOnly(node)) {
+        } else if (isNonEvent(node)) {
             state = STATE.ERROR;
         } else {
             state = STATE.NON_EXECUTABLE;
@@ -584,7 +584,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         if (output != null) {
             output.writeLine(data + JexlASTHelper.getFunctions(node).toString() + " -> " + state);
         }
-        // if (this.isIndexOnly(node)) {
+        // if (this.isNonEvent(node)) {
         // state = STATE.ERROR;
         // }
         return state;

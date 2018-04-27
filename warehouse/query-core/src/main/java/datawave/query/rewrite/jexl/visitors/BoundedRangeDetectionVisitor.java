@@ -1,34 +1,25 @@
 package datawave.query.rewrite.jexl.visitors;
 
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
 
 public class BoundedRangeDetectionVisitor extends FunctionIndexQueryExpansionVisitor {
-    protected Set<String> indexOnlyFields;
-    protected Set<String> termFrequencyFields;
     
-    public BoundedRangeDetectionVisitor(RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields,
-                    Set<String> termFrequencyFields) {
+    public BoundedRangeDetectionVisitor(RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper) {
         super(config, metadataHelper, null);
-        this.indexOnlyFields = indexOnlyFields;
-        this.termFrequencyFields = termFrequencyFields;
     }
     
     @SuppressWarnings("unchecked")
-    public static boolean mustExpandBoundedRange(RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields,
-                    Set<String> termFrequencyFields, JexlNode script) {
-        BoundedRangeDetectionVisitor visitor = new BoundedRangeDetectionVisitor(config, metadataHelper, indexOnlyFields, termFrequencyFields);
+    public static boolean mustExpandBoundedRange(RefactoredShardQueryConfiguration config, MetadataHelper metadataHelper, JexlNode script) {
+        BoundedRangeDetectionVisitor visitor = new BoundedRangeDetectionVisitor(config, metadataHelper);
         
         AtomicBoolean hasBounded = new AtomicBoolean(false);
         script.jjtAccept(visitor, hasBounded);
