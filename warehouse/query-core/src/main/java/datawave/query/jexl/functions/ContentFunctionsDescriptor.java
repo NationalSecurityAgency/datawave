@@ -54,9 +54,6 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
-            } catch (ExecutionException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-                throw new DatawaveFatalQueryException(qe);
             }
             
         }
@@ -153,9 +150,6 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
-            } catch (ExecutionException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-                throw new DatawaveFatalQueryException(qe);
             }
             
         }
@@ -177,9 +171,6 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 return fieldSets;
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                throw new DatawaveFatalQueryException(qe);
-            } catch (ExecutionException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             }
             
