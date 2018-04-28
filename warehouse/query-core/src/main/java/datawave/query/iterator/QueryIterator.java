@@ -190,7 +190,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             this.source = source;
         }
         
-        this.fiAggregator = new IdentityAggregator(this.getNonEventFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
+        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
                         .getMaxNextCount() : -1);
         
         if (isDebugMultithreadedSources()) {
