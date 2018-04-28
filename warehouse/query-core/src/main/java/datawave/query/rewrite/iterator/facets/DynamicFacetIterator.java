@@ -138,7 +138,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         configuration.setFacetedFields(facetedFields);
         
-        fiAggregator = new CardinalityAggregator(getNonEventFields(), !merge);
+        fiAggregator = new CardinalityAggregator(getAllIndexOnlyFields(), !merge);
         // assign the options for later use by the document iterator
         documenIteratorOptions = options;
         
