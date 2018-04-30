@@ -104,7 +104,7 @@ public class EventMapperTest {
         assertEquals("fileExtension\u0000gz", entry.getKey().getKey().getColumnQualifier().toString());
         
         entry = getRawFileName(written);
-        assertEquals("filename", entry.getKey().getKey().getColumnQualifier().toString());
+        assertEquals("/some/filename", entry.getKey().getKey().getColumnQualifier().toString());
     }
     
     @Test

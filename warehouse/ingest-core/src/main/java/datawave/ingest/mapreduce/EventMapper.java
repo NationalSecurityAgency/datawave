@@ -755,6 +755,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         // place the sequence filename into the event
         if (createSequenceFileName) {
             seqFileName = NDC.peek();
+            seqFileName = StringUtils.substringAfterLast(seqFileName, "/");
             if (null != seqFileName) {
                 StringBuilder seqFile = new StringBuilder(seqFileName);
                 
@@ -769,13 +770,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         }
         
         if (createRawFileName && !value.getRawFileName().isEmpty() && !value.getRawFileName().equals(seqFileName)) {
-            String rawFileName = value.getRawFileName();
-            int index = rawFileName.lastIndexOf('/');
-            if (index >= 0) {
-                rawFileName = rawFileName.substring(index + 1);
-            }
-            
-            newFields.put(RAW_FILE_FIELDNAME, new NormalizedFieldAndValue(RAW_FILE_FIELDNAME, rawFileName));
+            newFields.put(RAW_FILE_FIELDNAME, new NormalizedFieldAndValue(RAW_FILE_FIELDNAME, value.getRawFileName()));
         }
         
         // Also if this helper needs to filter the fields before returning, apply now
