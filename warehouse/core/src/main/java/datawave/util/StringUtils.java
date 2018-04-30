@@ -449,4 +449,20 @@ public class StringUtils {
         return stringArraySet.toArray(new String[stringArraySet.size()]);
     }
     
+    /**
+     * Return substring after last occurrence of separator
+     * 
+     * @param str
+     * @param separator
+     * @return substring after last occurrence of separator
+     */
+    public static String substringAfterLast(String str, String separator) {
+        int index = str.lastIndexOf(separator);
+        if (index >= 0) {
+            str = str.substring(index + 1);
+        }
+        
+        return str;
+        
+    }
 }

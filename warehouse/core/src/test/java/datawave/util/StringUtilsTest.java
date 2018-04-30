@@ -192,4 +192,14 @@ public class StringUtilsTest {
                         + Arrays.asList(stringsWithCaseDifferences) + " But have: " + Arrays.asList(deDupedStrings) + ".", stringsWithCaseDifferences.length,
                         deDupedStrings.length);
     }
+    
+    @Test
+    public void testSubstringAfterLast() {
+        String test1 = "/something/something/something/darkside";
+        String test2 = "something.something.something.complete";
+        
+        assertEquals("darkside", StringUtils.substringAfterLast(test1, "/"));
+        assertEquals("complete", StringUtils.substringAfterLast(test2, "."));
+        
+    }
 }
