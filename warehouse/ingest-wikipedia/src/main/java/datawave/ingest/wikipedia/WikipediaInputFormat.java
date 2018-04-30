@@ -16,103 +16,54 @@
  */
 package datawave.ingest.wikipedia;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
-import datawave.ingest.data.config.DataTypeHelperImpl;
-import org.apache.hadoop.fs.Path;
+import datawave.ingest.data.RawRecordContainer;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 
-public class WikipediaInputFormat extends TextInputFormat {
-    
-    public static class WikipediaInputSplit extends InputSplit implements Writable {
-        
-        public WikipediaInputSplit() {}
-        
-        public WikipediaInputSplit(FileSplit fileSplit, int partition) {
-            this.fileSplit = fileSplit;
-            this.partition = partition;
-        }
-        
-        private FileSplit fileSplit = null;
-        private int partition = -1;
-        
-        public int getPartition() {
-            return partition;
-        }
-        
-        public FileSplit getFileSplit() {
-            return fileSplit;
-        }
-        
-        @Override
-        public long getLength() throws IOException, InterruptedException {
-            return fileSplit.getLength();
-        }
-        
-        @Override
-        public String[] getLocations() throws IOException, InterruptedException {
-            // for highly replicated files, returning all of the locations can lead to bunching
-            // TODO replace this with a subset of the locations
-            return fileSplit.getLocations();
-        }
-        
-        @Override
-        public void readFields(DataInput in) throws IOException {
-            Path file = new Path(in.readUTF());
-            long start = in.readLong();
-            long length = in.readLong();
-            String[] hosts = null;
-            if (in.readBoolean()) {
-                int numHosts = in.readInt();
-                hosts = new String[numHosts];
-                for (int i = 0; i < numHosts; i++)
-                    hosts[i] = in.readUTF();
-            }
-            fileSplit = new FileSplit(file, start, length, hosts);
-            partition = in.readInt();
-        }
-        
-        @Override
-        public void write(DataOutput out) throws IOException {
-            out.writeUTF(fileSplit.getPath().toString());
-            out.writeLong(fileSplit.getStart());
-            out.writeLong(fileSplit.getLength());
-            String[] hosts = fileSplit.getLocations();
-            if (hosts == null) {
-                out.writeBoolean(false);
-            } else {
-                out.writeBoolean(true);
-                out.writeInt(hosts.length);
-                for (String host : hosts)
-                    out.writeUTF(host);
-            }
-            out.writeInt(partition);
-        }
-        
-    }
+import java.io.IOException;
+
+public class WikipediaInputFormat extends SequenceFileInputFormat<LongWritable,RawRecordContainer> {
     
     @Override
-    public RecordReader<LongWritable,Text> createRecordReader(InputSplit split, TaskAttemptContext context) {
-        /*
-         * Reader will typically be datawave.ingest.wikipedia.WikipediaRecordReader, but the ingest api allows for other implementations so we'll defer to
-         * ingest config to tell us the concrete class
-         */
-        DataTypeHelperImpl d = new DataTypeHelperImpl();
-        d.setup(context.getConfiguration());
-        RecordReader<LongWritable,Text> reader = (RecordReader<LongWritable,Text>) d.getType().newRecordReader();
-        if (reader == null) {
-            throw new IllegalArgumentException(d.getType().typeName() + " not handled in WikipediaInputFormat");
-        }
-        
-        return reader;
+    public RecordReader<LongWritable,RawRecordContainer> createRecordReader(InputSplit split, TaskAttemptContext context) {
+        return new RecordReader<LongWritable,RawRecordContainer>() {
+            
+            private WikipediaRecordReader delegate = null;
+            
+            @Override
+            public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
+                delegate = new WikipediaRecordReader();
+                delegate.initialize(split, context);
+            }
+            
+            @Override
+            public boolean nextKeyValue() throws IOException, InterruptedException {
+                return delegate.nextKeyValue();
+            }
+            
+            @Override
+            public LongWritable getCurrentKey() throws IOException, InterruptedException {
+                return delegate.getCurrentKey();
+            }
+            
+            @Override
+            public RawRecordContainer getCurrentValue() throws IOException, InterruptedException {
+                return delegate.getEvent();
+            }
+            
+            @Override
+            public float getProgress() throws IOException, InterruptedException {
+                return delegate.getProgress();
+            }
+            
+            @Override
+            public void close() throws IOException {
+                delegate.close();
+                delegate = null;
+            }
+        };
     }
 }
