@@ -1110,7 +1110,6 @@ public class MetadataHelper implements ApplicationContextAware {
      *
      * @return
      * @throws TableNotFoundException
-     * @throws ExecutionException
      */
     public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
