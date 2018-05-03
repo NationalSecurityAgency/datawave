@@ -390,6 +390,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     protected int geoWaveMaxEnvelopes = 4;
     
+    protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
+    
     public ShardQueryLogic() {
         super();
         setBaseIteratorPriority(100);
@@ -863,6 +865,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         transformer.setContentFieldNames(contentFieldNames);
         transformer.setLogTimingDetails(this.logTimingDetails);
         transformer.setCardinalityConfiguration(cardinalityConfiguration);
+        transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
         transformer.setQm(queryModel);
         if (config != null) {
             transformer.setProjectFields(config.getProjectFields());
@@ -2417,4 +2420,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.yieldThresholdMs = yieldThresholdMs;
     }
     
+    public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
+        this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;
+    }
+    
+    public Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
+        return primaryToSecondaryFieldMap;
+    }
 }
