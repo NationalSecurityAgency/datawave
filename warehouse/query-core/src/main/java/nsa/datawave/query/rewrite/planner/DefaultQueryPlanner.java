@@ -1528,6 +1528,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     addOption(cfg, QueryOptions.DATA_QUERY_EXPRESSION_FILTER_ENABLED, Boolean.toString(config.isDataQueryExpressionFilterEnabled()), false);
                 }
                 
+                if (config.isLimitFieldsPreQueryEvaluation()) {
+                    addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
+                }
+                
                 return cfg;
             }
         });
