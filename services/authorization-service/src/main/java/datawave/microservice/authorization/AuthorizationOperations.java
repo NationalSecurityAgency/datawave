@@ -8,6 +8,9 @@ import datawave.webservice.security.JWTTokenHandler;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.bus.event.AuthorizationEvictionEvent;
+import org.springframework.cloud.bus.event.AuthorizationEvictionEvent.Type;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,11 +29,13 @@ import java.util.Collection;
 public class AuthorizationOperations {
     private final JWTTokenHandler tokenHandler;
     private final CachedDatawaveUserService cachedDatawaveUserService;
+    private final ApplicationContext appCtx;
     
     @Autowired
-    public AuthorizationOperations(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService) {
+    public AuthorizationOperations(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService, ApplicationContext appCtx) {
         this.tokenHandler = tokenHandler;
         this.cachedDatawaveUserService = cachedDatawaveUserService;
+        this.appCtx = appCtx;
     }
     
     @ApiOperation(value = "Authorizes the calling user to produce a JWT value",
@@ -68,6 +73,7 @@ public class AuthorizationOperations {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "/admin/evictUser", produces = MediaType.TEXT_PLAIN_VALUE, method = {RequestMethod.GET, RequestMethod.DELETE})
     public String evictUser(@ApiParam("The username (e.g., subjectDn<issuerDn>) to evict") @RequestParam String username) {
+        appCtx.publishEvent(new AuthorizationEvictionEvent(this, appCtx.getId(), Type.USER, username));
         return cachedDatawaveUserService.evict(username);
     }
     
@@ -83,6 +89,7 @@ public class AuthorizationOperations {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "/admin/evictUsersMatching", produces = MediaType.TEXT_PLAIN_VALUE, method = {RequestMethod.GET, RequestMethod.DELETE})
     public String evictUsersMatching(@ApiParam("A substring to search for in user names to evict") @RequestParam String substring) {
+        appCtx.publishEvent(new AuthorizationEvictionEvent(this, appCtx.getId(), Type.PARTIAL, substring));
         return cachedDatawaveUserService.evictMatching(substring);
     }
     
@@ -98,6 +105,7 @@ public class AuthorizationOperations {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "/admin/evictAll", produces = MediaType.TEXT_PLAIN_VALUE, method = {RequestMethod.GET, RequestMethod.DELETE})
     public String evictAll() {
+        appCtx.publishEvent(new AuthorizationEvictionEvent(this, appCtx.getId(), Type.FULL, null));
         return cachedDatawaveUserService.evictAll();
     }
     
