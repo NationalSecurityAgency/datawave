@@ -382,6 +382,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     protected boolean dataQueryExpressionFilterEnabled = false;
     
+    protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
+    
     public RefactoredShardQueryLogic() {
         super();
         setBaseIteratorPriority(100);
@@ -851,6 +853,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         transformer.setContentFieldNames(contentFieldNames);
         transformer.setLogTimingDetails(this.logTimingDetails);
         transformer.setCardinalityConfiguration(cardinalityConfiguration);
+        transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
         transformer.setQm(queryModel);
         if (config != null) {
             transformer.setProjectFields(config.getProjectFields());
@@ -2358,4 +2361,11 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.yieldThresholdMs = yieldThresholdMs;
     }
     
+    public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
+        this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;
+    }
+    
+    public Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
+        return primaryToSecondaryFieldMap;
+    }
 }

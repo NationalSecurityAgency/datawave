@@ -1,5 +1,8 @@
 package nsa.datawave.query.rewrite.config;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import nsa.datawave.query.rewrite.planner.DefaultQueryPlanner;
@@ -25,6 +28,7 @@ public class LookupUUIDTune implements Profile {
     protected int maxFieldHitsBeforeSeek = -1;
     protected int maxKeysBeforeSeek = -1;
     protected String queryIteratorClass = TLDQueryIterator.class.getCanonicalName();
+    protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
     
     @Override
     public void configure(BaseQueryLogic<Entry<Key,Value>> logic) {
@@ -33,6 +37,7 @@ public class LookupUUIDTune implements Profile {
             rsq.setBypassAccumulo(bypassAccumulo);
             rsq.setSpeculativeScanning(speculativeScanning);
             rsq.setCacheModel(enableCaching);
+            rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
             if (reduceResponse) {
                 rsq.setCreateUidsIteratorClass(CreateTLDUidsIterator.class);
                 
@@ -158,5 +163,13 @@ public class LookupUUIDTune implements Profile {
     
     public String getQueryIteratorClass() {
         return queryIteratorClass;
+    }
+    
+    public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
+        this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;
+    }
+    
+    public Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
+        return primaryToSecondaryFieldMap;
     }
 }
