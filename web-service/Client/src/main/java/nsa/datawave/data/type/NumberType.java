@@ -15,4 +15,12 @@ public class NumberType extends BaseType<BigDecimal> {
     public NumberType(String delegateString) {
         super(delegateString, Normalizer.NUMBER_NORMALIZER);
     }
+    
+    /**
+     * one String, one BigDecimal and one reference to a normalizer
+     */
+    @Override
+    public long sizeInBytes() {
+        return PrecomputedSizes.STRING_STATIC_REF + (2 * normalizedValue.length()) + PrecomputedSizes.BIGDECIMAL_STATIC_REF + Sizer.REFERENCE;
+    }
 }

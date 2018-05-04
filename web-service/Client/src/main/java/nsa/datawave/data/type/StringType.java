@@ -9,4 +9,14 @@ public class StringType extends BaseType<String> {
     public StringType() {
         super(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
     }
+    
+    /**
+     * Two String + normalizer reference
+     * 
+     * @return
+     */
+    @Override
+    public long sizeInBytes() {
+        return PrecomputedSizes.STRING_STATIC_REF * 2 + (2 * normalizedValue.length()) + (2 * delegate.length()) + Sizer.REFERENCE;
+    }
 }

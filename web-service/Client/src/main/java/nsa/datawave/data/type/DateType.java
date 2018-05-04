@@ -22,4 +22,14 @@ public class DateType extends BaseType<Date> {
         // the normalized form of the date preserves milliseconds
         return normalizer.normalizeDelegateType(getDelegate());
     }
+    
+    /**
+     * One string, one date object, one reference to the normalizer
+     * 
+     * @return
+     */
+    @Override
+    public long sizeInBytes() {
+        return PrecomputedSizes.STRING_STATIC_REF + (2 * normalizedValue.length()) + PrecomputedSizes.DATE_STATIC_REF + Sizer.REFERENCE;
+    }
 }

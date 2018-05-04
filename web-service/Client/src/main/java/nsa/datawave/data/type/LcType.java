@@ -14,4 +14,13 @@ public class LcType extends BaseType<String> {
         super(delegateString, Normalizer.LC_NORMALIZER);
     }
     
+    /**
+     * Two String + normalizer reference
+     * 
+     * @return
+     */
+    @Override
+    public long sizeInBytes() {
+        return PrecomputedSizes.STRING_STATIC_REF * 2 + (2 * normalizedValue.length()) + (2 * delegate.length()) + Sizer.REFERENCE;
+    }
 }

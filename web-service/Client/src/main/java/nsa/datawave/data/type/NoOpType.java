@@ -15,4 +15,14 @@ public class NoOpType extends BaseType<String> {
         this.setDelegate(value);
         super.setNormalizedValue(normalizer.normalize(value));
     }
+    
+    /**
+     * two identical strings + normalizer reference
+     * 
+     * @return
+     */
+    @Override
+    public long sizeInBytes() {
+        return PrecomputedSizes.STRING_STATIC_REF * 2 + Sizer.REFERENCE + (4 * normalizedValue.length());
+    }
 }

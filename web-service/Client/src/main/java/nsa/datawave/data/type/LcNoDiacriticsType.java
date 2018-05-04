@@ -13,4 +13,14 @@ public class LcNoDiacriticsType extends BaseType<String> {
     public LcNoDiacriticsType(String delegateString) {
         super(delegateString, Normalizer.LC_NO_DIACRITICS_NORMALIZER);
     }
+    
+    /**
+     * Two strings + normalizer reference
+     * 
+     * @return
+     */
+    @Override
+    public long sizeInBytes() {
+        return PrecomputedSizes.STRING_STATIC_REF * 2 + Sizer.REFERENCE + (2 * normalizedValue.length()) + (2 * delegate.length());
+    }
 }

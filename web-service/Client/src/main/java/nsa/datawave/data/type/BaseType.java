@@ -4,8 +4,9 @@ import java.io.Serializable;
 import java.util.Collection;
 
 import nsa.datawave.data.normalizer.Normalizer;
+import nsa.datawave.webservice.query.data.ObjectSizeOf;
 
-public class BaseType<T extends Comparable<T> & Serializable> implements Serializable, Type<T> {
+public class BaseType<T extends Comparable<T> & Serializable> implements Serializable, Type<T>, ObjectSizeOf {
     
     private static final long serialVersionUID = 5354270429891763693L;
     
@@ -148,4 +149,15 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
         return delegate == null ? super.toString() : delegate.toString();
     }
     
+    /**
+     * One string (normalizedValue) one unknown object (delegate) one normalizer (singleton reference) ref to object (4) normalizers will not be counted because
+     * they are singletons
+     * 
+     * @return
+     */
+    @Override
+    public long sizeInBytes() {
+        return PrecomputedSizes.STRING_STATIC_REF + (2 * normalizedValue.length()) + ObjectSizeOf.Sizer.getObjectSize(delegate) + Sizer.REFERENCE
+                        + Sizer.REFERENCE;
+    }
 }
