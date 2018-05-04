@@ -51,4 +51,76 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         verifyAll();
     }
+    
+    @Test
+    public void getParseInfo_isRootTest() {
+        EasyMock.expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
+        replayAll();
+        
+        // expected key structure
+        Key key = new Key("row", "dataype" + Constants.NULL + "123.234.345", "field1" + Constants.NULL_BYTE_STRING + "value");
+        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, -1, -1);
+        
+        TLDEventDataFilter.ParseInfo info = filter.getParseInfo(key);
+        assertTrue(info != null);
+        assertTrue(info.getField().equals("field1"));
+        assertTrue(info.isRoot());
+        
+        // first two calls are made without the internal update to the cached parseInfo so are calculated independently
+        
+        key = new Key("row", "dataype" + Constants.NULL + "123.234.345", "field1" + Constants.NULL_BYTE_STRING + "value");
+        info = filter.getParseInfo(key);
+        assertTrue(info != null);
+        assertTrue(info.getField().equals("field1"));
+        assertTrue(info.isRoot());
+        
+        key = new Key("row", "dataype" + Constants.NULL + "123.234.345.1", "field1" + Constants.NULL_BYTE_STRING + "value");
+        info = filter.getParseInfo(key);
+        assertTrue(info != null);
+        assertTrue(info.getField().equals("field1"));
+        // this a wrong assumption based on DATAWAVE-30 (https://github.com/NationalSecurityAgency/datawave/issues/30)
+        assertTrue(info.isRoot());
+        
+        key = new Key("row", "dataype" + Constants.NULL + "123.234.345", "field1" + Constants.NULL_BYTE_STRING + "value");
+        // use the keep method to set the previous call state
+        filter.keep(key);
+        info = filter.getParseInfo(key);
+        assertTrue(info != null);
+        assertTrue(info.getField().equals("field1"));
+        assertTrue(info.isRoot());
+        
+        // now test the child and see that it is not root
+        key = new Key("row", "dataype" + Constants.NULL + "123.234.345.1", "field1" + Constants.NULL_BYTE_STRING + "value");
+        filter.keep(key);
+        info = filter.getParseInfo(key);
+        assertTrue(info != null);
+        assertTrue(info.getField().equals("field1"));
+        assertFalse(info.isRoot());
+        
+        // a second child
+        key = new Key("row", "dataype" + Constants.NULL + "123.234.345.2", "field1" + Constants.NULL_BYTE_STRING + "value");
+        filter.keep(key);
+        info = filter.getParseInfo(key);
+        assertTrue(info != null);
+        assertTrue(info.getField().equals("field1"));
+        assertFalse(info.isRoot());
+        
+        // a longer child
+        key = new Key("row", "dataype" + Constants.NULL + "123.234.345.23", "field1" + Constants.NULL_BYTE_STRING + "value");
+        filter.keep(key);
+        info = filter.getParseInfo(key);
+        assertTrue(info != null);
+        assertTrue(info.getField().equals("field1"));
+        assertFalse(info.isRoot());
+        
+        // jump back to the original
+        key = new Key("row", "dataype" + Constants.NULL + "123.234.345", "field1" + Constants.NULL_BYTE_STRING + "value");
+        filter.keep(key);
+        info = filter.getParseInfo(key);
+        assertTrue(info != null);
+        assertTrue(info.getField().equals("field1"));
+        assertTrue(info.isRoot());
+        
+        verifyAll();
+    }
 }
