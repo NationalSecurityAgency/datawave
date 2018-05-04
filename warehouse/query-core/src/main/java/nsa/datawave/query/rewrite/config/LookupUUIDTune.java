@@ -25,6 +25,9 @@ public class LookupUUIDTune implements Profile {
     protected int maxFieldHitsBeforeSeek = -1;
     protected int maxKeysBeforeSeek = -1;
     protected String queryIteratorClass = TLDQueryIterator.class.getCanonicalName();
+    protected int maxShardsPerDayThreshold = -1;
+    protected int pageByteTrigger = -1;
+    protected int maxPageSize = -1;
     
     @Override
     public void configure(BaseQueryLogic<Entry<Key,Value>> logic) {
@@ -41,6 +44,14 @@ public class LookupUUIDTune implements Profile {
                 planner.setMaxFieldHitsBeforeSeek(maxFieldHitsBeforeSeek);
                 planner.setMaxKeysBeforeSeek(maxKeysBeforeSeek);
                 rsq.setQueryPlanner(planner);
+                
+                if (maxPageSize != -1) {
+                    rsq.setMaxPageSize(maxPageSize);
+                }
+                
+                if (pageByteTrigger != -1) {
+                    rsq.setPageByteTrigger(pageByteTrigger);
+                }
             }
         }
         
@@ -83,6 +94,9 @@ public class LookupUUIDTune implements Profile {
             rsqc.setSerializeQueryIterator(true);
             rsqc.setMaxEvaluationPipelines(1);
             rsqc.setMaxPipelineCachedResults(1);
+            if (maxShardsPerDayThreshold != -1) {
+                rsqc.setShardsPerDayThreshold(maxShardsPerDayThreshold);
+            }
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
         }
@@ -159,4 +173,29 @@ public class LookupUUIDTune implements Profile {
     public String getQueryIteratorClass() {
         return queryIteratorClass;
     }
+    
+    public int getMaxShardsPerDayThreshold() {
+        return maxShardsPerDayThreshold;
+    }
+    
+    public void setMaxShardsPerDayThreshold(int maxShardsPerDayThreshold) {
+        this.maxShardsPerDayThreshold = maxShardsPerDayThreshold;
+    }
+    
+    public int getPageByteTrigger() {
+        return pageByteTrigger;
+    }
+    
+    public void setPageByteTrigger(int pageByteTrigger) {
+        this.pageByteTrigger = pageByteTrigger;
+    }
+    
+    public int getMaxPageSize() {
+        return maxPageSize;
+    }
+    
+    public void setMaxPageSize(int maxPageSize) {
+        this.maxPageSize = maxPageSize;
+    }
+    
 }
