@@ -1735,6 +1735,17 @@ public class DefaultQueryPlanner extends QueryPlanner {
             }
         }
         
+        // Include the document permutations
+        if (!config.getDocumentPermutations().isEmpty()) {
+            StringBuilder docPermutationConfig = new StringBuilder();
+            String sep = "";
+            for (String perm : config.getDocumentPermutations()) {
+                docPermutationConfig.append(sep).append(perm);
+                sep = ",";
+            }
+            addOption(cfg, QueryOptions.DOCUMENT_PERMUTATION_CLASSES, docPermutationConfig.toString(), false);
+        }
+        
         addOption(cfg, QueryOptions.REDUCED_RESPONSE, Boolean.toString(config.isReducedResponse()), false);
         addOption(cfg, QueryOptions.DISABLE_EVALUATION, Boolean.toString(config.isDisableEvaluation()), false);
         addOption(cfg, QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, Boolean.toString(config.disableIndexOnlyDocuments()), false);

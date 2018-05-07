@@ -24,7 +24,7 @@ import com.google.common.collect.Maps;
  *
  * Blacklist of 'NAME' applied: {CHILDREN:[{AGE:12}, {AGE:10}], AGE:40}
  */
-public class DocumentProjection implements Permutation<Entry<Key,Document>> {
+public class DocumentProjection implements DocumentPermutation {
     @SuppressWarnings("unused")
     private static final Logger log = Logger.getLogger(DocumentProjection.class);
     

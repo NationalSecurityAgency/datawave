@@ -86,6 +86,8 @@ public class ShardQueryConfigurationFactory {
         // ShardEventEvaluatingIterator options
         config.setIncludeGroupingContext(configuredLogic.getIncludeGroupingContext());
         
+        config.setDocumentPermutations(configuredLogic.getDocumentPermutations());
+        
         // Pass down the RangeCalculator options
         config.setEventPerDayThreshold(configuredLogic.getEventPerDayThreshold());
         config.setShardsPerDayThreshold(configuredLogic.getShardsPerDayThreshold());

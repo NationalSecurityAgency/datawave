@@ -13,7 +13,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
-import java.net.MalformedURLException;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
@@ -23,6 +22,7 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.function.ConfiguredFunction;
+import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
 import datawave.query.function.GetStartKey;
 import datawave.query.function.PrefixEquality;
@@ -54,13 +54,18 @@ import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,7 +79,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 public class QueryOptions implements OptionDescriber {
     private static final Logger log = Logger.getLogger(QueryOptions.class);
@@ -108,6 +112,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String CONTAINS_COMPOSITE_TERMS = "composite.terms";
     public static final String IGNORE_COLUMN_FAMILIES = "ignore.column.families";
     public static final String INCLUDE_GROUPING_CONTEXT = "include.grouping.context";
+    public static final String DOCUMENT_PERMUTATION_CLASSES = "document.permutation.classes";
     public static final String TERM_FREQUENCY_FIELDS = "term.frequency.fields";
     public static final String TERM_FREQUENCIES_REQUIRED = "term.frequencies.are.required";
     public static final String CONTENT_EXPANSION_FIELDS = "content.expansion.fields";
@@ -251,6 +256,9 @@ public class QueryOptions implements OptionDescriber {
     
     protected boolean includeGroupingContext = false;
     
+    protected List<String> documentPermutationClasses = new ArrayList<>();
+    protected List<DocumentPermutation> documentPermutations = null;
+    
     protected long startTime = 0l;
     protected long endTime = System.currentTimeMillis();
     protected TimeFilter timeFilter = null;
@@ -361,6 +369,9 @@ public class QueryOptions implements OptionDescriber {
         this.ignoreColumnFamilies = other.ignoreColumnFamilies;
         
         this.includeGroupingContext = other.includeGroupingContext;
+        
+        this.documentPermutationClasses = other.documentPermutationClasses;
+        this.documentPermutations = other.documentPermutations;
         
         this.startTime = other.startTime;
         this.endTime = other.endTime;
@@ -569,6 +580,49 @@ public class QueryOptions implements OptionDescriber {
     
     public void setIncludeGroupingContext(boolean includeGroupingContext) {
         this.includeGroupingContext = includeGroupingContext;
+    }
+    
+    public List<String> getDocumentPermutationClasses() {
+        return documentPermutationClasses;
+    }
+    
+    public List<DocumentPermutation> getDocumentPermutations() {
+        if (documentPermutations == null) {
+            List<DocumentPermutation> list = new ArrayList<>();
+            TypeMetadata metadata = getTypeMetadata();
+            for (String classname : getDocumentPermutationClasses()) {
+                try {
+                    Class<DocumentPermutation> clazz = (Class<DocumentPermutation>) Class.forName(classname);
+                    try {
+                        Constructor<DocumentPermutation> constructor = clazz.getConstructor(TypeMetadata.class);
+                        list.add(constructor.newInstance(metadata));
+                    } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+                        log.error("Unable to construct " + classname + " as a DocumentPermutation", e);
+                        throw new IllegalArgumentException("Unable to construct " + classname + " as a DocumentPermutation", e);
+                    } catch (NoSuchMethodException e) {
+                        try {
+                            list.add(clazz.newInstance());
+                        } catch (InstantiationException | IllegalAccessException e2) {
+                            log.error("Unable to construct " + classname + " as a DocumentPermutation", e2);
+                            throw new IllegalArgumentException("Unable to construct " + classname + " as a DocumentPermutation", e2);
+                        }
+                    }
+                } catch (ClassNotFoundException e) {
+                    log.error("Unable to construct " + classname + " as a DocumentPermutation", e);
+                    throw new IllegalArgumentException("Unable to construct " + classname + " as a DocumentPermutation", e);
+                }
+            }
+            this.documentPermutations = list;
+        }
+        return this.documentPermutations;
+    }
+    
+    public void setDocumentPermutationClasses(List<String> documentPermutationClasses) {
+        this.documentPermutationClasses = documentPermutationClasses;
+    }
+    
+    public void setDocumentPermutationClasses(String documentPermutationClassesStr) {
+        setDocumentPermutationClasses(Arrays.asList(StringUtils.split(documentPermutationClassesStr, ',')));
     }
     
     public boolean isIncludeRecordId() {
@@ -881,6 +935,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(POSTPROCESSING_CLASSES, "CSV of functions and predicates to apply to documents that pass the original query.");
         options.put(IndexIterator.INDEX_FILTERING_CLASSES, "CSV of predicates to apply to keys that pass the original field index (fi) scan.");
         options.put(INCLUDE_GROUPING_CONTEXT, "Keep the grouping context on the final returned document");
+        options.put(DOCUMENT_PERMUTATION_CLASSES,
+                        "Classes implementing DocumentPermutation which can transform the document prior to evaluation (e.g. expand/mutate fields).");
         options.put(LIMIT_FIELDS, "limit fields");
         options.put(GROUP_FIELDS, "group fields");
         options.put(HIT_LIST, "hit list");
@@ -1144,6 +1200,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(INCLUDE_GROUPING_CONTEXT)) {
             this.setIncludeGroupingContext(Boolean.parseBoolean(options.get(INCLUDE_GROUPING_CONTEXT)));
+        }
+        
+        if (options.containsKey(DOCUMENT_PERMUTATION_CLASSES)) {
+            this.setDocumentPermutationClasses(options.get(DOCUMENT_PERMUTATION_CLASSES));
         }
         
         if (options.containsKey(LIMIT_FIELDS)) {

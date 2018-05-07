@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
 import javax.annotation.Nullable;
 import java.util.Map.Entry;
 
-public class DocumentMetadata implements Function<Entry<Key,Document>,Entry<Key,Document>> {
+public class DocumentMetadata implements DocumentPermutation {
     
     private static final Logger log = Logger.getLogger(DocumentMetadata.class);
     

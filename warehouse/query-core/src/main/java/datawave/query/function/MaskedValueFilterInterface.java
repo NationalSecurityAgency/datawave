@@ -6,7 +6,7 @@ import datawave.query.attributes.Document;
 
 import org.apache.accumulo.core.data.Key;
 
-public interface MaskedValueFilterInterface extends Permutation<Entry<Key,Document>> {
+public interface MaskedValueFilterInterface extends DocumentPermutation {
     
     void setIncludeGroupingContext(boolean includeGroupingContext);
     

@@ -640,6 +640,16 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             }
         }
         
+        // Inject the document permutations if required
+        if (!this.getDocumentPermutations().isEmpty()) {
+            if (gatherTimingDetails()) {
+                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentPermutation, trackingSpan,
+                                new DocumentPermutation.DocumentPermutationAggregation(this.getDocumentPermutations())));
+            } else {
+                documents = Iterators.transform(documents, new DocumentPermutation.DocumentPermutationAggregation(this.getDocumentPermutations()));
+            }
+        }
+        
         if (gatherTimingDetails()) {
             documents = new EvaluationTrackingIterator(QuerySpan.Stage.DocumentEvaluation, trackingSpan, getEvaluation(documentSpecificSource, deepSourceCopy,
                             documents, compositeMetadata, typeMetadataWithNonIndexed));
@@ -862,6 +872,17 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                                             .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), this.getEvaluationFilter())));
             
             Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<Key,Document>());
+            
+            // Inject the document permutations if required
+            if (!this.getDocumentPermutations().isEmpty()) {
+                if (gatherTimingDetails()) {
+                    retDocuments = Iterators.transform(retDocuments, new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentPermutation, trackingSpan,
+                                    new DocumentPermutation.DocumentPermutationAggregation(this.getDocumentPermutations())));
+                } else {
+                    retDocuments = Iterators.transform(retDocuments, new DocumentPermutation.DocumentPermutationAggregation(this.getDocumentPermutations()));
+                }
+            }
+            
             return retDocuments;
             
         }

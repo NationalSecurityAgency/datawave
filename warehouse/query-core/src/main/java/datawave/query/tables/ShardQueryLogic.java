@@ -230,6 +230,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private boolean includeHierarchyFields = false;
     private Map<String,String> hierarchyFieldOptions = Collections.emptyMap();
     private boolean includeGroupingContext = false;
+    
+    // Used to create arbitrary document permutations prior to evaluation and/or returning documents.
+    private List<String> documentPermutations = Collections.emptyList();
+    
     private boolean reducedResponse = false;
     private boolean disableEvaluation = false;
     protected boolean disableIndexOnlyDocuments = false;
@@ -436,6 +440,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setIncludeRecordId(other.getIncludeRecordId());
         this.setIncludeHierarchyFields(other.getIncludeHierarchyFields());
         this.setIncludeGroupingContext(other.getIncludeGroupingContext());
+        this.setDocumentPermutations(other.getDocumentPermutations());
         this.setReducedResponse(other.isReducedResponse());
         this.setBeginDateCap(other.getBeginDateCap());
         this.setFailOutsideValidDateRange(other.isFailOutsideValidDateRange());
@@ -1435,6 +1440,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setIncludeHierarchyFields(boolean includeHierarchyFields) {
         this.includeHierarchyFields = includeHierarchyFields;
+    }
+    
+    public List<String> getDocumentPermutations() {
+        return documentPermutations;
+    }
+    
+    public void setDocumentPermutations(List<String> documentPermutations) {
+        this.documentPermutations = documentPermutations;
     }
     
     public Map<String,String> getHierarchyFieldOptions() {
