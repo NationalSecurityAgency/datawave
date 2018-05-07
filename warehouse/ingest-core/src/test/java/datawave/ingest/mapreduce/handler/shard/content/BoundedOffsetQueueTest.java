@@ -36,7 +36,7 @@ public class BoundedOffsetQueueTest {
         
         BoundedOffsetQueue.OffsetList ol = uut.addOffset(taz, (2 * uut.getCapacity()));
         Assert.assertNotNull("AddOffset failed to return an offset list", ol);
-        Assert.assertEquals("AddOffset returned a OffsetList with an unexpected number of offsets.", 21, ol.offsets.length);
+        Assert.assertEquals("AddOffset returned a OffsetList with an unexpected number of offsets.", 21, ol.offsets.size());
         Assert.assertEquals("AddOffset failed to correctly update the number of elements in the Queue", 0, uut.size());
         
     }

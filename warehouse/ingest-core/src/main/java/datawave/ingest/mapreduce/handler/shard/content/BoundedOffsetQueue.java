@@ -1,22 +1,21 @@
 package datawave.ingest.mapreduce.handler.shard.content;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.*;
 
-public class BoundedOffsetQueue implements OffsetQueue {
+public class BoundedOffsetQueue<T> implements OffsetQueue<T> {
     private static final long serialVersionUID = 452499360525244451L;
     
-    public static class OffsetList {
+    public static class OffsetList<T> {
         public TermAndZone termAndZone;
-        public int[] offsets;
+        public List<T> offsets;
+        
+        public int size() {
+            return offsets.size();
+        }
     }
     
     // The offsets
-    HashMap<String,int[]> offsetsMap;
+    HashMap<String,List<T>> offsetsMap;
     
     // The priority queue
     PriorityQueue<String> queue;
@@ -48,29 +47,28 @@ public class BoundedOffsetQueue implements OffsetQueue {
     /*
      * (non-Javadoc)
      * 
-     * @see datawave.ingest.mapreduce.handler.shard.OffsetQueue#addOffset(datawave.ingest.mapreduce.handler.shard.TermAndZone, int)
+     * @see datawave.ingest.mapreduce.handler.shard.OffsetQueue#addOffset(datawave.ingest.mapreduce.handler.shard.TermAndZone, T)
      */
     @Override
-    public OffsetList addOffset(TermAndZone termAndZone, int offset) {
+    public OffsetList addOffset(TermAndZone termAndZone, T offset) {
         String key = termAndZone.getToken();
         queue.remove(key);
-        int[] offsets = offsetsMap.remove(key);
-        if (offsets != null) {
-            offsets = Arrays.copyOf(offsets, offsets.length + 1);
-            offsets[offsets.length - 1] = offset;
-        } else {
-            offsets = new int[] {offset};
+        
+        List<T> offsets = offsetsMap.remove(key);
+        if (null == offsets) {
+            offsets = new ArrayList<>();
         }
+        offsets.add(offset);
         
         offsetsMap.put(key, offsets);
         queue.add(key);
         
         numOffsets++;
         if (numOffsets > maxNumOffsets) {
-            OffsetList list = new OffsetList();
+            OffsetList<T> list = new OffsetList<>();
             String token = queue.remove();
             list.offsets = offsetsMap.remove(token);
-            numOffsets -= list.offsets.length;
+            numOffsets -= list.offsets.size();
             list.termAndZone = new TermAndZone(token);
             return list;
         } else {
@@ -86,7 +84,7 @@ public class BoundedOffsetQueue implements OffsetQueue {
     }
     
     @Override
-    public int[] getOffsets(TermAndZone termAndZone) {
+    public List<T> getOffsets(TermAndZone termAndZone) {
         return offsetsMap.get(termAndZone.getToken());
     }
     
@@ -96,33 +94,29 @@ public class BoundedOffsetQueue implements OffsetQueue {
     }
     
     @Override
-    public Iterable<OffsetList> offsets() {
-        return new Iterable<OffsetList>() {
-            @Override
-            public Iterator<OffsetList> iterator() {
-                final Iterator<Map.Entry<String,int[]>> entries = offsetsMap.entrySet().iterator();
-                final OffsetList offsets = new OffsetList();
-                return new Iterator<OffsetList>() {
-                    
-                    @Override
-                    public boolean hasNext() {
-                        return entries.hasNext();
-                    }
-                    
-                    @Override
-                    public OffsetList next() {
-                        Map.Entry<String,int[]> entry = entries.next();
-                        offsets.offsets = entry.getValue();
-                        offsets.termAndZone = new TermAndZone(entry.getKey());
-                        return offsets;
-                    }
-                    
-                    @Override
-                    public void remove() {
-                        entries.remove();
-                    }
-                };
-            }
+    public Iterable<OffsetList<T>> offsets() {
+        return () -> {
+            final Iterator<Map.Entry<String,List<T>>> entries = offsetsMap.entrySet().iterator();
+            final OffsetList<T> offsets = new OffsetList<>();
+            return new Iterator<OffsetList<T>>() {
+                @Override
+                public boolean hasNext() {
+                    return entries.hasNext();
+                }
+                
+                @Override
+                public OffsetList next() {
+                    Map.Entry<String,List<T>> entry = entries.next();
+                    offsets.offsets = entry.getValue();
+                    offsets.termAndZone = new TermAndZone(entry.getKey());
+                    return offsets;
+                }
+                
+                @Override
+                public void remove() {
+                    entries.remove();
+                }
+            };
         };
     }
     
@@ -133,11 +127,11 @@ public class BoundedOffsetQueue implements OffsetQueue {
         }
         
         private int getSize(String o) {
-            int[] offsetList = offsetsMap.get(o);
+            List<T> offsetList = offsetsMap.get(o);
             if (offsetList == null) {
                 throw new IllegalArgumentException("Cannot compare a key that has no offsets to be found");
             }
-            return offsetList.length;
+            return offsetList.size();
         }
         
     }
