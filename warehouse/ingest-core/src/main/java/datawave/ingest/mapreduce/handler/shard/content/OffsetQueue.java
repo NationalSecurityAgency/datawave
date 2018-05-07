@@ -2,7 +2,9 @@ package datawave.ingest.mapreduce.handler.shard.content;
 
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue.OffsetList;
 
-public interface OffsetQueue {
+import java.util.List;
+
+public interface OffsetQueue<T> {
     
     /**
      * Add an offset. If this addition pushes the queue past its limit, then the smallest offset list entry is removed and returned.
@@ -11,15 +13,15 @@ public interface OffsetQueue {
      * @param offset
      * @return The removed overflow entry. Null if the queue is not full yet.
      */
-    public OffsetList addOffset(TermAndZone termAndZone, int offset);
+    OffsetList<T> addOffset(TermAndZone termAndZone, T offset);
     
-    public void clear();
+    void clear();
     
-    public boolean containsKey(TermAndZone termAndZone);
+    boolean containsKey(TermAndZone termAndZone);
     
-    public Iterable<OffsetList> offsets();
+    Iterable<OffsetList<T>> offsets();
     
-    public int[] getOffsets(TermAndZone termAndZone);
+    List<T> getOffsets(TermAndZone termAndZone);
     
-    public int size();
+    int size();
 }

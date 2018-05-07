@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.query.Constants;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.nodes.TreeHashNode;
 import datawave.query.jexl.visitors.TreeHashVisitor;
