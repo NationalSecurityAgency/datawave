@@ -9,6 +9,8 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.AbstractMap;
+
 import static org.junit.Assert.*;
 
 public class TLDEventDataFilterTest extends EasyMockSupport {
@@ -120,6 +122,32 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertTrue(info != null);
         assertTrue(info.getField().equals("field1"));
         assertTrue(info.isRoot());
+        
+        verifyAll();
+    }
+    
+    @Test
+    public void setDocumentClearParseInfoTest() {
+        EasyMock.expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
+        replayAll();
+        
+        // expected key structure
+        Key key1 = new Key("row", "dataype" + Constants.NULL + "123.234.345", "field1" + Constants.NULL_BYTE_STRING + "value");
+        Key key2 = new Key("row", "dataype" + Constants.NULL + "123.234.345.1", "field1" + Constants.NULL_BYTE_STRING + "value");
+        Key key3 = new Key("row", "dataype" + Constants.NULL + "123.234.34567", "field1" + Constants.NULL_BYTE_STRING + "value");
+        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, -1, -1);
+        
+        filter.setDocumentKey(key1);
+        // set the lastParseInfo to this key
+        filter.keep(key1);
+        assertFalse(filter.getParseInfo(key2).isRoot());
+        filter.keep(key2);
+        // breaking contract calling this on a new document without calling set document, do this to illustrate the potential problem
+        assertFalse(filter.getParseInfo(key3).isRoot());
+        
+        // property follow the contract by setting the context for the document first
+        filter.setDocumentKey(key2);
+        assertTrue(filter.getParseInfo(key2).isRoot());
         
         verifyAll();
     }

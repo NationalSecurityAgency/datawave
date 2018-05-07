@@ -68,6 +68,13 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         setSortedLists(whitelist, blacklist);
     }
     
+    @Override
+    public void setDocumentKey(Key document) {
+        super.setDocumentKey(document);
+        // clear the parse info so a length comparison can't be made against a new document
+        lastParseInfo = null;
+    }
+    
     /*
      * (non-Javadoc)
      * 
