@@ -38,6 +38,7 @@ public class QuerySpan {
         FieldIndexTree,
         Aggregation,
         DataTypeAsField,
+        DocumentPermutation,
         DocumentEvaluation,
         PostProcessing,
         MaskedValueFilter,

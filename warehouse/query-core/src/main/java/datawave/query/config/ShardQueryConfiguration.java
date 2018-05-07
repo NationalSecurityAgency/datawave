@@ -13,6 +13,7 @@ import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
 import datawave.query.UnindexType;
+import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.PowerSet;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.model.QueryModel;
@@ -173,6 +174,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     // Used to set the ShardEventEvaluating iterator INCLUDE_GROUPING_CONTEXT
     private boolean includeGroupingContext = false;
+    
+    // Used to create arbitrary document permutations prior to evaluation and/or returning documents.
+    private List<String> documentPermutations = Collections.emptyList();
     
     // Used to filter out masked values when the unmasked value is available
     private boolean filterMaskedValues = true;
@@ -1216,6 +1220,25 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     public void setIncludeGroupingContext(boolean withContextOption) {
         this.includeGroupingContext = withContextOption;
+    }
+    
+    public List<String> getDocumentPermutations() {
+        return documentPermutations;
+    }
+    
+    public void setDocumentPermutations(List<String> documentPermutations) {
+        // validate we have instances of DocumentPermutation
+        for (String perm : documentPermutations) {
+            try {
+                Class<?> clazz = Class.forName(perm);
+                if (!DocumentPermutation.class.isAssignableFrom(clazz)) {
+                    throw new IllegalArgumentException("Unable to load " + perm + " as a DocumentPermutation");
+                }
+            } catch (ClassNotFoundException e) {
+                throw new IllegalArgumentException("Unable to load " + perm + " as a DocumentPermutation");
+            }
+        }
+        this.documentPermutations = documentPermutations;
     }
     
     public boolean isReducedResponse() {
