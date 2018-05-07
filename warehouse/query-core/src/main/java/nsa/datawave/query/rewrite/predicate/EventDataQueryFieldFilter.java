@@ -93,4 +93,16 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
         // not yet implemented
         return -1;
     }
+    
+    @Override
+    public boolean isLimited(Key key) {
+        // not yet implemented
+        return false;
+    }
+    
+    @Override
+    public Key applyLimit(Key toLimit) {
+        // not yet implemented
+        return null;
+    }
 }

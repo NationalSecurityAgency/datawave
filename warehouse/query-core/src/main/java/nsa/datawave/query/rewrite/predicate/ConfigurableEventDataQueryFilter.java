@@ -79,4 +79,14 @@ public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
     public boolean apply(Map.Entry<Key,String> input) {
         return filter.apply(input);
     }
+    
+    @Override
+    public boolean isLimited(Key key) {
+        return filter.isLimited(key);
+    }
+    
+    @Override
+    public Key applyLimit(Key toLimit) {
+        return filter.applyLimit(toLimit);
+    }
 }

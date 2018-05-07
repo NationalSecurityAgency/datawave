@@ -62,8 +62,10 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     
     public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
                     Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, attributeFactory, expressionFilterEnabled, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP);
+        this(script, attributeFactory, expressionFilterEnabled, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null);
     }
+    
+    private String limitFieldsField = null;
     
     /**
      * Initialize the query field filter with all of the fields required to evaluation this query
@@ -71,12 +73,13 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
      * @param script
      */
     public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
-                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap) {
+                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField) {
         super(script, attributeFactory, expressionFilterEnabled);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
         this.limitFieldsMap = limitFieldsMap;
+        this.limitFieldsField = limitFieldsField;
         
         // set the anyFieldLimit once if specified otherwise set to -1
         anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
@@ -669,6 +672,21 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     private boolean isFieldLimit(String field) {
         return ((anyFieldLimit != -1 && fieldCount > anyFieldLimit) || (limitFieldsMap.get(field) != null && fieldCount > limitFieldsMap.get(field)))
                         && !queryFields.contains(field);
+    }
+    
+    @Override
+    public boolean isLimited(Key key) {
+        return isFieldLimit(getParseInfo(key).getField());
+    }
+    
+    @Override
+    public Key applyLimit(Key toLimit) {
+        if (this.limitFieldsField != null) {
+            String limitedField = getParseInfo(toLimit).getField();
+            return new Key(toLimit.getRow(), toLimit.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + limitedField));
+        } else {
+            return null;
+        }
     }
     
     /**

@@ -42,6 +42,8 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import static nsa.datawave.query.rewrite.Constants.EMPTY_VALUE;
+
 public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<DocumentData,Document>> {
     
     private static final Logger log = Logger.getLogger(KeyToDocumentData.class);
@@ -198,6 +200,12 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                     if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
                         documentAttributes.add(Maps.immutableEntry(docAttrKey.get(), source.getTopValue()));
                     } else if (filter != null) {
+                        if (filter.isLimited(docAttrKey.get())) {
+                            Key limitKey = filter.applyLimit(docAttrKey.get());
+                            if (limitKey != null) {
+                                documentAttributes.add(Maps.immutableEntry(limitKey, EMPTY_VALUE));
+                            }
+                        }
                         // request a seek range from the filter
                         Range seekRange = filter.getSeekRange(docAttrKey.get(), keyRange.getEndKey(), keyRange.isEndKeyInclusive());
                         if (seekRange != null) {

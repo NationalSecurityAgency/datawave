@@ -113,6 +113,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String CONTENT_EXPANSION_FIELDS = "content.expansion.fields";
     public static final String LIMIT_FIELDS = "limit.fields";
     public static final String LIMIT_FIELDS_PRE_QUERY_EVALUATION = "limit.fields.pre.query.evaluation";
+    public static final String LIMIT_FIELDS_FIELD = "limit.fields.field";
     public static final String GROUP_FIELDS = "group.fields";
     public static final String TYPE_METADATA_IN_HDFS = "type.metadata.in.hdfs";
     public static final String HITS_ONLY = "hits.only";
@@ -233,6 +234,7 @@ public class QueryOptions implements OptionDescriber {
     protected Set<String> blackListedFields = new HashSet<>();
     protected Map<String,Integer> limitFieldsMap = new HashMap<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
+    protected String limitFieldsField = null;
     
     protected Set<String> groupFieldsSet = Sets.newHashSet();
     
@@ -404,6 +406,7 @@ public class QueryOptions implements OptionDescriber {
         this.compressResults = other.compressResults;
         this.limitFieldsMap = other.limitFieldsMap;
         this.limitFieldsPreQueryEvaluation = other.limitFieldsPreQueryEvaluation;
+        this.limitFieldsField = other.limitFieldsField;
         this.groupFieldsSet = other.groupFieldsSet;
         this.hitsOnlySet = other.hitsOnlySet;
         
@@ -807,6 +810,14 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsPreQueryEvaluation = limitFieldsPreQueryEvaluation;
     }
     
+    public String getLimitFieldsField() {
+        return limitFieldsField;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
+    }
+    
     public Set<String> getGroupFieldsMap() {
         return groupFieldsSet;
     }
@@ -1169,6 +1180,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(LIMIT_FIELDS_PRE_QUERY_EVALUATION)) {
             this.setLimitFieldsPreQueryEvaluation(Boolean.parseBoolean(options.get(LIMIT_FIELDS_PRE_QUERY_EVALUATION)));
+        }
+        
+        if (options.containsKey(LIMIT_FIELDS_FIELD)) {
+            this.setLimitFieldsField(options.get(LIMIT_FIELDS_FIELD));
         }
         
         if (options.containsKey(GROUP_FIELDS)) {

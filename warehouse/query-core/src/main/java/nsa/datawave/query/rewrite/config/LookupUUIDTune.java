@@ -31,6 +31,7 @@ public class LookupUUIDTune implements Profile {
     protected boolean reduceFields = false;
     protected int reduceFieldCount = -1;
     protected boolean reduceFieldsPreQueryEvaluation = false;
+    protected String limitFieldsField = null;
     
     @Override
     public void configure(BaseQueryLogic<Entry<Key,Value>> logic) {
@@ -98,6 +99,7 @@ public class LookupUUIDTune implements Profile {
                     fieldLimits.add(Constants.ANY_FIELD + "=" + reduceFieldCount);
                     rsqc.setLimitFields(fieldLimits);
                     rsqc.setLimitFieldsPreQueryEvaluation(reduceFieldsPreQueryEvaluation);
+                    rsqc.setLimitFieldsField(limitFieldsField);
                 }
             }
         }
@@ -197,5 +199,13 @@ public class LookupUUIDTune implements Profile {
     
     public void setReduceFieldsPreQueryEvaluation(boolean reduceFieldsPreQueryEvaluation) {
         this.reduceFieldsPreQueryEvaluation = reduceFieldsPreQueryEvaluation;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
+    }
+    
+    public String getLimitFieldsField() {
+        return limitFieldsField;
     }
 }

@@ -136,6 +136,7 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
     private boolean limitFieldsPreQueryEvaluation = false;
+    private String limitFieldsField = null;
     
     private boolean hitList = false;
     
@@ -1009,6 +1010,14 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.limitFieldsPreQueryEvaluation = limitFieldsPreQueryEvaluation;
     }
     
+    public String getLimitFieldsField() {
+        return limitFieldsField;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
+    }
+    
     public boolean isDateIndexTimeTravel() {
         return dateIndexTimeTravel;
     }
@@ -1482,6 +1491,7 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         
         this.setLimitFields(new HashSet<String>(copy.getLimitFields()));
         this.setLimitFieldsPreQueryEvaluation(copy.isLimitFieldsPreQueryEvaluation());
+        this.setLimitFieldsField(copy.getLimitFieldsField());
         this.setQuery(copy.getQuery());
         Set<QueryImpl.Parameter> parameterSet = query.getParameters();
         for (QueryImpl.Parameter parameter : parameterSet) {
