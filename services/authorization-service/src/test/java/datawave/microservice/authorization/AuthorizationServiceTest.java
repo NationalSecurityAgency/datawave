@@ -27,9 +27,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
-import org.springframework.cloud.bus.DefaultBusPathMatcher;
-import org.springframework.cloud.bus.ServiceMatcher;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -37,7 +34,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -128,14 +124,6 @@ public class AuthorizationServiceTest {
             Config config = new Config();
             config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
             return Hazelcast.newHazelcastInstance(config);
-        }
-        
-        @Bean
-        public ServiceMatcher serviceMatcher(ApplicationContext ctx) {
-            ServiceMatcher sm = new ServiceMatcher();
-            sm.setApplicationContext(ctx);
-            sm.setMatcher(new DefaultBusPathMatcher(new AntPathMatcher(":")));
-            return sm;
         }
     }
     

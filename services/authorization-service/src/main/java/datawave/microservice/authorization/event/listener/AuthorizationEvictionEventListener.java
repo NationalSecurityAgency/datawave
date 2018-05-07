@@ -4,6 +4,7 @@ import datawave.security.authorization.CachedDatawaveUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.bus.ConditionalOnBusEnabled;
 import org.springframework.cloud.bus.ServiceMatcher;
 import org.springframework.cloud.bus.event.AuthorizationEvictionEvent;
 import org.springframework.context.ApplicationListener;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
  * delegating to {@link CachedDatawaveUserService}.
  */
 @Component
+@ConditionalOnBusEnabled
 public class AuthorizationEvictionEventListener implements ApplicationListener<AuthorizationEvictionEvent> {
     private Logger log = LoggerFactory.getLogger(getClass());
     private final CachedDatawaveUserService userService;
