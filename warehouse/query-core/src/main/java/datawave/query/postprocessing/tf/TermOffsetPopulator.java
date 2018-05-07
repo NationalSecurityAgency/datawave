@@ -1,21 +1,15 @@
 package datawave.query.postprocessing.tf;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import datawave.core.iterators.TermFrequencyIterator;
 import datawave.core.iterators.TermFrequencyIterator.FieldValue;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
+import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.Constants;
@@ -164,14 +158,22 @@ public class TermOffsetPopulator {
             
             this.document.put(fv.getField(), attr);
             
-            TreeMultimap<TermFrequencyList.Zone,Integer> offsets = TreeMultimap.create();
+            TreeMultimap<TermFrequencyList.Zone,TermWeightPosition> offsets = TreeMultimap.create();
             try {
                 TermWeight.Info twInfo = TermWeight.Info.parseFrom(tfSource.getTopValue().get());
                 
                 // if no content expansion fields then assume every field is permitted for unfielded content functions
-                offsets.putAll(new TermFrequencyList.Zone(fv.getField(),
+                TermFrequencyList.Zone twZone = new TermFrequencyList.Zone(fv.getField(),
                                 (contentExpansionFields == null || contentExpansionFields.isEmpty() || contentExpansionFields.contains(fv.getField())),
-                                TermFrequencyList.getEventId(key)), twInfo.getTermOffsetList());
+                                TermFrequencyList.getEventId(key));
+                
+                TermWeightPosition.Builder position = new TermWeightPosition.Builder();
+                for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
+                    position.setTermWeightOffsetInfo(twInfo, i);
+                    offsets.put(twZone, position.build());
+                    position.reset();
+                }
+                
             } catch (InvalidProtocolBufferException e) {
                 log.error("Could not deserialize TermWeight protocol buffer for: " + source.getTopKey());
                 
@@ -197,7 +199,7 @@ public class TermOffsetPopulator {
         }
         
         // Load the actual map into map that will be put into the JexlContext
-        Map<String,Object> map = new HashMap<String,Object>();
+        Map<String,Object> map = new HashMap<>();
         map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
         
         return map;
@@ -255,8 +257,8 @@ public class TermOffsetPopulator {
                 return null;
             }
             
-            Set<String> zones = new HashSet<String>();
-            if (args.zone() != null) {
+            Set<String> zones = new HashSet<>();
+            if (args.zone() != null && !args.zone().isEmpty()) {
                 zones.addAll(args.zone());
             } else {
                 zones.addAll(contentExpansionFields);
