@@ -527,7 +527,7 @@ public class MetadataHelper implements ApplicationContextAware {
      * @throws TableNotFoundException
      * @throws ExecutionException
      */
-    @Cacheable(value = "getQueryModel", key = "{#p0,#p1,#p2,#p3}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#p0,#p1,#p2,#p3}", cacheManager = "metadataHelperCacheManager")
     public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unevaluatedFields, Set<String> ingestTypeFilter)
                     throws TableNotFoundException {
         Preconditions.checkNotNull(modelTableName);
@@ -677,44 +677,6 @@ public class MetadataHelper implements ApplicationContextAware {
     }
     
     /**
-     * Returns a Set of all TextNormalizers in use by any type in Accumulo
-     * 
-     * @return
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     * @throws TableNotFoundException
-     */
-    @Cacheable(value = "getFacets", key = "{#root.target.auths,#table}", cacheManager = "metadataHelperCacheManager")
-    public Multimap<String,String> getFacets(String table) throws InstantiationException, IllegalAccessException, TableNotFoundException {
-        log.debug("cache fault for getFacets(" + this.auths + "," + table + ")");
-        Multimap<String,String> fieldPivots = HashMultimap.create();
-        
-        Scanner bs = ScannerHelper.createScanner(connector, table, auths);
-        Range range = new Range();
-        
-        bs.setRange(range);
-        
-        bs.fetchColumnFamily(PV);
-        
-        for (Entry<Key,Value> entry : bs) {
-            Key key = entry.getKey();
-            
-            if (null != key.getRow()) {
-                String[] parts = StringUtils.split(key.getRow().toString(), "\0");
-                if (parts.length == 2) {
-                    fieldPivots.put(parts[0], parts[1]);
-                    fieldPivots.put(parts[1], parts[0]);
-                    fieldPivots.put(parts[0], parts[0]);
-                }
-            } else {
-                log.warn("Row null in ColumnFamilyConstants for key: " + key);
-            }
-        }
-        
-        return fieldPivots;
-    }
-    
-    /**
      * Returns a Set of all counts / cardinalities
      *
      * @return
@@ -761,6 +723,44 @@ public class MetadataHelper implements ApplicationContextAware {
         }
         
         return Collections.unmodifiableMap(allCounts);
+    }
+    
+    /**
+     * Returns a Set of all TextNormalizers in use by any type in Accumulo
+     *
+     * @return
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     * @throws TableNotFoundException
+     */
+    @Cacheable(value = "getFacets", key = "{#root.target.auths,#table}", cacheManager = "metadataHelperCacheManager")
+    public Multimap<String,String> getFacets(String table) throws InstantiationException, IllegalAccessException, TableNotFoundException {
+        log.debug("cache fault for getFacets(" + this.auths + "," + table + ")");
+        Multimap<String,String> fieldPivots = HashMultimap.create();
+        
+        Scanner bs = ScannerHelper.createScanner(connector, table, auths);
+        Range range = new Range();
+        
+        bs.setRange(range);
+        
+        bs.fetchColumnFamily(PV);
+        
+        for (Entry<Key,Value> entry : bs) {
+            Key key = entry.getKey();
+            
+            if (null != key.getRow()) {
+                String[] parts = StringUtils.split(key.getRow().toString(), "\0");
+                if (parts.length == 2) {
+                    fieldPivots.put(parts[0], parts[1]);
+                    fieldPivots.put(parts[1], parts[0]);
+                    fieldPivots.put(parts[0], parts[0]);
+                }
+            } else {
+                log.warn("Row null in ColumnFamilyConstants for key: " + key);
+            }
+        }
+        
+        return fieldPivots;
     }
     
     /**
@@ -1112,7 +1112,7 @@ public class MetadataHelper implements ApplicationContextAware {
      * @return
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getTermFrequencyFields", key = "{#p0}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getTermFrequencyFields", key = "{#root.target.auths,#root.target.metadataTableName,#p0}", cacheManager = "metadataHelperCacheManager")
     public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
         Multimap<String,String> termFrequencyFields = loadTermFrequencyFields();
