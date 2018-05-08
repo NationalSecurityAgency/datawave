@@ -154,7 +154,8 @@ public class ContentFunctionQueryTest {
         record.setRawFileName("example.dat");
         record.setRawRecordNumber(1);
         record.setDate(formatter.parse(BEGIN_DATE).getTime());
-        record.setRawDataAndGenerateId(data);
+        record.setRawData(data);
+        record.generateId(null);
         record.setVisibility(new ColumnVisibility(AUTHS));
         
         final Multimap<String,NormalizedContentInterface> fields = ingestHelper.getEventFields(record);
