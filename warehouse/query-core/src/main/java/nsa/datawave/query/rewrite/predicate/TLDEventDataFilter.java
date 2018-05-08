@@ -131,8 +131,8 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
             ParseInfo parseInfo = new ParseInfo(current);
             boolean root;
             if (lastParseInfo != null) {
-                int lastLength = lastParseInfo.key.getColumnFamily().getLength();
-                int currentLength = current.getColumnFamily().getLength();
+                int lastLength = lastParseInfo.key.getColumnFamilyData().length();
+                int currentLength = current.getColumnFamilyData().length();
                 if (lastLength == currentLength) {
                     root = lastParseInfo.isRoot();
                 } else if (lastLength < currentLength) {
