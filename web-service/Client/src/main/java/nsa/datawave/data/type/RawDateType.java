@@ -7,6 +7,7 @@ import java.util.Date;
 public class RawDateType extends BaseType<String> {
     
     private static final long serialVersionUID = 936566410691643144L;
+    private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF * 2 + Sizer.REFERENCE;
     
     public RawDateType() {
         super(Normalizer.RAW_DATE_NORMALIZER);
@@ -24,6 +25,6 @@ public class RawDateType extends BaseType<String> {
      */
     @Override
     public long sizeInBytes() {
-        return PrecomputedSizes.STRING_STATIC_REF * 2 + (2 * normalizedValue.length()) + (2 * delegate.length()) + Sizer.REFERENCE;
+        return STATIC_SIZE + (2 * normalizedValue.length()) + (2 * delegate.length());
     }
 }

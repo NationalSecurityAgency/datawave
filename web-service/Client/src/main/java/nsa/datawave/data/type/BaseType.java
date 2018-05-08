@@ -9,6 +9,7 @@ import nsa.datawave.webservice.query.data.ObjectSizeOf;
 public class BaseType<T extends Comparable<T> & Serializable> implements Serializable, Type<T>, ObjectSizeOf {
     
     private static final long serialVersionUID = 5354270429891763693L;
+    private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF + Sizer.REFERENCE + Sizer.REFERENCE;
     
     protected T delegate;
     protected String normalizedValue;
@@ -157,7 +158,6 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
      */
     @Override
     public long sizeInBytes() {
-        return PrecomputedSizes.STRING_STATIC_REF + (2 * normalizedValue.length()) + ObjectSizeOf.Sizer.getObjectSize(delegate) + Sizer.REFERENCE
-                        + Sizer.REFERENCE;
+        return STATIC_SIZE + (2 * normalizedValue.length()) + ObjectSizeOf.Sizer.getObjectSize(delegate);
     }
 }

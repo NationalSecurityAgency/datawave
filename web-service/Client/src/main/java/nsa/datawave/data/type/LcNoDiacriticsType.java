@@ -5,6 +5,7 @@ import nsa.datawave.data.normalizer.Normalizer;
 public class LcNoDiacriticsType extends BaseType<String> {
     
     private static final long serialVersionUID = -6219894926244790742L;
+    private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF * 2 + Sizer.REFERENCE;
     
     public LcNoDiacriticsType() {
         super(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
@@ -21,6 +22,6 @@ public class LcNoDiacriticsType extends BaseType<String> {
      */
     @Override
     public long sizeInBytes() {
-        return PrecomputedSizes.STRING_STATIC_REF * 2 + Sizer.REFERENCE + (2 * normalizedValue.length()) + (2 * delegate.length());
+        return STATIC_SIZE + (2 * normalizedValue.length()) + (2 * delegate.length());
     }
 }

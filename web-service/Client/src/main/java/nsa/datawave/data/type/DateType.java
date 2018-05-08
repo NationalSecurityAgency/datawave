@@ -7,6 +7,7 @@ import nsa.datawave.data.normalizer.Normalizer;
 public class DateType extends BaseType<Date> {
     
     private static final long serialVersionUID = 936566410691643144L;
+    private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF + PrecomputedSizes.DATE_STATIC_REF + Sizer.REFERENCE;
     
     public DateType() {
         super(Normalizer.DATE_NORMALIZER);
@@ -30,6 +31,6 @@ public class DateType extends BaseType<Date> {
      */
     @Override
     public long sizeInBytes() {
-        return PrecomputedSizes.STRING_STATIC_REF + (2 * normalizedValue.length()) + PrecomputedSizes.DATE_STATIC_REF + Sizer.REFERENCE;
+        return STATIC_SIZE + (2 * normalizedValue.length());
     }
 }

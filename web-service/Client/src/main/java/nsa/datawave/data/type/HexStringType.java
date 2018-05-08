@@ -5,6 +5,7 @@ import nsa.datawave.data.normalizer.Normalizer;
 public class HexStringType extends BaseType<String> {
     
     private static final long serialVersionUID = -3480716807342380164L;
+    private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF * 2 + Sizer.REFERENCE;
     
     public HexStringType() {
         super(Normalizer.HEX_STRING_NORMALIZER);
@@ -17,6 +18,6 @@ public class HexStringType extends BaseType<String> {
      */
     @Override
     public long sizeInBytes() {
-        return PrecomputedSizes.STRING_STATIC_REF * 2 + (2 * normalizedValue.length()) + (2 * delegate.length()) + Sizer.REFERENCE;
+        return STATIC_SIZE + (2 * normalizedValue.length()) + (2 * delegate.length());
     }
 }

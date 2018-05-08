@@ -5,6 +5,7 @@ import nsa.datawave.data.normalizer.Normalizer;
 public class MacAddressType extends BaseType<String> {
     
     private static final long serialVersionUID = -6743560287574389073L;
+    private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF * 2 + Sizer.REFERENCE;
     
     public MacAddressType() {
         super(Normalizer.MAC_ADDRESS_NORMALIZER);
@@ -17,6 +18,6 @@ public class MacAddressType extends BaseType<String> {
      */
     @Override
     public long sizeInBytes() {
-        return PrecomputedSizes.STRING_STATIC_REF * 2 + (2 * normalizedValue.length()) + (2 * delegate.length()) + Sizer.REFERENCE;
+        return STATIC_SIZE + (2 * normalizedValue.length()) + (2 * delegate.length());
     }
 }

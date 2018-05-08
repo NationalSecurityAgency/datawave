@@ -7,6 +7,7 @@ import nsa.datawave.data.normalizer.Normalizer;
 public class NumberType extends BaseType<BigDecimal> {
     
     private static final long serialVersionUID = 1398451215614987988L;
+    private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF + PrecomputedSizes.BIGDECIMAL_STATIC_REF + Sizer.REFERENCE;
     
     public NumberType() {
         super(Normalizer.NUMBER_NORMALIZER);
@@ -21,6 +22,6 @@ public class NumberType extends BaseType<BigDecimal> {
      */
     @Override
     public long sizeInBytes() {
-        return PrecomputedSizes.STRING_STATIC_REF + (2 * normalizedValue.length()) + PrecomputedSizes.BIGDECIMAL_STATIC_REF + Sizer.REFERENCE;
+        return STATIC_SIZE + (2 * normalizedValue.length());
     }
 }

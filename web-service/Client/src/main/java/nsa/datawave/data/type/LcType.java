@@ -5,6 +5,7 @@ import nsa.datawave.data.normalizer.Normalizer;
 public class LcType extends BaseType<String> {
     
     private static final long serialVersionUID = -5102714749195917406L;
+    private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF * 2 + Sizer.REFERENCE;
     
     public LcType() {
         super(Normalizer.LC_NORMALIZER);
@@ -21,6 +22,6 @@ public class LcType extends BaseType<String> {
      */
     @Override
     public long sizeInBytes() {
-        return PrecomputedSizes.STRING_STATIC_REF * 2 + (2 * normalizedValue.length()) + (2 * delegate.length()) + Sizer.REFERENCE;
+        return STATIC_SIZE + (2 * normalizedValue.length()) + (2 * delegate.length());
     }
 }

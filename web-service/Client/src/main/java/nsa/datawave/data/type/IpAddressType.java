@@ -9,6 +9,7 @@ import nsa.datawave.data.type.util.IpV6Address;
 public class IpAddressType extends BaseType<IpAddress> {
     
     private static final long serialVersionUID = -6512690642978201801L;
+    private static final long STATIC_SIZE = PrecomputedSizes.STRING_STATIC_REF + Sizer.REFERENCE;
     
     public IpAddressType() {
         super(Normalizer.IP_ADDRESS_NORMALIZER);
@@ -29,7 +30,7 @@ public class IpAddressType extends BaseType<IpAddress> {
      */
     @Override
     public long sizeInBytes() {
-        long base = PrecomputedSizes.STRING_STATIC_REF + (2 * normalizedValue.length());
+        long base = STATIC_SIZE + (2 * normalizedValue.length());
         long ipSize;
         if (delegate instanceof IpV4Address) {
             ipSize = PrecomputedSizes.IPV4ADDRESS_STATIC_REF;
@@ -39,6 +40,6 @@ public class IpAddressType extends BaseType<IpAddress> {
             // let the sizer figure it out
             ipSize = Sizer.getObjectSize(delegate) + Sizer.REFERENCE;
         }
-        return base + ipSize + Sizer.REFERENCE;
+        return base + ipSize;
     }
 }
