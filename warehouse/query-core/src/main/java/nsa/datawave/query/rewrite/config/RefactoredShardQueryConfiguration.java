@@ -135,7 +135,15 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
+    
+    /**
+     * should limit fields be applied early
+     */
     private boolean limitFieldsPreQueryEvaluation = false;
+    
+    /**
+     * when <code>limitFieldsPreQueryEvaluation = true</code> this field will be used to record which fields were limited
+     */
     private String limitFieldsField = null;
     
     private boolean hitList = false;

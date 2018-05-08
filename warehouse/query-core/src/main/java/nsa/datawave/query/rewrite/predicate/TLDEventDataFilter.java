@@ -65,6 +65,9 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         this(script, attributeFactory, expressionFilterEnabled, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null);
     }
     
+    /**
+     * Field which should be used when transform() is called on a rejected Key that is field limited to store the field
+     */
     private String limitFieldsField = null;
     
     /**
@@ -586,20 +589,14 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
                 lastField = currentField;
                 fieldCount = 1;
             }
-        } else if (lastField != null && !currentField.equals(lastField)) {
+        } else if (!currentField.equals(lastField)) {
             // always update a change in field even if counts aren't applied
             lastField = currentField;
             // since the counts aren't being applied don't increment the count just reset it
             fieldCount = 0;
         }
         
-        boolean keep;
-        // test the field limits if it isn't a query field
-        if (isFieldLimit(currentField)) {
-            keep = false;
-        } else {
-            keep = keep(currentField, isTld);
-        }
+        boolean keep = keep(currentField, isTld);
         
         if (applyCount) {
             if (keep) {
@@ -623,6 +620,10 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
      * @return true if the field should be kept based on the whitelist/blacklist, false otherwise
      */
     private boolean keep(String field, boolean isTld) {
+        if (isFieldLimit(field)) {
+            return false;
+        }
+        
         if (isTld) {
             if (sortedWhitelist != null) {
                 return sortedWhitelist.contains(field);
@@ -674,14 +675,17 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
                         && !queryFields.contains(field);
     }
     
+    /**
+     * If the current key is rejected due to a field limit and a field limit field is specified generate a value with the field in it
+     * 
+     * @param toLimit
+     *            the
+     * @return
+     */
     @Override
-    public boolean isLimited(Key key) {
-        return isFieldLimit(getParseInfo(key).getField());
-    }
-    
-    @Override
-    public Key applyLimit(Key toLimit) {
-        if (this.limitFieldsField != null) {
+    public Key transform(Key toLimit) {
+        ParseInfo info = getParseInfo(toLimit);
+        if (this.limitFieldsField != null && isFieldLimit(info.getField())) {
             String limitedField = getParseInfo(toLimit).getField();
             return new Key(toLimit.getRow(), toLimit.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + limitedField));
         } else {

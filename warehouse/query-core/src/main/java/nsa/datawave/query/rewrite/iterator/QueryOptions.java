@@ -943,6 +943,9 @@ public class QueryOptions implements OptionDescriber {
         options.put(DATA_QUERY_EXPRESSION_FILTER_ENABLED, "If true, the EventDataQueryExpression filter will be used when performing TLD queries");
         
         options.put(METADATA_TABLE_NAME, this.metadataTableName);
+        options.put(LIMIT_FIELDS_PRE_QUERY_EVALUATION, "If true, non-query fields limits will be applied immediately off the iterator");
+        options.put(LIMIT_FIELDS_FIELD, "When " + LIMIT_FIELDS_PRE_QUERY_EVALUATION
+                        + " is set to true this field will contain all fields that were limited immediately");
         
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }

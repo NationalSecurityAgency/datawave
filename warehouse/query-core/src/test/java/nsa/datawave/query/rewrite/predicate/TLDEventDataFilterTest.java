@@ -125,7 +125,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertTrue(filter.keep(key1));
         // increments counts = 1
         assertTrue(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key1, null)));
-        assertFalse(filter.isLimited(key1));
+        assertTrue(filter.transform(key1) == null);
         assertTrue(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false) == null);
         // does not increment counts so will still return true
         assertTrue(filter.keep(key1));
@@ -140,8 +140,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // now fails
         assertFalse(filter.keep(key1));
         
-        assertTrue(filter.isLimited(key1));
-        Key limitKey = filter.applyLimit(key1);
+        Key limitKey = filter.transform(key1);
         assertTrue(limitKey != null);
         assertTrue(limitKey.getRow().equals(key1.getRow()));
         assertTrue(limitKey.getColumnFamily().equals(key1.getColumnFamily()));
@@ -151,7 +150,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertTrue(filter.keep(key2));
         // increments counts = 1
         assertTrue(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key2, null)));
-        assertFalse(filter.isLimited(key2));
+        assertTrue(filter.transform(key2) == null);
         assertTrue(filter.getSeekRange(key2, key2.followingKey(PartialKey.ROW), false) == null);
         
         assertTrue(filter.keep(key2));
@@ -160,7 +159,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertTrue(filter.getSeekRange(key2, key2.followingKey(PartialKey.ROW), false) == null);
         // still passes
         assertTrue(filter.keep(key2));
-        assertFalse(filter.isLimited(key2));
+        assertTrue(filter.transform(key2) == null);
         
         verifyAll();
     }

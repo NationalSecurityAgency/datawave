@@ -109,13 +109,7 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     }
     
     @Override
-    public boolean isLimited(Key key) {
-        // not yet implemented
-        return false;
-    }
-    
-    @Override
-    public Key applyLimit(Key toLimit) {
+    public Key transform(Key toLimit) {
         // not yet implemented
         return null;
     }
