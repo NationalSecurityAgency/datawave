@@ -382,6 +382,11 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     protected boolean dataQueryExpressionFilterEnabled = false;
     
+    /**
+     * should the size of the document be tracked
+     */
+    protected boolean trackSizes = true;
+    
     public RefactoredShardQueryLogic() {
         super();
         setBaseIteratorPriority(100);
@@ -511,6 +516,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.eventQueryDataDecoratorTransformer = new EventQueryDataDecoratorTransformer(other.eventQueryDataDecoratorTransformer);
         }
+        this.setTrackSizes(other.isTrackSizes());
     }
     
     @Override
@@ -2358,4 +2364,11 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.yieldThresholdMs = yieldThresholdMs;
     }
     
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
+    }
 }
