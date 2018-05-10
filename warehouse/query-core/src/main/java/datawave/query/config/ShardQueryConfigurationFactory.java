@@ -149,6 +149,8 @@ public class ShardQueryConfigurationFactory {
         config.setBypassAccumulo(configuredLogic.isBypassAccumulo());
         config.setSpeculativeScanning(configuredLogic.getSpeculativeScanning());
         config.setLimitFields(configuredLogic.getLimitFields());
+        config.setLimitFieldsPreQueryEvaluation(configuredLogic.isLimitFieldsPreQueryEvaluation());
+        config.setLimitFieldsField(configuredLogic.getLimitFieldsField());
         config.setBackoffEnabled(configuredLogic.getBackoffEnabled());
         config.setUnsortedUIDsEnabled(configuredLogic.getUnsortedUIDsEnabled());
         config.setQuery(query);
@@ -179,6 +181,7 @@ public class ShardQueryConfigurationFactory {
         config.setStatsdHost(configuredLogic.getStatsdHost());
         config.setStatsdPort(configuredLogic.getStatsdPort());
         config.setStatsdMaxQueueSize(configuredLogic.getStatsdMaxQueueSize());
+        config.setTrackSizes(configuredLogic.isTrackSizes());
         
         config.setSortGeoWaveQueryRanges(configuredLogic.isSortGeoWaveQueryRanges());
         config.setNumRangesToBuffer(configuredLogic.getNumRangesToBuffer());

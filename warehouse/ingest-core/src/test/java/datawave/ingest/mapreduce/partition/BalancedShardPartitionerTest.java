@@ -127,7 +127,7 @@ public class BalancedShardPartitionerTest {
         // enough data to warrant the full compliment of splits and the overhead in the tserver of
         // tracking all those splits. The job will still generate data with row ids up to
         // SHARDS_PER_DAY, but simply write the same number of rfiles as splits.
-        // See https://github.com/NationalSecurityAgency/datawave/issues/45
+        // See issues #45
         String tableName = "shard2";
         simulateDifferentNumberShardsPerDay("collapse", tableName);
         

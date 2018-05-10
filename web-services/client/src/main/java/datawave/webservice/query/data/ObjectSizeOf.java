@@ -4,6 +4,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
@@ -42,6 +43,38 @@ public interface ObjectSizeOf {
             }
             return ((ObjectInstance) obj).o == this.o;
         }
+    }
+    
+    /**
+     * Set of commonly sized objects with precomputed static sizes. Some types have additional dynamic sizing that must still be computed. All precomputed
+     * static sizes include the object overhead and reference overhead
+     */
+    class PrecomputedSizes {
+        /**
+         * static component: object ref (8) + ref to object (4) + int (4) + char[] (12 + 4) dynamic component: 2*length
+         */
+        public static long STRING_STATIC_REF = 32;
+        
+        /**
+         * All dates will be similarly sized, compute the size of one and reuse it
+         */
+        public static long DATE_STATIC_REF = Sizer.getObjectSize(new Date()) + Sizer.OBJECT_OVERHEAD + Sizer.REFERENCE;
+        
+        /**
+         * All IPV4 will be similarly sized object ref(8) + ref to object (4) + int (4) + int (4) + byte[4] (12 + 4 + 4*1)
+         */
+        public static long IPV4ADDRESS_STATIC_REF = 40;
+        
+        /**
+         * All IPV6 will be similarly sized object ref(8) + ref to object (4) + short[8] (12 + 4 + 8*2)
+         */
+        public static long IPV6ADDRESS_STATIC_REF = 44;
+        
+        /**
+         * All BigDecimal will be similarly sized object ref (8) + ref to object (4) + int (4) + int (4) + String (len=) + long (8) + BigInt( obj ref (8) + ref
+         * to object (4) + int (4) + int[] (len=) (12 + 4) + int (4) + int (4) + int (4) + int (4)) note: two dynamic string lengths should be negligible
+         */
+        public static long BIGDECIMAL_STATIC_REF = 76;
     }
     
     public static class Sizer {

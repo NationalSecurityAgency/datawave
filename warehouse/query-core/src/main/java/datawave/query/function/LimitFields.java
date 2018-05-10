@@ -129,7 +129,10 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 log.trace("mapOfMisses:" + misses.asMap());
             }
             
-            limitedFieldCounts.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, countForFieldMap.get(keyNoGrouping));
+            // only generate an original count if a field was reduced
+            if (countForFieldMap.get(keyNoGrouping) > this.limitFieldsMap.get(keyNoGrouping)) {
+                limitedFieldCounts.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, countForFieldMap.get(keyNoGrouping));
+            }
             
         }
         

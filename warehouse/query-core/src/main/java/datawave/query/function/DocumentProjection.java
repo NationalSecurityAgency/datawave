@@ -32,14 +32,24 @@ public class DocumentProjection implements DocumentPermutation {
     private final boolean reducedResponse;
     private final Projection projection;
     
+    /**
+     * should track document sizes
+     */
+    private boolean trackSizes = true;
+    
     public DocumentProjection() {
         this(false, false);
     }
     
     public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse) {
+        this(includeGroupingContext, reducedResponse, true);
+    }
+    
+    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, boolean trackSizes) {
         this.includeGroupingContext = includeGroupingContext;
         this.reducedResponse = reducedResponse;
         this.projection = new Projection();
+        this.trackSizes = trackSizes;
     }
     
     public void initializeWhitelist(Set<String> whiteListFields) {
@@ -128,7 +138,7 @@ public class DocumentProjection implements DocumentPermutation {
     }
     
     private Attributes trim(Attributes attrs, String fieldName) {
-        Attributes newAttrs = new Attributes(attrs.isToKeep());
+        Attributes newAttrs = new Attributes(attrs.isToKeep(), trackSizes);
         for (Attribute<? extends Comparable<?>> attr : attrs.getAttributes()) {
             if (attr instanceof Document) {
                 Document newAttr = trim((Document) attr);
