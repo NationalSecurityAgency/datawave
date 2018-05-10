@@ -834,8 +834,12 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private RunningQuery getQueryById(String id) throws Exception {
+        return getQueryById(id, ctx.getCallerPrincipal());
+    }
+    
+    private RunningQuery getQueryById(String id, Principal principal) throws Exception {
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
+        Principal p = principal;
         String userid = p.getName();
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
@@ -1232,7 +1236,14 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } finally {
             if (null != queryId) {
-                close(queryId);
+                final Principal p = ctx.getCallerPrincipal();
+                final String closeQueryId = queryId;
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        close(closeQueryId, p);
+                    }
+                });
             }
         }
     }
@@ -1676,13 +1687,17 @@ public class QueryExecutorBean implements QueryExecutor {
     @Override
     @Timed(name = "dw.query.close", absolute = true)
     public VoidResponse close(@Required("id") @PathParam("id") String id) {
+        return close(id, ctx.getCallerPrincipal());
+    }
+    
+    private VoidResponse close(String id, Principal principal) {
         VoidResponse response = new VoidResponse();
         try {
-            boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id);
-            Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ((DatawavePrincipal) ctx.getCallerPrincipal()).getShortName());
+            boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id, principal);
+            Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ((DatawavePrincipal) principal).getShortName());
             if (tuple == null) {
                 try {
-                    RunningQuery query = getQueryById(id);
+                    RunningQuery query = getQueryById(id, principal);
                     close(query);
                 } catch (NotFoundQueryException e) {
                     // if connection request was canceled, then the call was successful even if a RunningQuery was not found
