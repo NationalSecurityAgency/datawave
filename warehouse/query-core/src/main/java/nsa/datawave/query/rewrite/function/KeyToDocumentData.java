@@ -19,7 +19,6 @@ import nsa.datawave.query.rewrite.exceptions.DatawaveFatalQueryException;
 import nsa.datawave.query.rewrite.iterator.QueryOptions;
 import nsa.datawave.query.rewrite.iterator.aggregation.DocumentData;
 import nsa.datawave.query.rewrite.predicate.EventDataQueryFilter;
-import nsa.datawave.query.rewrite.predicate.SeekingFilter;
 import nsa.datawave.query.util.Tuple3;
 import nsa.datawave.webservice.query.exception.DatawaveErrorCode;
 import nsa.datawave.webservice.query.exception.QueryException;
@@ -41,6 +40,8 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
+import static nsa.datawave.query.rewrite.Constants.EMPTY_VALUE;
 
 public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<DocumentData,Document>> {
     
@@ -198,6 +199,10 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                     if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
                         documentAttributes.add(Maps.immutableEntry(docAttrKey.get(), source.getTopValue()));
                     } else if (filter != null) {
+                        Key limitKey = filter.transform(docAttrKey.get());
+                        if (limitKey != null) {
+                            documentAttributes.add(Maps.immutableEntry(limitKey, EMPTY_VALUE));
+                        }
                         // request a seek range from the filter
                         Range seekRange = filter.getSeekRange(docAttrKey.get(), keyRange.getEndKey(), keyRange.isEndKeyInclusive());
                         if (seekRange != null) {

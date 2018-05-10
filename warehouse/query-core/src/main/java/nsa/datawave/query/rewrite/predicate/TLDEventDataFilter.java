@@ -3,8 +3,8 @@ package nsa.datawave.query.rewrite.predicate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.Set;
 
 import nsa.datawave.query.util.TypeMetadata;
@@ -15,7 +15,6 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 
@@ -52,16 +51,41 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     private ParseInfo lastParseInfo;
     
     /**
+     * track count limits per field, _ANYFIELD_ implies a constraint on all fields
+     */
+    private Map<String,Integer> limitFieldsMap;
+    
+    /**
+     * if _ANYFIELD_ appears in the limitFieldsMap this will be set to that value or -1 if not configured
+     */
+    private int anyFieldLimit;
+    
+    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
+                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
+        this(script, attributeFactory, expressionFilterEnabled, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null);
+    }
+    
+    /**
+     * Field which should be used when transform() is called on a rejected Key that is field limited to store the field
+     */
+    private String limitFieldsField = null;
+    
+    /**
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
      */
     public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
-                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
+                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField) {
         super(script, attributeFactory, expressionFilterEnabled);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
+        this.limitFieldsMap = limitFieldsMap;
+        this.limitFieldsField = limitFieldsField;
+        
+        // set the anyFieldLimit once if specified otherwise set to -1
+        anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
         
         extractQueryFieldsFromScript(script);
         updateLists(whitelist, blacklist);
@@ -282,13 +306,39 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         }
         
         final String fieldName = lastParseInfo.getField();
-        if (sortedWhitelist != null) {
-            range = getWhitelistSeek(current, fieldName, endKey, endKeyInclusive);
-        } else if (sortedBlacklist != null) {
-            range = getBlacklistSeek(current, fieldName, endKey, endKeyInclusive);
+        // first handle seek due to a field limit, then use the white/block lists if necessary
+        if (isFieldLimit(fieldName)) {
+            range = getFieldSeek(current, fieldName, endKey, endKeyInclusive);
+        }
+        
+        // if it wasn't a field limit seek then do a normal seek
+        if (range == null) {
+            if (sortedWhitelist != null) {
+                range = getWhitelistSeek(current, fieldName, endKey, endKeyInclusive);
+            } else if (sortedBlacklist != null) {
+                range = getBlacklistSeek(current, fieldName, endKey, endKeyInclusive);
+            }
         }
         
         return range;
+    }
+    
+    /**
+     * Seek starting from the end of the current field
+     * 
+     * @param current
+     *            the current key
+     * @param fieldName
+     *            the field name to be seeked
+     * @param endKey
+     *            the current seek end key
+     * @param endKeyInclusive
+     *            the current seek end key inclusive flag
+     * @return a new range that begins at the end of the current field
+     */
+    private Range getFieldSeek(Key current, String fieldName, Key endKey, boolean endKeyInclusive) {
+        Key startKey = new Key(current.getRow(), current.getColumnFamily(), new Text(fieldName + "\u0001"));
+        return new Range(startKey, true, endKey, endKeyInclusive);
     }
     
     /**
@@ -539,6 +589,11 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
                 lastField = currentField;
                 fieldCount = 1;
             }
+        } else if (!currentField.equals(lastField)) {
+            // always update a change in field even if counts aren't applied
+            lastField = currentField;
+            // since the counts aren't being applied don't increment the count just reset it
+            fieldCount = 0;
         }
         
         boolean keep = keep(currentField, isTld);
@@ -565,6 +620,10 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
      * @return true if the field should be kept based on the whitelist/blacklist, false otherwise
      */
     private boolean keep(String field, boolean isTld) {
+        if (isFieldLimit(field)) {
+            return false;
+        }
+        
         if (isTld) {
             if (sortedWhitelist != null) {
                 return sortedWhitelist.contains(field);
@@ -602,6 +661,36 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         }
         
         return new String(cq, 0, stopIndex);
+    }
+    
+    /**
+     * Test if the field is limited by anyField or specific field limitations and is not a query field
+     * 
+     * @param field
+     *            the field to test
+     * @return true if the field limit has been reached for this field, false otherwise
+     */
+    private boolean isFieldLimit(String field) {
+        return ((anyFieldLimit != -1 && fieldCount > anyFieldLimit) || (limitFieldsMap.get(field) != null && fieldCount > limitFieldsMap.get(field)))
+                        && !queryFields.contains(field);
+    }
+    
+    /**
+     * If the current key is rejected due to a field limit and a field limit field is specified generate a value with the field in it
+     * 
+     * @param toLimit
+     *            the
+     * @return
+     */
+    @Override
+    public Key transform(Key toLimit) {
+        ParseInfo info = getParseInfo(toLimit);
+        if (this.limitFieldsField != null && isFieldLimit(info.getField())) {
+            String limitedField = getParseInfo(toLimit).getField();
+            return new Key(toLimit.getRow(), toLimit.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + limitedField));
+        } else {
+            return null;
+        }
     }
     
     /**

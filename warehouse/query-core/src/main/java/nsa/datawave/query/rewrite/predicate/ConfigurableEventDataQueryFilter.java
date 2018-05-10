@@ -1,8 +1,6 @@
 package nsa.datawave.query.rewrite.predicate;
 
-import nsa.datawave.query.data.parsers.DatawaveKey;
 import nsa.datawave.query.rewrite.attributes.Document;
-import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
 import nsa.datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -78,5 +76,10 @@ public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
     @Override
     public boolean apply(Map.Entry<Key,String> input) {
         return filter.apply(input);
+    }
+    
+    @Override
+    public Key transform(Key toLimit) {
+        return filter.transform(toLimit);
     }
 }
