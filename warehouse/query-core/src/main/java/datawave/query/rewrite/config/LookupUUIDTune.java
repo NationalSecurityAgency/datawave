@@ -1,7 +1,13 @@
 package datawave.query.rewrite.config;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
+import datawave.query.rewrite.Constants;
 import datawave.query.rewrite.planner.DefaultQueryPlanner;
 import datawave.query.rewrite.planner.QueryPlanner;
 import datawave.query.rewrite.planner.SeekingQueryPlanner;
@@ -25,6 +31,15 @@ public class LookupUUIDTune implements Profile {
     protected int maxFieldHitsBeforeSeek = -1;
     protected int maxKeysBeforeSeek = -1;
     protected String queryIteratorClass = TLDQueryIterator.class.getCanonicalName();
+    protected int maxShardsPerDayThreshold = -1;
+    protected int pageByteTrigger = -1;
+    protected int maxPageSize = -1;
+    protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
+    protected boolean trackSizes = true;
+    protected boolean reduceFields = false;
+    protected int reduceFieldCount = -1;
+    protected boolean reduceFieldsPreQueryEvaluation = false;
+    protected String limitFieldsField = null;
     
     @Override
     public void configure(BaseQueryLogic<Entry<Key,Value>> logic) {
@@ -33,6 +48,7 @@ public class LookupUUIDTune implements Profile {
             rsq.setBypassAccumulo(bypassAccumulo);
             rsq.setSpeculativeScanning(speculativeScanning);
             rsq.setCacheModel(enableCaching);
+            rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
             if (reduceResponse) {
                 rsq.setCreateUidsIteratorClass(CreateTLDUidsIterator.class);
                 
@@ -41,6 +57,14 @@ public class LookupUUIDTune implements Profile {
                 planner.setMaxFieldHitsBeforeSeek(maxFieldHitsBeforeSeek);
                 planner.setMaxKeysBeforeSeek(maxKeysBeforeSeek);
                 rsq.setQueryPlanner(planner);
+                
+                if (maxPageSize != -1) {
+                    rsq.setMaxPageSize(maxPageSize);
+                }
+                
+                if (pageByteTrigger != -1) {
+                    rsq.setPageByteTrigger(pageByteTrigger);
+                }
             }
         }
         
@@ -83,8 +107,22 @@ public class LookupUUIDTune implements Profile {
             rsqc.setSerializeQueryIterator(true);
             rsqc.setMaxEvaluationPipelines(1);
             rsqc.setMaxPipelineCachedResults(1);
+            if (maxShardsPerDayThreshold != -1) {
+                rsqc.setShardsPerDayThreshold(maxShardsPerDayThreshold);
+            }
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
+            rsqc.setTrackSizes(trackSizes);
+            
+            if (reduceResponse) {
+                if (reduceFields && reduceFieldCount != -1) {
+                    Set<String> fieldLimits = new HashSet<>(1);
+                    fieldLimits.add(Constants.ANY_FIELD + "=" + reduceFieldCount);
+                    rsqc.setLimitFields(fieldLimits);
+                    rsqc.setLimitFieldsPreQueryEvaluation(reduceFieldsPreQueryEvaluation);
+                    rsqc.setLimitFieldsField(limitFieldsField);
+                }
+            }
         }
     }
     
@@ -158,5 +196,77 @@ public class LookupUUIDTune implements Profile {
     
     public String getQueryIteratorClass() {
         return queryIteratorClass;
+    }
+    
+    public int getMaxShardsPerDayThreshold() {
+        return maxShardsPerDayThreshold;
+    }
+    
+    public void setMaxShardsPerDayThreshold(int maxShardsPerDayThreshold) {
+        this.maxShardsPerDayThreshold = maxShardsPerDayThreshold;
+    }
+    
+    public int getPageByteTrigger() {
+        return pageByteTrigger;
+    }
+    
+    public void setPageByteTrigger(int pageByteTrigger) {
+        this.pageByteTrigger = pageByteTrigger;
+    }
+    
+    public int getMaxPageSize() {
+        return maxPageSize;
+    }
+    
+    public void setMaxPageSize(int maxPageSize) {
+        this.maxPageSize = maxPageSize;
+    }
+    
+    public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
+        this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;
+    }
+    
+    public Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
+        return primaryToSecondaryFieldMap;
+    }
+    
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
+    }
+    
+    public boolean isReduceFields() {
+        return reduceFields;
+    }
+    
+    public void setReduceFields(boolean reduceFields) {
+        this.reduceFields = reduceFields;
+    }
+    
+    public int getReduceFieldCount() {
+        return reduceFieldCount;
+    }
+    
+    public void setReduceFieldCount(int reduceFieldCount) {
+        this.reduceFieldCount = reduceFieldCount;
+    }
+    
+    public boolean isReduceFieldsPreQueryEvaluation() {
+        return reduceFieldsPreQueryEvaluation;
+    }
+    
+    public void setReduceFieldsPreQueryEvaluation(boolean reduceFieldsPreQueryEvaluation) {
+        this.reduceFieldsPreQueryEvaluation = reduceFieldsPreQueryEvaluation;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
+    }
+    
+    public String getLimitFieldsField() {
+        return limitFieldsField;
     }
 }

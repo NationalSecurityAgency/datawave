@@ -538,7 +538,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getAuditType(q)).andReturn(AuditType.NONE);
         EasyMock.expect(logic.getConnPoolName()).andReturn("connPool1");
         
-        EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString())).andReturn(false);
+        EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), principal)).andReturn(false);
         connectionFactory.returnConnection(EasyMock.isA(Connector.class));
         
         final AtomicBoolean initializeLooping = new AtomicBoolean(false);

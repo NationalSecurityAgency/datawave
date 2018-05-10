@@ -436,6 +436,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
+        addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), true);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, compressMappings);
     }
@@ -1526,6 +1527,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 
                 if (config.isDataQueryExpressionFilterEnabled()) {
                     addOption(cfg, QueryOptions.DATA_QUERY_EXPRESSION_FILTER_ENABLED, Boolean.toString(config.isDataQueryExpressionFilterEnabled()), false);
+                }
+                
+                if (config.isLimitFieldsPreQueryEvaluation()) {
+                    addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
+                }
+                
+                if (config.getLimitFieldsField() != null) {
+                    addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
                 }
                 
                 return cfg;

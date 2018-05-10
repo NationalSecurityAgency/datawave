@@ -521,6 +521,7 @@ public class MetadataHelper implements ApplicationContextAware {
      * @return
      * @throws TableNotFoundException
      */
+    @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#p0,#p1,#p2,#p3}", cacheManager = "metadataHelperCacheManager")
     public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unevaluatedFields, Set<String> ingestTypeFilter)
                     throws TableNotFoundException {
         Preconditions.checkNotNull(modelTableName);
@@ -1101,6 +1102,7 @@ public class MetadataHelper implements ApplicationContextAware {
      * @return
      * @throws TableNotFoundException
      */
+    @Cacheable(value = "getTermFrequencyFields", key = "{#root.target.auths,#root.target.metadataTableName,#p0}", cacheManager = "metadataHelperCacheManager")
     public Set<String> getTermFrequencyFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
         Multimap<String,String> termFrequencyFields = loadTermFrequencyFields();
