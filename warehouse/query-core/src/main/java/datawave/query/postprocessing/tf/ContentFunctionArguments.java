@@ -13,6 +13,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 class ContentFunctionArguments {
     private List<String> terms;
     private int distance;
+    private float minScore;
     private List<String> zone = null;
     
     public List<String> terms() {
@@ -101,26 +102,31 @@ class ContentFunctionArguments {
             // Pull off the zone if it's the zone phrase function
             if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(JexlASTHelper.dereference(args.get(currentArg)).image)) {
                 zone = constructZone(args.get(currentArg++));
+                if (zone.isEmpty()) {
+                    currentArg--;
+                }
+            }
+            
+            String nextArg = JexlASTHelper.dereference(args.get(currentArg++)).image.trim();
+            
+            // Test for if the next arg is the term offset map first, This catch exists since it is the most likely query scenario
+            if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(nextArg)) {
+                Float minScoreArg = readMinScore(nextArg);
+                if (null != minScoreArg) {
+                    minScore = minScoreArg.floatValue();
+                    nextArg = JexlASTHelper.dereference(args.get(currentArg++)).image.trim();
+                }
+            } else { // short circuit, term offset map and it's terms are the final arguments
+                readTerms(args, currentArg);
+                return;
             }
             
             // Ensure the next term is the termOffsetMap variable
-            if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(JexlASTHelper.dereference(args.get(currentArg++)).image.trim())) {
+            if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(nextArg)) {
                 throw new ParseException("Did not find the term offset map name where expected in the function arguments");
             }
             
-            // Get the actual terms
-            terms = new ArrayList<>(args.size() - currentArg);
-            
-            // Get the actual terms
-            for (int i = currentArg; i < args.size(); i++) {
-                String term = JexlASTHelper.dereference(args.get(i)).image.trim();
-                
-                if (term.length() > 1 && term.charAt(0) == '\'' && term.charAt(term.length() - 1) == '\'') {
-                    term = term.substring(1, term.length() - 1);
-                }
-                
-                terms.add(term.toLowerCase(Locale.ENGLISH));
-            }
+            readTerms(args, currentArg);
         } else {
             throw new ParseException("Unrecognized content function: " + f.name());
         }
@@ -137,5 +143,29 @@ class ContentFunctionArguments {
             }
         }
         return zones;
+    }
+    
+    private void readTerms(final List<JexlNode> args, int currentArg) {
+        // Get the actual terms
+        terms = new ArrayList<>(args.size() - currentArg);
+        
+        // Get the actual terms
+        for (int i = currentArg; i < args.size(); i++) {
+            String term = JexlASTHelper.dereference(args.get(i)).image.trim();
+            
+            if (term.length() > 1 && term.charAt(0) == '\'' && term.charAt(term.length() - 1) == '\'') {
+                term = term.substring(1, term.length() - 1);
+            }
+            
+            terms.add(term.toLowerCase(Locale.ENGLISH));
+        }
+    }
+    
+    private static final Float readMinScore(String arg) {
+        try {
+            return Float.parseFloat(arg);
+        } catch (NumberFormatException nfe) {
+            return null;
+        }
     }
 }

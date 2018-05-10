@@ -1,5 +1,6 @@
 // compile with protoc --java_out ../java
 //      classpath for compile command should include ../../../target/classes and protobuf-java-2.2.0.jar
+syntax = "proto2";
 
 package datawave.ingest.protobuf;
 
@@ -7,5 +8,8 @@ option java_package = "datawave.ingest.protobuf";
 option optimize_for = SPEED;
 
 message Info {
-  repeated uint32 termOffset = 3; 
+  repeated uint32 termOffset = 3;
+  repeated uint32 prevSkips = 4;
+  repeated uint32 score = 5;
+  optional bool zeroOffsetMatch = 6 [default = true];
 }

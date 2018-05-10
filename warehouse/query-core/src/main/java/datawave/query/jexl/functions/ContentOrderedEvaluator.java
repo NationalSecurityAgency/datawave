@@ -1,21 +1,22 @@
 package datawave.query.jexl.functions;
 
-import java.util.*;
-
+import datawave.ingest.protobuf.TermWeightPosition;
 import org.apache.log4j.Logger;
+
+import java.util.*;
 
 /**
  * <p>
- * To support phrase() queries on all unicode terms, the terms are presented as an array of Strings and the integer offset lists are stored in the
- * <code>Map&lt;String, List&lt;Integer&gt;&gt;</code>. There should be an entry in the map for each term provided in the function call
+ * To support phrase() queries on all unicode terms, the terms are presented as an array of Strings and the TermWeightPosition offset lists are stored in the
+ * <code>Map&lt;String, List&lt;TermFrequencyList&gt;&gt;</code>. There should be an entry in the map for each term provided in the function call
  * </p>
  *
  * <b>Functions</b>
  * <ul>
  * <li>content:phrase(map, term1, term2, ...)
  * <ul>
- * <li>Only matches true on documents that contain the terms adjacent to each other in the order provided. Synonyms at the same position are considered
- * adjacent.</li>
+ * <li>Only matches true, a list of positions &gt; 0, on documents that contain the terms adjacent to each other in the order provided. Synonyms at the same
+ * position are considered adjacent.</li>
  * </ul>
  * </li>
  * <li>content:phrase(zone, map, term1, term2, ...)
@@ -23,287 +24,498 @@ import org.apache.log4j.Logger;
  * <li>Same as content:phrase() but with a zone specified</li>
  * </ul>
  * </li>
+ * <li>content:phrase(zone, score, map, term1, term2, ...)
+ * <ul>
+ * <li>Same as content:phrase() but with a zone and max score filter specified</li>
  * </ul>
- *
- * 
- * 
- * 
- *
+ * </li>
+ * </ul>
  */
 public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
+    
     private static final Logger log = Logger.getLogger(ContentOrderedEvaluator.class);
     
-    public ContentOrderedEvaluator(Set<String> fields, int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
-        super(fields, distance, termOffsetMap, terms);
+    private static final int FORWARD = 1;
+    private static final int REVERSE = -1;
+    
+    public ContentOrderedEvaluator(Set<String> fields, int distance, float maxScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+        super(fields, distance, maxScore, termOffsetMap, terms);
+        if (log.isTraceEnabled()) {
+            log.trace("ContentOrderedEvaluatorTreeSet constructor");
+        }
     }
     
-    /**
-     * Evaluate a list of offset lists to find an ordered sequence of offsets with a slot of this.distance. This will find the minimum length list of offsets,
-     * and then search forward and backward for ascending and descending offsets.
-     */
     @Override
-    protected boolean evaluate(List<List<Integer>> offsets) {
-        // Quick short-circuit -- if we have fewer offsets than terms in the phrase/adjacency/within
-        // we're evaluating, we know there are no results
-        if (this.terms.length > offsets.size()) {
+    protected boolean evaluate(List<List<TermWeightPosition>> offsets) {
+        if (offsets.isEmpty() || offsets.size() < terms.length) {
             return false;
         }
         
-        // first lets prune the lists by the maximum first offset and the minimum last offset
-        offsets = prune(offsets);
-        if (offsets == null) {
-            return false;
+        NavigableSet<EvaluateTermPosition> termPositions = new TreeSet<>();
+        int direction = FORWARD;
+        
+        // This is a little hokey, but because when the travers fails it falls back to looking for the first node
+        // A short "first" or "last" list should make it fast.
+        if (offsets.get(0).size() > offsets.get(offsets.size() - 1).size()) {
+            direction = REVERSE;
         }
         
-        // find the minimum length list
-        int minLength = offsets.get(0).size();
-        int minLengthIndex = 0;
-        int leftDensity = minLength;
-        int rightDensity = 0;
-        for (int i = 1; i < offsets.size(); i++) {
-            final int sz = offsets.get(i).size();
-            rightDensity += sz;
-            
-            if (sz < minLength) {
-                minLength = sz;
-                minLengthIndex = i;
-                leftDensity += rightDensity;
-                rightDensity = 0;
-            }
-        }
-        leftDensity -= minLength;
-        
-        // Quick short-circuit -- if we have an empty offset list then no results
-        if (minLength == 0) {
-            return false;
-        }
-        
-        final String[] terms = this.terms;
-        
-        if (rightDensity > leftDensity) {
-            // now evaluate the list of lists in both directions to find an appropriate sequence of offsets
-            for (int i = 0; i < minLength; i++) {
-                // if we can find a ascending sequence going forward
-                if (traverseAndPrune(terms, offsets, minLengthIndex, i, 0, distance, 1, minLengthIndex + 1)) {
-                    // if we can find a descending sequence going backward
-                    if (traverseAndPrune(terms, offsets, minLengthIndex, i, 0, distance, -1, -1)) {
-                        // then we have a matching sequence!
-                        return true;
-                    }
+        int[] maxSkips = new int[terms.length];
+        for (int i = 0; i < terms.length; i++) {
+            int maxSkip = 0;
+            for (TermWeightPosition twp : offsets.get(i)) {
+                if (twp.getPrevSkips() > maxSkip) {
+                    maxSkip = twp.getPrevSkips();
                 }
-            }
-        } else {
-            // now evaluate the list of lists in both directions to find an appropriate sequence of offsets
-            for (int i = minLength - 1; i >= 0; i--) {
-                // if we can find a ascending sequence going forward
-                if (traverseAndPrune(terms, offsets, minLengthIndex, i, 0, distance, -1, minLengthIndex - 1)) {
-                    // if we can find a descending sequence going backward
-                    if (traverseAndPrune(terms, offsets, minLengthIndex, i, 0, distance, 1, offsets.size())) {
-                        // then we have a matching sequence!
-                        return true;
+                
+                // Skip terms greater then the max score if it score is set
+                if (twp.getScore() > maxScore) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("[" + terms[i] + "] Skip score => " + twp);
                     }
+                    continue;
                 }
+                
+                EvaluateTermPosition etp = new EvaluateTermPosition(terms[i], i, twp);
+                termPositions.add(etp);
             }
+            maxSkips[i] = maxSkip;
         }
         
-        return false;
-    }
-    
-    /**
-     * This method will start at the offset list indexed by termIndex, and the offset indexed by offsetIndex, and will navigate the other offset lists in the
-     * direction specified for preceding or following offsets within the range specified. The offset lists will be replace (pruned) as offsets are eliminated
-     * from being possible candidates.
-     * 
-     * @param terms
-     *            an array of terms, parallel with the top level list from the <code>offsets</code> parameter.
-     * @param offsets
-     *            matrix of term positions, the outer list lis a list of terms, the inner lists are term positions for that term. The top level of this list is
-     *            parallel with the array of terms[].
-     * @param termIndex
-     *            index of the current term in the terms array and offsets list.
-     * @param offsetIndex
-     *            starting term position in the current term's offset list.
-     * @param rangeMin
-     *            minimum matching distance: accept adjacent term positions that are no less than this distance away from the current term.
-     * @param rangeMax
-     *            maximum matching distance: accept adjacent terms positions that are no greater than this distance away from the current term.
-     * @param direction
-     * @return true if a sequence if found
-     */
-    private static final boolean traverseAndPrune(final String[] terms, final List<List<Integer>> offsets, final int termIndex, final int offsetIndex,
-                    final int rangeMin, final int rangeMax, final int direction, final int pruneIndex) {
-        // if already at the end, then we have success
-        if (termIndex == (direction == 1 ? offsets.size() - 1 : 0)) {
+        // Low/High now needs to consider the distance of the skips
+        EvaluateTermPosition[] lowHigh = getLowHigh(offsets, maxSkips);
+        if (null == lowHigh) {
+            return false;
+        }
+        termPositions = termPositions.subSet(lowHigh[0], true, lowHigh[1], true);
+        
+        if (log.isTraceEnabled()) {
+            log.trace("Term Positions: " + termPositions);
+        }
+        
+        // Number of matched terms
+        termPositions = (direction == FORWARD) ? termPositions : termPositions.descendingSet();
+        List<EvaluateTermPosition> found = traverse(termPositions, direction);
+        
+        if (null != found && found.size() == terms.length) {
+            // to return offset => result.add(found.get(0).termWeightPosition.getOffset());
             return true;
         }
         
-        // get the offset in the current list
-        int offset = offsets.get(termIndex).get(offsetIndex);
-        
-        // find the range of offsets that meet our criteria in the next list
-        List<Integer> nextList = offsets.get(termIndex + direction);
-        
-        // If we are not accepting multiple of the same term matching at the same offset,
-        // then adjust rangeMin from 0 to 1 if terms[termIndex] and terms[termIndex+direction]
-        // are equal
-        int startOffset = offset + (rangeMin * direction);
-        int endOffset = offset + (rangeMax * direction);
-        if (rangeMin == 0 && terms[termIndex].equals(terms[termIndex + direction])) {
-            startOffset = offset + direction;
-        }
-        
-        int start, end;
-        
-        if (startOffset <= endOffset) {
-            start = findFirst(nextList, startOffset);
-            end = scanForLast(nextList, start, endOffset);
-        } else {
-            start = findLast(nextList, startOffset);
-            end = scanForFirst(nextList, start, endOffset);
-        }
-        
-        // for each offset that falls within the specified range
-        for (int i = start; (direction == 1 ? i <= end : i >= end); i += direction) {
-            // now recursively traverse and prune the next term.
-            int nextListSize = nextList.size();
-            if (traverseAndPrune(terms, offsets, termIndex + direction, i, rangeMin, rangeMax, direction, pruneIndex)) {
-                return true;
-            } else if (direction == 1) {
-                // Note that this call may have pruned the next term list
-                // invalidating our index range, so we will need to adjust accordingly
-                nextList = offsets.get(termIndex + direction); // offsets.get(..)
-                int adjustment = nextListSize - nextList.size();
-                i -= adjustment;
-                end -= adjustment;
-                nextListSize = nextList.size();
-            }
-        }
-        
-        // prune if requested
-        if (direction == 1 ? termIndex >= pruneIndex : termIndex <= pruneIndex) {
-            offsets.set(termIndex, pruneByIndex(offsets.get(termIndex), offsetIndex + direction, direction));
-        }
-        
-        // no traversal found
+        // fail
         return false;
     }
     
     /**
-     * Prune the lists by the maximum first offset and the minimum last offset
-     * 
+     * Prune the lists by the maximum first offset and the min last offset
+     *
      * @param offsets
-     *            , null if this results in
      */
-    private List<List<Integer>> prune(List<List<Integer>> offsets) {
+    private EvaluateTermPosition[] getLowHigh(List<List<TermWeightPosition>> offsets, int[] maxSkips) {
+        
         // first find the max offset of the initial offset in each list and the min offset of the last offset in each list (O(n))
-        List<Integer> list = offsets.get(0);
-        int maxFirstOffset = list.get(0);
-        int minLastOffset = list.get(list.size() - 1);
+        List<TermWeightPosition> list = offsets.get(0);
+        int maxFirstTermIndex = 0;
+        TermWeightPosition maxFirstOffset = list.get(0);
+        int minLastTermIndex = 0;
+        TermWeightPosition minLastOffset = list.get(list.size() - 1);
+        
         for (int i = 1; i < offsets.size(); i++) {
             list = offsets.get(i);
-            int first = list.get(0);
-            if (first > maxFirstOffset) {
+            TermWeightPosition first = list.get(0);
+            
+            if (first.compareTo(maxFirstOffset) > 0) {
+                maxFirstTermIndex = i;
                 maxFirstOffset = first;
             }
-            int last = list.get(list.size() - 1);
-            if (last < minLastOffset) {
+            
+            TermWeightPosition last = list.get(list.size() - 1);
+            if (last.compareTo(minLastOffset) <= 0) {
+                minLastTermIndex = i;
                 minLastOffset = last;
             }
         }
-        // fail fast if the max first offset is greater than the min last offset so much that
-        // a consecutive sequence cannot be found between the two
-        int maxOverallDistance = (distance * offsets.size());
         
-        // TODO: take the maxFirstOffsetIndex and the minLastOffsetIndex into account when computing the distance to compare against
-        if ((maxFirstOffset - minLastOffset) > maxOverallDistance) {
+        int maxFirstTWP = maxFirstOffset.getLowOffset() - (maxFirstTermIndex * distance);
+        for (int i = maxFirstTermIndex; i >= 0; i--) {
+            maxFirstTWP -= maxSkips[i];
+        }
+        
+        int minLastTWP = minLastOffset.getOffset() + (terms.length - minLastTermIndex - 1) * distance;
+        for (int i = minLastTermIndex; i < maxSkips.length; i++) {
+            minLastTWP += maxSkips[i];
+        }
+        
+        // min/max have already been adjusted for distance,
+        // if the first is larger the last they are out of order and no match is possible
+        if ((maxFirstTWP - minLastTWP) > 0) {
             return null;
         }
         
-        // now prune the offsets from each end (O(n))
-        // TODO: take the maxFirstOffsetIndex and the minLastOffsetIndex into account when computing the prune points
-        List<List<Integer>> newOffsets = new ArrayList<List<Integer>>(offsets.size());
-        for (int i = 0; i < offsets.size(); i++) {
-            // defensive copy because we will be modifying these later.
-            list = new ArrayList<Integer>(offsets.get(i));
+        // Construct low/high term positions
+        TermWeightPosition.Builder twpBuilder = new TermWeightPosition.Builder();
+        TermWeightPosition lowTWP = twpBuilder.setOffset(maxFirstTWP).build();
+        TermWeightPosition highTWP = twpBuilder.setOffset(minLastTWP).build();
+        
+        // Because sort is termPosition declining put low as the highest term position and hte high as the lowest
+        EvaluateTermPosition low = new EvaluateTermPosition(terms[terms.length - 1], terms.length - 1, lowTWP);
+        EvaluateTermPosition high = new EvaluateTermPosition(terms[0], 0, highTWP);
+        
+        return new EvaluateTermPosition[] {low, high};
+    }
+    
+    /**
+     *
+     * The traverse function descend the tree until a term is out of reach. When the next erm is out of reach it will fall back to the last "first term" and
+     * start over.
+     *
+     * skipped = is a reserved list of terms, reserved for matching at the same offset
+     *
+     * found = represent the largest match for that term and position still within the distance
+     *
+     * @param sub
+     *            NavigableSet sorted by EvaluateTermPosition comparable
+     * @param direction
+     *            1 == FORWARD, -1 == REVERSE, use static finals
+     * @return
+     */
+    protected List<EvaluateTermPosition> traverse(NavigableSet<EvaluateTermPosition> sub, int direction) {
+        List<EvaluateTermPosition> skipped = new ArrayList<>();
+        List<EvaluateTermPosition> found = new ArrayList<>();
+        int targetIndex = (direction == FORWARD) ? 0 : (terms.length - 1);
+        
+        // Find first root node
+        for (EvaluateTermPosition b : sub) {
+            if (b.phraseIndex == targetIndex) {
+                found.add(0, b);
+                
+                if (skipped.size() > 0) {
+                    // Add the skipped values that are at the same offset or within the distance of teh first term
+                    evaluateSkipped(b, skipped, found, direction);
+                    
+                    // Test for completion
+                    if (found.size() == terms.length) {
+                        return found;
+                    }
+                }
+                
+                // Start the search based on the largest found term index
+                List<EvaluateTermPosition> result = traverse(found.get(found.size() - 1), sub.tailSet(b, false), found, direction);
+                return result;
+            }
+            skipped.add(b);
+        }
+        
+        // No root node fail
+        return null;
+    }
+    
+    /**
+     *
+     * @param root
+     *            the last term and position matched
+     * @param sub
+     *            sorted navigable set of the remaining tree to match
+     * @param direction
+     *            1 == forward, -1 reverse
+     * @return number of matched terms
+     */
+    protected List<EvaluateTermPosition> traverse(EvaluateTermPosition root, NavigableSet<EvaluateTermPosition> sub, int direction) {
+        List<EvaluateTermPosition> etpa = new ArrayList<>(terms.length);
+        etpa.add(0, root);
+        return traverse(root, sub, etpa, direction);
+    }
+    
+    /**
+     *
+     * @param root
+     *            the last term and position matched
+     * @param sub
+     *            sorted navigableset of the remaining tree to match
+     * @param found
+     *            represents the largest match for that term and position still within the distance
+     * @param direction
+     *            1 == forward, -1 reverse
+     * @return number of matched terms
+     */
+    protected List<EvaluateTermPosition> traverse(EvaluateTermPosition root, NavigableSet<EvaluateTermPosition> sub, List<EvaluateTermPosition> found,
+                    int direction) {
+        // Success, why keep going.
+        if (found.size() == terms.length) {
+            return found;
+        }
+        
+        List<EvaluateTermPosition> skipped = new ArrayList<>();
+        for (EvaluateTermPosition termPosition : sub) {
+            // Same term position
+            if (root.phraseIndex == termPosition.phraseIndex) {
+                boolean first = (direction == FORWARD) ? (termPosition.phraseIndex - 1 < 0) : (termPosition.phraseIndex + 1 >= terms.length);
+                if (first || (!first && found.get(getFoundIndex(termPosition, direction)).isWithIn(termPosition, distance, direction))) {
+                    // First or Not first, and with in distance
+                    updateFound(termPosition, found, direction);
+                    root = termPosition;
+                    continue;
+                    
+                } else {
+                    // Not with in distance
+                    if (found.size() == terms.length) {
+                        return found;
+                    }
+                    
+                    // The term was to large for the currant found terms
+                    // We will grab the last skipped value, set it as the new root
+                    // and roll back to the last found term and try again.
+                    return traverseFailure(sub, skipped, termPosition, direction);
+                }
+            }
             
-            newOffsets.add(pruneByValue(list, maxFirstOffset - maxOverallDistance, minLastOffset + maxOverallDistance));
+            // Next term phrase
+            if ((root.phraseIndex + direction) == termPosition.phraseIndex) {
+                if (root.isWithIn(termPosition, distance, direction)) {
+                    // Same term and position, drop it
+                    if (root.isSameTerm(termPosition) && root.termWeightPosition.equals(termPosition.termWeightPosition)) {
+                        continue;
+                    }
+                    
+                    updateFound(termPosition, found, direction);
+                    
+                    if (found.size() == terms.length) {
+                        return found;
+                    }
+                    
+                    NavigableSet<EvaluateTermPosition> subB = sub.tailSet(termPosition, false);
+                    
+                    List<EvaluateTermPosition> results = traverse(termPosition, subB, found, direction);
+                    if (null == results || results.size() != terms.length) {
+                        if (skipped.size() > 0) {
+                            evaluateSkipped(found.get(found.size() - 1), skipped, found, direction);
+                        }
+                    }
+                    return found;
+                }
+                
+                // Failure for current root node find next
+                return traverseFailure(sub, skipped, termPosition, direction);
+            }
+            
+            if (log.isTraceEnabled()) {
+                log.trace("term is out of position, likely on same offset, add to skip: " + termPosition);
+            }
+            skipped.add(termPosition);
         }
-        return newOffsets;
+        
+        // empty sub
+        return found;
     }
     
     /**
-     * Given a list of offsets, return a sublist that contains nothing less that the max first offset, and nothing more than the min last offset
-     * 
-     * @param offsets
-     * @param maxFirstOffset
-     * @param minLastOffset
-     * @return the sublist
+     *
+     * @param sub
+     *            current sored set being evaluated
+     * @param skipped
+     *            list of terms that were skipped for being out of order, sorted in the same order as the set
+     * @param term
+     *            current term that failed against the current found terms
+     * @param direction
+     *            1 == FORWARD, -1 == REVERSE
+     * @return number of found terms for the given criteria
      */
-    private List<Integer> pruneByValue(List<Integer> offsets, int maxFirstOffset, int minLastOffset) {
-        final int start, end;
+    protected List<EvaluateTermPosition> traverseFailure(NavigableSet<EvaluateTermPosition> sub, List<EvaluateTermPosition> skipped, EvaluateTermPosition term,
+                    int direction) {
         
-        if (maxFirstOffset <= minLastOffset) {
-            start = findFirst(offsets, maxFirstOffset);
-            end = findLast(offsets, minLastOffset);
+        // Failure for current root node find next
+        NavigableSet<EvaluateTermPosition> subB;
+        if (skipped.size() > 0) {
+            subB = sub.tailSet(skipped.get(0), true);
         } else {
-            start = findLast(offsets, maxFirstOffset);
-            end = findFirst(offsets, minLastOffset);
+            subB = sub.tailSet(term, true);
         }
         
-        return offsets.subList(start, end + 1);
+        if (subB.size() > 0) { // Nothing after a, so it will fall out of the loop
+            return traverse(subB, direction);
+        }
+        
+        return null;
     }
     
-    private static final List<Integer> pruneByIndex(final List<Integer> offsets, final int fromIndex, final int direction) {
-        if (direction == 1) {
-            return offsets.subList(fromIndex, offsets.size());
-        } else {
-            return offsets.subList(0, fromIndex + 1);
+    /**
+     *
+     * @param root
+     *            term normally the last found and highest index
+     * @param skipped
+     *            list of terms sorted by offset or EvaluateTermPosition comparable
+     * @param found
+     *            list of matched terms for the given distance value
+     * @param direction
+     *            1 == FORWARD, -1 == REVERSE
+     */
+    protected void evaluateSkipped(EvaluateTermPosition root, List<EvaluateTermPosition> skipped, List<EvaluateTermPosition> found, int direction) {
+        
+        while (skipped.size() > 0 && found.size() < terms.length) {
+            EvaluateTermPosition skip = skipped.remove(skipped.size() - 1);
+            if (root.isZeroOffset(skip)) {
+                // Fail fast, same position
+                return;
+            }
+            
+            // Same term and position skip
+            if (root.isSameTerm(skip) && root.termWeightPosition.equals(skip.termWeightPosition)) {
+                continue;
+            }
+            
+            if (root.phraseIndex + direction == skip.phraseIndex && root.isWithIn(skip, distance, direction)) {
+                updateFound(skip, found, direction);
+                root = skip;
+            } else {
+                // Fail fast, should be an ordered list
+                return;
+            }
         }
     }
     
     /**
-     * @param offsets
-     *            list of offsets to search
-     * @return an int[]
+     *
+     * @param termPosition
+     *            current term
+     * @param direction
+     *            1 == FORWARD, -1 == REVERSE
+     * @return index for reference into the "found" list, it is always filled in 0 to terms length
      */
-    /*
-     * private static final int[] findIndexRange(final List<Integer> offsets,final int fromOffset,final int toOffset) { final int start, end; if (fromOffset <=
-     * toOffset) { start = findFirst(offsets, fromOffset); end = scanForLast(offsets, start, toOffset); } else { start = findLast(offsets, fromOffset); end =
-     * scanForFirst(offsets, start, toOffset); } return new int[] {start, end}; }
+    protected int getFoundIndex(EvaluateTermPosition termPosition, int direction) {
+        if (direction == FORWARD) {
+            return termPosition.phraseIndex;
+        } else {
+            return (terms.length - termPosition.phraseIndex) + direction;
+        }
+    }
+    
+    /**
+     * Updates the term into the found list, add or replace
+     *
+     * @param termPosition
+     *            current term
+     * @param found
+     *            current list of found nodes, the terms getFoundIndex will be added or replaced
+     * @param direction
+     *            1 == FORWARD, -1 == REVERSE
      */
-    
-    private static final int findFirst(final List<Integer> offsets, final int offset) {
-        int index = Collections.binarySearch(offsets, offset);
-        if (index < 0) { // invert the index from negative to find the appropriate starting postion for a missing offset value.
-            index = (index + 1) * -1;
+    protected void updateFound(EvaluateTermPosition termPosition, List<EvaluateTermPosition> found, int direction) {
+        int index = getFoundIndex(termPosition, direction);
+        if (found.size() <= index) {
+            found.add(index, termPosition);
+        } else {
+            found.set(index, termPosition);
         }
-        return index;
     }
     
-    private static final int findLast(final List<Integer> offsets, final int offset) {
-        int index = Collections.binarySearch(offsets, offset);
-        if (index < 0) { // invert the index from negative to find the appropriate starting postion for a missing offset value.
-            index = (index + 2) * -1;
+    /**
+     * <p>
+     * EvaluateTermPosition: Is a utility class for sorting terms and their positions
+     * </p>
+     *
+     * <ul>
+     * <li>isZeroOffset() two terms have the same offset, if it isn't allowed</li>
+     * <li>isWithIn() are two terms within a certain distance, with respect to direction</li>
+     * <li>comparable =&gt; prioritizes position, then phraseIndex, and finally alphanumeric on term</li>
+     * </ul>
+     */
+    private static class EvaluateTermPosition implements Comparable<EvaluateTermPosition> {
+        String term;
+        int phraseIndex;
+        TermWeightPosition termWeightPosition;
+        
+        public EvaluateTermPosition(String term, Integer phraseIndex, TermWeightPosition termWeightPosition) {
+            this.term = term;
+            this.phraseIndex = phraseIndex;
+            this.termWeightPosition = termWeightPosition;
         }
-        return index;
-    }
-    
-    /** Scan for index of the term position that is not greater than toOffset */
-    private static final int scanForLast(final List<Integer> offsets, final int startIndex, final int toOffset) {
-        for (int i = startIndex; i < offsets.size(); i++) {
-            if (offsets.get(i) > toOffset) {
-                return i - 1;
+        
+        /**
+         *
+         * Conditional if to allow these positions based on offset True if zeroOffset is not allowed, and offsets are equal. False if zeroOffsets are allowed.
+         *
+         * @param o
+         *            Other position
+         * @return True if zeroOffset is not allowed, and offsets are equal
+         */
+        public boolean isZeroOffset(EvaluateTermPosition o) {
+            if ((!this.termWeightPosition.getZeroOffsetMatch()) || (!o.termWeightPosition.getZeroOffsetMatch())) {
+                
+                if (this.termWeightPosition.getOffset() == o.termWeightPosition.getOffset()) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("EvaluateTermPosition.isZeroOffset: " + this.termWeightPosition.getOffset() + " == " + o.termWeightPosition.getOffset());
+                    }
+                    return true;
+                }
             }
+            return false;
         }
-        return offsets.size() - 1;
-    }
-    
-    private static final int scanForFirst(final List<Integer> offsets, final int startIndex, final int toOffset) {
-        for (int i = startIndex; i >= 0; i--) {
-            if (offsets.get(i) < toOffset) {
-                return i + 1;
+        
+        public boolean isWithIn(EvaluateTermPosition o, int distance) {
+            return isWithIn(o, distance, FORWARD);
+        }
+        
+        public boolean isWithIn(EvaluateTermPosition o, int distance, int direction) {
+            
+            // Instructed to not match at the same position
+            if (isZeroOffset(o)) {
+                return false;
             }
+            
+            int low, high = -1;
+            EvaluateTermPosition eval;
+            switch (direction) {
+                case FORWARD:
+                    low = termWeightPosition.getLowOffset();
+                    high = termWeightPosition.getOffset() + distance;
+                    eval = o;
+                    break;
+                case REVERSE:
+                    low = o.termWeightPosition.getLowOffset();
+                    high = o.termWeightPosition.getOffset() + distance;
+                    eval = this;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid direction option.");
+            }
+            
+            if (log.isTraceEnabled()) {
+                log.trace("EvaluateTermPosition.isWithIn: " + low + "<=" + eval.termWeightPosition.getOffset() + " && "
+                                + eval.termWeightPosition.getLowOffset() + "<=" + high);
+            }
+            
+            return (low <= eval.termWeightPosition.getOffset() && eval.termWeightPosition.getLowOffset() <= high);
         }
-        return 0;
+        
+        public boolean isSameTerm(EvaluateTermPosition o) {
+            // Fail on same term at same position
+            if (term.equals(o.term)) {
+                return true;
+            }
+            
+            return false;
+        }
+        
+        @Override
+        public int compareTo(EvaluateTermPosition o) {
+            int result = termWeightPosition.compareTo(o.termWeightPosition);
+            if (result != 0) {
+                return result;
+            }
+            
+            // Reverse the phrase index so you hit the other phrases before hitting current phrase index
+            // This helps with end match scenarios
+            result = Integer.compare(o.phraseIndex, phraseIndex);
+            if (result != 0) {
+                return result;
+            }
+            
+            return term.compareTo(o.term);
+        }
+        
+        @Override
+        public String toString() {
+            return "{" + "term='" + term + '\'' + ", index=" + phraseIndex + ", position=" + termWeightPosition + '}';
+        }
     }
 }
