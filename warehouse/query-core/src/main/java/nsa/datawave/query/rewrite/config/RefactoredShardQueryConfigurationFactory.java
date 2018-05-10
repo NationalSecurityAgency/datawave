@@ -148,6 +148,8 @@ public class RefactoredShardQueryConfigurationFactory {
         config.setBypassAccumulo(configuredLogic.isBypassAccumulo());
         config.setSpeculativeScanning(configuredLogic.getSpeculativeScanning());
         config.setLimitFields(configuredLogic.getLimitFields());
+        config.setLimitFieldsPreQueryEvaluation(configuredLogic.isLimitFieldsPreQueryEvaluation());
+        config.setLimitFieldsField(configuredLogic.getLimitFieldsField());
         config.setBackoffEnabled(configuredLogic.getBackoffEnabled());
         config.setUnsortedUIDsEnabled(configuredLogic.getUnsortedUIDsEnabled());
         config.setQuery(query);

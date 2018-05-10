@@ -136,6 +136,16 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
     
+    /**
+     * should limit fields be applied early
+     */
+    private boolean limitFieldsPreQueryEvaluation = false;
+    
+    /**
+     * when <code>limitFieldsPreQueryEvaluation = true</code> this field will be used to record which fields were limited
+     */
+    private String limitFieldsField = null;
+    
     private boolean hitList = false;
     
     private boolean typeMetadataInHdfs = false;
@@ -1000,6 +1010,22 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         return org.apache.commons.lang.StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
     }
     
+    public boolean isLimitFieldsPreQueryEvaluation() {
+        return limitFieldsPreQueryEvaluation;
+    }
+    
+    public void setLimitFieldsPreQueryEvaluation(boolean limitFieldsPreQueryEvaluation) {
+        this.limitFieldsPreQueryEvaluation = limitFieldsPreQueryEvaluation;
+    }
+    
+    public String getLimitFieldsField() {
+        return limitFieldsField;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
+    }
+    
     public boolean isDateIndexTimeTravel() {
         return dateIndexTimeTravel;
     }
@@ -1472,6 +1498,8 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.setAllowTermFrequencyLookup(copy.isAllowTermFrequencyLookup());
         
         this.setLimitFields(new HashSet<String>(copy.getLimitFields()));
+        this.setLimitFieldsPreQueryEvaluation(copy.isLimitFieldsPreQueryEvaluation());
+        this.setLimitFieldsField(copy.getLimitFieldsField());
         this.setQuery(copy.getQuery());
         Set<QueryImpl.Parameter> parameterSet = query.getParameters();
         for (QueryImpl.Parameter parameter : parameterSet) {
