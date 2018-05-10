@@ -33,6 +33,11 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     private long _bytes = super.sizeInBytes(16) + 16 + 48;
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
     
+    /**
+     * Should sizes of documents be tracked
+     */
+    private boolean trackSizes;
+    
     public MarkingFunctions getMarkingFunctions() {
         return MarkingFunctions.Factory.createMarkingFunctions();
     }
@@ -42,12 +47,21 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     }
     
     public Attributes(boolean toKeep) {
+        this(toKeep, true);
+    }
+    
+    public Attributes(boolean toKeep, boolean trackSizes) {
         super(toKeep);
         attributes = new LinkedHashSet<>();
+        this.trackSizes = trackSizes;
     }
     
     public Attributes(Collection<Attribute<? extends Comparable<?>>> attributes, boolean toKeep) {
-        this(toKeep);
+        this(attributes, toKeep, true);
+    }
+    
+    public Attributes(Collection<Attribute<? extends Comparable<?>>> attributes, boolean toKeep, boolean trackSizes) {
+        this(toKeep, trackSizes);
         
         for (Attribute<? extends Comparable<?>> attr : attributes) {
             this.add(attr);
@@ -76,7 +90,9 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         if (!this.attributes.contains(attr)) {
             this.attributes.add(attr);
             this._count += attr.size();
-            this._bytes += attr.sizeInBytes() + 24 + 24;
+            if (trackSizes) {
+                this._bytes += attr.sizeInBytes() + 24 + 24;
+            }
             invalidateMetadata();
         }
     }
@@ -100,7 +116,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeVInt(out, _count);
-        
+        out.writeBoolean(trackSizes);
         // Write out the number of Attributes we're going to store
         WritableUtils.writeVInt(out, this.attributes.size());
         
@@ -116,6 +132,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     @Override
     public void readFields(DataInput in) throws IOException {
         this._count = WritableUtils.readVInt(in);
+        this.trackSizes = in.readBoolean();
         int numAttrs = WritableUtils.readVInt(in);
         this.attributes = new LinkedHashSet<>();
         for (int i = 0; i < numAttrs; i++) {
@@ -231,14 +248,18 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         for (Iterator<Attribute<? extends Comparable<?>>> it = this.attributes.iterator(); it.hasNext();) {
             Attribute<?> attr = it.next();
             this._count -= attr.size();
-            this._bytes -= attr.sizeInBytes() + 24 + 24;
+            if (trackSizes) {
+                this._bytes -= attr.sizeInBytes() + 24 + 24;
+            }
             if (attr.isToKeep()) {
                 Attribute<?> newAttr = attr.reduceToKeep();
                 if (newAttr == null) {
                     it.remove();
                 } else {
                     this._count += newAttr.size();
-                    this._bytes += newAttr.sizeInBytes() + 24 + 24;
+                    if (trackSizes) {
+                        this._bytes += newAttr.sizeInBytes() + 24 + 24;
+                    }
                     if (attr != newAttr) {
                         it.remove();
                         replacements.add(newAttr);
@@ -268,7 +289,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeInt(this._count, true);
-        
+        output.writeBoolean(this.trackSizes);
         // Write out the number of Attributes we're going to store
         output.writeInt(this.attributes.size(), true);
         
@@ -284,7 +305,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     @Override
     public void read(Kryo kryo, Input input) {
         this._count = input.readInt(true);
-        
+        this.trackSizes = input.readBoolean();
         int numAttrs = input.readInt(true);
         
         this.attributes = new LinkedHashSet<>();
@@ -329,7 +350,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
      */
     @Override
     public Attributes copy() {
-        Attributes attrs = new Attributes(this.isToKeep());
+        Attributes attrs = new Attributes(this.isToKeep(), this.trackSizes);
         
         for (Attribute<?> attr : this._getAttributes()) {
             attrs.add((Attribute<?>) attr.copy());

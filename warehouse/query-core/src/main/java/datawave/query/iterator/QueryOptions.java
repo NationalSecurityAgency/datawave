@@ -112,6 +112,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String TERM_FREQUENCIES_REQUIRED = "term.frequencies.are.required";
     public static final String CONTENT_EXPANSION_FIELDS = "content.expansion.fields";
     public static final String LIMIT_FIELDS = "limit.fields";
+    public static final String LIMIT_FIELDS_PRE_QUERY_EVALUATION = "limit.fields.pre.query.evaluation";
+    public static final String LIMIT_FIELDS_FIELD = "limit.fields.field";
     public static final String GROUP_FIELDS = "group.fields";
     public static final String TYPE_METADATA_IN_HDFS = "type.metadata.in.hdfs";
     public static final String HITS_ONLY = "hits.only";
@@ -128,6 +130,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String STATSD_HOST_COLON_PORT = "statsd.host.colon.port";
     public static final String STATSD_MAX_QUEUE_SIZE = "statsd.max.queue.size";
     public static final String DATATYPE_FIELDNAME = "include.datatype.fieldname";
+    public static final String TRACK_SIZES = "track.sizes";
     
     // pass through to Evaluating iterator to ensure consistency between query
     // logics
@@ -231,6 +234,8 @@ public class QueryOptions implements OptionDescriber {
     protected boolean useBlackListedFields = false;
     protected Set<String> blackListedFields = new HashSet<>();
     protected Map<String,Integer> limitFieldsMap = new HashMap<>();
+    protected boolean limitFieldsPreQueryEvaluation = false;
+    protected String limitFieldsField = null;
     
     protected Set<String> groupFieldsSet = Sets.newHashSet();
     
@@ -333,6 +338,11 @@ public class QueryOptions implements OptionDescriber {
     
     protected boolean dataQueryExpressionFilterEnabled = false;
     
+    /**
+     * should document sizes be tracked
+     */
+    protected boolean trackSizes = true;
+    
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -401,6 +411,8 @@ public class QueryOptions implements OptionDescriber {
         
         this.compressResults = other.compressResults;
         this.limitFieldsMap = other.limitFieldsMap;
+        this.limitFieldsPreQueryEvaluation = other.limitFieldsPreQueryEvaluation;
+        this.limitFieldsField = other.limitFieldsField;
         this.groupFieldsSet = other.groupFieldsSet;
         this.hitsOnlySet = other.hitsOnlySet;
         
@@ -437,6 +449,8 @@ public class QueryOptions implements OptionDescriber {
         this.debugMultithreadedSources = other.debugMultithreadedSources;
         
         this.dataQueryExpressionFilterEnabled = other.dataQueryExpressionFilterEnabled;
+        
+        this.trackSizes = other.trackSizes;
     }
     
     public String getQuery() {
@@ -517,6 +531,14 @@ public class QueryOptions implements OptionDescriber {
         }
         log.debug("making a nothing typeMetadata");
         return new TypeMetadata();
+    }
+    
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
     }
     
     public void setTypeMetadata(TypeMetadata typeMetadata) {
@@ -796,6 +818,22 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsMap = limitFieldsMap;
     }
     
+    public boolean isLimitFieldsPreQueryEvaluation() {
+        return limitFieldsPreQueryEvaluation;
+    }
+    
+    public void setLimitFieldsPreQueryEvaluation(boolean limitFieldsPreQueryEvaluation) {
+        this.limitFieldsPreQueryEvaluation = limitFieldsPreQueryEvaluation;
+    }
+    
+    public String getLimitFieldsField() {
+        return limitFieldsField;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
+    }
+    
     public Set<String> getGroupFieldsMap() {
         return groupFieldsSet;
     }
@@ -921,6 +959,9 @@ public class QueryOptions implements OptionDescriber {
         options.put(DATA_QUERY_EXPRESSION_FILTER_ENABLED, "If true, the EventDataQueryExpression filter will be used when performing TLD queries");
         
         options.put(METADATA_TABLE_NAME, this.metadataTableName);
+        options.put(LIMIT_FIELDS_PRE_QUERY_EVALUATION, "If true, non-query fields limits will be applied immediately off the iterator");
+        options.put(LIMIT_FIELDS_FIELD, "When " + LIMIT_FIELDS_PRE_QUERY_EVALUATION
+                        + " is set to true this field will contain all fields that were limited immediately");
         
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
@@ -1010,6 +1051,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(FULL_TABLE_SCAN_ONLY)) {
             setFullTableScanOnly(Boolean.parseBoolean(options.get(FULL_TABLE_SCAN_ONLY)));
+        }
+        
+        if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
+            setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
         }
         
         if (options.containsKey(PROJECTION_FIELDS)) {
@@ -1154,6 +1199,14 @@ public class QueryOptions implements OptionDescriber {
                     this.getLimitFieldsMap().put(keyAndValue[0], Integer.parseInt(keyAndValue[1]));
                 }
             }
+        }
+        
+        if (options.containsKey(LIMIT_FIELDS_PRE_QUERY_EVALUATION)) {
+            this.setLimitFieldsPreQueryEvaluation(Boolean.parseBoolean(options.get(LIMIT_FIELDS_PRE_QUERY_EVALUATION)));
+        }
+        
+        if (options.containsKey(LIMIT_FIELDS_FIELD)) {
+            this.setLimitFieldsField(options.get(LIMIT_FIELDS_FIELD));
         }
         
         if (options.containsKey(GROUP_FIELDS)) {

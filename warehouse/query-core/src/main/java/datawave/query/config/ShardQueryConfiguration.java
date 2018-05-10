@@ -144,6 +144,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
     
+    /**
+     * should limit fields be applied early
+     */
+    private boolean limitFieldsPreQueryEvaluation = false;
+    
+    /**
+     * when <code>limitFieldsPreQueryEvaluation = true</code> this field will be used to record which fields were limited
+     */
+    private String limitFieldsField = null;
+    
     private boolean hitList = false;
     
     private boolean typeMetadataInHdfs = false;
@@ -338,6 +348,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
      * Used to determine the poll interval when buffering ranges in ThreadedRangeBundler
      */
     protected long rangeBufferPollMillis = 100;
+    
+    /**
+     * should the sizes of documents be tracked for this query
+     */
+    private boolean trackSizes = true;
     
     public ShardQueryConfiguration() {
         query = new QueryImpl();
@@ -1060,6 +1075,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         return org.apache.commons.lang.StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
     }
     
+    public boolean isLimitFieldsPreQueryEvaluation() {
+        return limitFieldsPreQueryEvaluation;
+    }
+    
+    public void setLimitFieldsPreQueryEvaluation(boolean limitFieldsPreQueryEvaluation) {
+        this.limitFieldsPreQueryEvaluation = limitFieldsPreQueryEvaluation;
+    }
+    
+    public String getLimitFieldsField() {
+        return limitFieldsField;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
+    }
+    
     public boolean isDateIndexTimeTravel() {
         return dateIndexTimeTravel;
     }
@@ -1532,6 +1563,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.setAllowTermFrequencyLookup(copy.isAllowTermFrequencyLookup());
         
         this.setLimitFields(new HashSet<String>(copy.getLimitFields()));
+        this.setLimitFieldsPreQueryEvaluation(copy.isLimitFieldsPreQueryEvaluation());
+        this.setLimitFieldsField(copy.getLimitFieldsField());
         this.setQuery(copy.getQuery());
         Set<QueryImpl.Parameter> parameterSet = query.getParameters();
         for (QueryImpl.Parameter parameter : parameterSet) {
@@ -1576,6 +1609,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.setRangeBufferPollMillis(copy.getRangeBufferPollMillis());
         
         this.setSortedUIDs(copy.isSortedUIDs());
+        this.setTrackSizes(copy.isTrackSizes());
     }
     
     public void setAccrueStats(boolean accrueStats) {
@@ -1720,4 +1754,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.yieldThresholdMs = yieldThresholdMs;
     }
     
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
+    }
 }
