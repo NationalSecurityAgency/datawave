@@ -226,7 +226,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         info = filter.getParseInfo(key);
         assertTrue(info != null);
         assertTrue(info.getField().equals("field1"));
-        // this a wrong assumption based on DATAWAVE-30 (https://github.com/NationalSecurityAgency/datawave/issues/30)
+        // this was wrong assumption based when fixed length UID parse assumptions were being made in the TLDEventDataFilter
         assertTrue(info.isRoot());
         
         key = new Key("row", "dataype" + Constants.NULL + "123.234.345", "field1" + Constants.NULL_BYTE_STRING + "value");
