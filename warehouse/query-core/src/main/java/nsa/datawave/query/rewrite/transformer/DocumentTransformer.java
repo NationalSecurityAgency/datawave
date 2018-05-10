@@ -90,6 +90,7 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
     private long logicCreated = System.currentTimeMillis();
     private Set<String> projectFields = Collections.emptySet();
     private Set<String> blacklistedFields = Collections.emptySet();
+    private Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
     
     /*
      * The 'HIT_TERM' feature required that an attribute value also contain the attribute's field name. The current implementation does it by prepending the
@@ -216,6 +217,17 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
                         if (contentField.getData().toString().equalsIgnoreCase("true")) {
                             Content c = new Content(uid, contentField.getMetadata(), document.isToKeep());
                             document.put(contentFieldName, c, false, this.reducedResponse);
+                        }
+                    }
+                }
+                
+                for (String primaryField : this.primaryToSecondaryFieldMap.keySet()) {
+                    if (!document.containsKey(primaryField)) {
+                        for (String secondaryField : this.primaryToSecondaryFieldMap.get(primaryField)) {
+                            if (document.containsKey(secondaryField)) {
+                                document.put(primaryField, document.get(secondaryField), false, this.reducedResponse);
+                                break;
+                            }
                         }
                     }
                 }
@@ -655,5 +667,9 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
     
     public void setBlacklistedFields(Set<String> blacklistedFields) {
         this.blacklistedFields = blacklistedFields;
+    }
+    
+    public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
+        this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;
     }
 }

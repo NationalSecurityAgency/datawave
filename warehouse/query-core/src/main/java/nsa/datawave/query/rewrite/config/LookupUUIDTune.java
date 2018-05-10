@@ -1,6 +1,9 @@
 package nsa.datawave.query.rewrite.config;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -28,6 +31,7 @@ public class LookupUUIDTune implements Profile {
     protected int maxFieldHitsBeforeSeek = -1;
     protected int maxKeysBeforeSeek = -1;
     protected String queryIteratorClass = TLDQueryIterator.class.getCanonicalName();
+    protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
     protected boolean trackSizes = true;
     protected boolean reduceFields = false;
     protected int reduceFieldCount = -1;
@@ -41,6 +45,7 @@ public class LookupUUIDTune implements Profile {
             rsq.setBypassAccumulo(bypassAccumulo);
             rsq.setSpeculativeScanning(speculativeScanning);
             rsq.setCacheModel(enableCaching);
+            rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
             if (reduceResponse) {
                 rsq.setCreateUidsIteratorClass(CreateTLDUidsIterator.class);
                 
@@ -179,6 +184,14 @@ public class LookupUUIDTune implements Profile {
         return queryIteratorClass;
     }
     
+    public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
+        this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;
+    }
+    
+    public Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
+        return primaryToSecondaryFieldMap;
+    }
+  
     public boolean isTrackSizes() {
         return trackSizes;
     }
