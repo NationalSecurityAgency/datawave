@@ -92,6 +92,13 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         setSortedLists(whitelist, blacklist);
     }
     
+    @Override
+    public void setDocumentKey(Key document) {
+        super.setDocumentKey(document);
+        // clear the parse info so a length comparison can't be made against a new document
+        lastParseInfo = null;
+    }
+    
     /*
      * (non-Javadoc)
      * 
@@ -146,7 +153,23 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         if (lastParseInfo == null || !lastParseInfo.isSame(current)) {
             // initialize the new parseInfo
             ParseInfo parseInfo = new ParseInfo(current);
-            parseInfo.setRoot(isRootPointer(current));
+            boolean root;
+            if (lastParseInfo != null) {
+                int lastLength = lastParseInfo.key.getColumnFamilyData().length();
+                int currentLength = current.getColumnFamilyData().length();
+                if (lastLength == currentLength) {
+                    root = lastParseInfo.isRoot();
+                } else if (lastLength < currentLength) {
+                    // next key must be longer or it would have been sorted first within the same document
+                    root = false;
+                } else {
+                    // the filter is being used again at the beginning of the document and state needs to be reset
+                    root = isRootPointer(current);
+                }
+            } else {
+                root = isRootPointer(current);
+            }
+            parseInfo.setRoot(root);
             parseInfo.setField(getCurrentField(current));
             
             return parseInfo;
