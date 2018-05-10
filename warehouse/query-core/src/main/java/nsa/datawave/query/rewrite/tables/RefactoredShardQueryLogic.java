@@ -241,6 +241,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     private boolean typeMetadataInHdfs = false;
     private Set<String> blacklistedFields = new HashSet<>(0);
     private Set<String> limitFields = new HashSet<>(0);
+    private boolean limitFieldsPreQueryEvaluation = false;
+    private String limitFieldsField = null;
     private Set<String> groupFields = new HashSet<>(0);
     private boolean compressServerSideResults = false;
     private boolean indexOnlyFilterFunctionsEnabled = false;
@@ -444,6 +446,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.setBlacklistedFields(other.getBlacklistedFields());
         this.setCacheModel(other.getCacheModel());
         this.setLimitFields(other.getLimitFields());
+        this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
+        this.setLimitFieldsField(other.getLimitFieldsField());
         this.setGroupFields(other.getGroupFields());
         this.setCompressServerSideResults(other.isCompressServerSideResults());
         this.setQuerySyntaxParsers(other.getQuerySyntaxParsers());
@@ -1045,6 +1049,19 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
             }
         }
         
+        String limitFieldsPreQueryEvaluation = settings.findParameter(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(limitFieldsPreQueryEvaluation)) {
+            Boolean limitFieldsPreQueryEvaluationValue = Boolean.parseBoolean(limitFieldsPreQueryEvaluation);
+            this.setLimitFieldsPreQueryEvaluation(limitFieldsPreQueryEvaluationValue);
+            config.setLimitFieldsPreQueryEvaluation(limitFieldsPreQueryEvaluationValue);
+        }
+        
+        String limitFieldsField = settings.findParameter(QueryOptions.LIMIT_FIELDS_FIELD).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(limitFieldsField)) {
+            this.setLimitFieldsField(limitFieldsField);
+            config.setLimitFieldsField(limitFieldsField);
+        }
+        
         // Get the GROUP_FIELDS parameter if given
         String groupFieldsString = settings.findParameter(QueryOptions.GROUP_FIELDS).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(groupFieldsString)) {
@@ -1470,6 +1487,22 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     public Set<String> getLimitFields() {
         return this.limitFields;
+    }
+    
+    public void setLimitFieldsPreQueryEvaluation(boolean limitFieldsPreQueryEvaluation) {
+        this.limitFieldsPreQueryEvaluation = limitFieldsPreQueryEvaluation;
+    }
+    
+    public boolean isLimitFieldsPreQueryEvaluation() {
+        return limitFieldsPreQueryEvaluation;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
+    }
+    
+    public String getLimitFieldsField() {
+        return limitFieldsField;
     }
     
     public void setGroupFields(Set<String> groupFields) {
