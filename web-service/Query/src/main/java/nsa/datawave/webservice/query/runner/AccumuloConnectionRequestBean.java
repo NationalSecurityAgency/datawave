@@ -25,13 +25,17 @@ public class AccumuloConnectionRequestBean {
     private Map<String,Pair<Principal,Thread>> getConnectionThreadMap = new ConcurrentHashMap<>();
     
     public boolean cancelConnectionRequest(String id) {
+        return cancelConnectionRequest(id, ctx.getCallerPrincipal());
+    }
+    
+    public boolean cancelConnectionRequest(String id, Principal principal) {
         // this call checks that the Principal used for the connection request and th connection cancel are the same
         // if query is waiting for an accumulo connection in create or reset, then interrupt it
         boolean connectionRequestCanceled = false;
         try {
             Pair<Principal,Thread> connectionRequestPair = getConnectionThreadMap.get(id);
             if (connectionRequestPair != null) {
-                String connectionRequestPrincipalName = ctx.getCallerPrincipal().getName();
+                String connectionRequestPrincipalName = principal.getName();
                 String connectionCancelPrincipalName = connectionRequestPair.getFirst().getName();
                 if (connectionRequestPrincipalName.equals(connectionCancelPrincipalName)) {
                     connectionRequestPair.getSecond().interrupt();

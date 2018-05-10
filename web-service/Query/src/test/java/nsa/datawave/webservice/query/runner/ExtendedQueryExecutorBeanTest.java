@@ -580,7 +580,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         
         // Set expectations
-        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
@@ -616,7 +616,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         
         // Set expectations
-        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getShortName()).andReturn(userSid);
         expect(this.principal.getProxyServers()).andReturn(new ArrayList<String>(0)).anyTimes();
@@ -1240,7 +1240,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).andReturn(false);
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(null);
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);

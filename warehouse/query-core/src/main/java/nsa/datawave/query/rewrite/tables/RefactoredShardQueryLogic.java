@@ -241,6 +241,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     private boolean typeMetadataInHdfs = false;
     private Set<String> blacklistedFields = new HashSet<>(0);
     private Set<String> limitFields = new HashSet<>(0);
+    private boolean limitFieldsPreQueryEvaluation = false;
+    private String limitFieldsField = null;
     private Set<String> groupFields = new HashSet<>(0);
     private boolean compressServerSideResults = false;
     private boolean indexOnlyFilterFunctionsEnabled = false;
@@ -383,6 +385,11 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     protected boolean dataQueryExpressionFilterEnabled = false;
     
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
+  
+    /**
+     * should the size of the document be tracked
+     */
+    protected boolean trackSizes = true;
     
     public RefactoredShardQueryLogic() {
         super();
@@ -441,6 +448,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.setBlacklistedFields(other.getBlacklistedFields());
         this.setCacheModel(other.getCacheModel());
         this.setLimitFields(other.getLimitFields());
+        this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
+        this.setLimitFieldsField(other.getLimitFieldsField());
         this.setGroupFields(other.getGroupFields());
         this.setCompressServerSideResults(other.isCompressServerSideResults());
         this.setQuerySyntaxParsers(other.getQuerySyntaxParsers());
@@ -513,6 +522,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.eventQueryDataDecoratorTransformer = new EventQueryDataDecoratorTransformer(other.eventQueryDataDecoratorTransformer);
         }
+        this.setTrackSizes(other.isTrackSizes());
     }
     
     @Override
@@ -684,6 +694,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
         getQueryPlanner().setUidIntersector(uidIntersector);
         
+        validateConfiguration(config);
+        
         if (cardinalityConfiguration != null && (config.getBlacklistedFields().size() > 0 || config.getProjectFields().size() > 0)) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
             // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
@@ -715,6 +727,19 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         config.setQueryString(getQueryPlanner().getPlannedScript());
         
         stopwatch.stop();
+    }
+    
+    /**
+     * Validate that the configuration is in a consistent state
+     * 
+     * @throws IllegalArgumentException
+     *             when config constraints are violated
+     */
+    protected void validateConfiguration(RefactoredShardQueryConfiguration config) {
+        // do not allow disabling track sizes unless page size is no more than 1
+        if (!config.isTrackSizes() && this.getMaxPageSize() > 1) {
+            throw new IllegalArgumentException("trackSizes cannot be disabled with a page size greater than 1");
+        }
     }
     
     protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths) {
@@ -1025,6 +1050,19 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
                     config.setLimitFields(new HashSet<>(limitFieldsList));
                 }
             }
+        }
+        
+        String limitFieldsPreQueryEvaluation = settings.findParameter(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(limitFieldsPreQueryEvaluation)) {
+            Boolean limitFieldsPreQueryEvaluationValue = Boolean.parseBoolean(limitFieldsPreQueryEvaluation);
+            this.setLimitFieldsPreQueryEvaluation(limitFieldsPreQueryEvaluationValue);
+            config.setLimitFieldsPreQueryEvaluation(limitFieldsPreQueryEvaluationValue);
+        }
+        
+        String limitFieldsField = settings.findParameter(QueryOptions.LIMIT_FIELDS_FIELD).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(limitFieldsField)) {
+            this.setLimitFieldsField(limitFieldsField);
+            config.setLimitFieldsField(limitFieldsField);
         }
         
         // Get the GROUP_FIELDS parameter if given
@@ -1452,6 +1490,22 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     public Set<String> getLimitFields() {
         return this.limitFields;
+    }
+    
+    public void setLimitFieldsPreQueryEvaluation(boolean limitFieldsPreQueryEvaluation) {
+        this.limitFieldsPreQueryEvaluation = limitFieldsPreQueryEvaluation;
+    }
+    
+    public boolean isLimitFieldsPreQueryEvaluation() {
+        return limitFieldsPreQueryEvaluation;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
+    }
+    
+    public String getLimitFieldsField() {
+        return limitFieldsField;
     }
     
     public void setGroupFields(Set<String> groupFields) {
@@ -2367,5 +2421,13 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     public Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
         return primaryToSecondaryFieldMap;
+    }
+  
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
     }
 }

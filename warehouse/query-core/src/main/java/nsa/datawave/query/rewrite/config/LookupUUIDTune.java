@@ -1,10 +1,13 @@
 package nsa.datawave.query.rewrite.config;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
+import nsa.datawave.query.rewrite.Constants;
 import nsa.datawave.query.rewrite.planner.DefaultQueryPlanner;
 import nsa.datawave.query.rewrite.planner.QueryPlanner;
 import nsa.datawave.query.rewrite.planner.SeekingQueryPlanner;
@@ -29,6 +32,11 @@ public class LookupUUIDTune implements Profile {
     protected int maxKeysBeforeSeek = -1;
     protected String queryIteratorClass = TLDQueryIterator.class.getCanonicalName();
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
+    protected boolean trackSizes = true;
+    protected boolean reduceFields = false;
+    protected int reduceFieldCount = -1;
+    protected boolean reduceFieldsPreQueryEvaluation = false;
+    protected String limitFieldsField = null;
     
     @Override
     public void configure(BaseQueryLogic<Entry<Key,Value>> logic) {
@@ -90,6 +98,17 @@ public class LookupUUIDTune implements Profile {
             rsqc.setMaxPipelineCachedResults(1);
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
+            rsqc.setTrackSizes(trackSizes);
+            
+            if (reduceResponse) {
+                if (reduceFields && reduceFieldCount != -1) {
+                    Set<String> fieldLimits = new HashSet<>(1);
+                    fieldLimits.add(Constants.ANY_FIELD + "=" + reduceFieldCount);
+                    rsqc.setLimitFields(fieldLimits);
+                    rsqc.setLimitFieldsPreQueryEvaluation(reduceFieldsPreQueryEvaluation);
+                    rsqc.setLimitFieldsField(limitFieldsField);
+                }
+            }
         }
     }
     
@@ -171,5 +190,45 @@ public class LookupUUIDTune implements Profile {
     
     public Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
         return primaryToSecondaryFieldMap;
+    }
+  
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
+    }
+  
+    public boolean isReduceFields() {
+        return reduceFields;
+    }
+    
+    public void setReduceFields(boolean reduceFields) {
+        this.reduceFields = reduceFields;
+    }
+    
+    public int getReduceFieldCount() {
+        return reduceFieldCount;
+    }
+    
+    public void setReduceFieldCount(int reduceFieldCount) {
+        this.reduceFieldCount = reduceFieldCount;
+    }
+    
+    public boolean isReduceFieldsPreQueryEvaluation() {
+        return reduceFieldsPreQueryEvaluation;
+    }
+    
+    public void setReduceFieldsPreQueryEvaluation(boolean reduceFieldsPreQueryEvaluation) {
+        this.reduceFieldsPreQueryEvaluation = reduceFieldsPreQueryEvaluation;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
+    }
+    
+    public String getLimitFieldsField() {
+        return limitFieldsField;
     }
 }
