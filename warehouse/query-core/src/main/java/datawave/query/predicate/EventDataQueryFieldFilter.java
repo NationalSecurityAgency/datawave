@@ -46,7 +46,7 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
     /*
      * (non-Javadoc)
      * 
-     * @see nsa.datawave.query.predicate.Filter#keep(org.apache.accumulo.core.data.Key)
+     * @see datawave.query.predicate.Filter#keep(org.apache.accumulo.core.data.Key)
      */
     @Override
     public boolean keep(Key k) {
@@ -90,5 +90,11 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
     public int getMaxNextCount() {
         // not yet implemented
         return -1;
+    }
+    
+    @Override
+    public Key transform(Key toLimit) {
+        // not yet implemented
+        return null;
     }
 }

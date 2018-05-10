@@ -30,12 +30,22 @@ public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<
     
     protected boolean disableIndexOnlyDocuments = false;
     
+    /**
+     * should documents track sizes
+     */
+    private boolean trackSizes = true;
+    
     // Need to provide the mapping
     @SuppressWarnings("unused")
     private Aggregation() {}
     
     public Aggregation(TimeFilter timeFilter, TypeMetadata typeMetadata, CompositeMetadata compositeMetadata, boolean includeGroupingContext,
                     boolean includeRecordId, boolean disableIndexOnlyDocuments, EventDataQueryFilter attrFilter) {
+        this(timeFilter, typeMetadata, compositeMetadata, includeGroupingContext, includeRecordId, disableIndexOnlyDocuments, attrFilter, true);
+    }
+    
+    public Aggregation(TimeFilter timeFilter, TypeMetadata typeMetadata, CompositeMetadata compositeMetadata, boolean includeGroupingContext,
+                    boolean includeRecordId, boolean disableIndexOnlyDocuments, EventDataQueryFilter attrFilter, boolean trackSizes) {
         Preconditions.checkNotNull(timeFilter);
         
         this.timeFilter = timeFilter;
@@ -45,6 +55,7 @@ public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<
         this.includeRecordId = includeRecordId;
         this.attrFilter = attrFilter;
         this.disableIndexOnlyDocuments = disableIndexOnlyDocuments;
+        this.trackSizes = trackSizes;
     }
     
     @Override
@@ -58,7 +69,7 @@ public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<
         
         // Only load attributes for this document that fall within the expected date range
         Document d = new Document(docData.getKey(), docData.getDocKeys(), Iterators.filter(docData.getData().iterator(), timeFilter.getKeyValueTimeFilter()),
-                        this.typeMetadata, this.compositeMetadata, this.includeGroupingContext, this.includeRecordId, this.attrFilter);
+                        this.typeMetadata, this.compositeMetadata, this.includeGroupingContext, this.includeRecordId, this.attrFilter, true, trackSizes);
         
         if (log.isTraceEnabled()) {
             log.trace("disable index only docs? " + disableIndexOnlyDocuments + " , size is " + d.size());
