@@ -625,7 +625,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         Iterator<Entry<Key,Document>> documents = null;
         CompositeMetadata compositeMetadata = new CompositeMetadata(this.getCompositeMetadata());
         Aggregation a = new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
-                        this.includeRecordId, this.disableIndexOnlyDocuments(), this.getEvaluationFilter());
+                        this.includeRecordId, this.disableIndexOnlyDocuments(), this.getEvaluationFilter(), isTrackSizes());
         if (gatherTimingDetails()) {
             documents = Iterators.transform(sourceIterator, new EvaluationTrackingFunction<>(QuerySpan.Stage.Aggregation, trackingSpan, a));
         } else {
@@ -861,7 +861,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
                             documents,
                             new GetDocument(docMapper, new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata, this
-                                            .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), this.getEvaluationFilter())));
+                                            .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), this.getEvaluationFilter(),
+                                            isTrackSizes())));
             
             Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<Key,Document>());
             return retDocuments;
@@ -952,7 +953,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     }
     
     protected DocumentProjection getProjection() {
-        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse());
+        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         
         if (this.useWhiteListedFields) {
             projection.initializeWhitelist(this.whiteListedFields);
@@ -969,7 +970,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     }
     
     protected DocumentProjection getCompositeProjection() {
-        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse());
+        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         Set<String> composites = Sets.newHashSet();
         for (Multimap<String,String> val : this.compositeMetadata.getCompositeToFieldMap().values()) {
             composites.addAll(val.asMap().keySet());

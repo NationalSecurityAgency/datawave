@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.
  */
-public interface EventDataQueryFilter extends Predicate<Map.Entry<Key,String>>, Filter, SeekingFilter {
+public interface EventDataQueryFilter extends Predicate<Map.Entry<Key,String>>, Filter, SeekingFilter, TransformingFilter {
     
     /**
      * This method can be used to change the document context fo the keep(Key k) method.
