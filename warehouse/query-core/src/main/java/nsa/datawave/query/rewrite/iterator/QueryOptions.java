@@ -130,6 +130,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String STATSD_HOST_COLON_PORT = "statsd.host.colon.port";
     public static final String STATSD_MAX_QUEUE_SIZE = "statsd.max.queue.size";
     public static final String DATATYPE_FIELDNAME = "include.datatype.fieldname";
+    public static final String TRACK_SIZES = "track.sizes";
     
     // pass through to Evaluating iterator to ensure consistency between query
     // logics
@@ -337,6 +338,11 @@ public class QueryOptions implements OptionDescriber {
     
     protected boolean dataQueryExpressionFilterEnabled = false;
     
+    /**
+     * should document sizes be tracked
+     */
+    protected boolean trackSizes = true;
+    
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -443,6 +449,8 @@ public class QueryOptions implements OptionDescriber {
         this.debugMultithreadedSources = other.debugMultithreadedSources;
         
         this.dataQueryExpressionFilterEnabled = other.dataQueryExpressionFilterEnabled;
+        
+        this.trackSizes = other.trackSizes;
     }
     
     public String getQuery() {
@@ -523,6 +531,14 @@ public class QueryOptions implements OptionDescriber {
         }
         log.debug("making a nothing typeMetadata");
         return new TypeMetadata();
+    }
+    
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
     }
     
     public void setTypeMetadata(TypeMetadata typeMetadata) {
@@ -1035,6 +1051,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(FULL_TABLE_SCAN_ONLY)) {
             setFullTableScanOnly(Boolean.parseBoolean(options.get(FULL_TABLE_SCAN_ONLY)));
+        }
+        
+        if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
+            setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
         }
         
         if (options.containsKey(PROJECTION_FIELDS)) {

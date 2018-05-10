@@ -321,6 +321,11 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
      */
     protected boolean dataQueryExpressionFilterEnabled = false;
     
+    /**
+     * should the sizes of documents be tracked for this query
+     */
+    private boolean trackSizes = true;
+    
     public RefactoredShardQueryConfiguration() {
         query = new QueryImpl();
     }
@@ -1539,6 +1544,7 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.setDataQueryExpressionFilterEnabled(copy.isDataQueryExpressionFilterEnabled());
         
         this.setSortedUIDs(copy.isSortedUIDs());
+        this.setTrackSizes(copy.isTrackSizes());
     }
     
     public void setAccrueStats(boolean accrueStats) {
@@ -1683,4 +1689,11 @@ public class RefactoredShardQueryConfiguration extends GenericQueryConfiguration
         this.yieldThresholdMs = yieldThresholdMs;
     }
     
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
+    }
 }

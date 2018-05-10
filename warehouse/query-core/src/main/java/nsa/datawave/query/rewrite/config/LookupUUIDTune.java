@@ -28,6 +28,7 @@ public class LookupUUIDTune implements Profile {
     protected int maxFieldHitsBeforeSeek = -1;
     protected int maxKeysBeforeSeek = -1;
     protected String queryIteratorClass = TLDQueryIterator.class.getCanonicalName();
+    protected boolean trackSizes = true;
     protected boolean reduceFields = false;
     protected int reduceFieldCount = -1;
     protected boolean reduceFieldsPreQueryEvaluation = false;
@@ -92,6 +93,7 @@ public class LookupUUIDTune implements Profile {
             rsqc.setMaxPipelineCachedResults(1);
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
+            rsqc.setTrackSizes(trackSizes);
             
             if (reduceResponse) {
                 if (reduceFields && reduceFieldCount != -1) {
@@ -177,6 +179,14 @@ public class LookupUUIDTune implements Profile {
         return queryIteratorClass;
     }
     
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
+    }
+  
     public boolean isReduceFields() {
         return reduceFields;
     }

@@ -436,6 +436,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
+        addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), true);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, compressMappings);
     }

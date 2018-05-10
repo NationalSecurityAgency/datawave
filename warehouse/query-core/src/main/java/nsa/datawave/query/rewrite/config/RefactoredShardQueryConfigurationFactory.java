@@ -180,6 +180,7 @@ public class RefactoredShardQueryConfigurationFactory {
         config.setStatsdHost(configuredLogic.getStatsdHost());
         config.setStatsdPort(configuredLogic.getStatsdPort());
         config.setStatsdMaxQueueSize(configuredLogic.getStatsdMaxQueueSize());
+        config.setTrackSizes(configuredLogic.isTrackSizes());
         
         return config;
     }

@@ -384,6 +384,11 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     
     protected boolean dataQueryExpressionFilterEnabled = false;
     
+    /**
+     * should the size of the document be tracked
+     */
+    protected boolean trackSizes = true;
+    
     public RefactoredShardQueryLogic() {
         super();
         setBaseIteratorPriority(100);
@@ -515,6 +520,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.eventQueryDataDecoratorTransformer = new EventQueryDataDecoratorTransformer(other.eventQueryDataDecoratorTransformer);
         }
+        this.setTrackSizes(other.isTrackSizes());
     }
     
     @Override
@@ -686,6 +692,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
         getQueryPlanner().setUidIntersector(uidIntersector);
         
+        validateConfiguration(config);
+        
         if (cardinalityConfiguration != null && (config.getBlacklistedFields().size() > 0 || config.getProjectFields().size() > 0)) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
             // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
@@ -717,6 +725,19 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         config.setQueryString(getQueryPlanner().getPlannedScript());
         
         stopwatch.stop();
+    }
+    
+    /**
+     * Validate that the configuration is in a consistent state
+     * 
+     * @throws IllegalArgumentException
+     *             when config constraints are violated
+     */
+    protected void validateConfiguration(RefactoredShardQueryConfiguration config) {
+        // do not allow disabling track sizes unless page size is no more than 1
+        if (!config.isTrackSizes() && this.getMaxPageSize() > 1) {
+            throw new IllegalArgumentException("trackSizes cannot be disabled with a page size greater than 1");
+        }
     }
     
     protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths) {
@@ -2391,4 +2412,11 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
         this.yieldThresholdMs = yieldThresholdMs;
     }
     
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
+    }
 }
