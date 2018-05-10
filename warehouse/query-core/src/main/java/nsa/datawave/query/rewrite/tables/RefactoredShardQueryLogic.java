@@ -385,7 +385,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     protected boolean dataQueryExpressionFilterEnabled = false;
     
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
-  
+    
     /**
      * should the size of the document be tracked
      */
@@ -2422,7 +2422,7 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     public Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
         return primaryToSecondaryFieldMap;
     }
-  
+    
     public boolean isTrackSizes() {
         return trackSizes;
     }

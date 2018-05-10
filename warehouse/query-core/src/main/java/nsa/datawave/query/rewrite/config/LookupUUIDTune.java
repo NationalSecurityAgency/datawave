@@ -229,7 +229,7 @@ public class LookupUUIDTune implements Profile {
     public Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
         return primaryToSecondaryFieldMap;
     }
-  
+    
     public boolean isTrackSizes() {
         return trackSizes;
     }
@@ -237,7 +237,7 @@ public class LookupUUIDTune implements Profile {
     public void setTrackSizes(boolean trackSizes) {
         this.trackSizes = trackSizes;
     }
-  
+    
     public boolean isReduceFields() {
         return reduceFields;
     }
