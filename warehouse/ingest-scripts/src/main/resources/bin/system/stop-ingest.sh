@@ -25,7 +25,7 @@ else
   trap 'rm -f "$ingestHost"; exit $?' INT TERM EXIT
   echo $INGEST_HOST > $ingestHost
 
-  pssh -p 25 -o /tmp/stdout -e /tmp/stderr -h ${ingestHost} "$INGEST_BIN/ingest/stop-ingesters.sh $@" < /dev/null
+  pdsh -f 25 -w ^${ingestHost} "$INGEST_BIN/ingest/stop-ingesters.sh $@" 1>> /tmp/stdout 2>> /tmp/stderr < /dev/null
 
   rm $ingestHost
   trap - INT TERM EXIT
