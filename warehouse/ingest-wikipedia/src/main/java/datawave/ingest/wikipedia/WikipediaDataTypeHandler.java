@@ -3,6 +3,7 @@ package datawave.ingest.wikipedia;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -263,7 +264,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
             
             // now flush out the offset queue
             if (tokenOffsetCache != null) {
-                for (OffsetList offsets : tokenOffsetCache.offsets()) {
+                for (OffsetList<Integer> offsets : tokenOffsetCache.offsets()) {
                     // no need to normalize as that was already done upon insertion into the token offset cache
                     NormalizedFieldAndValue nfv = new NormalizedFieldAndValue(offsets.termAndZone.zone, offsets.termAndZone.term);
                     byte[] fieldVisibility = getVisibility(event, nfv);
@@ -512,10 +513,10 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
                     // Build the field index key/value
                     createTermFrequencyIndex(event, contextWriter, context, this.shardId, overflowNfv, overflow.offsets, overflowFieldVisibility, false);
                     counters.increment(ContentIndexCounters.TOKENIZER_OFFSET_CACHE_OVERFLOWS, reporter);
-                    counters.incrementValue(ContentIndexCounters.TOKENIZER_OFFSET_CACHE_POSITIONS_OVERFLOWED, overflow.offsets.length, reporter);
+                    counters.incrementValue(ContentIndexCounters.TOKENIZER_OFFSET_CACHE_POSITIONS_OVERFLOWED, overflow.offsets.size(), reporter);
                 }
             } else {
-                createTermFrequencyIndex(event, contextWriter, context, this.shardId, nfv, new int[] {position}, fieldVisibility, false);
+                createTermFrequencyIndex(event, contextWriter, context, this.shardId, nfv, Arrays.asList(position), fieldVisibility, false);
             }
         }
     }

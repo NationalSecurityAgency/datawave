@@ -1,4 +1,4 @@
-package nsa.datawave.common.test.utils.query;
+package datawave.common.test.utils.query;
 
 public class TestQueries {
     public static final String SINGLE = "FOO == 'BAR'";
