@@ -7,7 +7,7 @@ permalink: /news/index.html
         {% assign published = site.posts | where:"draft",false %}
         {% for post in published limit:15 %}
             <h2>
-              <a class="post-link" href="{{ post.url }}">
+              <a class="post-link" href="{{site.baseurl}}{{ post.url }}">
                 {{ post.title }}
                 {% if post.category == "release" %}
                   &nbsp;Released!
@@ -16,7 +16,7 @@ permalink: /news/index.html
             </h2>
             <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }} /
               {% for tag in post.tags %}
-                <a href="{{ "/pages/tags/" | append: tag }}">{{tag}}</a>{% unless forloop.last %}, {% endunless%}
+                <a href="{{site.baseurl}}{{ "/pages/tags/" | append: tag }}">{{tag}}</a>{% unless forloop.last %}, {% endunless%}
               {% endfor %}
             </span>
             <p>
@@ -28,8 +28,8 @@ permalink: /news/index.html
             </p>
             <hr />
         {% endfor %}
-        <p>See more posts from the <a href="/news/archive">News Archive</a></p>
-        <p><a href="/feed.xml" class="btn btn-primary navbar-btn cursorNorm" role="button">RSS Subscribe{{tag}}</a></p>
+        <p>See more posts from the <a href="{{site.baseurl}}/news/archive">News Archive</a></p>
+        <p><a href="{{site.baseurl}}/feed.xml" class="btn btn-primary navbar-btn cursorNorm" role="button">RSS Subscribe{{tag}}</a></p>
     </div>
 </div>
 
