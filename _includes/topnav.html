@@ -7,7 +7,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="fa fa-lg navbar-brand" href="/"><img id="nav-logo" alt="DataWave" class="img-responsive" src="/images/datawave-logo.png" width="190"></a>
+            <a class="fa fa-lg navbar-brand" href="{{ site.baseurl }}/"><img id="nav-logo" alt="DataWave" class="img-responsive" src="{{ site.baseurl }}/images/datawave-logo.png" width="190"></a>
         </div>
         <div class="collapse navbar-collapse" id="example-navbar-collapse-1">
 
@@ -17,7 +17,7 @@
 
                 <!-- entries without drop-downs appear here -->
 
-                <li><a href="/"><i class="fa fa-home fa-lg"></i></a></li>
+                <li><a href="{{ site.baseurl }}/"><i class="fa fa-home fa-lg"></i></a></li>
 
                 {% assign topnav = site.data[page.topnav] %}
                 {% assign topnav_dropdowns = site.data[page.topnav].topnav_dropdowns %}
@@ -28,9 +28,9 @@
                         {% if item.external_url %}
                             <li><a href="{{item.external_url}}" target="_blank">{{item.title}}</a></li>
                         {% elsif page.url contains item.url %}
-                            <li class="active"><a href="{{item.url}}">{{item.title}}</a></li>
+                            <li class="active"><a href="{{ site.baseurl }}{{item.url}}">{{item.title}}</a></li>
                         {% else %}
-                            <li><a href="{{item.url}}">{{item.title}}</a></li>
+                            <li><a href="{{ site.baseurl }}{{item.url}}">{{item.title}}</a></li>
                         {% endif %}
                     {% endfor %}
 
@@ -48,9 +48,9 @@
                                 {% if folderitem.external_url %}
                                     <li><a href="{{folderitem.external_url}}" target="_blank">{{folderitem.title}}</a></li>
                                 {% elsif page.url contains folderitem.url %}
-                                    <li class="dropdownActive"><a href="{{folderitem.url}}">{{folderitem.title}}</a></li>
+                                    <li class="dropdownActive"><a href="{{ site.baseurl }}{{ folderitem.url }}">{{folderitem.title}}</a></li>
                                 {% else %}
-                                    <li><a href="{{folderitem.url}}">{{folderitem.title}}</a></li>
+                                    <li><a href="{{ site.baseurl }}{{ folderitem.url }}">{{folderitem.title}}</a></li>
                                 {% endif %}
                             {% endfor %}
                             </ul>

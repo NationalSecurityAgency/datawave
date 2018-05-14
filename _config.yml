@@ -4,6 +4,10 @@ repository_url: https://github.com/NationalSecurityAgency/datawave
 # gh-pages site repo. This config property is required when running the site in production mode
 repository: NationalSecurityAgency/datawave
 
+# Base URL to allow relative paths to work correctly on GitHub. Note: as a side effect of this
+# you'll need to run the site locally with "jekyll serve --baseurl '' ... " in order for things to work
+baseurl: /datawave
+
 # project default branch
 default_branch: master
 

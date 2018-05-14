@@ -6,27 +6,27 @@
 
 <title>{% if page.title_prefix %}{{ page.title_prefix | escape }}{% endif %}{% if page.title %}{{ page.title | escape }}{% else %}{{ site.title | escape }}{% endif %}</title>
 
-<link rel="stylesheet" href="/css/syntax.css">
+<link rel="stylesheet" href="{{ site.baseurl }}/css/syntax.css">
 
 <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-<link rel="stylesheet" href="/css/modern-business.css">
+<link rel="stylesheet" href="{{ site.baseurl }}/css/modern-business.css">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-<link rel="stylesheet" href="/css/customstyles.css">
-<link rel="stylesheet" href="/css/boxshadowproperties.css">
+<link rel="stylesheet" href="{{ site.baseurl }}/css/customstyles.css">
+<link rel="stylesheet" href="{{ site.baseurl }}/css/boxshadowproperties.css">
 
 <!-- Color styles are extracted out to here -->
-<link rel="stylesheet" href="/css/datawave-theme.css">
+<link rel="stylesheet" href="{{ site.baseurl }}/css/datawave-theme.css">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
-<script src="/js/jquery.navgoco.min.js"></script>
+<script src="{{ site.baseurl }}/js/jquery.navgoco.min.js"></script>
 
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/2.0.0/anchor.min.js"></script>
-<script src="/js/toc.js"></script>
-<script src="/js/customscripts.js"></script>
+<script src="{{ site.baseurl }}/js/toc.js"></script>
+<script src="{{ site.baseurl }}/js/customscripts.js"></script>
 
-<link rel="shortcut icon" href="/images/dw-logo.png">
+<link rel="shortcut icon" href="{{ site.baseurl }}/images/dw-logo.png">
 
 <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
 <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -35,4 +35,4 @@
 <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
 <![endif]-->
 
-<link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ site.baseurl }}/feed.xml">

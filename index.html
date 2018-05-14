@@ -33,14 +33,14 @@ skip_title_for_h1: true
          <div class="row text-left">
            <div class="col-sm-12" style="margin-bottom: 8px">
              <span style="margin-right: 5px; font-size: 12px;">{{ post.date | date: "%Y-%m-%d" }}</span>
-             <a href="{{ post.url }}">{{ post.title }}{% if post.category == "release" %}&nbsp;Released!{% endif %}</a>
+             <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}{% if post.category == "release" %}&nbsp;Released!{% endif %}</a>
            </div>
          </div>
          {% endfor %}
          <hr />
          <div class="row">
            <div class="col-sm-12" style="margin-bottom: 5px">
-              <a href="/news"> News Archive</a>
+              <a href="{{ site.baseurl }}/news"> News Archive</a>
            </div>
          </div>
       </div>
@@ -51,8 +51,8 @@ skip_title_for_h1: true
 {% if jekyll.environment != "production" %}
 <h3>Development Tags</h3>
 <ul>
-    <li><a href="/pages/tags/todo">TODO</a></li>
-    <li><a href="/pages/tags/wip">Work in Progress</a></li>
+    <li><a href="{{ site.baseurl }}/pages/tags/todo">TODO</a></li>
+    <li><a href="{{ site.baseurl }}/pages/tags/wip">Work in Progress</a></li>
 </ul>
 {% include devtag_todo.html content="Set up Google Analytics tracking and configure ID in _config.yml" %}
 {% include devtag_todo.html content="Establish user feedback mechanism in topnav menu and configure via settings in _config.yml" %}
