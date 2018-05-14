@@ -1,0 +1,33 @@
+<table>
+  <caption>Edge Table Layout</caption>
+  <thead><tr><th>Row</th><th>Column&nbsp;Family</th><th>Column&nbsp;Qualifier</th><th>Value</th><th>Purpose</th></tr></thead>
+  <tbody>
+
+  {% assign tables = site.data.datawave['data-model'].tables | where:"id","EDGE" %}
+
+  {% for entry in tables[0].entries %}
+  <tr>
+    {% for i in (1..4) %}
+        {% if i == 1 %}
+            {% assign td_raw = entry.row %}
+        {% elsif i == 2 %}
+            {% assign td_raw = entry.cf %}
+        {% elsif i == 3 %}
+            {% assign td_raw = entry.cq %}
+        {% elsif i == 4 %}
+            {% assign td_raw = entry.val %}
+        {% endif %}
+
+        {% assign terms = td_raw | split: '+' %}
+    <td>
+        {% include set_table_entry_tooltips.html entry_terms=terms %}
+    </td>
+    {% endfor %}
+    <td>
+        {{ entry.purpose }}
+    </td>
+  </tr>
+  {% endfor %}
+
+  </tbody>
+</table>

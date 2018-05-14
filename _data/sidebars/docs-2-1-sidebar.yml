@@ -1,0 +1,98 @@
+# This file is used to construct the sidebar navigation for DataWave 2.1 docs.
+
+# General sidebar notes...
+
+# The goal here is to have sidebar setup for our various pages and collection types be dynamic and data-driven.
+
+# The selection of a particular sidebar for each web page is typically defaulted in _config.yml based on the page's
+# collection type. However, the sidebar may be overridden, if needed, in the frontmatter section of the given
+# page/post/doc/etc
+
+# The code in _includes/sidebar.html will build an accordion-style menu using the data provided below for any page
+# having its "sidebar" property set to "docs-2-1-sidebar"
+
+# Note that if the sidebar 'version' below matches that of site.latest_minor_release (in _config.yml), then certain
+# layouts and behaviors will react accordingly, e.g., _includes/sidebar.html will append "(Latest)" to the sidebar
+# heading, etc
+
+entries:
+- title: sidebar
+  product: DataWave
+  version: 2.1
+  folders:
+
+  - title: Getting Started
+    folderitems:
+
+    - title: Overview
+      url: /docs/2.1/getting-started/overview
+
+    - title: Data Model
+      url: /docs/2.1/getting-started/data-model
+
+    - title: Development
+      url: /docs/2.1/getting-started/development
+
+      subfolders:
+      - title: Quickstart
+        subfolderitems:
+        - title: Installation
+          url: /docs/2.1/getting-started/quickstart-install
+
+        - title: Reference
+          url: /docs/2.1/getting-started/quickstart-reference
+
+        - title: Troubleshooting
+          url: /docs/2.1/getting-started/quickstart-trouble
+
+  - title: Tour
+    folderitems:
+    - title: Getting Started
+      url: /docs/2.1/tour/getting-started
+
+    - title: Ingest Basics
+      url: /docs/2.1/tour/ingest-basics
+
+    - title: Query Basics
+      url: /docs/2.1/tour/query-basics
+
+    - title: Edge Query
+      url: /docs/2.1/tour/edge-query
+
+  - title: Ingest
+    folderitems:
+
+    - title: Overview
+      url: /docs/2.1/ingest/overview
+
+    - title: Data Flow
+      url: /docs/2.1/ingest/data-flow
+
+    - title: Development
+      url: /docs/2.1/ingest/development
+
+    - title: Administration
+      url: /docs/2.1/ingest/administration
+
+    - title: Configuration
+      url: /docs/2.1/ingest/configuration
+
+  - title: Query
+    folderitems:
+
+    - title: Overview
+      url: /docs/2.1/query/overview
+
+    - title: Query Syntax
+      url: /docs/2.1/query/syntax
+
+    - title: Development
+      url: /docs/2.1/query/development
+
+    - title: Administration
+      url: /docs/2.1/query/administration
+
+    - title: Configuration
+      url: /docs/2.1/query/configuration
+
+

@@ -1,0 +1,62 @@
+# This data file describes config settings for the bulk loader
+
+properties:
+  - name: hdfsWorkDir
+    description: Directory in HDFS to watch
+
+  - name: jobDirPattern
+    description: Pattern for dirs in hdfsWorkDir to check for the complete file marker
+
+  - name: instanceName
+    description: Accumulo instance name
+
+  - name: zooKeepers
+    description: Zookeepers
+
+  - name: username
+    description: username
+
+  - name: password
+    description: password
+
+  - name: sleepTime
+    description: Amount of time (ms) to sleep between checks for map files
+
+  - name: numHdfsThreads
+    description: Number of threads to use for concurrent HDFS operations (default 1)
+
+  - name: numThreads
+    description: Number of bulk import threads (default 8)
+
+  - name: majcThreshold
+    description: Max number of compactions allowed before waiting
+
+  - name: majcCheckInterval
+    description: Number of bulk loads to process before rechecking majcThreshold and majcDelay
+
+  - name: maxDirectories
+    description: Max number of directories
+
+  - name: numAssignThreads
+    description: Number of bulk import assignment threads (default 4)
+
+  - name: jt
+    description: Job tracker node
+
+  - name: majcDelay
+    description: Amount of time (ms) to wait between bringing map files online
+
+  - name: seqFileHdfs
+    description: Sequence file system URI (Ingest)
+
+  - name: srcHdfs
+    description: Source file system URI (Warehouse)
+
+  - name: destHdfs
+    description: Destination file system URI (Warehouse)
+
+  - name: shutdownPort
+    description: Shutdown port
+
+  - name: confFile
+    description: Array of *-config.xml files

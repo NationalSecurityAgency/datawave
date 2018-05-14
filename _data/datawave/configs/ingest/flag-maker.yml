@@ -1,0 +1,73 @@
+# This data file describes FlagMaker and FlagMakerDataType config settings
+
+parent-properties:
+  - name: flagFileDirectory
+    description: Local directory on the ingest master host to put flag files
+
+  - name: setFlagFileTimestamp
+    description: If set to true, then the timestamp on flag files will be set to the last timestamp of the file contained therein
+
+  - name: useFolderTimestamp
+    description: If set to true, use folder for file timestamp instead of the actual file timestamp
+
+  - name: socketPort
+    description: Port on which this flag maker will listen for a shutdown command
+
+  - name: datawaveHome
+    description: /path/to/datawave-ingest/current
+
+  - name: sleepMilliSecs
+    description: Wait this long before making another flag file. Defaults to 15 seconds
+
+  - name: timeoutMilliSecs
+    description: Stop appending to the input file list after this time. Defaults to 5 minutes. That is, if there is any data to be processed, then a flag file must be created within this time period regardless of other considerations
+
+  - name: baseHDFSDir
+    description: Base HDFS directory
+
+  - name: filePattern
+    description: Regex of files to be added to the file list (ignore “.” files, etc)
+
+  - name: hdfs
+    description: Ingest namenode uri. E.g., hdfs://ingest.namenode.host:9000
+
+  - name: distributorType
+    description: One of "simple", "date", or "folderdate". See SimpleFlagDistributor, DateFlagDistributor, DateFolderFlagDistributor classes respectively
+
+datatype-properties:
+
+  - name: dataName
+    description: Unique <b>data.name</b> identifier for the registered data type
+
+  - name: folder
+    description: Folder under baseHDFSDir to look for files of type <em>dataName</em>. The folder will be considered an absolute path if it leads with a slash, otherwise relative to the HDFS base dir
+
+  - name: inputFormat
+    description: Input format to use for the job. Defaults to datawave.ingest.input.reader.event.EventSequenceFileInputFormat
+
+  - name: ingestPool
+    description: Used in the naming of flag files and may also identify the yarn scheduler queue to use
+
+  - name: maxFlags
+    description: Maximum number of blocks (mappers) per job. Allows you to override maximum files/mappers/blocks for the given data type
+
+  - name: reducers
+    description: Number of reducers to use for ingest jobs
+
+  - name: extraIngestArgs
+    description: Extra arguments to pass to the ingest process
+
+  - name: distributionArgs
+    description: Allows arguments to be passed to the FlagDistributor instance. Defauts to "none"
+
+  - name: lifo
+    description: Should we process the data <em>lifo</em> (true) or <em>fifo</em> (false)? Defaults to false, i.e., fifo. This is based on the file date, within a bucket
+
+  - name: timeoutMilliSecs
+    description: Overrides the parent flag maker's <em>timeoutMilliSecs</em> setting
+
+  - name: script
+    description: This will be the script used to launch the ingest job. Forms the basis of the command that will be written to the flag file
+
+  - name: fileListMarker
+    description: Marker to aid flag file parsing. Denotes that a list of input files for the MR job will follow immediately, one input file per line

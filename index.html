@@ -1,0 +1,62 @@
+---
+title: "DataWave"
+skip_title_for_h1: true
+---
+<div class="container-fluid" style="padding-right: 0px; padding-left: 0px;">
+
+<div class="row" style="padding-top: 25px; display:flex; flex-wrap: wrap;">
+
+  <div class="col-md-8">
+     <div class="jumbotron text-center" style="height: 100%; margin-bottom: 0px; padding: 45px; border-radius: 11px;">
+        <h2>Welcome to DataWave</h2>
+        <hr />
+        <div class="text-left">
+        <p style="font-size: 15px;">DataWave is a Java-based ingest and query framework that leverages <a class=".clear" href="http://accumulo.apache.org" target="_blank">Apache Accumulo</a> 
+        to provide fast, secure access to your data. It supports a wide variety of use cases, including but not limited to...</p>
+        <ul>
+          <li>Data fusion across structured and unstructured datasets</li>
+          <li>Construction and analysis of distributed graphs</li>
+          <li>Multi-tenant data architectures, with tenants having distinct security requirements and data access patterns</li>
+          <li>Fine-grained control over data access, easily integrated with your existing user-authorization services and PKI</li>
+        </ul>
+        </div>
+        <hr />
+        <a class="btn btn-success" style="width: 220px;" href="{{ site.repository_url }}/archive/{{ site.default_branch }}.zip" role="button"><i class="fa fa-download fa-lg"></i> Download Latest Source</a>
+        <a class="btn btn-success" style="width: 220px;" href="{{ site.repository_url }}/" role="button" target="_blank"><i class="fa fa-github fa-lg"></i> View/Clone the Repo</a>
+     </div>
+  </div>
+  <div class="col-md-4">
+      <div class="jumbotron text-center" style="height: 100%; margin-bottom: 0px; padding: 45px; border-radius: 11px;">
+         <h2>Latest Project News</h2><hr />
+         {% assign visible_posts = site.posts | where:"draft",false %}
+         {% for post in visible_posts limit:site.num_home_posts %}
+         <div class="row text-left">
+           <div class="col-sm-12" style="margin-bottom: 8px">
+             <span style="margin-right: 5px; font-size: 12px;">{{ post.date | date: "%Y-%m-%d" }}</span>
+             <a href="{{ post.url }}">{{ post.title }}{% if post.category == "release" %}&nbsp;Released!{% endif %}</a>
+           </div>
+         </div>
+         {% endfor %}
+         <hr />
+         <div class="row">
+           <div class="col-sm-12" style="margin-bottom: 5px">
+              <a href="/news"> News Archive</a>
+           </div>
+         </div>
+      </div>
+  </div>
+ 
+</div>
+
+{% if jekyll.environment != "production" %}
+<h3>Development Tags</h3>
+<ul>
+    <li><a href="/pages/tags/todo">TODO</a></li>
+    <li><a href="/pages/tags/wip">Work in Progress</a></li>
+</ul>
+{% include devtag_todo.html content="Set up Google Analytics tracking and configure ID in _config.yml" %}
+{% include devtag_todo.html content="Establish user feedback mechanism in topnav menu and configure via settings in _config.yml" %}
+<p>To disable all 'dev mode' elements within the site, set <em>JEKYLL_ENV=production</em> in your environment prior to building</p>
+
+{% endif %}
+</div>
