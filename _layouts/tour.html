@@ -65,10 +65,10 @@ layout: default
     <hr />
     <div class="text-center">
         {% if previous_page != '' and previous_page != nil %}
-           <a href="{{previous_page}}" class="btn btn-default" style="width: 150px;" role="button"> <i class="fa fa-arrow-circle-left fa-lg"></i> Previous</a>
+           <a href="{{site.baseurl}}{{previous_page}}" class="btn btn-default" style="width: 150px;" role="button"> <i class="fa fa-arrow-circle-left fa-lg"></i> Previous</a>
         {% endif %}
         {% if next_page != '' and next_page != nil %}
-           <a href="{{next_page}}" class="btn btn-default" style="width: 150px;" role="button">Next <i class="fa fa-arrow-circle-right fa-lg"></i></a>
+           <a href="{{site.baseurl}}{{next_page}}" class="btn btn-default" style="width: 150px;" role="button">Next <i class="fa fa-arrow-circle-right fa-lg"></i></a>
         {% endif %}
     </div>
     <hr />
@@ -78,11 +78,11 @@ layout: default
     <script>
     document.body.onkeyup = function(e){
         {% if prev_idx >= 0 %}
-            if (e.keyCode == '37') { window.location = '{{previous_page}}'; }
+            if (e.keyCode == '37') { window.location = '{{site.baseurl}}{{previous_page}}'; }
         {% endif %}
 
         {% if next_idx > 0 %}
-            if (e.keyCode == '39') { window.location = '{{next_page}}'; }
+            if (e.keyCode == '39') { window.location = '{{site.baseurl}}{{next_page}}'; }
         {% endif %}
     };
     </script>

@@ -14,12 +14,13 @@
  $ cd <DW SOURCE DIR>
  $ git checkout gh-pages (or gh-pages-dev)
  
- # Build and run site using the preview server, and auto-sync changes via --watch
+ # Build and run site using the preview server with overridden baseurl (see baseurl configuration
+ # notes in _config.yml for more info), and auto-sync site changes via --watch
   
  $ bundle update
- $ bundle exec jekyll serve --watch
+ $ bundle exec jekyll serve --baseurl '' --watch
  
- # Now browse to http://localhost:4000
+ # Now browse to http://localhost:4000/
  
 ```
 
@@ -34,7 +35,7 @@ and other dev-related *tags* and *includes* throughout the site.
 To build and run locally in production mode...
 
 ```bash
-JEKYLL_ENV=production bundle exec jekyll serve --watch
+JEKYLL_ENV=production bundle exec jekyll serve --baseurl '' --watch
 
 ```
 
