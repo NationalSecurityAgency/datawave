@@ -50,4 +50,11 @@ public interface EventDataQueryFilter extends Predicate<Map.Entry<Key,String>>, 
      * @return
      */
     public Range getKeyRange(Map.Entry<Key,Document> from);
+    
+    /**
+     * Clone the underlying EventDataQueryFilter
+     * 
+     * @return
+     */
+    EventDataQueryFilter clone();
 }

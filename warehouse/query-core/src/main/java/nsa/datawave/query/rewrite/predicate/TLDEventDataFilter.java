@@ -92,6 +92,23 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         setSortedLists(whitelist, blacklist);
     }
     
+    public TLDEventDataFilter(TLDEventDataFilter other) {
+        super(other);
+        maxFieldsBeforeSeek = other.maxFieldsBeforeSeek;
+        maxKeysBeforeSeek = other.maxKeysBeforeSeek;
+        sortedWhitelist = other.sortedWhitelist;
+        sortedBlacklist = other.sortedBlacklist;
+        queryFields = other.queryFields;
+        lastField = other.lastField;
+        fieldCount = other.fieldCount;
+        lastListSeekIndex = other.lastListSeekIndex;
+        keyMissCount = other.keyMissCount;
+        lastParseInfo = other.lastParseInfo;
+        limitFieldsField = other.limitFieldsField;
+        limitFieldsMap = other.limitFieldsMap;
+        anyFieldLimit = other.anyFieldLimit;
+    }
+    
     @Override
     public void setDocumentKey(Key document) {
         super.setDocumentKey(document);
@@ -714,6 +731,11 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         } else {
             return null;
         }
+    }
+    
+    @Override
+    public EventDataQueryFilter clone() {
+        return new TLDEventDataFilter(this);
     }
     
     /**
