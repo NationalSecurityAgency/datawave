@@ -192,8 +192,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             this.source = source;
         }
         
-        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter() != null ? getEvaluationFilter().clone() : null,
-                        getEvaluationFilter() != null ? getEvaluationFilter().getMaxNextCount() : -1);
+        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
+                        .getMaxNextCount() : -1);
         
         if (isDebugMultithreadedSources()) {
             this.source = new SourceThreadTrackingIterator(this.source);
@@ -605,8 +605,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 }
             };
         } else {
-            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, super.equality,
-                            getEvaluationFilter() != null ? getEvaluationFilter().clone() : null, this.includeHierarchyFields, this.includeHierarchyFields);
+            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, super.equality, getEvaluationFilter(),
+                            this.includeHierarchyFields, this.includeHierarchyFields);
         }
         
         Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, new Function<Key,Entry<DocumentData,Document>>() {
@@ -625,8 +625,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         Iterator<Entry<Key,Document>> documents = null;
         CompositeMetadata compositeMetadata = new CompositeMetadata(this.getCompositeMetadata());
         Aggregation a = new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
-                        this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter() != null ? getEvaluationFilter().clone() : null,
-                        isTrackSizes());
+                        this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(), isTrackSizes());
         if (gatherTimingDetails()) {
             documents = Iterators.transform(sourceIterator, new EvaluationTrackingFunction<>(QuerySpan.Stage.Aggregation, trackingSpan, a));
         } else {
@@ -772,7 +771,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             if (this.isTermFrequenciesRequired()) {
                 Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> tfFunction;
                 tfFunction = TFFactory.getFunction(getScript(documentSource), getContentExpansionFields(), getTermFrequencyFields(), this.getTypeMetadata(),
-                                super.equality, getEvaluationFilter() != null ? getEvaluationFilter().clone() : null, sourceDeepCopy.deepCopy(myEnvironment));
+                                super.equality, getEvaluationFilter(), sourceDeepCopy.deepCopy(myEnvironment));
                 
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
@@ -858,12 +857,12 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         }
         if (fieldIndexSatisfiesQuery) {
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, super.equality,
-                            getEvaluationFilter() != null ? getEvaluationFilter().clone() : null, this.includeHierarchyFields, this.includeHierarchyFields);
+                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields);
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
                             documents,
                             new GetDocument(docMapper, new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata, this
-                                            .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(),
-                                            getEvaluationFilter() != null ? getEvaluationFilter().clone() : null, isTrackSizes())));
+                                            .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(),
+                                            isTrackSizes())));
             
             Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<Key,Document>());
             return retDocuments;

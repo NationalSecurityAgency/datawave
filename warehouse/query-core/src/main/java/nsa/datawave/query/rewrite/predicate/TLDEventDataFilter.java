@@ -96,16 +96,26 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         super(other);
         maxFieldsBeforeSeek = other.maxFieldsBeforeSeek;
         maxKeysBeforeSeek = other.maxKeysBeforeSeek;
-        sortedWhitelist = other.sortedWhitelist;
-        sortedBlacklist = other.sortedBlacklist;
-        queryFields = other.queryFields;
+        if (other.sortedWhitelist != null) {
+            sortedWhitelist = Collections.unmodifiableList(other.sortedWhitelist);
+        }
+        if (other.sortedBlacklist != null) {
+            sortedBlacklist = Collections.unmodifiableList(other.sortedBlacklist);
+        }
+        if (other.queryFields != null) {
+            queryFields = Collections.unmodifiableList(other.queryFields);
+        }
         lastField = other.lastField;
         fieldCount = other.fieldCount;
         lastListSeekIndex = other.lastListSeekIndex;
         keyMissCount = other.keyMissCount;
-        lastParseInfo = other.lastParseInfo;
+        if (other.lastParseInfo != null) {
+            lastParseInfo = new ParseInfo(other.lastParseInfo);
+        }
         limitFieldsField = other.limitFieldsField;
-        limitFieldsMap = other.limitFieldsMap;
+        if (other.limitFieldsMap != null) {
+            limitFieldsMap = Collections.unmodifiableMap(other.limitFieldsMap);
+        }
         anyFieldLimit = other.anyFieldLimit;
     }
     
@@ -748,6 +758,14 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         
         public ParseInfo(Key k) {
             this.key = k;
+        }
+        
+        public ParseInfo(ParseInfo other) {
+            if (other.key != null) {
+                key = new Key(other.key);
+            }
+            root = other.root;
+            field = other.field;
         }
         
         public boolean isSame(Key other) {
