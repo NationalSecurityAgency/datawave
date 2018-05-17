@@ -33,6 +33,13 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
         setFilters(expressionFilters);
     }
     
+    public EventDataQueryExpressionFilter(EventDataQueryExpressionFilter other) {
+        setFilters(other.getFilters());
+        if (other.document != null) {
+            document = new Key(other.document);
+        }
+    }
+    
     protected Key document = null;
     
     @Override
@@ -112,5 +119,10 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     public Key transform(Key toLimit) {
         // not yet implemented
         return null;
+    }
+    
+    @Override
+    public EventDataQueryFilter clone() {
+        return new EventDataQueryExpressionFilter(this);
     }
 }
