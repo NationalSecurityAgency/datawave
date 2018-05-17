@@ -81,7 +81,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
-        this.limitFieldsMap = limitFieldsMap;
+        this.limitFieldsMap = Collections.unmodifiableMap(limitFieldsMap);
         this.limitFieldsField = limitFieldsField;
         
         // set the anyFieldLimit once if specified otherwise set to -1
@@ -96,15 +96,9 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         super(other);
         maxFieldsBeforeSeek = other.maxFieldsBeforeSeek;
         maxKeysBeforeSeek = other.maxKeysBeforeSeek;
-        if (other.sortedWhitelist != null) {
-            sortedWhitelist = Collections.unmodifiableList(other.sortedWhitelist);
-        }
-        if (other.sortedBlacklist != null) {
-            sortedBlacklist = Collections.unmodifiableList(other.sortedBlacklist);
-        }
-        if (other.queryFields != null) {
-            queryFields = Collections.unmodifiableList(other.queryFields);
-        }
+        sortedWhitelist = other.sortedWhitelist;
+        sortedBlacklist = other.sortedBlacklist;
+        queryFields = other.queryFields;
         lastField = other.lastField;
         fieldCount = other.fieldCount;
         lastListSeekIndex = other.lastListSeekIndex;
@@ -113,9 +107,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
             lastParseInfo = new ParseInfo(other.lastParseInfo);
         }
         limitFieldsField = other.limitFieldsField;
-        if (other.limitFieldsMap != null) {
-            limitFieldsMap = Collections.unmodifiableMap(other.limitFieldsMap);
-        }
+        limitFieldsMap = other.limitFieldsMap;
         anyFieldLimit = other.anyFieldLimit;
     }
     
@@ -566,6 +558,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         
         // sort the queryFields
         Collections.sort(queryFields);
+        queryFields = Collections.unmodifiableList(queryFields);
     }
     
     /**
@@ -609,11 +602,13 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         if (whitelist != null && !whitelist.isEmpty()) {
             sortedWhitelist = new ArrayList<>(whitelist);
             Collections.sort(sortedWhitelist);
+            sortedWhitelist = Collections.unmodifiableList(sortedWhitelist);
         }
         
         if (blacklist != null && !blacklist.isEmpty()) {
             sortedBlacklist = new ArrayList<>(blacklist);
             Collections.sort(sortedBlacklist);
+            sortedBlacklist = Collections.unmodifiableList(sortedBlacklist);
         }
     }
     
