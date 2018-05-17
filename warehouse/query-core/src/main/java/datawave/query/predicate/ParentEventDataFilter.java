@@ -18,6 +18,10 @@ public class ParentEventDataFilter extends ConfigurableEventDataQueryFilter {
         super(script, metadata, expressionFilterEnabled);
     }
     
+    public ParentEventDataFilter(ParentEventDataFilter other) {
+        super(other);
+    }
+    
     /*
      * (non-Javadoc)
      * 
@@ -27,5 +31,10 @@ public class ParentEventDataFilter extends ConfigurableEventDataQueryFilter {
     public boolean keep(Key k) {
         // do not keep any of these fields because we will be re-fetching the parent document anyway
         return false;
+    }
+    
+    @Override
+    public EventDataQueryFilter clone() {
+        return new ParentEventDataFilter(this);
     }
 }

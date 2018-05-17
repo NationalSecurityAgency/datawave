@@ -21,6 +21,10 @@ public class KeyProjection implements Predicate<Entry<Key,String>> {
         projection = new Projection();
     }
     
+    public KeyProjection(KeyProjection other) {
+        projection = other.getProjection();
+    }
+    
     public void initializeWhitelist(Set<String> whiteListFields) {
         projection.setWhitelist(whiteListFields);
     }

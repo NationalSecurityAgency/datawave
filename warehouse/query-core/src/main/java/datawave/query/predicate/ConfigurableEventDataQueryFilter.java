@@ -23,6 +23,13 @@ public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
         }
     }
     
+    public ConfigurableEventDataQueryFilter(ConfigurableEventDataQueryFilter other) {
+        filter = other.filter.clone();
+        if (other.document != null) {
+            document = new Key(other.document);
+        }
+    }
+    
     @Override
     public void setDocumentKey(Key document) {
         this.document = document;
@@ -81,5 +88,10 @@ public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
     @Override
     public Key transform(Key toLimit) {
         return filter.transform(toLimit);
+    }
+    
+    @Override
+    public EventDataQueryFilter clone() {
+        return new ConfigurableEventDataQueryFilter(this);
     }
 }

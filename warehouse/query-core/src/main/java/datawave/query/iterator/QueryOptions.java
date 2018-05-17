@@ -610,7 +610,7 @@ public class QueryOptions implements OptionDescriber {
     }
     
     public EventDataQueryFilter getEvaluationFilter() {
-        return evaluationFilter;
+        return evaluationFilter != null ? evaluationFilter.clone() : null;
     }
     
     public void setEvaluationFilter(EventDataQueryFilter evaluationFilter) {
