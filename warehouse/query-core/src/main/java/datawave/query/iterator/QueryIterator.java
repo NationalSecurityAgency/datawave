@@ -623,7 +623,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         Iterator<Entry<Key,Document>> documents = null;
         CompositeMetadata compositeMetadata = new CompositeMetadata(this.getCompositeMetadata());
         Aggregation a = new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
-                        this.includeRecordId, this.disableIndexOnlyDocuments(), this.getEvaluationFilter(), isTrackSizes());
+                        this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(), isTrackSizes());
         if (gatherTimingDetails()) {
             documents = Iterators.transform(sourceIterator, new EvaluationTrackingFunction<>(QuerySpan.Stage.Aggregation, trackingSpan, a));
         } else {
@@ -859,7 +859,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
                             documents,
                             new GetDocument(docMapper, new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata, this
-                                            .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), this.getEvaluationFilter(),
+                                            .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(),
                                             isTrackSizes())));
             
             Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<Key,Document>());
