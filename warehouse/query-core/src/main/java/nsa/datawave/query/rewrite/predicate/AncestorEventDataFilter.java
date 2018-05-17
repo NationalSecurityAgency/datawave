@@ -22,6 +22,11 @@ public class AncestorEventDataFilter extends ConfigurableEventDataQueryFilter {
         super(script, metadata, expressionFilterEnabled);
     }
     
+    public AncestorEventDataFilter(AncestorEventDataFilter other) {
+        super(other);
+        docUid = other.docUid;
+    }
+    
     /*
      * (non-Javadoc)
      * 
@@ -81,5 +86,10 @@ public class AncestorEventDataFilter extends ConfigurableEventDataQueryFilter {
             uid = cf.substring(cf.lastIndexOf('\0') + 1);
         }
         return uid;
+    }
+    
+    @Override
+    public EventDataQueryFilter clone() {
+        return new AncestorEventDataFilter(this);
     }
 }

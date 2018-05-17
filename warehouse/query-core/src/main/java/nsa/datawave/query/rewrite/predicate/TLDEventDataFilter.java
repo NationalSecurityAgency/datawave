@@ -81,7 +81,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
-        this.limitFieldsMap = limitFieldsMap;
+        this.limitFieldsMap = Collections.unmodifiableMap(limitFieldsMap);
         this.limitFieldsField = limitFieldsField;
         
         // set the anyFieldLimit once if specified otherwise set to -1
@@ -90,6 +90,25 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         extractQueryFieldsFromScript(script);
         updateLists(whitelist, blacklist);
         setSortedLists(whitelist, blacklist);
+    }
+    
+    public TLDEventDataFilter(TLDEventDataFilter other) {
+        super(other);
+        maxFieldsBeforeSeek = other.maxFieldsBeforeSeek;
+        maxKeysBeforeSeek = other.maxKeysBeforeSeek;
+        sortedWhitelist = other.sortedWhitelist;
+        sortedBlacklist = other.sortedBlacklist;
+        queryFields = other.queryFields;
+        lastField = other.lastField;
+        fieldCount = other.fieldCount;
+        lastListSeekIndex = other.lastListSeekIndex;
+        keyMissCount = other.keyMissCount;
+        if (other.lastParseInfo != null) {
+            lastParseInfo = new ParseInfo(other.lastParseInfo);
+        }
+        limitFieldsField = other.limitFieldsField;
+        limitFieldsMap = other.limitFieldsMap;
+        anyFieldLimit = other.anyFieldLimit;
     }
     
     @Override
@@ -539,6 +558,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         
         // sort the queryFields
         Collections.sort(queryFields);
+        queryFields = Collections.unmodifiableList(queryFields);
     }
     
     /**
@@ -582,11 +602,13 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         if (whitelist != null && !whitelist.isEmpty()) {
             sortedWhitelist = new ArrayList<>(whitelist);
             Collections.sort(sortedWhitelist);
+            sortedWhitelist = Collections.unmodifiableList(sortedWhitelist);
         }
         
         if (blacklist != null && !blacklist.isEmpty()) {
             sortedBlacklist = new ArrayList<>(blacklist);
             Collections.sort(sortedBlacklist);
+            sortedBlacklist = Collections.unmodifiableList(sortedBlacklist);
         }
     }
     
@@ -716,6 +738,11 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         }
     }
     
+    @Override
+    public EventDataQueryFilter clone() {
+        return new TLDEventDataFilter(this);
+    }
+    
     /**
      * Place to store all the parsed information about a Key so we don't have to re-parse
      */
@@ -726,6 +753,14 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         
         public ParseInfo(Key k) {
             this.key = k;
+        }
+        
+        public ParseInfo(ParseInfo other) {
+            if (other.key != null) {
+                key = new Key(other.key);
+            }
+            root = other.root;
+            field = other.field;
         }
         
         public boolean isSame(Key other) {
