@@ -89,7 +89,7 @@ public class TLDQueryIterator extends QueryIterator {
                             useWhiteListedFields ? whiteListedFields : null, useBlackListedFields ? blackListedFields : null, maxFieldHitsBeforeSeek,
                             maxKeysBeforeSeek, limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.EMPTY_MAP, limitFieldsField);
         }
-        return this.evaluationFilter;
+        return this.evaluationFilter != null ? evaluationFilter.clone() : null;
     }
     
     @Override
