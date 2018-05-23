@@ -421,43 +421,43 @@ public class QueryExecutorBeanTest {
         QueryImpl q = createNewQuery();
         q.setBeginDate(null);
         q.setEndDate(null);
-
+        
         MultivaluedMap p = createNewQueryParameterMap();
         p.remove(QueryParameters.QUERY_BEGIN);
         p.remove(QueryParameters.QUERY_END);
         p.putSingle(QueryParameters.QUERY_BEGIN, null);
         p.putSingle(QueryParameters.QUERY_END, null);
-
+        
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, p);
-
+        
         @SuppressWarnings("rawtypes")
         QueryLogic logic = createMock(BaseQueryLogic.class);
-
+        
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"), UserType.USER,
-                Arrays.asList(auths), null, null, 0L);
+                        Arrays.asList(auths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         String[] dns = principal.getDNs();
         Arrays.sort(dns);
         List<String> dnList = Arrays.asList(dns);
-
+        
         PowerMock.resetAll();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
         suppress(constructor(QueryParametersImpl.class));
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
-                queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
-
+                        queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
+        
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
         EasyMock.expect(logic.getConnectionPriority()).andReturn(AccumuloConnectionFactory.Priority.NORMAL);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
-
+        
         PowerMock.replayAll();
-
+        
         bean.defineQuery(queryLogicName, p);
-
+        
         PowerMock.verifyAll();
-
+        
         Object cachedRunningQuery = cache.get(q.getId().toString());
         Assert.assertNotNull(cachedRunningQuery);
         RunningQuery rq2 = (RunningQuery) cachedRunningQuery;
@@ -474,7 +474,7 @@ public class QueryExecutorBeanTest {
         queryParameters.remove(QueryParameters.QUERY_END);
         queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
         queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-
+        
         try {
             bean.createQuery("EventQueryLogic", queryParameters);
             fail(); // If doesn't throw exception, should fail
