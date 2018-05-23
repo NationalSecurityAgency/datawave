@@ -128,6 +128,7 @@ abstract public class RemoteHttpService {
                     .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                     .setDefaultHeaders(defaultHeaders)
                     .setMaxConnTotal(maxConnections())
+                    .setMaxConnPerRoute(maxConnections())
                     .setRetryHandler(new DatawaveRetryHandler(retryCount(), unavailableRetryCount(), unavailableRetryDelay(), retryCounter()))
                     .setServiceUnavailableRetryStrategy(new DatawaveUnavailableRetryStrategy(unavailableRetryCount(), unavailableRetryDelay(), retryCounter()))
                     .build();
