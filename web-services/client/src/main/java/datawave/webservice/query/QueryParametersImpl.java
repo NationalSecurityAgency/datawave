@@ -71,13 +71,13 @@ public class QueryParametersImpl implements QueryParameters {
                 this.trace = Boolean.parseBoolean(values.get(0));
             } else if (QUERY_BEGIN.equals(param)) {
                 try {
-                    this.beginDate = parseStartDate(values.get(0));
+                    this.beginDate = values.get(0) == null ? null : parseStartDate(values.get(0));
                 } catch (ParseException e) {
                     throw new IllegalArgumentException("Error parsing begin date", e);
                 }
             } else if (QUERY_END.equals(param)) {
                 try {
-                    this.endDate = parseEndDate(values.get(0));
+                    this.endDate = values.get(0) == null ? null : parseEndDate(values.get(0));
                 } catch (ParseException e) {
                     throw new IllegalArgumentException("Error parsing end date", e);
                 }
