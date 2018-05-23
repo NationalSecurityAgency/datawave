@@ -2,6 +2,7 @@ package datawave.microservice.config;
 
 import datawave.microservice.config.metrics.MetricsConfigurationProperties;
 import datawave.microservice.config.web.DatawaveServerProperties;
+import datawave.microservice.config.web.RestClientProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
@@ -17,6 +18,12 @@ public class DatawaveMicroserviceConfig {
     @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
     public ServerProperties serverProperties() {
         return new DatawaveServerProperties();
+    }
+    
+    @Bean
+    @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
+    public RestClientProperties restClientProperties() {
+        return new RestClientProperties();
     }
     
     @Bean
