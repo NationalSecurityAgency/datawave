@@ -4,7 +4,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.HttpClients;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.context.embedded.Ssl;
 import org.springframework.boot.web.client.RestTemplateCustomizer;
 import org.springframework.http.client.ClientHttpRequestFactory;
@@ -29,10 +28,14 @@ import java.security.NoSuchAlgorithmException;
 @Component
 public class ClientCertRestTemplateCustomizer implements RestTemplateCustomizer {
     private final Ssl ssl;
+    private final int maxConnectionsTotal;
+    private final int maxConnectionsPerRoute;
     
     @Autowired
-    public ClientCertRestTemplateCustomizer(ServerProperties serverProperties) {
+    public ClientCertRestTemplateCustomizer(DatawaveServerProperties serverProperties, RestClientProperties restClientProperties) {
         this.ssl = serverProperties.getSsl();
+        this.maxConnectionsTotal = restClientProperties.getMaxConnectionsTotal();
+        this.maxConnectionsPerRoute = restClientProperties.getMaxConnectionsPerRoute();
     }
     
     @Override
@@ -49,7 +52,8 @@ public class ClientCertRestTemplateCustomizer implements RestTemplateCustomizer 
         sslContext.init(getKeyManagers(), getTrustManagers(), null);
         // TODO: We're allowing all hosts, since the cert presented by the service we're calling likely won't match its hostname (e.g., a docker host name)
         // Instead, we could list the expected cert as a property (or use our server cert), and verify that the presented name matches.
-        HttpClient httpClient = HttpClients.custom().setSSLContext(sslContext).setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).build();
+        HttpClient httpClient = HttpClients.custom().setMaxConnTotal(maxConnectionsTotal).setMaxConnPerRoute(maxConnectionsPerRoute).setSSLContext(sslContext)
+                        .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).build();
         return new HttpComponentsClientHttpRequestFactory(httpClient);
     }
     
