@@ -19,10 +19,14 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class ClientCertRestTemplateCustomizer implements RestTemplateCustomizer {
     private final SSLContext sslContext;
+    private final int maxConnectionsTotal;
+    private final int maxConnectionsPerRoute;
     
     @Autowired
-    public ClientCertRestTemplateCustomizer(SSLContext sslContext) {
+    public ClientCertRestTemplateCustomizer(SSLContext sslContext, RestClientProperties restClientProperties) {
         this.sslContext = sslContext;
+        this.maxConnectionsTotal = restClientProperties.getMaxConnectionsTotal();
+        this.maxConnectionsPerRoute = restClientProperties.getMaxConnectionsPerRoute();
     }
     
     @Override
@@ -39,6 +43,8 @@ public class ClientCertRestTemplateCustomizer implements RestTemplateCustomizer 
         if (sslContext != null) {
             httpClientBuilder.setSSLContext(sslContext);
         }
+        httpClientBuilder.setMaxConnTotal(maxConnectionsTotal);
+        httpClientBuilder.setMaxConnPerRoute(maxConnectionsPerRoute);
         // TODO: We're allowing all hosts, since the cert presented by the service we're calling likely won't match its hostname (e.g., a docker host name)
         // Instead, we could list the expected cert as a property (or use our server cert), and verify that the presented name matches.
         return httpClientBuilder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
