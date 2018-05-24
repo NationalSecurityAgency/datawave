@@ -4,8 +4,8 @@ This module contains DATAWAVE external services. These are microservices that
 are intended to work in conjunction with, and eventually replace, the Wildfly
 based DATAWAVE web service.
 
-DATAWAVE microservices are built on top of [Spring Cloud](http://cloud.spring.io/spring-cloud-static/Edgware.SR1/single/spring-cloud.html) 
-and [Spring Boot](https://docs.spring.io/spring-boot/docs/1.5.9.RELEASE/reference/htmlsingle/).
+DATAWAVE microservices are built on top of [Spring Cloud](http://cloud.spring.io/spring-cloud-static/Edgware.SR3/single/spring-cloud.html) 
+and [Spring Boot](https://docs.spring.io/spring-boot/docs/1.5.13.RELEASE/reference/htmlsingle/).
 
 ## Why Microservices?
 
@@ -150,11 +150,14 @@ from the mechanism, and one must be careful in a bean that is not refreshable
 refreshable bean and store them in member variables. This defeats the purpose
 of having a refresh mechanism.
 
-There are two ways to issue a refresh:
+There are three ways to issue a refresh:
 1. Send a POST message with an empty body to `/<servicename>/mgmt/refresh` on the
    service you wish to refresh. This will cause all beans annotated wih `RefreshScope`
    to be re-created behind their proxies.
-2. Send a POST message with an empty body to `/<servicename>/mgmt/bus/refresh` on
+2. Send a POST message with an empty body to `/<servicename>/mgmt/bus/refresh?destination=<otherservicename>:**`
+   on any service. This will cause all running instances of `<otherservice>` that are
+   listening on the event bus to refresh.
+3. Send a POST message with an empty body to `/<servicename>/mgmt/bus/refresh` on
    any service when using RabbitMQ. The service in question and all other services
    using RabbitMQ will be refreshed.
    

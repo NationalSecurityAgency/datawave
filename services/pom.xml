@@ -4,7 +4,7 @@
     <parent>
         <artifactId>spring-boot-starter-parent</artifactId>
         <groupId>org.springframework.boot</groupId>
-        <version>1.5.9.RELEASE</version>
+        <version>1.5.13.RELEASE</version>
         <relativePath />
         <!-- lookup parent from repository -->
     </parent>
@@ -27,8 +27,8 @@
         <version.accumulo>1.8.1</version.accumulo>
         <version.datawave>2.2.0-SNAPSHOT</version.datawave>
         <version.docker.plugin>1.0.0</version.docker.plugin>
-        <version.spring.boot>1.5.9.RELEASE</version.spring.boot>
-        <version.spring.cloud>Edgware.RELEASE</version.spring.cloud>
+        <version.spring.boot>1.5.13.RELEASE</version.spring.boot>
+        <version.spring.cloud>Edgware.SR3</version.spring.cloud>
     </properties>
     <dependencyManagement>
         <dependencies>
