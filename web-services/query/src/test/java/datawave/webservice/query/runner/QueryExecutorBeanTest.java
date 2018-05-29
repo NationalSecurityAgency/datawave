@@ -240,11 +240,7 @@ public class QueryExecutorBeanTest {
         return optionalParameters;
     }
     
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testDefine() throws Exception {
-        QueryImpl q = createNewQuery();
-        MultivaluedMap p = createNewQueryParameterMap();
+    private void defineTestRunner(QueryImpl q, MultivaluedMap p) throws Exception {
         
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, p);
         
@@ -281,6 +277,15 @@ public class QueryExecutorBeanTest {
         RunningQuery rq2 = (RunningQuery) cachedRunningQuery;
         Assert.assertEquals(q, rq2.getSettings());
         
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testDefine() throws Exception {
+        QueryImpl q = createNewQuery();
+        MultivaluedMap p = createNewQueryParameterMap();
+        
+        defineTestRunner(q, p);
     }
     
     @SuppressWarnings("unchecked")
@@ -416,52 +421,38 @@ public class QueryExecutorBeanTest {
         
     }
     
-    @Test
-    public void testNullDates() throws Exception {
+    private void nullDateTestRunner(boolean nullStart, boolean nullEnd) throws Exception {
         QueryImpl q = createNewQuery();
-        q.setBeginDate(null);
-        q.setEndDate(null);
-        
         MultivaluedMap p = createNewQueryParameterMap();
-        p.remove(QueryParameters.QUERY_BEGIN);
-        p.remove(QueryParameters.QUERY_END);
-        p.putSingle(QueryParameters.QUERY_BEGIN, null);
-        p.putSingle(QueryParameters.QUERY_END, null);
         
-        MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, p);
+        if (nullStart) {
+            q.setBeginDate(null);
+            p.remove(QueryParameters.QUERY_BEGIN);
+            p.putSingle(QueryParameters.QUERY_BEGIN, null);
+        }
         
-        @SuppressWarnings("rawtypes")
-        QueryLogic logic = createMock(BaseQueryLogic.class);
+        if (nullEnd) {
+            q.setEndDate(null);
+            p.remove(QueryParameters.QUERY_END);
+            p.putSingle(QueryParameters.QUERY_END, null);
+        }
         
-        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"), UserType.USER,
-                        Arrays.asList(auths), null, null, 0L);
-        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
-        String[] dns = principal.getDNs();
-        Arrays.sort(dns);
-        List<String> dnList = Arrays.asList(dns);
-        
-        PowerMock.resetAll();
-        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
-        suppress(constructor(QueryParametersImpl.class));
-        EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
-                        queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
-        
-        EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
-        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
-        EasyMock.expect(logic.getConnectionPriority()).andReturn(AccumuloConnectionFactory.Priority.NORMAL);
-        EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
-        EasyMock.expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
-        
-        PowerMock.replayAll();
-        
-        bean.defineQuery(queryLogicName, p);
-        
-        PowerMock.verifyAll();
-        
-        Object cachedRunningQuery = cache.get(q.getId().toString());
-        Assert.assertNotNull(cachedRunningQuery);
-        RunningQuery rq2 = (RunningQuery) cachedRunningQuery;
-        Assert.assertEquals(q, rq2.getSettings());
+        defineTestRunner(q, p);
+    }
+    
+    @Test
+    public void testBothDatesNull() throws Exception {
+        nullDateTestRunner(true, true);
+    }
+    
+    @Test
+    public void testStartDateNull() throws Exception {
+        nullDateTestRunner(true, false);
+    }
+    
+    @Test
+    public void testEndDateNull() throws Exception {
+        nullDateTestRunner(false, true);
     }
     
     @Test
