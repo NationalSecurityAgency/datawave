@@ -119,7 +119,7 @@ public class JavaRegexAnalyzer {
     // Some pattern precompiling
     private static final String FLAG_REGEX = "\\(\\?-?[idmsux]\\).*";
     private static final Pattern flagRegexPattern = Pattern.compile(FLAG_REGEX);
-    private static final String NON_CAPTURING_REGEX = "\\(\\?[idmsux:=!>(<[=!])].*";
+    private static final String NON_CAPTURING_REGEX = "\\(\\?[idmsux:=!>(<[=!]-)].*";
     private static final Pattern nonCapturingPattern = Pattern.compile(NON_CAPTURING_REGEX);
     private static final String CURLY_QUANTIFIER_REGEX = "\\{([0-9]+)(,([0-9]*))?\\}.*";
     private static final Pattern curlyQuantifierPattern = Pattern.compile(CURLY_QUANTIFIER_REGEX);

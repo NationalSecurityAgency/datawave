@@ -6,12 +6,15 @@ import java.util.Set;
 import nsa.datawave.query.parser.JavaRegexAnalyzer;
 import nsa.datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import nsa.datawave.query.rewrite.config.RefactoredShardQueryConfiguration;
+import nsa.datawave.query.rewrite.exceptions.DatawaveFatalQueryException;
 import nsa.datawave.query.rewrite.jexl.JexlASTHelper;
 import nsa.datawave.query.rewrite.jexl.JexlNodeFactory;
 import nsa.datawave.query.rewrite.jexl.functions.FunctionJexlNodeVisitor;
 import nsa.datawave.query.util.MetadataHelper;
 import nsa.datawave.webservice.common.logging.ThreadConfigurableLogger;
 
+import nsa.datawave.webservice.query.exception.DatawaveErrorCode;
+import nsa.datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.*;
 import org.apache.log4j.Logger;
 
@@ -114,8 +117,8 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                     }
                 }
             } catch (JavaRegexParseException e) {
-                // this will be caught later
-                log.error(e);
+                QueryException qe = new QueryException(DatawaveErrorCode.INVALID_REGEX);
+                throw new DatawaveFatalQueryException(qe);
             }
         }
         return null;

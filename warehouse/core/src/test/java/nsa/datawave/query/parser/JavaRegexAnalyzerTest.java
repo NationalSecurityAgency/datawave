@@ -10,15 +10,11 @@ import nsa.datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
+import org.junit.rules.ExpectedException;
 
 /**
  * 
@@ -46,6 +42,9 @@ public class JavaRegexAnalyzerTest {
     
     @After
     public void tearDown() {}
+    
+    @Rule
+    public final ExpectedException exception = ExpectedException.none();
     
     public void enableLogging() {
         log.setLevel(Level.DEBUG);
@@ -882,6 +881,34 @@ public class JavaRegexAnalyzerTest {
         Assert.assertEquals("foo", wcd.getLeadingOrTrailingLiteral());
         Assert.assertEquals("foo", wcd.getLeadingLiteral());
         Assert.assertEquals("o", wcd.getTrailingLiteral());
+    }
+    
+    @Test
+    public void testRegexAnalyzer41() throws JavaRegexParseException {
+        log.debug("---testRegexAnalyzer41");
+        String value = "(?-icu)Friendly";
+        JavaRegexAnalyzer wcd = new JavaRegexAnalyzer(value);
+        Assert.assertEquals(value, wcd.getRegex());
+        Assert.assertEquals(value, wcd.toString());
+        log.debug("value: " + value);
+        Assert.assertFalse(wcd.hasWildCard());
+        Assert.assertFalse(wcd.isLeadingRegex());
+        Assert.assertFalse(wcd.isTrailingRegex());
+        Assert.assertTrue(wcd.isLeadingLiteral());
+        Assert.assertTrue(wcd.isTrailingLiteral());
+        Assert.assertFalse(wcd.isNgram());
+        Assert.assertEquals("Friendly", wcd.getLeadingOrTrailingLiteral());
+        Assert.assertEquals("Friendly", wcd.getLeadingLiteral());
+        Assert.assertEquals("Friendly", wcd.getTrailingLiteral());
+    }
+    
+    @Test
+    public void testRegexAnalyzer42() throws JavaRegexParseException {
+        log.debug("---testRegexAnalyzer42");
+        String value = "(?#icu)Friendly";
+        
+        exception.expect(JavaRegexParseException.class);
+        JavaRegexAnalyzer wcd = new JavaRegexAnalyzer(value);
     }
     
     @Test
