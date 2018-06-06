@@ -231,7 +231,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node, true);
     }
     
     @Override
@@ -239,7 +239,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
         
         concurrentExecution();
         try {
-            Object obj = expandFieldNames(node, data, false);
+            Object obj = expandFieldNames(node, false);
             concurrentExecution();
             return obj;
         } catch (CannotExpandUnfieldedTermFatalException e) {
@@ -252,7 +252,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node, true);
     }
     
     @Override
@@ -260,7 +260,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
         
         concurrentExecution();
         try {
-            Object obj = expandFieldNames(node, data, false);
+            Object obj = expandFieldNames(node, false);
             concurrentExecution();
             return obj;
         } catch (CannotExpandUnfieldedTermFatalException e) {
@@ -272,22 +272,22 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node, true);
     }
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node, true);
     }
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node, true);
     }
     
     @Override
     public Object visit(ASTGENode node, Object data) {
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node, true);
     }
     
     @Override
