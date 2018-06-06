@@ -1,0 +1,16 @@
+<ageoffConfiguration>
+	<rules>
+		<rule>
+			<filterClass>datawave.ingest.util.cache.watch.TestTrieFilter
+			</filterClass>
+			<matchPattern>
+				"baking powder" : 365d
+				"dried beans" : 548d
+				"baking soda" : 720d
+				"coffee ground" : 90d
+				"coffee whole bean" : 183d
+				"coffee instant" : 730d
+			</matchPattern>
+		</rule>
+	</rules>
+</ageoffConfiguration>

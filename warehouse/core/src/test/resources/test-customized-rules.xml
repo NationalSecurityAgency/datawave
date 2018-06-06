@@ -1,0 +1,16 @@
+<ageoffConfiguration>
+    <parent>/test-root-rules.xml</parent>
+    <rules>
+    	<!-- by specifying merge mode the match patterns of any rules for the 
+    		identical filter classes will be concatenated -->
+        <rule mode="merge">
+            <filterClass>datawave.ingest.util.cache.watch.TestTrieFilter</filterClass>
+            <ismerge>true</ismerge>
+            <matchPattern> <!-- override parent definitions -->
+				"coffee ground" : 30d
+				"coffee whole bean" : 150d
+				"coffee instant" : 1080d
+			</matchPattern>
+        </rule>
+    </rules>
+</ageoffConfiguration>

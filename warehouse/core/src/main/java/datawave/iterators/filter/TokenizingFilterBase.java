@@ -1,6 +1,8 @@
 package datawave.iterators.filter;
 
 import java.util.Objects;
+
+import datawave.iterators.filter.TokenTtlTrie.Builder.MERGE_MODE;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
@@ -46,8 +48,7 @@ import org.apache.accumulo.core.data.Value;
  *
  */
 public abstract class TokenizingFilterBase extends AppliedRule {
-    public final static String DELIMITERS_TAG = "delimiters";
-    
+    public static final String DELIMITERS_TAG = "delimiters";
     private String matchPattern = null;
     private TokenTtlTrie scanTrie = null;
     private boolean ruleApplied;
@@ -75,12 +76,13 @@ public abstract class TokenizingFilterBase extends AppliedRule {
         super.init(options);
         ruleApplied = false;
         String confPattern = options.getOption(AgeOffConfigParams.MATCHPATTERN);
+        MERGE_MODE mode = getMergeMode(options);
         if (!Objects.equals(matchPattern, confPattern)) {
-            this.scanTrie = new TokenTtlTrie.Builder().setDelimiters(getDelimiters(options)).parse(confPattern).build();
+            this.scanTrie = new TokenTtlTrie.Builder(mode).setDelimiters(getDelimiters(options)).parse(confPattern).build();
             this.matchPattern = confPattern;
         }
     }
-    
+
     @Override
     public void deepCopyInit(FilterOptions newOptions, AppliedRule parentCopy) {
         TokenizingFilterBase parent = (TokenizingFilterBase) parentCopy;
@@ -109,6 +111,16 @@ public abstract class TokenizingFilterBase extends AppliedRule {
         return ruleApplied;
     }
     
+    private MERGE_MODE getMergeMode(FilterOptions options) {
+        String isMergeStr = options.getOption(AgeOffConfigParams.IS_MERGE);
+        if (null == isMergeStr) {
+            return MERGE_MODE.OFF;
+        } else {
+            boolean isMerge = Boolean.parseBoolean(isMergeStr);
+            return isMerge ? MERGE_MODE.ON : MERGE_MODE.OFF;
+        }
+    }
+
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + "[size=" + (scanTrie == null ? null : scanTrie.size()) + "]";
