@@ -2429,4 +2429,8 @@ public class RefactoredShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> 
     public void setTrackSizes(boolean trackSizes) {
         this.trackSizes = trackSizes;
     }
+    
+    public void setSelectedProfile(Profile profile) {
+        this.selectedProfile = profile;
+    }
 }
