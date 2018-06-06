@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Set;
 
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
@@ -11,6 +13,9 @@ import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 import org.apache.commons.jexl2.parser.*;
 import org.apache.log4j.Logger;
@@ -113,8 +118,8 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                     }
                 }
             } catch (JavaRegexParseException e) {
-                // this will be caught later
-                log.error(e);
+                QueryException qe = new QueryException(DatawaveErrorCode.INVALID_REGEX);
+                throw new DatawaveFatalQueryException(qe);
             }
         }
         return null;
