@@ -35,7 +35,7 @@ public class FileRuleLoadContentsMergeFiltersTest {
 
     private FileRuleWatcher watcher;
     private TestTrieFilter parentFilter;
-    // this on inherits defaults from parentFilter
+    // this one inherits defaults from parentFilter
     private TestTrieFilter childFilter;
     // reference used by multiple tests, contents not used
     private Value value = new Value();

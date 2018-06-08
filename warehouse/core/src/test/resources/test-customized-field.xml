@@ -1,0 +1,11 @@
+<ageoffConfiguration>
+	<parent>/test-root-field.xml</parent>
+	<rules>
+		<rule mode="merge">
+			<filterClass>datawave.ingest.util.cache.watch.TestFieldFilter</filterClass>
+			<!-- these should override the parent definitions  -->
+			<foo ttl="123"/>
+			<zip ttl="123"/>
+		</rule>
+	</rules>
+</ageoffConfiguration>

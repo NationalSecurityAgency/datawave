@@ -2,6 +2,7 @@ package datawave.ingest.util.cache.watch;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -255,7 +256,14 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         for (int i = 0; i < parents.getLength(); i++) {
             Node parent = parents.item(i);
             String parentPathStr = parent.getTextContent();
-            Path parentPath = new Path(this.getClass().getResource(parentPathStr).toString());
+            URL resource = this.getClass().getResource(parentPathStr);
+            if (resource == null) {
+                throw new IllegalArgumentException("Invalid parent config path specified, resource " + parentPathStr + " not found!");
+            }
+            Path parentPath = new Path(resource.toString());
+            if (!fs.exists(parentPath)) {
+                throw new IllegalArgumentException("Invalid parent config path specified, " + parentPathStr + " does not exist!");
+            }
             rules.addAll(loadRuleConfigs(fs.open(parentPath)));
         }
         return rules;
