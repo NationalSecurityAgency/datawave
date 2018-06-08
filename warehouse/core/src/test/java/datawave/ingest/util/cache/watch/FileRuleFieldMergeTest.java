@@ -2,28 +2,17 @@ package datawave.ingest.util.cache.watch;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Collection;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Test;
 
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.AgeOffTtlUnits;
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
-import datawave.iterators.filter.ageoff.AppliedRule;
-import datawave.iterators.filter.ageoff.DataTypeAgeOffFilter;
-import datawave.iterators.filter.ageoff.FieldAgeOffFilter;
-import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.iterators.filter.ageoff.FilterRule;
 
 /**
