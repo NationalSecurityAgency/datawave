@@ -82,7 +82,7 @@ public abstract class TokenizingFilterBase extends AppliedRule {
             this.matchPattern = confPattern;
         }
     }
-
+    
     @Override
     public void deepCopyInit(FilterOptions newOptions, AppliedRule parentCopy) {
         TokenizingFilterBase parent = (TokenizingFilterBase) parentCopy;
@@ -120,7 +120,7 @@ public abstract class TokenizingFilterBase extends AppliedRule {
             return isMerge ? MERGE_MODE.ON : MERGE_MODE.OFF;
         }
     }
-
+    
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + "[size=" + (scanTrie == null ? null : scanTrie.size()) + "]";

@@ -34,9 +34,9 @@ import datawave.iterators.filter.ageoff.FilterRule;
  * 
  */
 public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
-
+    
     private static final Logger log = Logger.getLogger(FileRuleWatcher.class);
-
+    
     /**
      * @param fs
      * @param filePath
@@ -46,7 +46,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     public FileRuleWatcher(FileSystem fs, Path filePath, long configuredDiff) throws IOException {
         super(fs, filePath, configuredDiff);
     }
-
+    
     /**
      * @param filePath
      * @param configuredDiff
@@ -55,7 +55,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     public FileRuleWatcher(Path filePath, long configuredDiff) throws IOException {
         super(filePath.getFileSystem(new Configuration()), filePath, configuredDiff);
     }
-
+    
     /*
      * (non-Javadoc)
      * 
@@ -114,7 +114,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         }
         
     }
-
+    
     protected Collection<RuleConfig> loadRuleConfigs(InputStream in) throws IOException {
         
         Collection<RuleConfig> ruleConfigs = new ArrayList<>();
@@ -139,19 +139,15 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             }
             NodeList rules = docElement.getElementsByTagName("rule");
             // parse each node in rules and create a rule config
-            ruleConfigs.addAll(IntStream.range(0, rules.getLength())
-                .mapToObj(i -> getRuleConfigForNode(rules, i))
-                .collect(Collectors.toList()));
+            ruleConfigs.addAll(IntStream.range(0, rules.getLength()).mapToObj(i -> getRuleConfigForNode(rules, i)).collect(Collectors.toList()));
             
             // if any rules are a merge rule, the merge them all?
             boolean shouldMerge = ruleConfigs.stream().anyMatch(c -> c.isMerge);
             if (shouldMerge) {
-              // merge configs that map to the same filter class name
-              return ruleConfigs.stream().collect(Collectors.toMap(
-                      RuleConfig::getFilterClassName, 
-                      Function.identity(),
-                      (rule1, rule2) -> mergeRules(rule1, rule2)))
-                  .values();
+                // merge configs that map to the same filter class name
+                return ruleConfigs.stream()
+                                .collect(Collectors.toMap(RuleConfig::getFilterClassName, Function.identity(), (rule1, rule2) -> mergeRules(rule1, rule2)))
+                                .values();
             } else {
                 return ruleConfigs;
             }
@@ -185,7 +181,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             return rule2;
         }
     }
-
+    
     private RuleConfig getRuleConfigForNode(NodeList rules, int index) {
         Map<String,String> extendedOptions = new HashMap<>();
         String ttlValue = null;
@@ -193,16 +189,16 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         String matchPattern = null;
         String filterClassName = null;
         extendedOptions.clear();
-
+        
         Element ruleElem = (Element) rules.item(index);
         boolean isMerge = isMergeRule(ruleElem);
-
+        
         NodeList ruleElementList = ruleElem.getChildNodes();
         for (int j = 0; j < ruleElementList.getLength(); j++) {
             Node nodeItem = ruleElementList.item(j);
-
+            
             String nodeName = nodeItem.getNodeName();
-
+            
             log.debug("getting " + nodeName);
             if ("filterClass".equals(nodeName)) {
                 filterClassName = nodeItem.getTextContent().trim();
@@ -217,12 +213,11 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
                 matchPattern = nodeItem.getTextContent().trim();
             } else {
                 /*
-                 * gives us the ability to add arbitrary configuration items along with adding XML
-                 * attributes as sub tags.
+                 * gives us the ability to add arbitrary configuration items along with adding XML attributes as sub tags.
                  * 
                  * The sub tags are sent as name . attributename
                  */
-
+                
                 extendedOptions.put(nodeName, nodeItem.getTextContent().trim());
                 if (nodeItem.hasAttributes()) {
                     NamedNodeMap attributeMap = nodeItem.getAttributes();
@@ -235,22 +230,17 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
                     }
                     for (int k = 0; k < attributeMap.getLength(); k++) {
                         Node attItem = attributeMap.item(k);
-                        extendedOptions.put(prefix + "." + attItem.getNodeName(),
-                                attItem.getTextContent().trim());
+                        extendedOptions.put(prefix + "." + attItem.getNodeName(), attItem.getTextContent().trim());
                     }
                 }
             }
-
+            
         }
         extendedOptions.put(AgeOffConfigParams.IS_MERGE, Boolean.toString(isMerge));
-        return new RuleConfig(filterClassName, index)
-                .ttlValue(ttlValue)
-                .ttlUnits(ttlUnits)
-                .matchPattern(matchPattern)
-                .setIsMerge(isMerge)
-                .extendedOptions(extendedOptions);
+        return new RuleConfig(filterClassName, index).ttlValue(ttlValue).ttlUnits(ttlUnits).matchPattern(matchPattern).setIsMerge(isMerge)
+                        .extendedOptions(extendedOptions);
     }
-
+    
     private Collection<? extends RuleConfig> loadParentRuleConfigs(NodeList parents) throws IOException {
         Collection<RuleConfig> rules = new ArrayList<>();
         for (int i = 0; i < parents.getLength(); i++) {
@@ -268,19 +258,16 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         }
         return rules;
     }
-
+    
     /**
-     * Xml tag names cannot start with a number, so it was not previously possible to include
-     * extended options for items that begin with a number. The new prefix, provided by this method,
-     * provides a mechanism for doing this. Check if attribute "name" exists, e.g. &lt;field
-     * name='abc'&gt;value&lt;/field&gt;
+     * Xml tag names cannot start with a number, so it was not previously possible to include extended options for items that begin with a number. The new
+     * prefix, provided by this method, provides a mechanism for doing this. Check if attribute "name" exists, e.g. &lt;field name='abc'&gt;value&lt;/field&gt;
      * 
      * @param nodeName
      *            xml tag name, e.g. field using the above example
      * @param attributeMap
      *            attributes for current node
-     * @return null if the name attribute does not exist in the attribute map, or a prefix, e.g.
-     *         field.abc using the above example
+     * @return null if the name attribute does not exist in the attribute map, or a prefix, e.g. field.abc using the above example
      */
     private String extractNewPrefix(String nodeName, NamedNodeMap attributeMap) {
         String newPrefix = null;
@@ -290,7 +277,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         }
         return newPrefix;
     }
-
+    
     /**
      * does the rule specify mode="merge"
      * 
@@ -309,7 +296,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             return false;
         }
     }
-
+    
     /**
      * Temporary holding class for rule configs to allow merges of rules;
      */
@@ -321,36 +308,36 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         boolean isMerge = false;
         Map<String,String> extendedOptions = new HashMap<>();
         int priority = -1;
-
+        
         public RuleConfig(String filterClassName, int priority) {
             this.filterClassName = filterClassName;
             this.priority = priority;
         }
-
+        
         public String getFilterClassName() {
             return filterClassName;
         }
-
+        
         public RuleConfig ttlValue(String ttlValue) {
             this.ttlValue = ttlValue;
             return this;
         }
-
+        
         public RuleConfig ttlUnits(String ttlUnits) {
             this.ttlUnits = ttlUnits;
             return this;
         }
-
+        
         public RuleConfig matchPattern(String matchPattern) {
             this.matchPattern = matchPattern;
             return this;
         }
-
+        
         public RuleConfig setIsMerge(boolean isMerge) {
             this.isMerge = isMerge;
             return this;
         }
-
+        
         public RuleConfig extendedOptions(Map<String,String> extendedOptions) {
             this.extendedOptions = extendedOptions;
             return this;

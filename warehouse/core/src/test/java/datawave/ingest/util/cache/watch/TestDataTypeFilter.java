@@ -9,7 +9,7 @@ import datawave.iterators.filter.ageoff.FilterOptions;
  * Class to assist in the testing of DataTypeAgeOffFilter
  */
 public class TestDataTypeFilter extends DataTypeAgeOffFilter {
-
+    
     // public so that the tests can inspect the options
     public FilterOptions options;
     

@@ -1,12 +1,12 @@
 <ageoffConfiguration>
-	<rules>
-		<rule>
-			<filterClass>datawave.ingest.util.cache.watch.TestDataTypeFilter</filterClass>
-			<ttl units="ms">1000</ttl>
-			<datatypes>foo,bar,baz,zip</datatypes>
-			<foo ttl="600"/>
-			<bar ttl="500"/>
-			<baz ttl="400"/>
-		</rule>
-	</rules>
+    <rules>
+        <rule>
+            <filterClass>datawave.ingest.util.cache.watch.TestDataTypeFilter</filterClass>
+            <ttl units="ms">1000</ttl>
+            <datatypes>foo,bar,baz,zip</datatypes>
+            <foo ttl="600"/>
+            <bar ttl="500"/>
+            <baz ttl="400"/>
+        </rule>
+    </rules>
 </ageoffConfiguration>
