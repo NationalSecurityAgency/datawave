@@ -2,13 +2,13 @@ package datawave.ingest.util.cache.watch;
 
 import org.apache.accumulo.core.data.Key;
 
-import datawave.iterators.filter.ageoff.FieldAgeOffFilter;
+import datawave.iterators.filter.ageoff.DataTypeAgeOffFilter;
 import datawave.iterators.filter.ageoff.FilterOptions;
 
 /**
- * Class to assist in the testing of FieldAgeOffFilter
+ * Class to assist in the testing of DataTypeAgeOffFilter
  */
-public class TestFieldFilter extends FieldAgeOffFilter {
+public class TestDataTypeFilter extends DataTypeAgeOffFilter {
 
     // public so that the tests can inspect the options
     public FilterOptions options;

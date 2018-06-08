@@ -18,14 +18,14 @@ import datawave.iterators.filter.ageoff.FilterRule;
 /**
  * Tests to verify capability of merging configs that use filters that inherit from {@code FieldAgeOffFilter}
  */
-public class FileRuleFieldMergeTest {
-    private static final String ROOT_FILTER_CONFIGURATION_FILE = "/test-root-field.xml";
-    private static final String CHILD_FILTER_CONFIGURATION_FILE = "/test-customized-field.xml";
+public class FileRuleDataTypeMergeTest {
+    private static final String ROOT_FILTER_CONFIGURATION_FILE = "/test-root-data-type.xml";
+    private static final String CHILD_FILTER_CONFIGURATION_FILE = "/test-customized-data-type.xml";
 
     private FileRuleWatcher watcher;
-    private TestFieldFilter parentFilter;
+    private TestDataTypeFilter parentFilter;
     // this one inherits defaults from parentFilter
-    private TestFieldFilter childFilter;
+    private TestDataTypeFilter childFilter;
 
     @Before
     public void before() throws IOException {
@@ -35,8 +35,8 @@ public class FileRuleFieldMergeTest {
                 this.getClass().getResource(ROOT_FILTER_CONFIGURATION_FILE).toString());
         FileSystem fs = childPath.getFileSystem(new Configuration());
         watcher = new FileRuleWatcher(fs, childPath, 1);
-        parentFilter = (TestFieldFilter) loadRulesFromFile(watcher, fs, rootPath);
-        childFilter = (TestFieldFilter) loadRulesFromFile(watcher, fs, childPath);
+        parentFilter = (TestDataTypeFilter) loadRulesFromFile(watcher, fs, rootPath);
+        childFilter = (TestDataTypeFilter) loadRulesFromFile(watcher, fs, childPath);
     }
 
     @Test
@@ -74,7 +74,7 @@ public class FileRuleFieldMergeTest {
         // should only have the single rule
         assertThat(rules.size(), is(1));
         for (FilterRule rule : rules) {
-            assertEquals(TestFieldFilter.class, rule.getClass());
+            assertEquals(TestDataTypeFilter.class, rule.getClass());
         }
         return rules.iterator().next();
     }
