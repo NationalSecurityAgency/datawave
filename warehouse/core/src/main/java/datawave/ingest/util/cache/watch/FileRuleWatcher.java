@@ -142,13 +142,18 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
                 .mapToObj(i -> getRuleConfigForNode(rules, i))
                 .collect(Collectors.toList()));
             
-            // merge configs that map to the same filter class name
-            Collection<RuleConfig> mergedRuleConfigs = ruleConfigs.stream().collect(Collectors.toMap(
-                    RuleConfig::getFilterClassName, 
-                    Function.identity(),
-                    (rule1, rule2) -> mergeRules(rule1, rule2)))
-                .values();
-            return mergedRuleConfigs;
+            // if any rules are a merge rule, the merge them all?
+            boolean shouldMerge = ruleConfigs.stream().anyMatch(c -> c.isMerge);
+            if (shouldMerge) {
+              // merge configs that map to the same filter class name
+              return ruleConfigs.stream().collect(Collectors.toMap(
+                      RuleConfig::getFilterClassName, 
+                      Function.identity(),
+                      (rule1, rule2) -> mergeRules(rule1, rule2)))
+                  .values();
+            } else {
+                return ruleConfigs;
+            }
         } catch (Exception ex) {
             log.error("uh oh: " + ex);
             throw new IOException(ex);
@@ -241,7 +246,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
                 .ttlValue(ttlValue)
                 .ttlUnits(ttlUnits)
                 .matchPattern(matchPattern)
-                .isMerge(isMerge)
+                .setIsMerge(isMerge)
                 .extendedOptions(extendedOptions);
     }
 
@@ -333,7 +338,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             return this;
         }
 
-        public RuleConfig isMerge(boolean isMerge) {
+        public RuleConfig setIsMerge(boolean isMerge) {
             this.isMerge = isMerge;
             return this;
         }
