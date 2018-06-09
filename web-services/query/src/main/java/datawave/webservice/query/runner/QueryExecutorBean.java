@@ -1431,7 +1431,9 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } finally {
             if (null != queryId) {
-                this.close(queryId);
+                final Principal p = ctx.getCallerPrincipal();
+                final String closeQueryId = queryId;
+                executor.submit(() -> close(closeQueryId, p));
             }
         }
     }
