@@ -34,9 +34,9 @@ import datawave.iterators.filter.ageoff.FilterRule;
  * 
  */
 public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
-
+    
     private static final Logger log = Logger.getLogger(FileRuleWatcher.class);
-
+    
     /**
      * @param fs
      * @param filePath
@@ -46,7 +46,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     public FileRuleWatcher(FileSystem fs, Path filePath, long configuredDiff) throws IOException {
         super(fs, filePath, configuredDiff);
     }
-
+    
     /**
      * @param filePath
      * @param configuredDiff
@@ -55,7 +55,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     public FileRuleWatcher(Path filePath, long configuredDiff) throws IOException {
         super(filePath.getFileSystem(new Configuration()), filePath, configuredDiff);
     }
-
+    
     /*
      * (non-Javadoc)
      * 
@@ -114,7 +114,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         }
         
     }
-
+    
     protected Collection<RuleConfig> loadRuleConfigs(InputStream in) throws IOException {
         
         Collection<RuleConfig> ruleConfigs = new ArrayList<>();
@@ -134,24 +134,27 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             
             Element docElement = doc.getDocumentElement();
             NodeList parents = docElement.getElementsByTagName("parent");
-            if (null != parents) {
-                ruleConfigs.addAll(loadParentRuleConfigs(parents));
+            if (null != parents && parents.getLength() > 0) {
+                if (parents.getLength() > 1) {
+                    throw new IllegalArgumentException("Not allowed to have more than one parent config");
+                }
+                ruleConfigs.addAll(loadParentRuleConfigs(parents.item(0)));
             }
             NodeList rules = docElement.getElementsByTagName("rule");
             // parse each node in rules and create a rule config
-            ruleConfigs.addAll(IntStream.range(0, rules.getLength())
-                .mapToObj(i -> getRuleConfigForNode(rules, i))
-                .collect(Collectors.toList()));
+            ruleConfigs.addAll(IntStream.range(0, rules.getLength()).mapToObj(i -> getRuleConfigForNode(rules, i)).collect(Collectors.toList()));
             
-            // if any rules are a merge rule, the merge them all?
             boolean shouldMerge = ruleConfigs.stream().anyMatch(c -> c.isMerge);
             if (shouldMerge) {
-              // merge configs that map to the same filter class name
-              return ruleConfigs.stream().collect(Collectors.toMap(
-                      RuleConfig::getFilterClassName, 
-                      Function.identity(),
-                      (rule1, rule2) -> mergeRules(rule1, rule2)))
-                  .values();
+                // split into labeled and unlabled configs
+                Collection<RuleConfig> labledConfigs = ruleConfigs.stream().filter(r -> !r.getLabel().isEmpty()).collect(Collectors.toList());
+                Collection<RuleConfig> unlabledConfigs = ruleConfigs.stream().filter(r -> r.getLabel().isEmpty()).collect(Collectors.toList());
+                // merge configs that map to the same label
+                Collection<RuleConfig> merged = labledConfigs.stream()
+                                .collect(Collectors.toMap(RuleConfig::getLabel, Function.identity(), (rule1, rule2) -> mergeRules(rule1, rule2))).values();
+                // return combined list of merged and unlabled
+                unlabledConfigs.addAll(merged);
+                return unlabledConfigs;
             } else {
                 return ruleConfigs;
             }
@@ -169,13 +172,13 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             rule2.ttlValue = rule1.ttlValue;
             rule2.ttlUnits = rule1.ttlUnits;
             rule2.extendedOptions.putAll(rule1.extendedOptions);
-            rule2.matchPattern += rule1.matchPattern;
+            rule2.matchPattern += "\n" + rule1.matchPattern;
             return rule2;
         } else if (rule2.isMerge) {
             rule1.ttlValue = rule2.ttlValue;
             rule1.ttlUnits = rule2.ttlUnits;
             rule1.extendedOptions.putAll(rule2.extendedOptions);
-            rule1.matchPattern += rule2.matchPattern;
+            rule1.matchPattern += "\n" + rule2.matchPattern;
             return rule1;
         }
         // neither is a merge rule, so just pick highest priority?
@@ -185,7 +188,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             return rule2;
         }
     }
-
+    
     private RuleConfig getRuleConfigForNode(NodeList rules, int index) {
         Map<String,String> extendedOptions = new HashMap<>();
         String ttlValue = null;
@@ -193,16 +196,17 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         String matchPattern = null;
         String filterClassName = null;
         extendedOptions.clear();
-
+        
         Element ruleElem = (Element) rules.item(index);
         boolean isMerge = isMergeRule(ruleElem);
-
+        String label = getLabelIfAny(ruleElem);
+        
         NodeList ruleElementList = ruleElem.getChildNodes();
         for (int j = 0; j < ruleElementList.getLength(); j++) {
             Node nodeItem = ruleElementList.item(j);
-
+            
             String nodeName = nodeItem.getNodeName();
-
+            
             log.debug("getting " + nodeName);
             if ("filterClass".equals(nodeName)) {
                 filterClassName = nodeItem.getTextContent().trim();
@@ -217,12 +221,11 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
                 matchPattern = nodeItem.getTextContent().trim();
             } else {
                 /*
-                 * gives us the ability to add arbitrary configuration items along with adding XML
-                 * attributes as sub tags.
+                 * gives us the ability to add arbitrary configuration items along with adding XML attributes as sub tags.
                  * 
                  * The sub tags are sent as name . attributename
                  */
-
+                
                 extendedOptions.put(nodeName, nodeItem.getTextContent().trim());
                 if (nodeItem.hasAttributes()) {
                     NamedNodeMap attributeMap = nodeItem.getAttributes();
@@ -235,52 +238,41 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
                     }
                     for (int k = 0; k < attributeMap.getLength(); k++) {
                         Node attItem = attributeMap.item(k);
-                        extendedOptions.put(prefix + "." + attItem.getNodeName(),
-                                attItem.getTextContent().trim());
+                        extendedOptions.put(prefix + "." + attItem.getNodeName(), attItem.getTextContent().trim());
                     }
                 }
             }
-
+            
         }
         extendedOptions.put(AgeOffConfigParams.IS_MERGE, Boolean.toString(isMerge));
-        return new RuleConfig(filterClassName, index)
-                .ttlValue(ttlValue)
-                .ttlUnits(ttlUnits)
-                .matchPattern(matchPattern)
-                .setIsMerge(isMerge)
-                .extendedOptions(extendedOptions);
+        return new RuleConfig(filterClassName, index).ttlValue(ttlValue).ttlUnits(ttlUnits).matchPattern(matchPattern).label(label).setIsMerge(isMerge)
+                        .extendedOptions(extendedOptions);
     }
-
-    private Collection<? extends RuleConfig> loadParentRuleConfigs(NodeList parents) throws IOException {
+    
+    private Collection<? extends RuleConfig> loadParentRuleConfigs(Node parent) throws IOException {
         Collection<RuleConfig> rules = new ArrayList<>();
-        for (int i = 0; i < parents.getLength(); i++) {
-            Node parent = parents.item(i);
-            String parentPathStr = parent.getTextContent();
-            URL resource = this.getClass().getResource(parentPathStr);
-            if (resource == null) {
-                throw new IllegalArgumentException("Invalid parent config path specified, resource " + parentPathStr + " not found!");
-            }
-            Path parentPath = new Path(resource.toString());
-            if (!fs.exists(parentPath)) {
-                throw new IllegalArgumentException("Invalid parent config path specified, " + parentPathStr + " does not exist!");
-            }
-            rules.addAll(loadRuleConfigs(fs.open(parentPath)));
+        String parentPathStr = parent.getTextContent();
+        URL resource = this.getClass().getResource(parentPathStr);
+        if (resource == null) {
+            throw new IllegalArgumentException("Invalid parent config path specified, resource " + parentPathStr + " not found!");
         }
+        Path parentPath = new Path(resource.toString());
+        if (!fs.exists(parentPath)) {
+            throw new IllegalArgumentException("Invalid parent config path specified, " + parentPathStr + " does not exist!");
+        }
+        rules.addAll(loadRuleConfigs(fs.open(parentPath)));
         return rules;
     }
-
+    
     /**
-     * Xml tag names cannot start with a number, so it was not previously possible to include
-     * extended options for items that begin with a number. The new prefix, provided by this method,
-     * provides a mechanism for doing this. Check if attribute "name" exists, e.g. &lt;field
-     * name='abc'&gt;value&lt;/field&gt;
+     * Xml tag names cannot start with a number, so it was not previously possible to include extended options for items that begin with a number. The new
+     * prefix, provided by this method, provides a mechanism for doing this. Check if attribute "name" exists, e.g. &lt;field name='abc'&gt;value&lt;/field&gt;
      * 
      * @param nodeName
      *            xml tag name, e.g. field using the above example
      * @param attributeMap
      *            attributes for current node
-     * @return null if the name attribute does not exist in the attribute map, or a prefix, e.g.
-     *         field.abc using the above example
+     * @return null if the name attribute does not exist in the attribute map, or a prefix, e.g. field.abc using the above example
      */
     private String extractNewPrefix(String nodeName, NamedNodeMap attributeMap) {
         String newPrefix = null;
@@ -290,7 +282,19 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         }
         return newPrefix;
     }
-
+    
+    private String getLabelIfAny(Element nodeItem) {
+        if (null != nodeItem.getAttributes()) {
+            Node namedItem = nodeItem.getAttributes().getNamedItem("label");
+            if (null == namedItem) {
+                return "";
+            }
+            return namedItem.getNodeValue();
+        } else {
+            return "";
+        }
+    }
+    
     /**
      * does the rule specify mode="merge"
      * 
@@ -309,48 +313,54 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             return false;
         }
     }
-
+    
     /**
      * Temporary holding class for rule configs to allow merges of rules;
      */
     private static class RuleConfig {
         String ttlValue = null;
         String ttlUnits = null;
-        String matchPattern = null;
+        String matchPattern = "";
         String filterClassName = null;
+        String label;
         boolean isMerge = false;
         Map<String,String> extendedOptions = new HashMap<>();
         int priority = -1;
-
+        
         public RuleConfig(String filterClassName, int priority) {
             this.filterClassName = filterClassName;
             this.priority = priority;
         }
-
-        public String getFilterClassName() {
-            return filterClassName;
-        }
-
+        
         public RuleConfig ttlValue(String ttlValue) {
             this.ttlValue = ttlValue;
             return this;
         }
-
+        
         public RuleConfig ttlUnits(String ttlUnits) {
             this.ttlUnits = ttlUnits;
             return this;
         }
-
+        
         public RuleConfig matchPattern(String matchPattern) {
             this.matchPattern = matchPattern;
             return this;
         }
-
+        
+        public RuleConfig label(String label) {
+            this.label = label;
+            return this;
+        }
+        
+        public String getLabel() {
+            return label;
+        }
+        
         public RuleConfig setIsMerge(boolean isMerge) {
             this.isMerge = isMerge;
             return this;
         }
-
+        
         public RuleConfig extendedOptions(Map<String,String> extendedOptions) {
             this.extendedOptions = extendedOptions;
             return this;

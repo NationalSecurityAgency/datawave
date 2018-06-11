@@ -1,12 +1,12 @@
 package datawave.ingest.util.cache.watch;
 
-import datawave.iterators.filter.ageoff.DataTypeAgeOffFilter;
+import datawave.iterators.filter.ageoff.FieldAgeOffFilter;
 import datawave.iterators.filter.ageoff.FilterOptions;
 
 /**
- * Class to assist in the testing of DataTypeAgeOffFilter
+ * Class to assist in the testing of FieldAgeOffFilters
  */
-public class TestDataTypeFilter extends DataTypeAgeOffFilter {
+public class TestFieldFilter extends FieldAgeOffFilter {
     
     // public so that the tests can inspect the options
     public FilterOptions options;

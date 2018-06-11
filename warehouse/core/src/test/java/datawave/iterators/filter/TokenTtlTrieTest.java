@@ -36,7 +36,7 @@ public class TokenTtlTrieTest {
         Assert.assertEquals((Long) 4L, trie.scan("buffer,baz".getBytes()));
         Assert.assertNull(trie.scan("b;ba,banana,bread,apple,pie".getBytes()));
     }
-
+    
     @Test(expected = IllegalArgumentException.class)
     public void tokensMayNotContainDelimiters() {
         new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo,".getBytes(), 1).build();
@@ -88,18 +88,11 @@ public class TokenTtlTrieTest {
     
     @Test
     public void testParseAndMerge() {
-        String initial = "\"foo\" : 1ms\n" +
-                         "\"bar\" : 3ms\n" +
-                         "\"baz\" : 5ms\n" +
-                         "\"zip\" : 7ms\n";
-
-        String override = "\"bar\" : 5ms\n" +
-                          "\"zip\" : 9ms\n";
-
-        TokenTtlTrie trie = new TokenTtlTrie.Builder(MERGE_MODE.ON)
-                .setDelimiters("/".getBytes())
-                .parse(initial + override)
-                .build();
+        String initial = "\"foo\" : 1ms\n" + "\"bar\" : 3ms\n" + "\"baz\" : 5ms\n" + "\"zip\" : 7ms\n";
+        
+        String override = "\"bar\" : 5ms\n" + "\"zip\" : 9ms\n";
+        
+        TokenTtlTrie trie = new TokenTtlTrie.Builder(MERGE_MODE.ON).setDelimiters("/".getBytes()).parse(initial + override).build();
         // original values
         assertThat(trie.scan("foo".getBytes()), is(equalTo(1L)));
         assertThat(trie.scan("baz".getBytes()), is(equalTo(5L)));
@@ -110,24 +103,17 @@ public class TokenTtlTrieTest {
     
     @Test
     public void testParseWithWhiteSpaces() {
-        String initial = "\"baking powder\" : 1d\n\t\t\t\t"
-                + "\"dried beans\" : 2d\n\t\t\t\t"
-                + "\"baking soda\" : 3d\n\t\t\t\t"
-                + "\"coffee grounds\" : 4d\n\t\t\t\t"
-                + "\"coffee whole bean\" : 5d\n\t\t\t\t"
-                + "\"coffee instant\" : 6d";
-
-        TokenTtlTrie trie = new TokenTtlTrie.Builder()
-                .setDelimiters("/".getBytes())
-                .parse(initial)
-                .build();
+        String initial = "\"baking powder\" : 1d\n\t\t\t\t" + "\"dried beans\" : 2d\n\t\t\t\t" + "\"baking soda\" : 3d\n\t\t\t\t"
+                        + "\"coffee grounds\" : 4d\n\t\t\t\t" + "\"coffee whole bean\" : 5d\n\t\t\t\t" + "\"coffee instant\" : 6d";
+        
+        TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(initial).build();
         assertThat(trie.scan("baking powder".getBytes()), is(notNullValue()));
         assertThat(trie.scan("dried beans".getBytes()), is(notNullValue()));
         assertThat(trie.scan("baking soda".getBytes()), is(notNullValue()));
         // not one of the ones we configured the tree with
         assertThat(trie.scan("zip foo".getBytes()), is(nullValue()));
     }
-
+    
     @Test(expected = IllegalArgumentException.class)
     public void parsedTokensMayNotContainDelimiters() {
         new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).parse("\"foo,\":10s").build();

@@ -2,8 +2,8 @@
     <parent>/test-root-rules.xml</parent>
     <rules>
     	<!-- by specifying merge mode the match patterns of any rules for the 
-    		identical filter classes will be concatenated -->
-        <rule mode="merge">
+    		labels will be concatenated -->
+        <rule label="test" mode="merge">
             <filterClass>datawave.ingest.util.cache.watch.TestTrieFilter</filterClass>
             <ismerge>true</ismerge>
             <matchPattern> <!-- override parent definitions -->
@@ -11,6 +11,11 @@
 				"coffee whole bean" : 150d
 				"coffee instant" : 1080d
 			</matchPattern>
+        </rule>
+        <!-- additional rule not in parent and not merged -->
+        <rule>
+            <filterClass>datawave.ingest.util.cache.watch.TestFilter</filterClass>
+            <matchPattern>baz</matchPattern>
         </rule>
     </rules>
 </ageoffConfiguration>

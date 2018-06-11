@@ -11,7 +11,7 @@ import datawave.iterators.filter.ageoff.FilterOptions;
  */
 public class TestTrieFilter extends TokenizingFilterBase {
     private static final byte[] DELIM_BYTES = "/".getBytes();
-
+    
     // public so that the tests can inspect the options
     public FilterOptions options;
     
@@ -20,12 +20,12 @@ public class TestTrieFilter extends TokenizingFilterBase {
         super.init(options);
         this.options = options;
     }
-
+    
     @Override
     public byte[] getKeyField(Key k, Value V) {
         return k.getRow().getBytes();
     }
-
+    
     @Override
     public byte[] getDelimiters(FilterOptions options) {
         return DELIM_BYTES;

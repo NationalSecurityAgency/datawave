@@ -1,7 +1,7 @@
 <ageoffConfiguration>
 	<parent>/test-root-data-type.xml</parent>
 	<rules>
-		<rule mode="merge">
+		<rule label="test" mode="merge">
 			<filterClass>datawave.ingest.util.cache.watch.TestDataTypeFilter</filterClass>
 			<!-- these should override the parent definitions  -->
 			<foo ttl="123"/>

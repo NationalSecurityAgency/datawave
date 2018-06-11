@@ -89,12 +89,14 @@ public final class TokenTtlTrie {
         private final Set<Byte> delimiters = new HashSet<>();
         private boolean isMerge;
         
-        public enum MERGE_MODE { ON, OFF };
+        public enum MERGE_MODE {
+            ON, OFF
+        };
         
         Builder() {
             this(MERGE_MODE.OFF);
         }
-
+        
         Builder(MERGE_MODE mergeMode) {
             transitionMaps.add(new HashMap<Byte,Integer>());
             stateTtlList.add(null);

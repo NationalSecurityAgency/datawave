@@ -1,0 +1,10 @@
+<ageoffConfiguration>
+    <rules>
+        <rule label="test">
+            <filterClass>datawave.ingest.util.cache.watch.TestFieldFilter</filterClass>
+            <ttl units="ms">90</ttl>
+            <matchPattern>greek</matchPattern>
+            <fields>alpha,beta,gamma,delta</fields>
+        </rule>
+    </rules>
+</ageoffConfiguration>
