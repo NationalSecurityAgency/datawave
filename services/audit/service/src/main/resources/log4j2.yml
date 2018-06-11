@@ -63,8 +63,5 @@ Configuration:
       - name: datawave.microservice.audit.log.LogAuditor
         level: info
         AppenderRef:
-          - ref: Console
+          - ref: QueryFile
             level: info
-          - ref: File
-            level: info
-
