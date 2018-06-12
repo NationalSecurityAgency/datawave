@@ -663,9 +663,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch.stop();
         
-        Set<String> nonEventFields;
+        Set<String> indexOnlyFields;
         try {
-            nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
+            indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
             throw new DatawaveFatalQueryException(qe);
@@ -676,9 +676,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, metadataHelper, queryTree))
                 disableBoundedLookup = false;
         }
-        if (!nonEventFields.isEmpty()) {
+        if (!indexOnlyFields.isEmpty()) {
             // rebuild the query tree
-            queryTree = RegexFunctionVisitor.expandRegex(config, metadataHelper, nonEventFields, queryTree);
+            queryTree = RegexFunctionVisitor.expandRegex(config, metadataHelper, indexOnlyFields, queryTree);
         }
         
         queryTree = processTree(queryTree, config, settings, metadataHelper, scannerFactory, queryData, timers, queryModel);
@@ -687,24 +687,22 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Determine if query contains index-only fields");
         
-        // Figure out if the query contained any non-event terms so we know
+        // Figure out if the query contained any index only terms so we know
         // if we have to force it down the field-index path with event-specific
         // ranges
-        boolean containsNonEventFields = false;
-        if (!nonEventFields.isEmpty() && !disableBoundedLookup) {
-            // rebuild the query tree
-            queryTree = RegexFunctionVisitor.expandRegex(config, metadataHelper, nonEventFields, queryTree);
+        boolean containsIndexOnlyFields = false;
+        if (!indexOnlyFields.isEmpty() && !disableBoundedLookup) {
             boolean functionsEnabled = config.isIndexOnlyFilterFunctionsEnabled();
-            containsNonEventFields = !SetMembershipVisitor.getMembers(nonEventFields, config, metadataHelper, dateIndexHelper, queryTree, functionsEnabled)
+            containsIndexOnlyFields = !SetMembershipVisitor.getMembers(indexOnlyFields, config, metadataHelper, dateIndexHelper, queryTree, functionsEnabled)
                             .isEmpty();
         }
         
         // Print the nice log message
         if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Computed that the query " + (containsNonEventFields ? " contains " : " does not contain any ") + " non-event field(s)");
+            logQuery(queryTree, "Computed that the query " + (containsIndexOnlyFields ? " contains " : " does not contain any ") + " index only field(s)");
         }
         
-        config.setContainsIndexOnlyTerms(containsNonEventFields);
+        config.setContainsIndexOnlyTerms(containsIndexOnlyFields);
         
         stopwatch.stop();
         
