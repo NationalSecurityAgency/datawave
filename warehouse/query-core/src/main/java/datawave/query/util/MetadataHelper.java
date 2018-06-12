@@ -520,9 +520,11 @@ public class MetadataHelper implements ApplicationContextAware {
      * @return
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#p0,#p1,#p2,#p3}", cacheManager = "metadataHelperCacheManager")
     public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unevaluatedFields, Set<String> ingestTypeFilter)
                     throws TableNotFoundException {
+        // Note that we used to cache this, however this method is dependent on some variables in the all fields metadata helper
+        // @Cacheable(value = "getQueryModel", key = "{#root.target.auths,#p0,#p1,#p2,#p3}", cacheManager = "metadataHelperCacheManager")
+
         Preconditions.checkNotNull(modelTableName);
         Preconditions.checkNotNull(modelName);
         
