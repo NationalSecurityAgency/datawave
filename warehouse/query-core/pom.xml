@@ -64,13 +64,11 @@
             <artifactId>datawave-in-memory-accumulo</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!--
         <dependency>
             <groupId>datawave</groupId>
             <artifactId>datawave-ingest-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        -->
         <dependency>
             <groupId>datawave.webservices</groupId>
             <artifactId>datawave-ws-client</artifactId>
@@ -193,6 +191,12 @@
         <dependency>
             <groupId>datawave</groupId>
             <artifactId>datawave-ingest-configuration</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>datawave</groupId>
+            <artifactId>datawave-ingest-csv</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

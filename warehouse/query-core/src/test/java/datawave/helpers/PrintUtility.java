@@ -35,7 +35,7 @@ public class PrintUtility {
     
     /**
      * Utility class to print all the entries in a table
-     * 
+     *
      * @param conn
      *            Connector to mock accumulo
      * @param authorizations
@@ -46,25 +46,27 @@ public class PrintUtility {
      *             Invalid table name
      */
     public static void printTable(final Connector conn, final Authorizations authorizations, final String tableName) throws TableNotFoundException {
-        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd HHmmss");
-        
-        final StringBuilder sb = new StringBuilder("--Begin entire " + tableName + " table--");
-        
-        sb.append("\n");
-        
-        final Scanner scanner = conn.createScanner(tableName, authorizations);
-        for (final Entry<Key,Value> e : scanner) {
-            sb.append(e.getKey().toStringNoTime());
-            sb.append(' ');
-            sb.append(dateFormat.format(new Date(e.getKey().getTimestamp())));
-            sb.append('\t');
-            sb.append(getPrintableValue(e.getValue()));
+        if (logger.isDebugEnabled()) {
+            final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd HHmmss");
+            
+            final StringBuilder sb = new StringBuilder("--Begin entire " + tableName + " table--");
+            
             sb.append("\n");
+            
+            final Scanner scanner = conn.createScanner(tableName, authorizations);
+            for (final Entry<Key,Value> e : scanner) {
+                sb.append(e.getKey().toStringNoTime());
+                sb.append(' ');
+                sb.append(dateFormat.format(new Date(e.getKey().getTimestamp())));
+                sb.append('\t');
+                sb.append(getPrintableValue(e.getValue()));
+                sb.append("\n");
+            }
+            
+            sb.append("--End entire ").append(tableName).append(" table--").append("\n");
+            
+            logger.debug(sb.toString());
         }
-        
-        sb.append("--End entire ").append(tableName).append(" table--").append("\n");
-        
-        logger.debug(sb.toString());
     }
     
     public static void printTable(final Connector conn, final Authorizations authorizations, final String tableName, final PrintStream out)
@@ -92,7 +94,7 @@ public class PrintUtility {
     
     /**
      * List all the mock tables
-     * 
+     *
      * @param conn
      *            Connector to mock accumulo
      */
