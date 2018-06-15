@@ -8,6 +8,8 @@ import java.util.Set;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.table.aggregator.CombinerConfiguration;
+import datawave.ingest.table.balancer.ShardedTableTabletBalancer;
+import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
 import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
 
 import org.apache.accumulo.core.client.AccumuloException;
@@ -25,6 +27,25 @@ import org.apache.log4j.Logger;
 
 public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     
+    protected static final String SHARDED_TABLET_BALANCER_CLASS = ShardedTableTabletBalancer.class.getName();
+    
+    public static final String SHARD_TABLE_BALANCER_CONFIG = "shard.table.balancer.class";
+    protected String shardTableBalancerClass = SHARDED_TABLET_BALANCER_CLASS;
+    
+    public static final String ENABLE_BLOOM_FILTERS = "shard.enable.bloom.filters";
+    protected boolean enableBloomFilters = false;
+    
+    public static final String MARKINGS_SETUP_ITERATOR_ENABLED = "markings.setup.iterator.enabled";
+    private boolean markingsSetupIteratorEnabled = false;
+    
+    public static final String MARKINGS_SETUP_ITERATOR_CONFIG = "markings.setup.iterator.config";
+    private String markingsSetupIteratorConfig;
+    
+    public static final String LOCALITY_GROUPS = "shard.table.locality.groups";
+    protected HashMap<String,Set<Text>> localityGroups = new HashMap<>();
+    
+    protected static final String SHARD_KEY_FUNCTOR_CLASS = ShardKeyFunctor.class.getName();
+    
     protected Logger log;
     
     public enum ShardTableType {
@@ -38,26 +59,6 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     protected String shardGridxTableName; // global reverse index
     protected String shardDictionaryTableName;
     protected ShardTableType tableType;
-    
-    // TODO: Having the class name hard-coded in a constant isn't ideal, because if it changes, we've taken
-    // what would have been a compile-time error and turned it into a late runtime error (it will only show
-    // up in the accumulo monitor). In 1.4, there is a feature where the client can ask the server to
-    // load a class and verify it extends a class or interface. When switching to 1.4, we should add that check
-    // so that we can fail the ingest job as soon as possible.
-    protected static final String SHARDED_TABLET_BALANCER_CLASS = "datawave.ingest.table.balancer.ShardedTableTabletBalancer";
-    protected static final String SHARD_KEY_FUNCTOR_CLASS = "datawave.ingest.table.bloomfilter.ShardKeyFunctor";
-    
-    public static final String ENABLE_BLOOM_FILTERS = "shard.enable.bloom.filters";
-    
-    public static final String MARKINGS_SETUP_ITERATOR_ENABLED = "markings.setup.iterator.enabled";
-    public static final String MARKINGS_SETUP_ITERATOR_CONFIG = "markings.setup.iterator.config";
-    private boolean markingsSetupIteratorEnabled = false;
-    private String markingsSetupIteratorConfig;
-    
-    protected boolean enableBloomFilters = false;
-    
-    public static final String LOCALITY_GROUPS = "shard.table.locality.groups";
-    protected HashMap<String,Set<Text>> localityGroups = new HashMap<>();
     
     @Override
     public void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException {
@@ -75,6 +76,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         if (shardTableName == null && shardGidxTableName == null && shardGridxTableName == null) {
             throw new IllegalArgumentException("No Shard Tables Defined");
         }
+        
+        shardTableBalancerClass = conf.get(SHARD_TABLE_BALANCER_CONFIG, SHARDED_TABLET_BALANCER_CLASS);
         
         if (markingsSetupIteratorEnabled) {
             if (null == markingsSetupIteratorConfig || markingsSetupIteratorConfig.equals("")) {
@@ -181,8 +184,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         setPropertyIfNecessary(tableName, Property.TABLE_BLOOM_ENABLED.getKey(), Boolean.toString(enableBloomFilters), tops, log);
         
         // Set up the table balancer for shards
-        setPropertyIfNecessary(this.tableName, Property.TABLE_LOAD_BALANCER.getKey(), SHARDED_TABLET_BALANCER_CLASS, tops, log);
-        
+        setPropertyIfNecessary(tableName, Property.TABLE_LOAD_BALANCER.getKey(), shardTableBalancerClass, tops, log);
     }
     
     protected void configureGidxTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
