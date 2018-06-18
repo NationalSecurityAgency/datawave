@@ -4,7 +4,7 @@
     <parent>
         <groupId>nsa.datawave.webservice</groupId>
         <artifactId>WebService</artifactId>
-        <version>4.4.11-SNAPSHOT</version>
+        <version>4.5.0-SNAPSHOT</version>
     </parent>
     <artifactId>Query-WebSocket</artifactId>
     <packaging>war</packaging>
