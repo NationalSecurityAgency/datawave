@@ -28,8 +28,7 @@ summary: |
 
 ### Get the Source Code
 
-<a class="btn btn-success" style="width: 220px;" href="{{ site.repository_url }}/archive/{{ site.default_branch }}.zip" role="button"><i class="fa fa-download fa-lg"></i> Download Archive</a>
-or <a class="btn btn-success" style="width: 220px;" href="{{ site.repository_url }}/" role="button" target="_blank"><i class="fa fa-github fa-lg"></i> Clone the Repo</a>
+<a class="btn btn-success" style="width: 220px;" href="{{ site.repository_url }}/" role="button" target="_blank"><i class="fa fa-github fa-lg"></i> Clone the Repo</a>
 
 {% include note.html content="The local path that you select for DataWave's source code will be refererred to as
 **DW_SOURCE** from this point forward. Wherever it appears in a bash command below, be sure to substitute it with the
