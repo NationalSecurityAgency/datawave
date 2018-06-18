@@ -50,7 +50,7 @@ public class GeometryNormalizer implements Normalizer<datawave.data.type.util.Ge
     private static TreeSet<GeometryParser> geoParsers = new TreeSet();
     
     static {
-        ServiceLoader<GeometryParser> geoParserLoader = ServiceLoader.load(GeometryParser.class);
+        ServiceLoader<GeometryParser> geoParserLoader = ServiceLoader.load(GeometryParser.class, GeometryNormalizer.class.getClassLoader());
         for (GeometryParser geoParser : geoParserLoader)
             geoParsers.add(geoParser);
     }
