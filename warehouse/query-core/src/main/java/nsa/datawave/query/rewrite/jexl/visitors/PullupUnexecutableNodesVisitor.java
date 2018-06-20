@@ -75,7 +75,8 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     protected Set<String> indexOnlyFields;
     protected Set<String> indexedFields;
     
-    public PullupUnexecutableNodesVisitor(RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields, MetadataHelper helper) {
+    public PullupUnexecutableNodesVisitor(RefactoredShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+                    Set<String> nonEventFields, MetadataHelper helper) {
         this.helper = helper;
         this.config = config;
         this.indexedFields = indexedFields;
