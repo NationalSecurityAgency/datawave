@@ -59,6 +59,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     private RefactoredShardQueryConfiguration config;
     protected MetadataHelper metadataHelper;
     protected Set<String> indexedFields;
+    protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
     
     Map<String,String> previouslyExpanded = Maps.newHashMap();
@@ -82,6 +83,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             } catch (TableNotFoundException e) {
                 throw new RuntimeException(e);
             }
+        }
+        
+        try {
+            indexOnlyFields = this.metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
         }
         
         try {
@@ -164,7 +171,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         if (null == script)
                             script = JexlASTHelper.parseJexlQuery(query);
                         
-                        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, nonEventFields, debug, this.metadataHelper)) {
+                        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, debug,
+                                        this.metadataHelper)) {
                             
                             if (log.isTraceEnabled()) {
                                 log.trace("Need to pull up non-executable query: " + JexlStringBuildingVisitor.buildQuery(script));
@@ -173,11 +181,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 }
                                 DefaultQueryPlanner.logQuery(script, "Failing query:");
                             }
-                            script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, config, indexedFields, nonEventFields,
-                                            metadataHelper);
+                            script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, config, indexedFields, indexOnlyFields,
+                                            nonEventFields, metadataHelper);
                             madeChange = true;
                             
-                            STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, nonEventFields, false, debug, metadataHelper);
+                            STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, false, debug,
+                                            metadataHelper);
                             
                             /**
                              * We could achieve better performance if we live with the small number of queries that error due to the full table scan exception.
@@ -191,11 +200,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                         log.trace(debugStatement);
                                     }
                                 }
-                                script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, config, indexedFields, nonEventFields,
-                                                metadataHelper);
+                                script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, config, indexedFields, indexOnlyFields,
+                                                nonEventFields, metadataHelper);
                             }
                             
-                            state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, nonEventFields, false, debug, metadataHelper);
+                            state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, false, debug,
+                                            metadataHelper);
                             
                             if (state != STATE.EXECUTABLE) {
                                 if (state == STATE.ERROR) {
