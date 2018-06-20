@@ -70,12 +70,15 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     protected MetadataHelper helper;
     protected ShardQueryConfiguration config;
     protected Set<String> nonEventFields;
+    protected Set<String> indexOnlyFields;
     protected Set<String> indexedFields;
     
-    public PushdownUnexecutableNodesVisitor(ShardQueryConfiguration config, Set<String> indexedFields, Set<String> nonEventFields, MetadataHelper helper) {
+    public PushdownUnexecutableNodesVisitor(ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields,
+                    MetadataHelper helper) {
         this.helper = helper;
         this.config = config;
         this.indexedFields = indexedFields;
+        this.indexOnlyFields = indexOnlyFields;
         this.nonEventFields = nonEventFields;
         if (this.indexedFields == null) {
             if (config.getIndexedFields() != null && !config.getIndexedFields().isEmpty()) {
@@ -87,6 +90,14 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
                     log.error("Could not determine indexed fields", ex);
                     throw new RuntimeException("got exception when using MetadataHelper to get indexed fields", ex);
                 }
+            }
+        }
+        if (this.indexOnlyFields == null) {
+            try {
+                this.indexOnlyFields = this.helper.getIndexOnlyFields(config.getDatatypeFilter());
+            } catch (TableNotFoundException e) {
+                log.error("Could not determine index only fields", e);
+                throw new RuntimeException("got exception when using MetadataHelper to get index only fields", e);
             }
         }
         if (this.nonEventFields == null) {
@@ -101,15 +112,15 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     
     private static final Logger log = Logger.getLogger(PushdownUnexecutableNodesVisitor.class);
     
-    public static JexlNode pushdownPredicates(JexlNode queryTree, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> nonEventFields,
-                    MetadataHelper helper) {
-        PushdownUnexecutableNodesVisitor visitor = new PushdownUnexecutableNodesVisitor(config, indexedFields, nonEventFields, helper);
+    public static JexlNode pushdownPredicates(JexlNode queryTree, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
+                    Set<String> nonEventFields, MetadataHelper helper) {
+        PushdownUnexecutableNodesVisitor visitor = new PushdownUnexecutableNodesVisitor(config, indexedFields, indexOnlyFields, nonEventFields, helper);
         return (JexlNode) queryTree.jjtAccept(visitor, null);
     }
     
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -118,16 +129,16 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // if we have a non-executable and node, then we may be able to resolve this by pushing down the partial children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
             // first attempt to fix this by visiting the underlying nodes
             super.visit(node, data);
             // if still not executable, then we may be able to resolve this by pushing down the partial children
-            if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, nonEventFields, false, null, helper)) {
+            if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
                 // push down any partial states
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     JexlNode child = node.jjtGetChild(i);
-                    ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, nonEventFields, false,
-                                    null, helper);
+                    ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
+                                    nonEventFields, false, null, helper);
                     if (state == ExecutableDeterminationVisitor.STATE.PARTIAL) {
                         ASTDelayedPredicate.create(child);
                     }
@@ -140,7 +151,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTOrNode node, Object data) {
         // if not executable, then we may be able to resolve this by fixing the children children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -149,7 +160,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         // if not executable, then visit all children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -160,7 +171,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
         // if a delayed predicate, then leave it alone
         if (ASTDelayedPredicate.instanceOf(node)) {
             return node;
-        } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, nonEventFields, false, null, helper)) {
+        } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
             super.visit(node, data);
         }
         return node;
@@ -169,7 +180,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTNotNode node, Object data) {
         // if not executable, then visit all children
-        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, nonEventFields, false, null, helper)) {
+        if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, null, helper)) {
             super.visit(node, data);
         }
         return node;
