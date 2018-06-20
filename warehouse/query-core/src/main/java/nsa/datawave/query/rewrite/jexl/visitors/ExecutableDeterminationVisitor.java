@@ -519,8 +519,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         return this;
     }
     
-    public ExecutableDeterminationVisitor setIndexOnlyFields(Set<String> nonEventFields) {
-        this.nonEventFields = nonEventFields;
+    public ExecutableDeterminationVisitor setIndexOnlyFields(Set<String> indexOnlyFields) {
+        this.indexOnlyFields = indexOnlyFields;
         return this;
     }
     
