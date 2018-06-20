@@ -974,10 +974,12 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         // lets precomputed the indexed fields and index only fields for the specific datatype if needed below
         Set<String> indexedFields = null;
+        Set<String> indexOnlyFields = null;
         Set<String> nonEventFields = null;
         if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
             try {
                 indexedFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
+                indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
                 nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
             } catch (TableNotFoundException te) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, te);
@@ -998,8 +1000,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (log.isDebugEnabled()) {
                 debugOutput = new ArrayList<String>(32);
             }
-            if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, nonEventFields, debugOutput, metadataHelper)) {
-                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, nonEventFields,
+            if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
+                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields, nonEventFields,
                                 metadataHelper);
                 if (log.isDebugEnabled()) {
                     logDebug(debugOutput, "Executable state after pushing low-selective terms:");
@@ -1039,8 +1041,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 
                 // Unless config.isExandAllTerms is true, this may set some of
                 // the terms to be delayed.
-                if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, config, indexedFields, nonEventFields,
+                if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
+                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, config, indexedFields, indexOnlyFields, nonEventFields,
                                     metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges:");
@@ -1067,8 +1069,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 if (log.isDebugEnabled()) {
                     debugOutput.clear();
                 }
-                if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, nonEventFields,
+                if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
+                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields, nonEventFields,
                                     metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges and regex again:");
