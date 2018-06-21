@@ -252,16 +252,16 @@ public class BalancedShardPartitionerTest {
             partitionsUsed.add(partition);
         }
         // 9 is what we get by hashing the shardId
-        Assert.assertTrue("For " + daysBack + " days ago, we had a different number of collisions: " + collisions, expectedCollisions >= collisions); // this
-                                                                                                                                                      // has
-                                                                                                                                                      // more to
-                                                                                                                                                      // do with
-                                                                                                                                                      // the
-                                                                                                                                                      // random
-                                                                                                                                                      // assignment
-                                                                                                                                                      // of the
-                                                                                                                                                      // tablets
-        
+        Assert.assertTrue("For " + daysBack + " days ago, we had a different number of collisions: " + collisions, expectedCollisions >= collisions);
+        // this
+        // has
+        // more to
+        // do with
+        // the
+        // random
+        // assignment
+        // of the
+        // tablets
     }
     
     private static String formatDay(int daysBack) {

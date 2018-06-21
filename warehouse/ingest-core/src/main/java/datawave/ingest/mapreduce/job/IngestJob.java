@@ -787,8 +787,10 @@ public class IngestJob implements Tool {
             conf.set("split.work.dir", conf.get("ingest.work.dir.qualified"));
         }
         conf.setInt("splits.num.reduce", this.reduceTasks);
+        // want validation turned off by default
+        boolean validateShardTableMapFiles = conf.getBoolean(ShardedTableMapFile.SHARD_VALIDATION_ENABLED, false);
         // used by the output formatter and the sharded partitioner
-        ShardedTableMapFile.setupFile(conf);
+        ShardedTableMapFile.setupFile(conf, validateShardTableMapFiles);
         
         conf.setInt(MultiRFileOutputFormatter.EVENT_PARTITION_COUNT, this.reduceTasks * 2);
         configureMultiRFileOutputFormatter(conf, compressionType, compressionTableBlackList, maxRFileEntries, maxRFileSize, generateMapFileRowKeys);

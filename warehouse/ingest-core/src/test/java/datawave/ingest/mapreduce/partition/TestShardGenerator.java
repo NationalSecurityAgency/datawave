@@ -84,7 +84,7 @@ public class TestShardGenerator {
     
     private void writeSplits(Map<KeyExtent,String> locations, String directory, String fileName) throws IOException {
         Path shardedMapFile = new Path(directory, fileName);
-        ShardedTableMapFile.writeSplitsFile(locations, shardedMapFile, conf);
+        ShardedTableMapFile.writeSplitsFileLegacy(locations, shardedMapFile, conf);
     }
     
     private void registerSplitsFileForShardTable(String directory, String fileName, String... tableNames) {
