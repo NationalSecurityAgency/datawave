@@ -68,7 +68,7 @@ public class ShardedTableMapFileTest {
         
         Path file = createSplitsFile(splits, conf, 1);
         conf.set(ShardedTableMapFile.SHARDED_MAP_FILE_PATHS_RAW, TABLE_NAME + "=" + file.toString());
-        ShardedTableMapFile.setupFile(conf, true);
+        ShardedTableMapFile.setupFile(conf);
         TreeMap<Text,String> result = ShardedTableMapFile.getShardIdToLocations(conf, TABLE_NAME);
         Assert.assertEquals("location2_1234", result.get(new Text("zEndRow")).toString());
         Assert.assertEquals(1, result.size());
@@ -93,7 +93,7 @@ public class ShardedTableMapFileTest {
                             + ",shard_ingest_unit_test_table_1,shard_ingest_unit_test_table_2,shard_ingest_unit_test_table_3");
             conf.set(ShardedTableMapFile.TABLE_NAMES, TABLE_NAME);
             setWorkingDirectory(conf);
-            ShardedTableMapFile.setupFile(conf, true);
+            ShardedTableMapFile.setupFile(conf);
         } finally {
             if (null != accumuloCluster) {
                 accumuloCluster.stop();
@@ -169,7 +169,7 @@ public class ShardedTableMapFileTest {
         
         String[] tableNames = new String[] {TABLE_NAME};
         conf.set(ShardedTableMapFile.TABLE_NAMES, StringUtils.join(",", tableNames));
-        ShardedTableMapFile.setupFile(conf, true);
+        ShardedTableMapFile.setupFile(conf);
         ShardedTableMapFile.getShardIdToLocations(conf, TABLE_NAME);
     }
     

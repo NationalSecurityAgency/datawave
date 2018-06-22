@@ -1,28 +1,40 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.util.StringUtils;
-import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.client.*;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.impl.ClientContext;
+import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.metadata.MetadataServicer;
-import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.accumulo.fate.util.UtilWaitThread;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.*;
-import java.util.Map.Entry;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.util.StringUtils;
+import datawave.util.time.DateHelper;
 
 /**
  * Extracted from IngestJob
@@ -42,7 +54,10 @@ public class ShardedTableMapFile {
     public static final String SHARDED_MAP_FILE_PATHS_RAW = "shardedMap.file.paths.raw";
     public static final String SHARD_VALIDATION_ENABLED = "shardedMap.validation.enabled";
     
-    public static void setupFile(Configuration conf, boolean doValidation) throws IOException, URISyntaxException, AccumuloSecurityException, AccumuloException {
+    public static void setupFile(Configuration conf) throws IOException, URISyntaxException, AccumuloSecurityException, AccumuloException {
+        // want validation turned off by default
+        boolean doValidation = conf.getBoolean(ShardedTableMapFile.SHARD_VALIDATION_ENABLED, false);
+        
         Map<String,Path> map = loadMap(conf, doValidation);
         if (null == map) {
             log.fatal("Receieved a null mapping of sharded tables to split files, exiting...");
@@ -99,9 +114,9 @@ public class ShardedTableMapFile {
             }
         }
         if (!isValid) {
-            throw new IllegalStateException("All of today's shards have not been created.  Run bin/ingest/create_shards_since.sh "
-                            + "yyyymmdd, substitute yyyymmdd with today's date.  Ensure that the normal mechanism "
-                            + "for creating shards is running - e.g, crontab");
+            throw new IllegalStateException("All of today's shards have not been created or are not balanced for " + tableName +"."
+                            + "Run bin/ingest/create_shards_since.sh yyyymmdd, substitute yyyymmdd with today's date. "
+                            + "Ensure that the normal mechanism for creating shards is running - e.g, crontab");
         }
     }
     
@@ -338,7 +353,6 @@ public class ShardedTableMapFile {
                 }
                 // made it here, no errors so break out
                 keepRetrying = false;
-                ;
             } catch (Exception e) {
                 log.warn(e.getMessage() + " ... retrying ...");
                 UtilWaitThread.sleep(3000);
