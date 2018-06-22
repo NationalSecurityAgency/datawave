@@ -249,8 +249,8 @@ public class ShardedTableMapFileTest {
         Map<Text,String> locations = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
         // three days of splits, today should be invalid, which makes the rest bad too
         ShardedTableMapFile.validateShardIdLocations(conf, tableName, 0, locations);
-        ShardedTableMapFile.validateShardIdLocations(conf, tableName, 1, locations);
-        ShardedTableMapFile.validateShardIdLocations(conf, tableName, 2, locations);
+        // shouldn't make it here
+        fail();
     }
     
     @Test(expected = IllegalStateException.class)
