@@ -1293,14 +1293,7 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } finally {
             if (null != queryId) {
-                final Principal p = ctx.getCallerPrincipal();
-                final String closeQueryId = queryId;
-                executor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        close(closeQueryId, p);
-                    }
-                });
+                asyncClose(queryId);
             }
         }
     }
@@ -1360,7 +1353,7 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } finally {
             if (null != queryId) {
-                close(queryId);
+                asyncClose(queryId);
             }
         }
     }
@@ -1431,7 +1424,7 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } finally {
             if (null != queryId) {
-                this.close(queryId);
+                asyncClose(queryId);
             }
         }
     }
@@ -1486,7 +1479,7 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } finally {
             if (null != queryId) {
-                close(queryId);
+                asyncClose(queryId);
             }
         }
         
@@ -1660,6 +1653,32 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         return response;
+    }
+    
+    /**
+     * Attempt to async close a query using the executor. If the executor can't accommodate the close then the query will be closed in-line
+     * 
+     * @param queryId
+     *            non-null queryId
+     */
+    private void asyncClose(String queryId) {
+        if (queryId != null) {
+            final Principal p = ctx.getCallerPrincipal();
+            final String closeQueryId = queryId;
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        close(closeQueryId, p);
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                // log only
+                log.warn("close query rejected by executor id=" + closeQueryId + " principal=" + p, e);
+                // do it the old (slow way)
+                close(queryId);
+            }
+        }
     }
     
     /**
