@@ -93,6 +93,7 @@ undeploy mysql-connector-java-${version.mysql-connector}.jar
 /subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=max-pool-size,value=20)
 /subsystem=ejb3/thread-pool=default/:write-attribute(name=max-threads,value=10)
 /subsystem=ejb3/:undefine-attribute(name=in-vm-remote-interface-invocation-pass-by-value)
+/subsystem=ee/managed-executor-service=default:write-attribute(name=max-threads,value=25)
 
 #
 # Remove HornetQ configuration changes
