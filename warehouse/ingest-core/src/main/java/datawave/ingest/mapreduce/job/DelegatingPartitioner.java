@@ -76,7 +76,7 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
         if (null != offset) {
             return (offset + partition) % numPartitions;
         } else {
-            return partitioner.getPartition(key, value, numPartitions) % numPartitions;
+            return partition % numPartitions;
         }
     }
     
