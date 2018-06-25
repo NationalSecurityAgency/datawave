@@ -35,6 +35,7 @@ jboss.jmx.password, Admin Console and JMX Console username -- SET IN PRIVATE MAV
 jboss.jmx.username, Admin Console and JMX Console user password
 jboss.jvm.heap.size, jvm heap size to use, will be set in bin/run.conf
 jboss.cms.initiating.occupancy.fraction, start a garbage collection if the tenured generation exceeds this fraction, jvm default is 92, datawave uses 75
+jboss.managed.executor.service.default.max.threads, maximum number of threads to be used for the managed executor service
 jboss.mdb.pool.max.size, maximum number of Message Driven Bean instances in each pool
 jboss.mdb.pool.timeout, Timeout (ms) before throwing an exception when waiting to get a Message Driven Bean instance from the pool
 jboss.partition.name, name of the JBoss cluster

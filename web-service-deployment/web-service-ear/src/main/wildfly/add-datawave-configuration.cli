@@ -151,6 +151,7 @@ jms-queue add --queue-address=QueryMetricsQueue --entries=queue/QueryMetrics
 /subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=timeout-unit,value=MILLISECONDS)
 /subsystem=ejb3:write-attribute(name=default-slsb-instance-pool,value=slsb-strict-max-pool)
 /subsystem=transactions/:write-attribute(name=default-timeout,value=${jboss.transaction.time.out})
+/subsystem=ee/managed-executor-service=default:write-attribute(name=max-threads,value=${jboss.managed.executor.service.default.max.threads})
 
 # Configure the JDBC DataSource used by MySQL
 deploy mysql/mysql-connector-java-${version.mysql-connector}.jar
