@@ -34,8 +34,12 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      * List of cities that are used for testing. Each enumeration will contain the path of the data ingest file.
      */
     public enum CityEntry {
-        paris("input/paris-cities.csv", "paris"), london("input/london-cities.csv", "london"), rome("input/rome-cities.csv", "rome"), generic(
-                        "input/generic-cities.csv", "generic"), multivalue("input/multivalue-cities.csv", "multi");
+        // default provided cities with datatype name
+        paris("input/paris-cities.csv", "paris"),
+        london("input/london-cities.csv", "london"),
+        rome("input/rome-cities.csv", "rome"),
+        generic("input/generic-cities.csv", "generic"),
+        multivalue("input/multivalue-cities.csv", "multi");
         
         private final String ingestFile;
         private final String cityName;
@@ -65,7 +69,12 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      * Defines the valid dates that are used for shard ids. All test data should specify one of the shard id dates.
      */
     public enum CityShardId {
-        DATE_2015_0707("20150707"), DATE_2015_0808("20150808"), DATE_2015_0909("20150909"), DATE_2015_1010("20151010"), DATE_2015_1111("20151111");
+        // list of shards for testing
+        DATE_2015_0707("20150707"),
+        DATE_2015_0808("20150808"),
+        DATE_2015_0909("20150909"),
+        DATE_2015_1010("20151010"),
+        DATE_2015_1111("20151111");
         
         static Set<String> getShardRange(final Date start, final Date end) {
             final Set<String> shards = new HashSet<>();
@@ -135,7 +144,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         String getShardId() {
             return this.dateStr + "_0";
         }
-
+        
         static Collection<String> cityShards() {
             return Stream.of(CityShardId.values()).map(e -> e.getShardId()).collect(Collectors.toList());
         }

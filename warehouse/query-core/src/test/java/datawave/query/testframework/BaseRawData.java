@@ -52,8 +52,8 @@ public abstract class BaseRawData implements IRawData {
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        BaseRawData cityPOJO = (BaseRawData) o;
-        return Objects.equals(entry, cityPOJO.entry);
+        BaseRawData data = (BaseRawData) o;
+        return Objects.equals(entry, data.entry);
     }
     
     @Override

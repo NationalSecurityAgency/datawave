@@ -64,8 +64,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     public void testEqCityAndEqContinentHitList() throws Exception {
         log.info("------  testEqCityAndEqContinentHitList  ------");
         
+        String cont = "north america";
         for (final TestCities city : TestCities.values()) {
-            String cont = "north america";
             String query = CityField.CITY.name() + " == '" + city.name() + "' and " + CityField.CONTINENT.name() + " == '" + cont + "'";
             runTest(query, true, true);
         }
@@ -140,9 +140,9 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     public void testBlackListMultiValueIncluded() throws Exception {
         log.info("------  testBlackListMultiValueIncluded  ------");
         
+        String cont = "europe";
+        String state = "mississippi";
         for (final TestCities city : TestCities.values()) {
-            String cont = "europe";
-            String state = "mississippi";
             String query = CityField.CITY.name() + " == '" + city.name() + "' and " + "(" + CityField.CONTINENT.name() + " == '" + cont + "'" + " or "
                             + CityField.STATE.name() + " == '" + state + "')";
             final Set<String> fields = CityField.getRandomReturnFields(false);
@@ -156,9 +156,9 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     public void testBlackListMultiValueExcluded() throws Exception {
         log.info("------  testBlackListMultiValueExcluded  ------");
         
+        String cont = "europe";
+        String state = "mississippi";
         for (final TestCities city : TestCities.values()) {
-            String cont = "europe";
-            String state = "mississippi";
             String query = CityField.CITY.name() + " == '" + city.name() + "' and " + "(" + CityField.CONTINENT.name() + " == '" + cont + "'" + " or "
                             + CityField.STATE.name() + " == '" + state + "')";
             final Set<String> fields = CityField.getRandomReturnFields(false);
@@ -172,9 +172,9 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     public void testEqCityAndEqContinentBlackList() throws Exception {
         log.info("------  testEqCityAndEqContinentBlackList  ------");
         
+        String state = "ohio";
+        String mizzu = "missouri";
         for (final TestCities city : TestCities.values()) {
-            String state = "ohio";
-            String mizzu = "missouri";
             String query = CityField.CITY.name() + " == '" + city.name() + "' and " + "(" + CityField.STATE.name() + " == '" + state + "'" + " or "
                             + CityField.STATE.name() + " == '" + mizzu + "')";
             runTest(query, false, false);
@@ -185,9 +185,9 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     public void testEqCityAndEqContinentBlackListWithHitList() throws Exception {
         log.info("------  testEqCityAndEqContinentBlackListWithHitList  ------");
         
+        String cont = "europe";
+        String state = "missouri";
         for (final TestCities city : TestCities.values()) {
-            String cont = "europe";
-            String state = "missouri";
             String query = CityField.CITY.name() + " == '" + city.name() + "' and " + "(" + CityField.STATE.name() + " == '" + state + "'" + " or "
                             + CityField.CONTINENT.name() + " == '" + cont + "')";
             runTest(query, false, true);
@@ -198,8 +198,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     public void testWhiteListWithMultiValueIncluded() throws Exception {
         log.info("------  testWhiteListWithMultiValueIncluded  ------");
         
+        String cont = "north america";
         for (final TestCities city : TestCities.values()) {
-            String cont = "north america";
             String query = CityField.CITY.name() + " == '" + city.name() + "' and " + CityField.CONTINENT.name() + " == '" + cont + "'";
             final Set<String> fields = CityField.getRandomReturnFields(true);
             // include STATE field
@@ -212,8 +212,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     public void testWhiteListWithMultiValueExcluded() throws Exception {
         log.info("------  testWhiteListWithMultiValueExcluded  ------");
         
+        String cont = "north america";
         for (final TestCities city : TestCities.values()) {
-            String cont = "north america";
             String query = CityField.CITY.name() + " == '" + city.name() + "' and " + CityField.CONTINENT.name() + " == '" + cont + "'";
             final Set<String> fields = CityField.getRandomReturnFields(true);
             // remove STATE field
