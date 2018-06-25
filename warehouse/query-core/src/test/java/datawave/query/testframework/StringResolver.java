@@ -1,11 +1,9 @@
 package datawave.query.testframework;
 
 import datawave.data.normalizer.LcNoDiacriticsNormalizer;
-import datawave.query.testframework.BaseRawData.RawMetaData;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -232,7 +230,7 @@ public class StringResolver implements IQueryResolver {
     }
     
     public static class TestStringResolver {
-        private static final Logger log = LoggerFactory.getLogger(QueryAction.class);
+        private static final Logger log = Logger.getLogger(QueryAction.class);
         
         // just for testing
         @Test
@@ -247,56 +245,56 @@ public class StringResolver implements IQueryResolver {
             
             StringResolver qr = new StringResolver();
             QueryAction qa = new QueryAction("a", "==", "'a'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             Set<IRawData> resp = qr.isEqual(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(1, resp.size());
             qa = new QueryAction("b", "==", "'xyz'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             resp = qr.isEqual(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(1, resp.size());
             qa = new QueryAction("a", "!=", "'b'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             resp = qr.notEqual(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(2, resp.size());
             qa = new QueryAction("b", "!=", "'abc'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             resp = qr.notEqual(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(2, resp.size());
             qa = new QueryAction("b", "<", "'abx'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             // qa = new QueryAction("b < 'abx'");
             resp = qr.less(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(1, resp.size());
             qa = new QueryAction("a", "<=", "'A'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             resp = qr.lessEqual(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(1, resp.size());
             qa = new QueryAction("b", "<=", "'A'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             resp = qr.lessEqual(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(0, resp.size());
             qa = new QueryAction("A", ">", "'1'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             resp = qr.greater(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(2, resp.size());
             qa = new QueryAction("b", ">", "'s'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             resp = qr.greater(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(1, resp.size());
             qa = new QueryAction("a", ">=", "'a'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             resp = qr.greaterEqual(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(2, resp.size());
             qa = new QueryAction("b", ">=", "'c'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             resp = qr.greaterEqual(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(2, resp.size());
             qa = new QueryAction("b", "=~", "'c.*c'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             resp = qr.regex(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(2, resp.size());
             qa = new QueryAction("b", "!~", "'c.*c'", String.class, true);
-            log.info("query({})", qa);
+            log.info("query(" + qa + ")");
             resp = qr.negRegex(qa.getKey(), qa.getValue(), s);
             Assert.assertEquals(1, resp.size());
         }

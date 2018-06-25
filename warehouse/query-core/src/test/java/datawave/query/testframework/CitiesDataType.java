@@ -1,11 +1,8 @@
 package datawave.query.testframework;
 
-import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.data.config.ingest.CompositeIngest;
-import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.query.Constants;
 
@@ -14,7 +11,6 @@ import java.lang.reflect.Type;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -38,7 +34,8 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      * List of cities that are used for testing. Each enumeration will contain the path of the data ingest file.
      */
     public enum CityEntry {
-        paris("input/paris-cities.csv", "paris"), london("input/london-cities.csv", "london"), rome("input/rome-cities.csv", "rome");
+        paris("input/paris-cities.csv", "paris"), london("input/london-cities.csv", "london"), rome("input/rome-cities.csv", "rome"), generic(
+                        "input/generic-cities.csv", "generic"), multivalue("input/multivalue-cities.csv", "multi");
         
         private final String ingestFile;
         private final String cityName;
@@ -68,12 +65,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      * Defines the valid dates that are used for shard ids. All test data should specify one of the shard id dates.
      */
     public enum CityShardId {
-        DATE_2015_0707("20150707"),
-        DATE_2015_0808("20150808"),
-        DATE_2015_0909("20150909"),
-        DATE_2016_0404("20160404"),
-        DATE_2016_0505("20160505"),
-        DATE_2016_0606("20160606");
+        DATE_2015_0707("20150707"), DATE_2015_0808("20150808"), DATE_2015_0909("20150909"), DATE_2015_1010("20151010"), DATE_2015_1111("20151111");
         
         static Set<String> getShardRange(final Date start, final Date end) {
             final Set<String> shards = new HashSet<>();
@@ -90,7 +82,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         
         static final List<Date> sortedDate = new ArrayList<>();
         
-        static Date[] generateRandomStartEndDates() {
+        static Date[] getStartEndDates(final boolean random) {
             // use double check locking
             if (sortedDate.isEmpty()) {
                 synchronized (sortedDate) {
@@ -106,15 +98,20 @@ public class CitiesDataType extends AbstractDataTypeConfig {
             }
             
             Date[] startEndDate = new Date[2];
-            int s = rVal.nextInt(sortedDate.size());
-            startEndDate[0] = sortedDate.get(s);
-            int remaining = sortedDate.size() - s;
-            startEndDate[1] = startEndDate[0];
-            if (0 < remaining) {
-                int e = rVal.nextInt(sortedDate.size() - s);
-                startEndDate[1] = sortedDate.get(s + e);
+            if (random) {
+                int s = rVal.nextInt(sortedDate.size());
+                startEndDate[0] = sortedDate.get(s);
+                int remaining = sortedDate.size() - s;
+                startEndDate[1] = startEndDate[0];
+                if (0 < remaining) {
+                    int e = rVal.nextInt(sortedDate.size() - s);
+                    startEndDate[1] = sortedDate.get(s + e);
+                }
+            } else {
+                int s = rVal.nextInt(sortedDate.size());
+                startEndDate[0] = sortedDate.get(0);
+                startEndDate[1] = sortedDate.get(sortedDate.size() - 1);
             }
-            
             return startEndDate;
         }
         
@@ -138,11 +135,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         String getShardId() {
             return this.dateStr + "_0";
         }
-        
-        public Date date() {
-            return this.date;
-        }
-        
+
         static Collection<String> cityShards() {
             return Stream.of(CityShardId.values()).map(e -> e.getShardId()).collect(Collectors.toList());
         }
@@ -155,7 +148,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         // order is important, should match the order in the csv files
         START_DATE(String.class),
         EVENT_ID(String.class),
-        CITY(String.class),
+        CITY(String.class, true),
         STATE(String.class, true),
         COUNTRY(String.class),
         CONTINENT(String.class),
@@ -163,21 +156,9 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         ACCESS(String.class),
         NUM((Integer.class));
         
-        private static final Collection<List<String>> CompositeMapping = new HashSet<>();
-        private static final Collection<List<String>> VirtualMapping = new HashSet<>();
-        private static final String MultiValueFields;
         private static final List<String> Headers;
         
         static {
-            CompositeMapping.add(Arrays.asList(CITY.name(), STATE.name()));
-            CompositeMapping.add(Arrays.asList(CITY.name(), COUNTRY.name()));
-            CompositeMapping.add(Arrays.asList(CITY.name(), NUM.name()));
-            CompositeMapping.add(Arrays.asList(CITY.name(), CONTINENT.name()));
-            CompositeMapping.add(Arrays.asList(CITY.name(), NUM.name()));
-            
-            VirtualMapping.add(Arrays.asList(STATE.name(), COUNTRY.name()));
-            
-            MultiValueFields = STATE.name();
             Headers = Stream.of(CityField.values()).map(e -> e.name()).collect(Collectors.toList());
         }
         
@@ -273,74 +254,6 @@ public class CitiesDataType extends AbstractDataTypeConfig {
             return metadataMapping;
         }
         
-        /**
-         * Returns all indexed field names, including composite indexes.
-         *
-         * @return list of all indexed fields
-         */
-        static List<String> indexFields() {
-            final List<String> fields = compositeNames();
-            fields.addAll(indexFieldsOnly());
-            return fields;
-        }
-        
-        /**
-         * Returns only the indexed fields without the composite indexes.
-         *
-         * @return list of indexed fields
-         */
-        static List<String> indexFieldsOnly() {
-            return Arrays.asList(CITY.name(), STATE.name(), COUNTRY.name(), CONTINENT.name(), CODE.name(), NUM.name());
-        }
-        
-        static List<String> anyFieldIndex() {
-            final List<String> fields = new ArrayList<>(indexFieldsOnly());
-            fields.remove(NUM.name());
-            return fields;
-        }
-        
-        private static String multiValueFields() {
-            return MultiValueFields;
-        }
-        
-        private static List<String> compositeNames() {
-            final List<String> names = new ArrayList<>();
-            for (final List<String> composite : CompositeMapping) {
-                names.add(String.join("_", composite));
-            }
-            
-            return names;
-        }
-        
-        private static List<String> virtualFields() {
-            final List<String> fields = new ArrayList<>();
-            for (final List<String> virtual : VirtualMapping) {
-                fields.add(String.join(".", virtual));
-            }
-            return fields;
-        }
-        
-        private static List<String> virtualNames() {
-            final List<String> names = new ArrayList<>();
-            for (final List<String> virtual : VirtualMapping) {
-                names.add(String.join("_", virtual));
-            }
-            
-            return names;
-        }
-        
-        private static List<String> compositeFields() {
-            final List<String> fields = new ArrayList<>();
-            for (final List<String> composite : CompositeMapping) {
-                fields.add(String.join(".", composite));
-            }
-            return fields;
-        }
-        
-        private static Collection<String> reverseIndexFields() {
-            return Arrays.asList(CITY.name(), STATE.name(), COUNTRY.name(), CONTINENT.name(), CODE.name());
-        }
-        
         private BaseRawData.RawMetaData metadata;
         
         CityField(final Type type) {
@@ -371,8 +284,8 @@ public class CitiesDataType extends AbstractDataTypeConfig {
     }
     
     // ==================================
-    // pojo manager info
-    private static final IRawDataManager cityManager = new CityPOJOManager();
+    // data manager info
+    private static final IRawDataManager cityManager = new CityDataManager();
     
     public static IRawDataManager getManager() {
         return cityManager;
@@ -383,13 +296,15 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      *
      * @param city
      *            city entry for ingest
+     * @param config
+     *            hadoop field configuration
      * @throws IOException
      *             unable to load ingest file
      * @throws URISyntaxException
      *             unable to resolve ingest file
      */
-    public CitiesDataType(final CityEntry city) throws IOException, URISyntaxException {
-        super(city.name(), city.getIngestFile(), cityManager);
+    public CitiesDataType(final CityEntry city, final IFieldConfig config) throws IOException, URISyntaxException {
+        super(city.name(), city.getIngestFile(), config, cityManager);
         
         // NOTE: see super for default settings
         // set datatype settings
@@ -401,22 +316,6 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         
         // fields
         this.hConf.set(this.dataType + CSVHelper.DATA_HEADER, String.join(",", CityField.headers()));
-        this.hConf.set(this.dataType + BaseIngestHelper.INDEX_FIELDS, String.join(",", CityField.indexFields()));
-        this.hConf.set(this.dataType + BaseIngestHelper.REVERSE_INDEX_FIELDS, String.join(",", CityField.reverseIndexFields()));
-        this.hConf.set(this.dataType + CompositeIngest.COMPOSITE_FIELD_NAMES, String.join(",", CityField.compositeNames()));
-        this.hConf.set(this.dataType + CompositeIngest.COMPOSITE_FIELD_MEMBERS, String.join(",", CityField.compositeFields()));
-        
-        // type for composite fields
-        for (final String composite : CityField.compositeNames()) {
-            this.hConf.set(this.dataType + "." + composite, NoOpType.class.getName());
-        }
-        
-        // virtual fields
-        this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_NAMES, String.join(",", CityField.virtualNames()));
-        this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_MEMBERS, String.join(",", CityField.virtualFields()));
-        
-        // multivalue fields
-        this.hConf.set(this.dataType + CSVHelper.MULTI_VALUED_FIELDS, CityField.MultiValueFields);
     }
     
     @Override
@@ -426,6 +325,6 @@ public class CitiesDataType extends AbstractDataTypeConfig {
     
     @Override
     public String toString() {
-        return "CitiesDataType{" + "dataType='" + dataType + '\'' + ", ingestPath=" + ingestPath + '}';
+        return "CitiesDataType{" + super.toString() + "}";
     }
 }

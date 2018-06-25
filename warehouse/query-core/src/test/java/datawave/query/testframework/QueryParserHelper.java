@@ -1,13 +1,14 @@
 package datawave.query.testframework;
 
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -20,7 +21,7 @@ import java.util.Set;
  */
 public class QueryParserHelper {
     
-    private static final Logger log = LoggerFactory.getLogger(QueryParserHelper.class);
+    private static final Logger log = Logger.getLogger(QueryParserHelper.class);
     
     // valid states for parsing a JEXL query
     private enum ParseState {
@@ -195,7 +196,7 @@ public class QueryParserHelper {
      * @return execution tree for query
      */
     private LinkedList<QueryEntry> parse(final String query) {
-        log.debug("---------  query({})  ---------", query);
+        log.debug("---------  query(" + query + ")  ---------");
         LinkedList<QueryEntry> actions = new LinkedList<>();
         QueryEntry entry = null;
         String str = query.trim();
@@ -270,6 +271,7 @@ public class QueryParserHelper {
                             }
                             break;
                         case ValueAdd:
+                            // when value has an embedded ' ' char
                             if (0 < loc) {
                                 final String val = str.substring(0, loc);
                                 value.append(" ").append(val);
@@ -298,6 +300,7 @@ public class QueryParserHelper {
                     entry = new QueryEntry();
                 }
                 int loc = str.indexOf(' ');
+                Assert.assertTrue(loc > 0);
                 entry.op = LogicalOp.getOp(str.substring(0, loc));
                 str = str.substring(loc + 1).trim();
                 nextState = ParseState.Field;
@@ -315,6 +318,7 @@ public class QueryParserHelper {
     public static class TestParser {
         @Test
         public void test() {
+            log.info("valid test conditions");
             Date date = new Date();
             final IRawDataManager manager = new TestManager();
             QueryParserHelper.QueryEntry qe, cqe;
@@ -429,14 +433,51 @@ public class QueryParserHelper {
             Assert.assertEquals(2, c.childActions.size());
             
             q = "  (ab == 'bccc' && (ccc == 'xc' or sdb ==  'x')) ";
-            new QueryParserHelper(q, manager, date, date);
+            p = new QueryParserHelper(q, manager, date, date);
+            Assert.assertEquals(1, p.execTree.size());
+            qe = p.execTree.getFirst();
+            Assert.assertNotNull(qe.action);
+            Assert.assertNotNull(qe.childActions);
+            Assert.assertNotNull(qe.op);
+            Assert.assertNull(qe.parent);
+            Assert.assertEquals(2, qe.childActions.size());
+        }
+        
+        @Test
+        public void errorTests() {
+            log.info("error test conditions");
+            Date date = new Date();
+            final IRawDataManager manager = new TestManager();
+            QueryParserHelper.QueryEntry qe, cqe;
+            QueryParserHelper p;
+            
+            Collection<String> basic = Arrays.asList("a", "a == ", "a == q", "a $ b", "a == 'q' or", "a == 'q' or b and 'b'");
+            for (String q : basic) {
+                try {
+                    p = new QueryParserHelper(q, manager, date, date);
+                    Assert.fail("expected failure of parse of query");
+                } catch (AssertionError e) {
+                    // expected
+                }
+            }
+            
+            // paren mismatch
+            Collection<String> parens = Arrays.asList("a < 'q')", "(a <= 'w'", "(((a != 'a'))");
+            for (String q : parens) {
+                try {
+                    p = new QueryParserHelper(q, manager, date, date);
+                    Assert.fail("expected failure of parse of query");
+                } catch (AssertionError e) {
+                    // expected
+                }
+            }
         }
         
         private static class TestManager implements IRawDataManager {
             Type testType = String.class;
             
             @Override
-            public void addTestData(URI file) throws IOException {
+            public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {
                 
             }
             
@@ -458,6 +499,16 @@ public class QueryParserHelper {
             @Override
             public Date[] getRandomStartEndDate() {
                 return new Date[0];
+            }
+            
+            @Override
+            public Date[] getShardStartEndDate() {
+                return new Date[0];
+            }
+            
+            @Override
+            public List<String> getHeaders() {
+                return null;
             }
         }
     }

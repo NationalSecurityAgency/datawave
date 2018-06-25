@@ -1,7 +1,6 @@
 package datawave.query.testframework;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -13,7 +12,7 @@ import java.util.Objects;
  * Represents a single entry of raw data read from an ingest file. This is a generic POJO that can be used for any data entry. This class is immutable.
  */
 public abstract class BaseRawData implements IRawData {
-    private static final Logger log = LoggerFactory.getLogger(BaseRawData.class);
+    private static final Logger log = Logger.getLogger(BaseRawData.class);
     
     // =============================
     // instance members

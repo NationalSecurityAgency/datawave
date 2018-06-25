@@ -1,8 +1,7 @@
 package datawave.query.testframework;
 
+import org.apache.log4j.Logger;
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 
@@ -21,7 +20,7 @@ import java.lang.reflect.Type;
  */
 public class QueryAction {
     
-    private static final Logger log = LoggerFactory.getLogger(QueryAction.class);
+    private static final Logger log = Logger.getLogger(QueryAction.class);
     
     /**
      * Defines the JEXL operator tokens that appear for a simple query string (e.g. a == b).

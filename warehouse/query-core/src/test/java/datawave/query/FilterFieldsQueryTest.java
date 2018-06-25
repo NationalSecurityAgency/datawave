@@ -1,12 +1,14 @@
 package datawave.query;
 
+import datawave.query.language.parser.lucene.LuceneQueryParser;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.CitiesDataType.CityShardId;
+import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.IDataTypeHadoopConfig;
+import datawave.query.testframework.IFieldConfig;
 import datawave.query.testframework.IRawData;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.QueryParserHelper;
@@ -36,9 +38,9 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     @BeforeClass
     public static void filterSetup() throws Exception {
         Collection<IDataTypeHadoopConfig> dataTypes = new ArrayList<>();
-        for (final CitiesDataType.CityEntry entry : CitiesDataType.CityEntry.values()) {
-            dataTypes.add(new CitiesDataType(entry));
-        }
+        IFieldConfig generic = new GenericCityFields();
+        dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
+        
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
         connector = helper.loadTables(log);
     }
@@ -48,55 +50,157 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
-    public void testEqCityAndEqContinent() throws Exception {
-        log.debug("------  testEqCityAndEqCountry  ------");
+    public void testEqCityAndEqState() throws Exception {
+        log.info("------  testEqCityAndEqContinent  ------");
         
-        for (final CityEntry city : CityEntry.values()) {
-            String cont = "north america";
-            String query = CityField.CITY.name() + " == '" + city + "' and " + CityField.CONTINENT.name() + " == '" + cont + "'";
+        for (final TestCities city : TestCities.values()) {
+            String cont = "ohio";
+            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + CityField.STATE.name() + " == '" + cont + "'";
             runTest(query, true, false);
         }
     }
     
     @Test
-    public void testEqCityAndEqContinentBlackList() throws Exception {
-        log.debug("------  testEqCityAndEqContinentBlackList  ------");
-        
-        for (final CityEntry city : CityEntry.values()) {
-            String cont = "europe";
-            String query = CityField.CITY.name() + " == '" + city + "' and " + CityField.CONTINENT.name() + " == '" + cont + "'";
-            runTest(query, false, false);
-        }
-    }
-    
-    @Test
     public void testEqCityAndEqContinentHitList() throws Exception {
-        log.debug("------  testEqCityAndEqContinentHitList  ------");
+        log.info("------  testEqCityAndEqContinentHitList  ------");
         
-        for (final CityEntry city : CityEntry.values()) {
-            String cont = "europe";
-            String query = CityField.CITY.name() + " == '" + city + "' and " + CityField.CONTINENT.name() + " == '" + cont + "'";
+        for (final TestCities city : TestCities.values()) {
+            String cont = "north america";
+            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + CityField.CONTINENT.name() + " == '" + cont + "'";
             runTest(query, true, true);
         }
     }
     
     @Test
     public void testAnyField() throws Exception {
-        log.debug("------  testAnyField  ------");
+        log.info("------  testAnyField  ------");
         
-        for (final CityEntry city : CityEntry.values()) {
-            String query = Constants.ANY_FIELD + " == '" + city + "'";
+        for (final TestCities city : TestCities.values()) {
+            String query = Constants.ANY_FIELD + " == '" + city.name() + "'";
             runTest(query, true, false);
         }
     }
     
     @Test
-    public void testWhiteListWithMultiValueIncluded() throws Exception {
-        log.debug("------  testWhiteListWithMultiValueIncluded  ------");
+    public void testDisjunctionAnyField() throws Exception {
+        log.info("------  testDisjunctionAnyField  ------");
+        String query = Constants.ANY_FIELD + " == 'no-match-found' or " + Constants.ANY_FIELD + " == 'nothing-here'";
+        runTest(query, true, false);
+    }
+    
+    @Test
+    public void testConjunctionAnyField() throws Exception {
+        log.info("------  testConjunctionAnyField  ------");
+        String query = Constants.ANY_FIELD + " == 'no-match-found' and " + Constants.ANY_FIELD + " == 'nothing-here'";
+        runTest(query, true, false);
+    }
+    
+    @Test
+    public void testAnyFieldFilterIncludeRegex() throws Exception {
+        log.info("------  testAnyFieldFilterIncludeRegex  ------");
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + " filter:includeRegex(" + Constants.ANY_FIELD + ",'ohio')";
+            String expectQuery = CityField.CITY.name() + " == '" + city.name() + "' and " + Constants.ANY_FIELD + " == 'ohio'";
+            runTest(query, expectQuery, true, false);
+        }
+    }
+    
+    // WIP
+    @Ignore
+    @Test
+    public void testAnyFieldLuceneInclude() throws Exception {
+        log.info("------  testAnyFieldLuceneInclude  ------");
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + ":" + city.name() + " and " + " #INCLUDE(" + Constants.ANY_FIELD + ",ohio)";
+            String expectQuery = CityField.CITY.name() + " == '" + city.name() + "' and " + Constants.ANY_FIELD + " == 'ohio'";
+            this.logic.setParser(new LuceneQueryParser());
+            runTest(query, expectQuery, true, false);
+        }
+    }
+    
+    @Test
+    public void testOccurrenceFunction() throws Exception {
+        log.info("------  testOccurrenceFunction  ------");
+        String cont = "europe";
+        String query = CityField.CONTINENT.name() + " == '" + cont + "' and " + " filter:occurrence(" + CityField.CONTINENT.name() + ",'<', 2)";
+        String expectQuery = CityField.CONTINENT.name() + " == '" + cont + "'";
+        runTest(query, expectQuery, true, false);
+    }
+    
+    @Test
+    public void testZeroOccurrenceFunction() throws Exception {
+        log.info("------  test  ------");
+        String cont = "europe";
+        String query = CityField.CONTINENT.name() + " == '" + cont + "' and " + " filter:occurrence(" + CityField.CONTINENT.name() + ",'>', 1)";
+        String expectQuery = CityField.CONTINENT.name() + " == 'no-such-name'";
+        runTest(query, expectQuery, true, false);
+    }
+    
+    @Test
+    public void testBlackListMultiValueIncluded() throws Exception {
+        log.info("------  testBlackListMultiValueIncluded  ------");
         
-        for (final CityEntry city : CityEntry.values()) {
+        for (final TestCities city : TestCities.values()) {
             String cont = "europe";
-            String query = CityField.CITY.name() + " == '" + city + "' and " + CityField.CONTINENT.name() + " == '" + cont + "'";
+            String state = "mississippi";
+            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + "(" + CityField.CONTINENT.name() + " == '" + cont + "'" + " or "
+                            + CityField.STATE.name() + " == '" + state + "')";
+            final Set<String> fields = CityField.getRandomReturnFields(false);
+            // remove CITY field
+            fields.remove(CityField.CITY.name());
+            runTest(query, false, false, fields);
+        }
+    }
+    
+    @Test
+    public void testBlackListMultiValueExcluded() throws Exception {
+        log.info("------  testBlackListMultiValueExcluded  ------");
+        
+        for (final TestCities city : TestCities.values()) {
+            String cont = "europe";
+            String state = "mississippi";
+            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + "(" + CityField.CONTINENT.name() + " == '" + cont + "'" + " or "
+                            + CityField.STATE.name() + " == '" + state + "')";
+            final Set<String> fields = CityField.getRandomReturnFields(false);
+            // include CITY field
+            fields.add(CityField.CITY.name());
+            runTest(query, false, false, fields);
+        }
+    }
+    
+    @Test
+    public void testEqCityAndEqContinentBlackList() throws Exception {
+        log.info("------  testEqCityAndEqContinentBlackList  ------");
+        
+        for (final TestCities city : TestCities.values()) {
+            String state = "ohio";
+            String mizzu = "missouri";
+            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + "(" + CityField.STATE.name() + " == '" + state + "'" + " or "
+                            + CityField.STATE.name() + " == '" + mizzu + "')";
+            runTest(query, false, false);
+        }
+    }
+    
+    @Test
+    public void testEqCityAndEqContinentBlackListWithHitList() throws Exception {
+        log.info("------  testEqCityAndEqContinentBlackListWithHitList  ------");
+        
+        for (final TestCities city : TestCities.values()) {
+            String cont = "europe";
+            String state = "missouri";
+            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + "(" + CityField.STATE.name() + " == '" + state + "'" + " or "
+                            + CityField.CONTINENT.name() + " == '" + cont + "')";
+            runTest(query, false, true);
+        }
+    }
+    
+    @Test
+    public void testWhiteListWithMultiValueIncluded() throws Exception {
+        log.info("------  testWhiteListWithMultiValueIncluded  ------");
+        
+        for (final TestCities city : TestCities.values()) {
+            String cont = "north america";
+            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + CityField.CONTINENT.name() + " == '" + cont + "'";
             final Set<String> fields = CityField.getRandomReturnFields(true);
             // include STATE field
             fields.add(CityField.STATE.name());
@@ -106,38 +210,15 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testWhiteListWithMultiValueExcluded() throws Exception {
-        log.debug("------  testWhiteListWithMultiValueExcluded  ------");
+        log.info("------  testWhiteListWithMultiValueExcluded  ------");
         
-        for (final CityEntry city : CityEntry.values()) {
-            String cont = "europe";
-            String query = CityField.CITY.name() + " == '" + city + "' and " + CityField.CONTINENT.name() + " == '" + cont + "'";
+        for (final TestCities city : TestCities.values()) {
+            String cont = "north america";
+            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + CityField.CONTINENT.name() + " == '" + cont + "'";
             final Set<String> fields = CityField.getRandomReturnFields(true);
             // remove STATE field
             fields.remove(CityField.STATE.name());
             runTest(query, true, true, fields);
-        }
-    }
-    
-    @Ignore
-    // TODO WIP
-    @Test
-    public void testWhiteListWithMultiValue() throws Exception {
-        log.debug("------  testWhiteListWithMultiValueIncluded  ------");
-        
-        for (final CityEntry city : CityEntry.values()) {
-            String state = "texas";
-            // "oregon";
-            String s2 = "oregon";
-            Date startDate = CityShardId.DATE_2015_0707.date();
-            Date endDate = CityShardId.DATE_2015_0909.date();
-            String query = CityField.CITY.name() + " == '" + city + "'" + " and " +
-            // String query =
-            // "(" +
-                            CityField.STATE.name() + " == '" + state + "'"
-            // + " OR " +
-            // CityField.STATE.name() + " == '" + s2 + "')"
-            ;
-            runTest(query, startDate, endDate, true, true);
         }
     }
     
@@ -154,20 +235,21 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     // ============================================
     // private methods
     
-    private void runTest(final String query, final boolean whiteList, final boolean hitList) throws Exception {
-        Date[] startEndDate = this.dataManager.getRandomStartEndDate();
+    private void runTest(final String query, final String expectQuery, final boolean whiteList, final boolean hitList) throws Exception {
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
         final Set<String> fields = CityField.getRandomReturnFields(whiteList);
-        runTest(query, startEndDate[0], startEndDate[1], whiteList, hitList, fields);
+        runTest(query, expectQuery, startEndDate[0], startEndDate[1], whiteList, hitList, fields);
     }
     
-    private void runTest(final String query, final Date startDate, final Date endDate, final boolean whiteList, final boolean hitList) throws Exception {
+    private void runTest(final String query, final boolean whiteList, final boolean hitList) throws Exception {
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
         final Set<String> fields = CityField.getRandomReturnFields(whiteList);
-        runTest(query, startDate, endDate, whiteList, hitList, fields);
+        runTest(query, query, startEndDate[0], startEndDate[1], whiteList, hitList, fields);
     }
     
     private void runTest(final String query, final boolean whiteList, final boolean hitList, Set<String> fields) throws Exception {
-        Date[] startEndDate = this.dataManager.getRandomStartEndDate();
-        runTest(query, startEndDate[0], startEndDate[1], whiteList, hitList, fields);
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        runTest(query, query, startEndDate[0], startEndDate[1], whiteList, hitList, fields);
     }
     
     /**
@@ -175,6 +257,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
      *
      * @param query
      *            query string for execution
+     * @param expectQuery
+     *            query string to use to calculate expected results
      * @param startDate
      *            start date of query
      * @param endDate
@@ -188,15 +272,13 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
      * @throws Exception
      *             something failed - go figure it out
      */
-    private void runTest(final String query, final Date startDate, final Date endDate, final boolean whiteList, final boolean hitList, final Set<String> fields)
-                    throws Exception {
-        QueryParserHelper queryHelper = new QueryParserHelper(query, this.dataManager, startDate, endDate);
+    private void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate, final boolean whiteList,
+                    final boolean hitList, final Set<String> fields) throws Exception {
+        QueryParserHelper queryHelper = new QueryParserHelper(expectQuery, this.dataManager, startDate, endDate);
         final Set<IRawData> allData = queryHelper.findMatchers();
         final Set<String> expected = this.dataManager.getKeyField(allData);
         
-        // TODO - temp
-        fields.add(CityField.STATE.name());
-        final Set<String> otherFields = new HashSet<>(CityField.headers());
+        final Set<String> otherFields = new HashSet<>(this.dataManager.getHeaders());
         otherFields.removeAll(fields);
         
         final String queryFields = String.join(",", fields);

@@ -1,6 +1,7 @@
 package datawave.query.testframework;
 
 import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NoOpType;
 import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
 import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.data.TypeRegistry;
@@ -24,6 +25,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Abstract base class that contains the configuration settings for test data types.
@@ -36,15 +42,8 @@ public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
     // common constants for all data types
     protected static final String DATE_FIELD_FORMAT = "yyyyMMdd";
     public static final SimpleDateFormat YMD_DateFormat = new SimpleDateFormat(DATE_FIELD_FORMAT);
-    protected static final String AUTH_VALUES = "public";
+    private static final String AUTH_VALUES = "public";
     private static final Authorizations TEST_AUTHS = new Authorizations(AUTH_VALUES);
-    
-    // ===============================================
-    // inherited instance members
-    protected final String dataType;
-    protected final URI ingestPath;
-    protected final Configuration hConf = new Configuration();
-    private final IRawDataManager manager;
     
     /**
      * Retrieves an {@link Authorizations} object to use for query.
@@ -55,27 +54,60 @@ public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
         return TEST_AUTHS;
     }
     
+    private static List<String> mappingToNames(final Collection<Set<String>> mapping) {
+        final List<String> names = new ArrayList<>();
+        for (final Set<String> composite : mapping) {
+            names.add(String.join("_", composite));
+        }
+        
+        return names;
+    }
+    
+    private static List<String> mappingToFields(final Collection<Set<String>> mapping) {
+        final List<String> fields = new ArrayList<>();
+        for (final Set<String> virtual : mapping) {
+            fields.add(String.join(".", virtual));
+        }
+        return fields;
+    }
+    
+    // ===============================================
+    // inherited instance members
+    protected final String dataType;
+    protected final URI ingestPath;
+    /**
+     * Includes on the fields that are indexed (none of the composite fields).
+     */
+    private final IFieldConfig fieldConfig;
+    protected final Configuration hConf = new Configuration();
+    
     /**
      * @param dt
      *            datatype name
      * @param ingestFile
      *            ingest file name
+     * @param config
+     *            field config for accumulo
+     * @param manager
+     *            data manager for data
      * @throws IOException
      *             unable to load ingest file
      * @throws URISyntaxException
      *             ingest file uri conversion error
      */
-    protected AbstractDataTypeConfig(String dt, String ingestFile, IRawDataManager mgr) throws IOException, URISyntaxException {
+    protected AbstractDataTypeConfig(final String dt, final String ingestFile, final IFieldConfig config, final IRawDataManager manager) throws IOException,
+                    URISyntaxException {
         log.info("---------  loading datatype (" + dt + ") ingest file(" + ingestFile + ") ---------");
         
-        this.manager = mgr;
+        // IRawDataManager manager = mgr;
         URL url = this.getClass().getClassLoader().getResource(ingestFile);
         Assert.assertNotNull("unable to resolve ingest file(" + ingestFile + ")", url);
         this.ingestPath = url.toURI();
         this.dataType = dt;
+        this.fieldConfig = config;
         
         // load raw data into POJO
-        this.manager.addTestData(this.ingestPath);
+        manager.addTestData(this.ingestPath, this.dataType, this.fieldConfig.getIndexFields());
         
         // default Hadoop settings - override if needed
         this.hConf.set(DataTypeHelper.Properties.DATA_NAME, this.dataType);
@@ -97,6 +129,28 @@ public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
         // composite/virtual field separator
         this.hConf.set(this.dataType + CompositeIngest.COMPOSITE_FIELD_VALUE_SEPARATOR, Constants.MAX_UNICODE_STRING);
         this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_VALUE_SEPARATOR, "|");
+        
+        // index fields also include composite fields
+        Set<String> indexEntries = new HashSet<>(this.fieldConfig.getIndexFields());
+        List<String> compositeNames = mappingToNames(this.fieldConfig.getCompositeFields());
+        indexEntries.addAll(compositeNames);
+        this.hConf.set(this.dataType + BaseIngestHelper.INDEX_FIELDS, String.join(",", indexEntries));
+        this.hConf.set(this.dataType + BaseIngestHelper.REVERSE_INDEX_FIELDS, String.join(",", this.fieldConfig.getReverseIndexFields()));
+        this.hConf.set(this.dataType + CompositeIngest.COMPOSITE_FIELD_NAMES, String.join(",", mappingToNames(this.fieldConfig.getCompositeFields())));
+        this.hConf.set(this.dataType + CompositeIngest.COMPOSITE_FIELD_MEMBERS, String.join(",", mappingToFields(this.fieldConfig.getCompositeFields())));
+        
+        // type for composite fields
+        for (final String composite : compositeNames) {
+            this.hConf.set(this.dataType + "." + composite, NoOpType.class.getName());
+        }
+        
+        // virtual fields
+        this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_NAMES, String.join(",", mappingToNames(this.fieldConfig.getVirtualFields())));
+        this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_MEMBERS, String.join(",", mappingToFields(this.fieldConfig.getVirtualFields())));
+        
+        // multivalue fields
+        this.hConf.set(this.dataType + CSVHelper.MULTI_VALUED_FIELDS, String.join(",", this.fieldConfig.getMultiValueFields()));
+        
     }
     
     @Override
@@ -112,5 +166,10 @@ public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
     @Override
     public URI getIngestFile() {
         return this.ingestPath;
+    }
+    
+    @Override
+    public String toString() {
+        return "AbstractDataTypeConfig{" + "dataType='" + dataType + '\'' + ", ingestPath=" + ingestPath + ", fieldConfig=" + fieldConfig + '}';
     }
 }

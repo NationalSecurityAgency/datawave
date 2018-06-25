@@ -19,18 +19,16 @@ import java.io.IOException;
 import java.net.URI;
 
 /**
- * Loads a test file for ingestion.
+ * Loads a CSV test file for ingestion.
  */
 public class CSVTestFileLoader implements TestFileLoader {
     
     private final URI uri;
     private final Configuration conf;
-    private final RecordWriter<Text,Mutation> writer;
     
-    CSVTestFileLoader(URI u, Configuration cf, RecordWriter<Text,Mutation> wr) {
+    CSVTestFileLoader(URI u, Configuration cf) {
         this.uri = u;
         this.conf = cf;
-        this.writer = wr;
     }
     
     @Override

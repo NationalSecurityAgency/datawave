@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -14,14 +15,25 @@ public interface IRawDataManager {
     String MULTIVALUE_SEP = ";";
     
     /**
+     * Returns the field headers for this data manager.
+     * 
+     * @return headers strings
+     */
+    List<String> getHeaders();
+    
+    /**
      * Loads the contents of a raw file into the a set of POJOs.
      *
      * @param file
      *            ingest file name
+     * @param datatype
+     *            datatype for ingest data
+     * @param indexes
+     *            configured indexes
      * @throws IOException
      *             error processing ingest file
      */
-    void addTestData(URI file) throws IOException;
+    void addTestData(URI file, String datatype, Set<String> indexes) throws IOException;
     
     /**
      * Finds all unique keys that match the query from the loaded test data.
@@ -38,7 +50,7 @@ public interface IRawDataManager {
     
     /**
      * Returns the type for a field.
-     * 
+     *
      * @param field
      *            name of field
      * @return type
@@ -55,9 +67,16 @@ public interface IRawDataManager {
     Set<String> getKeyField(Set<IRawData> entries);
     
     /**
-     * Creates an array that contains the start and end date based upon the shard dates specified for the raw data.
-     * 
+     * Creates an array that contains a random start and end date based upon the shard dates specified for the raw data.
+     *
      * @return [0] => start date; [1] => end date
      */
     Date[] getRandomStartEndDate();
+    
+    /**
+     * Creates an array that contains the start and end date based upon the shard dates specified for the raw data.
+     *
+     * @return [0] => start date; [1] => end date
+     */
+    Date[] getShardStartEndDate();
 }

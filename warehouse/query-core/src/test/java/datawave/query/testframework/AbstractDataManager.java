@@ -2,29 +2,35 @@ package datawave.query.testframework;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Base class for all POJO managers. A POJO Manager is responsible for managing the data for a datatype.
+ * Base class for all raw data managers. Each manager is responsible for managing the data for one or more datatypes.
  */
-public abstract class AbstractPOJOManager implements IRawDataManager {
+public abstract class AbstractDataManager implements IRawDataManager {
     
     protected final String rawKeyField;
     /**
-     * Contains all test entries that should exist in Accumulo.
+     * Mapping of datatype to the raw entries that should match the datatype entries in Accumulo.
      */
-    protected final Set<IRawData> pojos;
+    protected final Map<String,Set<IRawData>> rawData;
+    /**
+     * Mapping of datatype to the indexes for the datatype.
+     */
+    protected final Map<String,Set<String>> rawDataIndex;
     
     /**
      *
      * @param keyField
      *            key field returned for results validation
      */
-    AbstractPOJOManager(final String keyField) {
+    AbstractDataManager(final String keyField) {
         this.rawKeyField = keyField;
-        this.pojos = new HashSet<>();
+        this.rawData = new HashMap<>();
+        this.rawDataIndex = new HashMap<>();
     }
     
     /**

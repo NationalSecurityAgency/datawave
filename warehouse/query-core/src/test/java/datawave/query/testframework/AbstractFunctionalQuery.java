@@ -23,10 +23,9 @@ import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -53,7 +52,7 @@ import java.util.UUID;
  */
 public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.TestResultParser {
     
-    private static final Logger log = LoggerFactory.getLogger(AbstractFunctionalQuery.class);
+    private static final Logger log = Logger.getLogger(AbstractFunctionalQuery.class);
     
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -70,8 +69,18 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         }
     }
     
-    protected static final SimpleDateFormat YMD_DateFormat = new SimpleDateFormat("yyyyMMdd");
-    protected static final SimpleDateFormat YMDHMS_DateFormat = new SimpleDateFormat("yyyyMMdd HHmmss");
+    /**
+     * Contains a list of cities that are specified in the test data. Additional cities can be added to the test data and do not specifically need to be added
+     * here. The purpose is to provide a location where the city names are specified without having to hard code these entries throughout the test cases.
+     */
+    public enum TestCities {
+        // any city entries can be added; these exist in the current set of data
+        LONDON,
+        PARIS,
+        ROME;
+    }
+    
+    private static final SimpleDateFormat YMD_DateFormat = new SimpleDateFormat("yyyyMMdd");
     
     // ============================================
     // static members
@@ -86,7 +95,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected Authorizations auths;
     protected String documentKey;
     protected ShardQueryLogic logic;
-    protected QueryLogicTestHarness testHarness;
+    private QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
     
     private final Set<Authorizations> authSet = new HashSet<>();
@@ -112,7 +121,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic = new ShardQueryLogic();
         QueryTestTableHelper.configureLogicToScanTables(this.logic);
         
-        this.logic.setFullTableScanEnabled(true);
+        this.logic.setFullTableScanEnabled(false);
         this.logic.setIncludeDataTypeAsField(true);
         this.logic.setIncludeGroupingContext(true);
         
@@ -232,7 +241,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected void runTestQuery(Collection<String> expected, String queryStr, Date startDate, Date endDate, Map<String,String> options,
                     List<DocumentChecker> checkers) throws Exception {
-        log.debug("  query({})  start({})  end({})", queryStr, YMD_DateFormat.format(startDate), YMD_DateFormat.format(endDate));
+        log.debug("  query(" + queryStr + ")  start(" + YMD_DateFormat.format(startDate) + "  end(" + YMD_DateFormat.format(endDate) + ")");
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startDate);
         q.setEndDate(endDate);

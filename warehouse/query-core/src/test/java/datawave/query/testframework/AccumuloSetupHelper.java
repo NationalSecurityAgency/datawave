@@ -80,14 +80,14 @@ public class AccumuloSetupHelper {
         final Connector connector = tableHelper.connector;
         tableHelper.configureTables(this.recordWriter);
         
-        // configureDataTypes();
         for (IDataTypeHadoopConfig dt : this.dataTypes) {
             HadoopTestConfiguration hadoopConfig = new HadoopTestConfiguration(dt);
             
-            CSVTestFileLoader loader = new CSVTestFileLoader(dt.getIngestFile(), hadoopConfig, this.recordWriter);
+            CSVTestFileLoader loader = new CSVTestFileLoader(dt.getIngestFile(), hadoopConfig);
             ingestTestData(hadoopConfig, loader);
         }
         
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
         PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_TABLE_NAME);
         // PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
         // PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);

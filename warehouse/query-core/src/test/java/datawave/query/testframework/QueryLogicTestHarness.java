@@ -10,19 +10,19 @@ import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class QueryLogicTestHarness {
     
-    private static final Logger log = LoggerFactory.getLogger(QueryLogicTestHarness.class);
+    private static final Logger log = Logger.getLogger(QueryLogicTestHarness.class);
     
     private final TestResultParser parser;
     private final KryoDocumentDeserializer deserializer;
@@ -49,7 +49,7 @@ public class QueryLogicTestHarness {
     }
     
     public interface TestResultParser {
-        public String parse(Key key, Document document);
+        String parse(Key key, Document document);
     }
     
     // =============================================
@@ -80,7 +80,7 @@ public class QueryLogicTestHarness {
                     for (Attribute<? extends Comparable<?>> attr : attrs.getAttributes()) {
                         if (attr instanceof TypeAttribute) {
                             Type<? extends Comparable<?>> type = ((TypeAttribute<?>) attr).getType();
-                            if (null != type) {
+                            if (Objects.nonNull(type)) {
                                 types.add(type.getClass());
                             }
                         }
@@ -91,7 +91,7 @@ public class QueryLogicTestHarness {
             
             // parse the document
             String extractedResult = this.parser.parse(entry.getKey(), document);
-            log.debug("result({}) key({}) document({})", extractedResult, entry.getKey(), document);
+            log.debug("result(" + extractedResult + ") key(" + entry.getKey() + ") document(" + document + ")");
             
             // verify expected results
             Assert.assertNotNull("extracted result", extractedResult);
@@ -104,7 +104,7 @@ public class QueryLogicTestHarness {
             }
         }
         
-        log.info("total records found({}) expected({})", actualResults.size(), expected.size());
+        log.info("total records found(" + actualResults.size() + ") expected(" + expected.size() + ")");
         
         // ensure that the complete expected result set exists
         if (expected.size() > actualResults.size()) {
