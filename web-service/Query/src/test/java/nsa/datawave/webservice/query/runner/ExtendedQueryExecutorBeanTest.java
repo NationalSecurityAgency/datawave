@@ -24,19 +24,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.RejectedExecutionException;
 
 import javax.ejb.EJBContext;
+import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.Status;
 import javax.transaction.UserTransaction;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriInfo;
 
 import nsa.datawave.marking.ColumnVisibilitySecurityMarking;
 import nsa.datawave.marking.SecurityMarking;
+import nsa.datawave.query.data.UUIDType;
 import nsa.datawave.security.authorization.DatawavePrincipal;
 import nsa.datawave.webservice.common.audit.AuditBean;
 import nsa.datawave.webservice.common.audit.AuditParameters;
@@ -76,6 +81,8 @@ import nsa.datawave.webservice.query.logic.RoleManager;
 import nsa.datawave.webservice.query.metric.QueryMetric;
 import nsa.datawave.webservice.query.metric.QueryMetricsBean;
 import nsa.datawave.webservice.query.result.event.ResponseObjectFactory;
+import nsa.datawave.webservice.query.util.GetUUIDCriteria;
+import nsa.datawave.webservice.query.util.LookupUUIDUtil;
 import nsa.datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import nsa.datawave.webservice.result.BaseQueryResponse;
 import nsa.datawave.webservice.result.DefaultEventQueryResponse;
@@ -93,6 +100,7 @@ import org.apache.accumulo.trace.instrument.Trace;
 import org.apache.accumulo.trace.instrument.Tracer;
 import org.apache.accumulo.trace.thrift.TInfo;
 import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Before;
@@ -137,6 +145,9 @@ public class ExtendedQueryExecutorBeanTest {
     
     @Mock
     LookupUUIDConfiguration lookupUUIDConfiguration;
+    
+    @Mock
+    LookupUUIDUtil lookupUUIDUtil;
     
     @Mock
     QueryMetricsBean metrics;
@@ -208,6 +219,9 @@ public class ExtendedQueryExecutorBeanTest {
     
     @Mock
     AccumuloConnectionRequestBean connectionRequestBean;
+    
+    @Mock
+    UriInfo uriInfo;
     
     QueryExpirationConfiguration queryExpirationConf;
     
@@ -3068,6 +3082,72 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertEquals("Expected a non-null response", null, result1);
+    }
+    
+    @Test
+    public void testLookupUUID_happyPath() {
+        UUIDType uuidType = PowerMock.createMock(UUIDType.class);
+        BaseQueryResponse response = PowerMock.createMock(BaseQueryResponse.class);
+        ManagedExecutorService executor = PowerMock.createMock(ManagedExecutorService.class);
+        
+        expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<String,String>());
+        expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
+        expect(uuidType.getDefinedView()).andReturn("abc");
+        expect(lookupUUIDUtil.createUUIDQueryAndNext(isA(GetUUIDCriteria.class))).andReturn(response);
+        expect(response.getQueryId()).andReturn("11111");
+        expect(context.getCallerPrincipal()).andReturn(principal);
+        expect(executor.submit(isA(Runnable.class))).andReturn(null);
+        
+        PowerMock.replayAll();
+        
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(subject, LookupUUIDUtil.class, lookupUUIDUtil);
+        setInternalState(subject, ManagedExecutorService.class, executor);
+        
+        subject.lookupUUID("uuidType", "1234567890", uriInfo, httpHeaders);
+        
+        PowerMock.verifyAll();
+    }
+    
+    @Test
+    public void testLookupUUID_closeFail() {
+        QueryExecutorBean subject = PowerMock.createPartialMock(QueryExecutorBean.class, "close");
+        UUIDType uuidType = PowerMock.createMock(UUIDType.class);
+        BaseQueryResponse response = PowerMock.createMock(BaseQueryResponse.class);
+        ManagedExecutorService executor = PowerMock.createMock(ManagedExecutorService.class);
+        
+        expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<String,String>());
+        expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
+        expect(uuidType.getDefinedView()).andReturn("abc");
+        expect(lookupUUIDUtil.createUUIDQueryAndNext(isA(GetUUIDCriteria.class))).andReturn(response);
+        expect(response.getQueryId()).andReturn("11111");
+        expect(context.getCallerPrincipal()).andReturn(principal);
+        expect(executor.submit(isA(Runnable.class))).andThrow(new RejectedExecutionException("INTENTIONALLY THROWN TEST EXCEPTION: Async close rejected"));
+        expect(subject.close("11111")).andReturn(null);
+        
+        PowerMock.replayAll();
+        
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(subject, LookupUUIDUtil.class, lookupUUIDUtil);
+        setInternalState(subject, ManagedExecutorService.class, executor);
+        setInternalState(subject, Logger.class, Logger.getLogger(QueryExecutorBean.class));
+        
+        subject.lookupUUID("uuidType", "1234567890", uriInfo, httpHeaders);
+        
+        PowerMock.verifyAll();
     }
     
     public class TestQuery extends QueryImpl {
