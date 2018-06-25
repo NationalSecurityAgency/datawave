@@ -304,7 +304,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      * Creates a cities datatype entry with all of the key/value configuration settings.
      *
      * @param city
-     *            city entry for ingest
+     *            entry for ingest containing datatype and ingest file
      * @param config
      *            hadoop field configuration
      * @throws IOException
@@ -313,7 +313,23 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      *             unable to resolve ingest file
      */
     public CitiesDataType(final CityEntry city, final IFieldConfig config) throws IOException, URISyntaxException {
-        super(city.name(), city.getIngestFile(), config, cityManager);
+        this(city.name(), city.getIngestFile(), config);
+    }
+    
+    /**
+     * Constructor for city/ingest files that are not defined in the class {@link CityEntry}.
+     * 
+     * @param city
+     *            name of the city datatype
+     * @param ingestFile
+     *            ingest file path
+     * @param config
+     *            hadoop field configuration
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    public CitiesDataType(final String city, final String ingestFile, final IFieldConfig config) throws IOException, URISyntaxException {
+        super(city, ingestFile, config, cityManager);
         
         // NOTE: see super for default settings
         // set datatype settings
