@@ -122,11 +122,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     
     private void updateMetric(ExecutorService executor, final QueryMetricsBean bean, final BaseQueryMetric metric) {
         if (executor != null) {
-            final BaseQueryMetric dupe = metric.duplicate();
             executor.submit(new Runnable() {
                 @Override
                 public void run() {
-                    updateMetric(bean, dupe);
+                    updateMetric(bean, metric);
                 }
             });
         } else {
