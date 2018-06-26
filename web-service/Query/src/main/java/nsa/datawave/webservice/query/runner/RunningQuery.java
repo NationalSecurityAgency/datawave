@@ -112,32 +112,15 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.settings.populateMetric(this.getMetric());
         this.getMetric().setQueryType(this.getClass().getSimpleName());
         if (this.queryMetrics != null) {
-            updateMetric(executor, queryMetrics, this.getMetric());
+            try {
+                this.queryMetrics.updateMetric(this.getMetric());
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
         }
         // If connection is null, then we are likely not going to use this object for query, probably for removing or closing it.
         if (null != connection) {
             setConnection(connection);
-        }
-    }
-    
-    private void updateMetric(ExecutorService executor, final QueryMetricsBean bean, final BaseQueryMetric metric) {
-        if (executor != null) {
-            executor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    updateMetric(bean, metric);
-                }
-            });
-        } else {
-            updateMetric(queryMetrics, getMetric());
-        }
-    }
-    
-    private void updateMetric(QueryMetricsBean bean, BaseQueryMetric metric) {
-        try {
-            bean.updateMetric(metric);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
         }
     }
     
@@ -194,7 +177,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             touch();
             removeNDC();
             if (this.queryMetrics != null) {
-                updateMetric(executor, queryMetrics, getMetric());
+                try {
+                    this.queryMetrics.updateMetric(this.getMetric());
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
             }
         }
     }
@@ -331,7 +318,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     if (iter.getTransformer() instanceof WritesQueryMetrics) {
                         ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
                     }
-                    updateMetric(executor, queryMetrics, getMetric());
+                    this.queryMetrics.updateMetric(this.getMetric());
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                 }
@@ -430,7 +417,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             } finally {
                 // only push metrics if this RunningQuery was initialized
                 if (this.queryMetrics != null) {
-                    updateMetric(executor, queryMetrics, getMetric());
+                    try {
+                        queryMetrics.updateMetric(this.getMetric());
+                    } catch (Exception e) {
+                        log.error(e.getMessage());
+                    }
                 }
             }
         }
