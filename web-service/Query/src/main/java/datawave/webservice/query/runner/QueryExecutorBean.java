@@ -642,7 +642,9 @@ public class QueryExecutorBean implements QueryExecutor {
                         throw new BadRequestException(qe, response);
                     } catch (Exception e) {
                         log.error("Error auditing query", e);
-                        response.addMessage("Error auditing query - " + e.getMessage());
+                        QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
+                        response.addException(qe);
+                        throw qe;
                     }
                 }
             }
@@ -1044,7 +1046,9 @@ public class QueryExecutorBean implements QueryExecutor {
                         auditor.audit(auditParameters);
                     } catch (Exception e) {
                         log.error("Error auditing query", e);
-                        response.addMessage("Error auditing query - " + e.getMessage());
+                        QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
+                        response.addException(qe);
+                        throw qe;
                     }
                 }
             }
@@ -2576,28 +2580,85 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         log.trace(userid + " has authorizations " + cbAuths.toString());
         
-        boolean auditRequired = false;
         Query q = runningQuery.getSettings();
         
+        // validate persistence mode first
+        if (persistenceMode != null) {
+            switch (persistenceMode) {
+                case PERSISTENT:
+                    if (q.getQueryName() == null)
+                        throw new BadRequestQueryException(DatawaveErrorCode.QUERY_NAME_REQUIRED);
+                    break;
+                case TRANSIENT:
+                    break;
+                default:
+                    throw new BadRequestQueryException(DatawaveErrorCode.UNKNOWN_PERSISTENCE_MODE, MessageFormat.format("Mode = {0}", persistenceMode));
+            }
+        }
+        
+        // test for any auditable updates
+        if (query != null || beginDate != null || endDate != null || queryAuthorizations != null) {
+            // must clone/audit attempt first
+            Query duplicate = q.duplicate(q.getQueryName());
+            duplicate.setId(q.getId());
+            
+            updateQueryParams(duplicate, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, parameters);
+            
+            // Fire off an audit prior to updating
+            Set<String> methodAuths = new HashSet<>(Arrays.asList(q.getQueryAuthorizations().split("\\s*,\\s*")));
+            cbAuths.retainAll(methodAuths);
+            AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
+            if (!auditType.equals(AuditType.NONE)) {
+                try {
+                    auditParameters.clear();
+                    auditParameters.validate(duplicate.toMap());
+                    auditor.audit(auditParameters);
+                } catch (Exception e) {
+                    QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
+                    log.error(qe);
+                    response.addException(qe.getBottomQueryException());
+                    throw e;
+                }
+            }
+        }
+        
+        // update the actual running query
+        updateQueryParams(q, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, parameters);
+        
+        // update the persistenceMode post audit
+        if (persistenceMode != null) {
+            switch (persistenceMode) {
+                case PERSISTENT:
+                    persister.update(q);
+                    break;
+                case TRANSIENT:
+                    persister.remove(q);
+                    break;
+            }
+        }
+        
+        // Put in the cache by id
+        queryCache.put(q.getId().toString(), runningQuery);
+    }
+    
+    private void updateQueryParams(Query q, String queryLogicName, String query, Date beginDate, Date endDate, String queryAuthorizations, Date expirationDate,
+                    Integer pagesize, String parameters) throws CloneNotSupportedException {
+        Principal p = ctx.getCallerPrincipal();
         // TODO: add validation for all these sets
         if (queryLogicName != null) {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(queryLogicName, p);
             q.setQueryLogicName(logic.getLogicName());
         }
         if (query != null) {
-            auditRequired = true;
             q.setQuery(query);
         }
         if (beginDate != null) {
-            auditRequired = true;
             q.setBeginDate(beginDate);
         }
         if (endDate != null) {
-            auditRequired = true;
             q.setEndDate(endDate);
         }
         if (queryAuthorizations != null) {
-            auditRequired = true;
             q.setQueryAuthorizations(queryAuthorizations);
         }
         if (expirationDate != null) {
@@ -2619,42 +2680,6 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
             }
             q.setParameters(params);
-        }
-        
-        if (persistenceMode != null) {
-            switch (persistenceMode) {
-                case PERSISTENT:
-                    if (q.getQueryName() == null)
-                        throw new BadRequestQueryException(DatawaveErrorCode.QUERY_NAME_REQUIRED);
-                    persister.update(q);
-                    break;
-                case TRANSIENT:
-                    persister.remove(q);
-                    break;
-                default:
-                    throw new BadRequestQueryException(DatawaveErrorCode.UNKNOWN_PERSISTENCE_MODE, MessageFormat.format("Mode = {0}", persistenceMode));
-            }
-        }
-        
-        // Put in the cache by id
-        queryCache.put(q.getId().toString(), runningQuery);
-        
-        // Fire off an audit
-        if (auditRequired) {
-            Set<String> methodAuths = new HashSet<>(Arrays.asList(q.getQueryAuthorizations().split("\\s*,\\s*")));
-            cbAuths.retainAll(methodAuths);
-            AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
-            if (!auditType.equals(AuditType.NONE)) {
-                try {
-                    auditParameters.clear();
-                    auditParameters.validate(q.toMap());
-                    auditor.audit(auditParameters);
-                } catch (Exception e) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
-                    log.error(qe);
-                    response.addException(qe.getBottomQueryException());
-                }
-            }
         }
     }
     
