@@ -13,6 +13,7 @@ import static org.junit.Assert.fail;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,6 +29,7 @@ import java.util.concurrent.RejectedExecutionException;
 
 import javax.ejb.EJBContext;
 import javax.enterprise.concurrent.ManagedExecutorService;
+import javax.jms.JMSRuntimeException;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.Status;
@@ -2876,6 +2878,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userName = "userName";
         String userSid = "userSid";
         String userDN = "userDN";
+        Query duplicateQuery = PowerMock.createMock(Query.class);
         
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
         p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
@@ -2896,15 +2899,26 @@ public class ExtendedQueryExecutorBeanTest {
         auditParameters.validate(p);
         
         // Set expectations
-        expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(2);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(4);
         expect(this.principal.getName()).andReturn(userName).times(2);
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations))).times(2);
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
-        expect(this.runningQuery.getSettings()).andReturn(this.query).times(3);
+        expect(this.runningQuery.getSettings()).andReturn(this.query).times(5);
         expect(this.query.getOwner()).andReturn(userSid);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
-        expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1).times(2);
+        expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName).times(2);
+        expect(this.query.duplicate(queryName)).andReturn(duplicateQuery);
+        duplicateQuery.setId(queryId);
+        duplicateQuery.setQueryLogicName(queryLogicName);
+        duplicateQuery.setQuery(query);
+        duplicateQuery.setBeginDate(beginDate);
+        duplicateQuery.setEndDate(endDate);
+        duplicateQuery.setQueryAuthorizations(queryAuthorizations);
+        duplicateQuery.setExpirationDate(expirationDate);
+        duplicateQuery.setPagesize(pagesize);
+        duplicateQuery.setParameters(isA(Set.class));
+        expect(duplicateQuery.toMap()).andReturn(p);
         this.query.setQueryLogicName(queryLogicName);
         this.query.setQuery(query);
         this.query.setBeginDate(beginDate);
@@ -2913,14 +2927,13 @@ public class ExtendedQueryExecutorBeanTest {
         this.query.setExpirationDate(expirationDate);
         this.query.setPagesize(pagesize);
         this.query.setParameters(isA(Set.class));
-        expect(this.query.getQueryName()).andReturn(queryName);
+        expect(this.query.getQueryName()).andReturn(queryName).times(2);
         this.persister.update(this.query);
-        expect(this.query.getId()).andReturn(queryId);
+        expect(this.query.getId()).andReturn(queryId).times(2);
         this.cache.put(queryId.toString(), this.runningQuery);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.LOCALONLY);
         expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
-        expect(this.query.toMap()).andReturn(p);
         this.auditor.audit(eq(auditParameters));
         
         // Run the test
@@ -3147,6 +3160,267 @@ public class ExtendedQueryExecutorBeanTest {
         
         subject.lookupUUID("uuidType", "1234567890", uriInfo, httpHeaders);
         
+        PowerMock.verifyAll();
+    }
+    
+    @Test(expected = DatawaveWebApplicationException.class)
+    public void testCreateQuery_auditException() throws Exception {
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 999999);
+        int pagesize = 10;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        boolean trace = false;
+        String userName = "userName";
+        String userSid = "userSid";
+        String userDN = "userDN";
+        List<String> dnList = Collections.singletonList(userDN);
+        UUID queryId = UUID.randomUUID();
+        long pageNumber = 0L;
+        AuditParameters auditParameters = PowerMock.createMock(AuditParameters.class);
+        
+        HashMap<String,Collection<String>> authsMap = new HashMap<>();
+        authsMap.put("USERDN", Arrays.asList(queryAuthorizations));
+        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.putSingle("valid", "param");
+        
+        expect(context.getCallerPrincipal()).andReturn(principal).anyTimes();
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        queryLogic1.validate(queryParameters);
+        expect(principal.getName()).andReturn(userName);
+        expect(principal.getShortName()).andReturn(userSid);
+        expect(principal.getUserDN()).andReturn(userDN);
+        expect(principal.getDNs()).andReturn(new String[] {userDN});
+        expect(this.principal.getProxyServers()).andReturn(new ArrayList<String>(0)).anyTimes();
+        expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
+        expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+        expect(this.principal.getAuthorizationsMap()).andReturn(authsMap);
+        expect(this.principal.getUserDN()).andReturn("USERDN");
+        expect(this.queryLogic1.getMaxPageSize()).andReturn(10).anyTimes();
+        auditParameters.clear();
+        auditParameters.validate(queryParameters);
+        expect(queryLogic1.getSelectors(null)).andReturn(null);
+        auditParameters.setSelectors(null);
+        auditor.audit(auditParameters);
+        EasyMock.expectLastCall().andThrow(new JMSRuntimeException("EXPECTED TESTING EXCEPTION"));
+        queryLogic1.close();
+        
+        PowerMock.replayAll();
+        
+        QueryExecutorBean executor = new QueryExecutorBean();
+        setInternalState(executor, EJBContext.class, context);
+        setInternalState(executor, AccumuloConnectionFactory.class, connectionFactory);
+        setInternalState(executor, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(executor, CreatedQueryLogicCacheBean.class, qlCache);
+        setInternalState(executor, QueryCache.class, cache);
+        setInternalState(executor, Persister.class, persister);
+        setInternalState(executor, QueryLogicFactoryImpl.class, queryLogicFactory);
+        setInternalState(executor, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(executor, AuditBean.class, auditor);
+        setInternalState(executor, QueryMetricsBean.class, metrics);
+        setInternalState(executor, Multimap.class, traceInfos);
+        setInternalState(executor, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
+        setInternalState(executor, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(executor, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(executor, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        setInternalState(executor, AuditParameters.class, auditParameters);
+        
+        executor.createQuery(queryLogicName, queryParameters);
+        
+        PowerMock.verifyAll();
+    }
+    
+    @Test(expected = DatawaveWebApplicationException.class)
+    public void testReset_auditException() throws Exception {
+        // Set local test input
+        String authorization = "AUTH_1";
+        String queryName = "queryName";
+        String queryLogicName = "queryLogicName";
+        String userName = "userName";
+        String userDN = "userDN";
+        String sid = "sid";
+        UUID queryId = UUID.randomUUID();
+        
+        HashMap<String,Collection<String>> authsMap = new HashMap<>();
+        authsMap.put("USERDN", Arrays.asList(authorization));
+        
+        QueryImpl qp = new QueryImpl();
+        qp.setQuery("someQuery");
+        qp.setQueryAuthorizations(authorization);
+        qp.setBeginDate(new Date());
+        qp.setEndDate(new Date());
+        qp.setExpirationDate(new Date());
+        qp.setQueryName(queryName);
+        qp.setUserDN(userDN);
+        qp.setDnList(Collections.singletonList(userDN));
+        
+        AuditParameters auditParameters = new AuditParameters();
+        auditParameters.setColviz(new ColumnVisibility(authorization));
+        auditParameters.setAuditType(AuditType.PASSIVE);
+        auditParameters.setUserDn(userDN);
+        
+        MultivaluedMap<String,String> map = qp.toMap();
+        
+        // Set expectations
+        expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
+        this.transaction.begin();
+        expect(this.transaction.getStatus()).andReturn(Status.STATUS_ACTIVE).anyTimes();
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal);
+        expect(this.principal.getName()).andReturn(userName);
+        expect(this.principal.getShortName()).andReturn(sid);
+        expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(authorization)));
+        expect(this.principal.getAuthorizationsMap()).andReturn(authsMap);
+        expect(this.principal.getUserDN()).andReturn("USERDN");
+        expect(this.cache.get(queryName)).andReturn(null);
+        expect(this.persister.findById(queryName)).andReturn(Arrays.asList((Query) this.query));
+        expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
+        expect(this.query.getQueryAuthorizations()).andReturn(authorization).anyTimes();
+        expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);
+        expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler).anyTimes();
+        expect(this.exceptionHandler.getThrowable()).andReturn(null).anyTimes();
+        expect(this.query.getOwner()).andReturn(sid).anyTimes();
+        expect(this.query.getId()).andReturn(queryId).anyTimes();
+        expect(this.query.getQuery()).andReturn(queryName).anyTimes();
+        this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
+        expect(this.cache.lock(queryName)).andReturn(true);
+        expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.PASSIVE);
+        expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
+        expect(this.query.toMap()).andReturn(map);
+        expect(this.query.getColumnVisibility()).andReturn(authorization);
+        this.query.populateMetric(anyObject(QueryMetric.class));
+        expect(this.queryLogic1.getSelectors(this.query)).andReturn(new ArrayList<String>());
+        this.auditor.audit(auditParameters);
+        expectLastCall().andThrow(new Exception("EXPECTED EXCEPTION IN AUDIT"));
+        cache.unlock(queryName);
+        transaction.commit();
+        expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
+        
+        // Run the test
+        PowerMock.replayAll();
+        
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
+        setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, QueryMetricsBean.class, metrics);
+        setInternalState(subject, AuditParameters.class, auditParameters);
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        setInternalState(connectionRequestBean, EJBContext.class, context);
+        setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
+        
+        subject.reset(queryName);
+        
+        PowerMock.verifyAll();
+    }
+    
+    @Test(expected = DatawaveWebApplicationException.class)
+    public void testUpdateQuery_auditException() throws Exception {
+        // Set local test input
+        UUID queryId = UUID.randomUUID();
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 9999);
+        int pagesize = 10;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String parameters = "invalidparam; valid:param";
+        String userName = "userName";
+        String userSid = "userSid";
+        String userDN = "userDN";
+        Query duplicateQuery = PowerMock.createMock(Query.class);
+        
+        MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
+        p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        p.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
+        p.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+        p.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        p.putSingle(QueryParameters.QUERY_NAME, queryName);
+        p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
+        p.putSingle(QueryParameters.QUERY_STRING, query);
+        p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        p.putSingle(QueryParameters.QUERY_PARAMS, parameters);
+        
+        p.putSingle(AuditParameters.QUERY_AUDIT_TYPE, AuditType.LOCALONLY.name());
+        p.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
+        p.putSingle(AuditParameters.USER_DN, userDN);
+        AuditParameters auditParameters = new AuditParameters();
+        auditParameters.validate(p);
+        
+        // Set expectations
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
+        expect(this.principal.getName()).andReturn(userName).times(2);
+        expect(this.principal.getShortName()).andReturn(userSid).times(2);
+        expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations))).times(2);
+        expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
+        expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
+        expect(this.query.getOwner()).andReturn(userSid);
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1).times(1);
+        expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName).times(1);
+        expect(this.query.duplicate(queryName)).andReturn(duplicateQuery);
+        duplicateQuery.setId(queryId);
+        duplicateQuery.setQueryLogicName(queryLogicName);
+        duplicateQuery.setQuery(query);
+        duplicateQuery.setBeginDate(beginDate);
+        duplicateQuery.setEndDate(endDate);
+        duplicateQuery.setQueryAuthorizations(queryAuthorizations);
+        duplicateQuery.setExpirationDate(expirationDate);
+        duplicateQuery.setPagesize(pagesize);
+        duplicateQuery.setParameters(isA(Set.class));
+        expect(duplicateQuery.toMap()).andReturn(p);
+        expect(this.query.getQueryName()).andReturn(queryName).times(2);
+        expect(this.query.getId()).andReturn(queryId);
+        expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.LOCALONLY);
+        expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
+        
+        this.auditor.audit(eq(auditParameters));
+        expectLastCall().andThrow(new Exception("INTENTIONALLY THROWN EXCEPTION"));
+        
+        // Run the test
+        PowerMock.replayAll();
+        
+        QueryExecutorBean subject = new QueryExecutorBean();
+        setInternalState(subject, EJBContext.class, context);
+        setInternalState(subject, QueryCache.class, cache);
+        setInternalState(subject, Persister.class, persister);
+        setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
+        setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
+        setInternalState(subject, AuditBean.class, auditor);
+        setInternalState(subject, AuditParameters.class, auditParameters);
+        setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
+        
+        subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize,
+                        persistenceMode, parameters);
         PowerMock.verifyAll();
     }
     
