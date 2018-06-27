@@ -261,8 +261,6 @@ public class EdgeKeyVersioningCache {
         
         recordWriter.addMutation(m);
         
-        recordWriter.flush();
-        
         recordWriter.close();
         
         return dateString;

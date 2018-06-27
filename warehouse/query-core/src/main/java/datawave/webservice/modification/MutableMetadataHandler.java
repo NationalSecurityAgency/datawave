@@ -413,7 +413,6 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 }
             }
         } finally {
-            writer.flush();
             writer.close();
         }
     }
