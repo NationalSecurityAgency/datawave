@@ -3238,6 +3238,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userName = "userName";
         String userSid = "userSid";
         String userDN = "userDN";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
         long pageNumber = 0L;
@@ -3263,13 +3264,11 @@ public class ExtendedQueryExecutorBeanTest {
         queryLogic1.validate(queryParameters);
         expect(principal.getName()).andReturn(userName);
         expect(principal.getShortName()).andReturn(userSid);
-        expect(principal.getUserDN()).andReturn(userDN);
+        expect(principal.getUserDN()).andReturn(userDNpair);
         expect(principal.getDNs()).andReturn(new String[] {userDN});
-        expect(this.principal.getProxyServers()).andReturn(new ArrayList<String>(0)).anyTimes();
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<String>(0)).anyTimes();
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        expect(this.principal.getAuthorizationsMap()).andReturn(authsMap);
-        expect(this.principal.getUserDN()).andReturn("USERDN");
         expect(this.queryLogic1.getMaxPageSize()).andReturn(10).anyTimes();
         auditParameters.clear();
         auditParameters.validate(queryParameters);
@@ -3313,6 +3312,7 @@ public class ExtendedQueryExecutorBeanTest {
         String queryLogicName = "queryLogicName";
         String userName = "userName";
         String userDN = "userDN";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         String sid = "sid";
         UUID queryId = UUID.randomUUID();
         
@@ -3344,8 +3344,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(sid);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(authorization)));
-        expect(this.principal.getAuthorizationsMap()).andReturn(authsMap);
-        expect(this.principal.getUserDN()).andReturn("USERDN");
+        expect(this.principal.getUserDN()).andReturn(userDNpair);
         expect(this.cache.get(queryName)).andReturn(null);
         expect(this.persister.findById(queryName)).andReturn(Arrays.asList((Query) this.query));
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
