@@ -2904,7 +2904,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations))).times(2);
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
-        expect(this.runningQuery.getSettings()).andReturn(this.query).times(5);
+        expect(this.runningQuery.getSettings()).andReturn(this.query).times(3);
         expect(this.query.getOwner()).andReturn(userSid);
         expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1).times(2);
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName).times(2);

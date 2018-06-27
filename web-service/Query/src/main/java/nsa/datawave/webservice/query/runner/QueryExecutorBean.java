@@ -2365,8 +2365,8 @@ public class QueryExecutorBean implements QueryExecutor {
         // test for any auditable updates
         if (beginDate != null || endDate != null || queryAuthorizations != null) {
             // must clone/audit attempt first
-            Query duplicate = q.duplicate(runningQuery.getSettings().getQueryName());
-            duplicate.setId(runningQuery.getSettings().getId());
+            Query duplicate = q.duplicate(q.getQueryName());
+            duplicate.setId(q.getId());
             
             updateQueryParams(duplicate, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, parameters);
             
