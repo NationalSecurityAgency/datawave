@@ -25,7 +25,7 @@ else
   trap 'rm -f "$ingestHost"; exit $?' INT TERM EXIT
   echo $INGEST_HOST > $ingestHost
 
-  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/stopMetricsIngest.sh $@" 1>> /tmp/stdout 2>> /tmp/stderr < /dev/null
+  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/stopMetricsIngest.sh $@" < /dev/null
 
   rm $ingestHost
   trap - INT TERM EXIT
@@ -45,7 +45,7 @@ else
       echo $host >> $stagingHosts
   done
 
-  pdsh -f 25 -w ^${stagingHosts} "$METRICS_BIN/metrics/stopMetricsIngest.sh $@" 1>> /tmp/stdout 2>> /tmp/stderr < /dev/null
+  pdsh -f 25 -w ^${stagingHosts} "$METRICS_BIN/metrics/stopMetricsIngest.sh $@" < /dev/null
 
   rm $stagingHosts
   trap - INT TERM EXIT
