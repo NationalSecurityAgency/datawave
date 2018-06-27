@@ -2953,6 +2953,7 @@ public class ExtendedQueryExecutorBeanTest {
         duplicateQuery.setQueryAuthorizations(queryAuthorizations);
         duplicateQuery.setExpirationDate(expirationDate);
         duplicateQuery.setPagesize(pagesize);
+        duplicateQuery.setPageTimeout(pageTimeout);
         duplicateQuery.setParameters(isA(Set.class));
         expect(duplicateQuery.toMap()).andReturn(p);
         this.query.setQueryLogicName(queryLogicName);
@@ -3390,6 +3391,7 @@ public class ExtendedQueryExecutorBeanTest {
         Date endDate = new Date(currentTime - 1000);
         String queryAuthorizations = "AUTH_1";
         Date expirationDate = new Date(currentTime + 9999);
+        int pageTimeout = 60;
         int pagesize = 10;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String parameters = "invalidparam; valid:param";
@@ -3405,6 +3407,7 @@ public class ExtendedQueryExecutorBeanTest {
         p.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
         p.putSingle(QueryParameters.QUERY_NAME, queryName);
         p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
+        p.putSingle(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(pageTimeout));
         p.putSingle(QueryParameters.QUERY_STRING, query);
         p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
@@ -3435,6 +3438,7 @@ public class ExtendedQueryExecutorBeanTest {
         duplicateQuery.setQueryAuthorizations(queryAuthorizations);
         duplicateQuery.setExpirationDate(expirationDate);
         duplicateQuery.setPagesize(pagesize);
+        duplicateQuery.setPageTimeout(pageTimeout);
         duplicateQuery.setParameters(isA(Set.class));
         expect(duplicateQuery.toMap()).andReturn(p);
         expect(this.query.getQueryName()).andReturn(queryName).times(2);
@@ -3460,7 +3464,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         
         subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize,
-                        persistenceMode, parameters);
+                        pageTimeout, persistenceMode, parameters);
         PowerMock.verifyAll();
     }
     

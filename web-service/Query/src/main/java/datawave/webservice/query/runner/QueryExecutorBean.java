@@ -2602,7 +2602,7 @@ public class QueryExecutorBean implements QueryExecutor {
             Query duplicate = q.duplicate(q.getQueryName());
             duplicate.setId(q.getId());
             
-            updateQueryParams(duplicate, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, parameters);
+            updateQueryParams(duplicate, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, parameters);
             
             // Fire off an audit prior to updating
             Set<String> methodAuths = new HashSet<>(Arrays.asList(q.getQueryAuthorizations().split("\\s*,\\s*")));
@@ -2623,7 +2623,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // update the actual running query
-        updateQueryParams(q, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, parameters);
+        updateQueryParams(q, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, parameters);
         
         // update the persistenceMode post audit
         if (persistenceMode != null) {
@@ -2642,7 +2642,7 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private void updateQueryParams(Query q, String queryLogicName, String query, Date beginDate, Date endDate, String queryAuthorizations, Date expirationDate,
-                    Integer pagesize, String parameters) throws CloneNotSupportedException {
+                    Integer pagesize, Integer pageTimeout, String parameters) throws CloneNotSupportedException {
         Principal p = ctx.getCallerPrincipal();
         // TODO: add validation for all these sets
         if (queryLogicName != null) {
