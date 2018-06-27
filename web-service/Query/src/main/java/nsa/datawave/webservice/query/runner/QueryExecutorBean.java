@@ -2363,7 +2363,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // test for any auditable updates
-        if (beginDate != null || endDate != null || queryAuthorizations != null) {
+        if (query != null || beginDate != null || endDate != null || queryAuthorizations != null) {
             // must clone/audit attempt first
             Query duplicate = q.duplicate(q.getQueryName());
             duplicate.setId(q.getId());
