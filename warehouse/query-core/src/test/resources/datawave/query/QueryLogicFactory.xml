@@ -103,6 +103,7 @@
     <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardQueryLogic" abstract="true">
         <property name="tableName" value="shard" />
         <property name="dateIndexTableName" value="dateIndex" />
+        <property name="defaultDateTypeName" value="EVENT"/>
         <property name="metadataTableName" value="DatawaveMetadata" />
         <property name="indexTableName" value="shardIndex" />
         <property name="reverseIndexTableName" value="shardReverseIndex" />
