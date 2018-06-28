@@ -1534,6 +1534,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.setModelTableName(copy.getModelTableName());
         this.setIndexStatsTableName(copy.getIndexStatsTableName());
         
+        this.setDefaultDateTypeName(copy.getDefaultDateTypeName());
+        
         this.setIndexHoles(copy.getIndexHoles());
         
         this.setSequentialScheduler(copy.getSequentialScheduler());

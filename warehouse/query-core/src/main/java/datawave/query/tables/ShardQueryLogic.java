@@ -165,8 +165,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      */
     public static final String DATATYPE_FILTER_SET = "datatype.filter.set";
     
-    public static final String DEFAULT_DATE_TYPE_NAME = "default.date.type.name";
-    
     public static final String LIMIT_FIELDS = "limit.fields";
     
     public static final String GROUP_FIELDS = "group.fields";
