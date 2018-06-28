@@ -2,6 +2,7 @@ package datawave.query.jexl.functions;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -13,6 +14,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.*;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.dateindex.DateIndexDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
@@ -62,6 +64,7 @@ import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
@@ -73,7 +76,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
@@ -83,6 +85,7 @@ import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
 import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
+import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
 
 @RunWith(Arquillian.class)
 public class ContentFunctionQueryTest {
@@ -92,6 +95,7 @@ public class ContentFunctionQueryTest {
     private static final String KNOWLEDGE_SHARD_TABLE_NAME = "knowledgeShard";
     private static final String ERROR_SHARD_TABLE_NAME = "errorShard";
     private static final String SHARD_INDEX_TABLE_NAME = "shardIndex";
+    private static final String DATE_INDEX_TABLE_NAME = "dateIndex";
     private static final String SHARD_REVERSE_INDEX_TABLE_NAME = "shardReverseIndex";
     private static final String METADATA_TABLE_NAME = "DatawaveMetadata";
     private static final String DATA_TYPE_NAME = "test";
@@ -185,10 +189,9 @@ public class ContentFunctionQueryTest {
         conf.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE_NAME);
         conf.set(DATA_TYPE_NAME + ".data.category.index", "ID, BODY");
         // conf.set(DATA_TYPE_NAME + ".model.table.name", METADATA_TABLE_NAME);
-        
         conf.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE_NAME);
         conf.set(DATA_TYPE_NAME + TypeRegistry.INGEST_HELPER, INGEST_HELPER_CLASS);
-        
+        conf.set(DateIndexDataTypeHandler.DATEINDEX_TNAME, DATE_INDEX_TABLE_NAME);
         conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, METADATA_TABLE_NAME);
         conf.set(ShardedDataTypeHandler.NUM_SHARDS, Integer.toString(NUM_SHARDS));
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, SHARD_TABLE_NAME + "," + KNOWLEDGE_SHARD_TABLE_NAME + "," + ERROR_SHARD_TABLE_NAME);
@@ -207,6 +210,7 @@ public class ContentFunctionQueryTest {
     private static void writeKeyValues(Connector connector, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
         final TableOperations tops = connector.tableOperations();
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
+        tops.create(DATE_INDEX_TABLE_NAME);
         for (final BulkIngestKey biKey : biKeys) {
             final String tableName = biKey.getTableName().toString();
             if (!tops.exists(tableName))
@@ -230,6 +234,44 @@ public class ContentFunctionQueryTest {
         final List<String> expected = Arrays.asList("dog", "cat");
         final List<DefaultEvent> events = getQueryResults(query, true, true);
         evaluateEvents(events, expected);
+    }
+    
+    @Test
+    public void withinTestWithAlternateDate() throws Exception {
+        
+        String queryStr = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
+        
+        MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
+        params.putSingle(QUERY_STRING, queryStr);
+        params.putSingle(QUERY_NAME, "contentQuery");
+        params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
+        params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
+        params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
+        params.putSingle(QUERY_BEGIN, BEGIN_DATE);
+        params.putSingle(QUERY_END, END_DATE);
+        
+        MultivaluedMap<String,String> optionalParams = new MultivaluedMapImpl<>();
+        optionalParams.putSingle(DATE_RANGE_TYPE, "BOGUSDATETYPE");
+        
+        QueryParameters queryParams = new QueryParametersImpl();
+        queryParams.validate(params);
+        
+        Set<Authorizations> auths = new HashSet<>();
+        auths.add(new Authorizations(AUTHS));
+        
+        Query query = new QueryImpl();
+        
+        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, optionalParams);
+        
+        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(logic, query);
+        
+        try {
+            logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
+            Assert.fail("Expected query to fail with bogus date type");
+        } catch (IllegalArgumentException e) {
+            Assert.assertEquals("The specified date type: BOGUSDATETYPE is unknown for the specified data types", e.getMessage());
+        }
+        
     }
     
     @Test

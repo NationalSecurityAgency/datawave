@@ -1330,7 +1330,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
      */
     public ASTJexlScript addDateFilters(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     ShardQueryConfiguration config, Query settings) throws TableNotFoundException, DatawaveQueryException {
-        String dateType = DateIndexUtil.EVENT_DATE_TYPE;
+        String defaultDateType = config.getDefaultDateTypeName();
+        String dateType = defaultDateType;
         Parameter dateTypeParameter = settings.findParameter(QueryParameters.DATE_RANGE_TYPE);
         if (dateTypeParameter != null && dateTypeParameter.getParameterValue() != null) {
             String parm = dateTypeParameter.getParameterValue().trim();
@@ -1341,7 +1342,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         // if we are using something other than the default of EVENT date
         // time, then we need to modify the query
-        if (!dateType.equals(DateIndexUtil.EVENT_DATE_TYPE)) {
+        if (!dateType.equals(defaultDateType)) {
+            
             log.info("Using the date index for " + dateType);
             // if no date index helper configured, then we are in error
             if (dateIndexHelper == null) {
