@@ -67,6 +67,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     private String dateIndexTableName = "DateIndex";
     private String indexStatsTableName = "indexStats";
     
+    private String defaultDateTypeName = "EVENT";
+    
     // should we cleanup the shards and days hints that are sent to the
     // tservers?
     private boolean cleanupShardsAndDaysQueryHints = true;
@@ -430,6 +432,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     public void setDateIndexTableName(String dateIndexTableName) {
         this.dateIndexTableName = dateIndexTableName;
+    }
+    
+    public String getDefaultDateTypeName() {
+        return defaultDateTypeName;
+    }
+    
+    public void setDefaultDateTypeName(String defaultDateTypeName) {
+        this.defaultDateTypeName = defaultDateTypeName;
     }
     
     public String getIndexTableName() {

@@ -165,6 +165,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      */
     public static final String DATATYPE_FILTER_SET = "datatype.filter.set";
     
+    public static final String DEFAULT_DATE_TYPE_NAME = "default.date.type.name";
+    
     public static final String LIMIT_FIELDS = "limit.fields";
     
     public static final String GROUP_FIELDS = "group.fields";
@@ -185,6 +187,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private String reverseIndexTableName;
     private String tableName;
     private String modelName;
+    
+    private String defaultDateTypeName = "EVENT";
     
     private List<IndexHole> indexHoles = new ArrayList<IndexHole>();
     
@@ -421,6 +425,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setMetadataHelperFactory(other.getMetadataHelperFactory());
         this.setDateIndexHelperFactory(other.getDateIndexHelperFactory());
         this.setDateIndexTableName(other.getDateIndexTableName());
+        this.setDefaultDateTypeName(other.getDefaultDateTypeName());
         this.setCollapseDatePercentThreshold(other.getCollapseDatePercentThreshold());
         this.setCleanupShardsAndDaysQueryHints(other.isCleanupShardsAndDaysQueryHints());
         this.setIndexTableName(other.getIndexTableName());
@@ -1668,6 +1673,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return dateIndexTableName;
     }
     
+    public String getDefaultDateTypeName() {
+        return defaultDateTypeName;
+    }
+    
     public String getMetadataTableName() {
         return metadataTableName;
     }
@@ -1683,6 +1692,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setDateIndexTableName(String dateIndexTableName) {
         this.dateIndexTableName = dateIndexTableName;
+    }
+    
+    public void setDefaultDateTypeName(String defaultDateTypeName) {
+        this.defaultDateTypeName = defaultDateTypeName;
     }
     
     public void setMetadataTableName(String metadataTableName) {

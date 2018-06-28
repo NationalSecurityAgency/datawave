@@ -47,6 +47,7 @@ public class ShardQueryConfigurationFactory {
         config.setMetadataTableName(configuredLogic.getMetadataTableName());
         config.setCleanupShardsAndDaysQueryHints(configuredLogic.isCleanupShardsAndDaysQueryHints());
         config.setDateIndexTableName(configuredLogic.getDateIndexTableName());
+        config.setDefaultDateTypeName(configuredLogic.getDefaultDateTypeName());
         config.setQueryModel(configuredLogic.getQueryModel());
         config.setLimitAnyFieldLookups(configuredLogic.getLimitAnyFieldLookups());
         config.setModelTableName(configuredLogic.getModelTableName());
