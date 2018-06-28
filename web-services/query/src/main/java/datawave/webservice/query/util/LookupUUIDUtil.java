@@ -315,7 +315,10 @@ public class LookupUUIDUtil {
             
             String userAuths;
             if (queryParameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
-                userAuths = AuthorizationsUtil.downgradeUserAuths(principal, queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS));
+                if (!queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS).isEmpty())
+                    userAuths = AuthorizationsUtil.downgradeUserAuths(principal, queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS));
+                else
+                    throw new IllegalArgumentException("Requested authorizations must not be empty");
             } else {
                 userAuths = AuthorizationsUtil.buildUserAuthorizationString(principal);
             }

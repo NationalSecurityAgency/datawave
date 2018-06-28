@@ -13,6 +13,7 @@ import static org.junit.Assert.fail;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1072,17 +1073,21 @@ public class ExtendedQueryExecutorBeanTest {
         op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
         op.putSingle(AuditParameters.USER_DN, userDNpair.subjectDN());
         
+        Map<String,Collection<String>> authsMap = new HashMap<String,Collection<String>>();
+        authsMap.put(userDN, Arrays.asList(queryAuthorizations));
+        
         // Set expectations
-        expect(context.getCallerPrincipal()).andReturn(principal);
         queryLogic1.validate(queryParameters);
         expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getMaxPageSize()).andReturn(1000).times(2);
-        expect(this.context.getCallerPrincipal()).andReturn(this.principal);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(3);
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid);
         expect(this.principal.getUserDN()).andReturn(userDNpair);
         expect(this.principal.getDNs()).andReturn(new String[] {userDN});
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0));
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getAuths()).andReturn(authsMap.get(userDN));
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.queryLogic1.getSelectors(this.query)).andReturn(new ArrayList<>());
@@ -2930,6 +2935,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userName = "userName";
         String userSid = "userSid";
         String userDN = "userDN";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         Query duplicateQuery = PowerMock.createMock(Query.class);
         
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
@@ -2951,11 +2957,16 @@ public class ExtendedQueryExecutorBeanTest {
         AuditParameters auditParameters = new AuditParameters();
         auditParameters.validate(p);
         
+        Map<String,Collection<String>> authsMap = new HashMap<>();
+        authsMap.put(userDN, Arrays.asList(queryAuthorizations));
+        
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(4);
         expect(this.principal.getName()).andReturn(userName).times(2);
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations))).times(2);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getAuths()).andReturn(Arrays.asList(queryAuthorizations));
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(this.runningQuery.getSettings()).andReturn(this.query).times(3);
         expect(this.query.getOwner()).andReturn(userSid);
@@ -3270,6 +3281,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.queryLogic1.getMaxPageSize()).andReturn(10).anyTimes();
+        auditParameters.setPrincipal(isA(Principal.class));
         auditParameters.clear();
         auditParameters.validate(queryParameters);
         expect(queryLogic1.getSelectors(null)).andReturn(null);
@@ -3414,6 +3426,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userName = "userName";
         String userSid = "userSid";
         String userDN = "userDN";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         Query duplicateQuery = PowerMock.createMock(Query.class);
         
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
@@ -3435,11 +3448,17 @@ public class ExtendedQueryExecutorBeanTest {
         AuditParameters auditParameters = new AuditParameters();
         auditParameters.validate(p);
         
+        Map<String,Collection<String>> authsMap = new HashMap<>();
+        authsMap.put(userDN, Arrays.asList(queryAuthorizations));
+        
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName).times(2);
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations))).times(2);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getAuths()).andReturn(Arrays.asList(queryAuthorizations));
+        expect(this.principal.getUserDN()).andReturn(userDNpair);
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
         expect(this.query.getOwner()).andReturn(userSid);
