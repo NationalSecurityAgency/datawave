@@ -63,6 +63,13 @@ public class TestAuditParameters {
         }
     }
     
+    @Test(expected = NullPointerException.class)
+    public void validateEmptyAuths() {
+        this.paramsMap.remove(AuditParameters.QUERY_AUTHORIZATIONS);
+        this.paramsMap.putSingle(AuditParameters.QUERY_AUTHORIZATIONS, "");
+        this.auditParameters.validate(this.paramsMap);
+    }
+    
     @Test
     public void handlesSpacesInAuths() {
         this.paramsMap.remove(AuditParameters.QUERY_AUTHORIZATIONS);
