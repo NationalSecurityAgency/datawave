@@ -632,7 +632,6 @@ public class QueryExecutorBean implements QueryExecutor {
                 if (!auditType.equals(AuditType.NONE)) {
                     try {
                         auditParameters.clear();
-                        auditParameters.setPrincipal(ctx.getCallerPrincipal());
                         auditParameters.validate(queryParameters);
                         try {
                             auditParameters.setSelectors(qd.logic.getSelectors(q));
@@ -2617,7 +2616,6 @@ public class QueryExecutorBean implements QueryExecutor {
             if (!auditType.equals(AuditType.NONE)) {
                 try {
                     auditParameters.clear();
-                    auditParameters.setPrincipal(p);
                     auditParameters.validate(duplicate.toMap());
                     auditor.audit(auditParameters);
                 } catch (Exception e) {
