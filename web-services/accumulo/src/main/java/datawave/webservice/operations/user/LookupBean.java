@@ -326,7 +326,6 @@ public class LookupBean {
         queryParameters.add("logicClass", "AccumuloLookupBean");
         try {
             auditParameters.clear();
-            auditParameters.setPrincipal(p);
             auditParameters.validate(queryParameters);
         } catch (IllegalArgumentException e) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.SECURITY_MARKING_CHECK_ERROR, e);

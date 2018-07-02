@@ -188,7 +188,6 @@ public class ModificationBean {
             if (service.getRequiresAudit()) {
                 try {
                     auditParameters.clear();
-                    auditParameters.setPrincipal(p);
                     auditParameters.validate(request.toMap());
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);

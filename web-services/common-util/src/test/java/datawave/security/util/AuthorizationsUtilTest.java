@@ -61,52 +61,6 @@ public class AuthorizationsUtilTest {
         assertEquals(expected, AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal));
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testDowngradeAuthorizationsWithMissingAuths() {
-        HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A", "C"), new Authorizations("A", "B", "E"), new Authorizations("A", "F", "G"));
-        assertEquals(expected, AuthorizationsUtil.getDowngradedAuthorizations("X,Y,Z", principal));
-    }
-    
-    @Test
-    public void testDowngradeAuthorizationsWithNoRequestedAuths() {
-        HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A", "C", "D"), new Authorizations("A", "B", "E"), new Authorizations("A", "F",
-                        "G"));
-        assertEquals(expected, AuthorizationsUtil.getDowngradedAuthorizations("", principal));
-    }
-    
-    @Test
-    public void testDowngradeAuthorizationsWithNullRequestedAuths() {
-        HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A", "C", "D"), new Authorizations("A", "B", "E"), new Authorizations("A", "F",
-                        "G"));
-        assertEquals(expected, AuthorizationsUtil.getDowngradedAuthorizations(null, principal));
-    }
-    
-    @Test
-    public void testDowngradeUserAuthorizations() {
-        String expected = "C,A";
-        assertEquals(new HashSet<String>(Arrays.asList(expected.split(","))),
-                        new HashSet<String>(Arrays.asList(AuthorizationsUtil.downgradeUserAuths(principal, methodAuths).split(","))));
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testDowngradeUserAuthorizationsWithMissingAuths() {
-        AuthorizationsUtil.downgradeUserAuths(principal, "X,Y,Z");
-    }
-    
-    @Test
-    public void testDowngradeUserAuthorizationsWithNoRequestedAuths() {
-        String expected = "C,D,A";
-        assertEquals(new HashSet<String>(Arrays.asList(expected.split(","))),
-                        new HashSet<String>(Arrays.asList(AuthorizationsUtil.downgradeUserAuths(principal, "").split(","))));
-    }
-    
-    @Test
-    public void testDowngradeUserAuthorizationsWithNullRequestedAuths() {
-        String expected = "C,D,A";
-        assertEquals(new HashSet<String>(Arrays.asList(expected.split(","))),
-                        new HashSet<String>(Arrays.asList(AuthorizationsUtil.downgradeUserAuths(principal, null).split(","))));
-    }
-    
     @Test
     public void testUserAuthsFirstInMergedSet() {
         HashSet<Authorizations> mergedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal);

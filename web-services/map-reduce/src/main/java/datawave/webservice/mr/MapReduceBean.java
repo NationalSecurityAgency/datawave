@@ -287,7 +287,6 @@ public class MapReduceBean {
                     auditQueryParameters.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
                     
                     auditParameters.clear();
-                    auditParameters.setPrincipal(datawavePrincipal);
                     auditParameters.validate(auditQueryParameters);
                     auditParameters.setSelectors(job.getSelectors(queryParameters, oozieConf));
                     log.debug("sending audit message: " + auditParameters);

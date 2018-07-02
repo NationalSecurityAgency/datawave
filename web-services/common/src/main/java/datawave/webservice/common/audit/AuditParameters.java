@@ -1,6 +1,5 @@
 package datawave.webservice.common.audit;
 
-import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.common.base.Splitter;
-import datawave.security.util.AuthorizationsUtil;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 
@@ -34,7 +32,6 @@ public class AuditParameters implements ParameterValidator {
     private static final List<String> REQUIRED_PARAMS = Arrays.asList(USER_DN, QUERY_STRING, QUERY_AUTHORIZATIONS, QUERY_AUDIT_TYPE,
                     QUERY_SECURITY_MARKING_COLVIZ);
     
-    protected Principal principal = null;
     protected Date queryDate = null;
     protected String userDn;
     protected String query = null;
@@ -63,9 +60,7 @@ public class AuditParameters implements ParameterValidator {
                 case QUERY_AUTHORIZATIONS:
                     // ensure that auths are comma separated with no empty values or spaces
                     Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
-                    String auths = StringUtils.join(splitter.splitToList(values.get(0)), ",");
-                    
-                    this.auths = (principal == null) ? auths : AuthorizationsUtil.downgradeUserAuths(principal, auths);
+                    this.auths = StringUtils.join(splitter.splitToList(values.get(0)), ",");
                     break;
                 case QUERY_AUDIT_TYPE:
                     this.auditType = AuditType.valueOf(values.get(0));
@@ -82,14 +77,6 @@ public class AuditParameters implements ParameterValidator {
         Preconditions.checkNotNull(this.auths);
         Preconditions.checkNotNull(this.auditType);
         Preconditions.checkNotNull(this.colviz);
-    }
-    
-    public Principal getPrincipal() {
-        return principal;
-    }
-    
-    public void setPrincipal(Principal principal) {
-        this.principal = principal;
     }
     
     public Date getQueryDate() {
@@ -241,7 +228,6 @@ public class AuditParameters implements ParameterValidator {
     }
     
     public void clear() {
-        this.principal = null;
         this.queryDate = null;
         this.userDn = null;
         this.query = null;
