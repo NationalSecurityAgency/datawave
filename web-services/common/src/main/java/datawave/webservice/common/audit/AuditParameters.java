@@ -60,7 +60,11 @@ public class AuditParameters implements ParameterValidator {
                 case QUERY_AUTHORIZATIONS:
                     // ensure that auths are comma separated with no empty values or spaces
                     Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
-                    this.auths = StringUtils.join(splitter.splitToList(values.get(0)), ",");
+                    String auths = StringUtils.join(splitter.splitToList(values.get(0)), ",");
+                    // if auth params are unset, auths stay null, and an exception is thrown
+                    if (!auths.isEmpty()) {
+                        this.auths = auths;
+                    }
                     break;
                 case QUERY_AUDIT_TYPE:
                     this.auditType = AuditType.valueOf(values.get(0));
