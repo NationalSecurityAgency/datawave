@@ -103,20 +103,19 @@ public class ShardedTableMapFile {
             int expectedNumberOfShards = shardIdFactory.getNumShards(datePrefix);
             boolean shardsExist = shardsExistForDate(shardIdToLocation, datePrefix, expectedNumberOfShards);
             if (!shardsExist) {
-                log.warn("Shards for " + datePrefix + " for table " + tableName + " do not exist!");
+                log.error("Shards for " + datePrefix + " for table " + tableName + " do not exist!");
                 isValid = false;
                 continue;
             }
             boolean shardsAreBalanced = shardsAreBalanced(shardIdToLocation, datePrefix);
             if (!shardsAreBalanced) {
-                log.warn("Shards for " + datePrefix + " for table " + tableName + " are not balanced!");
+                log.error("Shards for " + datePrefix + " for table " + tableName + " are not balanced!");
                 isValid = false;
             }
         }
         if (!isValid) {
-            throw new IllegalStateException("All of today's shards have not been created or are not balanced for " + tableName +"."
-                            + "Run bin/ingest/create_shards_since.sh yyyymmdd, substitute yyyymmdd with today's date. "
-                            + "Ensure that the normal mechanism for creating shards is running - e.g, crontab");
+            throw new IllegalStateException("Shard validation failed for " + tableName + ". Please ensure that "
+                            + "shards have been generated. Check log for details about the dates in question");
         }
     }
     
