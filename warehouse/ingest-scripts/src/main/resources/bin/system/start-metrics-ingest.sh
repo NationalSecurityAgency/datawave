@@ -32,9 +32,9 @@ else
   trap 'rm -f "$ingestHost"; exit $?' INT TERM EXIT
   echo $INGEST_HOST > $ingestHost
 
-  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh ingest $FORCE" 1>> /tmp/stdout 2>> /tmp/stderr < /dev/null
-  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh loader $FORCE" 1>> /tmp/stdout 2>> /tmp/stderr < /dev/null
-  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh flagmaker $FORCE" 1>> /tmp/stdout 2>> /tmp/stderr < /dev/null
+  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh ingest $FORCE" < /dev/null
+  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh loader $FORCE" < /dev/null
+  pdsh -f 25 -w ^${ingestHost} "$METRICS_BIN/metrics/startMetricsIngest.sh flagmaker $FORCE" < /dev/null
 
   rm $ingestHost
   trap - INT TERM EXIT
