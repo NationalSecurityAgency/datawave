@@ -1028,10 +1028,19 @@ public class QueryExecutorBean implements QueryExecutor {
                 AuditType auditType = query.getLogic().getAuditType(query.getSettings());
                 
                 MultivaluedMap<String,String> queryParameters = query.getSettings().toMap();
-                queryParameters.add("logicClass", query.getLogic().getLogicName());
-                queryParameters.add(AuditParameters.USER_DN, query.getSettings().getUserDN());
-                queryParameters.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
-                queryParameters.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, query.getSettings().getColumnVisibility());
+                
+                queryParameters.putSingle(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+                
+                if (!(queryParameters.containsKey("logicClass") && queryParameters.get("logicClass").contains(query.getLogic().getLogicName())))
+                    queryParameters.add("logicClass", query.getLogic().getLogicName());
+                
+                if (!(queryParameters.containsKey(AuditParameters.USER_DN) && queryParameters.get(AuditParameters.USER_DN).contains(
+                                query.getSettings().getUserDN())))
+                    queryParameters.add(AuditParameters.USER_DN, query.getSettings().getUserDN());
+                
+                if (!(queryParameters.containsKey(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ) && queryParameters.get(
+                                AuditParameters.QUERY_SECURITY_MARKING_COLVIZ).contains(query.getSettings().getColumnVisibility())))
+                    queryParameters.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, query.getSettings().getColumnVisibility());
                 
                 if (!auditType.equals(AuditType.NONE)) {
                     try {
