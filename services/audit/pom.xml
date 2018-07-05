@@ -4,7 +4,7 @@
     <parent>
         <artifactId>datawave-external-services</artifactId>
         <groupId>datawave.microservice</groupId>
-        <version>2.1.2</version>
+        <version>2.1.4</version>
     </parent>
     <artifactId>audit-parent</artifactId>
     <packaging>pom</packaging>
