@@ -61,6 +61,7 @@ import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
@@ -78,6 +79,7 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
@@ -402,9 +404,43 @@ public class QueryExecutorBeanTest {
         q.populateMetric(metric);
         metric.setQueryType(RunningQuery.class.getSimpleName());
         
+        QueryMetric testMetric = new QueryMetric((QueryMetric) metric) {
+            @Override
+            public boolean equals(Object o) {
+                // test for equality except for the create date
+                if (null == o) {
+                    return false;
+                }
+                if (this == o) {
+                    return true;
+                }
+                if (o instanceof QueryMetric) {
+                    QueryMetric other = (QueryMetric) o;
+                    return new EqualsBuilder().append(this.getQueryId(), other.getQueryId()).append(this.getQueryType(), other.getQueryType())
+                                    .append(this.getQueryAuthorizations(), other.getQueryAuthorizations())
+                                    .append(this.getColumnVisibility(), other.getColumnVisibility()).append(this.getBeginDate(), other.getBeginDate())
+                                    .append(this.getEndDate(), other.getEndDate()).append(this.getCreateDate(), other.getCreateDate())
+                                    .append(this.getSetupTime(), other.getSetupTime()).append(this.getUser(), other.getUser())
+                                    .append(this.getUserDN(), other.getUserDN()).append(this.getQuery(), other.getQuery())
+                                    .append(this.getQueryLogic(), other.getQueryLogic()).append(this.getQueryName(), other.getQueryName())
+                                    .append(this.getParameters(), other.getParameters()).append(this.getHost(), other.getHost())
+                                    .append(this.getPageTimes(), other.getPageTimes()).append(this.getProxyServers(), other.getProxyServers())
+                                    .append(this.getLifecycle(), other.getLifecycle()).append(this.getErrorMessage(), other.getErrorMessage())
+                                    .append(this.getErrorCode(), other.getErrorCode()).append(this.getSourceCount(), other.getSourceCount())
+                                    .append(this.getNextCount(), other.getNextCount()).append(this.getSeekCount(), other.getSeekCount())
+                                    .append(this.getDocRanges(), other.getDocRanges()).append(this.getFiRanges(), other.getFiRanges())
+                                    .append(this.getPlan(), other.getPlan()).append(this.getLoginTime(), other.getLoginTime())
+                                    .append(this.getPredictions(), other.getPredictions()).isEquals();
+                } else {
+                    return false;
+                }
+                
+            }
+        };
+        
         Set<Prediction> predictions = new HashSet<Prediction>();
         predictions.add(new Prediction("source", 1));
-        EasyMock.expect(predictor.predict(metric)).andReturn(predictions);
+        EasyMock.expect(predictor.predict(EasyMock.eq(testMetric))).andReturn(predictions);
         
         PowerMock.replayAll();
         
@@ -566,9 +602,10 @@ public class QueryExecutorBeanTest {
             try {
                 bean.createQuery("EventQueryLogic", queryParameters);
             } catch (Exception e) {
-                Assert.fail(e.getClass().getName() + " thrown with " + e.getMessage());
-            }
-        });
+                // ok if we fail the call
+                        log.debug("createQuery terminated with " + e);
+                    }
+                });
         
         @SuppressWarnings("rawtypes")
         QueryLogic logic = createMock(BaseQueryLogic.class);
@@ -597,10 +634,12 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getAuditType(null)).andReturn(AuditType.NONE);
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
                         Whitebox.getInternalState(bean, QueryParameters.class), optionalParameters)).andReturn(q);
+        persister.remove(q);
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(Maps.<String,String> newHashMap()).anyTimes();
         
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
         q.populateMetric(metric);
+        EasyMock.expectLastCall();
         metric.setQueryType(RunningQuery.class.getSimpleName());
         metric.setLifecycle(Lifecycle.DEFINED);
         System.out.println(metric.toString());
@@ -614,6 +653,8 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(connectionFactory.getConnection(eq("connPool1"), (AccumuloConnectionFactory.Priority) EasyMock.anyObject(),
                         (Map<String,String>) EasyMock.anyObject())).andReturn(c).anyTimes();
         connectionRequestBean.requestEnd(q.getId().toString());
+        EasyMock.expectLastCall();
+        connectionFactory.returnConnection(c);
         EasyMock.expectLastCall();
         
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
@@ -631,9 +672,13 @@ public class QueryExecutorBeanTest {
         // During initialize, mark that we get here, and then sleep
         final IAnswer<GenericQueryConfiguration> initializeAnswer = () -> {
             initializeLooping.set(true);
-            while (true) {
-                Thread.sleep(1000);
-                log.debug("Initialize: woke up");
+            try {
+                while (true) {
+                    Thread.sleep(1000);
+                    log.debug("Initialize: woke up");
+                }
+            } catch (InterruptedException e) {
+                throw new QueryException("EXPECTED EXCEPTION: initialize interrupted");
             }
         };
         
@@ -653,7 +698,7 @@ public class QueryExecutorBeanTest {
         };
         
         logic.close();
-        EasyMock.expectLastCall().andAnswer(closeAnswer);
+        EasyMock.expectLastCall().andAnswer(closeAnswer).anyTimes();
         
         // Make the QueryLogic mock not threadsafe, otherwise it will be blocked infinitely
         // trying to get the lock on the infinite loop
