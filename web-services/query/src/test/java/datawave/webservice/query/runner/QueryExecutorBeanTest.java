@@ -607,6 +607,14 @@ public class QueryExecutorBeanTest {
                     }
                 });
         
+        final Throwable[] createQueryException = {null};
+        createQuery.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                createQueryException[0] = e;
+            }
+        });
+        
         @SuppressWarnings("rawtypes")
         QueryLogic logic = createMock(BaseQueryLogic.class);
         
@@ -712,8 +720,8 @@ public class QueryExecutorBeanTest {
             
             // Wait for the create call to get to initialize
             while (!initializeLooping.get()) {
-                if (!createQuery.isAlive()) {
-                    Assert.fail("createQuery thread died before reaching initialize");
+                if (!createQuery.isAlive() && !initializeLooping.get()) {
+                    Assert.fail("createQuery thread died before reaching initialize: " + createQueryException[0]);
                 }
                 Thread.sleep(50);
             }
