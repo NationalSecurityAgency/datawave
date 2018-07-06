@@ -18,6 +18,7 @@
     <properties>
         <assembly.basedir>${project.basedir}</assembly.basedir>
         <datawave.root>${project.basedir}</datawave.root>
+        <dependency.locations.enabled>false</dependency.locations.enabled>
         <eclipseFormatterStyle>${datawave.root}/contrib/Eclipse-Datawave-Codestyle.xml</eclipseFormatterStyle>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -26,12 +27,12 @@
         <version.accumulo>1.8.1</version.accumulo>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.avro>1.7.4</version.avro>
-        <version.commons-beanutils>1.7.0</version.commons-beanutils>
+        <version.commons-beanutils>1.9.3</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-codec>1.10</version.commons-codec>
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-configuration>1.10</version.commons-configuration>
-        <version.commons-io>2.5</version.commons-io>
+        <version.commons-io>2.6</version.commons-io>
         <version.commons-jexl>2.1.1</version.commons-jexl>
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
@@ -53,7 +54,7 @@
         <version.httpcomponents-httpclient>4.5.5</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.infinispan>8.2.4.Final</version.infinispan>
-        <version.jackson>2.7.4</version.jackson>
+        <version.jackson>2.9.6</version.jackson>
         <version.javassist>3.20.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
         <version.javax-validation>1.1.0.Final</version.javax-validation>
@@ -70,7 +71,7 @@
         <version.lucene>4.7.1</version.lucene>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>5.1.35</version.mysql-connector>
-        <version.netty>4.0.15.Final</version.netty>
+        <version.netty>4.1.25.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>4.9.6.Final</version.picketbox>
         <version.powermock>1.6.6</version.powermock>
@@ -78,7 +79,7 @@
         <version.protostuff>1.5.5</version.protostuff>
         <version.slf4j>1.7.5</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
-        <version.spring>4.3.12.RELEASE</version.spring>
+        <version.spring>4.3.18.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.7.0</version.stream>
         <version.surefire.plugin>2.20</version.surefire.plugin>
@@ -170,7 +171,7 @@
             </dependency>
             <dependency>
                 <groupId>commons-beanutils</groupId>
-                <artifactId>commons-beanutils-core</artifactId>
+                <artifactId>commons-beanutils</artifactId>
                 <version>${version.commons-beanutils}</version>
                 <exclusions>
                     <exclusion>

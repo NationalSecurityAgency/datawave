@@ -45,8 +45,8 @@
         <version.abdera>1.1.3</version.abdera>
         <version.asm>4.0</version.asm>
         <version.axiom>1.2.14</version.axiom>
-        <version.bcprov>1.45</version.bcprov>
-        <version.commons-compress>1.13</version.commons-compress>
+        <version.bcprov>1.46</version.bcprov>
+        <version.commons-compress>1.17</version.commons-compress>
         <version.commons-dbutils>1.6</version.commons-dbutils>
         <version.commons-digester>3.2</version.commons-digester>
         <version.commons-net>3.5</version.commons-net>
