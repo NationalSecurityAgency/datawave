@@ -171,7 +171,8 @@
             <dependency>
                 <groupId>org.jboss.resteasy</groupId>
                 <artifactId>resteasy-jaxrs</artifactId>
-                <version>3.0.19.Final</version>
+                <version>3.5.1.Final</version>
+                <!-- <version>3.0.19.Final</version> -->
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
