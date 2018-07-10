@@ -24,10 +24,11 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
+	<!-- We should work on upgrading to 1.9.1 of accumulo, but this is an API breaking change. A method we use is now private. -->
         <version.accumulo>1.8.1</version.accumulo>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.avro>1.7.4</version.avro>
-        <version.commons-beanutils>1.9.3</version.commons-beanutils>
+        <version.commons-beanutils>1.9.2</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-codec>1.10</version.commons-codec>
         <version.commons-collections>3.2.2</version.commons-collections>
