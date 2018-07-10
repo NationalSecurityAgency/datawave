@@ -179,8 +179,7 @@ public class RangeSplit extends InputSplit implements Writable {
     protected void addRange(Range range) {
         if (null == startKey) {
             startKey = range.getStartKey();
-        }
-        {
+        } else {
             if (range.getStartKey().compareTo(startKey) < 0) {
                 startKey = range.getStartKey();
             }
