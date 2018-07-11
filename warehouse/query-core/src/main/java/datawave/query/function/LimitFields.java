@@ -32,7 +32,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     
     public final static String ORIGINAL_COUNT_SUFFIX = "ORIGINAL_COUNT";
     
-    public final static Pattern PREFIX_SUFFIX_PATTERN = Pattern.compile("([A-Za-z0-9]+[\\._])[A-Za-z0-9\\.]*\\.([A-Za-z0-9]+)");
+    public final static Pattern PREFIX_SUFFIX_PATTERN = Pattern.compile("([A-Za-z0-9]+[\\._])[A-Za-z0-9\\._]*\\.([A-Za-z0-9]+)");
     
     private Map<String,Integer> limitFieldsMap;
     
