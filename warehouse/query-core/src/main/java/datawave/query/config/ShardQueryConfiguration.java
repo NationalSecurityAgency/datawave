@@ -1538,6 +1538,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         
         this.setIndexHoles(copy.getIndexHoles());
         
+        // Set document permutations list
+        this.setDocumentPermutations(copy.getDocumentPermutations());
+        
         this.setSequentialScheduler(copy.getSequentialScheduler());
         // Enrichment properties
         this.setUseEnrichers(copy.getUseEnrichers());
