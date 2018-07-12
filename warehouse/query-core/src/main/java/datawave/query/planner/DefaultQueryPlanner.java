@@ -17,6 +17,7 @@ import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.composite.CompositeMetadata;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -571,7 +572,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
             try {
                 config.setCompositeToFieldMap(metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()));
-                config.setFieldToCompositeMap(metadataHelper.getFieldToCompositeMap(config.getDatatypeFilter()));
+                config.setCompositeTransitionDates(metadataHelper.getCompositeTransitionDateMap(config.getDatatypeFilter()));
+                config.setFixedLengthFields(metadataHelper.getFixedLengthCompositeFields(config.getDatatypeFilter()));
             } catch (TableNotFoundException ex) {
                 QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITES_RETRIEVAL_ERROR, ex);
                 log.warn(qe);
@@ -1539,13 +1541,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 }
                 
                 try {
-                    if (compressMappings) {
-                        addOption(cfg, QueryOptions.COMPOSITE_METADATA,
-                                        QueryOptions.compressOption(metadataHelper.getCompositeMetadata().toString(), QueryOptions.UTF8), true);
-                    } else {
-                        addOption(cfg, QueryOptions.COMPOSITE_METADATA, metadataHelper.getCompositeMetadata().toString(), true);
-                    }
-                } catch (TableNotFoundException | IOException e) {
+                    CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
+                    if (compositeMetadata != null && !compositeMetadata.isEmpty())
+                        addOption(cfg, QueryOptions.COMPOSITE_METADATA, new String(CompositeMetadata.toBytes(compositeMetadata)), false);
+                } catch (TableNotFoundException e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITE_METADATA_CONFIG_ERROR, e);
                     throw new DatawaveQueryException(qe);
                 }

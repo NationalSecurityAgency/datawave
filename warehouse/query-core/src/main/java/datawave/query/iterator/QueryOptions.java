@@ -18,9 +18,11 @@ import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedC
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
+import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
+import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
@@ -41,7 +43,6 @@ import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
-import datawave.query.util.CompositeMetadata;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataProvider;
 import datawave.util.StringUtils;
@@ -696,9 +697,12 @@ public class QueryOptions implements OptionDescriber {
         // index only fields are by definition not in the event
         if (indexOnlyFields != null)
             allIndexOnlyFields.addAll(indexOnlyFields);
-        // composite fields are index only as well
+        // composite fields are index only as well, unless they are overloaded composites
         if (compositeMetadata != null)
-            allIndexOnlyFields.addAll(compositeMetadata.keySet());
+            for (Multimap<String,String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values())
+                for (String compositeField : compositeFieldMap.keySet())
+                    if (!CompositeIngest.isOverloadedCompositeField(compositeFieldMap, compositeField))
+                        allIndexOnlyFields.add(compositeField);
         return allIndexOnlyFields;
     }
     
@@ -717,7 +721,10 @@ public class QueryOptions implements OptionDescriber {
             nonEventFields.addAll(termFrequencyFields);
         // composite metadata contains combined fields that are not in the event in the same form
         if (compositeMetadata != null)
-            nonEventFields.addAll(compositeMetadata.keySet());
+            for (Multimap<String,String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values())
+                for (String compositeField : compositeFieldMap.keySet())
+                    if (!CompositeIngest.isOverloadedCompositeField(compositeFieldMap, compositeField))
+                        nonEventFields.add(compositeField);
         return nonEventFields;
     }
     
@@ -1082,10 +1089,8 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(COMPOSITE_METADATA)) {
             try {
                 String compositeMetadataString = options.get(COMPOSITE_METADATA);
-                if (compressedMappings) {
-                    compositeMetadataString = decompressOption(compositeMetadataString, QueryOptions.UTF8);
-                }
-                this.compositeMetadata = buildCompositeMetadata(compositeMetadataString);
+                if (compositeMetadataString != null && !compositeMetadataString.isEmpty())
+                    this.compositeMetadata = CompositeMetadata.fromBytes(compositeMetadataString.getBytes("UTF8"));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1212,10 +1217,7 @@ public class QueryOptions implements OptionDescriber {
             return false;
         }
         
-        if (options.containsKey(COMPOSITE_METADATA)) {
-            this.compositeMetadata = buildCompositeMetadata(options.get(COMPOSITE_METADATA));
-        }
-        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
+        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
                         .getMaxNextCount() : -1);
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
@@ -1559,10 +1561,6 @@ public class QueryOptions implements OptionDescriber {
     
     public static TypeMetadata buildTypeMetadata(String data) throws IOException {
         return new TypeMetadata(data);
-    }
-    
-    public static CompositeMetadata buildCompositeMetadata(String in) {
-        return new CompositeMetadata(in);
     }
     
     /**

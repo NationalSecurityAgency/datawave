@@ -18,7 +18,6 @@ import datawave.query.iterator.PowerSet;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.model.QueryModel;
 import datawave.query.tld.TLDQueryIterator;
-import datawave.query.util.CompositeNameAndIndex;
 import datawave.query.util.QueryStopwatch;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -32,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -132,9 +132,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     private Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
     private Multimap<String,Type<?>> normalizedFieldsDatatypes = HashMultimap.create();
     
-    private Multimap<String,CompositeNameAndIndex> fieldToCompositeMap = ArrayListMultimap.create();
     private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
-    private Multimap<String,String> currentCompositeToFieldMap = ArrayListMultimap.create();
+    private Set<String> fixedLengthFields = new HashSet<>();
+    private Map<String,Date> compositeTransitionDates = new HashMap<>();
     
     private boolean sortedUIDs = true;
     
@@ -1078,20 +1078,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         return compositeToFieldMap;
     }
     
-    public Multimap<String,CompositeNameAndIndex> getFieldToCompositeMap() {
-        return fieldToCompositeMap;
+    public Set<String> getFixedLengthFields() {
+        return fixedLengthFields;
     }
     
-    public void setFieldToCompositeMap(Multimap<String,CompositeNameAndIndex> fieldToCompositeMap) {
-        this.fieldToCompositeMap = fieldToCompositeMap;
+    public void setFixedLengthFields(Set<String> fixedLengthFields) {
+        this.fixedLengthFields = fixedLengthFields;
     }
     
-    public Multimap<String,String> getCurrentCompositeToFieldMap() {
-        return currentCompositeToFieldMap;
+    public Map<String,Date> getCompositeTransitionDates() {
+        return compositeTransitionDates;
     }
     
-    public void setCurrentCompositeToFieldMap(Multimap<String,String> currentCompositeToFieldMap) {
-        this.currentCompositeToFieldMap = currentCompositeToFieldMap;
+    public void setCompositeTransitionDates(Map<String,Date> compositeTransitionDates) {
+        this.compositeTransitionDates = compositeTransitionDates;
     }
     
     public Multimap<String,Type<?>> getNormalizedFieldsDatatypes() {

@@ -2,22 +2,11 @@ package datawave.core.iterators;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
+import datawave.query.composite.CompositeUtils;
+import datawave.query.iterator.filter.composite.CompositePredicateFilter;
+import datawave.query.iterator.filter.composite.CompositePredicateFilterer;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
@@ -33,12 +22,29 @@ import org.apache.accumulo.core.iterators.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The Ivarator base class
@@ -52,7 +58,7 @@ import org.apache.log4j.Logger;
  * Event key: CF, {datatype}\0{UID}
  * 
  */
-public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator {
+public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator implements CompositePredicateFilterer {
     public static final Collection<ByteSequence> EMPTY_COL_FAMS = new ArrayList<>();
     public static final Logger log = Logger.getLogger(DatawaveFieldIndexCachingIteratorJexl.class);
     public static final String NULL_BYTE = Constants.NULL_BYTE_STRING;
@@ -158,6 +164,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // have we timed out
     private volatile boolean timedOut = false;
     
+    private Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters;
+    
     // -------------------------------------------------------------------------
     // ------------- Constructors
     public DatawaveFieldIndexCachingIteratorJexl() {
@@ -196,13 +204,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
                     QueryLock queryLock, boolean allowDirReuse) {
         this(fieldName, fieldValue, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true);
+                        queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true, null);
     }
     
     @SuppressWarnings("hiding")
     public DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
                     long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs) {
+                    QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs,
+                    Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters) {
         if (fieldName.toString().startsWith("fi" + NULL_BYTE)) {
             this.fieldName = new Text(fieldName.toString().substring(3));
             this.fiName = fieldName;
@@ -228,6 +237,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.maxRangeSplit = maxRangeSplit;
         
         this.sortedUIDs = sortedUIDs;
+        this.compositePredicateFilters = compositePredicateFilters;
     }
     
     public DatawaveFieldIndexCachingIteratorJexl(DatawaveFieldIndexCachingIteratorJexl other, IteratorEnvironment env) {
@@ -522,6 +532,19 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     }
                     // no need to check containership if not returning sorted uids
                     if (!sortedUIDs || this.lastRangeSeeked.contains(kv.getKey())) {
+                        if (compositePredicateFilters != null && !compositePredicateFilters.isEmpty()) {
+                            String colFam = kv.getKey().getColumnFamily().toString();
+                            String ingestType = colFam.substring(0, colFam.indexOf('\0'));
+                            String colQual = kv.getKey().getColumnQualifier().toString();
+                            String fieldName = colQual.substring(0, colQual.indexOf('\0'));
+                            String[] terms = colQual.substring(colQual.indexOf('\0') + 1).split(CompositeUtils.SEPARATOR);
+                            
+                            CompositePredicateFilter compositePredicateFilter = (compositePredicateFilters.get(ingestType) != null) ? compositePredicateFilters
+                                            .get(ingestType).get(fieldName) : null;
+                            if (compositePredicateFilter != null && !compositePredicateFilter.keep(terms, kv.getKey().getTimestamp()))
+                                continue;
+                        }
+                        
                         this.topKey = kv.getKey();
                         this.topValue = kv.getValue();
                         if (log.isDebugEnabled()) {
@@ -1236,5 +1259,15 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     
     public void setQuerySpanCollector(QuerySpanCollector querySpanCollector) {
         this.querySpanCollector = querySpanCollector;
+    }
+    
+    @Override
+    public void addCompositePredicates(Set<JexlNode> compositePredicates) {
+        if (compositePredicateFilters != null) {
+            // Assign composite predicates to their corresponding field index filters
+            for (Map<String,CompositePredicateFilter> map : compositePredicateFilters.values())
+                for (CompositePredicateFilter compositePredicateFilter : map.values())
+                    compositePredicateFilter.addCompositePredicates(compositePredicates);
+        }
     }
 }

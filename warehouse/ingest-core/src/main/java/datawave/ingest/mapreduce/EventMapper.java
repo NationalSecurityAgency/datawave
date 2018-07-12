@@ -739,8 +739,12 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         if (handler.getHelper(value.getDataType()) instanceof CompositeIngest) {
             CompositeIngest vHelper = (CompositeIngest) handler.getHelper(value.getDataType());
             Multimap<String,NormalizedContentInterface> compositeFields = vHelper.getCompositeFields(newFields);
-            for (Entry<String,NormalizedContentInterface> v : compositeFields.entries())
-                newFields.put(v.getKey(), v.getValue());
+            for (String fieldName : compositeFields.keySet()) {
+                // if this is an overloaded composite field, we are replacing the existing field data
+                if (vHelper.isOverloadedCompositeField(fieldName))
+                    newFields.removeAll(fieldName);
+                newFields.putAll(fieldName, compositeFields.get(fieldName));
+            }
         }
         
         // Create a LOAD_DATE parameter, which is the current time in milliseconds, for all datatypes

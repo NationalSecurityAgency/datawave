@@ -5,31 +5,13 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Set;
 import datawave.core.iterators.SourcePool;
 import datawave.core.iterators.ThreadLocalPooledSource;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.Constants;
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.Constants;
 import datawave.query.attributes.ValueTuple;
+import datawave.query.composite.CompositeMetadata;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.PowerSet;
@@ -49,21 +31,22 @@ import datawave.query.iterator.builder.OrIteratorBuilder;
 import datawave.query.iterator.builder.TermFrequencyIndexBuilder;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.jexl.ArithmeticJexlEngines;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.LiteralRange.NodeOperand;
-import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.parser.JavaRegexAnalyzer;
+import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.Filter;
 import datawave.query.predicate.TimeFilter;
-import datawave.query.iterator.SourceManager;
-import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -100,6 +83,19 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.text.MessageFormat;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -147,6 +143,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected boolean allowTermFrequencyLookup = true;
     protected Set<String> indexOnlyFields = Collections.<String> emptySet();
     protected FieldIndexAggregator fiAggregator = new IdentityAggregator(null);
+    
+    protected CompositeMetadata compositeMetadata;
     
     protected Range rangeLimiter;
     
@@ -533,6 +531,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
         builder.setSource(source.deepCopy(env));
         builder.setTypeMetadata(typeMetadata);
+        builder.setCompositeMetadata(compositeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setTimeFilter(timeFilter);
         builder.setDatatypeFilter(datatypeFilter);
@@ -605,6 +604,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
+        builder.setCompositeMetadata(compositeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -810,6 +810,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             JexlNode subNode = ASTDelayedPredicate.getQueryPropertySource(node, ASTDelayedPredicate.class);
             if (subNode instanceof ASTEQNode) {
                 delayedEqNodes.add(subNode);
+            } else {
+                Set<JexlNode> compositeNodes = CompositePredicateVisitor.findCompositePredicates(subNode);
+                if (!compositeNodes.isEmpty() && o instanceof AndIteratorBuilder) {
+                    AndIteratorBuilder aib = (AndIteratorBuilder) o;
+                    aib.addCompositePredicate(subNode);
+                }
             }
             if (isQueryFullySatisfied == true) {
                 log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
@@ -842,6 +848,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setField(identifier);
         builder.setTimeFilter(TimeFilter.alwaysTrue());
         builder.setTypeMetadata(typeMetadata);
+        builder.setCompositeMetadata(compositeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -874,6 +881,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
+        builder.setCompositeMetadata(compositeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -1216,6 +1224,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setSource(ivaratorSource);
         builder.setTimeFilter(timeFilter);
         builder.setTypeMetadata(typeMetadata);
+        builder.setCompositeMetadata(compositeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -1378,6 +1387,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setFiAggregator(FieldIndexAggregator fiAggregator) {
         this.fiAggregator = fiAggregator;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setCompositeMetadata(CompositeMetadata compositeMetadata) {
+        this.compositeMetadata = compositeMetadata;
         return this;
     }
     

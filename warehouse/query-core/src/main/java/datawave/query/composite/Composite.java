@@ -1,21 +1,23 @@
-package datawave.query.util;
-
-import java.util.List;
-import java.util.Set;
-
-import com.google.common.collect.Sets;
-import datawave.query.Constants;
-import org.apache.commons.jexl2.parser.*;
+package datawave.query.composite;
 
 import com.google.common.collect.Lists;
+import datawave.query.jexl.JexlNodeFactory;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl2.parser.JexlNode;
 
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * A composite is used to combine multiple terms into a single term.
+ *
+ */
 public class Composite {
-    public static final String START_SEPARATOR = Constants.MAX_UNICODE_STRING;
-    public static final String END_SEPARATOR = "";
-    public static final Set<Class<?>> WILDCARD_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTNENode.class, ASTERNode.class, ASTGTNode.class, ASTGENode.class,
-                    ASTLTNode.class, ASTLENode.class);
-    public static final Set<Class<?>> LEAF_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTEQNode.class, ASTNENode.class, ASTERNode.class, ASTGTNode.class,
-                    ASTGENode.class, ASTLTNode.class, ASTLENode.class);
     
     public final String compositeName; // FU_BA_BAZ
     public final List<String> fieldNameList = Lists.newArrayList(); // [ FOO, BAR, BAZ ]
@@ -49,12 +51,34 @@ public class Composite {
                         + expressionList + "]";
     }
     
+    public void getNodesAndExpressions(List<JexlNode> nodes, List<String> expressions, boolean includeOldData) {
+        nodes.addAll(Arrays.asList(jexlNodeList.get(jexlNodeList.size() - 1)));
+        expressions.addAll(Arrays.asList(getAppendedExpressions()));
+        
+        if (includeOldData) {
+            JexlNode node = jexlNodeList.get(0);
+            if (node instanceof ASTGTNode) {
+                nodes.clear();
+                expressions.clear();
+                
+                expressions.add(CompositeUtils.getInclusiveLowerBound(expressionList.get(0)));
+                nodes.add(JexlNodeFactory.buildNode((ASTGENode) null, (String) null, (String) null));
+            } else if (node instanceof ASTGENode || node instanceof ASTEQNode) {
+                nodes.clear();
+                expressions.clear();
+                
+                expressions.add(expressionList.get(0));
+                nodes.add(JexlNodeFactory.buildNode((ASTGENode) null, (String) null, (String) null));
+            }
+        }
+    }
+    
     /**
      * stop at the first regex expression
      * 
      * @return
      */
-    public String getAppendedExpressions() {
+    private String getAppendedExpressions() {
         StringBuilder buf = new StringBuilder();
         for (int i = 0; i < jexlNodeList.size(); i++) {
             JexlNode node = jexlNodeList.get(i);
@@ -62,12 +86,8 @@ public class Composite {
             
             buf.append(expression);
             
-            if (i > 0) {
-                buf.append(END_SEPARATOR);
-            }
-            
             if (i + 1 < jexlNodeList.size()) {
-                buf.append(START_SEPARATOR);
+                buf.append(CompositeUtils.SEPARATOR);
             }
             
             if (node instanceof ASTERNode) {
@@ -78,12 +98,37 @@ public class Composite {
         return buf.toString();
     }
     
+    // this composite is invalid if:
+    // - it contains a mix of GT/GE and LT/LE nodes
+    // - it contains a 'regex' or 'not equals' node in any position other than the last position
+    // - it contains a 'regex' or 'not equals' node in the last position, and any of the preceeding nodes are not 'equals' nodes
+    // -- e.g. no unbounded ranges ending in a 'regex' or 'not equals' node
     public boolean isValid() {
-        return (this.jexlNodeList.size() >= 1 && !WILDCARD_NODE_CLASSES.contains(jexlNodeList.get(0).getClass()));
+        if (jexlNodeList.isEmpty())
+            return false;
+        
+        boolean allEqNodes = true;
+        boolean hasGTOrGENodes = false;
+        boolean hasLTOrLENodes = false;
+        for (int i = 0; i < jexlNodeList.size(); i++) {
+            JexlNode node = jexlNodeList.get(i);
+            
+            hasGTOrGENodes |= (node instanceof ASTGTNode || node instanceof ASTGENode);
+            hasLTOrLENodes |= (node instanceof ASTLTNode || node instanceof ASTLENode);
+            if (hasGTOrGENodes && hasLTOrLENodes)
+                return false;
+            
+            // if this is a regex or not equals node, and this is either not the last node,
+            // or was preceeded by something other than an equals node
+            if (CompositeUtils.WILDCARD_NODE_CLASSES.contains(node.getClass()) && ((i + 1) != jexlNodeList.size() || !allEqNodes))
+                return false;
+        }
+        
+        return true;
     }
     
     public boolean contains(JexlNode node) {
-        return this.jexlNodeList.contains(node);
+        return jexlNodeList.contains(node);
     }
     
     @Override

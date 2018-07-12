@@ -1,15 +1,23 @@
 package datawave.query.jexl.lookups;
 
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.concurrent.Callable;
-
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
+import datawave.core.iterators.ColumnQualifierRangeIterator;
+import datawave.core.iterators.CompositeRangeFilterIterator;
+import datawave.core.iterators.TimeoutExceptionIterator;
+import datawave.core.iterators.TimeoutIterator;
+import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.IllegalRangeArgumentException;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.tables.ScannerFactory;
+import datawave.util.time.DateHelper;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
+import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -17,25 +25,20 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.WholeRowIterator;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import org.springframework.util.StringUtils;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
-
-import datawave.core.iterators.ColumnQualifierRangeIterator;
-import datawave.core.iterators.TimeoutExceptionIterator;
-import datawave.core.iterators.TimeoutIterator;
-import datawave.query.Constants;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.exceptions.IllegalRangeArgumentException;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.tables.ScannerFactory;
-import datawave.util.time.DateHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.NotFoundQueryException;
-import datawave.webservice.query.exception.QueryException;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.concurrent.Callable;
 
 public class LookupBoundedRangeForTerms extends IndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(LookupBoundedRangeForTerms.class);
@@ -43,9 +46,15 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
     protected Set<String> datatypeFilter;
     protected Set<Text> fields;
     private final LiteralRange<?> literalRange;
+    private final JexlNode compositePredicate;
     
     public LookupBoundedRangeForTerms(LiteralRange<?> literalRange) {
+        this(literalRange, null);
+    }
+    
+    public LookupBoundedRangeForTerms(LiteralRange<?> literalRange, JexlNode compositePredicate) {
         this.literalRange = literalRange;
+        this.compositePredicate = compositePredicate;
         datatypeFilter = Sets.newHashSet();
         fields = Sets.newHashSet();
     }
@@ -122,12 +131,38 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
             IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 50, "WholeRowIterator", WholeRowIterator.class);
             bs.addScanIterator(cfg);
             
-            cfg = new IteratorSetting(config.getBaseIteratorPriority() + 49, "DateFilter", ColumnQualifierRangeIterator.class);
+            cfg = new IteratorSetting(config.getBaseIteratorPriority() + 48, "DateFilter", ColumnQualifierRangeIterator.class);
             // search from 20YYddMM to 20ZZddMM\uffff to ensure we encompass all of the current day
             String end = endDay + Constants.MAX_UNICODE_STRING;
             cfg.addOption(ColumnQualifierRangeIterator.RANGE_NAME, ColumnQualifierRangeIterator.encodeRange(new Range(startDay, end)));
             
             bs.addScanIterator(cfg);
+            
+            // If this is a composite range, we need to setup our query to filter based on each component of the composite range
+            if (config.getCompositeToFieldMap().get(literalRange.getFieldName()) != null && compositePredicate != null) {
+                Date transitionDate = null;
+                if (config.getCompositeTransitionDates().containsKey(literalRange.getFieldName()))
+                    transitionDate = config.getCompositeTransitionDates().get(literalRange.getFieldName());
+                
+                // if this is a transitioned composite field, don't add the iterator if our date range preceeds the transition date
+                if (transitionDate == null || config.getEndDate().compareTo(transitionDate) > 0) {
+                    
+                    IteratorSetting compositeIterator = new IteratorSetting(config.getBaseIteratorPriority() + 51, CompositeRangeFilterIterator.class);
+                    
+                    compositeIterator.addOption(CompositeRangeFilterIterator.COMPOSITE_FIELDS,
+                                    StringUtils.collectionToCommaDelimitedString(config.getCompositeToFieldMap().get(literalRange.getFieldName())));
+                    
+                    compositeIterator.addOption(CompositeRangeFilterIterator.COMPOSITE_PREDICATE, JexlStringBuildingVisitor.buildQuery(compositePredicate));
+                    
+                    if (transitionDate != null) {
+                        // Ensure iterator runs before wholerowiterator so we get valid timestamps
+                        compositeIterator.setPriority(config.getBaseIteratorPriority() + 49);
+                        compositeIterator.addOption(CompositeRangeFilterIterator.COMPOSITE_TRANSITION_DATE, Long.toString(transitionDate.getTime()));
+                    }
+                    
+                    bs.addScanIterator(compositeIterator);
+                }
+            }
             
             if (null != fairnessIterator) {
                 cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);

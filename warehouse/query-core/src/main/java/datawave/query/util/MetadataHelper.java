@@ -1,42 +1,33 @@
 package datawave.query.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.CharacterCodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
-
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.cache.Cache;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Sets;
+import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.Type;
+import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.iterators.EdgeMetadataCombiner;
 import datawave.iterators.filter.EdgeMetadataCQStrippingIterator;
 import datawave.marking.MarkingFunctions;
-import datawave.query.model.QueryModel;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.iterator.PowerSet;
+import datawave.query.model.QueryModel;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.util.time.TraceStopwatch;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -66,20 +57,26 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-import com.google.common.cache.Cache;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.SetMultimap;
-import com.google.common.collect.Sets;
-import com.google.protobuf.InvalidProtocolBufferException;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.CharacterCodingException;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.ExecutionException;
 
 /**
  * <p>
@@ -481,7 +478,9 @@ public class MetadataHelper implements ApplicationContextAware {
         Set<String> fields = new HashSet<>();
         fields.addAll(getIndexOnlyFields(ingestTypeFilter));
         fields.addAll(getTermFrequencyFields(ingestTypeFilter));
-        fields.addAll(getCompositeMetadata(ingestTypeFilter).keySet());
+        for (String compField : getFieldToCompositeMap(ingestTypeFilter).keySet())
+            if (!CompositeIngest.isOverloadedCompositeField(getCompositeToFieldMap(ingestTypeFilter), compField))
+                fields.add(compField);
         
         return Collections.unmodifiableSet(fields);
     }
@@ -874,13 +873,41 @@ public class MetadataHelper implements ApplicationContextAware {
      * @return An unmodifiable Multimap
      * @throws TableNotFoundException
      */
-    public Multimap<String,CompositeNameAndIndex> getFieldToCompositeMap() throws TableNotFoundException {
-        return this.allFieldMetadataHelper.getFieldToCompositeMap();
+    public Multimap<String,String> getFieldToCompositeMap() throws TableNotFoundException {
+        return this.allFieldMetadataHelper.getCompositeToFieldMap();
     }
     
-    public Multimap<String,CompositeNameAndIndex> getFieldToCompositeMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public Multimap<String,String> getFieldToCompositeMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
-        return this.allFieldMetadataHelper.getFieldToCompositeMap(ingestTypeFilter);
+        return this.allFieldMetadataHelper.getCompositeToFieldMap(ingestTypeFilter);
+    }
+    
+    /**
+     * A map of composite name to transition date.
+     *
+     * @return An unmodifiable Map
+     * @throws TableNotFoundException
+     */
+    public Map<String,Date> getCompositeTransitionDateMap() throws TableNotFoundException {
+        return this.allFieldMetadataHelper.getCompositeTransitionDateMap();
+    }
+    
+    public Map<String,Date> getCompositeTransitionDateMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        return this.allFieldMetadataHelper.getCompositeTransitionDateMap(ingestTypeFilter);
+    }
+    
+    /**
+     * A set of fixed length composite fields.
+     *
+     * @return An unmodifiable Set
+     * @throws TableNotFoundException
+     */
+    public Set<String> getFixedLengthCompositeFields() throws TableNotFoundException {
+        return this.allFieldMetadataHelper.getFixedLengthCompositeFields();
+    }
+    
+    public Set<String> getFixedLengthCompositeFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        return this.allFieldMetadataHelper.getFixedLengthCompositeFields(ingestTypeFilter);
     }
     
     /**
@@ -1040,61 +1067,7 @@ public class MetadataHelper implements ApplicationContextAware {
     }
     
     public Multimap<String,String> getCompositeToFieldMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
-        
-        // map a composite name like COLOR_WHEELS to a list of field names like COLOR, WHEELS
-        ListMultimap<String,String> composites = ArrayListMultimap.create();
-        // FOO -> 'FOOBAR,0' 'BAZFOO,1' 'NOFOO,1'
-        // BAR -> 'FOOBAR,1'
-        // NO -> 'NOFOO,1'
-        // BAZ -> 'BAZFOO,0'
-        
-        // return
-        // FOOBAR -> FOO,BAR
-        // BAZFOO -> BAZ,FOO
-        // NOFOO -> NO,FOO
-        Map<String,TreeMap<Integer,String>> keyOrderingMap = new HashMap<>();
-        Multimap<String,CompositeNameAndIndex> mm = this.allFieldMetadataHelper.getFieldToCompositeMap(ingestTypeFilter);
-        for (Map.Entry<String,CompositeNameAndIndex> entry : mm.entries()) {
-            String fieldName = entry.getKey(); // is the field name
-            CompositeNameAndIndex composite = entry.getValue(); // is a Composite of compositename and fieldindex
-            String compositeName = composite.compositeName;
-            Integer index = composite.fieldIndex;
-            if (keyOrderingMap.containsKey(compositeName) == false) {
-                keyOrderingMap.put(compositeName, Maps.<Integer,String> newTreeMap());
-            }
-            keyOrderingMap.get(compositeName).put(index, fieldName);
-        }
-        for (Map.Entry<String,TreeMap<Integer,String>> entry : keyOrderingMap.entrySet()) {
-            for (Map.Entry<Integer,String> treeEntry : entry.getValue().entrySet()) {
-                composites.put(entry.getKey(), treeEntry.getValue());
-            }
-        }
-        
-        return Multimaps.unmodifiableListMultimap(composites);
-    }
-    
-    public Collection<CompositeNameAndIndex> getCompositesForField(String fieldName) throws TableNotFoundException {
-        return getCompositesForField(fieldName, null);
-    }
-    
-    public Collection<CompositeNameAndIndex> getCompositesForField(String fieldName, Set<String> filter) throws TableNotFoundException {
-        return this.allFieldMetadataHelper.getFieldToCompositeMap(filter).get(fieldName);
-    }
-    
-    /**
-     * for COLOR_WHEELS, returns (ordered) list [ COLOR, WHEELS ]
-     * 
-     * @param compositeNameIn
-     * @return
-     * @throws TableNotFoundException
-     */
-    public List<String> getFieldsForComposite(String compositeNameIn) throws TableNotFoundException {
-        return getFieldsForComposite(compositeNameIn, null);
-    }
-    
-    public List<String> getFieldsForComposite(String compositeNameIn, Set<String> filter) throws TableNotFoundException {
-        
-        return Collections.unmodifiableList(new ArrayList<String>(this.getCompositeToFieldMap(filter).get(compositeNameIn)));
+        return this.allFieldMetadataHelper.getCompositeToFieldMap(ingestTypeFilter);
     }
     
     /**

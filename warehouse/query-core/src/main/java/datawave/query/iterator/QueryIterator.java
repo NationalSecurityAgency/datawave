@@ -3,24 +3,51 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.collect.*;
-import java.net.MalformedURLException;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import com.google.common.collect.UnmodifiableIterator;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
-import datawave.query.jexl.DatawaveJexlContext;
+import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.AttributeKeepFilter;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ValueTuple;
-import datawave.query.function.*;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.function.Aggregation;
+import datawave.query.function.DataTypeAsField;
+import datawave.query.function.DocumentMetadata;
+import datawave.query.function.DocumentPermutation;
+import datawave.query.function.DocumentProjection;
+import datawave.query.function.IndexOnlyContextCreator;
+import datawave.query.function.JexlContextCreator;
+import datawave.query.function.JexlEvaluation;
+import datawave.query.function.KeyToDocumentData;
+import datawave.query.function.LimitFields;
+import datawave.query.function.MaskedValueFilterFactory;
+import datawave.query.function.MaskedValueFilterInterface;
+import datawave.query.function.RemoveGroupingContext;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.iterator.pipeline.PipelineFactory;
 import datawave.query.iterator.pipeline.PipelineIterator;
-import datawave.query.iterator.profile.*;
+import datawave.query.iterator.profile.EvaluationTrackingFunction;
+import datawave.query.iterator.profile.EvaluationTrackingIterator;
+import datawave.query.iterator.profile.EvaluationTrackingNestedIterator;
+import datawave.query.iterator.profile.EvaluationTrackingPredicate;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.iterator.profile.MultiThreadedQuerySpan;
+import datawave.query.iterator.profile.PipelineQuerySpanCollectionIterator;
+import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.profile.QuerySpanCollector;
+import datawave.query.iterator.profile.SourceTrackingIterator;
+import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
@@ -31,10 +58,14 @@ import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.predicate.EmptyDocumentFilter;
-import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.statsd.QueryStatsDClient;
+import datawave.query.util.EmptyContext;
+import datawave.query.util.EntryToTuple;
 import datawave.query.util.TraceIterators;
-import datawave.query.util.*;
+import datawave.query.util.Tuple2;
+import datawave.query.util.Tuple3;
+import datawave.query.util.TupleToEntry;
+import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -50,12 +81,20 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.*;
+import java.net.MalformedURLException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -621,7 +660,6 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         // removing Attributes for this Document
         // which do not fall within the expected time range
         Iterator<Entry<Key,Document>> documents = null;
-        CompositeMetadata compositeMetadata = new CompositeMetadata(this.getCompositeMetadata());
         Aggregation a = new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
                         this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(), isTrackSizes());
         if (gatherTimingDetails()) {
@@ -991,9 +1029,10 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     protected DocumentProjection getCompositeProjection() {
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         Set<String> composites = Sets.newHashSet();
-        for (Multimap<String,String> val : this.compositeMetadata.getCompositeToFieldMap().values()) {
-            composites.addAll(val.asMap().keySet());
-        }
+        for (Multimap<String,String> val : this.compositeMetadata.getCompositeFieldMapByType().values())
+            for (String compositeField : val.keySet())
+                if (!CompositeIngest.isOverloadedCompositeField(val, compositeField))
+                    composites.add(compositeField);
         projection.initializeBlacklist(composites);
         return projection;
     }
@@ -1164,7 +1203,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                         .setIncludes(indexedFields).setTermFrequencyFields(this.getTermFrequencyFields()).setIsQueryFullySatisfied(isQueryFullySatisfied)
                         .setSortedUIDs(sortedUIDs).limit(documentRange).disableIndexOnly(disableFiEval).limit(this.sourceLimit)
                         .setCollectTimingDetails(this.collectTimingDetails).setQuerySpanCollector(this.querySpanCollector)
-                        .setIndexOnlyFields(this.getAllIndexOnlyFields()).setAllowTermFrequencyLookup(this.allowTermFrequencyLookup);
+                        .setIndexOnlyFields(this.getAllIndexOnlyFields()).setAllowTermFrequencyLookup(this.allowTermFrequencyLookup)
+                        .setCompositeMetadata(compositeMetadata);
         // TODO: .setStatsPort(this.statsdHostAndPort);
     }
     
