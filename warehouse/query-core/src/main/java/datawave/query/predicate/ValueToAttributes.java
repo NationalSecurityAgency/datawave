@@ -118,6 +118,9 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     }
     
     public String getCompositeAttributeKey(String composite, String grouping) {
+        if (grouping == null || grouping.length() == 0) {
+            return composite;
+        }
         return composite + JexlASTHelper.GROUPING_CHARACTER_SEPARATOR + grouping;
     }
     

@@ -72,13 +72,11 @@ public abstract class ValueToAttributesTest {
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, METADATA_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -97,7 +95,6 @@ public abstract class ValueToAttributesTest {
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, METADATA_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
         }
         
@@ -151,11 +148,10 @@ public abstract class ValueToAttributesTest {
         deserializer = new KryoDocumentDeserializer();
     }
     
-    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                    throws ParseException, Exception;
+    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
-                    throws ParseException, Exception {
+                    throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -173,10 +169,13 @@ public abstract class ValueToAttributesTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
         
-        HashSet<String> expectedSet = new HashSet<String>(expected);
+        String plannedScript = logic.getQueryPlanner().getPlannedScript();
+        Assert.assertTrue("Composite was not substituted into query:" + plannedScript, plannedScript.contains("MAKE_COLOR"));
+        
+        HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
-        resultSet = new HashSet<String>();
-        Set<Document> docs = new HashSet<Document>();
+        resultSet = new HashSet<>();
+        Set<Document> docs = new HashSet<>();
         for (Map.Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
             
@@ -225,10 +224,16 @@ public abstract class ValueToAttributesTest {
             log.debug("testCompositeFunctions");
         }
         String[] queryStrings = { //
-        "COLOR == 'RED' && MAKE == 'FORD'"};
+        "COLOR == 'RED' && MAKE == 'FORD'", //
+                "COLOR == 'BLUE' && MAKE == 'CHEVY'", //
+                "COLOR == 'BLUE' && MAKE == 'FORD'", //
+        };
         
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("One"), // family name starts with C or S
+        List<String>[] expectedLists = new List[] { //
+        Arrays.asList("One"), //
+                Arrays.asList("One"), //
+                Collections.emptyList()//
         };
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
