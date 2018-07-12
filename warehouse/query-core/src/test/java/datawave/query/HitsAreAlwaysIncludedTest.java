@@ -51,9 +51,8 @@ import java.util.regex.Pattern;
 import static datawave.query.QueryTestTableHelper.*;
 
 /**
- * Tests the limit.fields feature to ensure that hit terms are always included and that
- * associated fields at the same grouping context are included along with the field that
- * hit on the query
+ * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
+ * the field that hit on the query
  * 
  */
 public abstract class HitsAreAlwaysIncludedTest {
@@ -295,6 +294,21 @@ public abstract class HitsAreAlwaysIncludedTest {
         
         Set<String> goodResults = Sets.newHashSet("FOO_1_BAR.FOO.3:good<cat>", "FOO_3_BAR.FOO.3:defg<cat>", "FOO_3.FOO.3.3:defg", "FOO_4.FOO.4.3:yes",
                         "FOO_1.FOO.1.3:good");
+        
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+    
+    @Test
+    public void testHitWithoutGroupingContext() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "false");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3");
+        
+        String queryString = "FOO_3_BAR == 'defg<cat>'";
+        
+        // there is no grouping context so i can expect only the original term, not the related ones (in the same group)
+        Set<String> goodResults = Sets.newHashSet("FOO_3_BAR:defg<cat>");
         
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
