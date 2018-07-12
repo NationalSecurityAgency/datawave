@@ -31,6 +31,8 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.iterators.PropogatingIterator;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
+import datawave.util.cli.PasswordConverter;
+
 import org.apache.accumulo.core.Constants;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -54,7 +56,6 @@ import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -564,7 +565,7 @@ public class IngestJob implements Tool {
                 userName = args[++i];
                 AccumuloHelper.setUsername(conf, userName);
             } else if (args[i].equals("-pass")) {
-                password = args[++i].getBytes();
+                password = PasswordConverter.parseArg(args[++i]).getBytes();
                 AccumuloHelper.setPassword(conf, password);
             } else if (args[i].equals("-flagFile")) {
                 flagFile = args[++i];
