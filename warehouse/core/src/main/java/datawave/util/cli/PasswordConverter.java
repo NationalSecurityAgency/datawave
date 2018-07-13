@@ -28,15 +28,35 @@ public class PasswordConverter implements IStringConverter<String> {
     };
     
     /**
-     * Static method to parse password args that may contain env: prefix
+     * Static method to parse args that may contain env: prefix indicating that
+     * an environment variable should be looked up to obtain the value
      * 
      * @param arg
      *            to parse
-     * @return the parsed password
+     * @return the parsed password or null if env var not defined
      */
     public static String parseArg(String arg) {
+        return parseArg(arg, null);
+    }
+    
+    /**
+     * Static method to parse args that may contain env: prefix indicating that
+     * an environment variable should be looked up to obtain the value
+     * 
+     * @param arg
+     *            to parse
+     * @param defaultValue
+     *            if env var not present
+     * @return the parsed password or default if env var not defined
+     */
+    public static String parseArg(String arg, String defaultValue) {
         if (arg.startsWith(ENV_PREFIX)) {
-            return System.getenv(arg.substring(ENV_PREFIX.length()));
+            String value = System.getenv(arg.substring(ENV_PREFIX.length()));
+            if (null == value) {
+                return defaultValue;
+            } else {
+                return value;
+            }
         } else {
             return arg;
         }
