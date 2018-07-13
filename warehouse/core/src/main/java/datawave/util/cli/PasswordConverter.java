@@ -28,8 +28,7 @@ public class PasswordConverter implements IStringConverter<String> {
     };
     
     /**
-     * Static method to parse args that may contain env: prefix indicating that
-     * an environment variable should be looked up to obtain the value
+     * Static method to parse args that may contain env: prefix indicating that an environment variable should be looked up to obtain the value
      * 
      * @param arg
      *            to parse
@@ -40,8 +39,7 @@ public class PasswordConverter implements IStringConverter<String> {
     }
     
     /**
-     * Static method to parse args that may contain env: prefix indicating that
-     * an environment variable should be looked up to obtain the value
+     * Static method to parse args that may contain env: prefix indicating that an environment variable should be looked up to obtain the value
      * 
      * @param arg
      *            to parse
