@@ -5,8 +5,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-import java.util.Random;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,7 +47,12 @@ public class PasswordConverterTest {
     @Test
     public void testConvertEnvPrefixedUndefinedEnvironmentVar() {
         // prefix with env var not defined should return null
-        argv[1] = "env:HighlyUnlikelyThisWillBeDefined" + new Random().nextInt();
+        String name = "HighlyUnlikelyThisWillBeDefined";
+        // make sure it is not defined
+        assertThat("Expected " + name + " to not be defined but it was!", System.getenv(name), is(nullValue()));
+        
+        argv[1] = "env:" + name;
+        
         new JCommander(password).parse(argv);
         assertThat(password.password, is(nullValue()));
     }
