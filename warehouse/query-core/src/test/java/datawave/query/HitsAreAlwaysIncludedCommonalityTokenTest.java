@@ -8,10 +8,9 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.function.LimitFields;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.util.LimitFieldsTestingIngest;
+import datawave.query.util.CommonalityTokenTestDataIngest;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -45,20 +44,18 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static datawave.query.QueryTestTableHelper.*;
 
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
- * the field that hit on the query
+ * the field that hit on the query. This test uses a dot delimited token in the event field name as a 'commonality token'
  * 
  */
-public abstract class HitsAreAlwaysIncludedTest {
+public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
     
     @RunWith(Arquillian.class)
-    public static class ShardRange extends HitsAreAlwaysIncludedTest {
+    public static class ShardRange extends HitsAreAlwaysIncludedCommonalityTokenTest {
         protected static Connector connector = null;
         
         @BeforeClass
@@ -67,7 +64,7 @@ public abstract class HitsAreAlwaysIncludedTest {
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
             connector = qtth.connector;
             
-            LimitFieldsTestingIngest.writeItAll(connector, LimitFieldsTestingIngest.WhatKindaRange.SHARD);
+            CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
@@ -82,7 +79,7 @@ public abstract class HitsAreAlwaysIncludedTest {
     }
     
     @RunWith(Arquillian.class)
-    public static class DocumentRange extends HitsAreAlwaysIncludedTest {
+    public static class DocumentRange extends HitsAreAlwaysIncludedCommonalityTokenTest {
         protected static Connector connector = null;
         
         @BeforeClass
@@ -91,7 +88,7 @@ public abstract class HitsAreAlwaysIncludedTest {
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
             connector = qtth.connector;
             
-            LimitFieldsTestingIngest.writeItAll(connector, LimitFieldsTestingIngest.WhatKindaRange.DOCUMENT);
+            CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
@@ -105,7 +102,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         }
     }
     
-    private static final Logger log = Logger.getLogger(HitsAreAlwaysIncludedTest.class);
+    private static final Logger log = Logger.getLogger(HitsAreAlwaysIncludedCommonalityTokenTest.class);
     
     protected Authorizations auths = new Authorizations("ALL");
     
@@ -224,91 +221,29 @@ public abstract class HitsAreAlwaysIncludedTest {
     }
     
     @Test
-    public void checkThePattern() throws Exception {
-        Pattern pattern = LimitFields.COMMONALITY_AND_SUFFIX_PATTERN;
-        Matcher matcher = pattern.matcher("FOO_3.FOO.3.3");
-        Assert.assertTrue(matcher.matches());
-        Assert.assertEquals(matcher.group(1), "FOO");
-        Assert.assertEquals(matcher.group(2), "3");
-        matcher = pattern.matcher("FOO_3");
-        Assert.assertFalse(matcher.matches());
-        matcher = pattern.matcher("FOO_3_BAR.FOO.3");
-        Assert.assertTrue(matcher.matches());
-        Assert.assertEquals(matcher.group(1), "FOO");
-        Assert.assertEquals(matcher.group(2), "3");
-    }
-    
-    @Test
-    public void testHitForIndexedQueryTerm() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3");
-        
-        String queryString = "FOO_3_BAR == 'defg<cat>'";
-        
-        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR.FOO.3:good<cat>", "FOO_3_BAR.FOO.3:defg<cat>", "FOO_3.FOO.3.3:defg", "FOO_4.FOO.4.3:yes",
-                        "FOO_1.FOO.1.3:good");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
-    }
-    
-    @Test
-    public void testHitForIndexedQueryOnUnrealmed() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3");
-        
-        String queryString = "FOO_3 == 'defg'";
-        
-        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR.FOO.3:good<cat>", "FOO_3_BAR.FOO.3:defg<cat>", "FOO_3.FOO.3.3:defg", "FOO_4.FOO.4.3:yes",
-                        "FOO_1.FOO.1.3:good");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
-    }
-    
-    @Test
-    public void testHitForIndexedQueryAndAnyfieldLimit() throws Exception {
+    public void testWhereTheWildThingsAre() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
         extraParameters.put("limit.fields", "_ANYFIELD_=2");
         
-        String queryString = "FOO_3_BAR == 'defg<cat>'";
+        String queryString = "BIRD == 'buzzard'";
         
-        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR.FOO.3:good<cat>", "FOO_3_BAR.FOO.3:defg<cat>", "FOO_3.FOO.3.3:defg", "FOO_4.FOO.4.3:yes",
-                        "FOO_1.FOO.1.3:good");
+        Set<String> goodResults = Sets.newHashSet("BIRD.WILD.3:buzzard", "CAT.WILD.3:puma", "CANINE.WILD.3:dingo", "FISH.WILD.3:salmon");
         
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
     
     @Test
-    public void testHitForIndexedAndUnindexedQueryAndAnyfieldLimit() throws Exception {
+    public void testPetSounds() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3");
+        extraParameters.put("limit.fields", "_ANYFIELD_=2");
         
-        String queryString = "FOO_3_BAR == 'defg<cat>' and FOO_1 == 'good'";
+        String queryString = "FISH == 'angelfish'";
         
-        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR.FOO.3:good<cat>", "FOO_3_BAR.FOO.3:defg<cat>", "FOO_3.FOO.3.3:defg", "FOO_4.FOO.4.3:yes",
-                        "FOO_1.FOO.1.3:good");
-        
-        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
-    }
-    
-    @Test
-    public void testHitWithoutGroupingContext() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "false");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("limit.fields", "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3");
-        
-        String queryString = "FOO_3_BAR == 'defg<cat>'";
-        
-        // there is no grouping context so i can expect only the original term, not the related ones (in the same group)
-        Set<String> goodResults = Sets.newHashSet("FOO_3_BAR:defg<cat>");
+        Set<String> goodResults = Sets.newHashSet("BIRD.PET.2:parrot", "CAT.PET.2:tom", "CANINE.PET.2:chihuahua", "FISH.PET.2:angelfish");
         
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }

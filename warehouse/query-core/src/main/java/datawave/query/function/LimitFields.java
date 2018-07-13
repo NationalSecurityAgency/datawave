@@ -32,7 +32,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     
     public final static String ORIGINAL_COUNT_SUFFIX = "ORIGINAL_COUNT";
     
-    public final static Pattern PREFIX_SUFFIX_PATTERN = Pattern.compile("([A-Za-z0-9]+[\\._])[A-Za-z0-9\\._]*\\.([A-Za-z0-9]+)");
+    public final static Pattern COMMONALITY_AND_SUFFIX_PATTERN = Pattern.compile("[A-Za-z0-9_]+\\.([A-Za-z0-9]+)\\.[A-Za-z0-9_\\.]*([A-Za-z0-9&&[^\\.]]+)");
     
     private Map<String,Integer> limitFieldsMap;
     
@@ -91,7 +91,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 if (log.isTraceEnabled())
                     log.trace("limitFieldsMap contains " + keyNoGrouping);
                 Attribute<?> attr = de.getValue();
-                int limit = this.limitFieldsMap.get(keyNoGrouping);
+                int limit = this.limitFieldsMap.get(keyNoGrouping); // used below if you un-comment to get all hits
                 if (attr instanceof Attributes) {
                     Attributes attrs = (Attributes) attr;
                     Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
@@ -175,13 +175,21 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         } else if (!hitTermMap.isEmpty() && limitFieldsMap.containsKey(keyNoGrouping)) {
             
             try {
-                Matcher matcher = PREFIX_SUFFIX_PATTERN.matcher(keyWithGrouping);
-                if (matcher.matches()) {
-                    String keyWithGroupingPrefix = matcher.group(1);
-                    String keyWithGroupingSuffix = matcher.group(2);
+                Matcher keyCommonalityAndSuffixMatcher = COMMONALITY_AND_SUFFIX_PATTERN.matcher(keyWithGrouping);
+                if (keyCommonalityAndSuffixMatcher.matches()) {
+                    String keyWithGroupingCommonality = keyCommonalityAndSuffixMatcher.group(1);
+                    String keyWithGroupingSuffix = keyCommonalityAndSuffixMatcher.group(2);
                     for (String key : hitTermMap.keySet()) {
-                        if (key.startsWith(keyWithGroupingPrefix) && key.endsWith(keyWithGroupingSuffix)) {
-                            mapOfHits.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                        
+                        // get the commonality from the hit term key
+                        Matcher hitTermKeyCommonalityMatcher = LimitFields.COMMONALITY_AND_SUFFIX_PATTERN.matcher(key);
+                        if (hitTermKeyCommonalityMatcher.matches()) {
+                            String hitTermKeyCommonality = hitTermKeyCommonalityMatcher.group(1);
+                            if (hitTermKeyCommonality.equals(keyWithGroupingCommonality) && key.endsWith(keyWithGroupingSuffix)) {
+                                mapOfHits.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                            } else {
+                                mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
+                            }
                         } else {
                             mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
                         }
@@ -189,6 +197,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 } else {
                     mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
                 }
+                
             } catch (Throwable ex) {
                 // if ANYTHING went wrong here, just put it into the misses
                 mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
