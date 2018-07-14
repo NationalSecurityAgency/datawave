@@ -3040,14 +3040,7 @@ public class QueryExecutorBean implements QueryExecutor {
         
         long start = System.nanoTime();
         GenericResponse<String> createResponse = null;
-        try {
-            createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
-        } catch (DatawaveWebApplicationException ex) {
-            if (ex.getCause() instanceof QueryException) {
-                QueryException queryException = (QueryException) ex.getCause();
-                return new ErrorResponse(queryException, s);
-            }
-        }
+        createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
         long createCallTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         final String queryId = createResponse.getResult();
         
@@ -3333,101 +3326,6 @@ public class QueryExecutorBean implements QueryExecutor {
                     log.error(qe);
                     errorResponse.addException(qe.getBottomQueryException());
                 }
-            }
-        }
-        
-    }
-    
-    public class ErrorResponse implements StreamingOutput {
-        private GenericResponse<String> errorResponse = new GenericResponse<String>();
-        private SerializationType serializationType = SerializationType.XML;
-        
-        public ErrorResponse(QueryException queryException, SerializationType serializationType) {
-            this.serializationType = serializationType;
-            this.errorResponse.addException(queryException);
-        }
-        
-        @Override
-        public void write(OutputStream out) throws IOException, WebApplicationException {
-            
-            try {
-                LinkedBuffer buffer = LinkedBuffer.allocate(4096);
-                Marshaller xmlSerializer;
-                try {
-                    JAXBContext jaxbContext = JAXBContext.newInstance(errorResponse.getClass());
-                    xmlSerializer = jaxbContext.createMarshaller();
-                } catch (JAXBException e1) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.JAXB_CONTEXT_ERROR, e1, MessageFormat.format("class: {0}",
-                                    errorResponse.getClass()));
-                    log.error(qe);
-                    errorResponse.addException(qe.getBottomQueryException());
-                    throw new DatawaveWebApplicationException(qe, errorResponse);
-                }
-                ObjectMapper jsonSerializer = new ObjectMapper();
-                jsonSerializer.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-                jsonSerializer.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JaxbAnnotationIntrospector(
-                                jsonSerializer.getTypeFactory())));
-                // Don't close the output stream
-                jsonSerializer.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
-                JsonGenerator jsonGenerator = jsonSerializer.getFactory().createGenerator(out, JsonEncoding.UTF8);
-                jsonGenerator.enable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
-                
-                boolean sentResults = false;
-                
-                try {
-                    BaseResponse page = this.errorResponse;
-                    
-                    // Wrap the output stream so that we can get a byte count
-                    CountingOutputStream countingStream = new CountingOutputStream(out);
-                    
-                    switch (serializationType) {
-                        case XML:
-                            xmlSerializer.marshal(page, countingStream);
-                            break;
-                        case JSON:
-                            jsonGenerator.writeStartObject();
-                            jsonGenerator.flush();
-                            jsonSerializer.writeValue(countingStream, page);
-                            break;
-                        case PB:
-                            @SuppressWarnings("unchecked")
-                            Message<Object> pb = (Message<Object>) page;
-                            Schema<Object> pbSchema = pb.cachedSchema();
-                            ProtobufIOUtil.writeTo(countingStream, page, pbSchema, buffer);
-                            buffer.clear();
-                            break;
-                        case YAML:
-                            @SuppressWarnings("unchecked")
-                            Message<Object> yaml = (Message<Object>) page;
-                            Schema<Object> yamlSchema = yaml.cachedSchema();
-                            YamlIOUtil.writeTo(countingStream, page, yamlSchema, buffer);
-                            buffer.clear();
-                            break;
-                    }
-                    countingStream.flush();
-                    sentResults = true;
-                } catch (Exception e) {
-                    if (e instanceof NoResultsException == false && e.getCause() instanceof NoResultsException == false) {
-                        throw e;
-                    }
-                }
-                
-                if (!sentResults)
-                    throw new NoResultsQueryException(DatawaveErrorCode.RESULTS_NOT_SENT);
-                else if (serializationType == SerializationType.JSON) {
-                    jsonGenerator.writeEndArray();
-                    jsonGenerator.writeEndObject();
-                    jsonGenerator.flush();
-                }
-            } catch (DatawaveWebApplicationException e) {
-                throw e;
-            } catch (Exception e) {
-                log.error("ErrorResponse write Failed", e);
-                QueryException qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "foo");
-                log.error(qe);
-                errorResponse.addException(qe.getBottomQueryException());
-                int statusCode = qe.getBottomQueryException().getStatusCode();
-                throw new DatawaveWebApplicationException(qe, errorResponse, statusCode);
             }
         }
         

@@ -209,6 +209,9 @@ function configureQuery() {
          --create-only | -C)
             DW_QUERY_CREATE_MODE="create"
             ;;
+         --use-execute | -E)
+            DW_QUERY_CREATE_MODE="execute"
+            ;;
          --next | -n)
             # Get the next page and bail out
             DW_QUERY_ID="${2}"
