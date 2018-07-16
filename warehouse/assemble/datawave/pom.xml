@@ -544,6 +544,7 @@
                                             <include>org.ow2.asm:asm</include>
                                             <include>io.protostuff:protostuff-api</include>
                                             <include>io.protostuff:protostuff-core</include>
+                                            <include>io.protostuff:protostuff-collectionschema</include>
                                         </includes>
                                     </dependency>
                                 </mapping>

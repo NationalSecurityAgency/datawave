@@ -82,6 +82,7 @@
                   <include>joda-time:joda-time</include>
                   <include>io.protostuff:protostuff-api</include>
                   <include>io.protostuff:protostuff-core</include>
+                  <include>io.protostuff:protostuff-collectionschema</include>
             </includes>
         </dependencySet>
         <!-- Stuff that goes in /opt/accumulo-warehouse/current/lib/ext -->
