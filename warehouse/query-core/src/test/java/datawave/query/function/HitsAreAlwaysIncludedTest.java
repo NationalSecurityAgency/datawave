@@ -1,14 +1,14 @@
-package datawave.query;
+package datawave.query.function;
 
 import com.google.common.collect.Sets;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.function.LimitFields;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.LimitFieldsTestingIngest;
@@ -45,8 +45,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static datawave.query.QueryTestTableHelper.*;
 
@@ -224,18 +222,19 @@ public abstract class HitsAreAlwaysIncludedTest {
     }
     
     @Test
-    public void checkThePattern() throws Exception {
-        Pattern pattern = LimitFields.COMMONALITY_AND_SUFFIX_PATTERN;
-        Matcher matcher = pattern.matcher("FOO_3.FOO.3.3");
-        Assert.assertTrue(matcher.matches());
-        Assert.assertEquals(matcher.group(1), "FOO");
-        Assert.assertEquals(matcher.group(2), "3");
-        matcher = pattern.matcher("FOO_3");
-        Assert.assertFalse(matcher.matches());
-        matcher = pattern.matcher("FOO_3_BAR.FOO.3");
-        Assert.assertTrue(matcher.matches());
-        Assert.assertEquals(matcher.group(1), "FOO");
-        Assert.assertEquals(matcher.group(2), "3");
+    public void checkThePattern() {
+        String[] tokens = LimitFields.getCommonalityAndGroupingContext("FOO_3.FOO.3.3");
+        Assert.assertTrue(tokens.length == 2);
+        Assert.assertEquals(tokens[0], "FOO");
+        Assert.assertEquals(tokens[1], "3");
+        
+        tokens = LimitFields.getCommonalityAndGroupingContext("FOO_3");
+        Assert.assertNull(tokens);
+        
+        tokens = LimitFields.getCommonalityAndGroupingContext("FOO_3_BAR.FOO.3");
+        Assert.assertTrue(tokens.length == 2);
+        Assert.assertEquals(tokens[0], "FOO");
+        Assert.assertEquals(tokens[1], "3");
     }
     
     @Test
