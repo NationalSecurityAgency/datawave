@@ -37,6 +37,9 @@ function usage() {
     echo "  Update all *.expected HTTP response files to auto-configure body assertions"
     echo "  Or use in conjunction with whitelist/blacklist options to target only a subset"
     echo
+    echo " $( printGreen "-lt" ) | $( printGreen "--list-tests" )"
+    echo "  Print a listing of all tests grouped by test file name"
+    echo
     echo " $( printGreen "-wf" ) | $( printGreen "--whitelist-files" ) F1.test,F2.test,..,Fn.test"
     echo "  Only execute test files having basename of F1.test or F2.test .. or Fn.test"
     echo "  If more than one, must be comma-delimited with no spaces"
@@ -59,6 +62,9 @@ function usage() {
     echo
     echo " $( printGreen "-p" ) | $( printGreen "--pretty-print" )"
     echo "  Will format web service responses for readability, when used in conjunction with -v,--verbose"
+    echo
+    echo " $( printGreen "-er" ) | $( printGreen "--expected-response" ) TEST_ID"
+    echo "  Print expected response metadata for the given test id, along with pretty-printed example response body"
     echo
     echo " $( printGreen "-h" ) | $( printGreen "--help" )"
     echo "  Print this usage information and exit the script"
@@ -102,6 +108,8 @@ function configure() {
     FILE_WHITELIST=""
     FILE_BLACKLIST=""
     PRETTY_PRINT=false
+    LIST_TESTS=false
+    LIST_ID=""
 
     while [ "${1}" != "" ]; do
        case "${1}" in
@@ -116,6 +124,14 @@ function configure() {
              ;;
           --whitelist-tests | -wt)
              TEST_WHITELIST="${2}"
+             shift
+             ;;
+          --list-tests | -lt)
+             LIST_TESTS=true
+             ;;
+          --expected-response | -er)
+             LIST_TESTS=true
+             LIST_ID="${2}"
              shift
              ;;
           --blacklist-tests | -bt)
@@ -180,8 +196,8 @@ function assert() {
     if [ -z "${TEST_STATUS}" ] ; then
         TEST_STATUS="${LABEL_PASS}" && TESTS_PASSED="${TESTS_PASSED} ${TEST_ID}"
     else
-        # Build a list of failed tests and their assertion statuses to display condensed summary at the end
-        TEST_FAILURES="${TEST_FAILURES} [${codeAssertionLabel}][${typeAssertionLabel}][${bodyAssertionLabel}]->${TEST_ID}"
+        # List of failed tests, comma-delimited, and their assertion statuses
+        TEST_FAILURES="${TEST_FAILURES},[${codeAssertionLabel}][${typeAssertionLabel}][${bodyAssertionLabel}] -> ${TEST_ID} ($( basename "${TEST_FILE}" ))"
     fi
 }
 
@@ -273,9 +289,8 @@ function runTest() {
     if [ "${CURL_EXIT_STATUS}" != "0" ] ; then
         echo
         TEST_STATUS="${LABEL_FAIL} - Curl command exited with non-zero status: ${CURL_EXIT_STATUS}"
-        TEST_FAILURES="${TEST_FAILURES} ${TEST_ID}->CURL_NON_ZERO_EXIT(${CURL_EXIT_STATUS})"
+        TEST_FAILURES="${TEST_FAILURES},${TEST_ID} -> CURL_NON_ZERO_EXIT(${CURL_EXIT_STATUS})"
     else
-
         parseCurlResponse
         assert
         echo "HTTP Response Status Code: ${ACTUAL_RESPONSE_CODE}"
@@ -292,7 +307,6 @@ function runTest() {
         echo
         echo "Test Finished: ${TEST_ID}"
         echo "Test Total Time: ${TOTAL_TIME}"
-
     fi
 
     echo "Test Status: ${TEST_STATUS}"
@@ -318,16 +332,77 @@ function prettyPrintTestResponse() {
        elif [ "${ACTUAL_RESPONSE_TYPE}" == "application/xml" ] ; then
            # defined in bin/query.sh
            prettyPrintXml "${ACTUAL_RESPONSE_BODY}"
+       else
+           # Unknown type
+           echo "${ACTUAL_RESPONSE_BODY}"
        fi
    else
        if [ "${ACTUAL_RESPONSE_CODE}" == "204" ] ; then
            info "No results for this query, as indicated by response code '204'"
-           echo
        else
            info "No response body to print"
-           echo
        fi
+       echo
    fi
+}
+
+function printTestInfo() {
+
+   # This function is dual-purpose...
+
+   # 1: Prints list of *all* tests whenever --list-tests,-lt is used by itself
+   # 2: Pretty-prints example data for a unique test id whenever --expected-response,-er is used (i.e. when LIST_ID is not null)
+
+   [ -z "${LIST_ID}" ] && echo "File: $( printGreen $( basename "${TEST_FILE}" ) )"
+
+   local testIds="$( cat "${TEST_FILE}" | grep -E '^TEST_ID=' | cut -d'=' -f2 | sed 's/"//g' )"
+   local testDescriptions="$( cat "${TEST_FILE}" | grep -E '^TEST_DESCRIPTION=' | cut -d'=' -f2 | sed 's/"//g' )"
+   local expectedCodes="$( cat "${TEST_FILE}" | grep -E '^EXPECTED_RESPONSE_CODE=' | cut -d'=' -f2 | sed 's/"//g' )"
+   local expectedTypes="$( cat "${TEST_FILE}" | grep -E '^EXPECTED_RESPONSE_TYPE=' | cut -d'=' -f2 | sed 's/"//g' )"
+   (
+      IFS=$'\n'
+      testIds=(${testIds})
+      testDescriptions=(${testDescriptions})
+      expectedCodes=(${expectedCodes})
+      expectedTypes=(${expectedTypes})
+
+      for (( i=0; i<${#testIds[@]}; i++ )) ; do
+
+         if [ -n "${LIST_ID}" ] ; then
+            if [ "${testIds[$i]}" != "${LIST_ID}" ] ; then
+               continue
+            fi
+         fi
+
+         responseType="${expectedTypes[$i]}"
+         [ -z "${responseType}" ] && responseType="N/A"
+
+         if [ -n "${LIST_ID}" ] ; then
+
+            # --expected-response was used, so we're printing expected metadata and pretty-printing example body.
+            # Just cue things up for our pretty-print function as needed
+
+            ACTUAL_RESPONSE_BODY="$( cat "${RESP_FILE_DIR}/${testIds[$i]}.expected" )"
+            ACTUAL_RESPONSE_TYPE="${responseType}"
+            ACTUAL_RESPONSE_CODE="${expectedCodes[$i]}"
+
+            echo
+            echo "$( printGreen "Expected Type:" ) ${ACTUAL_RESPONSE_TYPE}"
+            echo "$( printGreen "Expected Code:" ) ${ACTUAL_RESPONSE_CODE}"
+            echo "$( printGreen "Test File:" ) $( basename ${TEST_FILE})"
+            echo "$( printGreen "Test ID:" ) ${testIds[$i]}"
+            echo "$( printGreen "Test Description:" ) ${testDescriptions[$i]}"
+            echo
+
+            echo "$( printGreen "Example Response Body:" )"
+            prettyPrintTestResponse
+
+         else
+            # --list-tests was used, so just spit out a line with all the test info
+            echo "   $(($i + 1)): ${testIds[$i]} | ${responseType} | ${expectedCodes[$i]} | ${testDescriptions[$i]}"
+         fi
+      done
+   )
 }
 
 function printTestSummary() {
@@ -349,15 +424,22 @@ function printTestSummary() {
     if [ -z "${TEST_FAILURES}" ] ; then
         echo " Failed Tests: 0"
     else
+        (
+        IFS=","
         local failed=(${TEST_FAILURES})
-        echo "$( printRed " Tests Failed: ${#failed[@]}" )"
-        echo " ---------------------------------------------------------------------------------"
-        echo "  [StatusCode Assertion][ContentType Assertion][Body Assertion] -> FailedTestID"
-        echo " ---------------------------------------------------------------------------------"
+        echo "$( printRed " Tests Failed: $(( ${#failed[@]} - 1 ))" )"
+        echo " --------------------------------------------------------------------------------------------------"
+        echo "  [Code Assertion][Type Assertion][Body Assertion] -> Failed Test ID (Test File)"
+        echo " --------------------------------------------------------------------------------------------------"
         for f in "${failed[@]}" ; do
-             # Add whitespace padding
-             echo "  $( echo "${f}" | sed "s/->/ -> /" )"
+             echo "  ${f}"
         done
+        )
+        echo
+        echo "  $( printYellow "Wildfly Logs:" ) \$WILDFLY_HOME/standalone/log"
+        echo "  $( printYellow "Accumulo Logs:" ) \$ACCUMULO_HOME/logs"
+        echo "  $( printYellow "Hadoop Logs:" ) \$HADOOP_HOME/logs"
+        echo "  $( printYellow "Yarn Logs:" ) \$DW_CLOUD_DATA/hadoop/yarn/log"
     fi
     echo
     printLine
@@ -388,7 +470,7 @@ function runConfiguredTests() {
     # Note that we process files in lexicographical order of filename. So, if needed, "C.test" can
     # reliably depend on tests "A.test" and "B.test" having already been run
 
-    printLine
+    [ "${LIST_TESTS}" == false ] && printLine
 
     for TEST_FILE in $( find "${TEST_FILE_DIR}" -type f -name "*.test" | sort ) ; do
 
@@ -398,17 +480,22 @@ function runConfiguredTests() {
 
         [ -n "${FILE_WHITELIST}" ] && [ -z "$( echo "${FILE_WHITELIST}" | grep "$( basename ${TEST_FILE} )" )" ] && continue
 
+        if [ "${LIST_TESTS}" == true ] ; then
+            printTestInfo
+            [ -z "${LIST_ID}" ] && echo
+            continue
+        fi
+
         source "${TEST_FILE}" && runTest
     done
-
 }
 
 configure "$@"
 
 runConfiguredTests
 
-printTestSummary
-
-cleanup
-
-exitWithTestStatus
+if [ "${LIST_TESTS}" != true ] ; then
+   printTestSummary
+   cleanup
+   exitWithTestStatus
+fi
