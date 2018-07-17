@@ -27,6 +27,7 @@ import java.util.concurrent.Future;
 
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
+import datawave.util.cli.PasswordConverter;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -329,7 +330,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         String jobDirPattern = args[1].replaceAll("'", "");
         String instanceName = args[2];
         String zooKeepers = args[3];
-        String passwordStr = args[5];
+        String passwordStr = PasswordConverter.parseArg(args[5]);
         
         Credentials credentials = new Credentials(args[4], new PasswordToken(passwordStr));
         BulkIngestMapFileLoader processor = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,

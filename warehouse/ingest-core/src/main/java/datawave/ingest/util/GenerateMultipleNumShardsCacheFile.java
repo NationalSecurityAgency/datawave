@@ -24,6 +24,7 @@ public class GenerateMultipleNumShardsCacheFile {
     public static final String CONFIG_DIRECTORY_LOCATION_OVERRIDE = "cd";
     public static final String CONFIG_SUFFIEX_OVERRIDE = "cs";
     
+    @SuppressWarnings("static-access")
     public static void main(String[] args) throws ParseException, AccumuloException, AccumuloSecurityException, TableNotFoundException, IOException {
         AccumuloCliOptions accumuloOptions = new AccumuloCliOptions();
         Options options = accumuloOptions.getOptions();

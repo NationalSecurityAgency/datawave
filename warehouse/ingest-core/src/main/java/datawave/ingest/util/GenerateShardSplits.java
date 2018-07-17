@@ -1,6 +1,7 @@
 package datawave.ingest.util;
 
 import datawave.util.StringUtils;
+import datawave.util.cli.PasswordConverter;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -92,7 +93,7 @@ public class GenerateShardSplits {
                     printUsageAndExit();
                 } else {
                     username = args[i];
-                    password = args[i + 1].getBytes();
+                    password = PasswordConverter.parseArg(args[i + 1]).getBytes();
                     tableName = args[i + 2];
                     // skip over args
                     i += 3;

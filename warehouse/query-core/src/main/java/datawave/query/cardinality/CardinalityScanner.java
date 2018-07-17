@@ -14,6 +14,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import datawave.common.cl.OptionBuilder;
 import datawave.security.util.ScannerHelper;
+import datawave.util.cli.PasswordConverter;
+
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
@@ -162,7 +164,7 @@ public class CardinalityScanner {
         config.setZookeepers(cl.getOptionValue(ZOOKEEPERS));
         config.setInstanceName(cl.getOptionValue(INSTANCE));
         config.setUsername(cl.getOptionValue(USERNAME));
-        config.setPassword(cl.getOptionValue(PASSWORD));
+        config.setPassword(PasswordConverter.parseArg(cl.getOptionValue(PASSWORD)));
         config.setTableName(cl.getOptionValue(TABLE));
         config.setAuths(cl.getOptionValue(AUTHS));
         try {
