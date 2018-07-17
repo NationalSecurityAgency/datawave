@@ -34,7 +34,7 @@
 
 ### Scripts
 
-Note that the scripts below for bulding/running the datawave-quickstart container assume that the user executing them is in
+Note that the scripts below for building/running the datawave-quickstart container assume that the user executing them is in
 the local *docker* group and may thus execute docker commands without requiring *sudo*. For example, to ensure that this is the case:
 ```bash
 $ cat /etc/group | grep -qE '^docker:' || sudo groupadd docker
