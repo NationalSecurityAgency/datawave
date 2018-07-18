@@ -1,6 +1,5 @@
 package datawave.query.util;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.query.QueryTestTableHelper;
@@ -22,7 +21,6 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -36,8 +34,6 @@ public class TypeMetadataProviderTest {
     // it will use this temporary folder
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
-    
-    private static List<TemporaryFolder> staticTempFolders = Lists.newArrayList();
     
     @Inject
     private TypeMetadataProvider typeMetadataProvider;
@@ -55,22 +51,11 @@ public class TypeMetadataProviderTest {
     public static void beforeClass() {
         // this will get property substituted into the TypeMetadataBridgeContext.xml file
         // for the injection test (when this unit test is first created)
-        String val = tempDirForInjectionTest;
-        System.setProperty("type.metadata.dir", val);
+        System.setProperty("type.metadata.dir", tempDirForInjectionTest);
     }
     
     @AfterClass
     public static void teardown() {
-        for (TemporaryFolder t : staticTempFolders) {
-            if (t.getRoot().exists()) {
-                try {
-                    FileUtils.deleteDirectory(t.getRoot());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            log.debug("after class " + t.getRoot() + " exists? " + t.getRoot().exists());
-        }
         // maybe delete the temp folder here
         File tempFolder = new File(tempDirForInjectionTest);
         if (tempFolder.exists()) {
@@ -140,7 +125,6 @@ public class TypeMetadataProviderTest {
             } catch (InterruptedException iex) {
                 // ignored
             }
-            
         }
         Assert.assertEquals(typeMetadata, this.typeMetadataMap.get(Sets.newHashSet("AUTHA", "AUTHB")));
     }
@@ -154,13 +138,14 @@ public class TypeMetadataProviderTest {
             log.debug("powerset has " + s);
         }
         log.debug("got " + powerset);
-        
-        log.debug(Collections.singleton("AUTHA").hashCode());
-        log.debug(Sets.newHashSet("AUTHA").hashCode());
-        Set<Set<String>> stuff = Sets.newHashSet();
-        stuff.add(Collections.singleton("AUTHA"));
-        stuff.add(Sets.newHashSet("AUTHA"));
-        log.debug("stuff:" + stuff);
+        Assert.assertTrue(powerset.contains(Sets.newHashSet()));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHA")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHB")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("BAR")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHA", "AUTHB")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHB", "BAR")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHA", "BAR")));
+        Assert.assertTrue(powerset.contains(Sets.newHashSet("AUTHA", "AUTHB", "BAR")));
     }
     
     @Test

@@ -1,11 +1,20 @@
 package datawave.query.predicate;
 
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
 import datawave.query.Constants;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
+import datawave.query.util.MockDateIndexHelper;
+import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
@@ -14,7 +23,9 @@ import org.junit.Test;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -23,10 +34,26 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     private ASTJexlScript mockScript;
     private TypeMetadata mockAttributeFactory;
     
+    private AttributeFactory attrFactory;
+    private MockMetadataHelper helper = new MockMetadataHelper();
+    private MockDateIndexHelper helper2 = new MockDateIndexHelper();
+    private ShardQueryConfiguration config = new ShardQueryConfiguration();
+    
     @Before
     public void setup() {
         mockScript = createMock(ASTJexlScript.class);
         mockAttributeFactory = createMock(TypeMetadata.class);
+        
+        String lcNoDiacritics = LcNoDiacriticsType.class.getName();
+        String number = NumberType.class.getName();
+        
+        TypeMetadata md = new TypeMetadata();
+        md.put("FOO", "dataType", lcNoDiacritics);
+        md.put("BAZ", "dataType", number);
+        md.put("BAR", "dataType", lcNoDiacritics);
+        md.put("BAR", "dataType", number);
+        
+        attrFactory = new AttributeFactory(md);
     }
     
     @Test
@@ -77,16 +104,20 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     }
     
     @Test
-    public void keep_anyFieldTest() {
+    public void keep_anyFieldTest() throws ParseException {
         Map<String,Integer> fieldLimits = new HashMap<>(1);
         fieldLimits.put(Constants.ANY_FIELD, 1);
         
-        EasyMock.expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("field3");
+        
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("field2 == 'bar'");
+        
         replayAll();
         
         // expected key structure
         Key key = new Key("row", "dataType" + Constants.NULL + "123.345.456", "field1" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 1, -1, fieldLimits, "LIMIT_FIELD");
+        filter = new TLDEventDataFilter(query, mockAttributeFactory, false, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD");
         
         assertTrue(filter.keep(key));
         // increments counts = 1
@@ -94,7 +125,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertTrue(filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false) == null);
         // does not increment counts so will still return true
         assertTrue(filter.keep(key));
-        // increments counts = 2
+        // increments counts = 2 so rejects based on field filter
         assertFalse(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key, null)));
         Range seekRange = filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false);
         assertTrue(seekRange != null);
@@ -181,7 +212,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertTrue(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false) == null);
         // does not increment counts so will still return true
         assertTrue(filter.keep(key1));
-        // increments counts = 2
+        // increments counts = 2 rejected by field count
         assertFalse(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key1, null)));
         assertTrue(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false) == null);
         
@@ -298,4 +329,121 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         verifyAll();
     }
     
+    @Test
+    public void apply_acceptSuperRejectTest() throws ParseException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
+        
+        EasyMock.expect(mockAttributeFactory.getTypeMetadata("FOO", "datatype")).andReturn(Collections.<String> emptyList());
+        
+        replayAll();
+        
+        filter = new TLDEventDataFilter(query, mockAttributeFactory, true, null, null, -1, 01);
+        
+        Key key1 = new Key("row", "datatype" + Constants.NULL + "123.234.345", "FOO" + Constants.NULL_BYTE_STRING + "baz");
+        Key key2 = new Key("row", "datatype" + Constants.NULL + "123.234.345.11", "FOO" + Constants.NULL_BYTE_STRING + "baz");
+        boolean tldResult = filter.apply(new AbstractMap.SimpleEntry<Key,String>(key1, null));
+        boolean result = filter.apply(new AbstractMap.SimpleEntry<Key,String>(key2, null));
+        
+        verifyAll();
+        
+        assertTrue(tldResult);
+        assertFalse(result);
+    }
+    
+    @Test
+    public void apply_acceptSuperRejectChildTest() throws ParseException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
+        
+        EasyMock.expect(mockAttributeFactory.getTypeMetadata("FOO", "datatype")).andReturn(Collections.<String> emptyList());
+        
+        replayAll();
+        
+        filter = new TLDEventDataFilter(query, mockAttributeFactory, true, null, null, -1, 01);
+        
+        // process parent first to setup proper root calculations
+        Key parent = new Key("row", "datatype" + Constants.NULL + "123.234.345", "BAR" + Constants.NULL_BYTE_STRING + "baz");
+        filter.keep(parent);
+        filter.apply(new AbstractMap.SimpleEntry<Key,String>(parent, null));
+        
+        Key child = new Key("row", "datatype" + Constants.NULL + "123.234.345.11", "FOO" + Constants.NULL_BYTE_STRING + "baz");
+        boolean result = filter.apply(new AbstractMap.SimpleEntry<Key,String>(child, null));
+        
+        verifyAll();
+        
+        assertFalse(result);
+    }
+    
+    @Test
+    public void functional_ContentExpansionTest() throws ParseException {
+        Set<String> contentFields = new HashSet<>();
+        contentFields.add("FOO");
+        contentFields.add("BAR");
+        
+        helper.addTermFrequencyFields(contentFields);
+        helper.setIndexedFields(contentFields);
+        
+        String originalQuery = "content:phrase(termOffsetMap, 'abc', 'def')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
+        
+        filter = new TLDEventDataFilter(newScript, mockAttributeFactory, true, null, null, -1, 01);
+        
+        assertTrue(filter.queryFields.contains("FOO"));
+        assertTrue(filter.queryFields.contains("BAR"));
+    }
+    
+    @Test
+    public void functional_IncludesExpansionTest() throws ParseException {
+        Set<String> contentFields = new HashSet<>();
+        contentFields.add("FOO");
+        contentFields.add("BAR");
+        
+        helper.addTermFrequencyFields(contentFields);
+        helper.setIndexedFields(contentFields);
+        
+        String originalQuery = "filter:includeRegex(FOO, '.*23ab.*')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
+        
+        filter = new TLDEventDataFilter(newScript, mockAttributeFactory, true, null, null, -1, 01);
+        
+        assertTrue(filter.queryFields.contains("FOO"));
+    }
+    
+    @Test
+    public void functionalIncludesExpansionTest() throws ParseException {
+        Set<String> contentFields = new HashSet<>();
+        contentFields.add("FOO");
+        contentFields.add("BAR");
+        
+        helper.addTermFrequencyFields(contentFields);
+        helper.setIndexedFields(contentFields);
+        
+        String originalQuery = "filter:excludeRegex(BAR, '.*23ab.*')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
+        
+        filter = new TLDEventDataFilter(newScript, mockAttributeFactory, true, null, null, -1, 01);
+        
+        assertTrue(filter.queryFields.contains("BAR"));
+    }
+    
+    @Test
+    public void functionalOccuranceExpansionTest() throws ParseException {
+        Set<String> contentFields = new HashSet<>();
+        contentFields.add("FOO");
+        contentFields.add("BAR");
+        
+        helper.addTermFrequencyFields(contentFields);
+        helper.setIndexedFields(contentFields);
+        
+        String originalQuery = "filter:occurence(FOO, '.*23ab.*') && BAR == '123'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
+        
+        filter = new TLDEventDataFilter(newScript, mockAttributeFactory, true, null, null, -1, 01);
+        
+        assertTrue(filter.queryFields.contains("BAR"));
+        assertTrue(filter.queryFields.contains("FOO"));
+    }
 }

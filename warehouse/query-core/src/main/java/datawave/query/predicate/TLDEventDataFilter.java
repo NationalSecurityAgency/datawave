@@ -119,10 +119,13 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         lastParseInfo = null;
     }
     
-    /*
-     * (non-Javadoc)
+    /**
+     * Keep for context evaluation and potential return to the client. If a Key returns false the Key will not be used for context evaluation or returned to the
+     * client. If a Key returns true but keep() returns false the document will be used for context evaluation, but will not be returned to the client. If a Key
+     * returns true and keep() returns true the key will be used for context evaluation and returned to the client.
      * 
-     * @see datawave.query.function.Filter#accept(org.apache.accumulo .core.data.Key)
+     * @param input
+     * @return true if Key should be added to context, false otherwise
      */
     @Override
     public boolean apply(Entry<Key,String> input) {
@@ -130,12 +133,19 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         // filter
         Key current = input.getKey();
         lastParseInfo = getParseInfo(current);
-        if (lastParseInfo.isRoot()) {
-            return keepField(current, true, lastParseInfo.isRoot());
-        } else {
-            keepField(current, true, lastParseInfo.isRoot());
-            return super.apply(input);
+        boolean root = lastParseInfo.isRoot();
+        boolean keep = keepField(current, true, root);
+        if (keep) {
+            if (root) {
+                // must return true on the root or the field cannot be returned
+                return true;
+            } else {
+                // delegate to the super
+                return super.apply(input);
+            }
         }
+        
+        return false;
     }
     
     /**
@@ -149,10 +159,13 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         return new Key(from.getRow().toString(), from.getColumnFamily().toString() + '\uffff');
     }
     
-    /*
-     * (non-Javadoc)
+    /**
+     * Determine if a Key should be kept. If the Key also returns true when called with apply() the Key will be returned to the client
      * 
-     * @see datawave.query.function.Filter#keep(org.apache.accumulo.core .data.Key)
+     * @see datawave.query.rewrite.function.Filter#keep(org.apache.accumulo.core .data.Key)
+     *
+     * @param k
+     * @return true to keep, false otherwise
      */
     @Override
     public boolean keep(Key k) {

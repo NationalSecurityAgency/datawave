@@ -321,7 +321,6 @@ public class MetadataHelper implements ApplicationContextAware {
         }
         Map<Set<String>,TypeMetadata> map = Maps.newHashMap();
         
-        Collection<Authorizations> auths = Sets.newHashSet();
         for (Set<String> a : powerset) {
             if (log.isTraceEnabled()) {
                 log.trace("get TypeMetadata with auths:" + a);

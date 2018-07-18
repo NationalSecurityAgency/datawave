@@ -30,6 +30,10 @@ public class EventDataQueryExpressonVisitorTest {
     private static final ColumnVisibility cv1 = new ColumnVisibility("A&B&C&(D|E|F)");
     private AttributeFactory attrFactory;
     
+    private MockMetadataHelper helper = new MockMetadataHelper();
+    private MockDateIndexHelper helper2 = new MockDateIndexHelper();
+    private ShardQueryConfiguration config = new ShardQueryConfiguration();
+    
     @Before
     public void setupTypeMetadata() {
         String lcNoDiacritics = LcNoDiacriticsType.class.getName();
@@ -552,13 +556,8 @@ public class EventDataQueryExpressonVisitorTest {
         script.jjtAccept(v, "");
     }
     
-    MockMetadataHelper helper = new MockMetadataHelper();
-    MockDateIndexHelper helper2 = new MockDateIndexHelper();
-    ShardQueryConfiguration config = new ShardQueryConfiguration();
-    
     @Test
     public void testExpandedFunctionQuery() throws Exception {
-        
         Set<String> contentFields = new HashSet<String>();
         contentFields.add("FOO");
         contentFields.add("BAR");
@@ -570,7 +569,69 @@ public class EventDataQueryExpressonVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
         String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
-        System.out.println(newQuery);
+        // this is fragile, but captures what should be here.
+        assertEquals("(content:phrase(termOffsetMap, 'abc', 'def') && ((BAR == 'def' && BAR == 'abc') || (FOO == 'def' && FOO == 'abc')))", newQuery);
+    }
+    
+    @Test
+    public void testIncludeRegexFunctionQuery() throws Exception {
+        String originalQuery = "filter:includeRegex(FOO, '.*23ab.*')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
+        String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
+        assertEquals(originalQuery, newQuery);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(newScript, attrFactory);
+        
+        Key p1 = createKey("FOO", "abc");
+        Key p2 = createKey("FOO", "123abc");
+        Key p3 = createKey("FOO", "1abc3");
+        
+        assertNotNull(filter.get("FOO"));
+        assertFalse(filter.get("FOO").apply(p1));
+        assertTrue(filter.get("FOO").apply(p2));
+        assertFalse(filter.get("FOO").apply(p3));
+    }
+    
+    @Test
+    public void testExcludeRegexFunctionQuery() throws Exception {
+        String originalQuery = "filter:excludeRegex(FOO, '.*23ab.*')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
+        String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
+        assertEquals(originalQuery, newQuery);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(newScript, attrFactory);
+        
+        Key p1 = createKey("FOO", "abc");
+        Key p2 = createKey("FOO", "123abc");
+        Key p3 = createKey("FOO", "1abc3");
+        
+        assertNotNull(filter.get("FOO"));
+        assertFalse(filter.get("FOO").apply(p1));
+        assertTrue(filter.get("FOO").apply(p2));
+        assertFalse(filter.get("FOO").apply(p3));
+    }
+    
+    @Test
+    public void testUnknownFunctionQuery() throws Exception {
+        String originalQuery = "filter:occurence(FOO, '=', 3) && BAR == '123'";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
+        String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
+        assertEquals(originalQuery, newQuery);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(newScript, attrFactory);
+        
+        Key p1 = createKey("FOO", "abc");
+        Key p2 = createKey("FOO", "123abc");
+        Key p3 = createKey("FOO", "1abc3");
+        Key p4 = createKey("BAR", "123abc");
+        
+        assertNotNull(filter.get("FOO"));
+        assertTrue(filter.get("FOO").apply(p1));
+        assertTrue(filter.get("FOO").apply(p2));
+        assertTrue(filter.get("FOO").apply(p3));
+        
+        assertNotNull(filter.get("BAR"));
+        assertFalse(filter.get("BAR").apply(p3));
     }
     
     public static Key createKey(String fieldName, String fieldValue) {
