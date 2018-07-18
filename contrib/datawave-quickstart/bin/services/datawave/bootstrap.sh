@@ -31,7 +31,7 @@ DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
 
 # Maven command
 
-DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install}"
+DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -Dservices -DskipTests clean install --builder smart -T1.0C}"
 
 # Home of any temp data and *.properties file overrides for this instance of DataWave
 
@@ -215,6 +215,7 @@ function setBuildPropertiesSymlink() {
 }
 
 function buildRequiredPlugins() {
+    ( cd "${DW_DATAWAVE_SOURCE_DIR}/contrib/code-style" && mvn clean install )
     ( cd "${DW_DATAWAVE_SOURCE_DIR}/contrib/assert-properties" && mvn clean install )
     ( cd "${DW_DATAWAVE_SOURCE_DIR}/contrib/read-properties" && mvn clean install )
 }

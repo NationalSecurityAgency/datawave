@@ -3,7 +3,6 @@ package datawave.microservice.authorization;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import datawave.common.test.integration.IntegrationTest;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.cached.CacheInspector;
@@ -14,7 +13,6 @@ import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -45,9 +43,9 @@ import java.util.stream.Collectors;
 import static datawave.security.authorization.DatawaveUser.UserType.USER;
 import static org.junit.Assert.*;
 
-@Category(IntegrationTest.class)
+//@Category(IntegrationTest.class)
 @RunWith(SpringRunner.class)
-@SpringBootTest(properties = "spring.main.banner-mode=off", webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class AuthorizationServiceTest {
     private static final SubjectIssuerDNPair DN = SubjectIssuerDNPair.of("userDn", "issuerDn");
     
@@ -73,23 +71,23 @@ public class AuthorizationServiceTest {
         DatawaveUser unuathDWUser = new DatawaveUser(DN, USER, null, null, null, System.currentTimeMillis());
         ProxiedUserDetails unuathUser = new ProxiedUserDetails(Collections.singleton(unuathDWUser), unuathDWUser.getCreationTime());
         
-        testAdminMethodFailure(unuathUser, "/datawave/admin/evictAll", null);
-        testAdminMethodFailure(unuathUser, "/datawave/admin/evictUser", "username=ignored");
-        testAdminMethodFailure(unuathUser, "/datawave/admin/evictUsersMatching", "substring=ignored");
-        testAdminMethodFailure(unuathUser, "/datawave/admin/listUsers", null);
-        testAdminMethodFailure(unuathUser, "/datawave/admin/listUser", "username=ignored");
-        testAdminMethodFailure(unuathUser, "/datawave/admin/listUsersMatching", "substring=ignore");
+        testAdminMethodFailure(unuathUser, "/authorization/v1/admin/evictAll", null);
+        testAdminMethodFailure(unuathUser, "/authorization/v1/admin/evictUser", "username=ignored");
+        testAdminMethodFailure(unuathUser, "/authorization/v1/admin/evictUsersMatching", "substring=ignored");
+        testAdminMethodFailure(unuathUser, "/authorization/v1/admin/listUsers", null);
+        testAdminMethodFailure(unuathUser, "/authorization/v1/admin/listUser", "username=ignored");
+        testAdminMethodFailure(unuathUser, "/authorization/v1/admin/listUsersMatching", "substring=ignore");
         
         Collection<String> roles = Collections.singleton("Administrator");
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
-        testAdminMethodSuccess(authUser, "/datawave/admin/evictAll", null);
-        testAdminMethodSuccess(authUser, "/datawave/admin/evictUser", "username=ignored");
-        testAdminMethodSuccess(authUser, "/datawave/admin/evictUsersMatching", "substring=ignored");
-        testAdminMethodSuccess(authUser, "/datawave/admin/listUsers", null);
-        testAdminMethodSuccess(authUser, "/datawave/admin/listUser", "username=ignored");
-        testAdminMethodSuccess(authUser, "/datawave/admin/listUsersMatching", "substring=ignore");
+        testAdminMethodSuccess(authUser, "/authorization/v1/admin/evictAll", null);
+        testAdminMethodSuccess(authUser, "/authorization/v1/admin/evictUser", "username=ignored");
+        testAdminMethodSuccess(authUser, "/authorization/v1/admin/evictUsersMatching", "substring=ignored");
+        testAdminMethodSuccess(authUser, "/authorization/v1/admin/listUsers", null);
+        testAdminMethodSuccess(authUser, "/authorization/v1/admin/listUser", "username=ignored");
+        testAdminMethodSuccess(authUser, "/authorization/v1/admin/listUsersMatching", "substring=ignore");
     }
     
     private void testAdminMethodFailure(ProxiedUserDetails unauthUser, String path, String query) throws Exception {

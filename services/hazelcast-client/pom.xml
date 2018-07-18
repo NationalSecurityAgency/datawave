@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>datawave-microservice-parent</artifactId>
+        <groupId>gov.nsa.datawave.microservice</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>hazelcast-client</artifactId>
+    <version>2.2.0-SNAPSHOT</version>
+    <properties>
+        <!-- Override hazelcast version from spring boot to a newer one -->
+        <hazelcast.version>3.9</hazelcast.version>
+        <version.hazelcast-kubernetes>1.1.0</version.hazelcast-kubernetes>
+        <version.microservice.hazelcast>2.2.0-SNAPSHOT</version.microservice.hazelcast>
+    </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.hazelcast</groupId>
+                <artifactId>hazelcast-kubernetes</artifactId>
+                <version>${version.hazelcast-kubernetes}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>hazelcast-common</artifactId>
+                <version>${version.microservice.hazelcast}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-kubernetes</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>hazelcast-common</artifactId>
+        </dependency>
+    </dependencies>
+</project>

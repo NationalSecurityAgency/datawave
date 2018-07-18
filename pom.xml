@@ -1,24 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>datawave</groupId>
+    <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
     <version>2.2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>${project.artifactId}</name>
-    <url>http://datawave.example.com</url>
+    <name>DataWave</name>
+    <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
+    <url>http://code.nsa.gov/datawave</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
     <modules>
         <module>common-test</module>
         <module>web-services</module>
         <module>warehouse</module>
         <module>type-metadata-hdfs</module>
         <module>in-memory-accumulo</module>
-        <module>services</module>
     </modules>
+    <scm>
+        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
+        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
+    </scm>
     <properties>
-        <assembly.basedir>${project.basedir}</assembly.basedir>
-        <datawave.root>${project.basedir}</datawave.root>
-        <eclipseFormatterStyle>${datawave.root}/contrib/Eclipse-Datawave-Codestyle.xml</eclipseFormatterStyle>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -68,6 +76,9 @@
         <version.log4j>1.2.16</version.log4j>
         <version.log4j-extras>1.0</version.log4j-extras>
         <version.lucene>4.7.1</version.lucene>
+        <version.microservice.audit-api>2.2.0-SNAPSHOT</version.microservice.audit-api>
+        <version.microservice.authorization-api>2.2.0-SNAPSHOT</version.microservice.authorization-api>
+        <version.microservice.metrics-reporter>2.2.0-SNAPSHOT</version.microservice.metrics-reporter>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>5.1.35</version.mysql-connector>
         <version.netty>4.0.15.Final</version.netty>
@@ -266,6 +277,21 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>audit-api</artifactId>
+                <version>${version.microservice.audit-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>authorization-api</artifactId>
+                <version>${version.microservice.authorization-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>metrics-reporter</artifactId>
+                <version>${version.microservice.metrics-reporter}</version>
             </dependency>
             <dependency>
                 <groupId>io.astefanutti.metrics.cdi</groupId>
@@ -937,7 +963,7 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-common-test</artifactId>
                 <version>${project.version}</version>
                 <scope>test</scope>
@@ -1023,27 +1049,73 @@
         </repository>
         -->
         <repository>
+            <!--
+                This repository is a temporary work-around until we can public artifacts to maven central.
+                This allows us to retrieve released microservice artifacts from our github repository.
+            -->
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>datawave-github-mvn-repo</id>
+            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave/mvn-repo</url>
+        </repository>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
             <id>jboss</id>
             <url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
         </repository>
         <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
             <id>cloudera</id>
             <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
         </repository>
         <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
             <id>geowave</id>
             <url>http://geowave-maven.s3-website-us-east-1.amazonaws.com/release</url>
         </repository>
         <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
             <id>boundless</id>
             <url>http://repo.boundlessgeo.com/main/</url>
         </repository>
         <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
             <id>osgeo</id>
             <name>Open Source Geospatial Foundation Repository</name>
             <url>http://download.osgeo.org/webdav/geotools/</url>
         </repository>
     </repositories>
+    <pluginRepositories>
+        <!--
+            This is a temporary work-around until we can publish artifacts to maven central.
+            This allows us to download the read-properties and assert-properties plugins, as
+            well as the datawave code style template for the formatter-maven-plugin.
+        -->
+        <pluginRepository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>datawave-github-mvn-repo</id>
+            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave/mvn-repo</url>
+        </pluginRepository>
+    </pluginRepositories>
     <build>
         <pluginManagement>
             <plugins>
@@ -1072,14 +1144,14 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>datawave</groupId>
+                    <groupId>gov.nsa.datawave.plugins</groupId>
                     <artifactId>assert-properties</artifactId>
-                    <version>2.0</version>
+                    <version>2.0.1</version>
                 </plugin>
                 <plugin>
-                    <groupId>datawave</groupId>
+                    <groupId>gov.nsa.datawave.plugins</groupId>
                     <artifactId>read-properties</artifactId>
-                    <version>2.0.1</version>
+                    <version>2.0.2</version>
                     <configuration>
                         <quiet>true</quiet>
                         <directories combine.children="append">
@@ -1105,13 +1177,20 @@
                     <artifactId>formatter-maven-plugin</artifactId>
                     <version>0.5.2</version>
                     <configuration>
-                        <configFile>${eclipseFormatterStyle}</configFile>
+                        <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                         <lineEnding>LF</lineEnding>
                         <overrideConfigCompilerVersion>true</overrideConfigCompilerVersion>
                         <compilerSource>${maven.compiler.source}</compilerSource>
                         <compilerCompliance>${maven.compiler.source}</compilerCompliance>
                         <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>gov.nsa.datawave</groupId>
+                            <artifactId>datawave-code-style</artifactId>
+                            <version>1.0</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <goals>
@@ -1240,7 +1319,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.10.3</version>
+                    <version>3.0.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1342,15 +1421,43 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <?SORTPOM IGNORE?>
+            <!--
+                We need datawave.root to be set before the read/assert properties plugins run.
+                Maven will process the plugins in the order they appear in the pom, so we don't
+                want the sortpom plugin to change the order of declaration.
+            -->
             <plugin>
-                <groupId>datawave</groupId>
-                <artifactId>assert-properties</artifactId>
-                <version>2.0</version>
+                <groupId>org.commonjava.maven.plugins</groupId>
+                <artifactId>directory-maven-plugin</artifactId>
+                <version>0.3.1</version>
+                <executions>
+                    <execution>
+                        <id>directories</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>directory-of</goal>
+                        </goals>
+                        <configuration>
+                            <property>datawave.root</property>
+                            <project>
+                                <groupId>gov.nsa.datawave</groupId>
+                                <artifactId>datawave-parent</artifactId>
+                            </project>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
-                <groupId>datawave</groupId>
+                <groupId>gov.nsa.datawave.plugins</groupId>
+                <artifactId>assert-properties</artifactId>
+                <version>2.0.1</version>
+            </plugin>
+            <plugin>
+                <groupId>gov.nsa.datawave.plugins</groupId>
                 <artifactId>read-properties</artifactId>
             </plugin>
+            <?SORTPOM RESUME?>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
@@ -1417,9 +1524,30 @@
                                 <configuration>
                                     <encoding>UTF-8</encoding>
                                     <destDir>${project.build.directory}/apidocs</destDir>
-                                    <javadocVersion>1.8</javadocVersion>
+                                    <javadocVersion>1.8.0</javadocVersion>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
-                                    <additionalparam>-tag "HTTP:m:HTTP Return Codes" -tag "RequestHeader:m:HTTP Request Headers" -tag "ResponseHeader:m:HTTP ResponseHeader" -tag returnWrapped:m:Output</additionalparam>
+                                    <tags>
+                                        <tag>
+                                            <name>HTTP</name>
+                                            <placement>m</placement>
+                                            <head>HTTP Return Codes</head>
+                                        </tag>
+                                        <tag>
+                                            <name>RequestHeader</name>
+                                            <placement>m</placement>
+                                            <head>HTTP Request Headers</head>
+                                        </tag>
+                                        <tag>
+                                            <name>ResponseHeader</name>
+                                            <placement>m</placement>
+                                            <head>HTTP Response Headers</head>
+                                        </tag>
+                                        <tag>
+                                            <name>returnWrapped</name>
+                                            <placement>m</placement>
+                                            <head>Output</head>
+                                        </tag>
+                                    </tags>
                                     <show>private</show>
                                     <quiet>true</quiet>
                                     <javaApiLinks>
@@ -1451,7 +1579,7 @@
                         <groupId>pl.project13.maven</groupId>
                         <artifactId>git-commit-id-plugin</artifactId>
                         <configuration>
-                            <dotGitDirectory>${datawave.root}/../.git</dotGitDirectory>
+                            <dotGitDirectory>${datawave.root}/.git</dotGitDirectory>
                         </configuration>
                         <executions>
                             <execution>
@@ -1477,7 +1605,7 @@
                 <pluginManagement>
                     <plugins>
                         <plugin>
-                            <groupId>datawave</groupId>
+                            <groupId>gov.nsa.datawave.plugins</groupId>
                             <artifactId>read-properties</artifactId>
                             <configuration>
                                 <files>
@@ -1514,7 +1642,7 @@
                 <pluginManagement>
                     <plugins>
                         <plugin>
-                            <groupId>datawave</groupId>
+                            <groupId>gov.nsa.datawave.plugins</groupId>
                             <artifactId>read-properties</artifactId>
                             <configuration>
                                 <files>
@@ -1571,7 +1699,7 @@
                                         </pluginExecution>
                                         <pluginExecution>
                                             <pluginExecutionFilter>
-                                                <groupId>datawave</groupId>
+                                                <groupId>gov.nsa.datawave.plugins</groupId>
                                                 <artifactId>read-properties</artifactId>
                                                 <versionRange>[1.0.0,)</versionRange>
                                                 <goals>
@@ -1675,6 +1803,31 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <!-- The microservices profile (activated with -Pmicroservices or -Dservices triggers building of the microservices. -->
+        <profile>
+            <id>microservices</id>
+            <activation>
+                <property>
+                    <name>services</name>
+                </property>
+            </activation>
+            <modules>
+                <module>services/build-parent</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>dw-plugins</id>
+            <activation>
+                <property>
+                    <name>plugins</name>
+                </property>
+            </activation>
+            <modules>
+                <module>contrib/read-properties</module>
+                <module>contrib/assert-properties</module>
+                <module>contrib/code-style</module>
+            </modules>
         </profile>
     </profiles>
 </project>

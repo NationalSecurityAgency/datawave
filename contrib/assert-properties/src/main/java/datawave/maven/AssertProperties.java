@@ -21,6 +21,7 @@ import java.util.Set;
 /**
  * @goal assert-properties
  * @phase validate
+ * @threadSafe true
  */
 @SuppressWarnings("unused")
 public class AssertProperties extends AbstractMojo {

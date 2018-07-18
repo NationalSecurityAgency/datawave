@@ -12,8 +12,12 @@ import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.audit.AuditBean;
+import datawave.webservice.common.audit.AuditParameterBuilder;
 import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.AuditService;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.audit.DefaultAuditParameterBuilder;
+import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
@@ -85,6 +89,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +97,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -128,6 +134,7 @@ public class QueryExecutorBeanTest {
     private AccumuloConnectionRequestBean connectionRequestBean;
     private AccumuloConnectionFactory connectionFactory;
     private AuditBean auditor;
+    private AuditService auditService;
     private QueryMetricsBean metrics;
     private QueryLogicFactoryImpl queryLogicFactory;
     private QueryExpirationConfiguration queryExpirationConf;
@@ -153,7 +160,8 @@ public class QueryExecutorBeanTest {
         bean = new QueryExecutorBean();
         
         connectionFactory = createStrictMock(AccumuloConnectionFactory.class);
-        auditor = createStrictMock(AuditBean.class);
+        auditor = new AuditBean();
+        auditService = createStrictMock(AuditService.class);
         metrics = createStrictMock(QueryMetricsBean.class);
         queryLogicFactory = createStrictMock(QueryLogicFactoryImpl.class);
         persister = createStrictMock(Persister.class);
@@ -165,6 +173,8 @@ public class QueryExecutorBeanTest {
         queryExpirationConf.setPageShortCircuitTimeout(58);
         queryExpirationConf.setCallTime(60);
         connectionRequestBean = createStrictMock(AccumuloConnectionRequestBean.class);
+        setInternalState(auditor, AuditService.class, auditService);
+        setInternalState(auditor, AuditParameterBuilder.class, new DefaultAuditParameterBuilder());
         setInternalState(connectionRequestBean, EJBContext.class, ctx);
         setInternalState(bean, QueryCache.class, cache);
         setInternalState(bean, AccumuloConnectionFactory.class, connectionFactory);
@@ -180,7 +190,6 @@ public class QueryExecutorBeanTest {
         setInternalState(bean, Multimap.class, HashMultimap.create());
         setInternalState(bean, LookupUUIDConfiguration.class, new LookupUUIDConfiguration());
         setInternalState(bean, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(bean, AuditParameters.class, new AuditParameters());
         setInternalState(bean, QueryParameters.class, new QueryParametersImpl());
         setInternalState(bean, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(bean, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -235,9 +244,9 @@ public class QueryExecutorBeanTest {
     private MultivaluedMap createNewQueryParameters(QueryImpl q, MultivaluedMap p) {
         QueryParameters qp = new QueryParametersImpl();
         MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(p);
-        optionalParameters.putSingle(AuditParameters.USER_DN, userDN.toLowerCase());
-        optionalParameters.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "PRIVATE|PUBLIC");
-        optionalParameters.putSingle("logicClass", q.getQueryLogicName());
+        optionalParameters.putSingle(PrivateAuditConstants.USER_DN, userDN.toLowerCase());
+        optionalParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, "PRIVATE|PUBLIC");
+        optionalParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, q.getQueryLogicName());
         
         return optionalParameters;
     }
@@ -330,9 +339,6 @@ public class QueryExecutorBeanTest {
         
         QueryParameters qp = new QueryParametersImpl();
         MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(p);
-        optionalParameters.putSingle("logicClass", "EventQueryLogic");
-        optionalParameters.putSingle("auditUserDN", userDN);
-        optionalParameters.putSingle("auditColumnVisibility", "PRIVATE|PUBLIC");
         
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"), UserType.USER,
                         Arrays.asList(auths), null, null, 0L);
@@ -351,9 +357,17 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.expect(logic.getAuditType(EasyMock.<Query> anyObject())).andReturn(AuditType.ACTIVE).anyTimes();
+        EasyMock.expect(logic.getSelectors(anyObject())).andReturn(null);
+        Map<String,String> auditParams = new HashMap<>();
+        auditParams.put(QueryParameters.QUERY_STRING, p.getFirst(QueryParameters.QUERY_STRING));
+        auditParams.put(AuditParameters.USER_DN, userDN);
+        auditParams.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "PRIVATE|PUBLIC");
+        auditParams.put(AuditParameters.QUERY_AUDIT_TYPE, AuditType.ACTIVE.name());
+        auditParams.put(AuditParameters.QUERY_LOGIC_CLASS, "EventQueryLogic");
+        EasyMock.expect(auditService.audit(eq(auditParams))).andReturn(null);
         logic.close();
         EasyMock.expectLastCall();
-        persister.remove(EasyMock.anyObject(Query.class));
+        persister.remove(anyObject(Query.class));
         PowerMock.replayAll();
         
         bean.createQuery(queryLogicName, p);
@@ -641,7 +655,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
                         Whitebox.getInternalState(bean, QueryParameters.class), optionalParameters)).andReturn(q);
         persister.remove(q);
-        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(Maps.<String,String> newHashMap()).anyTimes();
+        EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) anyObject())).andReturn(Maps.<String,String> newHashMap()).anyTimes();
         
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
         q.populateMetric(metric);
@@ -656,8 +670,8 @@ public class QueryExecutorBeanTest {
         
         connectionRequestBean.requestBegin(q.getId().toString());
         EasyMock.expectLastCall();
-        EasyMock.expect(connectionFactory.getConnection(eq("connPool1"), (AccumuloConnectionFactory.Priority) EasyMock.anyObject(),
-                        (Map<String,String>) EasyMock.anyObject())).andReturn(c).anyTimes();
+        EasyMock.expect(connectionFactory.getConnection(eq("connPool1"), (AccumuloConnectionFactory.Priority) anyObject(), (Map<String,String>) anyObject()))
+                        .andReturn(c).anyTimes();
         connectionRequestBean.requestEnd(q.getId().toString());
         EasyMock.expectLastCall();
         connectionFactory.returnConnection(c);
@@ -688,8 +702,7 @@ public class QueryExecutorBeanTest {
             }
         };
         
-        EasyMock.expect(logic.initialize(EasyMock.anyObject(Connector.class), EasyMock.anyObject(Query.class), EasyMock.anyObject(Set.class))).andAnswer(
-                        initializeAnswer);
+        EasyMock.expect(logic.initialize(anyObject(Connector.class), anyObject(Query.class), anyObject(Set.class))).andAnswer(initializeAnswer);
         EasyMock.expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         
         // On close, interrupt the thread to simulate the ScannerFactory cleaning up

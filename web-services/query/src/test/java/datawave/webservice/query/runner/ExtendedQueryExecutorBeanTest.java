@@ -13,7 +13,6 @@ import static org.junit.Assert.fail;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,8 +48,8 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.audit.AuditBean;
-import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.exception.BadRequestException;
@@ -98,7 +97,6 @@ import datawave.webservice.result.VoidResponse;
 
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.trace.Span;
 import org.apache.accumulo.core.trace.Trace;
@@ -714,18 +712,15 @@ public class ExtendedQueryExecutorBeanTest {
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.setUserDn(userDN);
-        auditParameters.setAuditType(AuditType.NONE);
-        auditParameters.setQuery(query);
         
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogicName);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDNpair.subjectDN());
+        // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
         
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -888,18 +883,15 @@ public class ExtendedQueryExecutorBeanTest {
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.setUserDn(userDN);
-        auditParameters.setAuditType(AuditType.NONE);
-        auditParameters.setQuery(query);
         
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogicName);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDNpair.subjectDN());
+        // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
         
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -1056,21 +1048,15 @@ public class ExtendedQueryExecutorBeanTest {
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.setUserDn(userDN);
-        auditParameters.setAuditType(AuditType.ACTIVE);
-        auditParameters.setQuery(query);
-        auditParameters.setQueryDate(new Date());
-        auditParameters.setAuths(queryAuthorizations);
-        auditParameters.setColviz(new ColumnVisibility(queryAuthorizations));
         
         QueryParameters qp = new QueryParametersImpl();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogicName);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDNpair.subjectDN());
+        // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.ACTIVE.name());
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
         
         // Set expectations
         expect(context.getCallerPrincipal()).andReturn(principal);
@@ -1085,10 +1071,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0));
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        expect(this.queryLogic1.getSelectors(this.query)).andReturn(new ArrayList<>());
-        auditor.audit(eq(auditParameters));
         expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.ACTIVE);
+        expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
+        expect(auditor.audit(eq(queryParameters))).andReturn(null);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
@@ -1120,7 +1106,6 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, SecurityMarking.class, marking);
-        setInternalState(subject, AuditParameters.class, auditParameters);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -1186,9 +1171,9 @@ public class ExtendedQueryExecutorBeanTest {
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogicName);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDNpair.subjectDN());
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
         
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -1308,7 +1293,6 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, QueryMetricsBean.class, metrics);
             setInternalState(subject, Multimap.class, traceInfos);
             setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-            setInternalState(subject, AuditParameters.class, new AuditParameters());
             setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
             setInternalState(connectionRequestBean, EJBContext.class, context);
@@ -1432,8 +1416,8 @@ public class ExtendedQueryExecutorBeanTest {
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogicName);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryAuthorizations);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         
@@ -1453,7 +1437,6 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, AuditParameters.class, new AuditParameters());
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
@@ -1634,9 +1617,9 @@ public class ExtendedQueryExecutorBeanTest {
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDN);
-        op.putSingle("logicClass", queryLogicName);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
         
         // Set expectations
         queryLogic1.validate(queryParameters);
@@ -1671,7 +1654,6 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
             setInternalState(subject, Multimap.class, traceInfos);
             setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-            setInternalState(subject, AuditParameters.class, new AuditParameters());
             setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
             subject.defineQuery(queryLogicName, queryParameters);
@@ -1783,9 +1765,9 @@ public class ExtendedQueryExecutorBeanTest {
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        op.putSingle("logicClass", queryLogic1.getClass().getSimpleName());
-        op.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        op.putSingle(AuditParameters.USER_DN, userDN);
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogic1.getClass().getSimpleName());
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations of the create logic
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(2);
@@ -2703,12 +2685,11 @@ public class ExtendedQueryExecutorBeanTest {
         qp.setUserDN(userDN);
         qp.setDnList(Collections.singletonList(userDN));
         
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.setColviz(new ColumnVisibility(authorization));
-        auditParameters.setAuditType(AuditType.PASSIVE);
-        auditParameters.setUserDn(userDN);
-        
         MultivaluedMap<String,String> map = qp.toMap();
+        map.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.PASSIVE.name());
+        map.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        map.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, authorization);
+        map.putSingle(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
@@ -2739,9 +2720,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.toMap()).andReturn(map);
         expect(this.query.getColumnVisibility()).andReturn(authorization);
+        expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
+        expect(this.auditor.audit(map)).andReturn(null);
         this.query.populateMetric(anyObject(QueryMetric.class));
-        expect(this.queryLogic1.getSelectors(this.query)).andReturn(new ArrayList<>());
-        this.auditor.audit(auditParameters);
         //
         // Advice from a test-driven development perspective...
         //
@@ -2790,7 +2771,6 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
-        setInternalState(subject, AuditParameters.class, auditParameters);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -2945,11 +2925,10 @@ public class ExtendedQueryExecutorBeanTest {
         p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         p.putSingle(QueryParameters.QUERY_PARAMS, parameters);
         
-        p.putSingle(AuditParameters.QUERY_AUDIT_TYPE, AuditType.LOCALONLY.name());
-        p.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        p.putSingle(AuditParameters.USER_DN, userDN);
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.validate(p);
+        p.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.LOCALONLY.name());
+        p.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        p.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        p.putSingle(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(4);
@@ -2973,6 +2952,7 @@ public class ExtendedQueryExecutorBeanTest {
         duplicateQuery.setPageTimeout(pageTimeout);
         duplicateQuery.setParameters(isA(Set.class));
         expect(duplicateQuery.toMap()).andReturn(p);
+        expect(this.auditor.audit(eq(p))).andReturn(null);
         this.query.setQueryLogicName(queryLogicName);
         this.query.setQuery(query);
         this.query.setBeginDate(beginDate);
@@ -2989,7 +2969,6 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.LOCALONLY);
         expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
-        this.auditor.audit(eq(auditParameters));
         
         // Run the test
         PowerMock.replayAll();
@@ -3000,7 +2979,6 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
-        setInternalState(subject, AuditParameters.class, auditParameters);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         GenericResponse<String> result1 = subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate,
                         queryAuthorizations, expirationDate, pagesize, pageTimeout, persistenceMode, parameters);
@@ -3242,7 +3220,6 @@ public class ExtendedQueryExecutorBeanTest {
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
         long pageNumber = 0L;
-        AuditParameters auditParameters = PowerMock.createMock(AuditParameters.class);
         
         HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("USERDN", Arrays.asList(queryAuthorizations));
@@ -3270,12 +3247,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.queryLogic1.getMaxPageSize()).andReturn(10).anyTimes();
-        auditParameters.clear();
-        auditParameters.validate(queryParameters);
         expect(queryLogic1.getSelectors(null)).andReturn(null);
-        auditParameters.setSelectors(null);
-        auditor.audit(auditParameters);
-        EasyMock.expectLastCall().andThrow(new JMSRuntimeException("EXPECTED TESTING EXCEPTION"));
+        expect(auditor.audit(queryParameters)).andThrow(new JMSRuntimeException("EXPECTED TESTING EXCEPTION"));
         queryLogic1.close();
         
         PowerMock.replayAll();
@@ -3297,7 +3270,6 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(executor, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(executor, AccumuloConnectionRequestBean.class, connectionRequestBean);
-        setInternalState(executor, AuditParameters.class, auditParameters);
         
         executor.createQuery(queryLogicName, queryParameters);
         
@@ -3329,12 +3301,11 @@ public class ExtendedQueryExecutorBeanTest {
         qp.setUserDN(userDN);
         qp.setDnList(Collections.singletonList(userDN));
         
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.setColviz(new ColumnVisibility(authorization));
-        auditParameters.setAuditType(AuditType.PASSIVE);
-        auditParameters.setUserDn(userDN);
-        
         MultivaluedMap<String,String> map = qp.toMap();
+        map.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.PASSIVE.name());
+        map.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        map.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, authorization);
+        map.putSingle(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
@@ -3365,7 +3336,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getColumnVisibility()).andReturn(authorization);
         this.query.populateMetric(anyObject(QueryMetric.class));
         expect(this.queryLogic1.getSelectors(this.query)).andReturn(new ArrayList<String>());
-        this.auditor.audit(auditParameters);
+        expect(this.auditor.audit(map)).andReturn(null);
         expectLastCall().andThrow(new Exception("EXPECTED EXCEPTION IN AUDIT"));
         cache.unlock(queryName);
         transaction.commit();
@@ -3384,7 +3355,6 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
-        setInternalState(subject, AuditParameters.class, auditParameters);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -3429,11 +3399,10 @@ public class ExtendedQueryExecutorBeanTest {
         p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         p.putSingle(QueryParameters.QUERY_PARAMS, parameters);
         
-        p.putSingle(AuditParameters.QUERY_AUDIT_TYPE, AuditType.LOCALONLY.name());
-        p.putSingle(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, queryVisibility);
-        p.putSingle(AuditParameters.USER_DN, userDN);
-        AuditParameters auditParameters = new AuditParameters();
-        auditParameters.validate(p);
+        p.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.LOCALONLY.name());
+        p.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        p.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        p.putSingle(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
@@ -3457,14 +3426,15 @@ public class ExtendedQueryExecutorBeanTest {
         duplicateQuery.setPageTimeout(pageTimeout);
         duplicateQuery.setParameters(isA(Set.class));
         expect(duplicateQuery.toMap()).andReturn(p);
+        expect(duplicateQuery.getColumnVisibility()).andReturn(queryVisibility);
+        expect(duplicateQuery.getUserDN()).andReturn(userDN);
         expect(this.query.getQueryName()).andReturn(queryName).times(2);
         expect(this.query.getId()).andReturn(queryId);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.LOCALONLY);
         expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
         
-        this.auditor.audit(eq(auditParameters));
-        expectLastCall().andThrow(new Exception("INTENTIONALLY THROWN EXCEPTION"));
+        expect(this.auditor.audit(eq(p))).andThrow(new Exception("INTENTIONALLY THROWN EXCEPTION"));
         
         // Run the test
         PowerMock.replayAll();
@@ -3476,7 +3446,6 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationConfiguration.class, queryExpirationConf);
         setInternalState(subject, AuditBean.class, auditor);
-        setInternalState(subject, AuditParameters.class, auditParameters);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         
         subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize,

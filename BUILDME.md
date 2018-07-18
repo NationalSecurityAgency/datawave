@@ -1,7 +1,8 @@
 ### Prior to Building
 
-Before you can build Datawave, you must install the read-properties and assert-properties packages. This only needs to be 
-performed once:
+Before you can build Datawave, you must install the read-properties, assert-properties, and code-style packages. These
+only need to be installed once as a stopgap until these artifacts are published to maven central. You can either add
+`-Dplugins` to the build line you use below in the "Building Datawave" section, so perform the following steps:
 
 ```bash
 # Build ReadProperties
@@ -13,6 +14,10 @@ popd
 pushd contrib/assert-properties
 mvn clean install
 popd
+
+pushd contrib/code-style
+mvn clean install
+popd
 ```
 
 # Building Datawave
@@ -20,7 +25,7 @@ popd
 To perform a full (non-release) 'dev' build  without unit tests:
 
 ```bash
-mvn -Pdev -Ddeploy -Dtar -DskipTests clean install
+mvn -Pdev -Ddeploy -Dtar -DskipTests -Dservices clean install
 ```
 
 This command will produce the following deployment archives:
@@ -33,7 +38,7 @@ This command will produce the following deployment archives:
 In order to build a release, you must also define the dist variable by adding `-Ddist` to the command-line as follows:
 
 ```bash
-mvn -Pdev -Ddeploy -Dtar -Ddist -DskipTests clean install
+mvn -Pdev,examples -Ddeploy -Dtar -Ddist -DskipTests -Dservices clean install
 ```
 
 Note that this will build javadocs and source jars.

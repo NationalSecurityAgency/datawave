@@ -51,8 +51,8 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.ServerPrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
-import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
+import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 import datawave.webservice.common.exception.BadRequestException;
@@ -150,9 +150,6 @@ public class MapReduceBean {
     
     @Inject
     private SecurityMarking marking;
-    
-    @Inject
-    private AuditParameters auditParameters;
     
     @Inject
     private AuditBean auditor;
@@ -280,17 +277,15 @@ public class MapReduceBean {
             if (!auditType.equals(Auditor.AuditType.NONE)) {
                 try {
                     marking.validate(queryParameters);
-                    MultivaluedMap<String,String> auditQueryParameters = job.getAuditParameters(queryParameters, oozieConf,
-                                    auditParameters.getRequiredAuditParameters());
-                    auditQueryParameters.add(AuditParameters.USER_DN, userDn);
-                    auditQueryParameters.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, marking.toColumnVisibilityString());
-                    auditQueryParameters.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
-                    
-                    auditParameters.clear();
-                    auditParameters.validate(auditQueryParameters);
-                    auditParameters.setSelectors(job.getSelectors(queryParameters, oozieConf));
-                    log.debug("sending audit message: " + auditParameters);
-                    auditor.audit(auditParameters);
+                    PrivateAuditConstants.stripPrivateParameters(queryParameters);
+                    queryParameters.putSingle(PrivateAuditConstants.USER_DN, userDn);
+                    queryParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+                    queryParameters.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                    List<String> selectors = job.getSelectors(queryParameters, oozieConf);
+                    if (selectors != null && !selectors.isEmpty()) {
+                        queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
+                    }
+                    auditor.audit(queryParameters);
                 } catch (IllegalArgumentException e) {
                     log.error("Error validating audit parameters", e);
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);

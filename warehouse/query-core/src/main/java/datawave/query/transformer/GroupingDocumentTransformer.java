@@ -59,7 +59,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
     }
     
     @Override
-    /** 
+    /**
      * count the desired fields and create a new response with one event.
      */
     public BaseQueryResponse createResponse(List<Object> resultList) {

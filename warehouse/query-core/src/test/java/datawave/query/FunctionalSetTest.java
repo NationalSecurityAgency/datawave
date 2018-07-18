@@ -284,7 +284,8 @@ public abstract class FunctionalSetTest {
                 // "18 >= AG",
                 "AG == 18",
                 "18 == AG",
-                "GEN == 'FEMALE'", // this succeeds because the literal 'FEMALE' is normalized to 'female' based on the type (LcNoDiacritics) of the GENDER
+                "GEN == 'FEMALE'", // this succeeds because the literal 'FEMALE' is normalized to 'female' based on the type
+                                   // (LcNoDiacritics) of the GENDER
                                    // field
                 "GEN == 'female'", // this succeeds for the same reason as above. normalization was a no-op.
                 "'female' == GEN", // this succeeds because no normalization is necessary

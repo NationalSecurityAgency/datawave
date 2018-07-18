@@ -13,6 +13,7 @@ import java.util.*;
 /**
  * @goal read-properties
  * @phase validate
+ * @threadSafe true
  */
 @SuppressWarnings("unused")
 public class ReadProperties extends AbstractMojo {

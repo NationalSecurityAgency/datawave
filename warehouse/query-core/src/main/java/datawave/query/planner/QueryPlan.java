@@ -72,8 +72,8 @@ public class QueryPlan {
     }
     
     /**
-	 * 
-	 */
+     * 
+     */
     private void buildHashCode() {
         
         HashCodeBuilder builder = new HashCodeBuilder();

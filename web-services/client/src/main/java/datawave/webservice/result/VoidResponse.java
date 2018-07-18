@@ -1,14 +1,12 @@
 package datawave.webservice.result;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import datawave.webservice.HtmlProvider;
 import datawave.webservice.query.exception.QueryExceptionType;
 
 import io.protostuff.Input;
@@ -17,10 +15,9 @@ import io.protostuff.Output;
 import io.protostuff.Schema;
 
 @XmlRootElement(name = "VoidResponse")
-public class VoidResponse extends BaseResponse implements Message<VoidResponse>, HtmlProvider {
+public class VoidResponse extends BaseResponse implements Message<VoidResponse> {
     
     private static final long serialVersionUID = 1L;
-    private List<String> messsages = new ArrayList<String>();
     
     public VoidResponse() {
         super();
@@ -129,44 +126,4 @@ public class VoidResponse extends BaseResponse implements Message<VoidResponse>,
             fieldMap.put("exceptions", 3);
         }
     };
-    
-    @Override
-    public String getTitle() {
-        return "Void Response";
-    }
-    
-    @Override
-    public String getHeadContent() {
-        return "";
-    }
-    
-    @Override
-    public String getPageHeader() {
-        return VoidResponse.class.getName();
-    }
-    
-    public static final String BR = "<br/>";
-    
-    @Override
-    public String getMainContent() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("<b>MESSAGES:</b>").append(BR);
-        List<String> messages = this.getMessages();
-        if (messages != null) {
-            for (String msg : messages) {
-                if (msg != null)
-                    builder.append(msg).append(BR);
-            }
-        }
-        
-        builder.append("<b>EXCEPTIONS:</b>").append(BR);
-        List<QueryExceptionType> exceptions = this.getExceptions();
-        if (exceptions != null) {
-            for (QueryExceptionType exception : exceptions) {
-                if (exception != null)
-                    builder.append(exception).append(", ").append(QueryExceptionType.getSchema()).append(BR);
-            }
-        }
-        return builder.toString();
-    }
 }

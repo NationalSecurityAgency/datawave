@@ -26,6 +26,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
@@ -214,9 +215,6 @@ public class QueryExecutorBean implements QueryExecutor {
     
     @Inject
     private SecurityMarking marking;
-    
-    @Inject
-    private AuditParameters auditParameters;
     
     @Inject
     private ResponseObjectFactory responseObjectFactory;
@@ -450,7 +448,6 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         qd.logic.validate(queryParameters);
         
-        queryParameters.add("logicClass", queryLogicName);
         try {
             marking.clear();
             marking.validate(queryParameters);
@@ -460,7 +457,6 @@ public class QueryExecutorBean implements QueryExecutor {
             response.addException(qe);
             throw new BadRequestException(qe, response);
         }
-        queryParameters.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, marking.toColumnVisibilityString());
         // Find out who/what called this method
         qd.proxyServers = null;
         qd.p = ctx.getCallerPrincipal();
@@ -477,7 +473,6 @@ public class QueryExecutorBean implements QueryExecutor {
             qd.proxyServers = dp.getProxyServers();
         }
         log.trace(qd.userid + " has authorizations " + ((qd.p instanceof DatawavePrincipal) ? ((DatawavePrincipal) qd.p).getAuthorizations() : ""));
-        queryParameters.add(AuditParameters.USER_DN, qd.userDn);
         
         // always check against the max
         if (qd.logic.getMaxPageSize() > 0 && qp.getPagesize() > qd.logic.getMaxPageSize()) {
@@ -487,6 +482,13 @@ public class QueryExecutorBean implements QueryExecutor {
             response.addException(qe);
             throw new BadRequestException(qe, response);
         }
+        
+        // Set private audit-related parameters, stripping off any that the user might have passed in first.
+        // These are parameters that aren't passed in by the user, but rather are computed from other sources.
+        PrivateAuditConstants.stripPrivateParameters(queryParameters);
+        queryParameters.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        queryParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+        queryParameters.add(PrivateAuditConstants.USER_DN, qd.userDn);
         
         return qd;
     }
@@ -623,20 +625,20 @@ public class QueryExecutorBean implements QueryExecutor {
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 auditType = qd.logic.getAuditType(q);
             } finally {
-                queryParameters.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+                queryParameters.add(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
                 
-                // audit the query before its executed.
                 if (!auditType.equals(AuditType.NONE)) {
+                    // audit the query before its executed.
                     try {
-                        auditParameters.clear();
-                        auditParameters.validate(queryParameters);
                         try {
-                            auditParameters.setSelectors(qd.logic.getSelectors(q));
+                            List<String> selectors = qd.logic.getSelectors(q);
+                            if (selectors != null && !selectors.isEmpty()) {
+                                queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
+                            }
                         } catch (Exception e) {
                             log.error(e.getMessage());
                         }
-                        log.debug("sending audit message: " + auditParameters);
-                        auditor.audit(auditParameters);
+                        auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
                         log.error("Error validating audit parameters", e);
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
@@ -1023,38 +1025,28 @@ public class QueryExecutorBean implements QueryExecutor {
                 query.closeConnection(connectionFactory);
             } else {
                 AuditType auditType = query.getLogic().getAuditType(query.getSettings());
-                
                 MultivaluedMap<String,String> queryParameters = query.getSettings().toMap();
                 
-                queryParameters.putSingle(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
-                
-                if (!(queryParameters.containsKey("logicClass") && queryParameters.get("logicClass").contains(query.getLogic().getLogicName())))
-                    queryParameters.add("logicClass", query.getLogic().getLogicName());
-                
-                if (!(queryParameters.containsKey(AuditParameters.USER_DN) && queryParameters.get(AuditParameters.USER_DN).contains(
-                                query.getSettings().getUserDN())))
-                    queryParameters.add(AuditParameters.USER_DN, query.getSettings().getUserDN());
-                
-                if (!(queryParameters.containsKey(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ) && queryParameters.get(
-                                AuditParameters.QUERY_SECURITY_MARKING_COLVIZ).contains(query.getSettings().getColumnVisibility())))
-                    queryParameters.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, query.getSettings().getColumnVisibility());
+                queryParameters.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                queryParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, query.getLogic().getLogicName());
+                queryParameters.putSingle(PrivateAuditConstants.USER_DN, query.getSettings().getUserDN());
+                queryParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, query.getSettings().getColumnVisibility());
                 
                 if (!auditType.equals(AuditType.NONE)) {
                     try {
                         try {
-                            auditParameters.clear();
-                            auditParameters.validate(queryParameters);
-                        } catch (IllegalArgumentException e) {
-                            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
-                            response.addException(qe);
-                            throw new BadRequestException(qe, response);
-                        }
-                        try {
-                            auditParameters.setSelectors(query.getLogic().getSelectors(query.getSettings()));
+                            List<String> selectors = query.getLogic().getSelectors(query.getSettings());
+                            if (selectors != null && !selectors.isEmpty()) {
+                                queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
+                            }
                         } catch (Exception e) {
                             log.error(e.getMessage());
                         }
-                        auditor.audit(auditParameters);
+                        auditor.audit(queryParameters);
+                    } catch (IllegalArgumentException e) {
+                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
+                        response.addException(qe);
+                        throw new BadRequestException(qe, response);
                     } catch (Exception e) {
                         log.error("Error auditing query", e);
                         QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
@@ -2621,9 +2613,12 @@ public class QueryExecutorBean implements QueryExecutor {
             AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
             if (!auditType.equals(AuditType.NONE)) {
                 try {
-                    auditParameters.clear();
-                    auditParameters.validate(duplicate.toMap());
-                    auditor.audit(auditParameters);
+                    auditor.audit(duplicate.toMap());
+                } catch (IllegalArgumentException e) {
+                    log.error("Error validating audit parameters", e);
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
+                    response.addException(qe);
+                    throw new BadRequestException(qe, response);
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
                     log.error(qe);

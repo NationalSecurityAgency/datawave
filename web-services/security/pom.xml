@@ -2,16 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>datawave.webservices</groupId>
+        <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
         <version>2.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-security</artifactId>
     <packaging>ejb</packaging>
     <name>${project.artifactId}</name>
-    <properties>
-        <datawave.root>${project.parent.parent.basedir}</datawave.root>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -34,12 +31,16 @@
             <artifactId>commons-configuration</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>authorization-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common-util</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -108,7 +109,7 @@
             <artifactId>powermock-module-junit4</artifactId>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
@@ -184,7 +185,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

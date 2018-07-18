@@ -340,7 +340,8 @@ public class TestLuceneToJexlQueryParser {
                         "(content:phrase(TOKFIELD, termOffsetMap, 'someone\\u005c234someplace.com', 'otherterm') || content:within(TOKFIELD, 3, termOffsetMap, 'someone', '234someplace.com', 'otherterm'))",
                         parseQuery("TOKFIELD:\"someone\\\\234someplace.com otherterm\""));
         // FIX THIS, trailing slashes in queries should be acceptable.
-        // Assert.assertEquals("(TOKFIELD == 'someone\\u005c234someplace.com\\u005c' || content:within(TOKFIELD, 2, termOffsetMap, 'someone', '234someplace.com'))",
+        // Assert.assertEquals("(TOKFIELD == 'someone\\u005c234someplace.com\\u005c' || content:within(TOKFIELD, 2, termOffsetMap, 'someone',
+        // '234someplace.com'))",
         // parseQuery("TOKFIELD:someone\\\\234someplace.com\\\\"));
     }
     

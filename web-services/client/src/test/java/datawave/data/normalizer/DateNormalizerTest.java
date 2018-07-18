@@ -110,8 +110,7 @@ public class DateNormalizerTest {
     
     @Test
     /**
-     *  Show that an un-protected SimpleDateFormat will cause this test to have more than 4 Dates, or cause it to
-     *  throw an Exception:
+     * Show that an un-protected SimpleDateFormat will cause this test to have more than 4 Dates, or cause it to throw an Exception:
      */
     public void showThreadUnsafeDateFormat() {
         
