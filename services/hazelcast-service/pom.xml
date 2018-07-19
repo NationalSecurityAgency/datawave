@@ -4,18 +4,18 @@
     <parent>
         <artifactId>datawave-microservice-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
     </parent>
     <artifactId>hazelcast-service</artifactId>
-    <version>2.2.0-SNAPSHOT</version>
+    <version>1.0</version>
     <description>DATAWAVE Hazelcast Server</description>
     <properties>
         <!-- Override hazelcast version from spring boot to a newer one -->
         <hazelcast.version>3.9</hazelcast.version>
         <start-class>datawave.microservice.cached.server.HazelcastService</start-class>
         <version.hazelcast-kubernetes>1.1.0</version.hazelcast-kubernetes>
-        <version.microservice.hazelcast-common>2.2.0-SNAPSHOT</version.microservice.hazelcast-common>
-        <version.microservice.starter>1.0-SNAPSHOT</version.microservice.starter>
+        <version.microservice.hazelcast-common>1.0</version.microservice.hazelcast-common>
+        <version.microservice.starter>1.0</version.microservice.starter>
     </properties>
     <dependencyManagement>
         <dependencies>
