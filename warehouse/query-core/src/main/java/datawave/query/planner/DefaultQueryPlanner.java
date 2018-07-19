@@ -1543,7 +1543,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 try {
                     CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
                     if (compositeMetadata != null && !compositeMetadata.isEmpty())
-                        addOption(cfg, QueryOptions.COMPOSITE_METADATA, new String(CompositeMetadata.toBytes(compositeMetadata)), false);
+                        addOption(cfg, QueryOptions.COMPOSITE_METADATA,
+                                        java.util.Base64.getEncoder().encodeToString(CompositeMetadata.toBytes(compositeMetadata)), false);
                 } catch (TableNotFoundException e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITE_METADATA_CONFIG_ERROR, e);
                     throw new DatawaveQueryException(qe);

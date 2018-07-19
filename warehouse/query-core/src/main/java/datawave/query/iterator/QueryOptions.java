@@ -1087,13 +1087,9 @@ public class QueryOptions implements OptionDescriber {
         this.validateTypeMetadata(options);
         
         if (options.containsKey(COMPOSITE_METADATA)) {
-            try {
-                String compositeMetadataString = options.get(COMPOSITE_METADATA);
-                if (compositeMetadataString != null && !compositeMetadataString.isEmpty())
-                    this.compositeMetadata = CompositeMetadata.fromBytes(compositeMetadataString.getBytes("UTF8"));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            String compositeMetadataString = options.get(COMPOSITE_METADATA);
+            if (compositeMetadataString != null && !compositeMetadataString.isEmpty())
+                this.compositeMetadata = CompositeMetadata.fromBytes(java.util.Base64.getDecoder().decode(compositeMetadataString));
             
             if (log.isTraceEnabled()) {
                 log.trace("Using compositeMetadata: " + this.compositeMetadata);

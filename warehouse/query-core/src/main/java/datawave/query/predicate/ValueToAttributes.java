@@ -174,23 +174,23 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                 int originalDataListSize = dataList.size();
                 if (newAttributeCount > 0) {
                     if (dataList.size() == 0) {
-                        for (String value : attributeValues(attr))
+                        for (String value : attributeValues(attrs))
                             dataList.add(value);
                     } else {
                         for (int i = 0; i < originalDataListSize; i++) {
                             String base = dataList.remove(0);
                             if (base == null) {
-                                for (String value : attributeValues(attr))
+                                for (String value : attributeValues(attrs))
                                     dataList.add(value);
                             } else if (base.length() > 0) {
-                                for (String value : attributeValues(attr))
+                                for (String value : attributeValues(attrs))
                                     dataList.add(base + CompositeUtils.SEPARATOR + value);
                             } else {
-                                for (String value : attributeValues(attr))
+                                for (String value : attributeValues(attrs))
                                     dataList.add(base + value);
                             }
-                            timestamp = Math.max(timestamp, attr.getTimestamp());
-                            columnVisibilities.add(attr.getColumnVisibility());
+                            timestamp = Math.max(timestamp, attrs.getTimestamp());
+                            columnVisibilities.add(attrs.getColumnVisibility());
                         }
                     }
                 }
@@ -230,6 +230,16 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             }
             return attributes;
         }
+    }
+    
+    private List<String> attributeValues(Attributes attrs) {
+        List<String> attributeValues = new ArrayList<>();
+        for (Attribute attr : attrs.getAttributes()) {
+            List<String> attrValues = attributeValues(attr);
+            if (attrValues != null && !attrValues.isEmpty())
+                attributeValues.addAll(attrValues);
+        }
+        return attributeValues;
     }
     
     private List<String> attributeValues(Attribute attr) {
