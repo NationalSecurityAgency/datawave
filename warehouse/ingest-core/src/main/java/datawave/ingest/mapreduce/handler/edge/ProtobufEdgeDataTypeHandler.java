@@ -575,7 +575,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          */
         for (EdgeDefinition edgeDef : edgeDefs) {
             
-            String enrichmentFieldName = getEnrichmentFieldName(edgeDef);
             String jexlPreconditions = null;
             
             /**
@@ -610,6 +609,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                     edgeDef.setEnrichmentEdge(false);
                 }
             }
+            
+            String enrichmentFieldName = getEnrichmentFieldName(edgeDef);
             
             Multimap<String,NormalizedContentInterface> mSource = null;
             Multimap<String,NormalizedContentInterface> mSink = null;
