@@ -162,7 +162,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     /**
      * Determine if a Key should be kept. If the Key also returns true when called with apply() the Key will be returned to the client
      * 
-     * @see datawave.query.rewrite.function.Filter#keep(org.apache.accumulo.core .data.Key)
+     * @see datawave.query.predicate.Filter#keep(Key)
      *
      * @param k
      * @return true to keep, false otherwise

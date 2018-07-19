@@ -43,7 +43,7 @@ public interface EventDataQueryFilter extends Predicate<Map.Entry<Key,String>>, 
     /**
      * The keep method is used to filter out those fields returned from the apply method above that will be returned to the user.
      * 
-     * @see datawave.query.rewrite.predicate.Filter#keep(org.apache.accumulo.core.data.Key)
+     * @see datawave.query.predicate.Filter#keep(org.apache.accumulo.core.data.Key)
      *
      * @return true if keeping this field
      */
