@@ -31,4 +31,20 @@
             <optional>true</optional>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <!--
+                This repository is a temporary work-around until we can public artifacts to maven central.
+                This allows us to retrieve released microservice artifacts from our github repository.
+            -->
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>datawave-github-mvn-repo</id>
+            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave/mvn-repo</url>
+        </repository>
+    </repositories>
 </project>

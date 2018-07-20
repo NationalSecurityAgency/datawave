@@ -145,11 +145,6 @@
         <finalName>${project.artifactId}</finalName>
         <resources>
             <resource>
-                <targetPath>generated-sources/templated-sources</targetPath>
-                <filtering>true</filtering>
-                <directory>src/main/resources/source-templates</directory>
-            </resource>
-            <resource>
                 <filtering>true</filtering>
                 <directory>src/main/resources</directory>
                 <includes>
@@ -260,6 +255,22 @@
                                 </resource>
                             </resources>
                             <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-templated-sources</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>validate</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-sources/templated-sources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/resources/source-templates</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>
