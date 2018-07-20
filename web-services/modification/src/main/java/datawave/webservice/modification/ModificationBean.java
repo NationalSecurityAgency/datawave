@@ -5,7 +5,7 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.AuditParameterBuilder;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
@@ -86,7 +86,7 @@ public class ModificationBean {
     private ModificationConfiguration modificationConfiguration;
     
     @Inject
-    private AuditParameters auditParameters;
+    private AuditParameterBuilder auditParameterBuilder;
     
     /**
      * Returns a list of the Modification service names and their configurations
@@ -187,8 +187,7 @@ public class ModificationBean {
             
             if (service.getRequiresAudit()) {
                 try {
-                    auditParameters.clear();
-                    auditParameters.validate(request.toMap());
+                    auditParameterBuilder.convertAndValidate(request.toMap());
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
                     log.error(qe);

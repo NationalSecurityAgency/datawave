@@ -40,9 +40,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave</groupId>
+            <groupId>gov.nsa.datawave.contrib</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.protostuff</groupId>

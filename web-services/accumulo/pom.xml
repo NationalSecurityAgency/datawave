@@ -164,9 +164,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave</groupId>
+            <groupId>gov.nsa.datawave.contrib</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

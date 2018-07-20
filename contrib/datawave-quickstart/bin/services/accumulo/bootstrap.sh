@@ -32,7 +32,7 @@ maxClientCnxns=100"
 
 # You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 
-DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-http://apache.cs.utah.edu/accumulo/1.9.1/accumulo-1.9.1-bin.tar.gz}"
+DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-http://apache.cs.utah.edu/accumulo/1.9.2/accumulo-1.9.2-bin.tar.gz}"
 DW_ACCUMULO_DIST="$( downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
 DW_ACCUMULO_SYMLINK="accumulo"

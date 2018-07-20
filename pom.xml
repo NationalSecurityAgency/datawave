@@ -19,7 +19,6 @@
         <module>web-services</module>
         <module>warehouse</module>
         <module>type-metadata-hdfs</module>
-        <module>in-memory-accumulo</module>
     </modules>
     <scm>
         <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
@@ -60,6 +59,7 @@
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.5</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
+        <version.in-memory-accumulo>1.8.1</version.in-memory-accumulo>
         <version.infinispan>8.2.4.Final</version.infinispan>
         <version.jackson>2.7.4</version.jackson>
         <version.javassist>3.20.0-GA</version.javassist>
@@ -272,6 +272,18 @@
                 <artifactId>commons-pool</artifactId>
                 <version>${version.commons-pool}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.contrib</groupId>
+                <artifactId>datawave-in-memory-accumulo</artifactId>
+                <version>${version.in-memory-accumulo}</version>
+                <exclusions>
+                    <!-- Exclude all dependencies of in-memory-accumulo. We'll pull in the exact version we need. -->
                     <exclusion>
                         <groupId>*</groupId>
                         <artifactId>*</artifactId>
@@ -1817,7 +1829,7 @@
             </modules>
         </profile>
         <profile>
-            <id>dw-plugins</id>
+            <id>build-dw-contrib</id>
             <activation>
                 <property>
                     <name>plugins</name>
@@ -1827,6 +1839,7 @@
                 <module>contrib/read-properties</module>
                 <module>contrib/assert-properties</module>
                 <module>contrib/code-style</module>
+                <module>contrib/in-memory-accumulo</module>
             </modules>
         </profile>
     </profiles>
