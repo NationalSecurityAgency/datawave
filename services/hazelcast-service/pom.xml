@@ -4,7 +4,7 @@
     <parent>
         <artifactId>datawave-microservice-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.0</version>
+        <version>1.1</version>
     </parent>
     <artifactId>hazelcast-service</artifactId>
     <version>1.1-SNAPSHOT</version>
