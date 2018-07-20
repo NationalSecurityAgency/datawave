@@ -10,7 +10,7 @@
     </parent>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-parent</artifactId>
-    <version>1.1</version>
+    <version>1.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices</name>
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
