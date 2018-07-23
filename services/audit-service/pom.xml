@@ -7,11 +7,11 @@
         <version>1.1</version>
     </parent>
     <artifactId>audit-service</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2</version>
     <description>DATAWAVE Auditing Microservice</description>
     <properties>
         <version.in-memory-accumulo>1.8.1</version.in-memory-accumulo>
-        <version.microservice.audit-api>1.0</version.microservice.audit-api>
+        <version.microservice.audit-api>1.1</version.microservice.audit-api>
         <version.microservice.starter>1.0</version.microservice.starter>
     </properties>
     <dependencyManagement>
