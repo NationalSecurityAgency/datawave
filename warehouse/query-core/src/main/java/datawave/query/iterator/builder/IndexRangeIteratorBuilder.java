@@ -62,11 +62,16 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
             DocumentIterator docIterator = null;
             try {
                 // create a field index caching ivarator
-                DatawaveFieldIndexRangeIteratorJexl rangeIterator = new DatawaveFieldIndexRangeIteratorJexl(new Text(range.getFieldName()), new Text(range
-                                .getLower().toString()), range.isLowerInclusive(), new Text(range.getUpper().toString()), range.isUpperInclusive(),
-                                this.timeFilter, this.datatypeFilter, false, ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout,
-                                ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles, hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true,
-                                PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs, createCompositePredicateFilters(range.getFieldName()));
+                DatawaveFieldIndexRangeIteratorJexl rangeIterator = DatawaveFieldIndexRangeIteratorJexl.builder().withFieldName(new Text(range.getFieldName()))
+                                .withFieldValue(new Text(range.getLower().toString())).lowerInclusive(range.isLowerInclusive())
+                                .withUpperBound(new Text(range.getUpper().toString())).upperInclusive(range.isUpperInclusive()).withTimeFilter(this.timeFilter)
+                                .withDatatypeFilter(this.datatypeFilter).negated(false).withScanThreshold(ivaratorCacheScanPersistThreshold)
+                                .withScanTimeout(ivaratorCacheScanTimeout).withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
+                                .withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles).withFileSystem(hdfsFileSystem)
+                                .withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
+                                .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
+                                .withCompositePredicateFilters(createCompositePredicateFilters(range.getFieldName())).build();
+                
                 if (collectTimingDetails) {
                     rangeIterator.setCollectTimingDetails(true);
                     rangeIterator.setQuerySpanCollector(this.querySpanCollector);

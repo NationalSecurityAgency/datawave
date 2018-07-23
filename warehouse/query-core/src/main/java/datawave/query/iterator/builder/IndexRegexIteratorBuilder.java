@@ -58,10 +58,14 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
             DocumentIterator docIterator = null;
             try {
                 // create a field index caching ivarator
-                DatawaveFieldIndexRegexIteratorJexl regexIterator = new DatawaveFieldIndexRegexIteratorJexl(new Text(field), new Text(value), this.timeFilter,
-                                this.datatypeFilter, negated, ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, ivaratorCacheBufferSize,
-                                maxRangeSplit, ivaratorMaxOpenFiles, hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true,
-                                PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs, createCompositePredicateFilters(field));
+                DatawaveFieldIndexRegexIteratorJexl regexIterator = DatawaveFieldIndexRegexIteratorJexl.builder().withFieldName(new Text(field))
+                                .withFieldValue(new Text(value)).withTimeFilter(timeFilter).withDatatypeFilter(datatypeFilter).negated(negated)
+                                .withScanThreshold(ivaratorCacheScanPersistThreshold).withScanTimeout(ivaratorCacheScanTimeout)
+                                .withHdfsBackedSetBufferSize(ivaratorCacheBufferSize).withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles)
+                                .withFileSystem(hdfsFileSystem).withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
+                                .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
+                                .withCompositePredicateFilters(createCompositePredicateFilters(field)).build();
+                
                 if (collectTimingDetails) {
                     regexIterator.setCollectTimingDetails(true);
                     regexIterator.setQuerySpanCollector(this.querySpanCollector);
@@ -81,8 +85,8 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                 
             } catch (IOException e) {
                 throw new IllegalStateException("Unable to initialize regex iterator stack", e);
-            } catch (JavaRegexParseException e) {
-                throw new IllegalStateException("Unable to parse regex " + value, e);
+                // } catch (JavaRegexParseException e) {
+                // throw new IllegalStateException("Unable to parse regex " + value, e);
             }
             
             IndexIteratorBridge itr = new IndexIteratorBridge(docIterator);

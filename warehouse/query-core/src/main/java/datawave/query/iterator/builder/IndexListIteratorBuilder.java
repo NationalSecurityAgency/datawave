@@ -96,16 +96,32 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                 // create a field index caching ivarator
                 DatawaveFieldIndexListIteratorJexl listIterator = null;
                 if (values != null) {
-                    listIterator = new DatawaveFieldIndexListIteratorJexl(new Text(field), values, this.timeFilter, this.datatypeFilter, negated,
-                                    ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles,
-                                    hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs,
-                                    createCompositePredicateFilters(field));
+                    listIterator = DatawaveFieldIndexListIteratorJexl.builder().withFieldName(new Text(field)).withValues(values).withTimeFilter(timeFilter)
+                                    .withDatatypeFilter(datatypeFilter).negated(negated).withScanThreshold(ivaratorCacheScanPersistThreshold)
+                                    .withScanTimeout(ivaratorCacheScanTimeout).withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
+                                    .withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles).withFileSystem(hdfsFileSystem)
+                                    .withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
+                                    .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
+                                    .withCompositePredicateFilters(createCompositePredicateFilters(field)).build();
+                    
+                    // new DatawaveFieldIndexListIteratorJexl(new Text(field), values, this.timeFilter, this.datatypeFilter, negated,
+                    // ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles,
+                    // hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs,
+                    // createCompositePredicateFilters(field));
                 } else {
                     FST fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstURI), hdfsFileCompressionCodec, fstHdfsFileSystem);
-                    listIterator = new DatawaveFieldIndexListIteratorJexl(new Text(field), fst, this.timeFilter, this.datatypeFilter, negated,
-                                    ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles,
-                                    hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs,
-                                    createCompositePredicateFilters(field));
+                    listIterator = DatawaveFieldIndexListIteratorJexl.builder().withFieldName(new Text(field)).withFST(fst).withTimeFilter(timeFilter)
+                                    .withDatatypeFilter(datatypeFilter).negated(negated).withScanThreshold(ivaratorCacheScanPersistThreshold)
+                                    .withScanTimeout(ivaratorCacheScanTimeout).withHdfsBackedSetBufferSize(ivaratorCacheBufferSize)
+                                    .withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles).withFileSystem(hdfsFileSystem)
+                                    .withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
+                                    .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
+                                    .withCompositePredicateFilters(createCompositePredicateFilters(field)).build();
+                    
+                    // listIterator = new DatawaveFieldIndexListIteratorJexl(new Text(field), fst, this.timeFilter, this.datatypeFilter, negated,
+                    // ivaratorCacheScanPersistThreshold, ivaratorCacheScanTimeout, ivaratorCacheBufferSize, maxRangeSplit, ivaratorMaxOpenFiles,
+                    // hdfsFileSystem, new Path(hdfsCacheURI), queryLock, true, PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME, sortedUIDs,
+                    // createCompositePredicateFilters(field));
                 }
                 if (collectTimingDetails) {
                     listIterator.setCollectTimingDetails(true);
