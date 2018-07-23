@@ -107,7 +107,9 @@ public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
         this.fieldConfig = config;
         
         // load raw data into POJO
-        manager.addTestData(this.ingestPath, this.dataType, this.fieldConfig.getIndexFields());
+        Set<String> anyFieldIndexes = new HashSet<>(this.fieldConfig.getIndexFields());
+        anyFieldIndexes.addAll(this.fieldConfig.getReverseIndexFields());
+        manager.addTestData(this.ingestPath, this.dataType, anyFieldIndexes);
         
         // default Hadoop settings - override if needed
         this.hConf.set(DataTypeHelper.Properties.DATA_NAME, this.dataType);
@@ -122,7 +124,7 @@ public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
         this.hConf.set(this.dataType + ".ingest.policy.enforcer.class", IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         
         this.hConf.set(this.dataType + ".data.auth.id.mode", "NEVER");
-        this.hConf.set(this.dataType + ShardedDataTypeHandler.METADATA_TERM_FREQUENCY, "true");
+        this.hConf.set(ShardedDataTypeHandler.METADATA_TERM_FREQUENCY, "true");
         
         this.hConf.set(this.dataType + MarkingsHelper.DEFAULT_MARKING, AUTH_VALUES);
         
@@ -135,6 +137,7 @@ public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
         List<String> compositeNames = mappingToNames(this.fieldConfig.getCompositeFields());
         indexEntries.addAll(compositeNames);
         this.hConf.set(this.dataType + BaseIngestHelper.INDEX_FIELDS, String.join(",", indexEntries));
+        this.hConf.set(this.dataType + BaseIngestHelper.INDEX_ONLY_FIELDS, String.join(",", this.fieldConfig.getIndexOnlyFields()));
         this.hConf.set(this.dataType + BaseIngestHelper.REVERSE_INDEX_FIELDS, String.join(",", this.fieldConfig.getReverseIndexFields()));
         this.hConf.set(this.dataType + CompositeIngest.COMPOSITE_FIELD_NAMES, String.join(",", mappingToNames(this.fieldConfig.getCompositeFields())));
         this.hConf.set(this.dataType + CompositeIngest.COMPOSITE_FIELD_MEMBERS, String.join(",", mappingToFields(this.fieldConfig.getCompositeFields())));

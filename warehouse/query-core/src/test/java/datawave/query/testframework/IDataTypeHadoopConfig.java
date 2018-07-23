@@ -3,6 +3,7 @@ package datawave.query.testframework;
 import org.apache.hadoop.conf.Configuration;
 
 import java.net.URI;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
 
 /**
@@ -11,6 +12,9 @@ import java.util.Collection;
  * @see org.apache.hadoop.conf.Configuration
  */
 public interface IDataTypeHadoopConfig {
+    
+    String DATE_FIELD_FORMAT = "yyyyMMdd";
+    SimpleDateFormat YMD_DateFormat = new SimpleDateFormat(DATE_FIELD_FORMAT);
     
     /**
      * Data type string representation.

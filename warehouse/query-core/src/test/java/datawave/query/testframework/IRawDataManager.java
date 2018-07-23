@@ -1,10 +1,13 @@
 package datawave.query.testframework;
 
+import datawave.data.normalizer.Normalizer;
+
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -12,11 +15,17 @@ import java.util.Set;
  */
 public interface IRawDataManager {
     
+    // and/or logical strings for use by unit tests
+    String AND_OP = " and ";
+    String OR_OP = " or ";
+    
+    // string and char value for multivalue fields
     String MULTIVALUE_SEP = ";";
+    char MULTIVALUE_SEP_CHAR = ';';
     
     /**
      * Returns the field headers for this data manager.
-     * 
+     *
      * @return headers strings
      */
     List<String> getHeaders();
@@ -36,35 +45,56 @@ public interface IRawDataManager {
     void addTestData(URI file, String datatype, Set<String> indexes) throws IOException;
     
     /**
-     * Finds all unique keys that match the query from the loaded test data.
+     * Retrieves the all of the raw data for the date range
      *
-     * @param action
-     *            defines a simple query action
-     * @param startDate
-     *            start date for query
-     * @param endDate
-     *            end date for query
-     * @return set of keys expected to match the query
+     * @param start
+     *            start date
+     * @param end
+     *            end date
+     * @return raw data entries
      */
-    Set<IRawData> findMatchers(QueryAction action, Date startDate, Date endDate);
+    Iterator<Map<String,String>> rangeData(Date start, Date end);
     
     /**
-     * Returns the type for a field.
-     *
-     * @param field
-     *            name of field
-     * @return type
-     */
-    Type getFieldType(String field);
-    
-    /**
-     * Retrieves the set of key values from the query results dataset.
+     * Retrieves the key field for all of the entries.
      *
      * @param entries
-     *            raw data entries matching the query
-     * @return set of keys for the raw data entries
+     *            matching query entries
+     * @return key field value for all entries
      */
-    Set<String> getKeyField(Set<IRawData> entries);
+    Set<String> getKeys(Set<Map<String,String>> entries);
+    
+    /**
+     * Retrieves the normalizer class for a field name/.
+     *
+     * @param field
+     *            name of header field
+     * @return normalizer for valid field name
+     */
+    Normalizer getNormalizer(String field);
+    
+    /**
+     * Converts part of a query using ANY_FIELD into an equivalent string that includes all of the indexed fields. This is performed before the JEXL expression
+     * is created. It appears to be more complicated to modify the Jexl script after it has been created. Equivalent to {@link #convertAnyField(String, String)}
+     * using ${@link #OR_OP}.
+     *
+     * @param phrase
+     *            execution phrase (e.g. " == 'abc'")
+     * @return execution JEXL query compatible to ANY_FIELD execution
+     */
+    String convertAnyField(String phrase);
+    
+    /**
+     * Converts part of a query using ANY_FIELD into an equivalent string that includes all of the indexed fields. This is performed before the JEXL expression
+     * is created. It appears to be more complicated to modify the Jexl script after it has been created.
+     *
+     * @param phrase
+     *            execution phrase (e.g. " == 'abc'")
+     * @param op
+     *            operation to for the actions between executions (or, and)
+     * @return execution JEXL query compatible to ANY_FIELD execution
+     */
+    String convertAnyField(String phrase, String op);
     
     /**
      * Creates an array that contains a random start and end date based upon the shard dates specified for the raw data.

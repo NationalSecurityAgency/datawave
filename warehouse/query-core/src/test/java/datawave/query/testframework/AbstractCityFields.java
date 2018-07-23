@@ -15,6 +15,7 @@ public abstract class AbstractCityFields implements IFieldConfig {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     
     private final Set<String> indexFields = new HashSet<>();
+    private final Set<String> indexOnlyFields = new HashSet<>();
     private final Set<String> reverseIndexFields = new HashSet<>();
     private final Set<String> multivalueFields = new HashSet<>();
     private final Collection<Set<String>> compositeFields = new HashSet<>();
@@ -25,6 +26,8 @@ public abstract class AbstractCityFields implements IFieldConfig {
      *
      * @param index
      *            fields that are to be indexed
+     * @param indexOnly
+     *            fields that are set to index only
      * @param reverse
      *            fields included in the reverse index
      * @param multivalue
@@ -34,9 +37,10 @@ public abstract class AbstractCityFields implements IFieldConfig {
      * @param virtual
      *            mapping of virtual field entries
      */
-    protected AbstractCityFields(Collection<String> index, Collection<String> reverse, Collection<String> multivalue, Collection<Set<String>> composite,
-                    Collection<Set<String>> virtual) {
+    protected AbstractCityFields(Collection<String> index, Collection<String> indexOnly, Collection<String> reverse, Collection<String> multivalue,
+                    Collection<Set<String>> composite, Collection<Set<String>> virtual) {
         this.indexFields.addAll(index);
+        this.indexOnlyFields.addAll(indexOnly);
         this.reverseIndexFields.addAll(reverse);
         this.multivalueFields.addAll(multivalue);
         this.compositeFields.addAll(composite);
@@ -56,6 +60,21 @@ public abstract class AbstractCityFields implements IFieldConfig {
     @Override
     public void removeIndexField(String field) {
         this.indexFields.remove(field);
+    }
+    
+    @Override
+    public Set<String> getIndexOnlyFields() {
+        return indexOnlyFields;
+    }
+    
+    @Override
+    public void addIndexOnlyField(String field) {
+        this.indexOnlyFields.add(field);
+    }
+    
+    @Override
+    public void removeIndexOnlyField(String field) {
+        this.indexOnlyFields.remove(field);
     }
     
     @Override

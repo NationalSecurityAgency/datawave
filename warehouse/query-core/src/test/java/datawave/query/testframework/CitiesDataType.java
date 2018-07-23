@@ -1,13 +1,13 @@
 package datawave.query.testframework;
 
+import datawave.data.normalizer.Normalizer;
 import datawave.data.type.NumberType;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
-import datawave.query.Constants;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -28,6 +28,7 @@ import java.util.stream.Stream;
  */
 public class CitiesDataType extends AbstractDataTypeConfig {
     
+    private static final Logger log = Logger.getLogger(CitiesDataType.class);
     private static final Random rVal = new Random(System.currentTimeMillis());
     
     /**
@@ -70,6 +71,9 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      */
     public enum CityShardId {
         // list of shards for testing
+        DATE_2015_0404("20150404"),
+        DATE_2015_0505("20150505"),
+        DATE_2015_0606("20150606"),
         DATE_2015_0707("20150707"),
         DATE_2015_0808("20150808"),
         DATE_2015_0909("20150909"),
@@ -79,8 +83,6 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         static Set<String> getShardRange(final Date start, final Date end) {
             final Set<String> shards = new HashSet<>();
             for (final CityShardId id : CityShardId.values()) {
-                int s = start.compareTo(id.date);
-                int e = end.compareTo(id.date);
                 if (0 >= start.compareTo(id.date) && 0 <= end.compareTo(id.date)) {
                     shards.add(id.dateStr);
                 }
@@ -117,7 +119,6 @@ public class CitiesDataType extends AbstractDataTypeConfig {
                     startEndDate[1] = sortedDate.get(s + e);
                 }
             } else {
-                int s = rVal.nextInt(sortedDate.size());
                 startEndDate[0] = sortedDate.get(0);
                 startEndDate[1] = sortedDate.get(sortedDate.size() - 1);
             }
@@ -155,15 +156,15 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      */
     public enum CityField {
         // order is important, should match the order in the csv files
-        START_DATE(String.class),
-        EVENT_ID(String.class),
-        CITY(String.class, true),
-        STATE(String.class, true),
-        COUNTRY(String.class),
-        CONTINENT(String.class),
-        CODE(String.class),
-        ACCESS(String.class),
-        NUM((Integer.class));
+        START_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        EVENT_ID(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        CITY(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true),
+        STATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true),
+        COUNTRY(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        CONTINENT(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        CODE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        ACCESS(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        NUM((Normalizer.NUMBER_NORMALIZER));
         
         private static final List<String> Headers;
         
@@ -219,69 +220,18 @@ public class CitiesDataType extends AbstractDataTypeConfig {
             return fields;
         }
         
-        /**
-         * Creates a mapping of field names to the type
-         *
-         * @return key/value mapping of key to type
-         */
-        static Map<String,Type> getFieldTypeMapping() {
-            final Map<String,Type> mapping = new HashMap<>();
-            for (final CityField field : CityField.values()) {
-                mapping.put(field.name(), field.metadata.type);
-            }
-            return mapping;
-        }
-        
-        static Type getFieldType(final String fieldName) {
-            for (final CityField field : CityField.values()) {
-                if (field.name().equalsIgnoreCase(fieldName)) {
-                    return field.metadata.type;
-                }
-            }
-            
-            // check for ANY_FIELD
-            if (Constants.ANY_FIELD.equals(fieldName)) {
-                return String.class;
-            }
-            
-            throw new AssertionError("invalid city field(" + fieldName + ")");
-        }
-        
         private static final Map<String,BaseRawData.RawMetaData> metadataMapping = new HashMap<>();
-        
-        static Map<String,BaseRawData.RawMetaData> getMetaDataMapping() {
-            if (metadataMapping.isEmpty()) {
-                synchronized (metadataMapping) {
-                    if (metadataMapping.isEmpty()) {
-                        for (final CityField field : CityField.values()) {
-                            metadataMapping.put(field.name(), field.metadata);
-                        }
-                    }
-                }
-            }
-            
-            return metadataMapping;
-        }
         
         private BaseRawData.RawMetaData metadata;
         
-        CityField(final Type type) {
-            this(type, false);
+        CityField(final Normalizer<?> normalizer) {
+            this(normalizer, false);
         }
         
-        CityField(final Type type, final boolean isMulti) {
-            this.metadata = new BaseRawData.RawMetaData(this.name(), type, isMulti);
+        CityField(final Normalizer<?> normalizer, final boolean isMulti) {
+            this.metadata = new BaseRawData.RawMetaData(this.name(), normalizer, isMulti);
         }
-        
-        /**
-         * Returns the class associated with the field.
-         *
-         * @return class type
-         */
-        public Type getType() {
-            return this.metadata.type;
-        }
-        
+
         /**
          * Returns the metadata for this field.
          *
@@ -341,6 +291,8 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         
         // fields
         this.hConf.set(this.dataType + CSVHelper.DATA_HEADER, String.join(",", CityField.headers()));
+        
+        log.debug(this.toString());
     }
     
     @Override

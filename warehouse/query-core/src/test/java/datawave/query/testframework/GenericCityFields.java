@@ -13,6 +13,7 @@ import java.util.Set;
 public class GenericCityFields extends AbstractCityFields {
     
     private static final Collection<String> index = Arrays.asList(CityField.CITY.name(), CityField.STATE.name(), CityField.CONTINENT.name());
+    private static final Collection<String> indexOnly = new HashSet<>();
     private static final Collection<String> reverse = new HashSet<>();
     private static final Collection<String> multivalue = Arrays.asList(CityField.CITY.name(), CityField.STATE.name());
     
@@ -33,7 +34,7 @@ public class GenericCityFields extends AbstractCityFields {
     }
     
     public GenericCityFields() {
-        super(index, reverse, multivalue, composite, virtual);
+        super(index, indexOnly, reverse, multivalue, composite, virtual);
     }
     
     @Override

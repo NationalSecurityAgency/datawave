@@ -9,9 +9,8 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.IDataTypeHadoopConfig;
 import datawave.query.testframework.IFieldConfig;
-import datawave.query.testframework.IRawData;
+import datawave.query.testframework.QueryJexl;
 import datawave.query.testframework.QueryLogicTestHarness;
-import datawave.query.testframework.QueryParserHelper;
 import datawave.query.testframework.ResponseFieldChecker;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
@@ -76,31 +75,46 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         log.info("------  testAnyField  ------");
         
         for (final TestCities city : TestCities.values()) {
-            String query = Constants.ANY_FIELD + " == '" + city.name() + "'";
-            runTest(query, true, false);
+            String cityPhrase = " == '" + city.name() + "'";
+            String query = Constants.ANY_FIELD + cityPhrase;
+            String expect = this.dataManager.convertAnyField(cityPhrase);
+            runTest(query, expect, true, false);
         }
     }
     
     @Test
     public void testDisjunctionAnyField() throws Exception {
         log.info("------  testDisjunctionAnyField  ------");
-        String query = Constants.ANY_FIELD + " == 'no-match-found' or " + Constants.ANY_FIELD + " == 'nothing-here'";
-        runTest(query, true, false);
+        String noMatchPhrase = " == 'no-match-found'";
+        String nothingPhrase = " == 'nothing-here'";
+        String op = " or ";
+        String query = Constants.ANY_FIELD + noMatchPhrase + op + Constants.ANY_FIELD + nothingPhrase;
+        String anyNoMatch = this.dataManager.convertAnyField(noMatchPhrase);
+        String anyNothing = this.dataManager.convertAnyField(nothingPhrase);
+        String expect = anyNoMatch + op + anyNothing;
+        runTest(query, expect, true, false);
     }
     
     @Test
     public void testConjunctionAnyField() throws Exception {
         log.info("------  testConjunctionAnyField  ------");
-        String query = Constants.ANY_FIELD + " == 'no-match-found' and " + Constants.ANY_FIELD + " == 'nothing-here'";
-        runTest(query, true, false);
+        String noMatchPhrase = " == 'no-match-found'";
+        String nothingPhrase = " == 'nothing-here'";
+        String op = " and ";
+        String query = Constants.ANY_FIELD + noMatchPhrase + op + Constants.ANY_FIELD + nothingPhrase;
+        String anyNoMatch = this.dataManager.convertAnyField(noMatchPhrase);
+        String anyNothing = this.dataManager.convertAnyField(nothingPhrase);
+        String expect = anyNoMatch + op + anyNothing;
+        runTest(query, expect, true, false);
     }
     
     @Test
     public void testAnyFieldFilterIncludeRegex() throws Exception {
         log.info("------  testAnyFieldFilterIncludeRegex  ------");
+        String anyState = this.dataManager.convertAnyField(" == 'ohio'");
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + " == '" + city.name() + "' and " + " filter:includeRegex(" + Constants.ANY_FIELD + ",'ohio')";
-            String expectQuery = CityField.CITY.name() + " == '" + city.name() + "' and " + Constants.ANY_FIELD + " == 'ohio'";
+            String expectQuery = CityField.CITY.name() + " == '" + city.name() + "' and " + anyState;
             runTest(query, expectQuery, true, false);
         }
     }
@@ -110,9 +124,10 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testAnyFieldLuceneInclude() throws Exception {
         log.info("------  testAnyFieldLuceneInclude  ------");
+        String anyState = this.dataManager.convertAnyField(" == 'ohio'");
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + ":" + city.name() + " and " + " #INCLUDE(" + Constants.ANY_FIELD + ",ohio)";
-            String expectQuery = CityField.CITY.name() + " == '" + city.name() + "' and " + Constants.ANY_FIELD + " == 'ohio'";
+            String expectQuery = CityField.CITY.name() + " == '" + city.name() + "' and " + anyState;
             this.logic.setParser(new LuceneQueryParser());
             runTest(query, expectQuery, true, false);
         }
@@ -274,9 +289,10 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
      */
     private void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate, final boolean whiteList,
                     final boolean hitList, final Set<String> fields) throws Exception {
-        QueryParserHelper queryHelper = new QueryParserHelper(expectQuery, this.dataManager, startDate, endDate);
-        final Set<IRawData> allData = queryHelper.findMatchers();
-        final Set<String> expected = this.dataManager.getKeyField(allData);
+
+        QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startDate, endDate);
+        final Set<Map<String,String>> allData = jexl.evaluate();
+        final Set<String> expected = this.dataManager.getKeys(allData);
         
         final Set<String> otherFields = new HashSet<>(this.dataManager.getHeaders());
         otherFields.removeAll(fields);

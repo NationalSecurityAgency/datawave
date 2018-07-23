@@ -23,6 +23,12 @@ public interface IFieldConfig {
     
     void removeIndexField(String field);
     
+    Set<String> getIndexOnlyFields();
+    
+    void addIndexOnlyField(String field);
+    
+    void removeIndexOnlyField(String field);
+    
     Set<String> getReverseIndexFields();
     
     void addReverseIndexField(String field);

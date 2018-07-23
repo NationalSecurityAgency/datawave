@@ -1,6 +1,7 @@
 package datawave.query.testframework;
 
 import au.com.bytecode.opencsv.CSVReader;
+import datawave.data.normalizer.Normalizer;
 import datawave.query.Constants;
 import datawave.query.testframework.CitiesDataType.CityField;
 import org.apache.log4j.Logger;
@@ -16,6 +17,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +34,8 @@ public class CityDataManager extends AbstractDataManager {
     private static final Logger log = Logger.getLogger(CityDataManager.class);
     
     public CityDataManager() {
-        super(CityField.EVENT_ID.name());
+        super(CityField.EVENT_ID.name(), CityField.START_DATE.name());
+        this.metadata = CityRawData.metadata;
     }
     
     @Override
@@ -51,42 +54,6 @@ public class CityDataManager extends AbstractDataManager {
             this.rawDataIndex.put(datatype, indexes);
             log.info("city test data(" + file + ") count(" + count + ")");
         }
-    }
-    
-    @Override
-    public Set<IRawData> findMatchers(QueryAction action, final Date startDate, final Date endDate) {
-        final Map<String,Type> types = CityField.getFieldTypeMapping();
-        
-        final Set<IRawData> matches = new HashSet<>();
-        for (final String dataType : this.rawData.keySet()) {
-            Collection<IRawData> data = this.getRawData(this.rawData.get(dataType), startDate, endDate);
-            
-            Set<String> fields = new HashSet<>();
-            if (Constants.ANY_FIELD.equals(action.getKey())) {
-                fields.addAll(this.rawDataIndex.get(dataType));
-            } else {
-                fields.add(action.getKey());
-            }
-            
-            matches.addAll(matchField(fields, types, action, data));
-        }
-        
-        return matches;
-    }
-    
-    @Override
-    public Type getFieldType(String field) {
-        return CityField.getFieldType(field);
-    }
-    
-    @Override
-    public Set<String> getKeyField(Set<IRawData> entries) {
-        final Set<String> keys = new HashSet<>(entries.size());
-        for (IRawData entry : entries) {
-            keys.add(entry.getValue(this.rawKeyField));
-        }
-        
-        return keys;
     }
     
     @Override
@@ -122,7 +89,7 @@ public class CityDataManager extends AbstractDataManager {
         private static final Map<String,RawMetaData> metadata = new HashMap<>();
         static {
             for (final CityField field : CityField.values()) {
-                metadata.put(field.name(), field.getMetadata());
+                metadata.put(field.name().toLowerCase(), field.getMetadata());
             }
         }
         
@@ -138,17 +105,12 @@ public class CityDataManager extends AbstractDataManager {
         
         @Override
         protected boolean containsField(final String field) {
-            return CityField.headers().contains(field);
+            return CityField.headers().contains(field.toLowerCase());
         }
         
         @Override
         public boolean isMultiValueField(final String field) {
-            return metadata.get(field).multiValue;
-        }
-        
-        @Override
-        public Type getFieldType(final String field) {
-            return metadata.containsKey(field) ? metadata.get(field).type : null;
+            return metadata.get(field.toLowerCase()).multiValue;
         }
     }
 }

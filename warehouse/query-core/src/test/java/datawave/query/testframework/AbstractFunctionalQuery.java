@@ -75,9 +75,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     public enum TestCities {
         // any city entries can be added; these exist in the current set of data
-        LONDON,
-        PARIS,
-        ROME;
+        london,
+        paris,
+        rome;
     }
     
     private static final SimpleDateFormat YMD_DateFormat = new SimpleDateFormat("yyyyMMdd");
@@ -107,16 +107,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     @Before
     public void querySetUp() {
         log.debug("---------  querySetUp  ---------");
-        
-        testInit();
-        
-        Assert.assertNotNull(this.auths);
-        authSet.clear();
-        authSet.add(this.auths);
-        
-        SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
-        DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(this.auths.toString().split(",")), null, null, -1L);
-        this.principal = new DatawavePrincipal(Collections.singleton(user));
         
         this.logic = new ShardQueryLogic();
         QueryTestTableHelper.configureLogicToScanTables(this.logic);
@@ -150,6 +140,17 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         contentLogic.setTableName(QueryTestTableHelper.SHARD_TABLE_NAME);
         contentLogic.setMarkingFunctions(new NoOp());
         contentLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        
+        // init must set auths
+        testInit();
+        
+        Assert.assertNotNull(this.auths);
+        authSet.clear();
+        authSet.add(this.auths);
+        
+        SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
+        DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(this.auths.toString().split(",")), null, null, -1L);
+        this.principal = new DatawavePrincipal(Collections.singleton(user));
         
         QueryLogicTestHarness.TestResultParser resp = (key, document) -> {
             return this.parse(key, document);
@@ -188,6 +189,26 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     // ============================================
     // basic test execution methods
+    
+    /**
+     * Base test execution. This will use the first and last shard dates for the date range.
+     *
+     * @param query
+     *            query for execution
+     * @param expectQuery
+     *            query for expected results
+     * @throws Exception
+     *             test error condition
+     */
+    protected void runTest(final String query, final String expectQuery) throws Exception {
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        
+        QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startEndDate[0], startEndDate[1]);
+        final Set<Map<String,String>> allData = jexl.evaluate();
+        final Set<String> expected = this.dataManager.getKeys(allData);
+        
+        runTestQuery(expected, query, startEndDate[0], startEndDate[1]);
+    }
     
     /**
      * Equivalent to {@link #runTestQuery(Collection, String, Date, Date, Map)}, with an empty map for the options.
@@ -241,7 +262,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected void runTestQuery(Collection<String> expected, String queryStr, Date startDate, Date endDate, Map<String,String> options,
                     List<DocumentChecker> checkers) throws Exception {
-        log.debug("  query(" + queryStr + ")  start(" + YMD_DateFormat.format(startDate) + "  end(" + YMD_DateFormat.format(endDate) + ")");
+        log.debug("  query(" + queryStr + ")  start(" + YMD_DateFormat.format(startDate) + ")  end(" + YMD_DateFormat.format(endDate) + ")");
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startDate);
         q.setEndDate(endDate);

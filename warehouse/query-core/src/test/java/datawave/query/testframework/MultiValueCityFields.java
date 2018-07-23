@@ -4,7 +4,6 @@ import datawave.query.testframework.CitiesDataType.CityField;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,7 +13,8 @@ import java.util.Set;
 public class MultiValueCityFields extends AbstractCityFields {
     
     private static final Collection<String> index = Arrays.asList(CityField.CITY.name(), CityField.STATE.name(), CityField.CONTINENT.name());
-    private static final Collection<String> reverse = Collections.EMPTY_SET;
+    private static final Collection<String> indexOnly = new HashSet<>();
+    private static final Collection<String> reverse = new HashSet<>();
     private static final Collection<String> multivalue = Arrays.asList(CityField.CITY.name(), CityField.STATE.name());
     
     private static final Collection<Set<String>> composite = new HashSet<>();
@@ -33,7 +33,7 @@ public class MultiValueCityFields extends AbstractCityFields {
     }
     
     public MultiValueCityFields() {
-        super(index, reverse, multivalue, composite, virtual);
+        super(index, indexOnly, reverse, multivalue, composite, virtual);
     }
     
     @Override
