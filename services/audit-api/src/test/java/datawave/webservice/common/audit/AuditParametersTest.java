@@ -13,13 +13,27 @@ public class AuditParametersTest {
     private Map<String,List<String>> params = new HashMap<>();
     
     public AuditParametersTest() {
-        params.put(AuditParameters.USER_DN, Arrays.asList("someUser"));
-        params.put(AuditParameters.QUERY_STRING, Arrays.asList("someQuery"));
+        params.put(AuditParameters.USER_DN, Collections.singletonList("someUser"));
+        params.put(AuditParameters.QUERY_STRING, Collections.singletonList("someQuery"));
         params.put(AuditParameters.QUERY_SELECTORS, Arrays.asList("sel1", "sel2"));
-        params.put(AuditParameters.QUERY_AUTHORIZATIONS, Arrays.asList("AUTH1,AUTH2"));
-        params.put(AuditParameters.QUERY_AUDIT_TYPE, Arrays.asList(Auditor.AuditType.ACTIVE.name()));
-        params.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, Arrays.asList("ALL"));
-        params.put(AuditParameters.QUERY_DATE, Arrays.asList(Long.toString(new Date().getTime())));
+        params.put(AuditParameters.QUERY_AUTHORIZATIONS, Collections.singletonList("AUTH1,AUTH2"));
+        params.put(AuditParameters.QUERY_AUDIT_TYPE, Collections.singletonList(Auditor.AuditType.ACTIVE.name()));
+        params.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, Collections.singletonList("ALL"));
+        params.put(AuditParameters.QUERY_DATE, Collections.singletonList(Long.toString(new Date().getTime())));
+    }
+    
+    @Test
+    public void testValidateSetsNonRequiredParameters() {
+        params.put(AuditParameters.AUDIT_ID, Collections.singletonList(UUID.randomUUID().toString()));
+        params.put(AuditParameters.QUERY_LOGIC_CLASS, Collections.singletonList("QueryLogicClass"));
+        
+        AuditParameters p = new AuditParameters();
+        p.validate(params);
+        
+        assertEquals(params.get(AuditParameters.AUDIT_ID).get(0), p.getAuditId());
+        assertEquals(params.get(AuditParameters.QUERY_DATE).get(0), Long.toString(p.getQueryDate().getTime()));
+        assertEquals(params.get(AuditParameters.QUERY_SELECTORS), p.getSelectors());
+        assertEquals(params.get(AuditParameters.QUERY_LOGIC_CLASS).get(0), p.getLogicClass());
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -105,7 +119,7 @@ public class AuditParametersTest {
     @Test(expected = NullPointerException.class)
     public void nullValueUserDNTest() {
         Map<String,List<String>> params = new HashMap<>(this.params);
-        params.put(AuditParameters.USER_DN, Arrays.asList(null));
+        params.put(AuditParameters.USER_DN, Collections.singletonList(null));
         
         new AuditParameters().validate(params);
     }
@@ -113,7 +127,7 @@ public class AuditParametersTest {
     @Test(expected = NullPointerException.class)
     public void nullValueQueryStringTest() {
         Map<String,List<String>> params = new HashMap<>(this.params);
-        params.put(AuditParameters.QUERY_STRING, Arrays.asList(null));
+        params.put(AuditParameters.QUERY_STRING, Collections.singletonList(null));
         
         new AuditParameters().validate(params);
     }
@@ -121,7 +135,7 @@ public class AuditParametersTest {
     @Test(expected = NullPointerException.class)
     public void nullValueAuthsTest() {
         Map<String,List<String>> params = new HashMap<>(this.params);
-        params.put(AuditParameters.QUERY_AUTHORIZATIONS, Arrays.asList(null));
+        params.put(AuditParameters.QUERY_AUTHORIZATIONS, Collections.singletonList(null));
         
         new AuditParameters().validate(params);
     }
@@ -129,7 +143,7 @@ public class AuditParametersTest {
     @Test(expected = NullPointerException.class)
     public void nullValueAuditTypeTest() {
         Map<String,List<String>> params = new HashMap<>(this.params);
-        params.put(AuditParameters.QUERY_AUDIT_TYPE, Arrays.asList(null));
+        params.put(AuditParameters.QUERY_AUDIT_TYPE, Collections.singletonList(null));
         
         new AuditParameters().validate(params);
     }
@@ -137,7 +151,7 @@ public class AuditParametersTest {
     @Test(expected = NullPointerException.class)
     public void nullValueColVizTest() {
         Map<String,List<String>> params = new HashMap<>(this.params);
-        params.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, Arrays.asList(null));
+        params.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, Collections.singletonList(null));
         
         new AuditParameters().validate(params);
     }
@@ -145,7 +159,7 @@ public class AuditParametersTest {
     @Test(expected = IllegalArgumentException.class)
     public void emptyUserDNTest() {
         Map<String,List<String>> params = new HashMap<>(this.params);
-        params.put(AuditParameters.USER_DN, new ArrayList<String>());
+        params.put(AuditParameters.USER_DN, new ArrayList<>());
         
         new AuditParameters().validate(params);
     }
@@ -153,7 +167,7 @@ public class AuditParametersTest {
     @Test(expected = IllegalArgumentException.class)
     public void emptyQueryStringTest() {
         Map<String,List<String>> params = new HashMap<>(this.params);
-        params.put(AuditParameters.QUERY_STRING, new ArrayList<String>());
+        params.put(AuditParameters.QUERY_STRING, new ArrayList<>());
         
         new AuditParameters().validate(params);
     }
@@ -161,7 +175,7 @@ public class AuditParametersTest {
     @Test(expected = IllegalArgumentException.class)
     public void emptyAuthsTest() {
         Map<String,List<String>> params = new HashMap<>(this.params);
-        params.put(AuditParameters.QUERY_AUTHORIZATIONS, new ArrayList<String>());
+        params.put(AuditParameters.QUERY_AUTHORIZATIONS, new ArrayList<>());
         
         new AuditParameters().validate(params);
     }
@@ -169,7 +183,7 @@ public class AuditParametersTest {
     @Test(expected = IllegalArgumentException.class)
     public void emptyAuditTypeTest() {
         Map<String,List<String>> params = new HashMap<>(this.params);
-        params.put(AuditParameters.QUERY_AUDIT_TYPE, new ArrayList<String>());
+        params.put(AuditParameters.QUERY_AUDIT_TYPE, new ArrayList<>());
         
         new AuditParameters().validate(params);
     }
@@ -177,7 +191,7 @@ public class AuditParametersTest {
     @Test(expected = IllegalArgumentException.class)
     public void emptyColVizTest() {
         Map<String,List<String>> params = new HashMap<>(this.params);
-        params.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, new ArrayList<String>());
+        params.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, new ArrayList<>());
         
         new AuditParameters().validate(params);
     }
@@ -218,6 +232,14 @@ public class AuditParametersTest {
     public void multiValueColVizTest() {
         Map<String,List<String>> params = new HashMap<>(this.params);
         params.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, Arrays.asList("ALL", "NONE"));
+        
+        new AuditParameters().validate(params);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidDate() {
+        Map<String,List<String>> params = new HashMap<>(this.params);
+        params.put(AuditParameters.QUERY_DATE, Collections.singletonList("invalidDate"));
         
         new AuditParameters().validate(params);
     }

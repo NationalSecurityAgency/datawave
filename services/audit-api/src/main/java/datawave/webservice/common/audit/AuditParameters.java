@@ -80,6 +80,15 @@ public class AuditParameters {
             }
         }
         
+        if (parameters.containsKey(QUERY_DATE)) {
+            List<String> dates = parameters.get(QUERY_DATE);
+            if (dates != null && !dates.isEmpty()) {
+                setQueryDate(new Date(Long.parseLong(dates.get(0))));
+            }
+        }
+        if (parameters.containsKey(QUERY_SELECTORS)) {
+            setSelectors(parameters.get(QUERY_SELECTORS));
+        }
         if (parameters.containsKey(QUERY_LOGIC_CLASS)) {
             logicClass = parameters.get(QUERY_LOGIC_CLASS).get(0);
         }
