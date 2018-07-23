@@ -214,7 +214,6 @@ public class NumShardsTest {
         
         recordWriter.addMutation(m);
         
-        recordWriter.flush();
         recordWriter.close();
         
         File multipleNumShardCache = File.createTempFile("numshards", ".txt");
@@ -278,7 +277,6 @@ public class NumShardsTest {
         
         recordWriter.addMutation(m);
         
-        recordWriter.flush();
         recordWriter.close();
         
         File multipleNumShardCache = File.createTempFile("numshards", ".txt");

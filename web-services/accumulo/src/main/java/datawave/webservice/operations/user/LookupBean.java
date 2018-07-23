@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -45,16 +44,18 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.audit.AuditBean;
-import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.exception.AccumuloWebApplicationException;
 import datawave.webservice.exception.BadRequestException;
 import datawave.webservice.exception.NotFoundException;
 import datawave.webservice.operations.configuration.LookupAuditConfiguration;
 import datawave.webservice.operations.configuration.LookupBeanConfiguration;
+import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.response.LookupResponse;
 import datawave.webservice.response.objects.Entry;
@@ -105,9 +106,6 @@ public class LookupBean {
     private SecurityMarking marking;
     
     @Inject
-    private AuditParameters auditParameters;
-    
-    @Inject
     private ResponseObjectFactory responseObjectFactory;
     
     @Inject
@@ -141,7 +139,8 @@ public class LookupBean {
     @Path("/Lookup/{table}/{row}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @GET
-    public LookupResponse lookupGet(@Required("table") @PathParam("table") String table, @Required("row") @PathParam("row") String row, @Context UriInfo ui) {
+    public LookupResponse lookupGet(@Required("table") @PathParam("table") String table, @Required("row") @PathParam("row") String row, @Context UriInfo ui)
+                    throws QueryException {
         
         MultivaluedMap<String,String> queryParameters = ui.getQueryParameters(true);
         
@@ -168,7 +167,7 @@ public class LookupBean {
         
         LinkedHashMultimap<String,String> lhmm = LinkedHashMultimap.create();
         for (Map.Entry<String,List<String>> entry : queryParameters.entrySet()) {
-            // adding them will deplicate
+            // adding them will de-duplicate
             lhmm.putAll(entry.getKey(), entry.getValue());
         }
         // put them back into a MultivaluedMap
@@ -202,13 +201,13 @@ public class LookupBean {
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @POST
     public LookupResponse lookupPost(@Required("table") @PathParam("table") String table, @Required("row") @PathParam("row") String row,
-                    MultivaluedMap<String,String> formParameters) {
+                    MultivaluedMap<String,String> formParameters) throws QueryException {
         
         return lookup(table, row, formParameters);
     }
     
     @PermitAll
-    public LookupResponse lookup(String table, String row, MultivaluedMap<String,String> queryParameters) {
+    public LookupResponse lookup(String table, String row, MultivaluedMap<String,String> queryParameters) throws QueryException {
         
         LookupResponse response = new LookupResponse();
         
@@ -310,27 +309,47 @@ public class LookupBean {
         String sid = p.getName();
         String userDn = sid;
         Collection<Collection<String>> cbAuths = new HashSet<>();
+        Collection<String> userAuths = new ArrayList<>();
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal cp = (DatawavePrincipal) p;
             sid = cp.getShortName();
             cbAuths.addAll(cp.getAuthorizations());
+            userAuths = cp.getPrimaryUser().getAuths();
         }
         
         log.trace(sid + " has authorizations " + cbAuths.toString());
         
-        queryParameters.add(AuditParameters.USER_DN, userDn);
-        queryParameters.add(AuditParameters.QUERY_STRING, sb.toString());
-        queryParameters.add(AuditParameters.QUERY_AUTHORIZATIONS, cbAuths.toString());
-        queryParameters.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.toString());
-        queryParameters.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, marking.toColumnVisibilityString());
-        queryParameters.add("logicClass", "AccumuloLookupBean");
-        try {
-            auditParameters.clear();
-            auditParameters.validate(queryParameters);
-        } catch (IllegalArgumentException e) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.SECURITY_MARKING_CHECK_ERROR, e);
-            response.addException(qe);
-            throw new BadRequestException(qe, response);
+        queryParameters.add(QueryParameters.QUERY_STRING, sb.toString());
+        queryParameters.add(QueryParameters.QUERY_AUTHORIZATIONS, userAuths.toString());
+        
+        PrivateAuditConstants.stripPrivateParameters(queryParameters);
+        queryParameters.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+        queryParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+        queryParameters.putSingle(PrivateAuditConstants.USER_DN, userDn);
+        queryParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, "AccumuloLookupBean");
+        
+        if (auditor == null) {
+            throw new BadRequestException(new IllegalArgumentException("Auditor is null, can not process request"), response);
+        } else if (!auditType.equals(AuditType.NONE)) {
+            log.info("Auditing Lookup for " + sb.toString() + " at AuditType " + auditType.toString());
+            
+            if (log.isTraceEnabled()) {
+                log.trace("Auditing Lookup for " + sb.toString() + " at AuditType " + auditType.toString());
+            }
+            
+            try {
+                auditor.audit(queryParameters);
+            } catch (IllegalArgumentException e) {
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.SECURITY_MARKING_CHECK_ERROR, e);
+                response.addException(qe);
+                throw new BadRequestException(qe, response);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                response.addException(e);
+                QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
+                response.addException(qe);
+                throw qe;
+            }
         }
         
         Set<Authorizations> mergedAuths = null;
@@ -424,27 +443,10 @@ public class LookupBean {
                 }
             }
             
-            if (auditor == null) {
-                throw new BadRequestException(new IllegalArgumentException("Auditor is null, can not process request"), response);
-            } else {
-                log.info("Auditing Lookup for " + sb.toString() + " at AuditType " + auditType.toString());
-                
-                if (log.isTraceEnabled()) {
-                    log.trace("Auditing Lookup for " + sb.toString() + " at AuditType " + auditType.toString());
-                }
-                
-                Date now = new Date();
-                HashSet<String> mergedAuthsSet = new HashSet<>();
-                if (null != mergedAuths) {
-                    for (Authorizations authorizations : mergedAuths)
-                        mergedAuthsSet.addAll(Arrays.asList(authorizations.toString().split(",")));
-                }
-                try {
-                    auditor.audit(auditParameters);
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                    response.addException(e);
-                }
+            HashSet<String> mergedAuthsSet = new HashSet<>();
+            if (null != mergedAuths) {
+                for (Authorizations authorizations : mergedAuths)
+                    mergedAuthsSet.addAll(Arrays.asList(authorizations.toString().split(",")));
             }
         }
         

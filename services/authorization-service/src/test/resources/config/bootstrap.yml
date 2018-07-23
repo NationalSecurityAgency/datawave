@@ -12,3 +12,5 @@ spring:
       enabled: false
       discovery:
         enabled: false
+  main:
+    banner-mode: "OFF"

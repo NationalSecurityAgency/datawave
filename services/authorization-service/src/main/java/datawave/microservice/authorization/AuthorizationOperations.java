@@ -4,7 +4,7 @@ import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserInfo;
-import datawave.webservice.security.JWTTokenHandler;
+import datawave.security.authorization.JWTTokenHandler;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ import java.util.Collection;
  * Presents the REST operations for the authorization service.
  */
 @RestController
-@RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AuthorizationOperations {
     private final JWTTokenHandler tokenHandler;
     private final CachedDatawaveUserService cachedDatawaveUserService;

@@ -1,5 +1,6 @@
 package datawave.ingest.data.config.ingest;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +102,14 @@ public interface IngestHelperInterface extends DataTypeHelper {
     
     boolean isCompositeField(String fieldName);
     
+    boolean isFixedLengthCompositeField(String fieldName);
+    
+    boolean isTransitionedCompositeField(String fieldName);
+    
+    Date getCompositeFieldTransitionDate(String fieldName);
+    
+    boolean isOverloadedCompositeField(String fieldName);
+    
     void addCompositeField(String fieldName);
     
     boolean isNormalizedField(String fieldName);
@@ -113,7 +122,7 @@ public interface IngestHelperInterface extends DataTypeHelper {
     
     boolean isDataTypeField(String fieldName);
     
-    Map<String,String[]> getCompositeNameAndIndex(String fieldName);
+    Map<String,String[]> getCompositeFieldDefinitions();
     
     boolean isVirtualIndexedField(String fieldName);
     

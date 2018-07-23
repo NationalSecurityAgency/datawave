@@ -8,19 +8,19 @@ import datawave.validation.ParameterValidator;
 
 public interface QueryParameters extends ParameterValidator {
     
-    public static final String QUERY_STRING = "query";
-    public static final String QUERY_NAME = "queryName";
-    public static final String QUERY_PERSISTENCE = "persistence";
-    public static final String QUERY_PAGESIZE = "pagesize";
-    public static final String QUERY_PAGETIMEOUT = "pageTimeout";
-    public static final String QUERY_AUTHORIZATIONS = "auths";
-    public static final String QUERY_EXPIRATION = "expiration";
-    public static final String QUERY_TRACE = "trace";
-    public static final String QUERY_BEGIN = "begin";
-    public static final String QUERY_END = "end";
-    public static final String QUERY_PARAMS = "params";
-    public static final String QUERY_VISIBILITY = "columnVisibility";
-    public static final String QUERY_LOGIC_NAME = "logicName";
+    String QUERY_STRING = "query";
+    String QUERY_NAME = "queryName";
+    String QUERY_PERSISTENCE = "persistence";
+    String QUERY_PAGESIZE = "pagesize";
+    String QUERY_PAGETIMEOUT = "pageTimeout";
+    String QUERY_AUTHORIZATIONS = "auths";
+    String QUERY_EXPIRATION = "expiration";
+    String QUERY_TRACE = "trace";
+    String QUERY_BEGIN = "begin";
+    String QUERY_END = "end";
+    String QUERY_PARAMS = "params";
+    String QUERY_VISIBILITY = "columnVisibility";
+    String QUERY_LOGIC_NAME = "logicName";
     
     String getQuery();
     

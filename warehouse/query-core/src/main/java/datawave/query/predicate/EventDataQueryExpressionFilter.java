@@ -17,6 +17,10 @@ import org.apache.log4j.Logger;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * This class is used to filter out fields that are required for evaluation by apply the query expressions to the field values on the fly. This filter will
+ * "keep" all of those returned by "apply". If more fields are required to be returned to the user, then this class must be overridden.
+ */
 public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     private static final Logger log = Logger.getLogger(EventDataQueryExpressionFilter.class);
     private Map<String,Predicate<Key>> filters = null;
@@ -31,6 +35,13 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
         Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> expressionFilters = EventDataQueryExpressionVisitor.getExpressionFilters(script,
                         attributeFactory);
         setFilters(expressionFilters);
+    }
+    
+    public EventDataQueryExpressionFilter(EventDataQueryExpressionFilter other) {
+        setFilters(other.getFilters());
+        if (other.document != null) {
+            document = new Key(other.document);
+        }
     }
     
     protected Key document = null;
@@ -106,5 +117,16 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     public int getMaxNextCount() {
         // not yet implemented
         return -1;
+    }
+    
+    @Override
+    public Key transform(Key toLimit) {
+        // not yet implemented
+        return null;
+    }
+    
+    @Override
+    public EventDataQueryFilter clone() {
+        return new EventDataQueryExpressionFilter(this);
     }
 }

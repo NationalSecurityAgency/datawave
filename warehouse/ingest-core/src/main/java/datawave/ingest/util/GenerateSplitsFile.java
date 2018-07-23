@@ -17,6 +17,7 @@ public class GenerateSplitsFile {
     
     private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(GenerateSplitsFile.class);
     
+    @SuppressWarnings("static-access")
     public static void main(String[] args) {
         AccumuloCliOptions accumuloOptions = new AccumuloCliOptions();
         Options options = accumuloOptions.getOptions();

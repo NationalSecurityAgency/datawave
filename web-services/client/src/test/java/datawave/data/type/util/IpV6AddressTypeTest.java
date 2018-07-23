@@ -17,10 +17,10 @@ public class IpV6AddressTypeTest {
     private static Logger log = Logger.getLogger(IpV6AddressTypeTest.class);
     
     private final String[] in = { //
-    "2001:0db8:0000:0000:0000:ff00:0042:8329",//
-            "2003:DEAD:BEEF:4DAD:23:46:bb:101",//
-            "2000:FFFF:EEEE:DD:CC:0000:0000:0000",//
-            "AAAA:BBBB:CCCC:DDDD:EEEE:FFFF:2222:0",//
+    "2001:0db8:0000:0000:0000:ff00:0042:8329", //
+            "2003:DEAD:BEEF:4DAD:23:46:bb:101", //
+            "2000:FFFF:EEEE:DD:CC:0000:0000:0000", //
+            "AAAA:BBBB:CCCC:DDDD:EEEE:FFFF:2222:0", //
             "ff02:0b00:0000:0000:0001:0000:0000:000a", //
             "0000:0000:0000:0000:0000:0000:0000:0001", //
             "0000:0000:0000:0000:0000:0000:0000:0000", //
@@ -28,9 +28,9 @@ public class IpV6AddressTypeTest {
     };
     private final String[] out = { //
     "2001:db8::ff00:42:8329", //
-            "2003:dead:beef:4dad:23:46:bb:101",//
-            "2000:ffff:eeee:dd:cc:",//
-            "aaaa:bbbb:cccc:dddd:eeee:ffff:2222:",//
+            "2003:dead:beef:4dad:23:46:bb:101", //
+            "2000:ffff:eeee:dd:cc:", //
+            "aaaa:bbbb:cccc:dddd:eeee:ffff:2222:", //
             "ff02:b00::0001:0:0:a", //
             "::1", //
             "::", //

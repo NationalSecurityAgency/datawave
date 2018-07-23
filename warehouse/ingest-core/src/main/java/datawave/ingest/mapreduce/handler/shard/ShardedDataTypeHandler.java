@@ -839,8 +839,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             return values;
         }
         
-        // don't put composite fields into the event table
-        if (helper.isCompositeField(indexedFieldName)) {
+        // don't put composite fields into the event table, unless it is an overloaded composite field
+        if (helper.isCompositeField(indexedFieldName) && !helper.isOverloadedCompositeField(indexedFieldName)) {
             return values;
         }
         

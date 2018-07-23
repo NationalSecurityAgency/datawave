@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
+import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.util.DnUtils;
-import datawave.webservice.security.JWTTokenHandler;
 import org.apache.http.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -128,6 +128,7 @@ abstract public class RemoteHttpService {
                     .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                     .setDefaultHeaders(defaultHeaders)
                     .setMaxConnTotal(maxConnections())
+                    .setMaxConnPerRoute(maxConnections())
                     .setRetryHandler(new DatawaveRetryHandler(retryCount(), unavailableRetryCount(), unavailableRetryDelay(), retryCounter()))
                     .setServiceUnavailableRetryStrategy(new DatawaveUnavailableRetryStrategy(unavailableRetryCount(), unavailableRetryDelay(), retryCounter()))
                     .build();

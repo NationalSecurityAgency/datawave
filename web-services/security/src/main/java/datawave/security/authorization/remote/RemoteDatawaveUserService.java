@@ -73,7 +73,7 @@ public class RemoteDatawaveUserService extends RemoteHttpService implements Cach
     private int authServicePort;
     
     @Inject
-    @ConfigProperty(name = "dw.remoteDatawaveUserService.uri", defaultValue = "/datawave/")
+    @ConfigProperty(name = "dw.remoteDatawaveUserService.uri", defaultValue = "/authorization/v1/")
     private String authServiceURI;
     
     @Inject

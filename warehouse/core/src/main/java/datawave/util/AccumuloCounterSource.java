@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 import datawave.util.CounterDump.CounterSource;
+import datawave.util.cli.PasswordConverter;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -108,7 +109,7 @@ public class AccumuloCounterSource extends CounterSource {
         String instance = args[0];
         String zookeepers = args[1];
         String username = args[2];
-        String password = args[3];
+        String password = PasswordConverter.parseArg(args[3]);
         String table = args[4];
         String startRow = args[5];
         String endRow = args[6];

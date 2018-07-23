@@ -2,10 +2,14 @@ package datawave.query.jexl.functions.arguments;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-import datawave.query.jexl.JexlASTHelper;
+import com.google.common.collect.Sets;
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
@@ -29,6 +33,16 @@ public interface JexlArgumentDescriptor {
      * @return The query which will be used against the global index
      */
     JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter);
+    
+    /**
+     * Get the expression filters for this function. NOTE NOTE NOTE: This only needs to add expression filters IFF the getIndexQuery does not add appropriate
+     * expression filters in the first place. This is because addFilters is used after the query had been expanded to include the index query. So for most
+     * implementations this function will do nothing. For the EvaluationPhaseFilterFunctions however this will have to be implemented.
+     * 
+     * @param attributeFactory
+     * @param filterMap
+     */
+    public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap);
     
     /**
      * Get the entire set of fields that are referenced by this function. If you need subsets of fields required to satisfy the function, then use fieldSets()

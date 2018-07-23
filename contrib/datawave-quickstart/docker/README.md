@@ -34,6 +34,14 @@
 
 ### Scripts
 
+Note that the scripts below for building/running the datawave-quickstart container assume that the user executing them is in
+the local *docker* group and may thus execute docker commands without requiring *sudo*. For example, to ensure that this is the case:
+```bash
+$ cat /etc/group | grep -qE '^docker:' || sudo groupadd docker
+$ sudo usermod -aG docker yourusername
+```
+*Warning*: Executing `sudo ./docker-build.sh` will likely result in file permission issues and ultimately cause image creation to fail
+
 #### [docker-build.sh](docker-build.sh) 
 
 * Uses [Dockerfile](Dockerfile) to create a Docker image that mirrors the current DataWave source tree under an /opt/datawave root 

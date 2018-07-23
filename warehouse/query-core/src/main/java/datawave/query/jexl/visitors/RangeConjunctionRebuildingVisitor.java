@@ -1,14 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.id;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
@@ -19,18 +12,17 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.planner.pushdown.Cost;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -45,8 +37,15 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
 /**
  * Visits an JexlNode tree, removing bounded ranges (a pair consisting of one GT or GE and one LT or LE node), and replacing them with concrete equality nodes.
@@ -182,7 +181,20 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
         }
         
         for (Map.Entry<LiteralRange<?>,List<JexlNode>> range : ranges.entrySet()) {
-            IndexLookup lookup = ShardIndexQueryTableStaticMethods.expandRange(range.getKey());
+            JexlNode compositePredicate = null;
+            
+            // if this is a composite field, find the composite predicate, which will be
+            // used to filter out composite terms which fall outside of our range
+            String fieldName = range.getKey().getFieldName();
+            if (config.getCompositeToFieldMap().keySet().contains(fieldName)) {
+                Set<JexlNode> delayedCompositePredicates = leaves.stream()
+                                .map(leaf -> CompositePredicateVisitor.findCompositePredicates(leaf, config.getCompositeToFieldMap().get(fieldName)))
+                                .flatMap(set -> set.stream()).collect(Collectors.toSet());
+                if (delayedCompositePredicates != null && delayedCompositePredicates.size() == 1)
+                    compositePredicate = delayedCompositePredicates.stream().findFirst().get();
+            }
+            
+            IndexLookup lookup = ShardIndexQueryTableStaticMethods.expandRange(range.getKey(), compositePredicate);
             
             IndexLookupMap fieldsToTerms = null;
             

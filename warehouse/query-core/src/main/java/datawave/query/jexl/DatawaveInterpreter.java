@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.query.Constants;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.nodes.TreeHashNode;
 import datawave.query.jexl.visitors.TreeHashVisitor;
@@ -220,7 +221,7 @@ public class DatawaveInterpreter extends Interpreter {
      * * This will determine if this ANDNode contains a range, and will invoke the appropriate range function instead of evaluating the LT/LE and GT/GE nodes *
      * independently as that does not work when there are sets of values in the context. * * @param node * @return a collection of hits (or empty set) if we
      * evaluated a range. null otherwise.
-     * */
+     */
     private Collection<?> evaluateRange(ASTAndNode node) {
         Collection<?> evaluation = null;
         JexlNode left = node.jjtGetChild(0);

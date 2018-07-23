@@ -81,6 +81,27 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
     }
     
     /**
+     * Expects to receive a concatenated string. The string should be of the form:
+     *
+     * [number][non-numeric nor decimal dot][number]
+     *
+     * @throws IllegalArgumentException
+     *             , if unable to parse the numbers on either side of the delimiter
+     */
+    public double[] parseLatLon(String fieldValue) throws IllegalArgumentException {
+        int split = findSplit(fieldValue);
+        if (split > 0) {
+            try {
+                return new double[] {parseLatOrLon(fieldValue.substring(0, split)), parseLatOrLon(fieldValue.substring(split + 1, fieldValue.length()))};
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Failed to normalize value as a Geo: " + fieldValue);
+            }
+        } else {
+            throw new IllegalArgumentException("Failed to normalize value as a Geo: " + fieldValue);
+        }
+    }
+    
+    /**
      * We cannot support regex against numbers
      */
     @Override

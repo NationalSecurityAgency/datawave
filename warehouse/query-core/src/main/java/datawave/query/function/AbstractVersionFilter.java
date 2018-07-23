@@ -103,8 +103,8 @@ import com.google.gson.Gson;
 public abstract class AbstractVersionFilter<A> {
     
     /**
-     * The QueryOptions lookup key for patterns used to identify which data types and UIDs with which to filter events based on an associated
-     * "normalized version" field. Such a field is expected to
+     * The QueryOptions lookup key for patterns used to identify which data types and UIDs with which to filter events based on an associated "normalized
+     * version" field. Such a field is expected to
      * <p>
      * The DEFAULT_VERSION_PATTERN, for example, ...
      * 

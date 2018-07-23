@@ -9,6 +9,12 @@ management:
   security:
     roles: Administrator,JBossAdministrator
 
+info:
+  build:
+    version: "@project.version@"
+    groupId: "@project.groupId@"
+    artifactId: "@project.artifactId@"
+
 endpoints:
   health:
     sensitive: false

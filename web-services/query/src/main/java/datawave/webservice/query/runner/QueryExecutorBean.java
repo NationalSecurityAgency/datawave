@@ -1,29 +1,98 @@
 package datawave.webservice.query.runner;
 
-import static datawave.webservice.query.annotation.EnrichQueryMetrics.MethodType;
-import static datawave.webservice.query.cache.QueryTraceCache.CacheListener;
-import static datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.lang.reflect.Method;
-import java.security.Principal;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
+import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.AnnotationIntrospector;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.io.CountingOutputStream;
+import datawave.annotation.ClearQuerySessionId;
+import datawave.annotation.DateFormat;
+import datawave.annotation.GenerateQuerySessionId;
+import datawave.annotation.Required;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.SpringBean;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.marking.SecurityMarking;
+import datawave.query.data.UUIDType;
+import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.common.audit.AuditBean;
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.audit.PrivateAuditConstants;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.exception.BadRequestException;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.common.exception.NoResultsException;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.QueryParameters;
+import datawave.webservice.query.QueryPersistence;
+import datawave.webservice.query.annotation.EnrichQueryMetrics;
+import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
+import datawave.webservice.query.cache.QueryCache;
+import datawave.webservice.query.cache.QueryExpirationConfiguration;
+import datawave.webservice.query.cache.QueryMetricFactory;
+import datawave.webservice.query.cache.QueryTraceCache;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.cache.RunningQueryTimingImpl;
+import datawave.webservice.query.configuration.LookupUUIDConfiguration;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NoResultsQueryException;
+import datawave.webservice.query.exception.NotFoundQueryException;
+import datawave.webservice.query.exception.PreConditionFailedQueryException;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.UnauthorizedQueryException;
+import datawave.webservice.query.factory.Persister;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
+import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
+import datawave.webservice.query.metric.QueryMetric;
+import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.result.logic.QueryLogicDescription;
+import datawave.webservice.query.util.GetUUIDCriteria;
+import datawave.webservice.query.util.LookupUUIDUtil;
+import datawave.webservice.query.util.NextContentCriteria;
+import datawave.webservice.query.util.PostUUIDCriteria;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import datawave.webservice.query.util.QueryUtil;
+import datawave.webservice.query.util.UIDQueryCriteria;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.BaseResponse;
+import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.QueryImplListResponse;
+import datawave.webservice.result.QueryLogicResponse;
+import datawave.webservice.result.VoidResponse;
+import io.protostuff.LinkedBuffer;
+import io.protostuff.Message;
+import io.protostuff.ProtobufIOUtil;
+import io.protostuff.Schema;
+import io.protostuff.YamlIOUtil;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.trace.Span;
+import org.apache.accumulo.core.trace.Trace;
+import org.apache.accumulo.core.trace.Tracer;
+import org.apache.accumulo.core.trace.thrift.TInfo;
+import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -70,101 +139,30 @@ import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.security.Principal;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
-import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.AnnotationIntrospector;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.io.CountingOutputStream;
-
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
-import io.protostuff.LinkedBuffer;
-import io.protostuff.Message;
-import io.protostuff.ProtobufIOUtil;
-import io.protostuff.Schema;
-import io.protostuff.YamlIOUtil;
-import datawave.annotation.ClearQuerySessionId;
-import datawave.annotation.DateFormat;
-import datawave.annotation.GenerateQuerySessionId;
-import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.spring.SpringBean;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.marking.SecurityMarking;
-import datawave.query.data.UUIDType;
-import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.audit.AuditBean;
-import datawave.webservice.common.audit.AuditParameters;
-import datawave.webservice.common.audit.Auditor.AuditType;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.exception.BadRequestException;
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.common.exception.NoResultsException;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.QueryPersistence;
-import datawave.webservice.query.annotation.EnrichQueryMetrics;
-import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
-import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.cache.QueryExpirationConfiguration;
-import datawave.webservice.query.cache.QueryMetricFactory;
-import datawave.webservice.query.cache.QueryTraceCache;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.cache.RunningQueryTimingImpl;
-import datawave.webservice.query.configuration.LookupUUIDConfiguration;
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.NoResultsQueryException;
-import datawave.webservice.query.exception.NotFoundQueryException;
-import datawave.webservice.query.exception.PreConditionFailedQueryException;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.exception.UnauthorizedQueryException;
-import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.metric.QueryMetricsBean;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.query.result.logic.QueryLogicDescription;
-import datawave.webservice.query.util.GetUUIDCriteria;
-import datawave.webservice.query.util.LookupUUIDUtil;
-import datawave.webservice.query.util.NextContentCriteria;
-import datawave.webservice.query.util.PostUUIDCriteria;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import datawave.webservice.query.util.QueryUtil;
-import datawave.webservice.query.util.UIDQueryCriteria;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.BaseResponse;
-import datawave.webservice.result.GenericResponse;
-import datawave.webservice.result.QueryImplListResponse;
-import datawave.webservice.result.QueryLogicResponse;
-import datawave.webservice.result.VoidResponse;
-
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
-import org.apache.accumulo.core.trace.Tracer;
-import org.apache.accumulo.core.trace.thrift.TInfo;
-import org.apache.commons.jexl2.parser.TokenMgrError;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.springframework.util.StringUtils;
+import static datawave.webservice.query.annotation.EnrichQueryMetrics.MethodType;
+import static datawave.webservice.query.cache.QueryTraceCache.CacheListener;
+import static datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
 
 @Path("/Query")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
@@ -217,9 +215,6 @@ public class QueryExecutorBean implements QueryExecutor {
     
     @Inject
     private SecurityMarking marking;
-    
-    @Inject
-    private AuditParameters auditParameters;
     
     @Inject
     private ResponseObjectFactory responseObjectFactory;
@@ -423,8 +418,8 @@ public class QueryExecutorBean implements QueryExecutor {
             throwBadRequest(DatawaveErrorCode.INVALID_EXPIRATION_DATE, response);
         }
         
-        // Ensure begin date does not occur after the end date
-        if (qp.getBeginDate().after(qp.getEndDate())) {
+        // Ensure begin date does not occur after the end date (if dates are not null)
+        if ((qp.getBeginDate() != null && qp.getEndDate() != null) && qp.getBeginDate().after(qp.getEndDate())) {
             GenericResponse<String> response = new GenericResponse<>();
             throwBadRequest(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE, response);
         }
@@ -453,7 +448,6 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         qd.logic.validate(queryParameters);
         
-        queryParameters.add("logicClass", queryLogicName);
         try {
             marking.clear();
             marking.validate(queryParameters);
@@ -463,7 +457,6 @@ public class QueryExecutorBean implements QueryExecutor {
             response.addException(qe);
             throw new BadRequestException(qe, response);
         }
-        queryParameters.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, marking.toColumnVisibilityString());
         // Find out who/what called this method
         qd.proxyServers = null;
         qd.p = ctx.getCallerPrincipal();
@@ -480,7 +473,6 @@ public class QueryExecutorBean implements QueryExecutor {
             qd.proxyServers = dp.getProxyServers();
         }
         log.trace(qd.userid + " has authorizations " + ((qd.p instanceof DatawavePrincipal) ? ((DatawavePrincipal) qd.p).getAuthorizations() : ""));
-        queryParameters.add(AuditParameters.USER_DN, qd.userDn);
         
         // always check against the max
         if (qd.logic.getMaxPageSize() > 0 && qp.getPagesize() > qd.logic.getMaxPageSize()) {
@@ -490,6 +482,13 @@ public class QueryExecutorBean implements QueryExecutor {
             response.addException(qe);
             throw new BadRequestException(qe, response);
         }
+        
+        // Set private audit-related parameters, stripping off any that the user might have passed in first.
+        // These are parameters that aren't passed in by the user, but rather are computed from other sources.
+        PrivateAuditConstants.stripPrivateParameters(queryParameters);
+        queryParameters.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        queryParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+        queryParameters.add(PrivateAuditConstants.USER_DN, qd.userDn);
         
         return qd;
     }
@@ -626,20 +625,20 @@ public class QueryExecutorBean implements QueryExecutor {
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 auditType = qd.logic.getAuditType(q);
             } finally {
-                queryParameters.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
+                queryParameters.add(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
                 
-                // audit the query before its executed.
                 if (!auditType.equals(AuditType.NONE)) {
+                    // audit the query before its executed.
                     try {
-                        auditParameters.clear();
-                        auditParameters.validate(queryParameters);
                         try {
-                            auditParameters.setSelectors(qd.logic.getSelectors(q));
+                            List<String> selectors = qd.logic.getSelectors(q);
+                            if (selectors != null && !selectors.isEmpty()) {
+                                queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
+                            }
                         } catch (Exception e) {
                             log.error(e.getMessage());
                         }
-                        log.debug("sending audit message: " + auditParameters);
-                        auditor.audit(auditParameters);
+                        auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
                         log.error("Error validating audit parameters", e);
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
@@ -647,7 +646,9 @@ public class QueryExecutorBean implements QueryExecutor {
                         throw new BadRequestException(qe, response);
                     } catch (Exception e) {
                         log.error("Error auditing query", e);
-                        response.addMessage("Error auditing query - " + e.getMessage());
+                        QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
+                        response.addException(qe);
+                        throw qe;
                     }
                 }
             }
@@ -889,8 +890,12 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private RunningQuery getQueryById(String id) throws Exception {
+        return getQueryById(id, ctx.getCallerPrincipal());
+    }
+    
+    private RunningQuery getQueryById(String id, Principal principal) throws Exception {
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
+        Principal p = principal;
         String userid = p.getName();
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
@@ -1020,32 +1025,33 @@ public class QueryExecutorBean implements QueryExecutor {
                 query.closeConnection(connectionFactory);
             } else {
                 AuditType auditType = query.getLogic().getAuditType(query.getSettings());
-                
                 MultivaluedMap<String,String> queryParameters = query.getSettings().toMap();
-                queryParameters.add("logicClass", query.getLogic().getLogicName());
-                queryParameters.add(AuditParameters.USER_DN, query.getSettings().getUserDN());
-                queryParameters.add(AuditParameters.QUERY_AUDIT_TYPE, auditType.name());
-                queryParameters.add(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, query.getSettings().getColumnVisibility());
+                
+                queryParameters.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                queryParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, query.getLogic().getLogicName());
+                queryParameters.putSingle(PrivateAuditConstants.USER_DN, query.getSettings().getUserDN());
+                queryParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, query.getSettings().getColumnVisibility());
                 
                 if (!auditType.equals(AuditType.NONE)) {
                     try {
                         try {
-                            auditParameters.clear();
-                            auditParameters.validate(queryParameters);
-                        } catch (IllegalArgumentException e) {
-                            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
-                            response.addException(qe);
-                            throw new BadRequestException(qe, response);
-                        }
-                        try {
-                            auditParameters.setSelectors(query.getLogic().getSelectors(query.getSettings()));
+                            List<String> selectors = query.getLogic().getSelectors(query.getSettings());
+                            if (selectors != null && !selectors.isEmpty()) {
+                                queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
+                            }
                         } catch (Exception e) {
                             log.error(e.getMessage());
                         }
-                        auditor.audit(auditParameters);
+                        auditor.audit(queryParameters);
+                    } catch (IllegalArgumentException e) {
+                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
+                        response.addException(qe);
+                        throw new BadRequestException(qe, response);
                     } catch (Exception e) {
                         log.error("Error auditing query", e);
-                        response.addMessage("Error auditing query - " + e.getMessage());
+                        QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
+                        response.addException(qe);
+                        throw qe;
                     }
                 }
             }
@@ -1289,7 +1295,7 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } finally {
             if (null != queryId) {
-                close(queryId);
+                asyncClose(queryId);
             }
         }
     }
@@ -1349,7 +1355,7 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } finally {
             if (null != queryId) {
-                close(queryId);
+                asyncClose(queryId);
             }
         }
     }
@@ -1420,7 +1426,7 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } finally {
             if (null != queryId) {
-                this.close(queryId);
+                asyncClose(queryId);
             }
         }
     }
@@ -1475,7 +1481,7 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } finally {
             if (null != queryId) {
-                close(queryId);
+                asyncClose(queryId);
             }
         }
         
@@ -1649,6 +1655,32 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         return response;
+    }
+    
+    /**
+     * Attempt to async close a query using the executor. If the executor can't accommodate the close then the query will be closed in-line
+     * 
+     * @param queryId
+     *            non-null queryId
+     */
+    private void asyncClose(String queryId) {
+        if (queryId != null) {
+            final Principal p = ctx.getCallerPrincipal();
+            final String closeQueryId = queryId;
+            try {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        close(closeQueryId, p);
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                // log only
+                log.warn("close query rejected by executor id=" + closeQueryId + " principal=" + p, e);
+                // do it the old (slow way)
+                close(queryId);
+            }
+        }
     }
     
     /**
@@ -1905,13 +1937,17 @@ public class QueryExecutorBean implements QueryExecutor {
     @Override
     @Timed(name = "dw.query.close", absolute = true)
     public VoidResponse close(@Required("id") @PathParam("id") String id) {
+        return close(id, ctx.getCallerPrincipal());
+    }
+    
+    private VoidResponse close(String id, Principal principal) {
         VoidResponse response = new VoidResponse();
         try {
-            boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id);
-            Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ((DatawavePrincipal) ctx.getCallerPrincipal()).getShortName());
+            boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id, principal);
+            Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ((DatawavePrincipal) principal).getShortName());
             if (tuple == null) {
                 try {
-                    RunningQuery query = getQueryById(id);
+                    RunningQuery query = getQueryById(id, principal);
                     close(query);
                 } catch (NotFoundQueryException e) {
                     // if connection request was canceled, then the call was successful even if a RunningQuery was not found
@@ -2547,28 +2583,88 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         log.trace(userid + " has authorizations " + cbAuths.toString());
         
-        boolean auditRequired = false;
         Query q = runningQuery.getSettings();
         
+        // validate persistence mode first
+        if (persistenceMode != null) {
+            switch (persistenceMode) {
+                case PERSISTENT:
+                    if (q.getQueryName() == null)
+                        throw new BadRequestQueryException(DatawaveErrorCode.QUERY_NAME_REQUIRED);
+                    break;
+                case TRANSIENT:
+                    break;
+                default:
+                    throw new BadRequestQueryException(DatawaveErrorCode.UNKNOWN_PERSISTENCE_MODE, MessageFormat.format("Mode = {0}", persistenceMode));
+            }
+        }
+        
+        // test for any auditable updates
+        if (query != null || beginDate != null || endDate != null || queryAuthorizations != null) {
+            // must clone/audit attempt first
+            Query duplicate = q.duplicate(q.getQueryName());
+            duplicate.setId(q.getId());
+            
+            updateQueryParams(duplicate, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, parameters);
+            
+            // Fire off an audit prior to updating
+            Set<String> methodAuths = new HashSet<>(Arrays.asList(q.getQueryAuthorizations().split("\\s*,\\s*")));
+            cbAuths.retainAll(methodAuths);
+            AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
+            if (!auditType.equals(AuditType.NONE)) {
+                try {
+                    auditor.audit(duplicate.toMap());
+                } catch (IllegalArgumentException e) {
+                    log.error("Error validating audit parameters", e);
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
+                    response.addException(qe);
+                    throw new BadRequestException(qe, response);
+                } catch (Exception e) {
+                    QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
+                    log.error(qe);
+                    response.addException(qe.getBottomQueryException());
+                    throw e;
+                }
+            }
+        }
+        
+        // update the actual running query
+        updateQueryParams(q, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, parameters);
+        
+        // update the persistenceMode post audit
+        if (persistenceMode != null) {
+            switch (persistenceMode) {
+                case PERSISTENT:
+                    persister.update(q);
+                    break;
+                case TRANSIENT:
+                    persister.remove(q);
+                    break;
+            }
+        }
+        
+        // Put in the cache by id
+        queryCache.put(q.getId().toString(), runningQuery);
+    }
+    
+    private void updateQueryParams(Query q, String queryLogicName, String query, Date beginDate, Date endDate, String queryAuthorizations, Date expirationDate,
+                    Integer pagesize, Integer pageTimeout, String parameters) throws CloneNotSupportedException {
+        Principal p = ctx.getCallerPrincipal();
         // TODO: add validation for all these sets
         if (queryLogicName != null) {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(queryLogicName, p);
             q.setQueryLogicName(logic.getLogicName());
         }
         if (query != null) {
-            auditRequired = true;
             q.setQuery(query);
         }
         if (beginDate != null) {
-            auditRequired = true;
             q.setBeginDate(beginDate);
         }
         if (endDate != null) {
-            auditRequired = true;
             q.setEndDate(endDate);
         }
         if (queryAuthorizations != null) {
-            auditRequired = true;
             q.setQueryAuthorizations(queryAuthorizations);
         }
         if (expirationDate != null) {
@@ -2590,42 +2686,6 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
             }
             q.setParameters(params);
-        }
-        
-        if (persistenceMode != null) {
-            switch (persistenceMode) {
-                case PERSISTENT:
-                    if (q.getQueryName() == null)
-                        throw new BadRequestQueryException(DatawaveErrorCode.QUERY_NAME_REQUIRED);
-                    persister.update(q);
-                    break;
-                case TRANSIENT:
-                    persister.remove(q);
-                    break;
-                default:
-                    throw new BadRequestQueryException(DatawaveErrorCode.UNKNOWN_PERSISTENCE_MODE, MessageFormat.format("Mode = {0}", persistenceMode));
-            }
-        }
-        
-        // Put in the cache by id
-        queryCache.put(q.getId().toString(), runningQuery);
-        
-        // Fire off an audit
-        if (auditRequired) {
-            Set<String> methodAuths = new HashSet<>(Arrays.asList(q.getQueryAuthorizations().split("\\s*,\\s*")));
-            cbAuths.retainAll(methodAuths);
-            AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
-            if (!auditType.equals(AuditType.NONE)) {
-                try {
-                    auditParameters.clear();
-                    auditParameters.validate(q.toMap());
-                    auditor.audit(auditParameters);
-                } catch (Exception e) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
-                    log.error(qe);
-                    response.addException(qe.getBottomQueryException());
-                }
-            }
         }
     }
     
@@ -2975,14 +3035,7 @@ public class QueryExecutorBean implements QueryExecutor {
         
         long start = System.nanoTime();
         GenericResponse<String> createResponse = null;
-        try {
-            createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
-        } catch (DatawaveWebApplicationException ex) {
-            if (ex.getCause() instanceof QueryException) {
-                QueryException queryException = (QueryException) ex.getCause();
-                return new ErrorResponse(queryException, s);
-            }
-        }
+        createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
         long createCallTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         final String queryId = createResponse.getResult();
         
@@ -3268,101 +3321,6 @@ public class QueryExecutorBean implements QueryExecutor {
                     log.error(qe);
                     errorResponse.addException(qe.getBottomQueryException());
                 }
-            }
-        }
-        
-    }
-    
-    public class ErrorResponse implements StreamingOutput {
-        private GenericResponse<String> errorResponse = new GenericResponse<String>();
-        private SerializationType serializationType = SerializationType.XML;
-        
-        public ErrorResponse(QueryException queryException, SerializationType serializationType) {
-            this.serializationType = serializationType;
-            this.errorResponse.addException(queryException);
-        }
-        
-        @Override
-        public void write(OutputStream out) throws IOException, WebApplicationException {
-            
-            try {
-                LinkedBuffer buffer = LinkedBuffer.allocate(4096);
-                Marshaller xmlSerializer;
-                try {
-                    JAXBContext jaxbContext = JAXBContext.newInstance(errorResponse.getClass());
-                    xmlSerializer = jaxbContext.createMarshaller();
-                } catch (JAXBException e1) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.JAXB_CONTEXT_ERROR, e1, MessageFormat.format("class: {0}",
-                                    errorResponse.getClass()));
-                    log.error(qe);
-                    errorResponse.addException(qe.getBottomQueryException());
-                    throw new DatawaveWebApplicationException(qe, errorResponse);
-                }
-                ObjectMapper jsonSerializer = new ObjectMapper();
-                jsonSerializer.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-                jsonSerializer.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JaxbAnnotationIntrospector(
-                                jsonSerializer.getTypeFactory())));
-                // Don't close the output stream
-                jsonSerializer.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
-                JsonGenerator jsonGenerator = jsonSerializer.getFactory().createGenerator(out, JsonEncoding.UTF8);
-                jsonGenerator.enable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
-                
-                boolean sentResults = false;
-                
-                try {
-                    BaseResponse page = this.errorResponse;
-                    
-                    // Wrap the output stream so that we can get a byte count
-                    CountingOutputStream countingStream = new CountingOutputStream(out);
-                    
-                    switch (serializationType) {
-                        case XML:
-                            xmlSerializer.marshal(page, countingStream);
-                            break;
-                        case JSON:
-                            jsonGenerator.writeStartObject();
-                            jsonGenerator.flush();
-                            jsonSerializer.writeValue(countingStream, page);
-                            break;
-                        case PB:
-                            @SuppressWarnings("unchecked")
-                            Message<Object> pb = (Message<Object>) page;
-                            Schema<Object> pbSchema = pb.cachedSchema();
-                            ProtobufIOUtil.writeTo(countingStream, page, pbSchema, buffer);
-                            buffer.clear();
-                            break;
-                        case YAML:
-                            @SuppressWarnings("unchecked")
-                            Message<Object> yaml = (Message<Object>) page;
-                            Schema<Object> yamlSchema = yaml.cachedSchema();
-                            YamlIOUtil.writeTo(countingStream, page, yamlSchema, buffer);
-                            buffer.clear();
-                            break;
-                    }
-                    countingStream.flush();
-                    sentResults = true;
-                } catch (Exception e) {
-                    if (e instanceof NoResultsException == false && e.getCause() instanceof NoResultsException == false) {
-                        throw e;
-                    }
-                }
-                
-                if (!sentResults)
-                    throw new NoResultsQueryException(DatawaveErrorCode.RESULTS_NOT_SENT);
-                else if (serializationType == SerializationType.JSON) {
-                    jsonGenerator.writeEndArray();
-                    jsonGenerator.writeEndObject();
-                    jsonGenerator.flush();
-                }
-            } catch (DatawaveWebApplicationException e) {
-                throw e;
-            } catch (Exception e) {
-                log.error("ErrorResponse write Failed", e);
-                QueryException qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "foo");
-                log.error(qe);
-                errorResponse.addException(qe.getBottomQueryException());
-                int statusCode = qe.getBottomQueryException().getStatusCode();
-                throw new DatawaveWebApplicationException(qe, errorResponse, statusCode);
             }
         }
         

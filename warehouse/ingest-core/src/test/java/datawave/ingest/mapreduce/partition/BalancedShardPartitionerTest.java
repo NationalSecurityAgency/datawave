@@ -127,7 +127,7 @@ public class BalancedShardPartitionerTest {
         // enough data to warrant the full compliment of splits and the overhead in the tserver of
         // tracking all those splits. The job will still generate data with row ids up to
         // SHARDS_PER_DAY, but simply write the same number of rfiles as splits.
-        // See https://github.com/NationalSecurityAgency/datawave/issues/45
+        // See issues #45
         String tableName = "shard2";
         simulateDifferentNumberShardsPerDay("collapse", tableName);
         
@@ -252,16 +252,16 @@ public class BalancedShardPartitionerTest {
             partitionsUsed.add(partition);
         }
         // 9 is what we get by hashing the shardId
-        Assert.assertTrue("For " + daysBack + " days ago, we had a different number of collisions: " + collisions, expectedCollisions >= collisions); // this
-                                                                                                                                                      // has
-                                                                                                                                                      // more to
-                                                                                                                                                      // do with
-                                                                                                                                                      // the
-                                                                                                                                                      // random
-                                                                                                                                                      // assignment
-                                                                                                                                                      // of the
-                                                                                                                                                      // tablets
-        
+        Assert.assertTrue("For " + daysBack + " days ago, we had a different number of collisions: " + collisions, expectedCollisions >= collisions);
+        // this
+        // has
+        // more to
+        // do with
+        // the
+        // random
+        // assignment
+        // of the
+        // tablets
     }
     
     private static String formatDay(int daysBack) {

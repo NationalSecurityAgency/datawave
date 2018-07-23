@@ -82,6 +82,7 @@
                   <include>joda-time:joda-time</include>
                   <include>io.protostuff:protostuff-api</include>
                   <include>io.protostuff:protostuff-core</include>
+                  <include>io.protostuff:protostuff-collectionschema</include>
             </includes>
         </dependencySet>
         <!-- Stuff that goes in /opt/accumulo-warehouse/current/lib/ext -->
@@ -104,10 +105,10 @@
                 <include>${groupId}:datawave-edge-dictionary-core</include>
                 <include>${groupId}:datawave-ingest-wikipedia</include>
                 <include>${groupId}:datawave-ingest-json</include>
-                <include>datawave.webservices:datawave-ws-common</include>
-                <include>datawave.webservices:datawave-ws-common-util</include>
-                <include>datawave.webservices:datawave-ws-client</include>
-                <include>datawave.webservices:datawave-ws-query</include>
+                <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
+                <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
+                <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
+                <include>gov.nsa.datawave.webservices:datawave-ws-query</include>
                 <include>org.javatuples:javatuples</include>
                 <include>com.google.code.gson:gson</include>
                 <include>org.apache.lucene:lucene-core</include>
@@ -148,8 +149,8 @@
                   <include>${groupId}:datawave-ingest-configuration</include>
                   
                   <include>${groupId}:datawave-query-core</include>
-                  <include>datawave.webservices:datawave-ws-common</include>
-                  <include>datawave.webservices:datawave-ws-common-util</include>
+                  <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
+                  <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                   <include>com.google.code.gson:gson</include>
                   <!-- for dependency injection -->
                   <include>org.springframework:spring-aop</include>

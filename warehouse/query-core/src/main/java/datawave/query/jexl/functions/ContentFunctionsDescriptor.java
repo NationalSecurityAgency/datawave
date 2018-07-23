@@ -4,6 +4,7 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.ArithmeticJexlEngines;
@@ -11,6 +12,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
@@ -81,6 +83,11 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             } else {
                 return JexlNodeFactory.createAndNode(nodes);
             }
+        }
+        
+        @Override
+        public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
+            // noop, covered by getIndexQuery (see comments on interface)
         }
         
         @Override
@@ -231,9 +238,19 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 } else if (ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME.equals(funcName)) {
                     JexlNode firstArg = args.next();
                     
+                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode) {
+                        // firstArg is max score value, skip
+                        firstArg = args.next();
+                    }
+                    
                     // we override the zones if the first argument is a string
                     if (firstArg instanceof ASTStringLiteral) {
                         fields = Collections.singleton(firstArg.image);
+                        
+                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode) {
+                            args.next(); // max score not needed for fields and terms
+                        }
+                        
                         termOffsetMap = args.next();
                     } else {
                         JexlNode nextArg = args.peek();

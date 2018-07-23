@@ -224,15 +224,11 @@ public class DateHelper {
     /**
      * This method validates that the specified date range is valid and throws an exception if it is not. Specifically, it:
      * <ol>
-     * <li>
-     * checks that beginDate is not null or throws a NullPointerException</li>
-     * <li>
-     * checks that endDate is not null or throws a NullPointerException</li>
-     * <li>
-     * checks that beginDate &lt;= endDate or throws an IllegalArgumentException</li>
-     * <li>
-     * checks that both beginDate and endDate are within the allowable date range for DATAWAVE, which is one millisecond after -0001/12/31 (0001/01/01) and one
-     * millisecond before 10000/01/01 (9999/12/31) or throws an IllegalArgumentException otherwise</li>
+     * <li>checks that beginDate is not null or throws a NullPointerException</li>
+     * <li>checks that endDate is not null or throws a NullPointerException</li>
+     * <li>checks that beginDate &lt;= endDate or throws an IllegalArgumentException</li>
+     * <li>checks that both beginDate and endDate are within the allowable date range for DATAWAVE, which is one millisecond after -0001/12/31 (0001/01/01) and
+     * one millisecond before 10000/01/01 (9999/12/31) or throws an IllegalArgumentException otherwise</li>
      * </ol>
      * 
      * @param beginDate

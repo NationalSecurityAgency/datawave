@@ -31,7 +31,7 @@ DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
 
 # Maven command
 
-DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install}"
+DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -Dservices -DskipTests clean install --builder smart -T1.0C}"
 
 # Home of any temp data and *.properties file overrides for this instance of DataWave
 
@@ -214,11 +214,6 @@ function setBuildPropertiesSymlink() {
    fi
 }
 
-function buildRequiredPlugins() {
-    ( cd "${DW_DATAWAVE_SOURCE_DIR}/contrib/assert-properties" && mvn clean install )
-    ( cd "${DW_DATAWAVE_SOURCE_DIR}/contrib/read-properties" && mvn clean install )
-}
-
 function datawaveBuildSucceeded() {
    local success=$( tail -n 7 "$DW_DATAWAVE_BUILD_STATUS_LOG" | grep "BUILD SUCCESS" )
    if [ -z "${success}" ] ; then
@@ -238,8 +233,6 @@ function buildDataWave() {
    ! setBuildPropertyOverrides && error "Aborting DataWave build" && return 1
 
    [ -f "${DW_DATAWAVE_BUILD_STATUS_LOG}" ] && rm -f "$DW_DATAWAVE_BUILD_STATUS_LOG"
-
-   buildRequiredPlugins
 
    info "DataWave build in progress: '${DW_DATAWAVE_BUILD_COMMAND}'"
    info "Build status log: $DW_DATAWAVE_BUILD_STATUS_LOG"

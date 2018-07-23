@@ -121,7 +121,7 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     /**
      * Write splits in the following format. {@code
      * <count><class1><class2>...<classn><split1><split2>...<splitn>
-   * }
+    * }
      */
     public void write(DataOutput out) throws IOException {
         WritableUtils.writeString(out, table);

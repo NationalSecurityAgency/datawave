@@ -128,8 +128,7 @@ public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
         
         this.hConf.set(this.dataType + MarkingsHelper.DEFAULT_MARKING, AUTH_VALUES);
         
-        // composite/virtual field separator
-        this.hConf.set(this.dataType + CompositeIngest.COMPOSITE_FIELD_VALUE_SEPARATOR, Constants.MAX_UNICODE_STRING);
+        // virtual field separator
         this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_VALUE_SEPARATOR, "|");
         
         // index fields also include composite fields

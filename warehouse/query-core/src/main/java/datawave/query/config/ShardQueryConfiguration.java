@@ -18,7 +18,6 @@ import datawave.query.iterator.PowerSet;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.model.QueryModel;
 import datawave.query.tld.TLDQueryIterator;
-import datawave.query.util.CompositeNameAndIndex;
 import datawave.query.util.QueryStopwatch;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -32,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -66,6 +66,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     private String metadataTableName = "DatawaveMetadata";
     private String dateIndexTableName = "DateIndex";
     private String indexStatsTableName = "indexStats";
+    
+    private String defaultDateTypeName = "EVENT";
     
     // should we cleanup the shards and days hints that are sent to the
     // tservers?
@@ -130,9 +132,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     private Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
     private Multimap<String,Type<?>> normalizedFieldsDatatypes = HashMultimap.create();
     
-    private Multimap<String,CompositeNameAndIndex> fieldToCompositeMap = ArrayListMultimap.create();
     private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
-    private Multimap<String,String> currentCompositeToFieldMap = ArrayListMultimap.create();
+    private Set<String> fixedLengthFields = new HashSet<>();
+    private Map<String,Date> compositeTransitionDates = new HashMap<>();
     
     private boolean sortedUIDs = true;
     
@@ -144,6 +146,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
+    
+    /**
+     * should limit fields be applied early
+     */
+    private boolean limitFieldsPreQueryEvaluation = false;
+    
+    /**
+     * when <code>limitFieldsPreQueryEvaluation = true</code> this field will be used to record which fields were limited
+     */
+    private String limitFieldsField = null;
     
     private boolean hitList = false;
     
@@ -353,6 +365,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
      */
     protected int geoWaveMaxEnvelopes = 4;
     
+    /**
+     * should the sizes of documents be tracked for this query
+     */
+    private boolean trackSizes = true;
+    
     public ShardQueryConfiguration() {
         query = new QueryImpl();
     }
@@ -415,6 +432,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     public void setDateIndexTableName(String dateIndexTableName) {
         this.dateIndexTableName = dateIndexTableName;
+    }
+    
+    public String getDefaultDateTypeName() {
+        return defaultDateTypeName;
+    }
+    
+    public void setDefaultDateTypeName(String defaultDateTypeName) {
+        this.defaultDateTypeName = defaultDateTypeName;
     }
     
     public String getIndexTableName() {
@@ -1053,20 +1078,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         return compositeToFieldMap;
     }
     
-    public Multimap<String,CompositeNameAndIndex> getFieldToCompositeMap() {
-        return fieldToCompositeMap;
+    public Set<String> getFixedLengthFields() {
+        return fixedLengthFields;
     }
     
-    public void setFieldToCompositeMap(Multimap<String,CompositeNameAndIndex> fieldToCompositeMap) {
-        this.fieldToCompositeMap = fieldToCompositeMap;
+    public void setFixedLengthFields(Set<String> fixedLengthFields) {
+        this.fixedLengthFields = fixedLengthFields;
     }
     
-    public Multimap<String,String> getCurrentCompositeToFieldMap() {
-        return currentCompositeToFieldMap;
+    public Map<String,Date> getCompositeTransitionDates() {
+        return compositeTransitionDates;
     }
     
-    public void setCurrentCompositeToFieldMap(Multimap<String,String> currentCompositeToFieldMap) {
-        this.currentCompositeToFieldMap = currentCompositeToFieldMap;
+    public void setCompositeTransitionDates(Map<String,Date> compositeTransitionDates) {
+        this.compositeTransitionDates = compositeTransitionDates;
     }
     
     public Multimap<String,Type<?>> getNormalizedFieldsDatatypes() {
@@ -1088,6 +1113,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     public String getLimitFieldsAsString() {
         return org.apache.commons.lang.StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
+    }
+    
+    public boolean isLimitFieldsPreQueryEvaluation() {
+        return limitFieldsPreQueryEvaluation;
+    }
+    
+    public void setLimitFieldsPreQueryEvaluation(boolean limitFieldsPreQueryEvaluation) {
+        this.limitFieldsPreQueryEvaluation = limitFieldsPreQueryEvaluation;
+    }
+    
+    public String getLimitFieldsField() {
+        return limitFieldsField;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
     }
     
     public boolean isDateIndexTimeTravel() {
@@ -1493,7 +1534,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.setModelTableName(copy.getModelTableName());
         this.setIndexStatsTableName(copy.getIndexStatsTableName());
         
+        this.setDefaultDateTypeName(copy.getDefaultDateTypeName());
+        
         this.setIndexHoles(copy.getIndexHoles());
+        
+        // Set document permutations list
+        this.setDocumentPermutations(copy.getDocumentPermutations());
         
         this.setSequentialScheduler(copy.getSequentialScheduler());
         // Enrichment properties
@@ -1581,6 +1627,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.setAllowTermFrequencyLookup(copy.isAllowTermFrequencyLookup());
         
         this.setLimitFields(new HashSet<String>(copy.getLimitFields()));
+        this.setLimitFieldsPreQueryEvaluation(copy.isLimitFieldsPreQueryEvaluation());
+        this.setLimitFieldsField(copy.getLimitFieldsField());
         this.setQuery(copy.getQuery());
         Set<QueryImpl.Parameter> parameterSet = query.getParameters();
         for (QueryImpl.Parameter parameter : parameterSet) {
@@ -1628,6 +1676,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.setGeoWaveMaxEnvelopes(copy.getGeoWaveMaxEnvelopes());
         
         this.setSortedUIDs(copy.isSortedUIDs());
+        this.setTrackSizes(copy.isTrackSizes());
     }
     
     public void setAccrueStats(boolean accrueStats) {
@@ -1772,4 +1821,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.yieldThresholdMs = yieldThresholdMs;
     }
     
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
+    }
 }

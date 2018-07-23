@@ -17,6 +17,7 @@ import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.composite.CompositeMetadata;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -476,6 +477,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
+        addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), true);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, compressMappings);
     }
@@ -570,7 +572,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
             try {
                 config.setCompositeToFieldMap(metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()));
-                config.setFieldToCompositeMap(metadataHelper.getFieldToCompositeMap(config.getDatatypeFilter()));
+                config.setCompositeTransitionDates(metadataHelper.getCompositeTransitionDateMap(config.getDatatypeFilter()));
+                config.setFixedLengthFields(metadataHelper.getFixedLengthCompositeFields(config.getDatatypeFilter()));
             } catch (TableNotFoundException ex) {
                 QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITES_RETRIEVAL_ERROR, ex);
                 log.warn(qe);
@@ -701,9 +704,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch.stop();
         
-        Set<String> nonEventFields;
+        Set<String> indexOnlyFields;
         try {
-            nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
+            indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
             throw new DatawaveFatalQueryException(qe);
@@ -714,9 +717,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, metadataHelper, queryTree))
                 disableBoundedLookup = false;
         }
-        if (!nonEventFields.isEmpty()) {
+        if (!indexOnlyFields.isEmpty()) {
             // rebuild the query tree
-            queryTree = RegexFunctionVisitor.expandRegex(config, metadataHelper, nonEventFields, queryTree);
+            queryTree = RegexFunctionVisitor.expandRegex(config, metadataHelper, indexOnlyFields, queryTree);
         }
         
         queryTree = processTree(queryTree, config, settings, metadataHelper, scannerFactory, queryData, timers, queryModel);
@@ -725,24 +728,22 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Determine if query contains index-only fields");
         
-        // Figure out if the query contained any non-event terms so we know
+        // Figure out if the query contained any index only terms so we know
         // if we have to force it down the field-index path with event-specific
         // ranges
-        boolean containsNonEventFields = false;
-        if (!nonEventFields.isEmpty() && !disableBoundedLookup) {
-            // rebuild the query tree
-            queryTree = RegexFunctionVisitor.expandRegex(config, metadataHelper, nonEventFields, queryTree);
+        boolean containsIndexOnlyFields = false;
+        if (!indexOnlyFields.isEmpty() && !disableBoundedLookup) {
             boolean functionsEnabled = config.isIndexOnlyFilterFunctionsEnabled();
-            containsNonEventFields = !SetMembershipVisitor.getMembers(nonEventFields, config, metadataHelper, dateIndexHelper, queryTree, functionsEnabled)
+            containsIndexOnlyFields = !SetMembershipVisitor.getMembers(indexOnlyFields, config, metadataHelper, dateIndexHelper, queryTree, functionsEnabled)
                             .isEmpty();
         }
         
         // Print the nice log message
         if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Computed that the query " + (containsNonEventFields ? " contains " : " does not contain any ") + " non-event field(s)");
+            logQuery(queryTree, "Computed that the query " + (containsIndexOnlyFields ? " contains " : " does not contain any ") + " index only field(s)");
         }
         
-        config.setContainsIndexOnlyTerms(containsNonEventFields);
+        config.setContainsIndexOnlyTerms(containsIndexOnlyFields);
         
         stopwatch.stop();
         
@@ -896,7 +897,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 log.trace("metadataHelper " + metadataHelper.toString());
                 
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FIELDS_NOT_IN_DATA_DICTIONARY, MessageFormat.format(
-                                "Datatype: {0}, datatype.filter.set: {1}, Auths: ", nonexistentFields, datatypeFilterSet, config.getAuthorizations()));
+                                "Datatype: {0}, datatype.filter.set: {1}, Auths: {2}", nonexistentFields, datatypeFilterSet, config.getAuthorizations()));
                 log.error(qe);
                 throw new InvalidQueryException(qe);
             }
@@ -1013,10 +1014,12 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         // lets precomputed the indexed fields and index only fields for the specific datatype if needed below
         Set<String> indexedFields = null;
+        Set<String> indexOnlyFields = null;
         Set<String> nonEventFields = null;
         if (config.getMinSelectivity() > 0 || !disableBoundedLookup) {
             try {
                 indexedFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
+                indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
                 nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
             } catch (TableNotFoundException te) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, te);
@@ -1037,9 +1040,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (log.isDebugEnabled()) {
                 debugOutput = new ArrayList<String>(32);
             }
-            if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, nonEventFields, debugOutput, metadataHelper)) {
-                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, nonEventFields,
-                                metadataHelper);
+            if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
+                queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
+                                nonEventFields, metadataHelper);
                 if (log.isDebugEnabled()) {
                     logDebug(debugOutput, "Executable state after pushing low-selective terms:");
                     logQuery(queryTree, "Query after partially executable pushdown :");
@@ -1078,9 +1081,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 
                 // Unless config.isExandAllTerms is true, this may set some of
                 // the terms to be delayed.
-                if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, config, indexedFields, nonEventFields,
-                                    metadataHelper);
+                if (!ExecutableDeterminationVisitor
+                                .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
+                    queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, config, indexedFields, indexOnlyFields,
+                                    nonEventFields, metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges:");
                         logQuery(queryTree, "Query after delayed pullup:");
@@ -1106,9 +1110,10 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 if (log.isDebugEnabled()) {
                     debugOutput.clear();
                 }
-                if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, nonEventFields, debugOutput, metadataHelper)) {
-                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, nonEventFields,
-                                    metadataHelper);
+                if (!ExecutableDeterminationVisitor
+                                .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
+                    queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
+                                    nonEventFields, metadataHelper);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges and regex again:");
                         logQuery(queryTree, "Query after partially executable pushdown:");
@@ -1327,7 +1332,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
      */
     public ASTJexlScript addDateFilters(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     ShardQueryConfiguration config, Query settings) throws TableNotFoundException, DatawaveQueryException {
-        String dateType = DateIndexUtil.EVENT_DATE_TYPE;
+        String defaultDateType = config.getDefaultDateTypeName();
+        String dateType = defaultDateType;
         Parameter dateTypeParameter = settings.findParameter(QueryParameters.DATE_RANGE_TYPE);
         if (dateTypeParameter != null && dateTypeParameter.getParameterValue() != null) {
             String parm = dateTypeParameter.getParameterValue().trim();
@@ -1338,7 +1344,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         // if we are using something other than the default of EVENT date
         // time, then we need to modify the query
-        if (!dateType.equals(DateIndexUtil.EVENT_DATE_TYPE)) {
+        if (!dateType.equals(defaultDateType)) {
+            
             log.info("Using the date index for " + dateType);
             // if no date index helper configured, then we are in error
             if (dateIndexHelper == null) {
@@ -1534,13 +1541,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 }
                 
                 try {
-                    if (compressMappings) {
+                    CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
+                    if (compositeMetadata != null && !compositeMetadata.isEmpty())
                         addOption(cfg, QueryOptions.COMPOSITE_METADATA,
-                                        QueryOptions.compressOption(metadataHelper.getCompositeMetadata().toString(), QueryOptions.UTF8), true);
-                    } else {
-                        addOption(cfg, QueryOptions.COMPOSITE_METADATA, metadataHelper.getCompositeMetadata().toString(), true);
-                    }
-                } catch (TableNotFoundException | IOException e) {
+                                        java.util.Base64.getEncoder().encodeToString(CompositeMetadata.toBytes(compositeMetadata)), false);
+                } catch (TableNotFoundException e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITE_METADATA_CONFIG_ERROR, e);
                     throw new DatawaveQueryException(qe);
                 }
@@ -1563,6 +1568,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 
                 if (config.isDataQueryExpressionFilterEnabled()) {
                     addOption(cfg, QueryOptions.DATA_QUERY_EXPRESSION_FILTER_ENABLED, Boolean.toString(config.isDataQueryExpressionFilterEnabled()), false);
+                }
+                
+                if (config.isLimitFieldsPreQueryEvaluation()) {
+                    addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
+                }
+                
+                if (config.getLimitFieldsField() != null) {
+                    addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
                 }
                 
                 return cfg;

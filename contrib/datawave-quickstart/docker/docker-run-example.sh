@@ -11,6 +11,9 @@ function usage() {
     echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -it /bin/bash"
     echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -it datawave-bootstrap.sh --ingest --bash"
     echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -d datawave-bootstrap.sh --ingest --web"
+    echo
+    echo "  $( printGreen "Note:" ) If you happened to pull the image from a remote repo, set $( printGreen "REPO_OWNER" ) in your environment beforehand:"
+    echo "     E.g., REPO_OWNER=<dockerhubuser> && ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -it"
 }
 
 [[ -z "$1" || "$1" == "--help" || "$1" == "-h" ]] && usage && exit 0
@@ -19,7 +22,15 @@ function usage() {
 
 [[ "$2" != "-it" && "$2" != "-d" ]] && echo "Second argument must be -it or -d" && usage && exit 1
 
-IMAGE_NAME="datawave-quickstart:$1"
+REPO_OWNER="${REPO_OWNER:-""}"
+
+if [ -n "${REPO_OWNER}" ] ; then
+   # Pulled from docker repo
+   IMAGE_NAME="${REPO_OWNER}/datawave-quickstart:$1"
+else
+   # Built locally
+   IMAGE_NAME="datawave-quickstart:$1"
+fi
 
 # We're creating a named, external Docker volume on the fly for the container's primary data
 # directory (ie, /opt/datawave/contrib/datawave-quickstart/data), which will allow the user to

@@ -479,11 +479,11 @@ public abstract class CompositeFunctionsTest {
             log.debug("testWithLucene");
         }
         String[] queryStrings = {"UUID:C*", // family name starts with 'C'
-                "UUID:SOPRANO",// family name is SOPRANO
-                "UUID:C* OR UUID:S* ",// family name starts with C or S
-                "(UUID:C* OR UUID:S*) AND #INCLUDE(NAM, 'CONSTANZIA') ",// family has child CONSTANZIA
+                "UUID:SOPRANO", // family name is SOPRANO
+                "UUID:C* OR UUID:S* ", // family name starts with C or S
+                "(UUID:C* OR UUID:S*) AND #INCLUDE(NAM, 'CONSTANZIA') ", // family has child CONSTANZIA
                 "(UUID:C* OR UUID:S*) AND #INCLUDE(NAM, 'MICHAEL') ", // family has child MICHAEL
-                "#JEXL(\"$UUID == 'CORLEONE' AND filter:getAllMatches(NAM,'SANTINO').size() == 1\")",// test LUCENE function to deliver jexl
+                "#JEXL(\"$UUID == 'CORLEONE' AND filter:getAllMatches(NAM,'SANTINO').size() == 1\")", // test LUCENE function to deliver jexl
                 "UUID:CORLEONE AND #JEXL(\"filter:getAllMatches(NAM,'SANTINO').size() == 1\")"};
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE", "CORLEONE"), // family name starts with 'C'

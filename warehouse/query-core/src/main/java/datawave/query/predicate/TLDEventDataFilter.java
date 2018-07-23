@@ -3,8 +3,8 @@ package datawave.query.predicate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.Set;
 
 import datawave.query.util.TypeMetadata;
@@ -15,7 +15,6 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 
@@ -53,26 +52,80 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     private ParseInfo lastParseInfo;
     
     /**
+     * track count limits per field, _ANYFIELD_ implies a constraint on all fields
+     */
+    private Map<String,Integer> limitFieldsMap;
+    
+    /**
+     * if _ANYFIELD_ appears in the limitFieldsMap this will be set to that value or -1 if not configured
+     */
+    private int anyFieldLimit;
+    
+    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
+                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
+        this(script, attributeFactory, expressionFilterEnabled, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null);
+    }
+    
+    /**
+     * Field which should be used when transform() is called on a rejected Key that is field limited to store the field
+     */
+    private String limitFieldsField = null;
+    
+    /**
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
      */
     public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
-                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
+                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField) {
         super(script, attributeFactory, expressionFilterEnabled);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
+        this.limitFieldsMap = Collections.unmodifiableMap(limitFieldsMap);
+        this.limitFieldsField = limitFieldsField;
+        
+        // set the anyFieldLimit once if specified otherwise set to -1
+        anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
         
         extractQueryFieldsFromScript(script);
         updateLists(whitelist, blacklist);
         setSortedLists(whitelist, blacklist);
     }
     
-    /*
-     * (non-Javadoc)
+    public TLDEventDataFilter(TLDEventDataFilter other) {
+        super(other);
+        maxFieldsBeforeSeek = other.maxFieldsBeforeSeek;
+        maxKeysBeforeSeek = other.maxKeysBeforeSeek;
+        sortedWhitelist = other.sortedWhitelist;
+        sortedBlacklist = other.sortedBlacklist;
+        queryFields = other.queryFields;
+        lastField = other.lastField;
+        fieldCount = other.fieldCount;
+        lastListSeekIndex = other.lastListSeekIndex;
+        keyMissCount = other.keyMissCount;
+        if (other.lastParseInfo != null) {
+            lastParseInfo = new ParseInfo(other.lastParseInfo);
+        }
+        limitFieldsField = other.limitFieldsField;
+        limitFieldsMap = other.limitFieldsMap;
+        anyFieldLimit = other.anyFieldLimit;
+    }
+    
+    @Override
+    public void setDocumentKey(Key document) {
+        super.setDocumentKey(document);
+        // clear the parse info so a length comparison can't be made against a new document
+        lastParseInfo = null;
+    }
+    
+    /**
+     * Keep for context evaluation and potential return to the client. If a Key returns false the Key will not be used for context evaluation or returned to the
+     * client. If a Key returns true but keep() returns false the document will be used for context evaluation, but will not be returned to the client. If a Key
+     * returns true and keep() returns true the key will be used for context evaluation and returned to the client.
      * 
-     * @see datawave.query.function.Filter#accept(org.apache.accumulo .core.data.Key)
+     * @param input
+     * @return true if Key should be added to context, false otherwise
      */
     @Override
     public boolean apply(Entry<Key,String> input) {
@@ -80,12 +133,19 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         // filter
         Key current = input.getKey();
         lastParseInfo = getParseInfo(current);
-        if (lastParseInfo.isRoot()) {
-            return keepField(current, true, lastParseInfo.isRoot());
-        } else {
-            keepField(current, true, lastParseInfo.isRoot());
-            return super.apply(input);
+        boolean root = lastParseInfo.isRoot();
+        boolean keep = keepField(current, true, root);
+        if (keep) {
+            if (root) {
+                // must return true on the root or the field cannot be returned
+                return true;
+            } else {
+                // delegate to the super
+                return super.apply(input);
+            }
         }
+        
+        return false;
     }
     
     /**
@@ -99,10 +159,13 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         return new Key(from.getRow().toString(), from.getColumnFamily().toString() + '\uffff');
     }
     
-    /*
-     * (non-Javadoc)
+    /**
+     * Determine if a Key should be kept. If the Key also returns true when called with apply() the Key will be returned to the client
      * 
-     * @see datawave.query.function.Filter#keep(org.apache.accumulo.core .data.Key)
+     * @see datawave.query.predicate.Filter#keep(Key)
+     *
+     * @param k
+     * @return true to keep, false otherwise
      */
     @Override
     public boolean keep(Key k) {
@@ -123,7 +186,23 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         if (lastParseInfo == null || !lastParseInfo.isSame(current)) {
             // initialize the new parseInfo
             ParseInfo parseInfo = new ParseInfo(current);
-            parseInfo.setRoot(isRootPointer(current));
+            boolean root;
+            if (lastParseInfo != null) {
+                int lastLength = lastParseInfo.key.getColumnFamilyData().length();
+                int currentLength = current.getColumnFamilyData().length();
+                if (lastLength == currentLength) {
+                    root = lastParseInfo.isRoot();
+                } else if (lastLength < currentLength) {
+                    // next key must be longer or it would have been sorted first within the same document
+                    root = false;
+                } else {
+                    // the filter is being used again at the beginning of the document and state needs to be reset
+                    root = isRootPointer(current);
+                }
+            } else {
+                root = isRootPointer(current);
+            }
+            parseInfo.setRoot(root);
             parseInfo.setField(getCurrentField(current));
             
             return parseInfo;
@@ -283,13 +362,39 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         }
         
         final String fieldName = lastParseInfo.getField();
-        if (sortedWhitelist != null) {
-            range = getWhitelistSeek(current, fieldName, endKey, endKeyInclusive);
-        } else if (sortedBlacklist != null) {
-            range = getBlacklistSeek(current, fieldName, endKey, endKeyInclusive);
+        // first handle seek due to a field limit, then use the white/block lists if necessary
+        if (isFieldLimit(fieldName)) {
+            range = getFieldSeek(current, fieldName, endKey, endKeyInclusive);
+        }
+        
+        // if it wasn't a field limit seek then do a normal seek
+        if (range == null) {
+            if (sortedWhitelist != null) {
+                range = getWhitelistSeek(current, fieldName, endKey, endKeyInclusive);
+            } else if (sortedBlacklist != null) {
+                range = getBlacklistSeek(current, fieldName, endKey, endKeyInclusive);
+            }
         }
         
         return range;
+    }
+    
+    /**
+     * Seek starting from the end of the current field
+     * 
+     * @param current
+     *            the current key
+     * @param fieldName
+     *            the field name to be seeked
+     * @param endKey
+     *            the current seek end key
+     * @param endKeyInclusive
+     *            the current seek end key inclusive flag
+     * @return a new range that begins at the end of the current field
+     */
+    private Range getFieldSeek(Key current, String fieldName, Key endKey, boolean endKeyInclusive) {
+        Key startKey = new Key(current.getRow(), current.getColumnFamily(), new Text(fieldName + "\u0001"));
+        return new Range(startKey, true, endKey, endKeyInclusive);
     }
     
     /**
@@ -467,6 +572,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         
         // sort the queryFields
         Collections.sort(queryFields);
+        queryFields = Collections.unmodifiableList(queryFields);
     }
     
     /**
@@ -510,11 +616,13 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         if (whitelist != null && !whitelist.isEmpty()) {
             sortedWhitelist = new ArrayList<>(whitelist);
             Collections.sort(sortedWhitelist);
+            sortedWhitelist = Collections.unmodifiableList(sortedWhitelist);
         }
         
         if (blacklist != null && !blacklist.isEmpty()) {
             sortedBlacklist = new ArrayList<>(blacklist);
             Collections.sort(sortedBlacklist);
+            sortedBlacklist = Collections.unmodifiableList(sortedBlacklist);
         }
     }
     
@@ -540,6 +648,11 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
                 lastField = currentField;
                 fieldCount = 1;
             }
+        } else if (!currentField.equals(lastField)) {
+            // always update a change in field even if counts aren't applied
+            lastField = currentField;
+            // since the counts aren't being applied don't increment the count just reset it
+            fieldCount = 0;
         }
         
         boolean keep = keep(currentField, isTld);
@@ -566,6 +679,10 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
      * @return true if the field should be kept based on the whitelist/blacklist, false otherwise
      */
     private boolean keep(String field, boolean isTld) {
+        if (isFieldLimit(field)) {
+            return false;
+        }
+        
         if (isTld) {
             if (sortedWhitelist != null) {
                 return sortedWhitelist.contains(field);
@@ -606,6 +723,41 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     }
     
     /**
+     * Test if the field is limited by anyField or specific field limitations and is not a query field
+     * 
+     * @param field
+     *            the field to test
+     * @return true if the field limit has been reached for this field, false otherwise
+     */
+    private boolean isFieldLimit(String field) {
+        return ((anyFieldLimit != -1 && fieldCount > anyFieldLimit) || (limitFieldsMap.get(field) != null && fieldCount > limitFieldsMap.get(field)))
+                        && !queryFields.contains(field);
+    }
+    
+    /**
+     * If the current key is rejected due to a field limit and a field limit field is specified generate a value with the field in it
+     * 
+     * @param toLimit
+     *            the
+     * @return
+     */
+    @Override
+    public Key transform(Key toLimit) {
+        ParseInfo info = getParseInfo(toLimit);
+        if (this.limitFieldsField != null && isFieldLimit(info.getField())) {
+            String limitedField = getParseInfo(toLimit).getField();
+            return new Key(toLimit.getRow(), toLimit.getColumnFamily(), new Text(limitFieldsField + Constants.NULL + limitedField));
+        } else {
+            return null;
+        }
+    }
+    
+    @Override
+    public EventDataQueryFilter clone() {
+        return new TLDEventDataFilter(this);
+    }
+    
+    /**
      * Place to store all the parsed information about a Key so we don't have to re-parse
      */
     protected static class ParseInfo {
@@ -615,6 +767,14 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         
         public ParseInfo(Key k) {
             this.key = k;
+        }
+        
+        public ParseInfo(ParseInfo other) {
+            if (other.key != null) {
+                key = new Key(other.key);
+            }
+            root = other.root;
+            field = other.field;
         }
         
         public boolean isSame(Key other) {

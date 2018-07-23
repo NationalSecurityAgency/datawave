@@ -7,6 +7,7 @@ import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -239,15 +240,21 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
      * ERNode and an EQNode share an AND parent. There are more complicated variants involving grand parents and OR nodes that are considered.
      * 
      * @param node
+     * @param markedParents
      * @return true - if a regex has to be expanded false - if a regex doesn't have to be expanded
      */
-    public boolean shouldProcessRegexFromStructure(ASTERNode node) {
+    public boolean shouldProcessRegexFromStructure(ASTERNode node, Set<JexlNode> markedParents) {
         // if we have already marked this regex as exceeding the threshold, then no
-        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node)) {
-            return false;
+        if (markedParents != null) {
+            for (JexlNode markedParent : markedParents) {
+                if (ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent)) {
+                    return false;
+                }
+            }
         }
+        
         // if expanding all terms, then yes
-        else if (config.isExpandAllTerms()) {
+        if (config.isExpandAllTerms()) {
             return true;
         }
         
@@ -262,15 +269,34 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     }
     
     @Override
+    public Object visit(ASTAndNode node, Object data) {
+        Set<JexlNode> markedParents = (data != null && data instanceof Set) ? (Set) data : null;
+        
+        // check to see if this is a delayed node already
+        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededOrThresholdMarkerJexlNode.instanceOf(node) || ASTDelayedPredicate.instanceOf(node)
+                        || IndexHoleMarkerJexlNode.instanceOf(node)) {
+            markedParents = new HashSet<>();
+            markedParents.add(node);
+        }
+        
+        return super.visit(node, markedParents);
+    }
+    
+    @Override
     public Object visit(ASTERNode node, Object data) {
+        Set<JexlNode> markedParents = (data != null && data instanceof Set) ? (Set) data : null;
         
         // we've already been delayed.
-        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededOrThresholdMarkerJexlNode.instanceOf(node)
-                        || ExceededValueThresholdMarkerJexlNode.instanceOf(node))
-            return node;
+        if (markedParents != null) {
+            for (JexlNode markedParent : markedParents) {
+                if (ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ExceededOrThresholdMarkerJexlNode.instanceOf(markedParent)
+                                || ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent))
+                    return node;
+            }
+        }
         
         // Given the structure of the tree, we don't *have* to expand this regex node
-        if (config.getMaxIndexScanTimeMillis() == Long.MAX_VALUE && (!config.isExpandAllTerms() && !shouldProcessRegexFromStructure(node))) {
+        if (config.getMaxIndexScanTimeMillis() == Long.MAX_VALUE && (!config.isExpandAllTerms() && !shouldProcessRegexFromStructure(node, markedParents))) {
             // However, given the characteristics of the query terms, we may still want to
             // expand this regex because it would be more efficient to do so
             if (!shouldProcessRegexFromCost(node)) {
@@ -282,12 +308,15 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                     }
                     log.debug("");
                 }
-                if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededOrThresholdMarkerJexlNode.instanceOf(node)
-                                || ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ASTDelayedPredicate.instanceOf(node)
-                                || IndexHoleMarkerJexlNode.instanceOf(node))
-                    return node;
-                else
-                    return ASTDelayedPredicate.create(node); // wrap in a delayed predicate to avoid using in RangeStream
+                if (markedParents != null) {
+                    for (JexlNode markedParent : markedParents) {
+                        if (ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ExceededOrThresholdMarkerJexlNode.instanceOf(markedParent)
+                                        || ASTDelayedPredicate.instanceOf(markedParent) || IndexHoleMarkerJexlNode.instanceOf(markedParent))
+                            return node;
+                    }
+                }
+                
+                return ASTDelayedPredicate.create(node); // wrap in a delayed predicate to avoid using in RangeStream
             }
         } else {
             if (config.getMaxIndexScanTimeMillis() != Long.MAX_VALUE)
@@ -315,7 +344,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             throw new DatawaveFatalQueryException(e);
         }
         
-        return expandFieldNames(node, data, true);
+        return expandFieldNames(node, true);
     }
     
     /**
@@ -445,11 +474,10 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
      * Now, when nodes are expanded, we shall create a callable object that will be added to the todo list.
      * 
      * @param node
-     * @param data
      * @param positive
      * @return
      */
-    protected Object expandFieldNames(JexlNode node, Object data, Boolean positive) {
+    protected Object expandFieldNames(JexlNode node, Boolean positive) {
         
         if (isIdentifier(node)) {
             

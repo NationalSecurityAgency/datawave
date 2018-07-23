@@ -92,7 +92,6 @@ public class EdgeMetadataCQStripperCombinerTest {
             }
         }
         
-        writer.flush();
         writer.close();
         
     }

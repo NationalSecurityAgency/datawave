@@ -22,6 +22,13 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
         // empty white list and black list
     }
     
+    public EventDataQueryFieldFilter(EventDataQueryFieldFilter other) {
+        super(other);
+        if (other.document != null) {
+            document = new Key(other.document);
+        }
+    }
+    
     /**
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
@@ -46,7 +53,7 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
     /*
      * (non-Javadoc)
      * 
-     * @see nsa.datawave.query.predicate.Filter#keep(org.apache.accumulo.core.data.Key)
+     * @see datawave.query.predicate.Filter#keep(org.apache.accumulo.core.data.Key)
      */
     @Override
     public boolean keep(Key k) {
@@ -90,5 +97,16 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
     public int getMaxNextCount() {
         // not yet implemented
         return -1;
+    }
+    
+    @Override
+    public Key transform(Key toLimit) {
+        // not yet implemented
+        return null;
+    }
+    
+    @Override
+    public EventDataQueryFilter clone() {
+        return new EventDataQueryFieldFilter(this);
     }
 }

@@ -4,15 +4,15 @@ This module contains DATAWAVE external services. These are microservices that
 are intended to work in conjunction with, and eventually replace, the Wildfly
 based DATAWAVE web service.
 
-DATAWAVE microservices are built on top of [Spring Cloud](http://cloud.spring.io/spring-cloud-static/Edgware.SR1/single/spring-cloud.html) 
-and [Spring Boot](https://docs.spring.io/spring-boot/docs/1.5.9.RELEASE/reference/htmlsingle/).
+DATAWAVE microservices are built on top of [Spring Cloud](http://cloud.spring.io/spring-cloud-static/Edgware.SR3/single/spring-cloud.html) 
+and [Spring Boot](https://docs.spring.io/spring-boot/docs/1.5.13.RELEASE/reference/htmlsingle/).
 
 ## Why Microservices?
 
 The Wildfly DATAWAVE web service has become a monolith over time, and for
 production use, different components of the service evolve at different
 rates. However, given the monolithic nature of the service and impact of
-outages, deployments aren't as frequent as they could be. Splitting the
+outages, deployments are not as frequent as they could be. Splitting the
 web service into microservices will allow components to evolve at different
 rates. It will also allow components to be scaled independently as the
 need arises.
@@ -52,13 +52,13 @@ headers are not required and then any call without these headers acts as
 though the calling server is proxying for itself. This is controlled by setting
 `security.proxied-entities-required` to `true`.
 
-### Common Service Base
+### Common Service Starter
 
 Over time, the goal is to keep breaking up the monolithic DATAWAVE web service
-into smaller microservices. The `common` artifact provides common utilities and
-configuration that are intended to be used with any additional microservices.
-Depending on this artifact will activate the contained configuration. In
-particular, this applies Spring Security configuration that sets up the service
+into smaller microservices. The `spring-boot-starter-datawave` artifact provides
+common utilities and configuration that are intended to be used with any additional 
+microservices. Depending on this artifact will activate the contained configuration.
+In particular, this applies Spring Security configuration that sets up the service
 to accept a signed JSON Web Token (JWT) for authentication and authorization.
 Typically some gateway service will take care of calling the authorization
 service and retrieving a JWT that represents the calling user chain (this could
@@ -99,7 +99,7 @@ of servers to maintain consistency and provide fault tolerance. A lightweight
 agent acts as a proxy to the quorum of servers, and also provides DNS-based
 discovery of services (Consul also supports an HTTP discovery interface, which
 Spring uses behind the scenes). Consul integrates well with Spring Boot /
-Spring Cloud. When enabled, each service automatically registers iself with
+Spring Cloud. When enabled, each service automatically registers itself with
 Consul. When using Spring's RestTemplate to invoke a service, the location of
 that service is automatically discovered through Consul. Even the configuration
 server, which is needed at startup by all services, registers itself through
@@ -129,7 +129,7 @@ since it was inserted into the cache at a different time.
 
 Hazelcast provides a client-server cache where the server is a cluster of cache
 services that store data and provide it to clients. By running more than a
-singlecache server, we can achieve fault tolerance for the cache (and even
+single cache server, we can achieve fault tolerance for the cache (and even
 perform a rolling upgrade). The authorization service uses a Hazelcast client
 to connect to the server to store and retrieve cached data. The Hazelcast
 client can be configured with a "Near Cache" which stores frequently used data
@@ -150,11 +150,14 @@ from the mechanism, and one must be careful in a bean that is not refreshable
 refreshable bean and store them in member variables. This defeats the purpose
 of having a refresh mechanism.
 
-There are two ways to issue a refresh:
+There are three ways to issue a refresh:
 1. Send a POST message with an empty body to `/<servicename>/mgmt/refresh` on the
    service you wish to refresh. This will cause all beans annotated wih `RefreshScope`
    to be re-created behind their proxies.
-2. Send a POST message with an empty body to `/<servicename>/mgmt/bus/refresh` on
+2. Send a POST message with an empty body to `/<servicename>/mgmt/bus/refresh?destination=<otherservicename>:**`
+   on any service. This will cause all running instances of `<otherservice>` that are
+   listening on the event bus to refresh.
+3. Send a POST message with an empty body to `/<servicename>/mgmt/bus/refresh` on
    any service when using RabbitMQ. The service in question and all other services
    using RabbitMQ will be refreshed.
    
@@ -198,13 +201,13 @@ java -jar authorization-service/target/authorization-service*.jar --spring.profi
 
 Once all services are running, you should be able to hit some of the 
 following URLs:
-* https://localhost:8643/authorization/authorize will return a JWT corresponding
+* `https://localhost:8643/authorization/v1/authorize` will return a JWT corresponding
   to your user
-* https://localhost:8643/authorization/whoami will return a JSON-encoded version
+* `https://localhost:8643/authorization/v1/whoami` will return a JSON-encoded version
   of the DatawaveUser corresponding to your client certificate
-* https://localhost:8643/authorization/swagger-ui.html shows Swagger documentation
+* `https://localhost:8643/authorization/swagger-ui.html` shows Swagger documentation
   of the service
-* https://localhost:8643/authorization/mgmt/docs/ shows available management
+* `https://localhost:8643/authorization/mgmt/docs/` shows available management
   endpoints
 
 You may see an exception from either the authorization or config service due to
@@ -232,19 +235,19 @@ cd /path/to/datawave/services
 java -jar audit/service/target/audit-service*.jar --spring.profiles.active=dev 
 ```
 
-Once the adit service is running, you can call it by passing the JWT you 
+Once the audit service is running, you can call it by passing the JWT you 
 retrieved from the authorization service in an `Authorization` header. For example,
 here is how you would check the health of the audit service:
 
 ```bash
 curl -k -H "Authorization: Bearer <insert JWT text here>" https://localhost:8743/audit/mgmt/health
 # Optional: save JWT in a text file, then pass it for future calls:
-# curl -k <specify certificate info> https://localhost:8643/authorization/authorize > /tmp/jwt.txt
+# curl -k <specify certificate info> https://localhost:8643/authorization/v1/authorize > /tmp/jwt.txt
 # curl -q -k -H "Authorization: Bearer $(</tmp/jwt.txt)" https://localhost:8743/audit/mgmt/health
 ```
 
-You can send an audit request by posting to the `/audit` endpoint. The following
-example assumes you have saved your JWT provided by the authorization servce in
+You can send an audit request by posting to the `/v1/audit` endpoint. The following
+example assumes you have saved your JWT provided by the authorization service in
 `/tmp/jwt.txt`.
 
 ```bash
@@ -256,7 +259,7 @@ curl -q -k -H "Authorization: Bearer $(</tmp/jwt.txt)" \
 --data-urlencode "auditColumnVisibility=USER" \
 --data-urlencode "logicClass=EventQuery" \
 --data-urlencode "auths=TEST" \
-https://localhost:8743/audit/audit
+https://localhost:8743/audit/v1/audit
 ```
 
 ## Running With Consul
@@ -376,7 +379,7 @@ comment-out or remove the following line from you `authorization-dev.yml` file:
 hazelcast.client.enabled: ${hzClient:false}
 ```
 
-Alternatively, you can set hte value to `true`, or pass `--hzClient=true` on
+Alternatively, you can set the value to `true`, or pass `--hzClient=true` on
 the command-line.
 
 ## Building/Running with Docker
@@ -388,7 +391,7 @@ Docker images by enabling the docker maven profile:
 mvn -Pdocker -Dos.detected.classifier=linux-x86_64-fedora clean package
 ``` 
 
-Note that you must overrde the os detection since you might not be building on
+Note that you must override the os detection since you might not be building on
 the same architecture that the Docker image will be running.
 
 Then, using Docker Compose, you can run the demo:
@@ -424,3 +427,35 @@ run `docker ps` to find the port mappings for the various services. The
 authorization service and auditing service get randomly assigned ports, which
 allows scaling with `docker-compose scale`.
 
+# Directory/Build Layout
+
+The external services are organized as follows. Authorization and audit have two
+components: api and service. For example, authorization-api contains the components
+of the Authorization service that a client would use, and authorization-service
+contains the implementation of the service. Each of these modules can be versioned
+separately. If only code in authorization-service changes, its version can be
+updated, and a new version of the authorization service deployed with no other
+changes. If code in the authorization-api directory changes, then this is an API
+change and care must be taken. TODO: bfl
+
+In addition to the common pattern for services, this directory also contains:
+* `config-service`: The configuration service. It has no API (other than that 
+  provided by Spring Boot), so there is no `config-api` module.
+* `hazelcast-service`: This is the Hazelcast cache service. Multiple copies of this
+  are intended to be run and form a cluster for caching data.
+* `hazelcast-client`: This is the client code required to access a running
+  Hazelcast clustered cache.
+* `hazelcast-common`: This is code required by both `hazelcast-client` and `hazelcast-service`
+* `metrics-reporter`: This contains code to publish metrics from a Dropwizard
+  metrics registry to StatsD, NSQ, or Timely.
+* `spring-boot-starter-datawave`: This is a service starter that can be used
+  when creating a new microservice. See the "Common Service Starter" section above.
+* `build-parent`: This contains a parent pom that references everything else in the
+  services directory. Although each service/api can be versioned independently,
+  it is desirable to be able to build everything together using one Maven command.
+  This pom helps accomplish that goal.
+* `docker-quickstart`: This contains quickstart configuration for running the
+  microservices using Docker compose.
+* `sample_configuration`: This contains example configuration that you might
+  run the config service against in order to provide configuration for the various
+  microservices.

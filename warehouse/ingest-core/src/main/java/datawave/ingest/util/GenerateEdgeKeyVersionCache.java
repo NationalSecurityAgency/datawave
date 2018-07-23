@@ -3,6 +3,8 @@ package datawave.ingest.util;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache;
 import datawave.ingest.time.Now;
+import datawave.util.cli.PasswordConverter;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -54,7 +56,7 @@ public class GenerateEdgeKeyVersionCache {
                         printUsageAndExit();
                     } else {
                         username = toolArgs[i];
-                        password = toolArgs[i + 1].getBytes();
+                        password = PasswordConverter.parseArg(toolArgs[i + 1]).getBytes();
                         tableName = toolArgs[i + 2];
                         // skip over args
                         i += 3;

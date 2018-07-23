@@ -231,7 +231,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         CityField(final Normalizer<?> normalizer, final boolean isMulti) {
             this.metadata = new BaseRawData.RawMetaData(this.name(), normalizer, isMulti);
         }
-
+        
         /**
          * Returns the metadata for this field.
          *

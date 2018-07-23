@@ -18,9 +18,11 @@ import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedC
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
+import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
+import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
@@ -41,7 +43,6 @@ import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
-import datawave.query.util.CompositeMetadata;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataProvider;
 import datawave.util.StringUtils;
@@ -117,6 +118,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String TERM_FREQUENCIES_REQUIRED = "term.frequencies.are.required";
     public static final String CONTENT_EXPANSION_FIELDS = "content.expansion.fields";
     public static final String LIMIT_FIELDS = "limit.fields";
+    public static final String LIMIT_FIELDS_PRE_QUERY_EVALUATION = "limit.fields.pre.query.evaluation";
+    public static final String LIMIT_FIELDS_FIELD = "limit.fields.field";
     public static final String GROUP_FIELDS = "group.fields";
     public static final String TYPE_METADATA_IN_HDFS = "type.metadata.in.hdfs";
     public static final String HITS_ONLY = "hits.only";
@@ -133,6 +136,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String STATSD_HOST_COLON_PORT = "statsd.host.colon.port";
     public static final String STATSD_MAX_QUEUE_SIZE = "statsd.max.queue.size";
     public static final String DATATYPE_FIELDNAME = "include.datatype.fieldname";
+    public static final String TRACK_SIZES = "track.sizes";
     
     // pass through to Evaluating iterator to ensure consistency between query
     // logics
@@ -236,6 +240,8 @@ public class QueryOptions implements OptionDescriber {
     protected boolean useBlackListedFields = false;
     protected Set<String> blackListedFields = new HashSet<>();
     protected Map<String,Integer> limitFieldsMap = new HashMap<>();
+    protected boolean limitFieldsPreQueryEvaluation = false;
+    protected String limitFieldsField = null;
     
     protected Set<String> groupFieldsSet = Sets.newHashSet();
     
@@ -341,6 +347,11 @@ public class QueryOptions implements OptionDescriber {
     
     protected boolean dataQueryExpressionFilterEnabled = false;
     
+    /**
+     * should document sizes be tracked
+     */
+    protected boolean trackSizes = true;
+    
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -412,6 +423,8 @@ public class QueryOptions implements OptionDescriber {
         
         this.compressResults = other.compressResults;
         this.limitFieldsMap = other.limitFieldsMap;
+        this.limitFieldsPreQueryEvaluation = other.limitFieldsPreQueryEvaluation;
+        this.limitFieldsField = other.limitFieldsField;
         this.groupFieldsSet = other.groupFieldsSet;
         this.hitsOnlySet = other.hitsOnlySet;
         
@@ -448,6 +461,8 @@ public class QueryOptions implements OptionDescriber {
         this.debugMultithreadedSources = other.debugMultithreadedSources;
         
         this.dataQueryExpressionFilterEnabled = other.dataQueryExpressionFilterEnabled;
+        
+        this.trackSizes = other.trackSizes;
     }
     
     public String getQuery() {
@@ -528,6 +543,14 @@ public class QueryOptions implements OptionDescriber {
         }
         log.debug("making a nothing typeMetadata");
         return new TypeMetadata();
+    }
+    
+    public boolean isTrackSizes() {
+        return trackSizes;
+    }
+    
+    public void setTrackSizes(boolean trackSizes) {
+        this.trackSizes = trackSizes;
     }
     
     public void setTypeMetadata(TypeMetadata typeMetadata) {
@@ -642,7 +665,7 @@ public class QueryOptions implements OptionDescriber {
     }
     
     public EventDataQueryFilter getEvaluationFilter() {
-        return evaluationFilter;
+        return evaluationFilter != null ? evaluationFilter.clone() : null;
     }
     
     public void setEvaluationFilter(EventDataQueryFilter evaluationFilter) {
@@ -674,9 +697,12 @@ public class QueryOptions implements OptionDescriber {
         // index only fields are by definition not in the event
         if (indexOnlyFields != null)
             allIndexOnlyFields.addAll(indexOnlyFields);
-        // composite fields are index only as well
+        // composite fields are index only as well, unless they are overloaded composites
         if (compositeMetadata != null)
-            allIndexOnlyFields.addAll(compositeMetadata.keySet());
+            for (Multimap<String,String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values())
+                for (String compositeField : compositeFieldMap.keySet())
+                    if (!CompositeIngest.isOverloadedCompositeField(compositeFieldMap, compositeField))
+                        allIndexOnlyFields.add(compositeField);
         return allIndexOnlyFields;
     }
     
@@ -695,7 +721,10 @@ public class QueryOptions implements OptionDescriber {
             nonEventFields.addAll(termFrequencyFields);
         // composite metadata contains combined fields that are not in the event in the same form
         if (compositeMetadata != null)
-            nonEventFields.addAll(compositeMetadata.keySet());
+            for (Multimap<String,String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values())
+                for (String compositeField : compositeFieldMap.keySet())
+                    if (!CompositeIngest.isOverloadedCompositeField(compositeFieldMap, compositeField))
+                        nonEventFields.add(compositeField);
         return nonEventFields;
     }
     
@@ -850,6 +879,22 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsMap = limitFieldsMap;
     }
     
+    public boolean isLimitFieldsPreQueryEvaluation() {
+        return limitFieldsPreQueryEvaluation;
+    }
+    
+    public void setLimitFieldsPreQueryEvaluation(boolean limitFieldsPreQueryEvaluation) {
+        this.limitFieldsPreQueryEvaluation = limitFieldsPreQueryEvaluation;
+    }
+    
+    public String getLimitFieldsField() {
+        return limitFieldsField;
+    }
+    
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.limitFieldsField = limitFieldsField;
+    }
+    
     public Set<String> getGroupFieldsMap() {
         return groupFieldsSet;
     }
@@ -977,6 +1022,9 @@ public class QueryOptions implements OptionDescriber {
         options.put(DATA_QUERY_EXPRESSION_FILTER_ENABLED, "If true, the EventDataQueryExpression filter will be used when performing TLD queries");
         
         options.put(METADATA_TABLE_NAME, this.metadataTableName);
+        options.put(LIMIT_FIELDS_PRE_QUERY_EVALUATION, "If true, non-query fields limits will be applied immediately off the iterator");
+        options.put(LIMIT_FIELDS_FIELD, "When " + LIMIT_FIELDS_PRE_QUERY_EVALUATION
+                        + " is set to true this field will contain all fields that were limited immediately");
         
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
@@ -1039,15 +1087,9 @@ public class QueryOptions implements OptionDescriber {
         this.validateTypeMetadata(options);
         
         if (options.containsKey(COMPOSITE_METADATA)) {
-            try {
-                String compositeMetadataString = options.get(COMPOSITE_METADATA);
-                if (compressedMappings) {
-                    compositeMetadataString = decompressOption(compositeMetadataString, QueryOptions.UTF8);
-                }
-                this.compositeMetadata = buildCompositeMetadata(compositeMetadataString);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            String compositeMetadataString = options.get(COMPOSITE_METADATA);
+            if (compositeMetadataString != null && !compositeMetadataString.isEmpty())
+                this.compositeMetadata = CompositeMetadata.fromBytes(java.util.Base64.getDecoder().decode(compositeMetadataString));
             
             if (log.isTraceEnabled()) {
                 log.trace("Using compositeMetadata: " + this.compositeMetadata);
@@ -1066,6 +1108,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(FULL_TABLE_SCAN_ONLY)) {
             setFullTableScanOnly(Boolean.parseBoolean(options.get(FULL_TABLE_SCAN_ONLY)));
+        }
+        
+        if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
+            setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
         }
         
         if (options.containsKey(PROJECTION_FIELDS)) {
@@ -1167,10 +1213,7 @@ public class QueryOptions implements OptionDescriber {
             return false;
         }
         
-        if (options.containsKey(COMPOSITE_METADATA)) {
-            this.compositeMetadata = buildCompositeMetadata(options.get(COMPOSITE_METADATA));
-        }
-        this.fiAggregator = new IdentityAggregator(getAllIndexOnlyFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
+        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
                         .getMaxNextCount() : -1);
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
@@ -1214,6 +1257,14 @@ public class QueryOptions implements OptionDescriber {
                     this.getLimitFieldsMap().put(keyAndValue[0], Integer.parseInt(keyAndValue[1]));
                 }
             }
+        }
+        
+        if (options.containsKey(LIMIT_FIELDS_PRE_QUERY_EVALUATION)) {
+            this.setLimitFieldsPreQueryEvaluation(Boolean.parseBoolean(options.get(LIMIT_FIELDS_PRE_QUERY_EVALUATION)));
+        }
+        
+        if (options.containsKey(LIMIT_FIELDS_FIELD)) {
+            this.setLimitFieldsField(options.get(LIMIT_FIELDS_FIELD));
         }
         
         if (options.containsKey(GROUP_FIELDS)) {
@@ -1506,10 +1557,6 @@ public class QueryOptions implements OptionDescriber {
     
     public static TypeMetadata buildTypeMetadata(String data) throws IOException {
         return new TypeMetadata(data);
-    }
-    
-    public static CompositeMetadata buildCompositeMetadata(String in) {
-        return new CompositeMetadata(in);
     }
     
     /**

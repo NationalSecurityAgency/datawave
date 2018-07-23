@@ -2,14 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>datawave</groupId>
+        <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
         <version>2.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-docs</artifactId>
-    <properties>
-        <datawave.root>${project.parent.basedir}</datawave.root>
-    </properties>
     <!-- Declare all datawave modules as dependencies in order to have the javadoc include all the datawave source. -->
     <dependencies>
         <dependency>
@@ -20,152 +17,152 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-balancers</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common-test</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-edge-dictionary-core</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-configuration</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-core</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-csv</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-metrics-core</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-accumulo</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-accumulo-client</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-atom</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-cached-results</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-client</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common-util</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-data-dictionary</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-edge-dictionary</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-map-reduce</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-map-reduce-status</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-modification</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-query</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-rest-api</artifactId>
             <version>${project.version}</version>
             <type>war</type>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>datawave.webservices</groupId>
+            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-security</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
@@ -289,10 +286,10 @@
                             <docsDir>${project.build.outputDirectory}/enunciate</docsDir>
                             <sourcepath-includes>
                                 <include>
-                                    <groupId>datawave</groupId>
+                                    <groupId>gov.nsa.datawave</groupId>
                                 </include>
                                 <include>
-                                    <groupId>datawave.webservices</groupId>
+                                    <groupId>gov.nsa.datawave.webservices</groupId>
                                 </include>
                             </sourcepath-includes>
                         </configuration>
@@ -316,8 +313,8 @@
                             <includeDependencySources>true</includeDependencySources>
                             <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
                             <dependencySourceIncludes>
-                                <dependencySourceInclude>datawave:*</dependencySourceInclude>
-                                <dependencySourceInclude>datawave.webservices:*</dependencySourceInclude>
+                                <dependencySourceInclude>gov.nsa.datawave:*</dependencySourceInclude>
+                                <dependencySourceInclude>gov.nsa.datawave.webservices:*</dependencySourceInclude>
                             </dependencySourceIncludes>
                         </configuration>
                     </execution>

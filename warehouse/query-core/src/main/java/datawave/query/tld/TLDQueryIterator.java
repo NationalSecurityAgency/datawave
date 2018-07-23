@@ -87,9 +87,9 @@ public class TLDQueryIterator extends QueryIterator {
             // setup an evaluation filter to avoid loading every single child key into the event
             this.evaluationFilter = new TLDEventDataFilter(script, typeMetadata, this.isDataQueryExpressionFilterEnabled(),
                             useWhiteListedFields ? whiteListedFields : null, useBlackListedFields ? blackListedFields : null, maxFieldHitsBeforeSeek,
-                            maxKeysBeforeSeek);
+                            maxKeysBeforeSeek, limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.EMPTY_MAP, limitFieldsField);
         }
-        return this.evaluationFilter;
+        return this.evaluationFilter != null ? evaluationFilter.clone() : null;
     }
     
     @Override

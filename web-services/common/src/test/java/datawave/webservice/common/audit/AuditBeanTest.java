@@ -1,24 +1,20 @@
 package datawave.webservice.common.audit;
 
-import com.google.common.collect.HashMultimap;
-import org.easymock.EasyMockRunner;
-import org.easymock.Mock;
-import org.easymock.TestSubject;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
 
 public class AuditBeanTest {
     
@@ -32,16 +28,16 @@ public class AuditBeanTest {
         auditBean = new AuditBean();
         auditor = new TestAuditor();
         
-        Whitebox.setInternalState(auditBean, "auditParameters", new AuditParameters());
-        Whitebox.setInternalState(auditBean, "auditor", auditor);
+        Whitebox.setInternalState(auditBean, AuditParameterBuilder.class, new DefaultAuditParameterBuilder());
+        Whitebox.setInternalState(auditBean, AuditService.class, auditor);
         
-        params.put(AuditParameters.USER_DN, Arrays.asList("someUser"));
-        params.put(AuditParameters.QUERY_STRING, Arrays.asList("someQuery"));
+        params.put(AuditParameters.USER_DN, Collections.singletonList("someUser"));
+        params.put(AuditParameters.QUERY_STRING, Collections.singletonList("someQuery"));
         params.put(AuditParameters.QUERY_SELECTORS, Arrays.asList("sel1", "sel2"));
-        params.put(AuditParameters.QUERY_AUTHORIZATIONS, Arrays.asList("AUTH1,AUTH2"));
-        params.put(AuditParameters.QUERY_AUDIT_TYPE, Arrays.asList(Auditor.AuditType.ACTIVE.name()));
-        params.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, Arrays.asList("ALL"));
-        params.put(AuditParameters.QUERY_DATE, Arrays.asList(Long.toString(new Date().getTime())));
+        params.put(AuditParameters.QUERY_AUTHORIZATIONS, Collections.singletonList("AUTH1,AUTH2"));
+        params.put(AuditParameters.QUERY_AUDIT_TYPE, Collections.singletonList(Auditor.AuditType.ACTIVE.name()));
+        params.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, Collections.singletonList("ALL"));
+        params.put(AuditParameters.QUERY_DATE, Collections.singletonList(Long.toString(new Date().getTime())));
         
     }
     
@@ -49,7 +45,7 @@ public class AuditBeanTest {
     public void restCallTest() {
         MultivaluedMap<String,String> mvMapParams = new MultivaluedMapImpl<>();
         mvMapParams.putAll(params);
-        auditBean.audit(mvMapParams);
+        auditBean.auditRest(mvMapParams);
         
         AuditParameters expected = new AuditParameters();
         expected.validate(mvMapParams);
@@ -66,10 +62,12 @@ public class AuditBeanTest {
     }
     
     @Test
-    public void internalCallTest() throws Exception {
+    public void internalCallTest() {
+        MultivaluedMap<String,String> paramsMap = new MultivaluedMapImpl<>();
+        paramsMap.putAll(params);
         AuditParameters auditParams = new AuditParameters();
         auditParams.validate(params);
-        auditBean.audit(auditParams);
+        auditBean.auditRest(paramsMap);
         
         AuditParameters actual = new AuditParameters();
         actual.validate(AuditParameters.parseMessage(auditor.params));
@@ -82,13 +80,14 @@ public class AuditBeanTest {
         assertEquals(auditParams.getColviz(), actual.getColviz());
     }
     
-    private static class TestAuditor implements Auditor {
+    private static class TestAuditor implements AuditService {
         
         Map<String,String> params;
         
         @Override
-        public void audit(AuditParameters msg) throws Exception {
-            params = msg.toMap();
+        public String audit(Map<String,String> parameters) {
+            this.params = parameters;
+            return UUID.randomUUID().toString();
         }
     }
 }

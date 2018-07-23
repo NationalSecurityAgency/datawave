@@ -13,7 +13,7 @@ DataWave is a Java-based ingest and query framework that leverages [Apache Accum
 
 The easiest way to get started is the [DataWave Quickstart](contrib/datawave-quickstart/README.md)
 
-Documentation is located [here](https://nationalsecurityagency.github.io/datawave/)
+Documentation is located [here](https://code.nsa.gov/datawave/docs/)
 
 Basic build instructions are [here](BUILDME.md)
 

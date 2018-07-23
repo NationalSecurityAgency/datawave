@@ -1,28 +1,19 @@
 package datawave.query.jexl.lookups;
 
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
+import com.google.common.collect.Sets;
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.GlobalIndexTermMatchingIterator;
 import datawave.core.iterators.filter.GlobalIndexDataTypeFilter;
 import datawave.core.iterators.filter.GlobalIndexDateRangeFilter;
 import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
 import datawave.data.type.Type;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.tables.AnyFieldScanner;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
@@ -31,7 +22,6 @@ import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -54,7 +44,15 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Sets;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Temporary location for static methods in ShardIndexQueryTable
@@ -258,9 +256,9 @@ public class ShardIndexQueryTableStaticMethods {
         return (IndexLookup) new LookupTermsFromRegex(fieldName, patterns, datatypeFilter, helperRef);
     }
     
-    public static IndexLookup expandRange(LiteralRange<?> range) {
+    public static IndexLookup expandRange(LiteralRange<?> range, JexlNode compositePredicate) {
         
-        return new LookupBoundedRangeForTerms(range);
+        return new LookupBoundedRangeForTerms(range, compositePredicate);
     }
     
     /**

@@ -102,7 +102,9 @@
             datawave.webservice.util.HtmlProviderMessageBodyWriter,
             datawave.webservice.atom.jaxrs.AtomMessageBodyWriter,
             datawave.webservice.datadictionary.DataDictionaryHtmlProvider,
+            datawave.webservice.result.VoidResponseHtmlMessageBodyWriter,
             datawave.resteasy.util.DateParamConverterProvider,
+            datawave.security.authorization.DatawaveUserHtmlMessageBodyWriter,
             datawave.security.user.TextMessageBodyWriter
         </param-value>
     </context-param>

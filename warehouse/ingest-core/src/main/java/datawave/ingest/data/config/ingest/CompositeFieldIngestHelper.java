@@ -1,13 +1,13 @@
 package datawave.ingest.data.config.ingest;
 
-import java.util.Map;
-
+import com.google.common.collect.Multimap;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
-
 import org.apache.hadoop.conf.Configuration;
 
-import com.google.common.collect.Multimap;
+import java.util.Date;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This class will add the CompositeFieldNormalizer to the list of normalizers. Note that this can be done directly via the configuration.
@@ -51,26 +51,6 @@ public class CompositeFieldIngestHelper implements CompositeIngest {
     /*
      * (non-Javadoc)
      * 
-     * @see datawave.ingest.data.config.ingest.CompositeIngest#getDefaultSeparator()
-     */
-    @Override
-    public String getDefaultCompositeFieldSeparator() {
-        return compositeFieldNormalizer.getDefaultSeparator();
-    }
-    
-    /*
-     * (non-Javadoc)
-     * 
-     * @see datawave.ingest.data.config.ingest.CompositeIngest#setDefaultSeparator(java.lang.String)
-     */
-    @Override
-    public void setDefaultCompositeFieldSeparator(String sep) {
-        compositeFieldNormalizer.setDefaultSeparator(sep);
-    }
-    
-    /*
-     * (non-Javadoc)
-     * 
      * @see datawave.ingest.data.config.ingest.CompositeIngest#getCompositeFields(com.google.common.collect.Multimap)
      */
     @Override
@@ -92,10 +72,45 @@ public class CompositeFieldIngestHelper implements CompositeIngest {
     /*
      * (non-Javadoc)
      * 
-     * @see datawave.ingest.data.config.ingest.CompositeIngest#getCompositeNameAndIndex(java.lang.String)
+     * @see datawave.ingest.data.config.ingest.CompositeIngest#isFixedLengthCompositeField(java.lang.String)
      */
     @Override
-    public Map<String,String[]> getCompositeNameAndIndex(String compositeFieldName) {
-        return this.getCompositeFieldDefinitions();
+    public boolean isFixedLengthCompositeField(String fieldName) {
+        Set<String> fixedLengthFields = compositeFieldNormalizer.getFixedLengthFields();
+        return fixedLengthFields != null && fixedLengthFields.contains(fieldName);
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see datawave.ingest.data.config.ingest.CompositeIngest#isTransitionedCompositeField(java.lang.String)
+     */
+    @Override
+    public boolean isTransitionedCompositeField(String fieldName) {
+        Map<String,Date> fieldTransitionDateMap = compositeFieldNormalizer.getFieldTransitionDateMap();
+        return fieldTransitionDateMap != null && fieldTransitionDateMap.containsKey(fieldName);
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see datawave.ingest.data.config.ingest.CompositeIngest#getCompositeFieldTransitionDate(java.lang.String)
+     */
+    @Override
+    public Date getCompositeFieldTransitionDate(String fieldName) {
+        Date transitionDate = null;
+        if (isTransitionedCompositeField(fieldName))
+            transitionDate = compositeFieldNormalizer.getFieldTransitionDateMap().get(fieldName);
+        return transitionDate;
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see datawave.ingest.data.config.ingest.CompositeIngest#isOverloadedCompositeField(java.lang.String)
+     */
+    @Override
+    public boolean isOverloadedCompositeField(String fieldName) {
+        return CompositeIngest.isOverloadedCompositeField(getCompositeFieldDefinitions(), fieldName);
     }
 }

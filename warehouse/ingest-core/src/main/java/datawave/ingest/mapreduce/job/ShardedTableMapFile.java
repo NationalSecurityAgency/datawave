@@ -1,40 +1,64 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.util.StringUtils;
-import org.apache.accumulo.core.client.*;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.impl.ClientContext;
+import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.metadata.MetadataServicer;
-import org.apache.accumulo.core.client.impl.Credentials;
 import org.apache.accumulo.fate.util.UtilWaitThread;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.*;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.util.StringUtils;
+import datawave.util.time.DateHelper;
 
 /**
  * Extracted from IngestJob
  */
 public class ShardedTableMapFile {
+    public static final String SHARDS_BALANCED_DAYS_TO_VERIFY = "shards.balanced.days.to.verify";
     private static final String PREFIX = ShardedTableMapFile.class.getName();
+    private static final int MAX_RETRY_ATTEMPTS = 10;
+    
+    private static final Logger log = Logger.getLogger(ShardedTableMapFile.class);
+    
     public static final String TABLE_NAMES = "job.table.names";
     public static final String SHARD_TSERVER_MAP_FILE = PREFIX + ".shardTServerMapFile";
     public static final String SPLIT_WORK_DIR = "split.work.dir";
     
     public static final String CONFIGURED_SHARDED_TABLE_NAMES = ShardedDataTypeHandler.SHARDED_TNAMES + ".configured";
-    private static final Logger log = Logger.getLogger(ShardedTableMapFile.class);
     public static final String SHARDED_MAP_FILE_PATHS_RAW = "shardedMap.file.paths.raw";
+    public static final String SHARD_VALIDATION_ENABLED = "shardedMap.validation.enabled";
     
     public static void setupFile(Configuration conf) throws IOException, URISyntaxException, AccumuloSecurityException, AccumuloException {
-        Map<String,Path> map = loadMap(conf);
+        // want validation turned off by default
+        boolean doValidation = conf.getBoolean(ShardedTableMapFile.SHARD_VALIDATION_ENABLED, false);
+        
+        Map<String,Path> map = loadMap(conf, doValidation);
         if (null == map) {
             log.fatal("Receieved a null mapping of sharded tables to split files, exiting...");
             throw new RuntimeException("Receieved a null mapping of sharded tables to split files, exiting...");
@@ -58,6 +82,7 @@ public class ShardedTableMapFile {
         
         Text shardID = new Text();
         Text location = new Text();
+        
         try {
             while (reader.next(shardID, location)) {
                 locations.put(new Text(shardID), location.toString());
@@ -66,6 +91,101 @@ public class ShardedTableMapFile {
             reader.close();
         }
         return locations;
+    }
+    
+    public static void validateShardIdLocations(Configuration conf, String tableName, int daysToVerify, Map<Text,String> shardIdToLocation) {
+        ShardIdFactory shardIdFactory = new ShardIdFactory(conf);
+        // assume true unless proven otherwise
+        boolean isValid = true;
+        for (int daysAgo = 0; daysAgo <= daysToVerify; daysAgo++) {
+            long inMillis = System.currentTimeMillis() - (daysAgo * DateUtils.MILLIS_PER_DAY);
+            String datePrefix = DateHelper.format(inMillis);
+            int expectedNumberOfShards = shardIdFactory.getNumShards(datePrefix);
+            boolean shardsExist = shardsExistForDate(shardIdToLocation, datePrefix, expectedNumberOfShards);
+            if (!shardsExist) {
+                log.error("Shards for " + datePrefix + " for table " + tableName + " do not exist!");
+                isValid = false;
+                continue;
+            }
+            boolean shardsAreBalanced = shardsAreBalanced(shardIdToLocation, datePrefix);
+            if (!shardsAreBalanced) {
+                log.error("Shards for " + datePrefix + " for table " + tableName + " are not balanced!");
+                isValid = false;
+            }
+        }
+        if (!isValid) {
+            throw new IllegalStateException("Shard validation failed for " + tableName + ". Please ensure that "
+                            + "shards have been generated. Check log for details about the dates in question");
+        }
+    }
+    
+    /**
+     * Existence check for the shard splits for the specified date
+     * 
+     * @param locations
+     *            mapping of shard to tablet
+     * @param datePrefix
+     *            to check
+     * @param expectedNumberOfShards
+     *            that should exist
+     * @return if the number of shards for the given date are as expected
+     */
+    private static boolean shardsExistForDate(Map<Text,String> locations, String datePrefix, int expectedNumberOfShards) {
+        int count = 0;
+        byte[] prefixBytes = datePrefix.getBytes();
+        for (Text key : locations.keySet()) {
+            if (prefixMatches(prefixBytes, key.getBytes(), key.getLength())) {
+                count++;
+            }
+        }
+        return count == expectedNumberOfShards;
+    }
+    
+    /**
+     * Checks that the shard splits for the given date have been assigned to unique tablets.
+     * 
+     * @param locations
+     *            mapping of shard to tablet
+     * @param datePrefix
+     *            to check
+     * @return if the shards are distributed in a balanced fashion
+     */
+    private static boolean shardsAreBalanced(Map<Text,String> locations, String datePrefix) {
+        // assume true unless proven wrong
+        boolean dateIsBalanced = true;
+        
+        Set<String> tabletsSeenForDate = new HashSet<>();
+        byte[] prefixBytes = datePrefix.getBytes();
+        
+        for (Entry<Text,String> entry : locations.entrySet()) {
+            Text key = entry.getKey();
+            // only check entries for specified date
+            if (prefixMatches(prefixBytes, key.getBytes(), key.getLength())) {
+                String value = entry.getValue();
+                // if we have already seen this tablet assignment, then the shards are not balanced
+                if (tabletsSeenForDate.contains(value)) {
+                    log.warn("Multiple Shards for " + datePrefix + " assigned to tablet " + value);
+                    dateIsBalanced = false;
+                }
+                tabletsSeenForDate.add(value);
+            }
+        }
+        
+        return dateIsBalanced;
+    }
+    
+    private static boolean prefixMatches(byte[] prefixBytes, byte[] keyBytes, int keyLen) {
+        // if key length is less than prefix size, no use comparing
+        if (prefixBytes.length > keyLen) {
+            return false;
+        }
+        for (int i = 0; i < prefixBytes.length; i++) {
+            if (prefixBytes[i] != keyBytes[i]) {
+                return false;
+            }
+        }
+        // at this point didn't fail match, so should be good
+        return true;
     }
     
     public static void addToConf(Configuration conf, Map<String,Path> map) {
@@ -77,7 +197,8 @@ public class ShardedTableMapFile {
         conf.setStrings(CONFIGURED_SHARDED_TABLE_NAMES, var.toArray(new String[var.size()]));
     }
     
-    private static Map<String,Path> loadMap(Configuration conf) throws IOException, URISyntaxException, AccumuloSecurityException, AccumuloException {
+    private static Map<String,Path> loadMap(Configuration conf, boolean doValidation) throws IOException, URISyntaxException, AccumuloSecurityException,
+                    AccumuloException {
         AccumuloHelper accumuloHelper = null;
         Path workDir = new Path(conf.get(SPLIT_WORK_DIR));// todo make sure this is set in ingest job
         String[] tableNames = StringUtils.split(conf.get(TABLE_NAMES), ",");// todo make sure this is set in ingest job
@@ -108,7 +229,7 @@ public class ShardedTableMapFile {
                 }
                 Connector conn = accumuloHelper.getConnector();
                 Credentials credentials = accumuloHelper.getCredentials();
-                shardedMapFile = createShardedMapFile(log, conf, workDir, conn.getInstance(), credentials, shardedTableName);
+                shardedMapFile = createShardedMapFile(log, conf, workDir, conn.getInstance(), credentials, shardedTableName, doValidation);
             }
             
             // Ensure that we either computed, or were given, a valid path to the shard mappings
@@ -162,26 +283,34 @@ public class ShardedTableMapFile {
      *            Accumulo access credentials for querying shard locations
      * @param shardedTableName
      *            name of the shard table--the table whose locations we are querying
+     * @param validateShardLocations
+     *            if validation of shards mappings should be performed
      * @return the path to the sharded table map file
      * @throws IOException
      * @throws URISyntaxException
      */
-    public static Path createShardedMapFile(Logger log, Configuration conf, Path workDir, Instance instance, Credentials credentials, String shardedTableName)
-                    throws IOException, URISyntaxException {
+    public static Path createShardedMapFile(Logger log, Configuration conf, Path workDir, Instance instance, Credentials credentials, String shardedTableName,
+                    boolean validateShardLocations) throws IOException, URISyntaxException {
         Path shardedMapFile = null;
+        // minus one to make zero based indexed
+        int daysToVerify = conf.getInt(SHARDS_BALANCED_DAYS_TO_VERIFY, 2) - 1;
         
         if (null != shardedTableName) {
             // Read all the metadata entries for the sharded table so that we can
             // get the mapping of shard IDs to tablet locations.
             log.info("Reading metadata entries for " + shardedTableName);
             
-            SortedMap<KeyExtent,String> locations = getLocations(log, instance, credentials, shardedTableName);
+            Map<KeyExtent,String> rawLocations = getLocations(log, instance, credentials, shardedTableName);
+            Map<Text,String> convertedLocations = convertToTextStringMap(rawLocations);
+            if (validateShardLocations) {
+                validateShardIdLocations(conf, shardedTableName, daysToVerify, convertedLocations);
+            }
             
             // Now write all of the assignments out to a file stored in HDFS
             // we're ok with putting the sharded table file in the hdfs workdir. why is that not good enough for the non sharded splits?
             shardedMapFile = new Path(workDir, shardedTableName + "_shards.lst");
             log.info("Writing shard assignments to " + shardedMapFile);
-            long count = writeSplitsFile(locations, shardedMapFile, conf);
+            long count = writeSplitsFile(convertedLocations, shardedMapFile, conf);
             log.info("Wrote " + count + " shard assignments to " + shardedMapFile);
         }
         
@@ -204,14 +333,25 @@ public class ShardedTableMapFile {
     public static SortedMap<KeyExtent,String> getLocations(Logger log, Instance instance, Credentials credentials, String shardedTableName) {
         
         TreeMap<KeyExtent,String> locations = new TreeMap<>();
-        while (true) {
+        boolean keepRetrying = true;
+        int attempts = 0;
+        while (keepRetrying && attempts < MAX_RETRY_ATTEMPTS) {
             try {
+                attempts++;
                 // re-create the locations so that we don't re-use stale metadata information.
                 locations.clear();
-                MetadataServicer servicer = MetadataServicer.forTableName(
-                                new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration()), shardedTableName);
-                servicer.getTabletLocations(locations);
-                break;
+                ClientContext context = new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration());
+                // if table does not exist don't want to catch the errors and end up in infinite loop
+                Map<String,String> tableIdMap = context.getConnector().tableOperations().tableIdMap();
+                boolean tableExists = tableIdMap.containsKey(shardedTableName);
+                if (!tableExists) {
+                    log.error("Table " + shardedTableName + " not found, skipping split locations for missing table");
+                } else {
+                    MetadataServicer servicer = MetadataServicer.forTableName(context, shardedTableName);
+                    servicer.getTabletLocations(locations);
+                }
+                // made it here, no errors so break out
+                keepRetrying = false;
             } catch (Exception e) {
                 log.warn(e.getMessage() + " ... retrying ...");
                 UtilWaitThread.sleep(3000);
@@ -233,24 +373,59 @@ public class ShardedTableMapFile {
      * @throws IOException
      *             if file system interaction fails
      */
-    public static long writeSplitsFile(Map<KeyExtent,String> splits, Path file, Configuration conf) throws IOException {
+    public static long writeSplitsFile(Map<Text,String> splits, Path file, Configuration conf) throws IOException {
         FileSystem fs = file.getFileSystem(conf);
         if (fs.exists(file))
             fs.delete(file, false);
         
         long count = 0;
+        // reusable value for writing
+        Text value = new Text();
         SequenceFile.Writer writer = SequenceFile.createWriter(conf, SequenceFile.Writer.file(file), SequenceFile.Writer.keyClass(Text.class),
                         SequenceFile.Writer.valueClass(Text.class));
-        for (Map.Entry<KeyExtent,String> entry : splits.entrySet()) {
-            KeyExtent extent = entry.getKey();
-            if (extent.getEndRow() != null && entry.getValue() != null) {
-                count++;
-                Text location = new Text(entry.getValue().replaceAll("[\\.:]", "_"));
-                writer.append(extent.getEndRow(), location);
-            }
+        for (Entry<Text,String> entry : splits.entrySet()) {
+            count++;
+            value.set(entry.getValue());
+            writer.append(entry.getKey(), value);
         }
         writer.close();
         return count;
+    }
+    
+    /**
+     * Writes the contents of splits out to a sequence file on the given FileSystem.
+     *
+     * @param splits
+     *            map of split points for a table
+     * @param file
+     *            the file to which the splits should be written
+     * @param conf
+     *            hadoop configuration
+     * @return the number of entries written to the splits file
+     * @throws IOException
+     *             if file system interaction fails
+     */
+    public static long writeSplitsFileLegacy(Map<KeyExtent,String> splits, Path file, Configuration conf) throws IOException {
+        return writeSplitsFile(convertToTextStringMap(splits), file, conf);
+    }
+    
+    /**
+     * Formats KeyExtent end row to tablet server for consumption by other methods.
+     * 
+     * @param splits
+     *            raw splits read from accumulo
+     * @return converted to end row to location mapping
+     */
+    private static Map<Text,String> convertToTextStringMap(Map<KeyExtent,String> splits) {
+        Map<Text,String> converted = new TreeMap<>();
+        for (Map.Entry<KeyExtent,String> entry : splits.entrySet()) {
+            KeyExtent extent = entry.getKey();
+            if (extent.getEndRow() != null && entry.getValue() != null) {
+                String location = entry.getValue().replaceAll("[\\.:]", "_");
+                converted.put(extent.getEndRow(), location);
+            }
+        }
+        return converted;
     }
     
 }

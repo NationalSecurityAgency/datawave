@@ -169,7 +169,7 @@ import org.apache.log4j.Logger;
  *   &lt;/Events&gt;
  * &lt;/DefaultUUIDModificationRequest&gt;
  * </pre>
- * */
+ */
 
 public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
     

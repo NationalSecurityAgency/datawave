@@ -34,7 +34,7 @@
         <property name="allMetadataAuths" ref="allMetadataAuths" />
     </bean>
 
-    <bean id="compositeMetadataHelper" scope="prototype" class="datawave.query.util.CompositeMetadataHelper" />
+    <bean id="compositeMetadataHelper" scope="prototype" class="datawave.query.composite.CompositeMetadataHelper" />
 
     <util:set id="allMetadataAuths" scope="prototype" value-type="org.apache.accumulo.core.security.Authorizations" >
         <bean class="org.apache.accumulo.core.security.Authorizations" >
