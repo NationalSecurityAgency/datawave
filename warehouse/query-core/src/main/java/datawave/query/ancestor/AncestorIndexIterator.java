@@ -1,32 +1,33 @@
 package datawave.query.ancestor;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import datawave.query.iterator.filter.composite.CompositePredicateFilter;
 import datawave.query.iterator.logic.IndexIterator;
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.tld.TLD;
-import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import java.util.Map;
-
 public class AncestorIndexIterator extends IndexIterator {
     
-    public AncestorIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter) {
-        this(field, value, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new IdentityAggregator(null, null), null);
+    public static class Builder<B extends Builder<B>> extends IndexIterator.Builder<B> {
+        
+        Builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {
+            super(field, value, source);
+        }
+        
+        public AncestorIndexIterator build() {
+            return new AncestorIndexIterator(this);
+        }
     }
     
-    public AncestorIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator,
-                    Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters) {
-        super(field, value, source, timeFilter, typeMetadata, buildDocument, datatypeFilter, aggregator, compositePredicateFilters);
+    public static Builder<?> builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {
+        return new Builder(field, value, source);
+    }
+    
+    protected AncestorIndexIterator(Builder builder) {
+        super(builder);
     }
     
     @Override

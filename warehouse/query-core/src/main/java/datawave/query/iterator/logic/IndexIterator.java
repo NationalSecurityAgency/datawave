@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,6 +41,68 @@ import java.util.Set;
  */
 public class IndexIterator implements SortedKeyValueIterator<Key,Value>, DocumentIterator, CompositePredicateFilterer {
     private static final Logger log = Logger.getLogger(IndexIterator.class);
+    
+    public static class Builder<B extends Builder<B>> {
+        protected Text field;
+        protected Text value;
+        protected SortedKeyValueIterator<Key,Value> source;
+        protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
+        protected boolean buildDocument = false;
+        protected TypeMetadata typeMetadata;
+        protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
+        protected FieldIndexAggregator aggregation;
+        protected Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters = Collections.emptyMap();
+        
+        protected Builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {
+            this.field = field;
+            this.value = value;
+            this.source = source;
+        }
+        
+        @SuppressWarnings("unchecked")
+        protected B self() {
+            return (B) this;
+        }
+        
+        public B withTimeFilter(TimeFilter timeFilter) {
+            this.timeFilter = timeFilter;
+            return self();
+        }
+        
+        public B shouldBuildDocument(boolean buildDocument) {
+            this.buildDocument = buildDocument;
+            return self();
+        }
+        
+        public B withTypeMetadata(TypeMetadata typeMetadata) {
+            this.typeMetadata = typeMetadata;
+            return self();
+        }
+        
+        public B withDatatypeFilter(Predicate<Key> datatypeFilter) {
+            this.datatypeFilter = datatypeFilter;
+            return self();
+        }
+        
+        public B withAggregation(FieldIndexAggregator aggregation) {
+            this.aggregation = aggregation;
+            return self();
+        }
+        
+        public B withCompositePredicateFilters(Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters) {
+            this.compositePredicateFilters = compositePredicateFilters;
+            return self();
+        }
+        
+        public IndexIterator build() {
+            return new IndexIterator(this);
+        }
+        
+    }
+    
+    public static Builder<?> builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {
+        return new Builder(field, value, source);
+    }
     
     public static final String INDEX_FILTERING_CLASSES = "indexfiltering.classes";
     
@@ -68,18 +131,12 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     protected SeekingFilter timeSeekingFilter;
     private Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters;
     
-    /**
-     * A convenience constructor that allows all keys to pass through unmodified from the source.
-     * 
-     * @param field
-     * @param value
-     * @param source
-     */
-    public IndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter) {
-        this(field, value, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new IdentityAggregator(null, null), null);
+    protected IndexIterator(Builder builder) {
+        this(builder.field, builder.value, builder.source, builder.timeFilter, builder.typeMetadata, builder.buildDocument, builder.datatypeFilter,
+                        builder.aggregation, builder.compositePredicateFilters);
     }
     
-    public IndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
+    private IndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
                     boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator,
                     Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters) {
         
