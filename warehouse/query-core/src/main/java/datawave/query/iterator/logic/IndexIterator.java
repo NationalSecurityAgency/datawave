@@ -50,7 +50,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         protected boolean buildDocument = false;
         protected TypeMetadata typeMetadata;
         protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
-        protected FieldIndexAggregator aggregation;
+        protected FieldIndexAggregator aggregation = new IdentityAggregator(null, null);
         protected Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters = Collections.emptyMap();
         
         protected Builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {

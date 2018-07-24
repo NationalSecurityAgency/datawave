@@ -71,7 +71,8 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
             try {
                 // create a field index caching ivarator
                 DatawaveFieldIndexFilterIteratorJexl rangeIterator = DatawaveFieldIndexFilterIteratorJexl.builder()
-                                .withFieldName(new Text(range.getFieldName())).withFilter(filter).withUpperBound(new Text(range.getUpper().toString()))
+                                .withFieldName(new Text(range.getFieldName())).withFilter(filter).withFieldValue(new Text(range.getLower().toString()))
+                                .lowerInclusive(range.isLowerInclusive()).withUpperBound(new Text(range.getUpper().toString()))
                                 .upperInclusive(range.isUpperInclusive()).withTimeFilter(timeFilter).withDatatypeFilter(datatypeFilter).negated(false)
                                 .withScanThreshold(ivaratorCacheScanPersistThreshold).withScanTimeout(ivaratorCacheScanTimeout)
                                 .withHdfsBackedSetBufferSize(ivaratorCacheBufferSize).withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles)
