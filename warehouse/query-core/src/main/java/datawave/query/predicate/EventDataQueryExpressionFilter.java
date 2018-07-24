@@ -19,7 +19,8 @@ import java.util.Map;
 
 /**
  * This class is used to filter out fields that are required for evaluation by apply the query expressions to the field values on the fly. This filter will
- * "keep" all of those returned by "apply". If more fields are required to be returned to the user, then this class must be overridden.
+ * "keep" all of those returned by "apply". If more fields are required to be returned to the user, then this class must be overridden. startNewDocument will be
+ * called with a documentKey whenever we are starting to scan a new document or document tree as defined by getKeyRange.
  */
 public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     private static final Logger log = Logger.getLogger(EventDataQueryExpressionFilter.class);
@@ -38,7 +39,7 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     }
     
     public EventDataQueryExpressionFilter(EventDataQueryExpressionFilter other) {
-        setFilters(other.getFilters());
+        setFilters(EventDataQueryExpressionVisitor.ExpressionFilter.clone(other.getFilters()));
         if (other.document != null) {
             document = new Key(other.document);
         }
@@ -47,8 +48,10 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     protected Key document = null;
     
     @Override
-    public void setDocumentKey(Key document) {
+    public void startNewDocument(Key document) {
         this.document = document;
+        // since we are starting a new document, reset the filters
+        EventDataQueryExpressionVisitor.ExpressionFilter.reset(filters);
     }
     
     @Override

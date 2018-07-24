@@ -138,7 +138,7 @@ public class TermOffsetPopulator {
         
         // set the document context on the filter
         if (evaluationFilter != null) {
-            evaluationFilter.setDocumentKey(docKey);
+            evaluationFilter.startNewDocument(docKey);
         }
         
         Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();

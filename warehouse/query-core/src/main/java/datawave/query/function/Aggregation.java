@@ -62,7 +62,7 @@ public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<
         
         // set the document context on the attribute filter
         if (attrFilter != null) {
-            attrFilter.setDocumentKey(docData.getKey());
+            attrFilter.startNewDocument(docData.getKey());
         }
         
         // Only load attributes for this document that fall within the expected date range

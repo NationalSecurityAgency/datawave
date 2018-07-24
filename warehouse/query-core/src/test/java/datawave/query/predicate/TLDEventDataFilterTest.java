@@ -314,7 +314,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Key key3 = new Key("row", "dataype" + Constants.NULL + "123.234.34567", "field1" + Constants.NULL_BYTE_STRING + "value");
         filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, -1, -1);
         
-        filter.setDocumentKey(key1);
+        filter.startNewDocument(key1);
         // set the lastParseInfo to this key
         filter.keep(key1);
         assertFalse(filter.getParseInfo(key2).isRoot());
@@ -323,7 +323,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertFalse(filter.getParseInfo(key3).isRoot());
         
         // property follow the contract by setting the context for the document first
-        filter.setDocumentKey(key2);
+        filter.startNewDocument(key2);
         assertTrue(filter.getParseInfo(key2).isRoot());
         
         verifyAll();

@@ -113,8 +113,8 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     }
     
     @Override
-    public void setDocumentKey(Key document) {
-        super.setDocumentKey(document);
+    public void startNewDocument(Key document) {
+        super.startNewDocument(document);
         // clear the parse info so a length comparison can't be made against a new document
         lastParseInfo = null;
     }
