@@ -38,9 +38,21 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
         protected boolean upperInclusive = true;
         protected boolean lowerInclusive = true;
         
+        public B withLowerBound(Text lowerBound) {
+            return super.withFieldValue(lowerBound);
+        }
+        
+        public B withLowerBound(String lowerBound) {
+            return this.withLowerBound(new Text(lowerBound));
+        }
+        
         public B withUpperBound(Text upperBound) {
             this.upperBound = upperBound;
             return self();
+        }
+        
+        public B withUpperBound(String upperBound) {
+            return this.withUpperBound(new Text(upperBound));
         }
         
         public B upperInclusive(boolean upperInclusive) {

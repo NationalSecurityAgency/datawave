@@ -91,9 +91,17 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             return self();
         }
         
+        public B withFieldName(String fieldName) {
+            return this.withFieldName(new Text(fieldName));
+        }
+        
         public B withFieldValue(Text fieldValue) {
             this.fieldValue = fieldValue;
             return self();
+        }
+        
+        public B withFieldValue(String fieldValue) {
+            return this.withFieldValue(new Text(fieldValue));
         }
         
         public B withTimeFilter(TimeFilter timeFilter) {
