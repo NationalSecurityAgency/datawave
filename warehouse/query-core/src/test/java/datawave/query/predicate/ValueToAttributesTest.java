@@ -233,7 +233,7 @@ public abstract class ValueToAttributesTest {
         List<String>[] expectedLists = new List[] { //
         Arrays.asList("One"), //
                 Arrays.asList("One"), //
-                Collections.emptyList()//
+                Arrays.asList("One")//
         };
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);

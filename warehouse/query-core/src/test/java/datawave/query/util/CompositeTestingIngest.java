@@ -137,6 +137,14 @@ public class CompositeTestingIngest {
             mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(oneUUID));
             bw.addMutation(mutation);
+            mutation = new Mutation(ucType.normalize("Ford" + Constants.MAX_UNICODE_STRING + "blue"));
+            mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(oneUUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation(ucType.normalize("Chevy" + Constants.MAX_UNICODE_STRING + "red"));
+            mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(oneUUID));
+            bw.addMutation(mutation);
             mutation = new Mutation(ucType.normalize("Chevy" + Constants.MAX_UNICODE_STRING + "blue"));
             mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(oneUUID));
@@ -171,6 +179,14 @@ public class CompositeTestingIngest {
             mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(twoUUID));
             bw.addMutation(mutation);
+            mutation = new Mutation(ucType.normalize("Toyota" + Constants.MAX_UNICODE_STRING + "green"));
+            mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(twoUUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation(ucType.normalize("VW" + Constants.MAX_UNICODE_STRING + "pink"));
+            mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(twoUUID));
+            bw.addMutation(mutation);
             mutation = new Mutation(ucType.normalize("VW" + Constants.MAX_UNICODE_STRING + "green"));
             mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(twoUUID));
@@ -202,6 +218,14 @@ public class CompositeTestingIngest {
             bw.addMutation(mutation);
             
             mutation = new Mutation(ucType.normalize("Subaru" + Constants.MAX_UNICODE_STRING + "cyan"));
+            mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(threeUUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation(ucType.normalize("Subaru" + Constants.MAX_UNICODE_STRING + "purple"));
+            mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
+                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(threeUUID));
+            bw.addMutation(mutation);
+            mutation = new Mutation(ucType.normalize("Nissan" + Constants.MAX_UNICODE_STRING + "cyan"));
             mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(threeUUID));
             bw.addMutation(mutation);
@@ -255,13 +279,27 @@ public class CompositeTestingIngest {
             
             mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Ford" + Constants.MAX_UNICODE_STRING + "red") + "\u0000" + datatype + "\u0000" + oneUUID,
                             columnVisibility, timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "MAKE_COLOR",
+                            ucType.normalize("Ford" + Constants.MAX_UNICODE_STRING + "blue") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility,
+                            timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "MAKE_COLOR",
+                            ucType.normalize("Chevy" + Constants.MAX_UNICODE_STRING + "red") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility,
+                            timeStamp, emptyValue);
             mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Chevy" + Constants.MAX_UNICODE_STRING + "blue") + "\u0000" + datatype + "\u0000"
                             + oneUUID, columnVisibility, timeStamp, emptyValue);
             mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Toyota" + Constants.MAX_UNICODE_STRING + "pink") + "\u0000" + datatype + "\u0000"
                             + twoUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Toyota" + Constants.MAX_UNICODE_STRING + "green") + "\u0000" + datatype + "\u0000"
+                            + twoUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("VW" + Constants.MAX_UNICODE_STRING + "pink") + "\u0000" + datatype + "\u0000" + twoUUID,
+                            columnVisibility, timeStamp, emptyValue);
             mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("VW" + Constants.MAX_UNICODE_STRING + "green") + "\u0000" + datatype + "\u0000" + twoUUID,
                             columnVisibility, timeStamp, emptyValue);
             mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Subaru" + Constants.MAX_UNICODE_STRING + "cyan") + "\u0000" + datatype + "\u0000"
+                            + threeUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Subaru" + Constants.MAX_UNICODE_STRING + "purple") + "\u0000" + datatype + "\u0000"
+                            + threeUUID, columnVisibility, timeStamp, emptyValue);
+            mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Nissan" + Constants.MAX_UNICODE_STRING + "cyan") + "\u0000" + datatype + "\u0000"
                             + threeUUID, columnVisibility, timeStamp, emptyValue);
             mutation.put("fi\u0000" + "MAKE_COLOR", ucType.normalize("Nissan" + Constants.MAX_UNICODE_STRING + "purple") + "\u0000" + datatype + "\u0000"
                             + threeUUID, columnVisibility, timeStamp, emptyValue);
@@ -304,7 +342,6 @@ public class CompositeTestingIngest {
             
             mutation = new Mutation("MAKE_COLOR");
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_CI, new Text(datatype + "\u0000" + "MAKE,COLOR"), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_CIFL, new Text(datatype + "\u0000"), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_CITD, new Text(datatype + "\u0000" + "20010101 000000.000"), emptyValue);

@@ -821,6 +821,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                     Composite newComp;
                     comp.clone();
                     
+                    // at this point, if this is an and node, it is a bounded range
                     if (node instanceof ASTAndNode) {
                         newComp = CompositeRange.clone(comp);
                     } else {

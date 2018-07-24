@@ -51,8 +51,25 @@ public class Composite {
                         + expressionList + "]";
     }
     
+    protected JexlNode getNodeClass(List<JexlNode> jexlNodeList) {
+        JexlNode lastNode = null;
+        boolean allEqSoFar = true;
+        for (JexlNode node : jexlNodeList) {
+            if (node != null) {
+                if (allEqSoFar && node instanceof ASTEQNode)
+                    lastNode = node;
+                else if (!(node instanceof ASTEQNode)) {
+                    lastNode = node;
+                    allEqSoFar = false;
+                }
+            } else
+                break;
+        }
+        return lastNode;
+    }
+    
     public void getNodesAndExpressions(List<JexlNode> nodes, List<String> expressions, boolean includeOldData) {
-        nodes.addAll(Arrays.asList(jexlNodeList.get(jexlNodeList.size() - 1)));
+        nodes.addAll(Arrays.asList(getNodeClass(jexlNodeList)));
         expressions.addAll(Arrays.asList(getAppendedExpressions()));
         
         if (includeOldData) {
@@ -64,11 +81,18 @@ public class Composite {
                 expressions.add(CompositeUtils.getInclusiveLowerBound(expressionList.get(0)));
                 nodes.add(JexlNodeFactory.buildNode((ASTGENode) null, (String) null, (String) null));
             } else if (node instanceof ASTGENode || node instanceof ASTEQNode) {
+                String origExpression = expressions.get(0);
+                
                 nodes.clear();
                 expressions.clear();
                 
                 expressions.add(expressionList.get(0));
                 nodes.add(JexlNodeFactory.buildNode((ASTGENode) null, (String) null, (String) null));
+                
+                if (node instanceof ASTEQNode) {
+                    expressions.add(origExpression);
+                    nodes.add(JexlNodeFactory.buildNode((ASTLENode) null, (String) null, (String) null));
+                }
             }
         }
     }

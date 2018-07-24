@@ -33,7 +33,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * 
@@ -50,7 +49,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     
     private Map<String,Multimap<String,String>> compositeToFieldMap;
     private MarkingFunctions markingFunctions;
-    private Multimap<String,Attribute<?>> compositeAttributes = ArrayListMultimap.create();
+    private Multimap<String,Attribute<?>> componentFieldToValues = ArrayListMultimap.create();
     
     private EventDataQueryFilter attrFilter;
     
@@ -67,54 +66,83 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     public Iterable<Entry<String,Attribute<? extends Comparable<?>>>> apply(Entry<Key,String> from) {
         String origFieldName = from.getValue();
         String modifiedFieldName = JexlASTHelper.deconstructIdentifier(origFieldName, false);
-        String groupingContext = JexlASTHelper.getGroupingContext(origFieldName);
-        
         Key key = from.getKey();
-        String ingestDatatype = this.getDatatypeFromKey(key);
-        Multimap<String,String> mm = this.compositeToFieldMap.get(ingestDatatype);
-        // mm looks something like this: {MAKE_COLOR=[MAKE,COLOR], COLOR_WHEELS=[COLOR,WHEELS]}
-        if (mm != null) {
-            Multimap<String,String> inverted = Multimaps.invertFrom(mm, ArrayListMultimap.<String,String> create());
-            // inverted, it looks like this: {MAKE=[MAKE_COLOR],WHEELS=[COLOR_WHEELS],COLOR=[MAKE_COLOR,COLOR_WHEELS]}
-            if (inverted.containsKey(modifiedFieldName)) {
-                for (String composite : inverted.get(modifiedFieldName)) {
-                    List<Attribute<?>> list = (List<Attribute<?>>) this.compositeAttributes.get(getCompositeAttributeKey(composite, groupingContext));
-                    List<String> components = (List<String>) this.compositeToFieldMap.get(ingestDatatype).get(composite);
-                    int idx = components.indexOf(modifiedFieldName);
-                    if (idx > list.size()) {
-                        idx = list.size();
-                    }
-                    list.add(idx, getFieldValue(modifiedFieldName, key));
-                    if (log.isDebugEnabled()) {
-                        log.debug("added to " + list + " in " + this.compositeAttributes);
-                    }
-                }
-            }
-        }
-        List<Entry<String,Attribute<? extends Comparable<?>>>> list = new ArrayList<>();
-        list.add(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(origFieldName, getFieldValue(modifiedFieldName, from.getKey())));
-        Set<String> goners = Sets.newHashSet();
         
-        for (String composite : this.compositeAttributes.keySet()) {
-            String compositeFieldMapKey = JexlASTHelper.deconstructIdentifier(composite, false);
-            if (this.compositeToFieldMap.get(ingestDatatype).get(compositeFieldMapKey).size() == this.compositeAttributes.get(composite).size()) {
-                try {
-                    boolean isOverloadedComposite = CompositeIngest.isOverloadedCompositeField(
-                                    this.compositeToFieldMap.get(ingestDatatype).get(compositeFieldMapKey), compositeFieldMapKey);
-                    Attribute<? extends Comparable<?>> combined = this
-                                    .joinAttributes(composite, this.compositeAttributes.get(composite), isOverloadedComposite);
-                    list.add(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(composite, combined));
-                    log.debug("will be removing " + composite + " from compositeAttributes:" + this.compositeAttributes);
-                    goners.add(composite);
-                } catch (Exception e) {
-                    log.debug("could not join attributes:", e);
+        Attribute curAttr = getFieldValue(modifiedFieldName, key);
+        
+        // by default, we will return the attribute for the given entry
+        List<Entry<String,Attribute<? extends Comparable<?>>>> list = new ArrayList<>();
+        list.add(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(origFieldName, curAttr));
+        
+        // check to see if we can create any composite attributes using this entry
+        String ingestDatatype = this.getDatatypeFromKey(key);
+        Multimap<String,String> compToFieldMap = this.compositeToFieldMap.get(ingestDatatype);
+        if (compToFieldMap != null && !compToFieldMap.isEmpty()) {
+            Multimap<String,String> inverted = Multimaps.invertFrom(compToFieldMap, ArrayListMultimap.create());
+            // check to see if this entry can be used to create a composite
+            if (inverted.containsKey(modifiedFieldName)) {
+                // save a list of composites that could be built from this component
+                List<String> compsToBuild = new ArrayList<>(inverted.get(modifiedFieldName));
+                
+                // add this component to the list of composite components
+                componentFieldToValues.put(modifiedFieldName, curAttr);
+                
+                // try to build each of the composites with this component
+                for (String composite : compsToBuild) {
+                    List<Collection<Attribute<?>>> componentAttributes = new ArrayList<>();
+                    Collection<String> components = compToFieldMap.get(composite);
+                    for (String component : components) {
+                        if (component.equals(modifiedFieldName)) {
+                            // add the attribute from this entry
+                            componentAttributes.add(Arrays.asList(curAttr));
+                        } else if (componentFieldToValues.containsKey(component)) {
+                            // add the attributes for this component
+                            componentAttributes.add(componentFieldToValues.get(component));
+                        } else {
+                            // stop, we can't build this composite, as we're missing a component
+                            break;
+                        }
+                    }
+                    
+                    // if we have attributes for each component, we'll build composites
+                    if (componentAttributes.size() == components.size()) {
+                        list.addAll(buildCompositesFromComponents(
+                                        CompositeIngest.isOverloadedCompositeField(this.compositeToFieldMap.get(ingestDatatype), composite), composite,
+                                        componentAttributes));
+                    }
                 }
             }
-        }
-        for (String goner : goners) {
-            this.compositeAttributes.removeAll(goner);
         }
         return list;
+    }
+    
+    private List<Entry<String,Attribute<? extends Comparable<?>>>> buildCompositesFromComponents(boolean isOverloadedComposite, String compositeField,
+                    List<Collection<Attribute<?>>> componentAttributes) {
+        return buildCompositesFromComponents(isOverloadedComposite, compositeField, null, componentAttributes);
+    }
+    
+    private List<Entry<String,Attribute<? extends Comparable<?>>>> buildCompositesFromComponents(boolean isOverloadedComposite, String compositeField,
+                    Collection<Attribute<?>> currentAttributes, List<Collection<Attribute<?>>> componentAttributes) {
+        if (componentAttributes == null) {
+            // finally create the composite from what we have
+            try {
+                return Arrays.asList(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(compositeField,
+                                joinAttributes(compositeField, currentAttributes, isOverloadedComposite)));
+            } catch (Exception e) {
+                log.debug("could not join attributes:", e);
+            }
+        } else {
+            List<Entry<String,Attribute<? extends Comparable<?>>>> compositeAttributes = new ArrayList<>();
+            Collection<Attribute<?>> compAttrs = componentAttributes.get(0);
+            for (Attribute<?> compAttr : compAttrs) {
+                List<Attribute<?>> attrs = (currentAttributes != null) ? new ArrayList<>(currentAttributes) : new ArrayList<>();
+                attrs.add(compAttr);
+                compositeAttributes.addAll(buildCompositesFromComponents(isOverloadedComposite, compositeField, attrs,
+                                (componentAttributes.size() > 1) ? componentAttributes.subList(1, componentAttributes.size()) : null));
+            }
+            return compositeAttributes;
+        }
+        return new ArrayList<>();
     }
     
     public String getCompositeAttributeKey(String composite, String grouping) {
@@ -222,11 +250,11 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         ColumnVisibility combinedColumnVisibility = this.markingFunctions.combine(columnVisibilities);
         metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), new Text(), combinedColumnVisibility, timestamp);
         if (dataList.size() == 1) {
-            return this.attrFactory.create(compositeName, dataList.get(0), metadata, toKeep);
+            return this.attrFactory.create(compositeName, dataList.get(0), metadata, toKeep, true);
         } else {
             Attributes attributes = new Attributes(toKeep);
             for (String d : dataList) {
-                attributes.add(this.attrFactory.create(compositeName, d, metadata, toKeep));
+                attributes.add(this.attrFactory.create(compositeName, d, metadata, toKeep, true));
             }
             return attributes;
         }

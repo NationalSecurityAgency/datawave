@@ -14,7 +14,6 @@ import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
@@ -60,6 +59,7 @@ import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -68,7 +68,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
@@ -79,7 +79,7 @@ import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 
 @RunWith(Arquillian.class)
-public class CompositeIndexTest {
+public class MultiValueCompositeIndexTest {
     
     private static final int NUM_SHARDS = 241;
     private static final String SHARD_TABLE_NAME = "shard";
@@ -100,7 +100,6 @@ public class CompositeIndexTest {
     private static final String formatPattern = "yyyyMMdd HHmmss.SSS";
     private static final SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
     
-    private static final String LEGACY_BEGIN_DATE = "20000101 000000.000";
     private static final String COMPOSITE_BEGIN_DATE = "20010101 000000.000";
     
     private static final String BEGIN_DATE = "20000101 000000.000";
@@ -111,67 +110,52 @@ public class CompositeIndexTest {
     
     private static final Configuration conf = new Configuration();
     
-    // @formatter:off
-    private static final String[] wktLegacyData = {
-            "POINT (0 0)",
-
-            "POLYGON ((10 10, -10 10, -10 -10, 10 -10, 10 10))",
-
-            "POLYGON ((45 45, -45 45, -45 -45, 45 -45, 45 45))",
-
-            "POLYGON ((90 90, -90 90, -90 -90, 90 -90, 90 90))"};
-
-    private static final Integer[] wktByteLengthLegacyData = {
-            wktLegacyData[0].length(),
-            wktLegacyData[1].length(),
-            null,
-            wktLegacyData[3].length()};
-
-    private static final long[] legacyDates = {
-            0,
-            TimeUnit.DAYS.toMillis(90),
-            TimeUnit.DAYS.toMillis(180),
-            0};
-
-    private static final String[] wktCompositeData = {
-            "POINT (30 -85)",
-            "POINT (-45 17)",
-
-            "POLYGON ((25 25, 5 25, 5 5, 25 5, 25 25))",
-            "POLYGON ((-20 -20, -40 -20, -40 -40, -20 -40, -20 -20))",
-
-            "POLYGON ((90 45, 0 45, 0 -45, 90 -45, 90 45))",
-            "POLYGON ((45 15, -45 15, -45 -60, 45 -60, 45 15))",
-
-            "POLYGON ((180 90, 0 90, 0 -90, 180 -90, 180 90))",
-            "POLYGON ((90 0, -90 0, -90 -180, 90 -180, 90 0))"};
-
-    private static final Integer[] wktByteLengthCompositeData = {
-            wktCompositeData[0].length(),
-            wktCompositeData[1].length(),
-
-            null,
-            wktCompositeData[3].length(),
-
-            wktCompositeData[4].length(),
-            null,
-
-            wktCompositeData[6].length(),
-            wktCompositeData[7].length()};
-
-    private static final long[] compositeDates = {
-            0,
-            TimeUnit.DAYS.toMillis(90),
-
-            TimeUnit.DAYS.toMillis(180),
-            0,
-
-            TimeUnit.DAYS.toMillis(90),
-            TimeUnit.DAYS.toMillis(180),
-
-            0,
-            TimeUnit.DAYS.toMillis(90)};
-    // @formatter:on
+    private static class TestData {
+        public TestData(List<String> wktData, List<Integer> numData) {
+            this.wktData = wktData;
+            this.numData = numData;
+        }
+        
+        public List<String> wktData;
+        public List<Integer> numData;
+        
+        public String toString() {
+            return String.join("|", wktData) + "||" + String.join("|", numData.stream().map(x -> x.toString()).collect(Collectors.toList()));
+        }
+        
+        public static TestData fromString(String td) {
+            String[] splitData = td.split("\\|\\|");
+            return new TestData((splitData.length >= 1) ? Arrays.asList(splitData[0].split("\\|")) : new ArrayList<>(), (splitData.length >= 2) ? Arrays
+                            .asList(splitData[1].split("\\|")).stream().map(x -> Integer.parseInt(x)).collect(Collectors.toList()) : new ArrayList<>());
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            
+            TestData testData = (TestData) o;
+            
+            if (!wktData.containsAll(testData.wktData))
+                return false;
+            if (!testData.wktData.containsAll(wktData))
+                return false;
+            if (!numData.containsAll(testData.numData))
+                return false;
+            return testData.numData.containsAll(numData);
+        }
+        
+        @Override
+        public int hashCode() {
+            int result = wktData.hashCode();
+            result = 31 * result + numData.hashCode();
+            return result;
+        }
+    }
+    
+    private static final List<TestData> testData = new ArrayList<>();
     
     @Inject
     @SpringBean(name = "EventQuery")
@@ -192,9 +176,23 @@ public class CompositeIndexTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
+    public static void createTestData() {
+        // Test Data with 2 wkt and 2 numbers
+        testData.add(new TestData(Arrays.asList("POLYGON ((-120 20, -100 20, -100 60, -120 60, -120 20))", "POINT (45 -45)"), Arrays.asList(55, 15)));
+        
+        // Test Data with 2 wkt and 1 number
+        testData.add(new TestData(Arrays.asList("POLYGON ((-110 -15, -105 -15, -105 -10, -110 -10, -110 -15))", "POINT (45 45)"), Arrays.asList(60)));
+        
+        // Test Data with 1 wkt and 2 numbers
+        testData.add(new TestData(Arrays.asList("POINT (0 0)"), Arrays.asList(11, 22)));
+        
+    }
+    
     @BeforeClass
     public static void setupClass() throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
+        
+        createTestData();
         
         setupConfiguration(conf);
         
@@ -208,57 +206,36 @@ public class CompositeIndexTest {
         RawRecordContainer record = new RawRecordContainerImpl();
         Multimap<BulkIngestKey,Value> keyValues = HashMultimap.create();
         int recNum = 1;
-        for (int dataIdx = 0; dataIdx < 2; dataIdx++) {
+        
+        for (int i = 0; i < testData.size(); i++) {
+            TestData entry = testData.get(i);
             
-            String beginDate;
-            String[] wktData;
-            Integer[] wktByteLengthData;
-            long[] dates;
-            boolean useCompositeIngest;
+            record.clear();
+            record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
+            record.setRawFileName("geodata_" + recNum + ".dat");
+            record.setRawRecordNumber(recNum++);
+            record.setDate(formatter.parse(COMPOSITE_BEGIN_DATE).getTime());
+            record.setRawData(entry.toString().getBytes("UTF8"));
+            record.generateId(null);
+            record.setVisibility(new ColumnVisibility(AUTHS));
             
-            if (dataIdx == 0) {
-                beginDate = LEGACY_BEGIN_DATE;
-                wktData = wktLegacyData;
-                wktByteLengthData = wktByteLengthLegacyData;
-                dates = legacyDates;
-                useCompositeIngest = false;
-            } else {
-                beginDate = COMPOSITE_BEGIN_DATE;
-                wktData = wktCompositeData;
-                wktByteLengthData = wktByteLengthCompositeData;
-                dates = compositeDates;
-                useCompositeIngest = true;
+            final Multimap<String,NormalizedContentInterface> fields = ingestHelper.getEventFields(record);
+            
+            Multimap<String,NormalizedContentInterface> compositeFields = ingestHelper.getCompositeFields(fields);
+            for (String fieldName : compositeFields.keySet()) {
+                // if this is an overloaded event field, we are replacing the existing data
+                if (ingestHelper.isOverloadedCompositeField(fieldName))
+                    fields.removeAll(fieldName);
+                fields.putAll(fieldName, compositeFields.get(fieldName));
             }
             
-            for (int i = 0; i < wktData.length; i++) {
-                record.clear();
-                record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
-                record.setRawFileName("geodata_" + recNum + ".dat");
-                record.setRawRecordNumber(recNum++);
-                record.setDate(formatter.parse(beginDate).getTime() + dates[i]);
-                record.setRawData((wktData[i] + "|" + ((wktByteLengthData[i] != null) ? Integer.toString(wktByteLengthData[i]) : "")).getBytes("UTF8"));
-                record.generateId(null);
-                record.setVisibility(new ColumnVisibility(AUTHS));
-                
-                final Multimap<String,NormalizedContentInterface> fields = ingestHelper.getEventFields(record);
-                
-                if (useCompositeIngest && ingestHelper instanceof CompositeIngest) {
-                    Multimap<String,NormalizedContentInterface> compositeFields = ingestHelper.getCompositeFields(fields);
-                    for (String fieldName : compositeFields.keySet()) {
-                        // if this is an overloaded event field, we are replacing the existing data
-                        if (ingestHelper.isOverloadedCompositeField(fieldName))
-                            fields.removeAll(fieldName);
-                        fields.putAll(fieldName, compositeFields.get(fieldName));
-                    }
-                }
-                
-                Multimap kvPairs = dataTypeHandler.processBulk(new Text(), record, fields, new MockStatusReporter());
-                
-                keyValues.putAll(kvPairs);
-                
-                dataTypeHandler.getMetadata().addEvent(ingestHelper, record, fields);
-            }
+            Multimap kvPairs = dataTypeHandler.processBulk(new Text(), record, fields, new MockStatusReporter());
+            
+            keyValues.putAll(kvPairs);
+            
+            dataTypeHandler.getMetadata().addEvent(ingestHelper, record, fields);
         }
+        
         keyValues.putAll(dataTypeHandler.getMetadata().getBulkMetadata());
         
         // write these values to their respective tables
@@ -274,7 +251,6 @@ public class CompositeIndexTest {
         conf.set(DATA_TYPE_NAME + BaseIngestHelper.COMPOSITE_FIELD_NAMES, compositeFieldName);
         conf.set(DATA_TYPE_NAME + BaseIngestHelper.COMPOSITE_FIELD_MEMBERS, GEO_FIELD + "." + WKT_BYTE_LENGTH_FIELD);
         conf.set(DATA_TYPE_NAME + BaseIngestHelper.COMPOSITE_FIELDS_FIXED_LENGTH, compositeFieldName);
-        conf.set(DATA_TYPE_NAME + BaseIngestHelper.COMPOSITE_FIELDS_TRANSITION_DATES, compositeFieldName + "|" + COMPOSITE_BEGIN_DATE);
         
         conf.set(DATA_TYPE_NAME + BaseIngestHelper.INDEX_FIELDS, GEO_FIELD + ((!compositeFieldName.equals(GEO_FIELD)) ? "," + compositeFieldName : ""));
         conf.set(DATA_TYPE_NAME + "." + GEO_FIELD + BaseIngestHelper.FIELD_TYPE, GeometryType.class.getName());
@@ -324,100 +300,60 @@ public class CompositeIndexTest {
     
     @Test
     public void compositeWithoutIvaratorTest() throws Exception {
-        // @formatter:off
-        String query = "((" + GEO_FIELD + " >= '0202' && " + GEO_FIELD + " <= '020d') || " +
-                "(" + GEO_FIELD + " >= '030a' && " + GEO_FIELD + " <= '0335') || " +
-                "(" + GEO_FIELD + " >= '0428' && " + GEO_FIELD + " <= '0483') || " +
-                "(" + GEO_FIELD + " >= '0500aa' && " + GEO_FIELD + " <= '050355') || " +
-                "(" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa' && " + GEO_FIELD + " <= '1f36c71c71c71c71c7')) && " +
-                "(" + WKT_BYTE_LENGTH_FIELD + " >= 0 && " + WKT_BYTE_LENGTH_FIELD + " < 80)";
-        // @formatter:on
+        String query = "((" + GEO_FIELD + " >= '0311' && " + GEO_FIELD + " <= '0312') && " + WKT_BYTE_LENGTH_FIELD + " == 15) ||" + "(" + GEO_FIELD
+                        + " == '1f20aaaaaaaaaaaaaa' && (" + WKT_BYTE_LENGTH_FIELD + " >= 59 && " + WKT_BYTE_LENGTH_FIELD + " <= 61)) ||" + "(" + GEO_FIELD
+                        + " == '1f0aaaaaaaaaaaaaaa' && " + WKT_BYTE_LENGTH_FIELD + " == 22)";
         
         List<QueryData> queries = getQueryRanges(query, false);
-        Assert.assertEquals(11, queries.size());
+        Assert.assertEquals(3, queries.size());
         
         List<DefaultEvent> events = getQueryResults(query, false);
         
-        List<String> wktList = new ArrayList<>();
-        wktList.addAll(Arrays.asList(wktLegacyData));
-        wktList.addAll(Arrays.asList(wktCompositeData));
-        
-        List<Integer> wktByteLengthList = new ArrayList<>();
-        wktByteLengthList.addAll(Arrays.asList(wktByteLengthLegacyData));
-        wktByteLengthList.addAll(Arrays.asList(wktByteLengthCompositeData));
-        
         for (DefaultEvent event : events) {
-            String wkt = null;
-            Integer wktByteLength = null;
+            List<String> wkt = new ArrayList<>();
+            List<Integer> wktByteLength = new ArrayList<>();
             
             for (DefaultField field : event.getFields()) {
                 if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
+                    wkt.add(field.getValueString());
                 else if (field.getName().equals(WKT_BYTE_LENGTH_FIELD))
-                    wktByteLength = Integer.parseInt(field.getValueString());
+                    wktByteLength.add(Integer.parseInt(field.getValueString()));
             }
             
-            // shouldn't get back a null wktByteLength
-            Assert.assertNotNull(wktByteLength);
-            
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(wktList.remove(wkt));
-            Assert.assertTrue(wktByteLengthList.remove(wktByteLength));
+            TestData result = new TestData(wkt, wktByteLength);
+            Assert.assertTrue(testData.contains(result));
         }
         
-        Assert.assertEquals(3, wktList.size());
-        Assert.assertEquals(3, wktByteLengthList.size());
-        
-        Assert.assertEquals(9, events.size());
+        Assert.assertEquals(3, events.size());
     }
     
     @Test
     public void compositeWithIvaratorTest() throws Exception {
-        // @formatter:off
-        String query = "((" + GEO_FIELD + " >= '0202' && " + GEO_FIELD + " <= '020d') || " +
-                "(" + GEO_FIELD + " >= '030a' && " + GEO_FIELD + " <= '0335') || " +
-                "(" + GEO_FIELD + " >= '0428' && " + GEO_FIELD + " <= '0483') || " +
-                "(" + GEO_FIELD + " >= '0500aa' && " + GEO_FIELD + " <= '050355') || " +
-                "(" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa' && " + GEO_FIELD + " <= '1f36c71c71c71c71c7')) && " +
-                "(" + WKT_BYTE_LENGTH_FIELD + " >= 0 && " + WKT_BYTE_LENGTH_FIELD + " < 80)";
-        // @formatter:on
+        String query = "((" + GEO_FIELD + " >= '0311' && " + GEO_FIELD + " <= '0312') && " + WKT_BYTE_LENGTH_FIELD + " == 15) ||" + "(" + GEO_FIELD
+                        + " == '1f20aaaaaaaaaaaaaa' && (" + WKT_BYTE_LENGTH_FIELD + " >= 59 && " + WKT_BYTE_LENGTH_FIELD + " <= 61)) ||" + "(" + GEO_FIELD
+                        + " == '1f0aaaaaaaaaaaaaaa' && " + WKT_BYTE_LENGTH_FIELD + " == 22)";
         
         List<QueryData> queries = getQueryRanges(query, true);
         Assert.assertEquals(732, queries.size());
         
         List<DefaultEvent> events = getQueryResults(query, true);
         
-        List<String> wktList = new ArrayList<>();
-        wktList.addAll(Arrays.asList(wktLegacyData));
-        wktList.addAll(Arrays.asList(wktCompositeData));
-        
-        List<Integer> wktByteLengthList = new ArrayList<>();
-        wktByteLengthList.addAll(Arrays.asList(wktByteLengthLegacyData));
-        wktByteLengthList.addAll(Arrays.asList(wktByteLengthCompositeData));
-        
         for (DefaultEvent event : events) {
-            String wkt = null;
-            Integer wktByteLength = null;
+            List<String> wkt = new ArrayList<>();
+            List<Integer> wktByteLength = new ArrayList<>();
             
             for (DefaultField field : event.getFields()) {
                 if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
+                    wkt.add(field.getValueString());
                 else if (field.getName().equals(WKT_BYTE_LENGTH_FIELD))
-                    wktByteLength = Integer.parseInt(field.getValueString());
+                    wktByteLength.add(Integer.parseInt(field.getValueString()));
             }
             
-            // shouldn't get back a null wktByteLength
-            Assert.assertNotNull(wktByteLength);
-            
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(wktList.remove(wkt));
-            Assert.assertTrue(wktByteLengthList.remove(wktByteLength));
+            TestData result = new TestData(wkt, wktByteLength);
+            Assert.assertTrue(testData.contains(result));
         }
         
-        Assert.assertEquals(3, wktList.size());
-        Assert.assertEquals(3, wktByteLengthList.size());
-        
-        Assert.assertEquals(9, events.size());
+        Assert.assertEquals(3, events.size());
     }
     
     private List<QueryData> getQueryRanges(String queryString, boolean useIvarator) throws Exception {
@@ -531,14 +467,21 @@ public class CompositeIndexTest {
         public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer record) {
             Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
             
-            String[] values = new String(record.getRawData()).split("\\|");
-            
-            NormalizedContentInterface geo_nci = new NormalizedFieldAndValue(GEO_FIELD, values[0]);
-            eventFields.put(GEO_FIELD, geo_nci);
-            
-            if (values.length > 1) {
-                NormalizedContentInterface wktByteLength_nci = new NormalizedFieldAndValue(WKT_BYTE_LENGTH_FIELD, values[1]);
-                eventFields.put(WKT_BYTE_LENGTH_FIELD, wktByteLength_nci);
+            try {
+                TestData entry = TestData.fromString(new String(record.getRawData(), "UTF8"));
+                
+                for (int i = 0; i < entry.wktData.size(); i++) {
+                    NormalizedContentInterface geo_nci = new NormalizedFieldAndValue(GEO_FIELD, entry.wktData.get(i), Integer.toString(i), null);
+                    eventFields.put(GEO_FIELD, geo_nci);
+                }
+                
+                for (int i = 0; i < entry.numData.size(); i++) {
+                    NormalizedContentInterface wktByteLength_nci = new NormalizedFieldAndValue(WKT_BYTE_LENGTH_FIELD, Integer.toString(entry.numData.get(i)),
+                                    Integer.toString(i), null);
+                    eventFields.put(WKT_BYTE_LENGTH_FIELD, wktByteLength_nci);
+                }
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
             }
             
             return normalizeMap(eventFields);
