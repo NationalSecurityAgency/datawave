@@ -11,6 +11,7 @@ import org.apache.deltaspike.core.api.jmx.MBean;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RunAs;
@@ -40,7 +41,9 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 @PermitAll
@@ -196,6 +199,26 @@ public class HealthBean {
         return Response.ok().entity(response).build();
     }
     
+    @GET
+    @Path("/info")
+    @JmxManaged
+    public VersionInfo versionInfo() {
+        String buildTime = null;
+        GitInfo gitInfo = null;
+        try {
+            Properties gitProps = PropertiesLoaderUtils.loadAllProperties("git.properties");
+            CommitInfo ci = new CommitInfo(gitProps.getProperty("git.commit.time"), gitProps.getProperty("git.commit.id.abbrev"));
+            gitInfo = new GitInfo(ci, gitProps.getProperty("git.branch"));
+            buildTime = gitProps.getProperty("git.build.time");
+        } catch (IOException e) {
+            // Ignore -- we just won't have git info.
+        }
+        
+        String version = getClass().getPackage().getImplementationVersion();
+        BuildInfo buildInfo = new BuildInfo(version, buildTime);
+        return new VersionInfo(buildInfo, gitInfo);
+    }
+    
     @XmlRootElement
     @XmlAccessorType(XmlAccessType.NONE)
     public static class ServerHealth {
@@ -233,6 +256,102 @@ public class HealthBean {
         
         public long getSwapBytesUsed() {
             return swapBytesUsed;
+        }
+    }
+    
+    @XmlRootElement
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class VersionInfo {
+        private BuildInfo build;
+        private GitInfo git;
+        
+        public VersionInfo() {
+            // Constructor required for JAX-B
+        }
+        
+        public VersionInfo(BuildInfo build, GitInfo git) {
+            this.build = build;
+            this.git = git;
+        }
+        
+        public BuildInfo getBuild() {
+            return build;
+        }
+        
+        public GitInfo getGit() {
+            return git;
+        }
+    }
+    
+    @XmlRootElement
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class BuildInfo {
+        private String version;
+        private String time;
+        
+        public BuildInfo() {
+            // Constructor required for JAX-B
+        }
+        
+        public BuildInfo(String version, String time) {
+            this.version = version;
+            this.time = time;
+        }
+        
+        public String getVersion() {
+            return version;
+        }
+        
+        public String getTime() {
+            return time;
+        }
+    }
+    
+    @XmlRootElement
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class GitInfo {
+        private CommitInfo commit;
+        private String branch;
+        
+        public GitInfo() {
+            // Constructor required for JAX-B
+        }
+        
+        public GitInfo(CommitInfo commit, String branch) {
+            this.commit = commit;
+            this.branch = branch;
+        }
+        
+        public CommitInfo getCommit() {
+            return commit;
+        }
+        
+        public String getBranch() {
+            return branch;
+        }
+    }
+    
+    @XmlRootElement
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class CommitInfo {
+        private String time;
+        private String id;
+        
+        public CommitInfo() {
+            // Constructor required for JAX-B
+        }
+        
+        public CommitInfo(String time, String id) {
+            this.time = time;
+            this.id = id;
+        }
+        
+        public String getTime() {
+            return time;
+        }
+        
+        public String getId() {
+            return id;
         }
     }
 }
