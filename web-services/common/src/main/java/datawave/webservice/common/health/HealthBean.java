@@ -11,13 +11,13 @@ import org.apache.deltaspike.core.api.jmx.MBean;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RunAs;
 import javax.ejb.LocalBean;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
@@ -43,6 +43,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -72,6 +74,9 @@ public class HealthBean {
     @Inject
     @ConfigProperty(name = "dw.health.shutdown.check.interval.ms", defaultValue = "15000")
     private long queryCompletionWaitIntervalMillis;
+    
+    @Inject
+    private Instance<HealthInfoContributor> healthInfos;
     
     /**
      * Returns a {@link ServerHealth} object, which indicates the current health of the server. This object contains information regarding the operating system
@@ -202,21 +207,12 @@ public class HealthBean {
     @GET
     @Path("/info")
     @JmxManaged
-    public VersionInfo versionInfo() {
-        String buildTime = null;
-        GitInfo gitInfo = null;
-        try {
-            Properties gitProps = PropertiesLoaderUtils.loadAllProperties("git.properties");
-            CommitInfo ci = new CommitInfo(gitProps.getProperty("git.commit.time"), gitProps.getProperty("git.commit.id.abbrev"));
-            gitInfo = new GitInfo(ci, gitProps.getProperty("git.branch"));
-            buildTime = gitProps.getProperty("git.build.time");
-        } catch (IOException e) {
-            // Ignore -- we just won't have git info.
+    public List<VersionInfo> versionInfo() {
+        ArrayList<VersionInfo> versionInfos = new ArrayList<>();
+        for (HealthInfoContributor contributor : healthInfos) {
+            versionInfos.add(contributor.versionInfo());
         }
-        
-        String version = getClass().getPackage().getImplementationVersion();
-        BuildInfo buildInfo = new BuildInfo(version, buildTime);
-        return new VersionInfo(buildInfo, gitInfo);
+        return versionInfos;
     }
     
     @XmlRootElement
@@ -262,6 +258,7 @@ public class HealthBean {
     @XmlRootElement
     @XmlAccessorType(XmlAccessType.FIELD)
     public static class VersionInfo {
+        private String name;
         private BuildInfo build;
         private GitInfo git;
         
@@ -269,9 +266,14 @@ public class HealthBean {
             // Constructor required for JAX-B
         }
         
-        public VersionInfo(BuildInfo build, GitInfo git) {
+        public VersionInfo(String name, BuildInfo build, GitInfo git) {
+            this.name = name;
             this.build = build;
             this.git = git;
+        }
+        
+        public String getName() {
+            return name;
         }
         
         public BuildInfo getBuild() {
