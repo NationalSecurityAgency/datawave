@@ -1,5 +1,6 @@
 package datawave.query.transformer;
 
+import datawave.webservice.query.logic.FlushableQueryLogicTransformer;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -63,13 +64,11 @@ import com.google.common.collect.Sets;
  * Document. Once we move toward a nested event, we can have a simpler approach.
  *
  */
-public class DocumentTransformer extends EventQueryTransformer implements WritesQueryMetrics, WritesResultCardinalities {
+public class DocumentTransformer extends EventQueryTransformer implements WritesQueryMetrics, WritesResultCardinalities, FlushableQueryLogicTransformer {
     
     protected DocumentDeserializer deserializer;
     
     protected Boolean reducedResponse;
-    
-    protected List<String> contentFieldNames = Collections.emptyList();
     
     private static final Logger log = Logger.getLogger(DocumentTransformer.class);
     private static final Map<String,String> EMPTY_MARKINGS = new HashMap<>();
@@ -86,7 +85,8 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
     private long logicCreated = System.currentTimeMillis();
     private Set<String> projectFields = Collections.emptySet();
     private Set<String> blacklistedFields = Collections.emptySet();
-    private Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
+    
+    private List<DocumentTransform> transforms = new ArrayList<>();
     
     /*
      * The 'HIT_TERM' feature required that an attribute value also contain the attribute's field name. The current implementation does it by prepending the
@@ -165,79 +165,89 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
     }
     
     @Override
-    public Object transform(Object input) {
-        if (null == input)
-            throw new IllegalArgumentException("Input cannot be null");
+    public Object flush() throws EmptyObjectException {
+        Entry<Key,Document> documentEntry = null;
+        boolean flushedObjectFound = false;
+        for (DocumentTransform transform : transforms) {
+            if (documentEntry == null) {
+                // if we had found a flushed object, but a subsequent transform returned null, then we need to try this again later.
+                // throwing EmptyObjectException will force the DatawaveTransformIterator to do as such
+                if (flushedObjectFound) {
+                    throw new EmptyObjectException();
+                }
+                documentEntry = transform.flush();
+                if (documentEntry != null) {
+                    flushedObjectFound = true;
+                }
+            } else {
+                documentEntry = transform.apply(documentEntry);
+            }
+        }
         
-        Object output = null;
-        
-        Key documentKey = null;
-        Document document = null;
-        String dataType = null;
-        String uid = null;
-        
+        if (flushedObjectFound) {
+            return _transform(documentEntry);
+        } else {
+            return null;
+        }
+    }
+    
+    @Override
+    public Object transform(Object input) throws EmptyObjectException {
         if (input instanceof Entry<?,?>) {
             @SuppressWarnings("unchecked")
             Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
             
             Entry<Key,Document> documentEntry = deserializer.apply(entry);
-            
-            documentKey = correctKey(documentEntry.getKey());
-            document = documentEntry.getValue();
-            
-            if (null == documentKey || null == document)
-                throw new IllegalArgumentException("Null key or value. Key:" + documentKey + ", Value: " + entry.getValue());
-            
-            extractMetrics(document, documentKey);
-            document.debugDocumentSize(documentKey);
-            
-            String row = documentKey.getRow().toString();
-            
-            String colf = documentKey.getColumnFamily().toString();
-            
-            int index = colf.indexOf("\0");
-            Preconditions.checkArgument(-1 != index);
-            
-            dataType = colf.substring(0, index);
-            uid = colf.substring(index + 1);
-            
-            // We don't have to consult the Document to rebuild the Visibility, the key
-            // should have the correct top-level visibility
-            ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
-            
-            try {
-                
-                for (String contentFieldName : this.contentFieldNames) {
-                    if (document.containsKey(contentFieldName)) {
-                        Attribute<?> contentField = document.remove(contentFieldName);
-                        if (contentField.getData().toString().equalsIgnoreCase("true")) {
-                            Content c = new Content(uid, contentField.getMetadata(), document.isToKeep());
-                            document.put(contentFieldName, c, false, this.reducedResponse);
-                        }
-                    }
+            for (DocumentTransform transform : transforms) {
+                if (documentEntry != null) {
+                    documentEntry = transform.apply(documentEntry);
+                } else {
+                    break;
                 }
-                
-                for (String primaryField : this.primaryToSecondaryFieldMap.keySet()) {
-                    if (!document.containsKey(primaryField)) {
-                        for (String secondaryField : this.primaryToSecondaryFieldMap.get(primaryField)) {
-                            if (document.containsKey(secondaryField)) {
-                                document.put(primaryField, document.get(secondaryField), false, this.reducedResponse);
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                // build response method here
-                output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
-                
-            } catch (Exception ex) {
-                log.error("Error building response document", ex);
-                throw new RuntimeException(ex);
             }
             
+            return _transform(documentEntry);
         } else {
             throw new IllegalArgumentException("Invalid input type: " + input.getClass());
+        }
+    }
+    
+    private Object _transform(Entry<Key,Document> documentEntry) throws EmptyObjectException {
+        if (documentEntry == null) {
+            // buildResponse will return a null object if there was only metadata in the document
+            throw new EmptyObjectException();
+        }
+        
+        Key documentKey = correctKey(documentEntry.getKey());
+        Document document = documentEntry.getValue();
+        
+        if (null == documentKey || null == document)
+            throw new IllegalArgumentException("Null key or value. Key:" + documentKey + ", Value: " + documentEntry.getValue());
+        
+        extractMetrics(document, documentKey);
+        document.debugDocumentSize(documentKey);
+        
+        String row = documentKey.getRow().toString();
+        
+        String colf = documentKey.getColumnFamily().toString();
+        
+        int index = colf.indexOf("\0");
+        Preconditions.checkArgument(-1 != index);
+        
+        String dataType = colf.substring(0, index);
+        String uid = colf.substring(index + 1);
+        
+        // We don't have to consult the Document to rebuild the Visibility, the key
+        // should have the correct top-level visibility
+        ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
+        
+        Object output = null;
+        try {
+            // build response method here
+            output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
+        } catch (Exception ex) {
+            log.error("Error building response document", ex);
+            throw new RuntimeException(ex);
         }
         
         if (output == null) {
@@ -627,14 +637,20 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
         }
     }
     
-    @Override
-    public List<String> getContentFieldNames() {
-        return contentFieldNames;
+    /**
+     * Add a document transformer
+     * 
+     * @param transform
+     */
+    public void addTransform(DocumentTransform transform) {
+        transform.initialize(settings, markingFunctions);
+        transforms.add(transform);
     }
     
     @Override
     public void setContentFieldNames(List<String> contentFieldNames) {
-        this.contentFieldNames = contentFieldNames;
+        super.setContentFieldNames(contentFieldNames);
+        addTransform(new ContentTransform(contentFieldNames, reducedResponse));
     }
     
     public void setLogTimingDetails(Boolean logTimingDetails) {
@@ -666,6 +682,6 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
     }
     
     public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
-        this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;
+        addTransform(new FieldMappingTransform(primaryToSecondaryFieldMap, reducedResponse));
     }
 }

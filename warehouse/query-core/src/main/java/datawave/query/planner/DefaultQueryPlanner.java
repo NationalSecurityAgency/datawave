@@ -470,6 +470,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFieldsAsString(), true);
+        addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFieldsAsString(), true);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TYPE_METADATA_IN_HDFS, Boolean.toString(config.isTypeMetadataInHdfs()), true);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
@@ -1186,7 +1187,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
         Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields(), groupFields = config
-                        .getGroupFields();
+                        .getGroupFields(), uniqueFields = config.getUniqueFields();
         
         if (projectFields != null && !projectFields.isEmpty()) {
             projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
@@ -1199,11 +1200,19 @@ public class DefaultQueryPlanner extends QueryPlanner {
         if (groupFields != null && !groupFields.isEmpty()) {
             Collection<String> remappedGroupFields = queryModel.remapParameter(groupFields, inverseReverseModel);
             if (log.isTraceEnabled()) {
-                log.trace("Updated grouping set using query model to: " + groupFields);
+                log.trace("Updated grouping set using query model to: " + remappedGroupFields);
             }
-            config.setGroupFields(Sets.newHashSet(groupFields));
+            config.setGroupFields(Sets.newHashSet(remappedGroupFields));
             // if grouping is set, also set the projection to be the same
             config.setProjectFields(Sets.newHashSet(remappedGroupFields));
+        }
+        
+        if (uniqueFields != null && !uniqueFields.isEmpty()) {
+            Collection<String> remappedUniqueFields = queryModel.remapParameter(uniqueFields, inverseReverseModel);
+            if (log.isTraceEnabled()) {
+                log.trace("Updated unique set using query model to: " + remappedUniqueFields);
+            }
+            config.setUniqueFields(Sets.newHashSet(remappedUniqueFields));
         }
         
         if (config.getBlacklistedFields() != null && !config.getBlacklistedFields().isEmpty()) {

@@ -302,7 +302,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     protected boolean limitAnyFieldLookups = true;
     
-    protected Collection<String> groupFields;
+    protected Set<String> groupFields;
+    
+    protected Set<String> uniqueFields;
     
     private boolean accrueStats = false;
     
@@ -1155,7 +1157,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.failOutsideValidDateRange = failOutsideValidDateRange;
     }
     
-    public Collection<String> getGroupFields() {
+    public Set<String> getGroupFields() {
         return groupFields;
     }
     
@@ -1165,6 +1167,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     public String getGroupFieldsAsString() {
         return org.apache.commons.lang.StringUtils.join(this.getGroupFields(), Constants.PARAM_VALUE_SEP);
+    }
+    
+    public Set<String> getUniqueFields() {
+        return uniqueFields;
+    }
+    
+    public void setUniqueFields(Set<String> uniqueFields) {
+        this.uniqueFields = uniqueFields;
+    }
+    
+    public String getUniqueFieldsAsString() {
+        return org.apache.commons.lang.StringUtils.join(this.getUniqueFields(), Constants.PARAM_VALUE_SEP);
     }
     
     public void setHitList(boolean hitList) {
@@ -1629,6 +1643,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.setLimitFields(new HashSet<String>(copy.getLimitFields()));
         this.setLimitFieldsPreQueryEvaluation(copy.isLimitFieldsPreQueryEvaluation());
         this.setLimitFieldsField(copy.getLimitFieldsField());
+        this.setGroupFields(copy.getGroupFields());
+        this.setUniqueFields(copy.getUniqueFields());
         this.setQuery(copy.getQuery());
         Set<QueryImpl.Parameter> parameterSet = query.getParameters();
         for (QueryImpl.Parameter parameter : parameterSet) {

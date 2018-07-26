@@ -15,14 +15,14 @@ import org.apache.accumulo.core.data.Value;
 /**
  * Created on 9/13/16.
  */
-class DedupingIterator implements Iterator<Entry<Key,Value>> {
+class DeduppingIterator implements Iterator<Entry<Key,Value>> {
     private Iterator<Entry<Key,Value>> delegate;
     private Entry<Key,Value> next;
     private BloomFilter<byte[]> bloom = null;
     private HashSet<ByteSequence> seen;
     private final boolean DEBUG = true;
     
-    public DedupingIterator(Iterator<Entry<Key,Value>> iterator) {
+    public DeduppingIterator(Iterator<Entry<Key,Value>> iterator) {
         this.delegate = iterator;
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (DEBUG) {
