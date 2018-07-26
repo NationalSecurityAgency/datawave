@@ -235,6 +235,30 @@ public abstract class CompositeFunctionsTest {
     }
     
     @Test
+    public void testMatchesAtLeastCountOfWithOptionsFunction() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        if (log.isDebugEnabled()) {
+            log.debug("testMatchesAtLeastCountOf");
+        }
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAM,'MICHAEL','VINCENT','FREDO','TONY') "+
+                        "AND filter:options('include.grouping.context','true','hit.list','true')",
+
+                "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAME,'MICHAEL','VINCENT','FRED','TONY') "+
+                        "AND filter:options('include.grouping.context','true','hit.list','true')"
+        };
+        // @formatter:on
+        
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE"), Arrays.asList()};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+    }
+    
+    @Test
     public void testDateDelta() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
@@ -492,6 +516,40 @@ public abstract class CompositeFunctionsTest {
                 Arrays.asList("CORLEONE"), // family has child CONSTANZIA
                 Arrays.asList("CORLEONE", "CAPONE"), // family has child MICHAEL
                 Arrays.asList("CORLEONE"), Arrays.asList("CORLEONE")};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+    }
+    
+    @Test
+    public void testWithLuceneAndOptionsFunction() throws Exception {
+        logic.setParser(new LuceneToJexlQueryParser());
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        if (log.isDebugEnabled()) {
+            log.debug("testWithLucene");
+        }
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID:C* AND #OPTIONS('include.grouping.context', 'true')", // family name starts with 'C'
+                "UUID:SOPRANO AND #OPTIONS('include.grouping.context', 'true')", // family name is SOPRANO
+                "UUID:C* OR UUID:S*  AND #OPTIONS('include.grouping.context', 'true')", // family name starts with C or S
+                "(UUID:C* OR UUID:S*) AND #INCLUDE(NAM, 'CONSTANZIA')  AND #OPTIONS('include.grouping.context', 'true')", // family has child CONSTANZIA
+                "(UUID:C* OR UUID:S*) AND #INCLUDE(NAM, 'MICHAEL')  AND #OPTIONS('include.grouping.context', 'true')", // family has child MICHAEL
+                "#JEXL(\"$UUID == 'CORLEONE' AND filter:getAllMatches(NAM,'SANTINO').size() == 1\") AND #OPTIONS('include.grouping.context', 'true')", // test LUCENE function to deliver jexl
+                "UUID:CORLEONE AND #JEXL(\"filter:getAllMatches(NAM,'SANTINO').size() == 1\") AND #OPTIONS('include.grouping.context', 'true')"
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("CAPONE", "CORLEONE"), // family name starts with 'C'
+                Arrays.asList("SOPRANO"), // family name is SOPRANO
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"), // family name starts with C or S
+                Arrays.asList("CORLEONE"), // family has child CONSTANZIA
+                Arrays.asList("CORLEONE", "CAPONE"), // family has child MICHAEL
+                Arrays.asList("CORLEONE"),
+                Arrays.asList("CORLEONE")
+        };
+        // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }

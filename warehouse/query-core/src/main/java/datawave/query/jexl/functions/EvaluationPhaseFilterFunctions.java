@@ -1185,6 +1185,18 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
+     * This is the query function to pass query option pairs to the ShardQueryConfiguration. It always evaluates to 'true' so that it does not need to be
+     * removed from the query after the args are parsed to the ShardQueryConfiguration
+     * 
+     * @param args
+     *            ignored here. used to pass key/value pairs to the query options
+     * @return true
+     */
+    public static boolean options(String[] args) {
+        return true;
+    }
+    
+    /**
      * A special format denoting the time since epoch format
      */
     public static final String TIME_SINCE_EPOCH_FORMAT = "e";

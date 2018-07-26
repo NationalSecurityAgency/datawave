@@ -1,0 +1,99 @@
+package datawave.query.jexl.visitors;
+
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Visits the query tree and if there is a filter:options function, extracts the parameters into a Map
+ *
+ */
+public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
+    private static final Logger log = Logger.getLogger(QueryOptionsFromQueryVisitor.class);
+    private List<String> optionsList = new ArrayList<>();
+    
+    /**
+     * If the passed userData is a Map, type cast and call the method to begin collection of the function arguments
+     * 
+     * @param node
+     *            potentially a filter:options function node
+     * @param data
+     *            userData
+     * @return the rebuilt node
+     */
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        if (data instanceof Map) {
+            return this.visit(node, (Map) data);
+        }
+        return super.visit(node, data);
+    }
+    
+    /**
+     * If this is the filter:options function, descend the tree with a List in the passed userdata. The function args will be collected into the List when
+     * visiting the child ASTStringLiteral nodes
+     * 
+     * @param node
+     *            the function node potentially for filter:options
+     * @param optionsMap
+     *            a Map to return option key/values
+     * @return the rebuilt node
+     */
+    private Object visit(ASTFunctionNode node, Map<String,String> optionsMap) {
+        // if this is the filter:options function, create a List for the userData to be passed to the child nodes
+        if (node.jjtGetChild(0).image.equals("filter") && node.jjtGetChild(1).image.equals("options")) {
+            List<String> optionsList = new ArrayList<>();
+            Object ret = this.visit(node, optionsList);
+            // Parse the options List pairs into the map as key,value,key,value....
+            for (int i = 0; i + 1 < optionsList.size(); i++) {
+                String key = optionsList.get(i++);
+                String value = optionsList.get(i);
+                optionsMap.put(key, value);
+            }
+            return ret;
+        }
+        return super.visit(node, optionsMap);
+    }
+    
+    /**
+     * if the passed data is a List, call the method that collects the node image strings
+     * 
+     * @param node
+     *            a string literal
+     * @param data
+     *            userData
+     * @return the rebuilt node
+     */
+    @Override
+    public Object visit(ASTStringLiteral node, Object data) {
+        if (data instanceof List) {
+            return this.visit(node, (List) data);
+        }
+        return super.visit(node, data);
+    }
+    
+    /**
+     * collect the node.image strings into the passed List
+     * 
+     * @param node
+     *            the ASTLiteralNode that is a child of the filter:options function
+     * @param list
+     *            a list for collecting the child image strings (the property key/values)
+     * @return
+     */
+    private Object visit(ASTStringLiteral node, List<String> list) {
+        list.add(node.image);
+        return super.visit(node, list);
+    }
+    
+    @SuppressWarnings("unchecked")
+    public static <T extends JexlNode> T collect(T node, Object data) {
+        QueryOptionsFromQueryVisitor visitor = new QueryOptionsFromQueryVisitor();
+        return (T) node.jjtAccept(visitor, data);
+    }
+}
