@@ -339,26 +339,24 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                     EXPIRATION_INTERVAL_MS = getLongProperty(EXPIRATION_INTERVAL_MS_PROP, DEFAULT_EXPIRATION_INTERVAL_MS); // 1 hour
                     ruleCache = CacheBuilder.newBuilder().refreshAfterWrite(UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS)
                                     .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new ReloadableCacheBuilder());
-                    SimpleTimer.getInstance(AccumuloConfiguration.getDefaultConfiguration()).schedule(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                long interval = getLongProperty(UPDATE_INTERVAL_MS_PROP, DEFAULT_UPDATE_INTERVAL_MS);
-                                long expiration = getLongProperty(EXPIRATION_INTERVAL_MS_PROP, DEFAULT_EXPIRATION_INTERVAL_MS);
-                                if (UPDATE_INTERVAL_MS != interval || EXPIRATION_INTERVAL_MS != expiration) {
-                                    log.info("Changing " + UPDATE_INTERVAL_MS_PROP + " to " + interval);
-                                    UPDATE_INTERVAL_MS = interval;
-                                    log.info("Changing " + EXPIRATION_INTERVAL_MS_PROP + " to " + expiration);
-                                    EXPIRATION_INTERVAL_MS = expiration;
-                                    ruleCache = CacheBuilder.newBuilder().refreshAfterWrite(UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS)
-                                                    .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new ReloadableCacheBuilder());
-                                }
-                            } catch (Throwable t) {
-                                log.error(t, t);
-                            }
-                        }
-                        
-                    }, 1000, 10 * 1000);
+                    SimpleTimer.getInstance(AccumuloConfiguration.getDefaultConfiguration()).schedule(
+                                    () -> {
+                                        try {
+                                            long interval = getLongProperty(UPDATE_INTERVAL_MS_PROP, DEFAULT_UPDATE_INTERVAL_MS);
+                                            long expiration = getLongProperty(EXPIRATION_INTERVAL_MS_PROP, DEFAULT_EXPIRATION_INTERVAL_MS);
+                                            if (UPDATE_INTERVAL_MS != interval || EXPIRATION_INTERVAL_MS != expiration) {
+                                                log.info("Changing " + UPDATE_INTERVAL_MS_PROP + " to " + interval);
+                                                UPDATE_INTERVAL_MS = interval;
+                                                log.info("Changing " + EXPIRATION_INTERVAL_MS_PROP + " to " + expiration);
+                                                EXPIRATION_INTERVAL_MS = expiration;
+                                                ruleCache = CacheBuilder.newBuilder().refreshAfterWrite(UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS)
+                                                                .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS)
+                                                                .build(new ReloadableCacheBuilder());
+                                            }
+                                        } catch (Throwable t) {
+                                            log.error(t, t);
+                                        }
+                                    }, 1000, 10 * 1000);
                 }
             }
         }

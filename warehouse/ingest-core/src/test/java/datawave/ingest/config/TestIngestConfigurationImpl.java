@@ -42,12 +42,7 @@ public class TestIngestConfigurationImpl implements IngestConfiguration {
     
     @Override
     public MimeDecoder createMimeDecoder() {
-        return new MimeDecoder() {
-            @Override
-            public byte[] decode(byte[] b) throws IOException {
-                return MimeUtility.decodeText(new String(b, "iso-8859-1")).getBytes();
-            }
-        };
+        return b -> MimeUtility.decodeText(new String(b, "iso-8859-1")).getBytes();
     }
     
     @Override

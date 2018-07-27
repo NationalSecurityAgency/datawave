@@ -46,30 +46,10 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
     public WikipediaRecordReader() {
         delegate = new ReaderDelegate();
         delegate.setEvent(INGEST_CONFIG.createRawRecordContainer());
-        delegate.setEventInitializer(new EventInitializer() {
-            @Override
-            public void initializeEvent(Configuration conf) throws IOException {
-                initializeEventSuperClass(conf);
-            }
-        });
-        delegate.setReaderInitializer(new ReaderInitializer() {
-            @Override
-            public void initialize(InputSplit split, TaskAttemptContext context) throws IOException {
-                initializeSuperClass(split, context);
-            }
-        });
-        delegate.setCurrentKeyReader(new KeyReader() {
-            @Override
-            public LongWritable readKey() {
-                return currentKey();
-            }
-        });
-        delegate.setCurrentValueReader(new ValueReader() {
-            @Override
-            public Text readValue() {
-                return currentVal();
-            }
-        });
+        delegate.setEventInitializer(this::initializeEventSuperClass);
+        delegate.setReaderInitializer(this::initializeSuperClass);
+        delegate.setCurrentKeyReader(this::currentKey);
+        delegate.setCurrentValueReader(this::currentVal);
         
     }
     

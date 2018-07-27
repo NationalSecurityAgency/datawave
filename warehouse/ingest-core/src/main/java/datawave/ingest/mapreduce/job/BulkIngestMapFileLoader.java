@@ -367,12 +367,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         try {
             if (shutdownPort > 0) {
                 final ServerSocket serverSocket = new ServerSocket(shutdownPort);
-                Runnable shutdownListener = new Runnable() {
-                    @Override
-                    public void run() {
-                        listenForShutdownCommand(serverSocket);
-                    }
-                };
+                Runnable shutdownListener = () -> listenForShutdownCommand(serverSocket);
                 Thread t = new Thread(shutdownListener, "shutdown-listener");
                 t.setDaemon(true);
                 t.start();
@@ -645,13 +640,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
         Path[] jobDirectories;
         if (files != null && files.length > 0) {
             final int order = (FIFO ? 1 : -1);
-            Arrays.sort(files, new Comparator<FileStatus>() {
-                @Override
-                public int compare(FileStatus o1, FileStatus o2) {
-                    long m1 = o1.getModificationTime();
-                    long m2 = o2.getModificationTime();
-                    return order * ((m1 < m2) ? -1 : ((m1 > m2) ? 1 : 0));
-                }
+            Arrays.sort(files, (o1, o2) -> {
+                long m1 = o1.getModificationTime();
+                long m2 = o2.getModificationTime();
+                return order * ((m1 < m2) ? -1 : ((m1 > m2) ? 1 : 0));
             });
             jobDirectories = new Path[Math.min(MAX_DIRECTORIES, files.length)];
             for (int i = 0; i < jobDirectories.length; i++) {
@@ -680,23 +672,20 @@ public final class BulkIngestMapFileLoader implements Runnable {
         FileStatus[] tableDirs = fs.globStatus(new Path(mapFilesDir, "*"));
         
         // sort the table dirs in priority order based on the configuration
-        Arrays.sort(tableDirs, new Comparator<FileStatus>() {
-            @Override
-            public int compare(FileStatus o1, FileStatus o2) {
-                Integer p1 = tablePriorities.get(o1.getPath().getName());
-                Integer p2 = tablePriorities.get(o2.getPath().getName());
-                if (p1 == null) {
-                    if (p2 == null) {
-                        return o1.getPath().getName().compareTo(o2.getPath().getName());
-                    } else {
-                        return 1;
-                    }
+        Arrays.sort(tableDirs, (o1, o2) -> {
+            Integer p1 = tablePriorities.get(o1.getPath().getName());
+            Integer p2 = tablePriorities.get(o2.getPath().getName());
+            if (p1 == null) {
+                if (p2 == null) {
+                    return o1.getPath().getName().compareTo(o2.getPath().getName());
                 } else {
-                    if (p2 == null) {
-                        return -1;
-                    } else {
-                        return p1.compareTo(p2);
-                    }
+                    return 1;
+                }
+            } else {
+                if (p2 == null) {
+                    return -1;
+                } else {
+                    return p1.compareTo(p2);
                 }
             }
         });
@@ -1072,41 +1061,38 @@ public final class BulkIngestMapFileLoader implements Runnable {
         
         for (final String file : files) {
             
-            renameCallables.add(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws IOException {
-                    if (file.contains("/flagged/")) {
-                        Path dst = new Path(file.replaceFirst("/flagged/", "/loaded/"));
-                        boolean mkdirs = sourceFs.mkdirs(dst.getParent());
-                        if (mkdirs) {
-                            boolean renamed = false;
-                            try {
-                                renamed = sourceFs.rename(new Path(file), dst);
-                            } catch (Exception e) {
-                                log.warn("Exception renaming " + file + " to " + dst, e);
-                                renamed = false;
-                            }
-                            if (!renamed) {
-                                // if the file is already in loaded and not in flagged,
-                                // then we do not need to fail here
-                                boolean flaggedExists = sourceFs.exists(new Path(file));
-                                boolean loadedExists = sourceFs.exists(dst);
-                                if (flaggedExists || !loadedExists) {
-                                    throw new IOException("Unable to rename " + file + " (exists=" + flaggedExists + ") to " + dst + " (exists=" + loadedExists
-                                                    + ")");
-                                } else {
-                                    log.warn("File was already moved to loaded: " + dst);
-                                    renamed = true;
-                                }
-                            }
-                            return Boolean.valueOf(renamed);
-                        } else {
-                            throw new IOException("Unable to create parent dir " + dst.getParent());
+            renameCallables.add(() -> {
+                if (file.contains("/flagged/")) {
+                    Path dst = new Path(file.replaceFirst("/flagged/", "/loaded/"));
+                    boolean mkdirs = sourceFs.mkdirs(dst.getParent());
+                    if (mkdirs) {
+                        boolean renamed = false;
+                        try {
+                            renamed = sourceFs.rename(new Path(file), dst);
+                        } catch (Exception e) {
+                            log.warn("Exception renaming " + file + " to " + dst, e);
+                            renamed = false;
                         }
-                        
+                        if (!renamed) {
+                            // if the file is already in loaded and not in flagged,
+                            // then we do not need to fail here
+                            boolean flaggedExists = sourceFs.exists(new Path(file));
+                            boolean loadedExists = sourceFs.exists(dst);
+                            if (flaggedExists || !loadedExists) {
+                                throw new IOException("Unable to rename " + file + " (exists=" + flaggedExists + ") to " + dst + " (exists=" + loadedExists
+                                                + ")");
+                            } else {
+                                log.warn("File was already moved to loaded: " + dst);
+                                renamed = true;
+                            }
+                        }
+                        return Boolean.valueOf(renamed);
+                    } else {
+                        throw new IOException("Unable to create parent dir " + dst.getParent());
                     }
-                    return Boolean.valueOf(false);
+                    
                 }
+                return Boolean.valueOf(false);
             });
         }
         try {

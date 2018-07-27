@@ -341,12 +341,7 @@ public class FlagMakerTest {
         fmc.setDistributorType("folderdate");
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
-        File[] flags = f.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.toString().endsWith("flag");
-            }
-        });
+        File[] flags = f.listFiles(pathname -> pathname.toString().endsWith("flag"));
         assertEquals("Incorrect number of flags: " + Arrays.toString(flags), 5, flags.length);
         HashSet<Long> buckets = new HashSet<>();
         DateUtils du = new DateUtils();

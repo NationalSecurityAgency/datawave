@@ -65,12 +65,7 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
     }
     
     private String regex = null;
-    private ThreadLocal<Pattern> pattern = new ThreadLocal<Pattern>() {
-        @Override
-        protected Pattern initialValue() {
-            return Pattern.compile(regex);
-        }
-    };
+    private ThreadLocal<Pattern> pattern = ThreadLocal.withInitial(() -> Pattern.compile(regex));
     
     // -------------------------------------------------------------------------
     // ------------- Constructors

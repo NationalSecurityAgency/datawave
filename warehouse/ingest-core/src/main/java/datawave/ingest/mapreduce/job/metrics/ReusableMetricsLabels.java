@@ -8,12 +8,7 @@ import java.util.TreeMap;
  */
 public class ReusableMetricsLabels {
     
-    private ThreadLocal<Map<String,String>> threadLocalMap = new ThreadLocal<Map<String,String>>() {
-        @Override
-        protected Map<String,String> initialValue() {
-            return new TreeMap<>();
-        }
-    };
+    private ThreadLocal<Map<String,String>> threadLocalMap = ThreadLocal.withInitial(TreeMap::new);
     
     /**
      * Add a new label

@@ -862,61 +862,58 @@ public class MapReduceBean {
         
         // Make final references for use in anonymous class
         final List<FileStatus> paths = resultFiles;
-        return new StreamingOutput() {
-            @Override
-            public void write(OutputStream output) throws IOException, WebApplicationException {
-                TarArchiveOutputStream tos = new TarArchiveOutputStream(output);
-                tos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
-                try {
-                    for (FileStatus fileStatus : paths) {
-                        if (fileStatus.isDirectory())
-                            continue;
-                        // The archive entry will be started when the first (and possibly only) chunk is
-                        // written out. It is done this way because we need to know the size of the file
-                        // for the archive entry, and don't want to scan twice to get that info (once
-                        // here and again in streamFile).
-                        String fileName = fileStatus.getPath().toUri().getPath().substring(jobDirectoryPathLength + 1);
-                        TarArchiveEntry entry = new TarArchiveEntry(jobId + "/" + fileName, false);
-                        entry.setSize(fileStatus.getLen());
-                        tos.putArchiveEntry(entry);
-                        FSDataInputStream fis = fs.open(fileStatus.getPath());
-                        byte[] buf = new byte[BUFFER_SIZE];
-                        int read;
-                        try {
+        return output -> {
+            TarArchiveOutputStream tos = new TarArchiveOutputStream(output);
+            tos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+            try {
+                for (FileStatus fileStatus : paths) {
+                    if (fileStatus.isDirectory())
+                        continue;
+                    // The archive entry will be started when the first (and possibly only) chunk is
+                    // written out. It is done this way because we need to know the size of the file
+                    // for the archive entry, and don't want to scan twice to get that info (once
+                    // here and again in streamFile).
+                    String fileName = fileStatus.getPath().toUri().getPath().substring(jobDirectoryPathLength + 1);
+                    TarArchiveEntry entry = new TarArchiveEntry(jobId + "/" + fileName, false);
+                    entry.setSize(fileStatus.getLen());
+                    tos.putArchiveEntry(entry);
+                    FSDataInputStream fis = fs.open(fileStatus.getPath());
+                    byte[] buf = new byte[BUFFER_SIZE];
+                    int read;
+                    try {
+                        read = fis.read(buf);
+                        while (read != -1) {
+                            tos.write(buf, 0, read);
                             read = fis.read(buf);
-                            while (read != -1) {
-                                tos.write(buf, 0, read);
-                                read = fis.read(buf);
-                            }
-                        } catch (Exception e) {
-                            log.error("Error writing result file to output", e);
-                            throw new WebApplicationException(e);
-                        } finally {
-                            try {
-                                if (null != fis)
-                                    fis.close();
-                            } catch (IOException e) {
-                                log.error("Error closing FSDataInputStream for file: " + fileStatus.getPath().getName(), e);
-                            }
                         }
-                        tos.closeArchiveEntry();
+                    } catch (Exception e) {
+                        log.error("Error writing result file to output", e);
+                        throw new WebApplicationException(e);
+                    } finally {
+                        try {
+                            if (null != fis)
+                                fis.close();
+                        } catch (IOException e) {
+                            log.error("Error closing FSDataInputStream for file: " + fileStatus.getPath().getName(), e);
+                        }
                     }
-                    tos.finish();
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                } finally {
-                    try {
-                        if (null != tos)
-                            tos.close();
-                    } catch (IOException ioe) {
-                        log.error("Error closing TarArchiveOutputStream", ioe);
-                    }
-                    try {
-                        if (null != fs)
-                            fs.close();
-                    } catch (IOException ioe) {
-                        log.error("Error closing HDFS client", ioe);
-                    }
+                    tos.closeArchiveEntry();
+                }
+                tos.finish();
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            } finally {
+                try {
+                    if (null != tos)
+                        tos.close();
+                } catch (IOException ioe) {
+                    log.error("Error closing TarArchiveOutputStream", ioe);
+                }
+                try {
+                    if (null != fs)
+                        fs.close();
+                } catch (IOException ioe) {
+                    log.error("Error closing HDFS client", ioe);
                 }
             }
         };

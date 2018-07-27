@@ -224,89 +224,87 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
     protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
                     Set<String> datatypeFilter, final Set<Text> fields, final boolean isReverse, long timeout) {
         final Set<String> myDatatypeFilter = datatypeFilter;
-        return new Callable<Boolean>() {
-            public Boolean call() {
-                Text holder = new Text();
-                try {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Do we have next? " + iter.hasNext());
-                        
-                    }
-                    while (iter.hasNext()) {
-                        
-                        Entry<Key,Value> entry = iter.next();
-                        
-                        if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
-                            throw new Exception("Exceeded fair threshold");
-                        }
-                        
-                        Key topKey = entry.getKey();
-                        
-                        if (log.isTraceEnabled()) {
-                            log.trace("Foward Index entry: " + entry.getKey().toString());
-                        }
-                        
-                        // Get the column qualifier from the key. It contains the datatype and normalizer class
-                        if (null != topKey.getColumnQualifier()) {
-                            String colq = topKey.getColumnQualifier().toString();
-                            int idx = colq.indexOf(Constants.NULL);
-                            
-                            if (idx != -1) {
-                                String type = colq.substring(idx + 1);
-                                
-                                // If types are specified and this type is not in the list, skip it.
-                                if (null != myDatatypeFilter && myDatatypeFilter.size() > 0 && !myDatatypeFilter.contains(type)) {
-                                    
-                                    if (log.isTraceEnabled())
-                                        log.trace(myDatatypeFilter + " does not contain " + type);
-                                    continue;
-                                }
-                                
-                                topKey.getRow(holder);
-                                String term;
-                                if (!isReverse)
-                                    term = holder.toString();
-                                else
-                                    term = (new StringBuilder(holder.toString())).reverse().toString();
-                                
-                                topKey.getColumnFamily(holder);
-                                String field = holder.toString();
-                                
-                                // We are only returning a mapping of field value to field name, no need to
-                                // determine cardinality and such at this point.
-                                fieldsToValues.put(field, term);
-                                // conditional states that if we exceed the key threshold OR field name is not null and we've exceeded
-                                // the value threshold for that field name ( in the case where we have a fielded lookup ).
-                                if (fieldsToValues.isKeyThresholdExceeded() || (fields.size() == 1 && fieldsToValues.get(field).isThresholdExceeded())) {
-                                    if (log.isTraceEnabled())
-                                        log.trace("We've passed term expansion threshold");
-                                    return true;
-                                }
-                            }
-                        }
+        return () -> {
+            Text holder = new Text();
+            try {
+                if (log.isTraceEnabled()) {
+                    log.trace("Do we have next? " + iter.hasNext());
+                    
+                }
+                while (iter.hasNext()) {
+                    
+                    Entry<Key,Value> entry = iter.next();
+                    
+                    if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
+                        throw new Exception("Exceeded fair threshold");
                     }
                     
-                } catch (Exception e) {
-                    log.info("Failed or Timed out expanding regex: " + e.getMessage());
-                    if (log.isDebugEnabled())
-                        log.debug("Failed or Timed out " + e);
-                    if (fields.size() >= 1) {
-                        for (Text fieldTxt : fields) {
-                            String field = fieldTxt.toString();
-                            if (log.isTraceEnabled()) {
-                                log.trace("field is " + field);
-                                log.trace("field is " + (null == fieldsToValues));
+                    Key topKey = entry.getKey();
+                    
+                    if (log.isTraceEnabled()) {
+                        log.trace("Foward Index entry: " + entry.getKey().toString());
+                    }
+                    
+                    // Get the column qualifier from the key. It contains the datatype and normalizer class
+                    if (null != topKey.getColumnQualifier()) {
+                        String colq = topKey.getColumnQualifier().toString();
+                        int idx = colq.indexOf(Constants.NULL);
+                        
+                        if (idx != -1) {
+                            String type = colq.substring(idx + 1);
+                            
+                            // If types are specified and this type is not in the list, skip it.
+                            if (null != myDatatypeFilter && myDatatypeFilter.size() > 0 && !myDatatypeFilter.contains(type)) {
+                                
+                                if (log.isTraceEnabled())
+                                    log.trace(myDatatypeFilter + " does not contain " + type);
+                                continue;
                             }
-                            fieldsToValues.put(field, "");
-                            fieldsToValues.get(field).setThresholdExceeded();
+                            
+                            topKey.getRow(holder);
+                            String term;
+                            if (!isReverse)
+                                term = holder.toString();
+                            else
+                                term = (new StringBuilder(holder.toString())).reverse().toString();
+                            
+                            topKey.getColumnFamily(holder);
+                            String field = holder.toString();
+                            
+                            // We are only returning a mapping of field value to field name, no need to
+                            // determine cardinality and such at this point.
+                            fieldsToValues.put(field, term);
+                            // conditional states that if we exceed the key threshold OR field name is not null and we've exceeded
+                            // the value threshold for that field name ( in the case where we have a fielded lookup ).
+                            if (fieldsToValues.isKeyThresholdExceeded() || (fields.size() == 1 && fieldsToValues.get(field).isThresholdExceeded())) {
+                                if (log.isTraceEnabled())
+                                    log.trace("We've passed term expansion threshold");
+                                return true;
+                            }
                         }
-                    } else
-                        fieldsToValues.setKeyThresholdExceeded();
-                    return false;
+                    }
                 }
                 
-                return true;
+            } catch (Exception e) {
+                log.info("Failed or Timed out expanding regex: " + e.getMessage());
+                if (log.isDebugEnabled())
+                    log.debug("Failed or Timed out " + e);
+                if (fields.size() >= 1) {
+                    for (Text fieldTxt : fields) {
+                        String field = fieldTxt.toString();
+                        if (log.isTraceEnabled()) {
+                            log.trace("field is " + field);
+                            log.trace("field is " + (null == fieldsToValues));
+                        }
+                        fieldsToValues.put(field, "");
+                        fieldsToValues.get(field).setThresholdExceeded();
+                    }
+                } else
+                    fieldsToValues.setKeyThresholdExceeded();
+                return false;
             }
+            
+            return true;
         };
     }
     

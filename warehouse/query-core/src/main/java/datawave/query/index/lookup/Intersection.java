@@ -235,12 +235,10 @@ public class Intersection implements IndexStream {
     }
     
     static Iterable<IndexInfo> convert(Iterable<? extends PeekingIterator<Tuple2<String,IndexInfo>>> i) {
-        final Function<PeekingIterator<Tuple2<String,IndexInfo>>,IndexInfo> f = new Function<PeekingIterator<Tuple2<String,IndexInfo>>,IndexInfo>() {
-            public IndexInfo apply(PeekingIterator<Tuple2<String,IndexInfo>> itr) {
-                if (log.isTraceEnabled())
-                    log.trace("ah" + itr.peek().first() + " " + itr.peek().second());
-                return itr.peek().second();
-            }
+        final Function<PeekingIterator<Tuple2<String,IndexInfo>>,IndexInfo> f = itr -> {
+            if (log.isTraceEnabled())
+                log.trace("ah" + itr.peek().first() + " " + itr.peek().second());
+            return itr.peek().second();
         };
         return Iterables.transform(i, f);
     }

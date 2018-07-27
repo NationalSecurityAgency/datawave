@@ -200,109 +200,107 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
     protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final IndexLookupMap fieldsToValues, ShardQueryConfiguration config,
                     Set<String> datatypeFilter, final Set<Text> fields, boolean isReverse, long timeout) {
         final Set<String> myDatatypeFilter = datatypeFilter;
-        return new Callable<Boolean>() {
-            public Boolean call() {
-                Text holder = new Text();
-                try {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Do we have next? " + iter.hasNext());
-                        
+        return () -> {
+            Text holder = new Text();
+            try {
+                if (log.isTraceEnabled()) {
+                    log.trace("Do we have next? " + iter.hasNext());
+                    
+                }
+                while (iter.hasNext()) {
+                    
+                    Entry<Key,Value> entry = iter.next();
+                    
+                    if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
+                        throw new Exception("Timeout exceeded for bounded range lookup");
                     }
-                    while (iter.hasNext()) {
-                        
-                        Entry<Key,Value> entry = iter.next();
-                        
-                        if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
-                            throw new Exception("Timeout exceeded for bounded range lookup");
-                        }
-                        Key k = entry.getKey();
-                        
-                        if (log.isTraceEnabled()) {
-                            log.trace("Foward Index entry: " + entry.getKey().toString());
-                        }
-                        
-                        k.getRow(holder);
-                        String uniqueTerm = holder.toString();
-                        
-                        SortedMap<Key,Value> keymap = WholeRowIterator.decodeRow(entry.getKey(), entry.getValue());
-                        
-                        String field = null;
-                        
-                        boolean foundDataType = false;
-                        
-                        for (Key topKey : keymap.keySet()) {
-                            if (null == field) {
-                                topKey.getColumnFamily(holder);
-                                field = holder.toString();
-                            }
-                            // Get the column qualifier from the key. It
-                            // contains the datatype and normalizer class
-                            
-                            if (null != topKey.getColumnQualifier()) {
-                                if (null != myDatatypeFilter && myDatatypeFilter.size() > 0) {
-                                    
-                                    String colq = topKey.getColumnQualifier().toString();
-                                    int idx = colq.indexOf(Constants.NULL);
-                                    
-                                    if (idx != -1) {
-                                        String type = colq.substring(idx + 1);
-                                        
-                                        // If types are specified and this type
-                                        // is not in the list, skip it.
-                                        if (myDatatypeFilter.contains(type)) {
-                                            
-                                            if (log.isTraceEnabled())
-                                                log.trace(myDatatypeFilter + " contains " + type);
-                                            foundDataType = true;
-                                            break;
-                                        }
-                                        
-                                    }
-                                } else
-                                    foundDataType = true;
-                            }
-                        }
-                        if (foundDataType) {
-                            
-                            // obtaining the size of a map can be expensive,
-                            // instead
-                            // track the count of each unique item added.
-                            fieldsToValues.put(field, uniqueTerm);
-                            
-                            // safety check...
-                            Preconditions.checkState(field.equals(literalRange.getFieldName()), "Got an unexpected field name when expanding range" + field
-                                            + " " + literalRange.getFieldName());
-                            
-                            // If this range expands into to many values, we can
-                            // stop
-                            if (fieldsToValues.get(field).isThresholdExceeded()) {
-                                return true;
-                                
-                            }
-                        }
+                    Key k = entry.getKey();
+                    
+                    if (log.isTraceEnabled()) {
+                        log.trace("Foward Index entry: " + entry.getKey().toString());
                     }
                     
-                } catch (Exception e) {
-                    log.info("Failed or timed out expanding range fields: " + e.getMessage());
-                    if (log.isDebugEnabled())
-                        log.debug("Failed or Timed out ", e);
-                    if (fields.size() >= 1) {
-                        for (Text fieldTxt : fields) {
-                            String field = fieldTxt.toString();
-                            if (log.isTraceEnabled()) {
-                                log.trace("field is " + field);
-                                log.trace("field is " + (null == fieldsToValues));
-                            }
-                            fieldsToValues.put(field, "");
-                            fieldsToValues.get(field).setThresholdExceeded();
+                    k.getRow(holder);
+                    String uniqueTerm = holder.toString();
+                    
+                    SortedMap<Key,Value> keymap = WholeRowIterator.decodeRow(entry.getKey(), entry.getValue());
+                    
+                    String field = null;
+                    
+                    boolean foundDataType = false;
+                    
+                    for (Key topKey : keymap.keySet()) {
+                        if (null == field) {
+                            topKey.getColumnFamily(holder);
+                            field = holder.toString();
                         }
-                    } else
-                        fieldsToValues.setKeyThresholdExceeded();
-                    return false;
+                        // Get the column qualifier from the key. It
+                        // contains the datatype and normalizer class
+                        
+                        if (null != topKey.getColumnQualifier()) {
+                            if (null != myDatatypeFilter && myDatatypeFilter.size() > 0) {
+                                
+                                String colq = topKey.getColumnQualifier().toString();
+                                int idx = colq.indexOf(Constants.NULL);
+                                
+                                if (idx != -1) {
+                                    String type = colq.substring(idx + 1);
+                                    
+                                    // If types are specified and this type
+                                    // is not in the list, skip it.
+                                    if (myDatatypeFilter.contains(type)) {
+                                        
+                                        if (log.isTraceEnabled())
+                                            log.trace(myDatatypeFilter + " contains " + type);
+                                        foundDataType = true;
+                                        break;
+                                    }
+                                    
+                                }
+                            } else
+                                foundDataType = true;
+                        }
+                    }
+                    if (foundDataType) {
+                        
+                        // obtaining the size of a map can be expensive,
+                        // instead
+                        // track the count of each unique item added.
+                        fieldsToValues.put(field, uniqueTerm);
+                        
+                        // safety check...
+                        Preconditions.checkState(field.equals(literalRange.getFieldName()), "Got an unexpected field name when expanding range" + field + " "
+                                        + literalRange.getFieldName());
+                        
+                        // If this range expands into to many values, we can
+                        // stop
+                        if (fieldsToValues.get(field).isThresholdExceeded()) {
+                            return true;
+                            
+                        }
+                    }
                 }
                 
-                return true;
+            } catch (Exception e) {
+                log.info("Failed or timed out expanding range fields: " + e.getMessage());
+                if (log.isDebugEnabled())
+                    log.debug("Failed or Timed out ", e);
+                if (fields.size() >= 1) {
+                    for (Text fieldTxt : fields) {
+                        String field = fieldTxt.toString();
+                        if (log.isTraceEnabled()) {
+                            log.trace("field is " + field);
+                            log.trace("field is " + (null == fieldsToValues));
+                        }
+                        fieldsToValues.put(field, "");
+                        fieldsToValues.get(field).setThresholdExceeded();
+                    }
+                } else
+                    fieldsToValues.setKeyThresholdExceeded();
+                return false;
             }
+            
+            return true;
         };
     }
     

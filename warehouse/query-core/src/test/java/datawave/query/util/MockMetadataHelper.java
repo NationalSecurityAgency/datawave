@@ -292,12 +292,7 @@ public class MockMetadataHelper extends MetadataHelper {
             return 0L;
         }
         
-        Iterable<Map.Entry<String,Long>> filteredByType = Iterables.filter(countsByType.entrySet(), new Predicate<Map.Entry<String,Long>>() {
-            @Override
-            public boolean apply(Map.Entry<String,Long> input) {
-                return datatypes.contains(input.getKey());
-            }
-        });
+        Iterable<Map.Entry<String,Long>> filteredByType = Iterables.filter(countsByType.entrySet(), input -> datatypes.contains(input.getKey()));
         
         long sum = 0;
         for (Map.Entry<String,Long> entry : filteredByType) {

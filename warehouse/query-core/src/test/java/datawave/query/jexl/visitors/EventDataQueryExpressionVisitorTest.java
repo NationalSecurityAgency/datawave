@@ -700,28 +700,26 @@ public class EventDataQueryExpressionVisitorTest {
         final AtomicInteger started = new AtomicInteger();
         final AtomicInteger running = new AtomicInteger();
         final AtomicInteger completed = new AtomicInteger();
-        Runnable runnable = new Runnable() {
-            public void run() {
-                try {
-                    final Map<String,? extends Predicate<Key>> filter = EventDataQueryExpressionVisitor.ExpressionFilter.clone(base);
-                    started.getAndIncrement();
-                    synchronized (gate) {
-                        gate.wait();
-                    }
-                    running.getAndIncrement();
-                    for (int i = 0; i < 1024; i++) {
-                        assertTrue(filter.get("FOO").apply(n1));
-                        assertTrue(filter.get("FOO").apply(p1));
-                        assertFalse(filter.get("FOO").apply(n1));
-                        assertTrue(filter.get("FOO").apply(p1));
-                        
-                        ExpressionFilter.reset(filter);
-                    }
-                } catch (InterruptedException e) {} catch (Throwable t) {
-                    exceptions.add(t);
+        Runnable runnable = () -> {
+            try {
+                final Map<String,? extends Predicate<Key>> filter = ExpressionFilter.clone(base);
+                started.getAndIncrement();
+                synchronized (gate) {
+                    gate.wait();
                 }
-                completed.getAndIncrement();
+                running.getAndIncrement();
+                for (int i = 0; i < 1024; i++) {
+                    assertTrue(filter.get("FOO").apply(n1));
+                    assertTrue(filter.get("FOO").apply(p1));
+                    assertFalse(filter.get("FOO").apply(n1));
+                    assertTrue(filter.get("FOO").apply(p1));
+                    
+                    ExpressionFilter.reset(filter);
+                }
+            } catch (InterruptedException e) {} catch (Throwable t) {
+                exceptions.add(t);
             }
+            completed.getAndIncrement();
         };
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(runnable);

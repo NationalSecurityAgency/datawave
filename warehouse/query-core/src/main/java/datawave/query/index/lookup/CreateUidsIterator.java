@@ -156,12 +156,8 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
         final String dataType = parseDataType(k);
         Uid.List docIds = Uid.List.parseFrom(v.get());
         final boolean ignore = docIds.getIGNORE();
-        List<String> uids = ignore || docIds.getUIDList() == null ? Collections.<String> emptyList() : Lists.transform(docIds.getUIDList(),
-                        new Function<String,String>() {
-                            public String apply(String s) {
-                                return dataType + "\u0000" + s.trim();
-                            }
-                        });
+        List<String> uids = ignore || docIds.getUIDList() == null ? Collections.<String> emptyList() : Lists.transform(docIds.getUIDList(), s -> dataType
+                        + "\u0000" + s.trim());
         return Tuples.tuple(docIds.getCOUNT(), ignore, uids);
     }
     

@@ -86,60 +86,46 @@ public class MultiRFileOutputFormatterTest {
         MultiRFileOutputFormatterTest.logger.info(String.format("createMockConfiguration: %d", mocked.hashCode()));
         
         mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
-                
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String value = (String) EasyMock.getCurrentArguments()[1];
-                
-                MultiRFileOutputFormatterTest.mockedConfiguration.put(key, value);
-                
-                return null;
-            }
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String value = (String) EasyMock.getCurrentArguments()[1];
             
+            MultiRFileOutputFormatterTest.mockedConfiguration.put(key, value);
+            
+            return null;
         }).anyTimes();
         
         mocked.setStrings(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            if (2 <= EasyMock.getCurrentArguments().length) {
                 
-                if (2 <= EasyMock.getCurrentArguments().length) {
+                String key = (String) EasyMock.getCurrentArguments()[0];
+                String[] values = new String[EasyMock.getCurrentArguments().length - 1];
+                
+                for (int index = 1; index <= values.length; index++) {
                     
-                    String key = (String) EasyMock.getCurrentArguments()[0];
-                    String[] values = new String[EasyMock.getCurrentArguments().length - 1];
-                    
-                    for (int index = 1; index <= values.length; index++) {
-                        
-                        values[index - 1] = (String) EasyMock.getCurrentArguments()[index];
-                    }
-                    
-                    MultiRFileOutputFormatterTest.mockedConfiguration.put(key, StringUtils.arrayToString(values));
+                    values[index - 1] = (String) EasyMock.getCurrentArguments()[index];
                 }
-                return null;
+                
+                MultiRFileOutputFormatterTest.mockedConfiguration.put(key, StringUtils.arrayToString(values));
             }
-            
+            return null;
         }).anyTimes();
         
         mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String value = (String) EasyMock.getCurrentArguments()[1];
+            
+            if (MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(key)) {
                 
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String value = (String) EasyMock.getCurrentArguments()[1];
-                
-                if (MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(key)) {
-                    
-                    value = MultiRFileOutputFormatterTest.mockedConfiguration.get(key);
-                }
-                
-                return value;
+                value = MultiRFileOutputFormatterTest.mockedConfiguration.get(key);
             }
+            
+            return value;
         }).anyTimes();
         
         PowerMock.replay(mocked);

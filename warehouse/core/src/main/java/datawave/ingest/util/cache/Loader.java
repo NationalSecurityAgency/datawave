@@ -74,13 +74,9 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
             }
         } else {
             
-            task = ListenableFutureTask.create(new Callable<V>() {
-                
-                @Override
-                public V call() throws Exception {
-                    build(null);
-                    return load(key);
-                }
+            task = ListenableFutureTask.create(() -> {
+                build(null);
+                return load(key);
             });
             
             executor.execute(task);

@@ -311,36 +311,33 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             List<Callable<Path>> callables = Lists.newArrayList();
             for (final InputFile inFile : inFiles) {
                 // Create the flagging directory
-                Callable<Path> mover = new Callable<Path>() {
-                    @Override
-                    public Path call() throws IOException {
-                        Path dstFlagging = getDestPath(inFile, "flagging", fc);
-                        if (directoryCache.getIfPresent(dstFlagging) == null && !fs.exists(dstFlagging.getParent())) {
-                            fs.mkdirs(dstFlagging.getParent());
-                            directoryCache.put(dstFlagging, dstFlagging);
-                        }
-                        // Create the flagged directory
-                        Path dstFlagged = getDestPath(inFile, "flagged", fc);
-                        if (directoryCache.getIfPresent(dstFlagged) == null && !fs.exists(dstFlagged.getParent())) {
-                            fs.mkdirs(dstFlagged.getParent());
-                            directoryCache.put(dstFlagged, dstFlagged);
-                        }
-                        // Check for existence of the file already in the flagging, flagged, or loaded directories
-                        Path dstLoaded = getDestPath(inFile, "loaded", fc);
-                        if (fs.exists(dstFlagged) || fs.exists(dstFlagging) || fs.exists(dstLoaded)) {
-                            log.warn("Unable to move file " + inFile.getDirectory() + "/" + inFile.getFileName()
-                                            + " as it already exists in the flagging, flagged, or loaded directory");
-                        } else {
-                            // now move the file into the flagging directory
-                            if (fs.rename(inFile.getPath(), dstFlagging)) {
-                                moved.put(inFile, dstFlagging);
-                                latestTime.set(Math.max(inFile.getTimestamp(), latestTime.get()));
-                            } else {
-                                log.error("Unable to move file " + inFile.getDirectory() + "/" + inFile.getFileName() + ", skipping");
-                            }
-                        }
-                        return dstLoaded;
+                Callable<Path> mover = () -> {
+                    Path dstFlagging = getDestPath(inFile, "flagging", fc);
+                    if (directoryCache.getIfPresent(dstFlagging) == null && !fs.exists(dstFlagging.getParent())) {
+                        fs.mkdirs(dstFlagging.getParent());
+                        directoryCache.put(dstFlagging, dstFlagging);
                     }
+                    // Create the flagged directory
+                    Path dstFlagged = getDestPath(inFile, "flagged", fc);
+                    if (directoryCache.getIfPresent(dstFlagged) == null && !fs.exists(dstFlagged.getParent())) {
+                        fs.mkdirs(dstFlagged.getParent());
+                        directoryCache.put(dstFlagged, dstFlagged);
+                    }
+                    // Check for existence of the file already in the flagging, flagged, or loaded directories
+                    Path dstLoaded = getDestPath(inFile, "loaded", fc);
+                    if (fs.exists(dstFlagged) || fs.exists(dstFlagging) || fs.exists(dstLoaded)) {
+                        log.warn("Unable to move file " + inFile.getDirectory() + "/" + inFile.getFileName()
+                                        + " as it already exists in the flagging, flagged, or loaded directory");
+                    } else {
+                        // now move the file into the flagging directory
+                        if (fs.rename(inFile.getPath(), dstFlagging)) {
+                            moved.put(inFile, dstFlagging);
+                            latestTime.set(Math.max(inFile.getTimestamp(), latestTime.get()));
+                        } else {
+                            log.error("Unable to move file " + inFile.getDirectory() + "/" + inFile.getFileName() + ", skipping");
+                        }
+                    }
+                    return dstLoaded;
                 };
                 // can look at I files that have a logical ts greater than the logical ts of the last compaction. that would indicate what has been imported
                 // since that compaction started. which is basically the pile up we've seen.
@@ -438,19 +435,16 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 final InputFile inFile = entry.getKey();
                 final Path dstFlagging = entry.getValue();
                 final Path dstFlagged = getDestPath(inFile, "flagged", fc);
-                Callable<Path> mover = new Callable<Path>() {
-                    @Override
-                    public Path call() throws Exception {
-                        if (fs.rename(dstFlagging, dstFlagged)) {
-                            moved.put(inFile, dstFlagged);
-                            if (fc.isCollectMetrics())
-                                ctx.getCounter(FlagFile.class.getSimpleName(), dstFlagged.getName()).setValue(System.currentTimeMillis());
-                        } else {
-                            throw new IOException("Unable to move file " + inFile.getDirectory() + "/" + inFile.getFileName());
-                        }
-                        
-                        return dstFlagged;
+                Callable<Path> mover = () -> {
+                    if (fs.rename(dstFlagging, dstFlagged)) {
+                        moved.put(inFile, dstFlagged);
+                        if (fc.isCollectMetrics())
+                            ctx.getCounter(FlagFile.class.getSimpleName(), dstFlagged.getName()).setValue(System.currentTimeMillis());
+                    } else {
+                        throw new IOException("Unable to move file " + inFile.getDirectory() + "/" + inFile.getFileName());
                     }
+                    
+                    return dstFlagged;
                 };
                 callables.add(mover);
             }

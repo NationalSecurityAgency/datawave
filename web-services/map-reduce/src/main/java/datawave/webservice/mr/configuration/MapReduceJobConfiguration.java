@@ -274,12 +274,7 @@ public class MapReduceJobConfiguration {
             QueryException qe = new QueryException(DatawaveErrorCode.DFS_DIRECTORY_READ_ERROR, MessageFormat.format("directory: {0}", libDir));
             throw qe;
         }
-        FilenameFilter jarFilter = new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.toLowerCase().endsWith(".jar");
-            }
-        };
+        FilenameFilter jarFilter = (dir, name) -> name.toLowerCase().endsWith(".jar");
         File[] jarFiles = libDir.listFiles(jarFilter);
         if (jarFiles != null) {
             for (File jar : jarFiles) {

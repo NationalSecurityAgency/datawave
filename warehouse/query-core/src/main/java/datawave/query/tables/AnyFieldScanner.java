@@ -74,20 +74,17 @@ public class AnyFieldScanner extends ScannerSession {
      */
     @Override
     protected Executor executor() {
-        return new Executor() {
-            @Override
-            public void execute(Runnable command) {
-                String name = serviceName();
-                Preconditions.checkNotNull(name);
-                Preconditions.checkNotNull(command);
-                Thread result = MoreExecutors.platformThreadFactory().newThread(command);
-                try {
-                    result.setName(name);
-                } catch (SecurityException e) {
-                    // OK if we can't set the name in this environment.
-                }
-                result.start();
+        return command -> {
+            String name = serviceName();
+            Preconditions.checkNotNull(name);
+            Preconditions.checkNotNull(command);
+            Thread result = MoreExecutors.platformThreadFactory().newThread(command);
+            try {
+                result.setName(name);
+            } catch (SecurityException e) {
+                // OK if we can't set the name in this environment.
             }
+            result.start();
         };
     }
     
