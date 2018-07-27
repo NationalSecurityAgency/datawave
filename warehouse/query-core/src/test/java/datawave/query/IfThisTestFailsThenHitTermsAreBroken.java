@@ -2,8 +2,8 @@ package datawave.query;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import com.google.common.io.Files;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
@@ -38,18 +38,15 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
-import java.io.IOException;
+import java.io.File;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -78,6 +75,8 @@ import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
  * different fields in the returned documents will have the correct hit terms.
  *
  * The same tests are made against document ranges and shard ranges
+ *
+ * If this test fails, then hit terms are broken... maybe... probably...
  * 
  */
 public class IfThisTestFailsThenHitTermsAreBroken {
@@ -85,11 +84,6 @@ public class IfThisTestFailsThenHitTermsAreBroken {
     static enum WhatKindaRange {
         SHARD, DOCUMENT;
     }
-    
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-    
-    private static List<TemporaryFolder> staticTempFolders = Lists.newArrayList();
     
     private static final Logger log = Logger.getLogger(IfThisTestFailsThenHitTermsAreBroken.class);
     
@@ -134,34 +128,21 @@ public class IfThisTestFailsThenHitTermsAreBroken {
     @AfterClass
     public static void teardown() {
         TypeRegistry.reset();
-        for (TemporaryFolder t : staticTempFolders) {
-            if (t.getRoot().exists()) {
-                try {
-                    FileUtils.deleteDirectory(t.getRoot());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            log.debug("after class " + t.getRoot() + " exists? " + t.getRoot().exists());
-        }
     }
     
     @After
     public void after() {
         TypeRegistry.reset();
         System.clearProperty("type.metadata.dir");
-        staticTempFolders.add(tempFolder);
-        for (TemporaryFolder t : staticTempFolders) {
-            log.debug("after test " + t.getRoot() + " exists? " + t.getRoot().exists());
-        }
     }
     
     @Before
     public void setup() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        String val = tempFolder.getRoot().getAbsolutePath();
-        System.setProperty("type.metadata.dir", val);
-        log.info("using tempFolder " + tempFolder.getRoot());
+        File tempDir = Files.createTempDir();
+        tempDir.deleteOnExit();
+        System.setProperty("type.metadata.dir", tempDir.getAbsolutePath());
+        log.info("using tempFolder " + tempDir);
         
         logic = new ShardQueryLogic();
         logic.setMetadataTableName(MODEL_TABLE_NAME);

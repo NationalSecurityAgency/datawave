@@ -2,6 +2,7 @@ package datawave.query.util;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import datawave.query.QueryTestTableHelper;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -10,9 +11,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -29,11 +28,6 @@ import java.util.Set;
 public class TypeMetadataProviderTest {
     
     private static final Logger log = Logger.getLogger(TypeMetadataProviderTest.class);
-    
-    // the test that uses the factory defers loading the spring context until during the test
-    // it will use this temporary folder
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
     
     @Inject
     private TypeMetadataProvider typeMetadataProvider;
@@ -69,12 +63,11 @@ public class TypeMetadataProviderTest {
     
     @Before
     public void prepareTypeMetadataMap() {
-        // This is for the factory test. It will use the tempFolder which will
-        // be substituted into the TypeMetadataBridgeContext in time for its loading
-        // by the Factory methods in TypeMetadataWriter and TypeMetadataProvider
-        String val = tempFolder.getRoot().getAbsolutePath();
+        File tempDir = Files.createTempDir();
+        tempDir.deleteOnExit();
+        String val = tempDir.getAbsolutePath();
         System.setProperty("type.metadata.dir", val);
-        log.info("using tempFolder " + tempFolder.getRoot());
+        log.info("using tempFolder " + tempDir);
         
         TypeMetadata typeMetadata = new TypeMetadata();
         typeMetadata.put("field1", "ingest1", "LcType");
