@@ -71,9 +71,6 @@ encrypt:
 spring:
   profiles: 'consul'
   cloud:
-    config:
-      discovery:
-        enabled: true
     consul:
       enabled: true
       # Allow the default Consul host to be overridden via an environment variable

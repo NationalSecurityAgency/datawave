@@ -1,6 +1,6 @@
 package datawave.webservice.common.audit;
 
-import org.assertj.core.util.Lists;
+import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

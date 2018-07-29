@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>datawave-microservice-parent</artifactId>
+        <groupId>gov.nsa.datawave.microservice</groupId>
+        <version>1.2-SNAPSHOT</version>
+    </parent>
+    <artifactId>datawave-microservice-service-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>DataWave Microservices Spring Boot Service Parent</name>
+    <properties>
+        <resource.delimiter>@</resource.delimiter>
+        <!-- delimiter that doesn't clash with Spring ${} placeholders -->
+        <version.hazelcast>3.9</version.hazelcast>
+        <version.spring.boot>1.5.13.RELEASE</version.spring.boot>
+        <version.spring.cloud>Edgware.SR3</version.spring.cloud>
+        <version.thymeleaf>3.0.9.RELEASE</version.thymeleaf>
+        <version.thymeleaf-extras-java8time>3.0.1.RELEASE</version.thymeleaf-extras-java8time>
+        <version.thymeleaf-extras-springsecurity4>3.0.2.RELEASE</version.thymeleaf-extras-springsecurity4>
+    </properties>
+    <dependencyManagement>
+        <dependencies>
+            <!--
+                Don't sort the dependencies here since we need to declare overridden versions of certain modules
+                before we include the spring boot and spring cloud BOMs
+              -->
+            <?SORTPOM IGNORE?>
+            <!-- Override Hazelcast version. This must appear before the spring dependencies BOM import -->
+            <dependency>
+                <groupId>com.hazelcast</groupId>
+                <artifactId>hazelcast</artifactId>
+                <version>${version.hazelcast}</version>
+            </dependency>
+            <!-- Override Hazelcast version. This must appear before the spring dependencies BOM import -->
+            <dependency>
+                <groupId>com.hazelcast</groupId>
+                <artifactId>hazelcast-client</artifactId>
+                <version>${version.hazelcast}</version>
+            </dependency>
+            <!-- Override Hazelcast version. This must appear before the spring dependencies BOM import -->
+            <dependency>
+                <groupId>com.hazelcast</groupId>
+                <artifactId>hazelcast-spring</artifactId>
+                <version>${version.hazelcast}</version>
+            </dependency>
+            <!-- Override Thymeleaf version. This must appear before the spring dependencies BOM import -->
+            <dependency>
+                <groupId>org.thymeleaf</groupId>
+                <artifactId>thymeleaf</artifactId>
+                <version>${version.thymeleaf}</version>
+            </dependency>
+            <!-- Override Thymeleaf version. This must appear before the spring dependencies BOM import -->
+            <dependency>
+                <groupId>org.thymeleaf</groupId>
+                <artifactId>thymeleaf-spring4</artifactId>
+                <version>${version.thymeleaf}</version>
+            </dependency>
+            <!-- Override Thymeleaf version. This must appear before the spring dependencies BOM import -->
+            <dependency>
+                <groupId>org.thymeleaf</groupId>
+                <artifactId>thymeleaf-extras-java8time</artifactId>
+                <version>${version.thymeleaf-extras-java8time}</version>
+            </dependency>
+            <!-- Override Thymeleaf version. This must appear before the spring dependencies BOM import -->
+            <dependency>
+                <groupId>org.thymeleaf</groupId>
+                <artifactId>thymeleaf-extras-springsecurity4</artifactId>
+                <version>${version.thymeleaf-extras-springsecurity4}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+                <version>${version.spring.boot}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>commons-logging</artifactId>
+                        <groupId>commons-logging</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>spring-boot-starter-logging</artifactId>
+                        <groupId>org.springframework.boot</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${version.spring.boot}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${version.spring.cloud}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <?SORTPOM RESUME?>
+        </dependencies>
+    </dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <!-- includes test libraries (forcing the test scope) for all modules -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <repositories>
+        <repository>
+            <!--
+                This repository is a temporary work-around until we can public artifacts to maven central.
+                This allows us to retrieve released microservice artifacts from our github repository.
+            -->
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>datawave-github-mvn-repo</id>
+            <url>https://raw.githubusercontent.com/NationalSecurityAgency/datawave/mvn-repo</url>
+        </repository>
+    </repositories>
+    <build>
+        <!-- Turn on filtering by default for application properties -->
+        <resources>
+            <resource>
+                <filtering>true</filtering>
+                <directory>${basedir}/src/main/resources</directory>
+                <includes>
+                    <include>**/application*.yml</include>
+                    <include>**/application*.yaml</include>
+                    <include>**/application*.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <excludes>
+                    <exclude>**/application*.yml</exclude>
+                    <exclude>**/application*.yaml</exclude>
+                    <exclude>**/application*.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
+        <pluginManagement>
+            <plugins>
+                <!-- Apply more sensible defaults for user projects -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>2.18.1</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.6</version>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                                <mainClass>${start-class}</mainClass>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>2.6</version>
+                    <configuration>
+                        <delimiters>
+                            <delimiter>${resource.delimiter}</delimiter>
+                        </delimiters>
+                        <useDefaultDelimiters>false</useDefaultDelimiters>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.18.1</version>
+                    <configuration>
+                        <includes>
+                            <include>**/*Tests.java</include>
+                            <include>**/*Test.java</include>
+                        </includes>
+                        <excludes>
+                            <exclude>**/Abstract*.java</exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>2.6</version>
+                    <configuration>
+                        <failOnMissingWebXml>false</failOnMissingWebXml>
+                        <archive>
+                            <manifest>
+                                <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                                <mainClass>${start-class}</mainClass>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>1.5.0</version>
+                    <configuration>
+                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                        <mainClass>${start-class}</mainClass>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${version.spring.boot}</version>
+                    <executions>
+                        <execution>
+                            <!--
+                                Override the parent configuration so that we don't run the default
+                                execution, which repackages the jar into an executable one. We do
+                                this since we don't want to deploy the executable jar. Instead, that
+                                will be done if the docker profile is enabled.
+                              -->
+                            <phase>none</phase>
+                        </execution>
+                        <execution>
+                            <id>generate-build-info</id>
+                            <goals>
+                                <goal>build-info</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+    <profiles>
+        <profile>
+            <id>docker</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>repackage-executable-jar</id>
+                                    <goals>
+                                        <goal>repackage</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                            <configuration>
+                                <!-- Mark the repackaged executable jar with the "exec" classifier -->
+                                <classifier>exec</classifier>
+                                <!-- Make the jar fully executable so it can be used as an init.d script -->
+                                <executable>true</executable>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+            <id>exec</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>repackage-executable-jar</id>
+                                    <goals>
+                                        <goal>repackage</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                            <configuration>
+                                <!-- Mark the repackaged executable jar with the "exec" classifier -->
+                                <classifier>exec</classifier>
+                                <!-- Make the jar fully executable so it can be used as an init.d script -->
+                                <executable>true</executable>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
+</project>
