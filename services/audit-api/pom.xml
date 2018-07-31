@@ -4,10 +4,10 @@
     <parent>
         <artifactId>datawave-microservice-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.2-SNAPSHOT</version>
+        <version>1.2</version>
     </parent>
     <artifactId>audit-api</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2</version>
     <properties>
         <version.accumulo>1.8.1</version.accumulo>
         <version.guava>24.1-jre</version.guava>

@@ -4,16 +4,16 @@
     <parent>
         <artifactId>datawave-microservice-service-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>1.0</version>
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>authorization-service</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
     <description>DATAWAVE Authorization Microservice</description>
     <properties>
         <start-class>datawave.microservice.authorization.AuthorizationService</start-class>
-        <version.microservice.hazelcast-client>1.1-SNAPSHOT</version.microservice.hazelcast-client>
-        <version.microservice.starter>1.1-SNAPSHOT</version.microservice.starter>
+        <version.microservice.hazelcast-client>1.1</version.microservice.hazelcast-client>
+        <version.microservice.starter>1.1</version.microservice.starter>
     </properties>
     <dependencyManagement>
         <dependencies>

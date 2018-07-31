@@ -4,10 +4,10 @@
     <parent>
         <artifactId>datawave-microservice-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.2-SNAPSHOT</version>
+        <version>1.2</version>
     </parent>
     <artifactId>metrics-reporter</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
     <properties>
         <version.commons-io>2.5</version.commons-io>
         <version.dropwizard-metrics>3.1.5</version.dropwizard-metrics>
