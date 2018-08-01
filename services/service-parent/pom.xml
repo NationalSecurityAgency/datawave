@@ -7,7 +7,7 @@
         <version>1.2</version>
     </parent>
     <artifactId>datawave-microservice-service-parent</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Spring Boot Service Parent</name>
     <properties>
@@ -59,13 +59,13 @@
             </dependency>
             <!-- Override Thymeleaf version. This must appear before the spring dependencies BOM import -->
             <dependency>
-                <groupId>org.thymeleaf</groupId>
+                <groupId>org.thymeleaf.extras</groupId>
                 <artifactId>thymeleaf-extras-java8time</artifactId>
                 <version>${version.thymeleaf-extras-java8time}</version>
             </dependency>
             <!-- Override Thymeleaf version. This must appear before the spring dependencies BOM import -->
             <dependency>
-                <groupId>org.thymeleaf</groupId>
+                <groupId>org.thymeleaf.extras</groupId>
                 <artifactId>thymeleaf-extras-springsecurity4</artifactId>
                 <version>${version.thymeleaf-extras-springsecurity4}</version>
             </dependency>
