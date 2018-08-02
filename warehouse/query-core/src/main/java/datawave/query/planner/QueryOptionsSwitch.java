@@ -28,9 +28,6 @@ public class QueryOptionsSwitch {
                 case QueryOptions.TYPE_METADATA_IN_HDFS:
                     config.setTypeMetadataInHdfs(Boolean.parseBoolean(value));
                     break;
-                case QueryOptions.DISABLE_EVALUATION:
-                    config.setDisableEvaluation(Boolean.parseBoolean(value));
-                    break;
                 case QueryOptions.GROUP_FIELDS:
                     String[] groups = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     config.setLimitFields(Sets.newHashSet(groups));
