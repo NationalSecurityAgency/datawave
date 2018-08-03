@@ -62,6 +62,11 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-ingest-nyctlc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-scripts</artifactId>
         </dependency>
         <dependency>
@@ -564,6 +569,7 @@
                                             <include>${project.groupId}:datawave-common</include>
                                             <include>${project.groupId}:datawave-edge-dictionary-core</include>
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
+                                            <include>${project.groupId}:datawave-ingest-nyctlc</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-client</include>

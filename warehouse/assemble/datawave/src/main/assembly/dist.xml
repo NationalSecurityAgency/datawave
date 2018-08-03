@@ -105,6 +105,7 @@
                 <include>${groupId}:datawave-query-core</include>
                 <include>${groupId}:datawave-edge-dictionary-core</include>
                 <include>${groupId}:datawave-ingest-wikipedia</include>
+                <include>${groupId}:datawave-ingest-nyctlc</include>
                 <include>${groupId}:datawave-ingest-json</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>

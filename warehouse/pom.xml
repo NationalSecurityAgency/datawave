@@ -24,6 +24,7 @@
         <module>ingest-scripts</module>
         <module>assemble</module>
         <module>ingest-wikipedia</module>
+        <module>ingest-nyctlc</module>
         <module>metrics-core</module>
         <module>ops-tools</module>
     </modules>

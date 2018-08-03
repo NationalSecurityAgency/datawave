@@ -1,0 +1,213 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+    <property>
+        <name>file.input.format</name>
+        <value>datawave.ingest.input.reader.raw.RawInputFormat</value>
+    </property>
+
+    <property>
+        <name>data.name</name>
+        <value>nyctlc</value>
+        <description>This is the type of data being ingested.
+        </description>
+    </property>
+
+    <property>
+        <name>nyctlc.ingest.helper.class</name>
+        <value>datawave.ingest.nyctlc.NYCTLCIngestHelper</value>
+    </property>
+
+    <property>
+        <name>nyctlc.reader.class</name>
+        <value>datawave.ingest.nyctlc.NYCTLCReader</value>
+    </property>
+
+    <property>
+        <name>nyctlc.handler.classes</name>
+        <value>datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler</value>
+    </property>
+
+    <property>
+        <name>nytctlc.data.category.date</name>
+        <value>LPEP_PICKUP_DATETIME</value>
+    </property>
+
+    <property>
+        <name>nyctlc.ingest.policy.enforcer.class</name>
+        <value>datawave.policy.IngestPolicyEnforcer$NoOpIngestPolicyEnforcer</value>
+        <description>Name of the class to use for policy enforcement</description>
+    </property>
+
+    <property>
+        <name>nyctlc.data.category.marking.default</name>
+        <value>ALL</value>
+    </property>
+
+    <!-- Indexing -->
+    <property>
+        <name>nyctlc.data.category.index</name>
+        <value>PICKUP_LOCATION,DROPOFF_LOCATION,PICKUP_LOCATION_DATETIME,DROPOFF_LOCATION_DATETIME,PICKUP_LOCATION_TOTAL_AMOUNT,DROPOFF_LOCATION_TOTAL_AMOUNT</value>
+        <description>These are the fields to index (delimited by first separator).
+        </description>
+    </property>
+
+    <property>
+        <name>nyctlc.data.category.index.reverse</name>
+        <value></value>
+    </property>
+
+    <!-- Normalization -->
+    <property>
+        <name>nyctlc.data.default.type.class</name>
+        <value>datawave.data.type.NoOpType</value>
+    </property>
+
+    <!-- Normalization for Included Fields -->
+    <property>
+        <name>nyctlc.VENDORID.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.LPEP_PICKUP_DATETIME.data.field.type.class</name>
+        <value>datawave.data.type.DateType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.LPEP_DROPOFF_DATETIME.data.field.type.class</name>
+        <value>datawave.data.type.DateType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.STORE_AND_FWD_FLAG.data.field.type.class</name>
+        <value>datawave.data.type.NoOpType</value>
+    </property>
+    <property>
+        <name>nyctlc.RATECODEID.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.PICKUP_LONGITUDE.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.PICKUP_LATITUDE.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.DROPOFF_LONGITUDE.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+    <property>
+        <name>nyctlc.DROPOFF_LATITUDE.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.PASSENGER_COUNT.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.TRIP_DISTANCE.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.FARE_AMOUNT.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.EXTRA.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.MTA_TAX.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.TIP_AMOUNT.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.TOLLS_AMOUNT.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.EHAIL_FEE.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.IMPROVEMENT_SURCHARGE.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.TOTAL_AMOUNT.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.TRIP_TYPE.data.field.type.class</name>
+        <value>datawave.data.type.NumberType</value>
+    </property>
+
+    <!-- Normalization for Derived Fields -->
+    <property>
+        <name>nyctlc.PICKUP_LOCATION.data.field.type.class</name>
+        <value>datawave.data.type.GeometryType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.DROPOFF_LOCATION.data.field.type.class</name>
+        <value>datawave.data.type.GeometryType</value>
+    </property>
+
+    <!-- Normalization for Composite Fields -->
+    <property>
+        <name>nyctlc.PICKUP_LOCATION_DATETIME.data.field.type.class</name>
+        <value>datawave.data.type.NoOpType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.DROPOFF_LOCATION_DATETIME.data.field.type.class</name>
+        <value>datawave.data.type.NoOpType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.PICKUP_LOCATION_TOTAL_AMOUNT.data.field.type.class</name>
+        <value>datawave.data.type.NoOpType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.DROPOFF_LOCATION_TOTAL_AMOUNT.data.field.type.class</name>
+        <value>datawave.data.type.NoOpType</value>
+    </property>
+
+    <!-- Composite Field Configuration -->
+    <property>
+        <name>nyctlc.data.composite.name</name>
+        <value>PICKUP_LOCATION_DATETIME,DROPOFF_LOCATION_DATETIME,PICKUP_LOCATION_TOTAL_AMOUNT,DROPOFF_LOCATION_TOTAL_AMOUNT</value>
+    </property>
+
+    <property>
+        <name>nyctlc.data.composite.fields</name>
+        <value>PICKUP_LOCATION.LPEP_PICKUP_DATETIME,DROPOFF_LOCATION.LPEP_DROPOFF_DATETIME,PICKUP_LOCATION.TOTAL_AMOUNT,DROPOFF_LOCATION.TOTAL_AMOUNT</value>
+    </property>
+
+    <property>
+        <name>nyctlc.data.composite.fields.fixed.length</name>
+        <value>PICKUP_LOCATION,DROPOFF_LOCATION</value>
+    </property>
+</configuration>

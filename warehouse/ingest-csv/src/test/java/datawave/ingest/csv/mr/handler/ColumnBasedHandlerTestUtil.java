@@ -12,6 +12,8 @@ import java.util.TreeSet;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.CompositeIngest;
+import datawave.ingest.data.config.ingest.CompositeIngestHelperInterface;
 import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
@@ -183,6 +185,16 @@ public class ColumnBasedHandlerTestUtil {
         for (Map.Entry<String,NormalizedContentInterface> v : virtualFields.entries()) {
             eventFields.put(v.getKey(), v.getValue());
         }
+        if (vHelper instanceof CompositeIngest) {
+            CompositeIngest compIngest = (CompositeIngest) vHelper;
+            Multimap<String,NormalizedContentInterface> compositeFields = compIngest.getCompositeFields(eventFields);
+            for (String fieldName : compositeFields.keySet()) {
+                // if this is an overloaded event field, we are replacing the existing data
+                if (compIngest.isOverloadedCompositeField(fieldName))
+                    eventFields.removeAll(fieldName);
+                eventFields.putAll(fieldName, compositeFields.get(fieldName));
+            }
+        }
         Multimap<BulkIngestKey,Value> results = handler.processBulk(new Text(), event, eventFields, new MockStatusReporter());
         Set<Key> shardKeys = new HashSet<>();
         Set<Key> shardIndexKeys = new HashSet<>();
@@ -278,8 +290,14 @@ public class ColumnBasedHandlerTestUtil {
                     log.info(keyString.trim());
                 }
             }
-            Assert.assertTrue(countMap.get(shardTableName) == expectedShardKeys && countMap.get(shardIndexTableName) == expectedShardIndexKeys
-                            && countMap.get(shardReverseIndexTableName) == expectedShardReverseIndexKeys && countMap.get(edgeTableName) == expectedEdgeKeys);
+            if (expectedShardKeys > 0)
+                Assert.assertTrue(countMap.get(shardTableName) == expectedShardKeys);
+            if (expectedShardIndexKeys > 0)
+                Assert.assertTrue(countMap.get(shardIndexTableName) == expectedShardIndexKeys);
+            if (expectedShardReverseIndexKeys > 0)
+                Assert.assertTrue(countMap.get(shardReverseIndexTableName) == expectedShardReverseIndexKeys);
+            if (expectedEdgeKeys > 0)
+                Assert.assertTrue(countMap.get(edgeTableName) == expectedEdgeKeys);
         } catch (AssertionError ae) {
             if (printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {

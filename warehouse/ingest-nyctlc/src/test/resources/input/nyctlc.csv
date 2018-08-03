@@ -1,0 +1,5 @@
+VendorID,lpep_pickup_datetime,Lpep_dropoff_datetime,Store_and_fwd_flag,RateCodeID,Pickup_longitude,Pickup_latitude,Dropoff_longitude,Dropoff_latitude,Passenger_count,Trip_distance,Fare_amount,Extra,MTA_tax,Tip_amount,Tolls_amount,Ehail_fee,improvement_surcharge,Total_amount,Payment_type,Trip_type
+
+1,2012-03-26 00:01:00,2012-03-26 00:01:05,N,3,-71.01,40.1,-73.03,39.99,4,1.20,5,1.1,3.33,10.5,0,,0.15,10.85,1,1
+2,2015-06-02 00:06:30,2015-06-02 00:06:44,Y,2,-72.02,40.2,-71.5,39.997,3,.83,5,2.2,2.22,13,0,.7,0.91,3.37,2,1
+3,2018-05-15 00:12:45,2018-05-15 00:12:55,N,1,-73.03,40.3,-72.7,40.085,2,2.7,10,3.3,1.11,1.5,.25,,0.19,17.02,3,2
