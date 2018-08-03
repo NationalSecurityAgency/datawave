@@ -436,7 +436,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
         
         @Override
         public Object visit(ASTIdentifier node, Object data) {
-            JexlNode newNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
+            JexlNode newNode;
             String fieldName = JexlASTHelper.getIdentifier(node);
             
             Collection<String> aliases = Sets.newLinkedHashSet(getAliasesForField(fieldName)); // de-dupe
@@ -451,7 +451,11 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 newKid.image = JexlASTHelper.rebuildIdentifier(alias);
                 nodes.add(newKid);
             }
-            newNode = JexlNodeFactory.createOrNode(nodes);
+            if (nodes.size() == 1) {
+                newNode = JexlNodeFactory.wrap(nodes.iterator().next());
+            } else {
+                newNode = JexlNodeFactory.createOrNode(nodes);
+            }
             newNode.jjtSetParent(node.jjtGetParent());
             
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
