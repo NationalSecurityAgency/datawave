@@ -30,8 +30,6 @@
         <module>modification</module>
         <module>rest-api</module>
         <module>model</module>
-        <module>geoserver/geoserver-authorization</module>
-        <module>geoserver/geoserver-application</module>
     </modules>
     <properties>
         <accumulo.scope>provided</accumulo.scope>
@@ -728,6 +726,18 @@
             <id>examples</id>
             <modules>
                 <module>examples</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>geoserver</id>
+            <activation>
+                <property>
+                    <name>geoserver</name>
+                </property>
+            </activation>
+            <modules>
+                <module>geoserver/geoserver-authorization</module>
+                <module>geoserver/geoserver-application</module>
             </modules>
         </profile>
     </profiles>

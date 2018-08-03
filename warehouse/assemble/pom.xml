@@ -9,8 +9,20 @@
     <artifactId>assemble-parent</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>geowave</module>
         <module>webservice</module>
         <module>datawave</module>
     </modules>
+    <profiles>
+        <profile>
+            <id>geoserver</id>
+            <activation>
+                <property>
+                    <name>geoserver</name>
+                </property>
+            </activation>
+            <modules>
+                <module>geowave</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
