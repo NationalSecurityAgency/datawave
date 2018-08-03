@@ -130,13 +130,13 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
     /**
      * Get the parameters for this marker node (see constructors)
      * 
-     * @param node
+     * @param source
      * @return A map of parameters for FIELD_PROP, and FST_URI_PROP or VALUES_PROP. URI will be a URI object, and values will be a Set of String
      * @throws URISyntaxException
      */
-    public static Map<String,Object> getParameters(JexlNode node) throws URISyntaxException {
+    public static Map<String,Object> getParameters(JexlNode source) throws URISyntaxException {
         Map<String,Object> returnParameters = new HashMap<String,Object>();
-        Map<String,Object> parameters = JexlASTHelper.getAssignments(getExceededOrThresholdSource(node));
+        Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
         // turn the FST URI into a URI and the values into a set of values
         for (Map.Entry<String,Object> entry : parameters.entrySet()) {
             if (entry.getKey().equalsIgnoreCase(FST_URI_PROP)) {
