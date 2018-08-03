@@ -24,18 +24,62 @@ import java.util.stream.Collectors;
  * Converts between a String encoded JSON Web Token and a collection of {@link DatawaveUser}s.
  */
 public class JWTTokenHandler {
+    public enum TtlMode {
+        RELATIVE_TO_CURRENT_TIME, RELATIVE_TO_CREATION_TIME
+    }
+    
     private static final String PRINCIPALS_CLAIM = "principals";
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
     
     private final String issuer;
     private final Key signingKey;
+    private final TtlMode ttlMode;
     private final long jwtTtl;
     private final ObjectMapper objectMapper;
     
-    public JWTTokenHandler(Certificate cert, Key signingKey, long jwtTtl, TimeUnit jwtTtUnit, ObjectMapper objectMapper) {
+    /**
+     * Creates a new JWTTokenHandler.
+     *
+     * @param cert
+     *            the certificate to use for retrieving the JWT issuer name to use when creating JWTs. {@code DATAWAVE} is used if null is passed
+     * @param signingKey
+     *            the key to use for signing new JWTs or checking the signature of existing JWTs
+     * @param jwtTtl
+     *            the length of time, relative to the oldest creation time of the {@link DatawaveUser} being converted to a JWT, for which a signed JWT will be
+     *            valid
+     * @param jwtTtlUnit
+     *            the units of time for {@code jwtTtl}
+     * @param objectMapper
+     *            an {@link ObjectMapper} to use for converting a JWT back into a collection of {@link DatawaveUser}s
+     */
+    public JWTTokenHandler(Certificate cert, Key signingKey, long jwtTtl, TimeUnit jwtTtlUnit, ObjectMapper objectMapper) {
+        this(cert, signingKey, jwtTtl, jwtTtlUnit, TtlMode.RELATIVE_TO_CREATION_TIME, objectMapper);
+    }
+    
+    /**
+     * Creates a new JWTTokenHandler.
+     *
+     * @param cert
+     *            the certificate to use for retrieving the JWT issuer name to use when creating JWTs. {@code DATAWAVE} is used if null is passed
+     * @param signingKey
+     *            the key to use for signing new JWTs or checking the signature of existing JWTs
+     * @param jwtTtl
+     *            the length of time (relative to either {@link DatawaveUser} creation time or now, based on the value of {@code ttlMode}) for which generated
+     *            JWTs will be valid
+     * @param jwtTtlUnit
+     *            the units of time for {@code jwtTtl}
+     * @param ttlMode
+     *            the mode of calculation used to determine a signed JWT's expiration date. When the mode is {@code TtlMode.RELATIVE_TO_CURRENT_TIME}, the
+     *            expiration time will be the current time plus {@code jwtTtl}. When the mode is {@code TtlMode.RELATIVE_TO_CREATION_TIME}, the expiration time
+     *            will be the oldest creation time of the {@link DatawaveUser}s being converted to a JWT plus {@code jwtTtl}
+     * @param objectMapper
+     *            an {@link ObjectMapper} to use for converting a JWT back into a collection of {@link DatawaveUser}s
+     */
+    public JWTTokenHandler(Certificate cert, Key signingKey, long jwtTtl, TimeUnit jwtTtlUnit, TtlMode ttlMode, ObjectMapper objectMapper) {
         this.signingKey = signingKey;
-        this.jwtTtl = jwtTtUnit.toMillis(jwtTtl);
+        this.ttlMode = ttlMode;
+        this.jwtTtl = jwtTtlUnit.toMillis(jwtTtl);
         this.objectMapper = objectMapper;
         if (cert instanceof X509Certificate) {
             issuer = ((X509Certificate) cert).getSubjectDN().getName();
@@ -46,6 +90,9 @@ public class JWTTokenHandler {
     
     public String createTokenFromUsers(String username, Collection<? extends DatawaveUser> users) {
         long minCreationTime = users.stream().map(DatawaveUser::getCreationTime).min(Long::compareTo).orElse(System.currentTimeMillis());
+        if (ttlMode == TtlMode.RELATIVE_TO_CURRENT_TIME) {
+            minCreationTime = System.currentTimeMillis();
+        }
         Date expirationDate = new Date(minCreationTime + jwtTtl);
         logger.trace("Creating new JWT to expire at {} for users {}", expirationDate, users);
         // @formatter:off
