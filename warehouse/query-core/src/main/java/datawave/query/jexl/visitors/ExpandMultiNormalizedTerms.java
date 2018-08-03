@@ -173,18 +173,39 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         ASTAndNode smashed = TreeFlatteningRebuildingVisitor.flatten(node);
         HashMap<String,JexlNode> lowerBounds = Maps.newHashMap(), upperBounds = Maps.newHashMap();
         List<JexlNode> others = Lists.newArrayList();
-        for (JexlNode child : JexlNodes.children(node)) {
-            switch (id(child)) {
-                case ParserTreeConstants.JJTGENODE:
-                case ParserTreeConstants.JJTGTNODE:
-                    lowerBounds.put(JexlASTHelper.getIdentifier(child), child);
-                    break;
-                case ParserTreeConstants.JJTLENODE:
-                case ParserTreeConstants.JJTLTNODE:
-                    upperBounds.put(JexlASTHelper.getIdentifier(child), child);
-                    break;
-                default:
-                    others.add(child);
+        for (JexlNode child : JexlNodes.children(smashed)) {
+            // if the child has a method attached, it is not eligible for ranges
+            if (JexlASTHelper.HasMethodVisitor.hasMethod(child)) {
+                others.add(child);
+            } else {
+                switch (id(child)) {
+                    case ParserTreeConstants.JJTGENODE:
+                    case ParserTreeConstants.JJTGTNODE:
+                        String key = JexlASTHelper.getIdentifier(child);
+                        // if the key is null, this is not eligible for ranges
+                        // it may have model-expanded identifier (FOO|BAR) or it
+                        // may have a method attached
+                        if (key == null) {
+                            others.add(child);
+                        } else {
+                            lowerBounds.put(key, child);
+                        }
+                        break;
+                    case ParserTreeConstants.JJTLENODE:
+                    case ParserTreeConstants.JJTLTNODE:
+                        key = JexlASTHelper.getIdentifier(child);
+                        // if the key is null, this is not eligible for ranges
+                        // it may have model-expanded identifier (FOO|BAR) or it
+                        // may have a method attached
+                        if (key == null) {
+                            others.add(child);
+                        } else {
+                            upperBounds.put(key, child);
+                        }
+                        break;
+                    default:
+                        others.add(child);
+                }
             }
         }
         
