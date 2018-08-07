@@ -70,8 +70,6 @@ public class Intersection implements IndexStream {
         isVariable = false;
         if (childrenItr.hasNext()) {
             boolean absent = false;
-            boolean exceededTermThreshold = false;
-            boolean exceededValueThreshold = false;
             boolean delayedField = false;
             while (childrenItr.hasNext()) {
                 IndexStream stream = childrenItr.next();
@@ -83,9 +81,6 @@ public class Intersection implements IndexStream {
                     continue;
                 
                 if (stream.hasNext()) {
-                    if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context()) {
-                        exceededValueThreshold = true;
-                    }
                     if (log.isTraceEnabled()) {
                         log.trace("Stream has next, so adding it to children " + stream.peek().second().getNode() + " " + key(stream));
                     }
@@ -104,8 +99,9 @@ public class Intersection implements IndexStream {
                     }
                 } else {
                     if (StreamContext.EXCEEDED_TERM_THRESHOLD == stream.context()) {
-                        exceededTermThreshold = true;
                         delayedNodes.add(stream.currentNode());
+                    } else if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context()) {
+                        absent = true;
                     } else if (StreamContext.ABSENT == stream.context()) {
                         absent = true;
                     } else if (StreamContext.UNINDEXED == stream.context() || StreamContext.UNKNOWN_FIELD == stream.context()
