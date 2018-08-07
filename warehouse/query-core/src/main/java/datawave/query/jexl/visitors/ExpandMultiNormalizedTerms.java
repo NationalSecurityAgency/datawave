@@ -211,7 +211,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         
         if (!lowerBounds.isEmpty() && !upperBounds.isEmpty()) {
             // this is the set of fields that have an upper and a lower bound operand
-            Set<String> tightBounds = Sets.intersection(lowerBounds.keySet(), upperBounds.keySet());
+            Set<String> tightBounds = Sets.intersection(lowerBounds.keySet(), upperBounds.keySet()).immutableCopy();
             
             if (log.isDebugEnabled()) {
                 log.debug("Found bounds to match: " + tightBounds);
