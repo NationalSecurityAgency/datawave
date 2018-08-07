@@ -871,12 +871,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         Calendar end = Calendar.getInstance();
         end.setTime(config.getEndDate());
         
-        List<String> datatypes = new ArrayList<>();
-        if (config.getDatatypeFilter() != null) {
-            datatypes.addAll(config.getDatatypeFilter());
-            Collections.sort(datatypes);
-        }
-        
         while (!start.after(end)) {
             String day = DateHelper.format(start.getTime());
             IndexInfo info = new IndexInfo(-1);
