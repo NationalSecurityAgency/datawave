@@ -124,8 +124,8 @@ public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<?,?>,Fac
                     value.setDelegate(v.toString());
                     value.setNormalizedValue(v.toString());
                     
-                    FieldCardinalityBase fc = documentTransformer.responseObjectFactory.getFieldCardinality();
-                    fc.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(attr.getColumnVisibility(), documentTransformer.auths)); // reduces
+                    FieldCardinalityBase fc = documentTransformer.getResponseObjectFactory().getFieldCardinality();
+                    fc.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(attr.getColumnVisibility(), documentTransformer.getAuths())); // reduces
                     // colvis
                     // based on
                     // visibility
@@ -149,7 +149,7 @@ public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<?,?>,Fac
     protected FacetsBase buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row, MarkingFunctions mf)
                     throws MarkingFunctions.Exception {
         
-        FacetsBase facetedResponse = documentTransformer.responseObjectFactory.getFacets();
+        FacetsBase facetedResponse = documentTransformer.getResponseObjectFactory().getFacets();
         
         final Collection<FieldCardinalityBase> documentFields = buildFacets(documentKey, null, document, eventCV, mf);
         
@@ -166,7 +166,7 @@ public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<?,?>,Fac
     
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
-        FacetQueryResponseBase response = documentTransformer.responseObjectFactory.getFacetQueryResponse();
+        FacetQueryResponseBase response = documentTransformer.getResponseObjectFactory().getFacetQueryResponse();
         Set<ColumnVisibility> combinedColumnVisibility = new HashSet<ColumnVisibility>();
         
         for (Object result : resultList) {
@@ -210,7 +210,7 @@ public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<?,?>,Fac
         @SuppressWarnings("unchecked")
         Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
         
-        Entry<Key,Document> documentEntry = documentTransformer.deserializer.apply(entry);
+        Entry<Key,Document> documentEntry = documentTransformer.getDocumentDeserializer().apply(entry);
         
         documentKey = documentTransformer.correctKey(documentEntry.getKey());
         document = documentEntry.getValue();
@@ -237,21 +237,21 @@ public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<?,?>,Fac
         
         try {
             
-            for (String contentFieldName : documentTransformer.contentFieldNames) {
+            for (String contentFieldName : documentTransformer.getContentFieldNames()) {
                 if (document.containsKey(contentFieldName)) {
                     Attribute<?> contentField = document.remove(contentFieldName);
                     if (contentField.getData().toString().equalsIgnoreCase("true")) {
                         Content c = new Content(uid, contentField.getMetadata(), document.isToKeep());
-                        document.put(contentFieldName, c, false, documentTransformer.reducedResponse);
+                        document.put(contentFieldName, c, false, documentTransformer.isReducedResponse());
                     }
                 }
             }
             
-            for (String primaryField : documentTransformer.primaryToSecondaryFieldMap.keySet()) {
+            for (String primaryField : documentTransformer.getPrimaryToSecondaryFieldMap().keySet()) {
                 if (!document.containsKey(primaryField)) {
-                    for (String secondaryField : documentTransformer.primaryToSecondaryFieldMap.get(primaryField)) {
+                    for (String secondaryField : documentTransformer.getPrimaryToSecondaryFieldMap().get(primaryField)) {
                         if (document.containsKey(secondaryField)) {
-                            document.put(primaryField, document.get(secondaryField), false, documentTransformer.reducedResponse);
+                            document.put(primaryField, document.get(secondaryField), false, documentTransformer.isReducedResponse());
                             break;
                         }
                     }
@@ -271,7 +271,7 @@ public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<?,?>,Fac
             throw new EmptyObjectException();
         }
         
-        if (documentTransformer.cardinalityConfiguration != null) {
+        if (documentTransformer.getCardinalityConfiguration() != null) {
             documentTransformer.collectCardinalities(document, documentKey, uid, dataType);
         }
         

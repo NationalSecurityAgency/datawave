@@ -81,7 +81,7 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
     private boolean logTimingDetails = false;
     private CardinalityRecord resultCardinalityDocumentDate = null;
     private CardinalityRecord resultCardinalityQueryDate = null;
-    CardinalityConfiguration cardinalityConfiguration = null;
+    private CardinalityConfiguration cardinalityConfiguration = null;
     private int objectsTransformed = 0;
     private long logicCreated = System.currentTimeMillis();
     private Set<String> projectFields = Collections.emptySet();
@@ -130,6 +130,18 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
         if (org.apache.commons.lang.StringUtils.isNotBlank(logTimingDetailsStr)) {
             logTimingDetails = Boolean.parseBoolean(logTimingDetailsStr);
         }
+    }
+    
+    protected Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
+        return primaryToSecondaryFieldMap;
+    }
+    
+    protected boolean isReducedResponse() {
+        return this.reducedResponse;
+    }
+    
+    protected DocumentDeserializer getDocumentDeserializer() {
+        return this.deserializer;
     }
     
     protected Map<String,String> getAdditionalCardinalityValues(Key documentKey, Document document) {

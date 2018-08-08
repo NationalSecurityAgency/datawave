@@ -82,6 +82,14 @@ public class EventQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?>,
         this.responseObjectFactory = responseObjectFactory;
     }
     
+    protected ResponseObjectFactory getResponseObjectFactory() {
+        return this.responseObjectFactory;
+    }
+    
+    protected Authorizations getAuths() {
+        return this.auths;
+    }
+    
     @Override
     public EventBase transform(Entry<?,?> input) {
         @SuppressWarnings("unchecked")
