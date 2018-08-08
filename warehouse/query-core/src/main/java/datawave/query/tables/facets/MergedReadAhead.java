@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-//import org.apache.commons.collections4.Buffer;
 import org.apache.commons.collections4.QueueUtils;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.log4j.Logger;
