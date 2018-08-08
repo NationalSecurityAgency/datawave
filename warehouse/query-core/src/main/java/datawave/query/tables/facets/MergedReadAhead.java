@@ -4,11 +4,12 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.commons.collections.Buffer;
-import org.apache.commons.collections.BufferUtils;
-import org.apache.commons.collections.buffer.CircularFifoBuffer;
+//import org.apache.commons.collections4.Buffer;
+import org.apache.commons.collections4.QueueUtils;
+import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
@@ -25,7 +26,7 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
     
     private Iterator<T> iter;
     
-    protected Buffer buf = null;
+    protected Queue buf = null;
     
     protected FacetedConfiguration facetedConfig;
     
@@ -41,7 +42,7 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
             this.iter = Iterators.filter(this.iter, predicate);
         }
         
-        buf = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(1));
+        buf = QueueUtils.synchronizedQueue(new CircularFifoQueue(1));
         
         startAndWait();
         
@@ -74,7 +75,7 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
      */
     @Override
     public T next() {
-        T val = (T) buf.get();
+        T val = (T) buf.peek();
         if (removeEntry.get() == true)
             buf.remove();
         return val;
