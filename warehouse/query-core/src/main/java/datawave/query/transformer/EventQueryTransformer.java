@@ -45,7 +45,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.google.common.collect.Lists;
 
-public class EventQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?>,EventBase> implements CacheableLogic {
+public class EventQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> implements CacheableLogic {
     
     protected EventFields eventFields = new EventFields();
     
@@ -91,9 +91,7 @@ public class EventQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?>,
     }
     
     @Override
-    public EventBase transform(Entry<?,?> input) {
-        @SuppressWarnings("unchecked")
-        Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
+    public EventBase transform(Entry<Key,Value> entry) {
         
         Key key = entry.getKey();
         Value val = entry.getValue();

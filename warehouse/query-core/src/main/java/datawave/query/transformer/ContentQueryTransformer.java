@@ -18,10 +18,11 @@ import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
-public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?>,DefaultEvent> {
+public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,DefaultEvent> {
     
     private Authorizations auths = null;
     private Logger log = Logger.getLogger(ContentQueryTransformer.class);
@@ -32,9 +33,7 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?
     }
     
     @Override
-    public DefaultEvent transform(Entry<?,?> input) {
-        @SuppressWarnings("unchecked")
-        Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
+    public DefaultEvent transform(Entry<Key,Value> entry) {
         
         if (entry.getKey() == null && entry.getValue() == null)
             return null;

@@ -34,7 +34,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<?,?>,FacetsBase> {
+public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,FacetsBase> {
     
     private static final Logger log = Logger.getLogger(FacetedTransformer.class);
     
@@ -196,7 +196,7 @@ public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<?,?>,Fac
     }
     
     @Override
-    public FacetsBase transform(Entry<?,?> input) {
+    public FacetsBase transform(Entry<Key,Value> input) {
         if (null == input)
             throw new IllegalArgumentException("Input cannot be null");
         

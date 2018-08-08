@@ -177,7 +177,7 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
     }
     
     @Override
-    public EventBase transform(Entry<?,?> input) {
+    public EventBase transform(Entry<Key,Value> input) {
         if (null == input)
             throw new IllegalArgumentException("Input cannot be null");
         

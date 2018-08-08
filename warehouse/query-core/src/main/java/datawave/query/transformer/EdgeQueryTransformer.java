@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Sets;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-public class EdgeQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?>,EdgeBase> implements CacheableLogic, EdgeModelAware {
+public class EdgeQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EdgeBase> implements CacheableLogic, EdgeModelAware {
     private Logger log = Logger.getLogger(EdgeQueryTransformer.class);
     protected Authorizations auths;
     protected ResponseObjectFactory responseObjectFactory;
@@ -99,15 +99,12 @@ public class EdgeQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?>,E
     }
     
     @Override
-    public EdgeBase transform(Entry<?,?> input) {
-        
-        @SuppressWarnings("unchecked")
-        Entry<Key,Value> entry = (Entry<Key,Value>) input;
+    public EdgeBase transform(Entry<Key,Value> entry) {
         
         EdgeKey edgeKey = EdgeKey.decode(entry.getKey());
         Value value = entry.getValue();
         
-        EdgeBase edge = (EdgeBase) this.responseObjectFactory.getEdge();
+        EdgeBase edge = this.responseObjectFactory.getEdge();
         
         boolean statsEdge = edgeKey.isStatsKey();
         try {

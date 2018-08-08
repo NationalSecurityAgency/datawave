@@ -25,7 +25,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
-public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<Entry<?,?>,EventBase> implements CacheableLogic {
+public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<Entry<Long,ColumnVisibility>,EventBase> implements CacheableLogic {
     public static final String COUNT_CELL = "count";
     
     private Authorizations auths = null;
@@ -42,13 +42,10 @@ public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<E
     }
     
     @Override
-    public EventBase transform(Entry<?,?> untypedEntry) {
-        if (!(untypedEntry.getKey() instanceof Long) || !(untypedEntry.getValue() instanceof ColumnVisibility)) {
-            throw new IllegalArgumentException("Invalid input type: " + untypedEntry.getClass());
-        }
+    public EventBase transform(Entry<Long,ColumnVisibility> untypedEntry) {
         
-        Long count = (Long) untypedEntry.getKey();
-        ColumnVisibility vis = (ColumnVisibility) untypedEntry.getValue();
+        Long count = untypedEntry.getKey();
+        ColumnVisibility vis = untypedEntry.getValue();
         
         Map<String,String> markings;
         try {
