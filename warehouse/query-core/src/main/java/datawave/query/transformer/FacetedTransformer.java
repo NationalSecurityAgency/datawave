@@ -40,8 +40,6 @@ public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<?,?>,Fac
     
     private DocumentTransformer documentTransformer;
     
-    // protected Boolean reducedResponse;
-    
     /**
      * By default, assume each cell still has the visibility attached to it
      *
@@ -209,68 +207,63 @@ public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<?,?>,Fac
         String dataType = null;
         String uid = null;
         
-        if (input instanceof Entry<?,?>) {
-            @SuppressWarnings("unchecked")
-            Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
+        @SuppressWarnings("unchecked")
+        Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
+        
+        Entry<Key,Document> documentEntry = documentTransformer.deserializer.apply(entry);
+        
+        documentKey = documentTransformer.correctKey(documentEntry.getKey());
+        document = documentEntry.getValue();
+        
+        if (null == documentKey || null == document)
+            throw new IllegalArgumentException("Null key or value. Key:" + documentKey + ", Value: " + entry.getValue());
+        
+        documentTransformer.extractMetrics(document, documentKey);
+        document.debugDocumentSize(documentKey);
+        
+        String row = documentKey.getRow().toString();
+        
+        String colf = documentKey.getColumnFamily().toString();
+        
+        int index = colf.indexOf("\0");
+        Preconditions.checkArgument(-1 != index);
+        
+        dataType = colf.substring(0, index);
+        uid = colf.substring(index + 1);
+        
+        // We don't have to consult the Document to rebuild the Visibility, the key
+        // should have the correct top-level visibility
+        ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
+        
+        try {
             
-            Entry<Key,Document> documentEntry = documentTransformer.deserializer.apply(entry);
-            
-            documentKey = documentTransformer.correctKey(documentEntry.getKey());
-            document = documentEntry.getValue();
-            
-            if (null == documentKey || null == document)
-                throw new IllegalArgumentException("Null key or value. Key:" + documentKey + ", Value: " + entry.getValue());
-            
-            documentTransformer.extractMetrics(document, documentKey);
-            document.debugDocumentSize(documentKey);
-            
-            String row = documentKey.getRow().toString();
-            
-            String colf = documentKey.getColumnFamily().toString();
-            
-            int index = colf.indexOf("\0");
-            Preconditions.checkArgument(-1 != index);
-            
-            dataType = colf.substring(0, index);
-            uid = colf.substring(index + 1);
-            
-            // We don't have to consult the Document to rebuild the Visibility, the key
-            // should have the correct top-level visibility
-            ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
-            
-            try {
-                
-                for (String contentFieldName : documentTransformer.contentFieldNames) {
-                    if (document.containsKey(contentFieldName)) {
-                        Attribute<?> contentField = document.remove(contentFieldName);
-                        if (contentField.getData().toString().equalsIgnoreCase("true")) {
-                            Content c = new Content(uid, contentField.getMetadata(), document.isToKeep());
-                            document.put(contentFieldName, c, false, documentTransformer.reducedResponse);
-                        }
+            for (String contentFieldName : documentTransformer.contentFieldNames) {
+                if (document.containsKey(contentFieldName)) {
+                    Attribute<?> contentField = document.remove(contentFieldName);
+                    if (contentField.getData().toString().equalsIgnoreCase("true")) {
+                        Content c = new Content(uid, contentField.getMetadata(), document.isToKeep());
+                        document.put(contentFieldName, c, false, documentTransformer.reducedResponse);
                     }
                 }
-                
-                for (String primaryField : documentTransformer.primaryToSecondaryFieldMap.keySet()) {
-                    if (!document.containsKey(primaryField)) {
-                        for (String secondaryField : documentTransformer.primaryToSecondaryFieldMap.get(primaryField)) {
-                            if (document.containsKey(secondaryField)) {
-                                document.put(primaryField, document.get(secondaryField), false, documentTransformer.reducedResponse);
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                // build response method here
-                output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
-                
-            } catch (Exception ex) {
-                log.error("Error building response document", ex);
-                throw new RuntimeException(ex);
             }
             
-        } else {
-            throw new IllegalArgumentException("Invalid input type: " + input.getClass());
+            for (String primaryField : documentTransformer.primaryToSecondaryFieldMap.keySet()) {
+                if (!document.containsKey(primaryField)) {
+                    for (String secondaryField : documentTransformer.primaryToSecondaryFieldMap.get(primaryField)) {
+                        if (document.containsKey(secondaryField)) {
+                            document.put(primaryField, document.get(secondaryField), false, documentTransformer.reducedResponse);
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // build response method here
+            output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
+            
+        } catch (Exception ex) {
+            log.error("Error building response document", ex);
+            throw new RuntimeException(ex);
         }
         
         if (output == null) {

@@ -101,10 +101,6 @@ public class EdgeQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?>,E
     @Override
     public EdgeBase transform(Entry<?,?> input) {
         
-        if (!(input instanceof Entry)) {
-            throw new IllegalArgumentException("Invalid input is not an Entry<Key, Value>: " + (input == null ? null : input.getClass()));
-        }
-        
         @SuppressWarnings("unchecked")
         Entry<Key,Value> entry = (Entry<Key,Value>) input;
         

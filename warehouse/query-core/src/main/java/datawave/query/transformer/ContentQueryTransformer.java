@@ -33,49 +33,44 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?
     
     @Override
     public DefaultEvent transform(Entry<?,?> input) {
-        if (input instanceof Entry<?,?>) {
-            @SuppressWarnings("unchecked")
-            Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
-            
-            if (entry.getKey() == null && entry.getValue() == null)
-                return null;
-            
-            if (null == entry.getKey() || null == entry.getValue()) {
-                throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
-            }
-            
-            ContentKeyValue ckv;
-            try {
-                ckv = ContentKeyValueFactory.parse(entry.getKey(), entry.getValue(), auths, markingFunctions);
-            } catch (Exception e1) {
-                throw new IllegalArgumentException("Unable to parse visibility", e1);
-            }
-            
-            DefaultEvent e = new DefaultEvent();
-            DefaultField field = new DefaultField();
-            
-            e.setMarkings(ckv.getMarkings());
-            
-            Metadata m = new Metadata();
-            m.setRow(ckv.getShardId());
-            m.setDataType(ckv.getDatatype());
-            m.setInternalId(ckv.getUid());
-            e.setMetadata(m);
-            
-            field.setMarkings(ckv.getMarkings());
-            field.setName(ckv.getViewName());
-            field.setTimestamp(entry.getKey().getTimestamp());
-            field.setValue(ckv.getContents());
-            
-            List<DefaultField> fields = new ArrayList<DefaultField>();
-            fields.add(field);
-            e.setFields(fields);
-            
-            return e;
-            
-        } else {
-            throw new IllegalArgumentException("Invalid input type: " + input.getClass());
+        @SuppressWarnings("unchecked")
+        Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
+        
+        if (entry.getKey() == null && entry.getValue() == null)
+            return null;
+        
+        if (null == entry.getKey() || null == entry.getValue()) {
+            throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
         }
+        
+        ContentKeyValue ckv;
+        try {
+            ckv = ContentKeyValueFactory.parse(entry.getKey(), entry.getValue(), auths, markingFunctions);
+        } catch (Exception e1) {
+            throw new IllegalArgumentException("Unable to parse visibility", e1);
+        }
+        
+        DefaultEvent e = new DefaultEvent();
+        DefaultField field = new DefaultField();
+        
+        e.setMarkings(ckv.getMarkings());
+        
+        Metadata m = new Metadata();
+        m.setRow(ckv.getShardId());
+        m.setDataType(ckv.getDatatype());
+        m.setInternalId(ckv.getUid());
+        e.setMetadata(m);
+        
+        field.setMarkings(ckv.getMarkings());
+        field.setName(ckv.getViewName());
+        field.setTimestamp(entry.getKey().getTimestamp());
+        field.setValue(ckv.getContents());
+        
+        List<DefaultField> fields = new ArrayList<DefaultField>();
+        fields.add(field);
+        e.setFields(fields);
+        
+        return e;
         
     }
     
