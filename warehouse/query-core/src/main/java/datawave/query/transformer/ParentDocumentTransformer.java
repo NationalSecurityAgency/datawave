@@ -28,7 +28,7 @@ public class ParentDocumentTransformer extends DocumentTransformer {
     }
     
     @Override
-    public Object transform(Object input) {
+    public EventBase transform(Entry<?,?> input) {
         EventBase event = (EventBase) super.transform(input);
         Metadata md = event.getMetadata();
         byte[] id = md.getInternalId().getBytes();

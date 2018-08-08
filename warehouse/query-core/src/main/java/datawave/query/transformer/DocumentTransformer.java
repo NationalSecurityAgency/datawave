@@ -81,12 +81,12 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
     private boolean logTimingDetails = false;
     private CardinalityRecord resultCardinalityDocumentDate = null;
     private CardinalityRecord resultCardinalityQueryDate = null;
-    private CardinalityConfiguration cardinalityConfiguration = null;
+    CardinalityConfiguration cardinalityConfiguration = null;
     private int objectsTransformed = 0;
     private long logicCreated = System.currentTimeMillis();
     private Set<String> projectFields = Collections.emptySet();
     private Set<String> blacklistedFields = Collections.emptySet();
-    private Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
+    Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
     
     /*
      * The 'HIT_TERM' feature required that an attribute value also contain the attribute's field name. The current implementation does it by prepending the
@@ -165,11 +165,11 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
     }
     
     @Override
-    public Object transform(Object input) {
+    public EventBase transform(Entry<?,?> input) {
         if (null == input)
             throw new IllegalArgumentException("Input cannot be null");
         
-        Object output = null;
+        EventBase output = null;
         
         Key documentKey = null;
         Document document = null;
@@ -252,7 +252,7 @@ public class DocumentTransformer extends EventQueryTransformer implements Writes
         return output;
     }
     
-    protected Object buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row, MarkingFunctions mf)
+    protected EventBase buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row, MarkingFunctions mf)
                     throws MarkingFunctions.Exception {
         
         Map<String,String> markings = mf.translateFromColumnVisibility(eventCV);

@@ -25,7 +25,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
-public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer implements CacheableLogic {
+public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<Entry<?,?>,EventBase> implements CacheableLogic {
     public static final String COUNT_CELL = "count";
     
     private Authorizations auths = null;
@@ -42,7 +42,7 @@ public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer i
     }
     
     @Override
-    public Object transform(Object input) {
+    public EventBase transform(Entry<?,?> input) {
         if (input instanceof Entry<?,?>) {
             Entry<?,?> untypedEntry = (Entry<?,?>) input;
             if (!(untypedEntry.getKey() instanceof Long) || !(untypedEntry.getValue() instanceof ColumnVisibility)) {

@@ -29,7 +29,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer implements CacheableLogic {
+public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?>,EventBase> implements CacheableLogic {
     
     private Authorizations auths = null;
     private Logger log = Logger.getLogger(FieldIndexCountQueryTransformer.class);
@@ -46,7 +46,7 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer i
     }
     
     @Override
-    public Object transform(Object input) {
+    public EventBase transform(Entry<?,?> input) {
         
         if (input instanceof Entry<?,?>) {
             @SuppressWarnings("unchecked")

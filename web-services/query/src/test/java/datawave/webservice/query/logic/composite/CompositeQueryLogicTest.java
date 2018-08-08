@@ -149,14 +149,14 @@ public class CompositeQueryLogicTest {
         
     }
     
-    public static class TestQueryLogicTransformer extends BaseQueryLogicTransformer {
+    public static class TestQueryLogicTransformer extends BaseQueryLogicTransformer<Entry<?,?>,TestQueryResponse> {
         
         public TestQueryLogicTransformer(MarkingFunctions markingFunctions) {
             super(markingFunctions);
         }
         
         @Override
-        public Object transform(Object input) {
+        public TestQueryResponse transform(Entry<?,?> input) {
             if (input instanceof Entry<?,?>) {
                 @SuppressWarnings("unchecked")
                 Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
@@ -181,14 +181,14 @@ public class CompositeQueryLogicTest {
         
     }
     
-    public static class DifferentTestQueryLogicTransformer extends BaseQueryLogicTransformer {
+    public static class DifferentTestQueryLogicTransformer extends BaseQueryLogicTransformer<Entry<?,?>,TestQueryResponse> {
         
         public DifferentTestQueryLogicTransformer(MarkingFunctions markingFunctions) {
             super(markingFunctions);
         }
         
         @Override
-        public Object transform(Object input) {
+        public TestQueryResponse transform(Entry<?,?> input) {
             if (input instanceof Entry<?,?>) {
                 @SuppressWarnings("unchecked")
                 Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;

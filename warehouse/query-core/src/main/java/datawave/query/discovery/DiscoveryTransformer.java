@@ -27,7 +27,7 @@ import org.apache.hadoop.io.Writable;
 
 import com.google.common.base.Preconditions;
 
-public class DiscoveryTransformer extends BaseQueryLogicTransformer implements CacheableLogic {
+public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredThing,EventBase> implements CacheableLogic {
     private List<String> variableFieldList = null;
     private BaseQueryLogic<DiscoveredThing> logic = null;
     private QueryModel myQueryModel = null;
@@ -43,7 +43,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer implements C
     }
     
     @Override
-    public Object transform(Object input) {
+    public EventBase transform(DiscoveredThing input) {
         Preconditions.checkNotNull(input, "Received a null object to transform!");
         if (input instanceof DiscoveredThing) {
             DiscoveredThing thing = (DiscoveredThing) input;

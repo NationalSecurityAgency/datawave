@@ -8,15 +8,20 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.google.common.base.Preconditions;
 import datawave.data.type.StringType;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Cardinality;
+import datawave.query.attributes.Content;
 import datawave.query.attributes.FieldValueCardinality;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.model.QueryModel;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.result.event.FacetsBase;
 import datawave.webservice.query.result.event.FieldCardinalityBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -29,13 +34,17 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-public class FacetedTransformer extends DocumentTransformer {
+public class FacetedTransformer extends BaseQueryLogicTransformer<Entry<?,?>,FacetsBase> {
     
     private static final Logger log = Logger.getLogger(FacetedTransformer.class);
     
+    private DocumentTransformer documentTransformer;
+    
+    // protected Boolean reducedResponse;
+    
     /**
      * By default, assume each cell still has the visibility attached to it
-     * 
+     *
      * @param logic
      * @param settings
      * @param markingFunctions
@@ -43,17 +52,21 @@ public class FacetedTransformer extends DocumentTransformer {
      */
     public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
-        super(logic, settings, markingFunctions, responseObjectFactory, false);
+        super(markingFunctions);
+        this.documentTransformer = new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, false);
     }
     
     public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
-        super(null != logic ? logic.getTableName() : null, settings, markingFunctions, responseObjectFactory, reducedResponse);
+        super(markingFunctions);
+        this.documentTransformer = new DocumentTransformer(null != logic ? logic.getTableName() : null, settings, markingFunctions, responseObjectFactory,
+                        reducedResponse);
     }
     
     public FacetedTransformer(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
                     Boolean reducedResponse) {
-        super(tableName, settings, markingFunctions, responseObjectFactory, reducedResponse);
+        super(markingFunctions);
+        this.documentTransformer = new DocumentTransformer(tableName, settings, markingFunctions, responseObjectFactory, reducedResponse);
     }
     
     /**
@@ -113,9 +126,11 @@ public class FacetedTransformer extends DocumentTransformer {
                     value.setDelegate(v.toString());
                     value.setNormalizedValue(v.toString());
                     
-                    FieldCardinalityBase fc = this.responseObjectFactory.getFieldCardinality();
-                    fc.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(attr.getColumnVisibility(), auths)); // reduces colvis based on
-                                                                                                                               // visibility
+                    FieldCardinalityBase fc = documentTransformer.responseObjectFactory.getFieldCardinality();
+                    fc.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(attr.getColumnVisibility(), documentTransformer.auths)); // reduces
+                    // colvis
+                    // based on
+                    // visibility
                     fc.setColumnVisibility(new String(markingFunctions.translateToColumnVisibility(fc.getMarkings()).flatten()));
                     fc.setLower(v.getFloorValue());
                     fc.setUpper(v.getCeilingValue());
@@ -133,10 +148,10 @@ public class FacetedTransformer extends DocumentTransformer {
         return myFields;
     }
     
-    protected Object buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row, MarkingFunctions mf)
+    protected FacetsBase buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row, MarkingFunctions mf)
                     throws MarkingFunctions.Exception {
         
-        FacetsBase facetedResponse = responseObjectFactory.getFacets();
+        FacetsBase facetedResponse = documentTransformer.responseObjectFactory.getFacets();
         
         final Collection<FieldCardinalityBase> documentFields = buildFacets(documentKey, null, document, eventCV, mf);
         
@@ -153,7 +168,7 @@ public class FacetedTransformer extends DocumentTransformer {
     
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
-        FacetQueryResponseBase response = responseObjectFactory.getFacetQueryResponse();
+        FacetQueryResponseBase response = documentTransformer.responseObjectFactory.getFacetQueryResponse();
         Set<ColumnVisibility> combinedColumnVisibility = new HashSet<ColumnVisibility>();
         
         for (Object result : resultList) {
@@ -180,6 +195,108 @@ public class FacetedTransformer extends DocumentTransformer {
         }
         
         return response;
+    }
+    
+    @Override
+    public FacetsBase transform(Entry<?,?> input) {
+        if (null == input)
+            throw new IllegalArgumentException("Input cannot be null");
+        
+        FacetsBase output = null;
+        
+        Key documentKey = null;
+        Document document = null;
+        String dataType = null;
+        String uid = null;
+        
+        if (input instanceof Entry<?,?>) {
+            @SuppressWarnings("unchecked")
+            Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
+            
+            Entry<Key,Document> documentEntry = documentTransformer.deserializer.apply(entry);
+            
+            documentKey = documentTransformer.correctKey(documentEntry.getKey());
+            document = documentEntry.getValue();
+            
+            if (null == documentKey || null == document)
+                throw new IllegalArgumentException("Null key or value. Key:" + documentKey + ", Value: " + entry.getValue());
+            
+            documentTransformer.extractMetrics(document, documentKey);
+            document.debugDocumentSize(documentKey);
+            
+            String row = documentKey.getRow().toString();
+            
+            String colf = documentKey.getColumnFamily().toString();
+            
+            int index = colf.indexOf("\0");
+            Preconditions.checkArgument(-1 != index);
+            
+            dataType = colf.substring(0, index);
+            uid = colf.substring(index + 1);
+            
+            // We don't have to consult the Document to rebuild the Visibility, the key
+            // should have the correct top-level visibility
+            ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
+            
+            try {
+                
+                for (String contentFieldName : documentTransformer.contentFieldNames) {
+                    if (document.containsKey(contentFieldName)) {
+                        Attribute<?> contentField = document.remove(contentFieldName);
+                        if (contentField.getData().toString().equalsIgnoreCase("true")) {
+                            Content c = new Content(uid, contentField.getMetadata(), document.isToKeep());
+                            document.put(contentFieldName, c, false, documentTransformer.reducedResponse);
+                        }
+                    }
+                }
+                
+                for (String primaryField : documentTransformer.primaryToSecondaryFieldMap.keySet()) {
+                    if (!document.containsKey(primaryField)) {
+                        for (String secondaryField : documentTransformer.primaryToSecondaryFieldMap.get(primaryField)) {
+                            if (document.containsKey(secondaryField)) {
+                                document.put(primaryField, document.get(secondaryField), false, documentTransformer.reducedResponse);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // build response method here
+                output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
+                
+            } catch (Exception ex) {
+                log.error("Error building response document", ex);
+                throw new RuntimeException(ex);
+            }
+            
+        } else {
+            throw new IllegalArgumentException("Invalid input type: " + input.getClass());
+        }
+        
+        if (output == null) {
+            // buildResponse will return a null object if there was only metadata in the document
+            throw new EmptyObjectException();
+        }
+        
+        if (documentTransformer.cardinalityConfiguration != null) {
+            documentTransformer.collectCardinalities(document, documentKey, uid, dataType);
+        }
+        
+        return output;
+    }
+    
+    // @Override
+    public void setEventQueryDataDecoratorTransformer(EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer) {
+        this.documentTransformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
+        
+    }
+    
+    public QueryModel getQm() {
+        return this.documentTransformer.getQm();
+    }
+    
+    public void setQm(QueryModel qm) {
+        this.documentTransformer.setQm(qm);
     }
     
 }

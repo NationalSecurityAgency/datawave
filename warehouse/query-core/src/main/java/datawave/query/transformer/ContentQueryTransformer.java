@@ -21,7 +21,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
-public class ContentQueryTransformer extends BaseQueryLogicTransformer {
+public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?>,DefaultEvent> {
     
     private Authorizations auths = null;
     private Logger log = Logger.getLogger(ContentQueryTransformer.class);
@@ -32,7 +32,7 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer {
     }
     
     @Override
-    public Object transform(Object input) {
+    public DefaultEvent transform(Entry<?,?> input) {
         if (input instanceof Entry<?,?>) {
             @SuppressWarnings("unchecked")
             Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;

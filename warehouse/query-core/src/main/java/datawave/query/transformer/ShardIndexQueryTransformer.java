@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
-public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer implements CacheableLogic {
+public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?>,EventBase> implements CacheableLogic {
     
     private Authorizations auths = null;
     private Logger log = Logger.getLogger(ShardIndexQueryTransformer.class);
@@ -51,7 +51,7 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer implem
     }
     
     @Override
-    public Object transform(Object input) {
+    public EventBase transform(Entry<?,?> input) {
         
         log.debug("Transform got " + input);
         if (input instanceof Entry<?,?>) {

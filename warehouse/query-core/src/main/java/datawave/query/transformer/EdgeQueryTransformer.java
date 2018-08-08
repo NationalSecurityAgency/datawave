@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Sets;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-public class EdgeQueryTransformer extends BaseQueryLogicTransformer implements CacheableLogic, EdgeModelAware {
+public class EdgeQueryTransformer extends BaseQueryLogicTransformer<Entry<?,?>,EdgeBase> implements CacheableLogic, EdgeModelAware {
     private Logger log = Logger.getLogger(EdgeQueryTransformer.class);
     protected Authorizations auths;
     protected ResponseObjectFactory responseObjectFactory;
@@ -99,7 +99,7 @@ public class EdgeQueryTransformer extends BaseQueryLogicTransformer implements C
     }
     
     @Override
-    public Object transform(Object input) {
+    public EdgeBase transform(Entry<?,?> input) {
         
         if (!(input instanceof Entry)) {
             throw new IllegalArgumentException("Invalid input is not an Entry<Key, Value>: " + (input == null ? null : input.getClass()));
