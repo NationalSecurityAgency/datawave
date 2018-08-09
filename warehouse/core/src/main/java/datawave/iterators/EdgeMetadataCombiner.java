@@ -95,17 +95,24 @@ public class EdgeMetadataCombiner extends Combiner {
         @Override
         public int compare(Metadata m1, Metadata m2) {
             
-            int jexl = metadataComparatorHelper(m1.getJexlPrecondition(), m2.getJexlPrecondition());
+            int comparison = metadataComparatorHelper(m1.getJexlPrecondition(), m2.getJexlPrecondition());
+            if (comparison != 0) {
+                return comparison;
+            }
             
-            int source = metadataComparatorHelper(m1.getSource(), m2.getSource());
+            comparison = metadataComparatorHelper(m1.getSource(), m2.getSource());
+            if (comparison != 0) {
+                return comparison;
+            }
             
-            int sink = metadataComparatorHelper(m1.getSink(), m2.getSink());
+            comparison = metadataComparatorHelper(m1.getSink(), m2.getSink());
+            if (comparison != 0) {
+                return comparison;
+            }
             
-            int enrich = metadataComparatorHelper(m1.getEnrichment(), m2.getEnrichment());
+            comparison = metadataComparatorHelper(m1.getEnrichment(), m2.getEnrichment());
             
-            int ei = metadataComparatorHelper(m1.getEnrichmentIndex(), m2.getEnrichmentIndex());
-            
-            return (jexl + source + sink + enrich + ei);
+            return comparison;
             
         }
         
@@ -115,11 +122,7 @@ public class EdgeMetadataCombiner extends Combiner {
         private int metadataComparatorHelper(String s1, String s2) {
             
             if (s1 != null && s2 != null) {
-                if (s1.equals(s2)) {
-                    return 0;
-                } else {
-                    return 1;
-                }
+                return s1.compareTo(s2);
             } else if (s1 == null && s2 == null) {
                 return 0;
             } else {
