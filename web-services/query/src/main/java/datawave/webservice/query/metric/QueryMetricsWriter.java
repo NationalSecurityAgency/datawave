@@ -31,7 +31,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.util.timely.UdpClient;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import org.apache.commons.collections.map.LRUMap;
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.deltaspike.core.api.exclude.Exclude;

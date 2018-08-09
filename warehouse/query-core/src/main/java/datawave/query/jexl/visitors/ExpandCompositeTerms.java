@@ -21,7 +21,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.collections.keyvalue.DefaultMapEntry;
+import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTCompositePredicate;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;

@@ -8,7 +8,7 @@ import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.inject.Inject;

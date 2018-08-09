@@ -1,7 +1,7 @@
 package datawave.query.ancestor;
 
 import datawave.query.index.lookup.IndexMatch;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.jexl2.parser.*;
 import org.junit.Assert;
 import org.junit.Before;

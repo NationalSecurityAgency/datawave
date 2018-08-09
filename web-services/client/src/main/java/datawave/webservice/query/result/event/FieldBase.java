@@ -15,7 +15,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultField.class)
-public abstract class FieldBase<T> implements HasMarkings, Message<T> {
+public abstract class FieldBase<T> implements Message<T>, HasMarkings {
     
     protected transient Map<String,String> markings;
     

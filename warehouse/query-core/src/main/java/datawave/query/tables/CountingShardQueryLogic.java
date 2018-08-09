@@ -10,7 +10,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
 /**

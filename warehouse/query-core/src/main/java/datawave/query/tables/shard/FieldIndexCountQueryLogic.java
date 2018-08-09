@@ -41,8 +41,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.collections.Transformer;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
