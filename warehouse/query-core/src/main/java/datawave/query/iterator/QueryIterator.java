@@ -61,6 +61,7 @@ import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
+import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.TraceIterators;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
@@ -162,6 +163,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     protected QuerySpan trackingSpan = null;
     
     protected QuerySpanCollector querySpanCollector = new QuerySpanCollector();
+    
+    protected UniqueTransform uniqueTransform = null;
     
     protected boolean groupingContextAddedByMe = false;
     
@@ -346,7 +349,6 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                     this.seekKeySource = new DocumentSpecificNestedIterator(documentKey);
                 }
             } else {
-                
                 this.seekKeySource = buildDocumentIterator(documentRange, range, columnFamilies, inclusive);
             }
             
@@ -567,7 +569,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     
     /**
      * Returns the elements of {@code unfiltered} that satisfy a predicate. This is used instead of the google commons Iterators.filter to create a
-     * non-stateless filtering iterator.
+     * non-statefull filtering iterator.
      */
     public static <T> UnmodifiableIterator<T> statelessFilter(final Iterator<T> unfiltered, final Predicate<? super T> predicate) {
         checkNotNull(unfiltered);
@@ -734,7 +736,14 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             }
         }
         
+        // remove the composite entries
         documents = Iterators.transform(documents, this.getCompositeProjection());
+        
+        // now apply the unique transform if requested
+        UniqueTransform uniquify = getUniqueTransform();
+        if (uniquify != null) {
+            documents = Iterators.filter(documents, uniquify.getUniquePredicate());
+        }
         
         // Filter out any Documents which are empty (e.g. due to attribute
         // projection or visibility filtering)
@@ -1287,6 +1296,17 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     @Override
     public Comparator<Object> getValueComparator(Tuple3<Key,Document,Map<String,Object>> from) {
         return new ValueComparator(from.second().getMetadata());
+    }
+    
+    protected UniqueTransform getUniqueTransform() {
+        if (uniqueTransform == null && getUniqueFields() != null & !getUniqueFields().isEmpty()) {
+            synchronized (getUniqueFields()) {
+                if (uniqueTransform == null) {
+                    uniqueTransform = new UniqueTransform(getUniqueFields());
+                }
+            }
+        }
+        return uniqueTransform;
     }
     
 }
