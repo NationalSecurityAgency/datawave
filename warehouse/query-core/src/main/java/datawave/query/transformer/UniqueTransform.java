@@ -122,9 +122,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         if (modelMapping != null) {
             fields.addAll(modelMapping.get(field));
         }
-        if (fields.isEmpty()) {
-            fields.add(field);
-        }
+        // always include the original field name in case it exists in that form within the DB
+        fields.add(field);
         Collections.sort(fields);
         for (String finalField : fields) {
             Attribute<?> attr = document.get(finalField);

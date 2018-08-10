@@ -41,7 +41,6 @@ import datawave.query.scheduler.SequentialScheduler;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
-import datawave.query.transformer.GroupingDocumentTransformer;
 import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
@@ -830,7 +829,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.iterator = this.scheduler.iterator();
         
         if (!config.isSortedUIDs()) {
-            this.iterator = new DeduppingIterator(this.iterator);
+            this.iterator = new DedupingIterator(this.iterator);
         }
         
         stopwatch.stop();

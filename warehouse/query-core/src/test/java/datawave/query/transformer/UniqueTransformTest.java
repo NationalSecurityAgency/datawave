@@ -57,7 +57,6 @@ public class UniqueTransformTest {
     
     private String createVisibility(Random random) {
         int count = random.nextInt(5) + 2;
-        int size = random.nextInt(7) + 3;
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < count; i++) {
             if (builder.length() > 0) {

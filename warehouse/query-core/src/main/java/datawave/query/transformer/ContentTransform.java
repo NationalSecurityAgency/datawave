@@ -9,6 +9,9 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This transform will replace the content field name values from "true" to the document UID
+ */
 public class ContentTransform extends DocumentTransform.DefaultDocumentTransform {
     private final Boolean reducedResponse;
     private final List<String> contentFieldNames;
