@@ -149,7 +149,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
                 String singleFieldName = helper.usingMultiValuedFieldsBlacklist() ? fieldName : helper.getMultiValuedFields().get(fieldName);
                 int limit = helper.getMultiFieldSizeThreshold();
                 int count = 0;
-                for (String value : StringUtils.splitIterable(fieldValue, helper.getMultiValueSeparator())) {
+                for (String value : StringUtils.splitIterable(fieldValue, helper.getEscapeSafeMultiValueSeparatorPattern())) {
                     value = helper.clean(singleFieldName, value);
                     if (value != null) {
                         if (count == limit) {
@@ -217,6 +217,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
         if (fieldValue.length() > sizeLimit) {
             applyThresholdAction(fields, fieldName, fieldValue, sizeLimit);
         } else {
+            fieldValue = helper.cleanEscapedMultivalueSeparators(fieldValue);
             fields.put(fieldName, fieldValue);
         }
     }

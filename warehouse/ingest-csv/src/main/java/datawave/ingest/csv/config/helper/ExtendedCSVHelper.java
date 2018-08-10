@@ -33,13 +33,13 @@ public class ExtendedCSVHelper extends CSVHelper {
         /**
          * Comma-delimited list of fields in the header to use as security markings. This parameter supports multiple datatypes, for example
          * mydatatype.data.category.security.field.names. Field name N within this list must be paired with corresponding "domain" entry N within
-         * {@link EVENT_SECURITY_MARKING_FIELD_DOMAINS}
+         * EVENT_SECURITY_MARKING_FIELD_DOMAINS
          */
         public static final String EVENT_SECURITY_MARKING_FIELD_NAMES = ".data.category.security.field.names";
         /**
          * Comma-delimited list of names to use as security marking domains. This parameter supports multiple datatypes, for example
          * mydatatype.data.category.security.field.domains. Domain N within this list must be paired with a corresponding field name entry N within
-         * {@link EVENT_SECURITY_MARKING_FIELD_NAMES}
+         * EVENT_SECURITY_MARKING_FIELD_NAMES
          */
         public static final String EVENT_SECURITY_MARKING_FIELD_DOMAINS = ".data.category.security.field.domains";
         /**
@@ -169,6 +169,7 @@ public class ExtendedCSVHelper extends CSVHelper {
         if (fieldValue.contains("\"\"")) {
             fieldValue = fieldValue.replaceAll("\"\"", "\"");
         }
+        
         return fieldValue;
     }
     
@@ -181,18 +182,24 @@ public class ExtendedCSVHelper extends CSVHelper {
     }
     
     /**
-     * Lowercase MD5,SHA1,SHA256 but do *not* remove any wildspace
-     * 
+     * Lowercase MD5,SHA1,SHA256 but do *not* remove any whitespace as CSVHelper does.
+     *
+     * @param fieldName
+     *            the name of the field to clean
      * @param fieldValue
-     * @return
+     *            the value to clean
+     * @return the cleaned field, null if the field value is empty.
      */
     @Override
     public String clean(String fieldName, String fieldValue) {
         if (StringUtils.isEmpty(fieldValue)) {
             return null;
         }
-        if (fieldName.equalsIgnoreCase("md5") || fieldName.equalsIgnoreCase("sha1") || fieldName.equalsIgnoreCase("sha256"))
-            return fieldValue.toLowerCase();
+        
+        if (fieldName.equalsIgnoreCase("md5") || fieldName.equalsIgnoreCase("sha1") || fieldName.equalsIgnoreCase("sha256")) {
+            fieldValue = fieldValue.toLowerCase();
+        }
+        
         return fieldValue;
     }
     

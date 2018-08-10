@@ -252,7 +252,7 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
     protected void processPreSplitField(String fieldName, final String fieldValue) {
         if (csvHelper.isMultiValuedField(fieldName)) {
             // Value can be multiple parts, need to break on semi-colon
-            final String[] values = fieldValue.split(csvHelper.getMultiValueSeparator());
+            final String[] values = fieldValue.split(csvHelper.getEscapeSafeMultiValueSeparatorPattern());
             
             // Can be renamed if specified in multivalued fields, but not if using blacklist
             if (!csvHelper.usingMultiValuedFieldsBlacklist()) {
