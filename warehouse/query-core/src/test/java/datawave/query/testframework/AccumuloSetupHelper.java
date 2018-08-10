@@ -89,8 +89,8 @@ public class AccumuloSetupHelper {
         
         PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
         PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_TABLE_NAME);
-        // PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
-        // PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_INDEX_TABLE_NAME);
+        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME);
         
         return connector;
     }
