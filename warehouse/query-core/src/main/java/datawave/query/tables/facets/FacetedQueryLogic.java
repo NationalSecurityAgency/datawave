@@ -1,5 +1,6 @@
 package datawave.query.tables.facets;
 
+import datawave.query.QueryParameters;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -94,7 +95,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
             }
         }
         
-        final String limitFieldsString = settings.findParameter(LIMIT_FIELDS).getParameterValue().trim();
+        final String limitFieldsString = settings.findParameter(QueryParameters.LIMIT_FIELDS).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(limitFieldsString)) {
             Boolean limitFields = Boolean.parseBoolean(limitFieldsString);
             facetedConfig.setHasFieldLimits(limitFields);

@@ -121,6 +121,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String LIMIT_FIELDS_PRE_QUERY_EVALUATION = "limit.fields.pre.query.evaluation";
     public static final String LIMIT_FIELDS_FIELD = "limit.fields.field";
     public static final String GROUP_FIELDS = "group.fields";
+    public static final String UNIQUE_FIELDS = "unique.fields";
     public static final String TYPE_METADATA_IN_HDFS = "type.metadata.in.hdfs";
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
@@ -243,7 +244,8 @@ public class QueryOptions implements OptionDescriber {
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
     
-    protected Set<String> groupFieldsSet = Sets.newHashSet();
+    protected Set<String> groupFields = Sets.newHashSet();
+    protected Set<String> uniqueFields = Sets.newHashSet();
     
     protected Set<String> hitsOnlySet = new HashSet<>();
     
@@ -425,7 +427,7 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsMap = other.limitFieldsMap;
         this.limitFieldsPreQueryEvaluation = other.limitFieldsPreQueryEvaluation;
         this.limitFieldsField = other.limitFieldsField;
-        this.groupFieldsSet = other.groupFieldsSet;
+        this.groupFields = other.groupFields;
         this.hitsOnlySet = other.hitsOnlySet;
         
         this.compressedMappings = other.compressedMappings;
@@ -895,12 +897,20 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsField = limitFieldsField;
     }
     
-    public Set<String> getGroupFieldsMap() {
-        return groupFieldsSet;
+    public Set<String> getGroupFields() {
+        return groupFields;
     }
     
-    public void setGroupFieldsMap(Set<String> groupFieldsSet) {
-        this.groupFieldsSet = groupFieldsSet;
+    public void setGroupFields(Set<String> groupFields) {
+        this.groupFields = groupFields;
+    }
+    
+    public Set<String> getUniqueFields() {
+        return uniqueFields;
+    }
+    
+    public void setUniqueFields(Set<String> uniqueFields) {
+        this.uniqueFields = uniqueFields;
     }
     
     public Set<String> getHitsOnlySet() {
@@ -984,6 +994,7 @@ public class QueryOptions implements OptionDescriber {
                         "Classes implementing DocumentPermutation which can transform the document prior to evaluation (e.g. expand/mutate fields).");
         options.put(LIMIT_FIELDS, "limit fields");
         options.put(GROUP_FIELDS, "group fields");
+        options.put(UNIQUE_FIELDS, "unique fields");
         options.put(HIT_LIST, "hit list");
         options.put(NON_INDEXED_DATATYPES, "Normalizers to apply only at aggregation time");
         options.put(CONTAINS_INDEX_ONLY_TERMS, "Does the query being evaluated contain any terms which are index-only");
@@ -1270,7 +1281,14 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(GROUP_FIELDS)) {
             String groupFields = options.get(GROUP_FIELDS);
             for (String param : Splitter.on(',').omitEmptyStrings().trimResults().split(groupFields)) {
-                this.getGroupFieldsMap().add(param);
+                this.getGroupFields().add(param);
+            }
+        }
+        
+        if (options.containsKey(UNIQUE_FIELDS)) {
+            String uniqueFields = options.get(UNIQUE_FIELDS);
+            for (String param : Splitter.on(',').omitEmptyStrings().trimResults().split(uniqueFields)) {
+                this.getUniqueFields().add(param);
             }
         }
         

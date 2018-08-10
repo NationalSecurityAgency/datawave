@@ -83,7 +83,7 @@ class DedupingIterator implements Iterator<Entry<Key,Value>> {
     
     @Override
     public void remove() {
-        throw new UnsupportedOperationException("Remove not supported on DeduppingIterator");
+        throw new UnsupportedOperationException("Remove not supported on DedupingIterator");
     }
     
     private boolean isDuplicate(Entry<Key,Value> entry) {

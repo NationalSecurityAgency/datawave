@@ -1,6 +1,8 @@
 package datawave.webservice.query.iterator;
 
+import datawave.webservice.query.logic.FlushableQueryLogicTransformer;
 import java.util.Iterator;
+
 import org.apache.commons.collections.Transformer;
 import org.apache.commons.collections.iterators.TransformIterator;
 import datawave.webservice.query.exception.EmptyObjectException;
@@ -55,6 +57,18 @@ public class DatawaveTransformIterator extends TransformIterator {
                 done = true;
             } catch (EmptyObjectException e) {
                 // not yet done, so continue fetching next
+            }
+        }
+        // see if there are any results cached by the transformer
+        if (o == null && getTransformer() instanceof FlushableQueryLogicTransformer) {
+            done = false;
+            while (!done) {
+                try {
+                    o = ((FlushableQueryLogicTransformer) getTransformer()).flush();
+                    done = true;
+                } catch (EmptyObjectException e) {
+                    // not yet done, so continue flushing
+                }
             }
         }
         return o;
