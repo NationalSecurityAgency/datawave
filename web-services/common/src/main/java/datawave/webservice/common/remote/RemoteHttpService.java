@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.spotify.dns.DnsSrvResolver;
 import com.spotify.dns.DnsSrvResolvers;
 import datawave.security.authorization.JWTTokenHandler;
+import datawave.security.authorization.JWTTokenHandler.TtlMode;
 import datawave.security.util.DnUtils;
 import org.apache.http.*;
 import org.apache.http.client.ClientProtocolException;
@@ -112,7 +113,7 @@ abstract public class RemoteHttpService {
             X509Certificate[] certs = keyManager.getCertificateChain(alias);
             Key signingKey = keyManager.getPrivateKey(alias);
             
-            jwtTokenHandler = new JWTTokenHandler(certs[0], signingKey, 24, TimeUnit.HOURS, objectMapper);
+            jwtTokenHandler = new JWTTokenHandler(certs[0], signingKey, 24, TimeUnit.HOURS, TtlMode.RELATIVE_TO_CURRENT_TIME, objectMapper);
             
             ArrayList<Header> defaultHeaders = new ArrayList<>();
             defaultHeaders.add(new BasicHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType()));

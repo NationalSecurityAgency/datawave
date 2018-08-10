@@ -173,8 +173,6 @@ public class CompositeIndexTest {
             TimeUnit.DAYS.toMillis(90)};
     // @formatter:on
     
-    private static final String QUERY_WKT = "POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))";
-    
     @Inject
     @SpringBean(name = "EventQuery")
     ShardQueryLogic logic;
@@ -272,7 +270,7 @@ public class CompositeIndexTest {
     }
     
     public static void setupConfiguration(Configuration conf) {
-        String compositeFieldName = GEO_FIELD;// + "_" + WKT_BYTE_LENGTH_FIELD;
+        String compositeFieldName = GEO_FIELD;
         conf.set(DATA_TYPE_NAME + BaseIngestHelper.COMPOSITE_FIELD_NAMES, compositeFieldName);
         conf.set(DATA_TYPE_NAME + BaseIngestHelper.COMPOSITE_FIELD_MEMBERS, GEO_FIELD + "." + WKT_BYTE_LENGTH_FIELD);
         conf.set(DATA_TYPE_NAME + BaseIngestHelper.COMPOSITE_FIELDS_FIXED_LENGTH, compositeFieldName);

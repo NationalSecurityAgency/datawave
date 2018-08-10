@@ -22,7 +22,6 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     protected static final Logger log = Logger.getLogger(JexlStringBuildingVisitor.class);
     protected static final char BACKSLASH = '\\';
     protected static final char STRING_QUOTE = '\'';
-    private JexlASTHelper.HasMethodVisitor hasMethodVisitor = new JexlASTHelper.HasMethodVisitor();
     
     // allowed methods for composition. Nothing that mutates the collection is allowed, thus we have:
     private Set<String> allowedMethods = Sets.newHashSet("contains", "retainAll", "containsAll", "isEmpty", "size", "equals", "hashCode", "getValueForGroup",
@@ -413,7 +412,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
                 JexlNode argumentNode = node.jjtGetChild(i);
                 if (argumentNode instanceof ASTReference) {
                     // a method may have an argument that is another method. In this case, descend the visit tree for it
-                    if (((AtomicBoolean) argumentNode.jjtAccept(hasMethodVisitor, new AtomicBoolean(false))).get()) {
+                    if (JexlASTHelper.HasMethodVisitor.hasMethod(argumentNode)) {
                         this.visit((ASTReference) argumentNode, argumentStringBuilder);
                     } else {
                         for (int j = 0; j < argumentNode.jjtGetNumChildren(); j++) {

@@ -1036,6 +1036,8 @@ public class CachedResultsBean {
         return response;
     }
     
+    // Do not use the @Asynchronous annotation here. This method runs (calling the other version), setting
+    // status and then executes loadAndCreate asynchronously. It does not itself get run asynchronously.
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public Future<CachedResultsResponse> loadAndCreateAsync(@Required("newQueryId") String newQueryId, String alias, @Required("queryId") String queryId,
                     @Required("fields") String fields, String conditions, String grouping, String order, @Required("columnVisibility") String columnVisibility,
@@ -1056,7 +1058,8 @@ public class CachedResultsBean {
         return loadAndCreateAsync(queryParameters);
     }
     
-    @Asynchronous
+    // Do not use the @Asynchronous annotation here. This method runs, setting status and
+    // then executes loadAndCreate asynchronously. It does not itself get run asynchronously.
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public Future<CachedResultsResponse> loadAndCreateAsync(MultivaluedMap<String,String> queryParameters) {
         

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>2.2.0-SNAPSHOT</version>
+    <version>2.3.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -76,9 +76,9 @@
         <version.log4j>1.2.16</version.log4j>
         <version.log4j-extras>1.0</version.log4j-extras>
         <version.lucene>4.7.1</version.lucene>
-        <version.microservice.audit-api>1.0</version.microservice.audit-api>
-        <version.microservice.authorization-api>1.0</version.microservice.authorization-api>
-        <version.microservice.metrics-reporter>1.0</version.microservice.metrics-reporter>
+        <version.microservice.audit-api>1.2</version.microservice.audit-api>
+        <version.microservice.authorization-api>1.2</version.microservice.authorization-api>
+        <version.microservice.metrics-reporter>1.1</version.microservice.metrics-reporter>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>5.1.35</version.mysql-connector>
         <version.netty>4.0.15.Final</version.netty>
@@ -1167,6 +1167,7 @@
                     <configuration>
                         <quiet>true</quiet>
                         <directories combine.children="append">
+                            <!--suppress MavenModelInspection -->
                             <file>${datawave.root}/properties</file>
                             <file>${user.home}/.m2/datawave/properties</file>
                         </directories>
@@ -1423,12 +1424,23 @@
                 <plugin>
                     <groupId>pl.project13.maven</groupId>
                     <artifactId>git-commit-id-plugin</artifactId>
-                    <version>2.1.13</version>
+                    <version>2.2.3</version>
                     <configuration>
+                        <dotGitDirectory>${datawave.root}/.git</dotGitDirectory>
+                        <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
+                        <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                        <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
                         <gitDescribe>
                             <skip>true</skip>
                         </gitDescribe>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>revision</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1590,16 +1602,6 @@
                     <plugin>
                         <groupId>pl.project13.maven</groupId>
                         <artifactId>git-commit-id-plugin</artifactId>
-                        <configuration>
-                            <dotGitDirectory>${datawave.root}/.git</dotGitDirectory>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>revision</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>

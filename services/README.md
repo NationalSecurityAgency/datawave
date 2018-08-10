@@ -181,7 +181,7 @@ Next, build the DATAWAVE microservices.
 cd /path/to/datawave/services
 mvn clean install
 # You can add -DskipTests to skip running unit tests
-# You can add -Pdocker to build Docker images (also add -Dos.detected.classifier=linux-x86_64-fedora if you are not running on a 64-bit linux platform)
+# You can add -Pdocker to build Docker images
 ```
 
 Now launch the configuration service. Specify the `sample_configuration` for the
@@ -388,7 +388,7 @@ If you have Docker installed on your machine, then this demo can be built with
 Docker images by enabling the docker maven profile:
 
 ```bash
-mvn -Pdocker -Dos.detected.classifier=linux-x86_64-fedora clean package
+mvn -Pdocker clean package
 ``` 
 
 Note that you must override the os detection since you might not be building on

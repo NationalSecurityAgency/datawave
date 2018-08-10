@@ -2,6 +2,7 @@ package datawave.query.composite;
 
 import datawave.query.jexl.JexlNodeFactory;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -105,14 +106,18 @@ public class CompositeRange extends Composite {
             expressions.add(getFullyInclusiveLowerBoundExpression());
             nodes.add(JexlNodeFactory.buildNode((ASTGENode) null, (String) null, (String) null));
         } else {
-            if (getLowerBoundNode() != null && getLowerBoundExpression() != null && !getLowerBoundExpression().equals("")) {
-                nodes.add(getLowerBoundNode());
-                expressions.add(getLowerBoundExpression());
+            JexlNode lowerBoundNode = getLowerBoundNode();
+            String lowerBoundExpression = getLowerBoundExpression();
+            if (lowerBoundNode != null && lowerBoundExpression != null && !lowerBoundExpression.equals("")) {
+                nodes.add(lowerBoundNode);
+                expressions.add(lowerBoundExpression);
             }
         }
-        if (getUpperBoundNode() != null && getUpperBoundExpression() != null && !getUpperBoundExpression().equals("")) {
-            nodes.add(getUpperBoundNode());
-            expressions.add(getUpperBoundExpression());
+        JexlNode upperBoundNode = getUpperBoundNode();
+        String upperBoundExpression = getUpperBoundExpression();
+        if (upperBoundNode != null && upperBoundExpression != null && !upperBoundExpression.equals("")) {
+            nodes.add(upperBoundNode);
+            expressions.add(upperBoundExpression);
         }
     }
     
@@ -130,15 +135,6 @@ public class CompositeRange extends Composite {
         if (isUnbounded && node instanceof ASTLENode)
             return JexlNodeFactory.buildNode((ASTLTNode) null, compositeName, "");
         return node;
-    }
-    
-    private JexlNode getNodeClass(List<JexlNode> jexlNodeList) {
-        JexlNode lastNode = null;
-        for (JexlNode node : jexlNodeList) {
-            if (node != null)
-                lastNode = node;
-        }
-        return lastNode;
     }
     
     // used to handle special case where our index is overloaded and runs against legacy (i.e. non-composite) data

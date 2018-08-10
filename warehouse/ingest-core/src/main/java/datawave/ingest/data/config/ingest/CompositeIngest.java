@@ -382,7 +382,7 @@ public interface CompositeIngest {
                 List<NormalizedContentInterface> tempResults = new ArrayList<>();
                 for (Entry<String,String[]> vFields : this.compositeFieldDefinitions.entrySet()) {
                     tempResults.clear();
-                    addCompositeFields(tempResults, eventFields, vFields.getKey(), null, null, grouping.get(vFields.getKey()),
+                    addCompositeFields(tempResults, eventFields, vFields.getKey(), null, null, GroupingPolicy.IGNORE_GROUPS,
                                     allowMissing.get(vFields.getKey()), vFields.getValue(), 0, new StringBuilder(), new StringBuilder(), null,
                                     CompositeIngest.isOverloadedCompositeField(Arrays.asList(vFields.getValue()), vFields.getKey()));
                     for (NormalizedContentInterface value : tempResults) {

@@ -32,6 +32,55 @@ import java.util.Map;
  * 
  */
 public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachingIteratorJexl {
+    
+    public static class Builder<B extends Builder<B>> extends DatawaveFieldIndexCachingIteratorJexl.Builder<B> {
+        protected Text upperBound = null;
+        protected boolean upperInclusive = true;
+        protected boolean lowerInclusive = true;
+        
+        public B withLowerBound(Text lowerBound) {
+            return super.withFieldValue(lowerBound);
+        }
+        
+        public B withLowerBound(String lowerBound) {
+            return this.withLowerBound(new Text(lowerBound));
+        }
+        
+        public B withUpperBound(Text upperBound) {
+            this.upperBound = upperBound;
+            return self();
+        }
+        
+        public B withUpperBound(String upperBound) {
+            return this.withUpperBound(new Text(upperBound));
+        }
+        
+        public B upperInclusive(boolean upperInclusive) {
+            this.upperInclusive = upperInclusive;
+            return self();
+        }
+        
+        public B lowerInclusive(boolean lowerInclusive) {
+            this.lowerInclusive = lowerInclusive;
+            return self();
+        }
+        
+        public DatawaveFieldIndexRangeIteratorJexl build() {
+            return new DatawaveFieldIndexRangeIteratorJexl(this);
+        }
+    }
+    
+    public static Builder<?> builder() {
+        return new Builder();
+    }
+    
+    protected DatawaveFieldIndexRangeIteratorJexl(Builder builder) {
+        super(builder);
+        this.upperBound = builder.upperBound;
+        this.upperInclusive = builder.upperInclusive;
+        this.lowerInclusive = builder.lowerInclusive;
+    }
+    
     protected Text upperBound = null;
     protected boolean upperInclusive = true;
     protected boolean lowerInclusive = true;
@@ -40,34 +89,6 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
     // ------------- Constructors
     public DatawaveFieldIndexRangeIteratorJexl() {
         super();
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexRangeIteratorJexl(Text fieldName, Text lowerBound, boolean lowerInclusive, Text upperBound, boolean upperInclusive,
-                    TimeFilter timeFilter, Predicate<Key> datatypeFilter, long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit,
-                    int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock, boolean allowDirReuse) {
-        this(fieldName, lowerBound, lowerInclusive, upperBound, upperInclusive, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout, bufferSize,
-                        maxRangeSplit, maxOpenFiles, fs, uniqueDir, queryLock, allowDirReuse);
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexRangeIteratorJexl(Text fieldName, Text lowerBound, boolean lowerInclusive, Text upperBound, boolean upperInclusive,
-                    TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg, long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit,
-                    int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock, boolean allowDirReuse) {
-        this(fieldName, lowerBound, lowerInclusive, upperBound, upperInclusive, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize,
-                        maxRangeSplit, maxOpenFiles, fs, uniqueDir, queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true, null);
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexRangeIteratorJexl(Text fieldName, Text lowerBound, boolean lowerInclusive, Text upperBound, boolean upperInclusive,
-                    TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg, long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit,
-                    int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs,
-                    Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters) {
-        super(fieldName, lowerBound, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse, returnKeyType, sortedUIDs, compositePredicateFilters);
-        this.lowerInclusive = lowerInclusive;
-        this.upperBound = upperBound;
-        this.upperInclusive = upperInclusive;
     }
     
     public DatawaveFieldIndexRangeIteratorJexl(DatawaveFieldIndexRangeIteratorJexl other, IteratorEnvironment env) {

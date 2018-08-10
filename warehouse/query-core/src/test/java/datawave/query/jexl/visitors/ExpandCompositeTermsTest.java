@@ -1030,15 +1030,108 @@ public class ExpandCompositeTermsTest {
     
     @Test
     public void test26() throws Exception {
-        String query = "((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))))) && GEO == '1f36c71c71c71c71c7􏿿+bE1.3'";
+        ShardQueryConfiguration conf = new ShardQueryConfiguration();
         
-        System.out.println(JexlStringBuildingVisitor.buildQuery(JexlASTHelper.parseJexlQuery(query)));
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
         
-        JexlNode node = TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query));
+        compositeToFieldMap.put("GEO", "GEO");
+        compositeToFieldMap.put("GEO", "WKT");
+        conf.setCompositeToFieldMap(compositeToFieldMap);
         
-        System.out.println(JexlStringBuildingVisitor.buildQuery(node));
+        Set<String> indexedFields = new HashSet<>();
+        indexedFields.add("GEO");
+        conf.setFixedLengthFields(indexedFields);
         
-        System.out.println("done!");
+        conf.setBeginDate(new Date(0));
+        conf.setEndDate(new Date(TimeUnit.DAYS.toMillis(30)));
+        
+        Map<String,Date> compositeWithOldDataMap = new HashMap<>();
+        compositeWithOldDataMap.put("GEO", new Date(TimeUnit.DAYS.toMillis(15)));
+        conf.setCompositeTransitionDates(compositeWithOldDataMap);
+        
+        String normNum = Normalizer.NUMBER_NORMALIZER.normalize("55");
+        
+        String query = "(GEO == '0202' || ((GEO >= '030a' && GEO <= '0335'))) && WKT == '" + normNum + "'";
+        String expected = "(((GEO >= '0202' && GEO <= '0202􏿿" + normNum
+                        + "') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && WKT == '" + normNum
+                        + "'))))) || ((GEO >= '030a' && GEO <= '0335􏿿" + normNum
+                        + "') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && WKT == '" + normNum
+                        + "'))))))";
+        
+        runTestQuery(query, expected, indexedFields, conf);
+    }
+    
+    @Test
+    public void test27() throws Exception {
+        ShardQueryConfiguration conf = new ShardQueryConfiguration();
+        
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
+        
+        compositeToFieldMap.put("GEO", "GEO");
+        compositeToFieldMap.put("GEO", "WKT");
+        conf.setCompositeToFieldMap(compositeToFieldMap);
+        
+        Set<String> indexedFields = new HashSet<>();
+        indexedFields.add("GEO");
+        conf.setFixedLengthFields(indexedFields);
+        
+        String normNum = Normalizer.NUMBER_NORMALIZER.normalize("55");
+        
+        String query = "(GEO == '0202' || ((GEO >= '030a' && GEO <= '0335'))) && WKT == '" + normNum + "'";
+        String expected = "(GEO == '0202􏿿+bE5.5' || ((GEO >= '030a􏿿+bE5.5' && GEO <= '0335􏿿+bE5.5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && WKT == '+bE5.5'))))))";
+        
+        runTestQuery(query, expected, indexedFields, conf);
+    }
+    
+    @Test
+    public void test28() throws Exception {
+        ShardQueryConfiguration conf = new ShardQueryConfiguration();
+        
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
+        
+        compositeToFieldMap.put("GEO", "GEO");
+        compositeToFieldMap.put("GEO", "WKT");
+        conf.setCompositeToFieldMap(compositeToFieldMap);
+        
+        Set<String> indexedFields = new HashSet<>();
+        indexedFields.add("GEO");
+        conf.setFixedLengthFields(indexedFields);
+        
+        conf.setBeginDate(new Date(0));
+        conf.setEndDate(new Date(TimeUnit.DAYS.toMillis(30)));
+        
+        Map<String,Date> compositeWithOldDataMap = new HashMap<>();
+        compositeWithOldDataMap.put("GEO", new Date(TimeUnit.DAYS.toMillis(15)));
+        conf.setCompositeTransitionDates(compositeWithOldDataMap);
+        
+        String normNum = Normalizer.NUMBER_NORMALIZER.normalize("55");
+        
+        String query = "(GEO == '0202' || GEO >= '030a') && WKT == '" + normNum + "'";
+        String expected = "(((GEO >= '0202' && GEO <= '0202􏿿+bE5.5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && WKT == '+bE5.5'))))) || (GEO >= '030a' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO >= '030a' && WKT == '+bE5.5'))))))";
+        
+        runTestQuery(query, expected, indexedFields, conf);
+    }
+    
+    @Test
+    public void test29() throws Exception {
+        ShardQueryConfiguration conf = new ShardQueryConfiguration();
+        
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
+        
+        compositeToFieldMap.put("GEO", "GEO");
+        compositeToFieldMap.put("GEO", "WKT");
+        conf.setCompositeToFieldMap(compositeToFieldMap);
+        
+        Set<String> indexedFields = new HashSet<>();
+        indexedFields.add("GEO");
+        conf.setFixedLengthFields(indexedFields);
+        
+        String normNum = Normalizer.NUMBER_NORMALIZER.normalize("55");
+        
+        String query = "(GEO == '0202' || GEO >= '030a') && WKT == '" + normNum + "'";
+        String expected = "(GEO == '0202􏿿+bE5.5' || (GEO >= '030a􏿿+bE5.5' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO >= '030a' && WKT == '+bE5.5'))))))";
+        
+        runTestQuery(query, expected, indexedFields, conf);
     }
     
     void runTestQuery(String query, String expected) throws ParseException {

@@ -4,13 +4,14 @@
     <parent>
         <artifactId>datawave-microservice-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.1</version>
+        <version>1.2</version>
     </parent>
     <artifactId>metrics-reporter</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.2-SNAPSHOT</version>
     <properties>
         <version.commons-io>2.5</version.commons-io>
         <version.dropwizard-metrics>3.1.5</version.dropwizard-metrics>
+        <version.httpclient>4.5.5</version.httpclient>
         <version.javastatsd>3.1.0</version.javastatsd>
     </properties>
     <dependencyManagement>
@@ -29,6 +30,17 @@
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
                 <version>${version.dropwizard-metrics}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${version.httpclient}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>commons-logging</artifactId>
+                        <groupId>commons-logging</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>

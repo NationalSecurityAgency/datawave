@@ -47,8 +47,8 @@ public class AncestorEventDataFilter extends ConfigurableEventDataQueryFilter {
     protected String docUid = null;
     
     @Override
-    public void setDocumentKey(Key document) {
-        super.setDocumentKey(document);
+    public void startNewDocument(Key document) {
+        super.startNewDocument(document);
         this.docUid = getUid(document);
     }
     

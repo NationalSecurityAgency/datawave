@@ -351,7 +351,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
     private long beginDateCap = -1;
     
-    private boolean failOutsideValidDateRange = false;
+    private boolean failOutsideValidDateRange = true;
     
     protected Function<String,String> queryMacroFunction;
     

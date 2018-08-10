@@ -31,9 +31,9 @@ public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
     }
     
     @Override
-    public void setDocumentKey(Key document) {
+    public void startNewDocument(Key document) {
         this.document = document;
-        filter.setDocumentKey(document);
+        filter.startNewDocument(document);
     }
     
     @Override

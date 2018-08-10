@@ -17,6 +17,7 @@ import javax.annotation.security.RunAs;
 import javax.ejb.LocalBean;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
@@ -40,7 +41,11 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 @PermitAll
@@ -69,6 +74,9 @@ public class HealthBean {
     @Inject
     @ConfigProperty(name = "dw.health.shutdown.check.interval.ms", defaultValue = "15000")
     private long queryCompletionWaitIntervalMillis;
+    
+    @Inject
+    private Instance<HealthInfoContributor> healthInfos;
     
     /**
      * Returns a {@link ServerHealth} object, which indicates the current health of the server. This object contains information regarding the operating system
@@ -196,6 +204,17 @@ public class HealthBean {
         return Response.ok().entity(response).build();
     }
     
+    @GET
+    @Path("/info")
+    @JmxManaged
+    public List<VersionInfo> versionInfo() {
+        ArrayList<VersionInfo> versionInfos = new ArrayList<>();
+        for (HealthInfoContributor contributor : healthInfos) {
+            versionInfos.add(contributor.versionInfo());
+        }
+        return versionInfos;
+    }
+    
     @XmlRootElement
     @XmlAccessorType(XmlAccessType.NONE)
     public static class ServerHealth {
@@ -233,6 +252,108 @@ public class HealthBean {
         
         public long getSwapBytesUsed() {
             return swapBytesUsed;
+        }
+    }
+    
+    @XmlRootElement
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class VersionInfo {
+        private String name;
+        private BuildInfo build;
+        private GitInfo git;
+        
+        public VersionInfo() {
+            // Constructor required for JAX-B
+        }
+        
+        public VersionInfo(String name, BuildInfo build, GitInfo git) {
+            this.name = name;
+            this.build = build;
+            this.git = git;
+        }
+        
+        public String getName() {
+            return name;
+        }
+        
+        public BuildInfo getBuild() {
+            return build;
+        }
+        
+        public GitInfo getGit() {
+            return git;
+        }
+    }
+    
+    @XmlRootElement
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class BuildInfo {
+        private String version;
+        private String time;
+        
+        public BuildInfo() {
+            // Constructor required for JAX-B
+        }
+        
+        public BuildInfo(String version, String time) {
+            this.version = version;
+            this.time = time;
+        }
+        
+        public String getVersion() {
+            return version;
+        }
+        
+        public String getTime() {
+            return time;
+        }
+    }
+    
+    @XmlRootElement
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class GitInfo {
+        private CommitInfo commit;
+        private String branch;
+        
+        public GitInfo() {
+            // Constructor required for JAX-B
+        }
+        
+        public GitInfo(CommitInfo commit, String branch) {
+            this.commit = commit;
+            this.branch = branch;
+        }
+        
+        public CommitInfo getCommit() {
+            return commit;
+        }
+        
+        public String getBranch() {
+            return branch;
+        }
+    }
+    
+    @XmlRootElement
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class CommitInfo {
+        private String time;
+        private String id;
+        
+        public CommitInfo() {
+            // Constructor required for JAX-B
+        }
+        
+        public CommitInfo(String time, String id) {
+            this.time = time;
+            this.id = id;
+        }
+        
+        public String getTime() {
+            return time;
+        }
+        
+        public String getId() {
+            return id;
         }
     }
 }

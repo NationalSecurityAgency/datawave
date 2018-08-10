@@ -59,6 +59,129 @@ import java.util.concurrent.atomic.AtomicLong;
  * 
  */
 public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator implements CompositePredicateFilterer {
+    
+    public static abstract class Builder<B extends Builder<B>> {
+        private Text fieldName;
+        protected Text fieldValue;
+        private Predicate<Key> datatypeFilter;
+        private TimeFilter timeFilter;
+        private boolean negated;
+        private PartialKey returnKeyType = DEFAULT_RETURN_KEY_TYPE;
+        private int maxRangeSplit = 11;
+        private FileSystem fs;
+        private Path uniqueDir;
+        private QueryLock queryLock;
+        private boolean allowDirReuse;
+        private long scanThreshold = 10000;
+        private int hdfsBackedSetBufferSize = 10000;
+        private int maxOpenFiles = 100;
+        private boolean sortedUIDs = true;
+        protected QuerySpanCollector querySpanCollector = null;
+        protected volatile boolean collectTimingDetails = false;
+        private volatile long scanTimeout = 1000L * 60 * 60;
+        private Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters;
+        
+        @SuppressWarnings("unchecked")
+        protected B self() {
+            return (B) this;
+        }
+        
+        public B withFieldName(Text fieldName) {
+            this.fieldName = fieldName;
+            return self();
+        }
+        
+        public B withFieldName(String fieldName) {
+            return this.withFieldName(new Text(fieldName));
+        }
+        
+        public B withFieldValue(Text fieldValue) {
+            this.fieldValue = fieldValue;
+            return self();
+        }
+        
+        public B withFieldValue(String fieldValue) {
+            return this.withFieldValue(new Text(fieldValue));
+        }
+        
+        public B withTimeFilter(TimeFilter timeFilter) {
+            this.timeFilter = timeFilter;
+            return self();
+        }
+        
+        public B withDatatypeFilter(Predicate datatypeFilter) {
+            this.datatypeFilter = datatypeFilter;
+            return self();
+        }
+        
+        public B negated(boolean negated) {
+            this.negated = negated;
+            return self();
+        }
+        
+        public B withScanThreshold(long scanThreshold) {
+            this.scanThreshold = scanThreshold;
+            return self();
+        }
+        
+        public B withScanTimeout(long scanTimeout) {
+            this.scanTimeout = scanTimeout;
+            return self();
+        }
+        
+        public B withHdfsBackedSetBufferSize(int hdfsBackedSetBufferSize) {
+            this.hdfsBackedSetBufferSize = hdfsBackedSetBufferSize;
+            return self();
+        }
+        
+        public B withMaxRangeSplit(int maxRangeSplit) {
+            this.maxRangeSplit = maxRangeSplit;
+            return self();
+        }
+        
+        public B withMaxOpenFiles(int maxOpenFiles) {
+            this.maxOpenFiles = maxOpenFiles;
+            return self();
+        }
+        
+        public B withFileSystem(FileSystem fs) {
+            this.fs = fs;
+            return self();
+        }
+        
+        public B withUniqueDir(Path uniqueDir) {
+            this.uniqueDir = uniqueDir;
+            return self();
+        }
+        
+        public B withQueryLock(QueryLock queryLock) {
+            this.queryLock = queryLock;
+            return self();
+        }
+        
+        public B allowDirResuse(boolean allowDirReuse) {
+            this.allowDirReuse = allowDirReuse;
+            return self();
+        }
+        
+        public B withReturnKeyType(PartialKey returnKeyType) {
+            this.returnKeyType = returnKeyType;
+            return self();
+        }
+        
+        public B withSortedUUIDs(boolean sortedUUIDs) {
+            this.sortedUIDs = sortedUUIDs;
+            return self();
+        }
+        
+        public B withCompositePredicateFilters(Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters) {
+            this.compositePredicateFilters = compositePredicateFilters;
+            return self();
+        }
+        
+        public abstract DatawaveFieldIndexCachingIteratorJexl build();
+    }
+    
     public static final Collection<ByteSequence> EMPTY_COL_FAMS = new ArrayList<>();
     public static final Logger log = Logger.getLogger(DatawaveFieldIndexCachingIteratorJexl.class);
     public static final String NULL_BYTE = Constants.NULL_BYTE_STRING;
@@ -168,6 +291,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     
     // -------------------------------------------------------------------------
     // ------------- Constructors
+    
     public DatawaveFieldIndexCachingIteratorJexl() {
         super();
         this.fieldName = null;
@@ -191,24 +315,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.sortedUIDs = true;
     }
     
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, long scanThreshold,
-                    long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir, QueryLock queryLock,
-                    boolean allowDirReuse) {
-        this(fieldName, fieldValue, timeFilter, datatypeFilter, false, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse);
+    protected DatawaveFieldIndexCachingIteratorJexl(Builder builder) {
+        this(builder.fieldName, builder.fieldValue, builder.timeFilter, builder.datatypeFilter, builder.negated, builder.scanThreshold, builder.scanTimeout,
+                        builder.hdfsBackedSetBufferSize, builder.maxRangeSplit, builder.maxOpenFiles, builder.fs, builder.uniqueDir, builder.queryLock,
+                        builder.allowDirReuse, builder.returnKeyType, builder.sortedUIDs, builder.compositePredicateFilters);
     }
     
     @SuppressWarnings("hiding")
-    public DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
-                    long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
-                    QueryLock queryLock, boolean allowDirReuse) {
-        this(fieldName, fieldValue, timeFilter, datatypeFilter, neg, scanThreshold, scanTimeout, bufferSize, maxRangeSplit, maxOpenFiles, fs, uniqueDir,
-                        queryLock, allowDirReuse, DEFAULT_RETURN_KEY_TYPE, true, null);
-    }
-    
-    @SuppressWarnings("hiding")
-    public DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
+    private DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
                     long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
                     QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs,
                     Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters) {

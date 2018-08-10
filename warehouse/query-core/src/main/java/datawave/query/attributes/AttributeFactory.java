@@ -1,6 +1,7 @@
 package datawave.query.attributes;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -70,12 +71,21 @@ public class AttributeFactory {
     
     public Attribute<?> create(String fieldName, String data, Key key, boolean toKeep) {
         
-        return this.create(fieldName, data, key, extractIngestDataTypeFromKey(key), toKeep);
+        return this.create(fieldName, data, key, extractIngestDataTypeFromKey(key), toKeep, false);
+    }
+    
+    public Attribute<?> create(String fieldName, String data, Key key, boolean toKeep, boolean isComposite) {
+        
+        return this.create(fieldName, data, key, extractIngestDataTypeFromKey(key), toKeep, isComposite);
     }
     
     public Attribute<?> create(String fieldName, String data, Key key, String ingestType, boolean toKeep) {
+        return this.create(fieldName, data, key, ingestType, toKeep, false);
+    }
+    
+    public Attribute<?> create(String fieldName, String data, Key key, String ingestType, boolean toKeep, boolean isComposite) {
         
-        Collection<String> dataTypes = this.typeMetadata.getTypeMetadata(fieldName, ingestType);
+        Collection<String> dataTypes = (isComposite) ? Arrays.asList(NoOpType.class.getName()) : this.typeMetadata.getTypeMetadata(fieldName, ingestType);
         
         try {
             if (null == dataTypes || dataTypes.isEmpty()) {

@@ -30,7 +30,6 @@ public class QueryModelVisitor extends RebuildingVisitor {
     private HashSet<ASTAndNode> expandedNodes;
     private Set<String> validFields;
     private SimpleQueryModelVisitor simpleQueryModelVisitor;
-    private JexlASTHelper.HasMethodVisitor hasMethodVisitor = new JexlASTHelper.HasMethodVisitor();
     
     public QueryModelVisitor(QueryModel queryModel, Set<String> validFields) {
         this.queryModel = queryModel;
@@ -104,8 +103,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        AtomicBoolean state = (AtomicBoolean) node.jjtAccept(hasMethodVisitor, new AtomicBoolean(false));
-        if (state.get()) {
+        if (JexlASTHelper.HasMethodVisitor.hasMethod(node)) {
             // this reference has a child that is a method
             return (ASTReference) node.jjtAccept(this.simpleQueryModelVisitor, null);
         } else {
@@ -137,8 +135,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 log.trace("visiting:" + JexlStringBuildingVisitor.buildQuery(child));
             }
             // if this child has a method attached, be sure to descend into it for model substitutions
-            AtomicBoolean state = (AtomicBoolean) child.jjtAccept(hasMethodVisitor, new AtomicBoolean(false));
-            if (state.get()) {
+            if (JexlASTHelper.HasMethodVisitor.hasMethod(child)) {
                 child = (JexlNode) child.jjtAccept(this.simpleQueryModelVisitor, null);
             }
             
@@ -255,13 +252,13 @@ public class QueryModelVisitor extends RebuildingVisitor {
             log.trace("rightNodeQuery:" + JexlStringBuildingVisitor.buildQuery(rightNode));
         }
         // this will expand identifiers that have a method connected to them
-        AtomicBoolean leftState = (AtomicBoolean) leftNode.jjtAccept(hasMethodVisitor, new AtomicBoolean(false));
-        if (leftState.get()) {
+        boolean leftState = JexlASTHelper.HasMethodVisitor.hasMethod(leftNode);
+        if (leftState) {
             // there is a method under leftNode
             leftNode = (JexlNode) leftNode.jjtAccept(this.simpleQueryModelVisitor, null);
         }
-        AtomicBoolean rightState = (AtomicBoolean) rightNode.jjtAccept(hasMethodVisitor, new AtomicBoolean(false));
-        if (rightState.get() == false) {
+        boolean rightState = JexlASTHelper.HasMethodVisitor.hasMethod(rightNode);
+        if (rightState) {
             // there is a method under rightNode
             rightNode = (JexlNode) rightNode.jjtAccept(this.simpleQueryModelVisitor, null);
         }
@@ -277,7 +274,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
         }
         
         // if state == true on either side, then there is a method on one side and we are done applying the model
-        if (leftState.get() || rightState.get()) {
+        if (leftState || rightState) {
             JexlNode toReturn = JexlNodeFactory.buildUntypedBinaryNode(node, leftNode, rightNode);
             if (log.isTraceEnabled()) {
                 log.trace("done early. returning:" + JexlStringBuildingVisitor.buildQuery(toReturn));
@@ -439,7 +436,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
         
         @Override
         public Object visit(ASTIdentifier node, Object data) {
-            JexlNode newNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
+            JexlNode newNode;
             String fieldName = JexlASTHelper.getIdentifier(node);
             
             Collection<String> aliases = Sets.newLinkedHashSet(getAliasesForField(fieldName)); // de-dupe
@@ -454,7 +451,11 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 newKid.image = JexlASTHelper.rebuildIdentifier(alias);
                 nodes.add(newKid);
             }
-            newNode = JexlNodeFactory.createOrNode(nodes);
+            if (nodes.size() == 1) {
+                newNode = JexlNodeFactory.wrap(nodes.iterator().next());
+            } else {
+                newNode = JexlNodeFactory.createOrNode(nodes);
+            }
             newNode.jjtSetParent(node.jjtGetParent());
             
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {

@@ -20,11 +20,11 @@ import java.util.Map;
 public interface EventDataQueryFilter extends Predicate<Map.Entry<Key,String>>, Filter, SeekingFilter, TransformingFilter, Cloneable {
     
     /**
-     * This method can be used to change the document context fo the keep(Key k) method.
+     * This method is used to denote the start of processing a new document.
      *
-     * @param document
+     * @param documentKey
      */
-    void setDocumentKey(Key document);
+    void startNewDocument(Key documentKey);
     
     /**
      * The apply method is used to determine what gets put into the resulting document and subsequently the jexl context for evaluation. Note that this must

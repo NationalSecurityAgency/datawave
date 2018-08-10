@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import com.google.common.base.Predicate;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.query.attributes.AttributeFactory;
@@ -20,6 +21,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -181,6 +187,10 @@ public class EventDataQueryExpressonVisitorTest {
         assertTrue(filter.get("FOO").apply(p1));
         assertFalse(filter.get("FOO").apply(n1));
         assertFalse(filter.get("FOO").apply(p1));
+        filter.get("FOO").reset();
+        assertTrue(filter.get("FOO").apply(p1));
+        assertFalse(filter.get("FOO").apply(n1));
+        assertFalse(filter.get("FOO").apply(p1));
         
         assertNull(filter.get("BAR"));
     }
@@ -225,6 +235,17 @@ public class EventDataQueryExpressonVisitorTest {
         assertTrue(filter.get("BAR").apply(p2));
         assertFalse(filter.get("BAR").apply(n2));
         assertFalse(filter.get("BAR").apply(p2));
+        
+        ExpressionFilter.reset(filter);
+        
+        assertTrue(filter.get("FOO").apply(p1));
+        assertFalse(filter.get("FOO").apply(n1));
+        assertTrue(filter.get("FOO").apply(p1));
+        
+        assertTrue(filter.get("BAR").apply(p2));
+        assertFalse(filter.get("BAR").apply(n2));
+        assertFalse(filter.get("BAR").apply(p2));
+        
     }
     
     @Test
@@ -237,6 +258,36 @@ public class EventDataQueryExpressonVisitorTest {
         Key n1 = createKey("FOO", "def");
         
         assertNotNull(filter.get("FOO"));
+        assertTrue(filter.get("FOO").apply(n1));
+        assertTrue(filter.get("FOO").apply(p1));
+        assertFalse(filter.get("FOO").apply(n1));
+        assertTrue(filter.get("FOO").apply(p1));
+        
+        ExpressionFilter.reset(filter);
+        
+        assertTrue(filter.get("FOO").apply(n1));
+        assertTrue(filter.get("FOO").apply(p1));
+        assertFalse(filter.get("FOO").apply(n1));
+        assertTrue(filter.get("FOO").apply(p1));
+    }
+    
+    @Test
+    public void testAndNullSameFieldRegex() throws Exception {
+        String originalQuery = "FOO =~ 'a.*' && FOO == null";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        
+        Key p1 = createKey("FOO", "abc");
+        Key n1 = createKey("FOO", "def");
+        
+        assertNotNull(filter.get("FOO"));
+        assertTrue(filter.get("FOO").apply(n1));
+        assertTrue(filter.get("FOO").apply(p1));
+        assertFalse(filter.get("FOO").apply(n1));
+        assertTrue(filter.get("FOO").apply(p1));
+        
+        ExpressionFilter.reset(filter);
+        
         assertTrue(filter.get("FOO").apply(n1));
         assertTrue(filter.get("FOO").apply(p1));
         assertFalse(filter.get("FOO").apply(n1));
@@ -632,6 +683,66 @@ public class EventDataQueryExpressonVisitorTest {
         
         assertNotNull(filter.get("BAR"));
         assertFalse(filter.get("BAR").apply(p3));
+    }
+    
+    @Test
+    public void testClonesInThreads() throws Exception {
+        final Set<Object> exceptions = Collections.synchronizedSet(new HashSet<>());
+        
+        Thread[] threads = new Thread[256];
+        String originalQuery = "FOO =~ 'a.*' && FOO == null";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        final Map<String,ExpressionFilter> base = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        
+        final Key p1 = createKey("FOO", "abc");
+        final Key n1 = createKey("FOO", "def");
+        final Object gate = new Object();
+        final AtomicInteger started = new AtomicInteger();
+        final AtomicInteger running = new AtomicInteger();
+        final AtomicInteger completed = new AtomicInteger();
+        Runnable runnable = new Runnable() {
+            public void run() {
+                try {
+                    final Map<String,? extends Predicate<Key>> filter = EventDataQueryExpressionVisitor.ExpressionFilter.clone(base);
+                    started.getAndIncrement();
+                    synchronized (gate) {
+                        gate.wait();
+                    }
+                    running.getAndIncrement();
+                    for (int i = 0; i < 1024; i++) {
+                        assertTrue(filter.get("FOO").apply(n1));
+                        assertTrue(filter.get("FOO").apply(p1));
+                        assertFalse(filter.get("FOO").apply(n1));
+                        assertTrue(filter.get("FOO").apply(p1));
+                        
+                        ExpressionFilter.reset(filter);
+                    }
+                } catch (InterruptedException e) {} catch (Throwable t) {
+                    exceptions.add(t);
+                }
+                completed.getAndIncrement();
+            }
+        };
+        for (int i = 0; i < threads.length; i++) {
+            threads[i] = new Thread(runnable);
+            threads[i].start();
+        }
+        while (started.get() < threads.length) {
+            Thread.sleep(100);
+        }
+        synchronized (gate) {
+            gate.notifyAll();
+        }
+        while (running.get() < threads.length) {
+            synchronized (gate) {
+                gate.notifyAll();
+            }
+        }
+        while (completed.get() < threads.length) {
+            Thread.sleep(100);
+        }
+        
+        assertTrue(exceptions.isEmpty());
     }
     
     public static Key createKey(String fieldName, String fieldValue) {

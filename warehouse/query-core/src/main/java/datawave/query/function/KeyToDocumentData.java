@@ -179,7 +179,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         
         // setup the document key we are filtering for on the EventDataQueryFilter
         if (filter != null) {
-            filter.setDocumentKey(documentStartKey);
+            filter.startNewDocument(documentStartKey);
         }
         
         final List<Entry<Key,Value>> documentAttributes;

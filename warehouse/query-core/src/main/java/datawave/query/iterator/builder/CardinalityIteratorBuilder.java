@@ -9,9 +9,11 @@ public class CardinalityIteratorBuilder extends IndexIteratorBuilder {
     @SuppressWarnings("unchecked")
     public IndexIteratorBridge build() {
         if (notNull(field, value, source, datatypeFilter, keyTform, timeFilter)) {
-            IndexIteratorBridge itr = new IndexIteratorBridge(new IndexIterator(new Text(field), new Text(value), source, this.timeFilter, this.typeMetadata,
-                            this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), this.datatypeFilter, this.keyTform,
-                            createCompositePredicateFilters(field)));
+            IndexIteratorBridge itr = new IndexIteratorBridge(IndexIterator.builder(new Text(field), new Text(value), source).withTimeFilter(timeFilter)
+                            .withTypeMetadata(typeMetadata)
+                            .shouldBuildDocument(this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field))
+                            .withDatatypeFilter(datatypeFilter).withAggregation(this.keyTform)
+                            .withCompositePredicateFilters(createCompositePredicateFilters(field)).build());
             field = null;
             value = null;
             source = null;
