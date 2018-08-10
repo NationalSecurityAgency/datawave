@@ -14,7 +14,6 @@ import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.policy.IngestPolicyEnforcer;
-import datawave.query.Constants;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
@@ -34,7 +33,7 @@ import java.util.Set;
 /**
  * Abstract base class that contains the configuration settings for test data types.
  */
-public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
+public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
     
     private static final Logger log = Logger.getLogger(AbstractDataTypeConfig.class);
     
@@ -78,7 +77,7 @@ public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
     /**
      * Includes on the fields that are indexed (none of the composite fields).
      */
-    private final IFieldConfig fieldConfig;
+    private final FieldConfig fieldConfig;
     protected final Configuration hConf = new Configuration();
     
     /**
@@ -95,11 +94,11 @@ public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
      * @throws URISyntaxException
      *             ingest file uri conversion error
      */
-    protected AbstractDataTypeConfig(final String dt, final String ingestFile, final IFieldConfig config, final IRawDataManager manager) throws IOException,
+    protected AbstractDataTypeConfig(final String dt, final String ingestFile, final FieldConfig config, final RawDataManager manager) throws IOException,
                     URISyntaxException {
         log.info("---------  loading datatype (" + dt + ") ingest file(" + ingestFile + ") ---------");
         
-        // IRawDataManager manager = mgr;
+        // RawDataManager manager = mgr;
         URL url = this.getClass().getClassLoader().getResource(ingestFile);
         Assert.assertNotNull("unable to resolve ingest file(" + ingestFile + ")", url);
         this.ingestPath = url.toURI();
@@ -119,7 +118,7 @@ public abstract class AbstractDataTypeConfig implements IDataTypeHadoopConfig {
         this.hConf.set(this.dataType + TypeRegistry.HANDLER_CLASSES, AbstractColumnBasedHandler.class.getName());
         this.hConf.set(this.dataType + BaseIngestHelper.DEFAULT_TYPE, LcNoDiacriticsType.class.getName());
         this.hConf.set(this.dataType + CSVHelper.DATA_SEP, ",");
-        this.hConf.set(this.dataType + CSVHelper.MULTI_VALUED_SEPARATOR, IRawDataManager.MULTIVALUE_SEP);
+        this.hConf.set(this.dataType + CSVHelper.MULTI_VALUED_SEPARATOR, RawDataManager.MULTIVALUE_SEP);
         
         this.hConf.set(this.dataType + ".ingest.policy.enforcer.class", IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         

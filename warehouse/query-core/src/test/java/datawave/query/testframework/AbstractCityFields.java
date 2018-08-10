@@ -10,7 +10,7 @@ import java.util.Set;
 /**
  * Base class implementation for setting field configuration. Classes should extend this class and initialize the settings.
  */
-public abstract class AbstractCityFields implements IFieldConfig {
+public abstract class AbstractCityFields implements FieldConfig {
     
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     

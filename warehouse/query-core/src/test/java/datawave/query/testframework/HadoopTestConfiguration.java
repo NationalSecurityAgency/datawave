@@ -35,11 +35,11 @@ public class HadoopTestConfiguration extends Configuration {
         DefaultTables.put(DateIndexDataTypeHandler.DATEINDEX_TNAME, QueryTestTableHelper.DATE_INDEX_TABLE_NAME);
     }
     
-    public HadoopTestConfiguration(IDataTypeHadoopConfig dataType) {
+    public HadoopTestConfiguration(DataTypeHadoopConfig dataType) {
         this(dataType, DefaultTables);
     }
     
-    public HadoopTestConfiguration(IDataTypeHadoopConfig dataType, Map<String,String> tables) {
+    public HadoopTestConfiguration(DataTypeHadoopConfig dataType, Map<String,String> tables) {
         // add datatype configuration
         this.addResource(dataType.getHadoopConfiguration());
         

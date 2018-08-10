@@ -44,7 +44,7 @@ public class QueryJexl {
     private static final Logger log = Logger.getLogger(QueryJexl.class);
     
     private static final JexlEngine jEngine = new JexlEngine();
-    private final IRawDataManager manager;
+    private final RawDataManager manager;
     private final Date startDate;
     private final Date endDate;
     private final Expression jExpr;
@@ -60,7 +60,7 @@ public class QueryJexl {
      * @param end
      *            end date
      */
-    public QueryJexl(final String queryStr, final IRawDataManager dataManager, final Date start, final Date end) {
+    public QueryJexl(final String queryStr, final RawDataManager dataManager, final Date start, final Date end) {
         this.manager = dataManager;
         this.startDate = start;
         this.endDate = end;
@@ -211,14 +211,14 @@ public class QueryJexl {
     // classes for testing purposes
     public static class QueryJexlTest {
         
-        private static final int TestEntries = 4;
+        private static final int TEST_ENTRIES = 4;
         private static final String testDate = "20151010";
-        private final IRawDataManager manager = new TestManager();
+        private final RawDataManager manager = new TestManager();
         private Date date;
         
         public QueryJexlTest() {
             try {
-                this.date = IDataTypeHadoopConfig.YMD_DateFormat.parse(testDate);
+                this.date = DataTypeHadoopConfig.YMD_DateFormat.parse(testDate);
             } catch (ParseException pe) {
                 Assert.fail("invalid test date (" + testDate + ")");
             }
@@ -227,7 +227,7 @@ public class QueryJexl {
         @Test
         public void testSimple() {
             log.info("valid simple jexl parser/evaluation");
-            for (int n = 1; n <= TestEntries; n++) {
+            for (int n = 1; n <= TEST_ENTRIES; n++) {
                 String val = "hOME-" + n;
                 String q = "HOME == '" + val + "' or xxx == 'xxx'";
                 QueryJexl p = new QueryJexl(q, manager, date, date);
@@ -243,24 +243,24 @@ public class QueryJexl {
         @Test
         public void testRegex() {
             log.info("valid regex jexl parser/evaluation");
-            for (int n = 1; n <= TestEntries; n++) {
+            for (int n = 1; n <= TEST_ENTRIES; n++) {
                 String val = "Ho.*";
                 String q = "HOME =~ '" + val + "'";
                 QueryJexl p = new QueryJexl(q, manager, date, date);
                 Set<Map<String,String>> resp = p.evaluate();
-                Assert.assertEquals(TestEntries, resp.size());
+                Assert.assertEquals(TEST_ENTRIES, resp.size());
             }
         }
         
         @Test
         public void testNotRegex() {
             log.info("valid NOT regex jexl parser/evaluation");
-            for (int n = 1; n <= TestEntries; n++) {
+            for (int n = 1; n <= TEST_ENTRIES; n++) {
                 String val = ".*E-" + n;
                 String q = "HOME !~ '" + val + "'";
                 QueryJexl p = new QueryJexl(q, manager, date, date);
                 Set<Map<String,String>> resp = p.evaluate();
-                Assert.assertEquals(TestEntries - 1, resp.size());
+                Assert.assertEquals(TEST_ENTRIES - 1, resp.size());
                 for (Map<String,String> entry : resp) {
                     Assert.assertNotEquals("home-" + n, entry.get(TestHeader.home.name()));
                     Assert.assertNotEquals("away-" + n, entry.get(TestHeader.away.name()));
@@ -318,7 +318,7 @@ public class QueryJexl {
         
         @Test
         public void testAny() {
-            for (int n = 1; n <= TestEntries; n++) {
+            for (int n = 1; n <= TEST_ENTRIES; n++) {
                 String phrase = " == 'away-" + n + "'";
                 String q = this.manager.convertAnyField(phrase);
                 QueryJexl p = new QueryJexl(q, manager, date, date);
@@ -331,7 +331,7 @@ public class QueryJexl {
         
         @Test
         public void testAnyNumeric() {
-            for (int n = 1; n <= TestEntries; n++) {
+            for (int n = 1; n <= TEST_ENTRIES; n++) {
                 String phrase = " == '" + n + "'";
                 String q = this.manager.convertAnyField(phrase);
                 QueryJexl p = new QueryJexl(q, manager, date, date);
@@ -345,7 +345,7 @@ public class QueryJexl {
         @Test
         public void testNumeric() {
             log.info("jexl numeric test");
-            for (int n = 1; n < TestEntries; n++) {
+            for (int n = 1; n < TEST_ENTRIES; n++) {
                 String q = "" + n + " == nUm or NUM == " + n;
                 QueryJexl p = new QueryJexl(q, manager, date, date);
                 Set<Map<String,String>> resp = p.evaluate();
@@ -406,13 +406,13 @@ public class QueryJexl {
         
         private void createData() {
             String[] vals = new String[TestHeader.values().length];
-            final Set<IRawData> data = new HashSet<>();
-            for (int n = 1; n <= QueryJexlTest.TestEntries; n++) {
+            final Set<RawData> data = new HashSet<>();
+            for (int n = 1; n <= QueryJexlTest.TEST_ENTRIES; n++) {
                 vals[0] = QueryJexlTest.testDate;
                 vals[1] = "home-" + n;
                 vals[2] = "away-" + n;
                 vals[3] = "" + n;
-                final IRawData raw = new TestRawData(vals);
+                final RawData raw = new TestRawData(vals);
                 data.add(raw);
             }
             this.rawData.put(dataType, data);

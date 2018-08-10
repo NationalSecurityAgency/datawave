@@ -1,23 +1,18 @@
 package datawave.query.testframework;
 
 import au.com.bytecode.opencsv.CSVReader;
-import datawave.data.normalizer.Normalizer;
-import datawave.query.Constants;
 import datawave.query.testframework.CitiesDataType.CityField;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.lang.reflect.Type;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,9 +39,9 @@ public class CityDataManager extends AbstractDataManager {
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
             String[] data;
             int count = 0;
-            Set<IRawData> cityData = new HashSet<>();
+            Set<RawData> cityData = new HashSet<>();
             while (null != (data = csv.readNext())) {
-                final IRawData raw = new CityRawData(data);
+                final RawData raw = new CityRawData(data);
                 cityData.add(raw);
                 count++;
             }
@@ -71,10 +66,10 @@ public class CityDataManager extends AbstractDataManager {
         return CitiesDataType.CityShardId.getStartEndDates(false);
     }
     
-    private Set<IRawData> getRawData(final Set<IRawData> rawData, final Date start, final Date end) {
-        final Set<IRawData> data = new HashSet<>(this.rawData.size());
+    private Set<RawData> getRawData(final Set<RawData> rawData, final Date start, final Date end) {
+        final Set<RawData> data = new HashSet<>(this.rawData.size());
         final Set<String> shards = CitiesDataType.CityShardId.getShardRange(start, end);
-        for (final IRawData raw : rawData) {
+        for (final RawData raw : rawData) {
             String id = raw.getValue(CityField.START_DATE.name());
             if (shards.contains(id)) {
                 data.add(raw);

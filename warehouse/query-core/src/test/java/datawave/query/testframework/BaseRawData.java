@@ -15,7 +15,7 @@ import java.util.Set;
 /**
  * Represents a single entry of raw data read from an ingest file. This is a generic POJO that can be used for any data entry. This class is immutable.
  */
-public abstract class BaseRawData implements IRawData {
+public abstract class BaseRawData implements RawData {
     private static final Logger log = Logger.getLogger(BaseRawData.class);
     
     // =============================
@@ -36,7 +36,7 @@ public abstract class BaseRawData implements IRawData {
             final Set<String> values = new HashSet<>();
             // convert multi-value fields into a set of values
             if (isMultiValueField(header)) {
-                String[] multi = Strings.split(fields[n], IRawDataManager.MULTIVALUE_SEP_CHAR);
+                String[] multi = Strings.split(fields[n], RawDataManager.MULTIVALUE_SEP_CHAR);
                 for (String s : multi) {
                     values.add(s.toLowerCase());
                 }

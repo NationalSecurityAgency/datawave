@@ -50,14 +50,14 @@ public class AccumuloSetupHelper {
     private static final Logger log = Logger.getLogger(AccumuloSetupHelper.class);
     
     private final MockAccumuloRecordWriter recordWriter;
-    private final Collection<IDataTypeHadoopConfig> dataTypes;
+    private final Collection<DataTypeHadoopConfig> dataTypes;
     private final Set<String> shardIds;
     
-    public AccumuloSetupHelper(final Collection<IDataTypeHadoopConfig> types) {
+    public AccumuloSetupHelper(final Collection<DataTypeHadoopConfig> types) {
         this.recordWriter = new MockAccumuloRecordWriter();
         this.dataTypes = types;
         this.shardIds = new HashSet<>();
-        for (IDataTypeHadoopConfig config : this.dataTypes) {
+        for (DataTypeHadoopConfig config : this.dataTypes) {
             this.shardIds.addAll(config.getShardIds());
         }
     }
@@ -80,7 +80,7 @@ public class AccumuloSetupHelper {
         final Connector connector = tableHelper.connector;
         tableHelper.configureTables(this.recordWriter);
         
-        for (IDataTypeHadoopConfig dt : this.dataTypes) {
+        for (DataTypeHadoopConfig dt : this.dataTypes) {
             HadoopTestConfiguration hadoopConfig = new HadoopTestConfiguration(dt);
             
             CSVTestFileLoader loader = new CSVTestFileLoader(dt.getIngestFile(), hadoopConfig);

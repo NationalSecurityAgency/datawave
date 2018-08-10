@@ -20,6 +20,6 @@ public interface TestFileLoader {
      * @param seqFile
      *            hadoop sequence file
      */
-    public void loadTestData(SequenceFile.Writer seqFile) throws IOException;
+    void loadTestData(SequenceFile.Writer seqFile) throws IOException;
     
 }

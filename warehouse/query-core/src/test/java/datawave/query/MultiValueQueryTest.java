@@ -5,8 +5,8 @@ import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.IDataTypeHadoopConfig;
-import datawave.query.testframework.IFieldConfig;
+import datawave.query.testframework.DataTypeHadoopConfig;
+import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.MultiValueCityFields;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
@@ -28,8 +28,8 @@ public class MultiValueQueryTest extends AbstractFunctionalQuery {
     
     @BeforeClass
     public static void filterSetup() throws Exception {
-        Collection<IDataTypeHadoopConfig> dataTypes = new ArrayList<>();
-        IFieldConfig multi = new MultiValueCityFields();
+        Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
+        FieldConfig multi = new MultiValueCityFields();
         dataTypes.add(new CitiesDataType(CityEntry.multivalue, multi));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);

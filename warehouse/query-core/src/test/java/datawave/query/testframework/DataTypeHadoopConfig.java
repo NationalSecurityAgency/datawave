@@ -11,7 +11,7 @@ import java.util.Collection;
  *
  * @see org.apache.hadoop.conf.Configuration
  */
-public interface IDataTypeHadoopConfig {
+public interface DataTypeHadoopConfig {
     
     String DATE_FIELD_FORMAT = "yyyyMMdd";
     SimpleDateFormat YMD_DateFormat = new SimpleDateFormat(DATE_FIELD_FORMAT);

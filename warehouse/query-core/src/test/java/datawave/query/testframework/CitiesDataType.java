@@ -244,9 +244,9 @@ public class CitiesDataType extends AbstractDataTypeConfig {
     
     // ==================================
     // data manager info
-    private static final IRawDataManager cityManager = new CityDataManager();
+    private static final RawDataManager cityManager = new CityDataManager();
     
-    public static IRawDataManager getManager() {
+    public static RawDataManager getManager() {
         return cityManager;
     }
     
@@ -262,7 +262,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      * @throws URISyntaxException
      *             unable to resolve ingest file
      */
-    public CitiesDataType(final CityEntry city, final IFieldConfig config) throws IOException, URISyntaxException {
+    public CitiesDataType(final CityEntry city, final FieldConfig config) throws IOException, URISyntaxException {
         this(city.name(), city.getIngestFile(), config);
     }
     
@@ -278,7 +278,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      * @throws IOException
      * @throws URISyntaxException
      */
-    public CitiesDataType(final String city, final String ingestFile, final IFieldConfig config) throws IOException, URISyntaxException {
+    public CitiesDataType(final String city, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
         super(city, ingestFile, config, cityManager);
         
         // NOTE: see super for default settings

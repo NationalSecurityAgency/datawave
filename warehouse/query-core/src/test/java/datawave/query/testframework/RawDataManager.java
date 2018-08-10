@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * Defines the methods that are required to dynamically resolve and validate query results.
  */
-public interface IRawDataManager {
+public interface RawDataManager {
     
     // and/or logical strings for use by unit tests
     String AND_OP = " and ";

@@ -91,7 +91,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     /**
      * Manager for the raw data should exist in Accumulo.
      */
-    protected final IRawDataManager dataManager;
+    protected final RawDataManager dataManager;
     protected Authorizations auths;
     protected String documentKey;
     protected ShardQueryLogic logic;
@@ -100,7 +100,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     private final Set<Authorizations> authSet = new HashSet<>();
     
-    protected AbstractFunctionalQuery(final IRawDataManager mgr) {
+    protected AbstractFunctionalQuery(final RawDataManager mgr) {
         this.dataManager = mgr;
     }
     

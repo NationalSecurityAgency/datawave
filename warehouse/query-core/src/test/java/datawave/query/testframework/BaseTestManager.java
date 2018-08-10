@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Basic class used for testing when a skeleton {@link IRawDataManager} is needed. All methods are implemented without any logic. Test classes should extend
- * this class and implement any needed functionality.
+ * Basic class used for testing when a skeleton {@link RawDataManager} is needed. All methods are implemented without any logic. Test classes should extend this
+ * class and implement any needed functionality.
  */
 abstract class BaseTestManager extends AbstractDataManager {
     

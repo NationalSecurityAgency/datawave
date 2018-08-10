@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  * Defines the actions for retrieval and processing of raw data.
  */
-public interface IRawData {
+public interface RawData {
     
     /**
      * Retrieves a mapping of the the raw entries. Multi-value field will be expanded into multiple entries.

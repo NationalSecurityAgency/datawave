@@ -15,7 +15,7 @@ import java.util.Set;
  * entries. Fields that are designated as multivalue but only contain a single entry will work correctly.
  * </p>>
  */
-public interface IFieldConfig {
+public interface FieldConfig {
     
     Set<String> getIndexFields();
     

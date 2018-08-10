@@ -16,7 +16,7 @@ import java.util.Set;
 /**
  * Base class for all raw data managers. Each manager is responsible for managing the data for one or more datatype.
  */
-public abstract class AbstractDataManager implements IRawDataManager {
+public abstract class AbstractDataManager implements RawDataManager {
     
     private static final Logger log = Logger.getLogger(AbstractDataManager.class);
     
@@ -31,7 +31,7 @@ public abstract class AbstractDataManager implements IRawDataManager {
     /**
      * Mapping of datatype to the raw entries that should match the datatype entries in Accumulo.
      */
-    protected final Map<String,Set<IRawData>> rawData;
+    protected final Map<String,Set<RawData>> rawData;
     /**
      * Mapping of datatype to the indexes for the datatype.
      */
@@ -58,11 +58,11 @@ public abstract class AbstractDataManager implements IRawDataManager {
     public Iterator<Map<String,String>> rangeData(Date start, Date end) {
         log.debug("start(" + start.toString() + ") end(" + end.toString() + ")");
         final Set<Map<String,String>> raw = new HashSet<>();
-        for (final Map.Entry<String,Set<IRawData>> entry : this.rawData.entrySet()) {
-            for (final IRawData rawEntry : entry.getValue()) {
+        for (final Map.Entry<String,Set<RawData>> entry : this.rawData.entrySet()) {
+            for (final RawData rawEntry : entry.getValue()) {
                 String dateStr = rawEntry.getValue(this.shardId);
                 try {
-                    Date shardDate = IDataTypeHadoopConfig.YMD_DateFormat.parse(dateStr);
+                    Date shardDate = DataTypeHadoopConfig.YMD_DateFormat.parse(dateStr);
                     
                     if (0 >= start.compareTo(shardDate) && 0 <= end.compareTo(shardDate)) {
                         final Set<Map<String,String>> matchers = rawEntry.getMapping();

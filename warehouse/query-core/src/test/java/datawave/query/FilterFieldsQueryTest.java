@@ -7,8 +7,8 @@ import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.GenericCityFields;
-import datawave.query.testframework.IDataTypeHadoopConfig;
-import datawave.query.testframework.IFieldConfig;
+import datawave.query.testframework.DataTypeHadoopConfig;
+import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.QueryJexl;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.ResponseFieldChecker;
@@ -36,8 +36,8 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     
     @BeforeClass
     public static void filterSetup() throws Exception {
-        Collection<IDataTypeHadoopConfig> dataTypes = new ArrayList<>();
-        IFieldConfig generic = new GenericCityFields();
+        Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
+        FieldConfig generic = new GenericCityFields();
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
