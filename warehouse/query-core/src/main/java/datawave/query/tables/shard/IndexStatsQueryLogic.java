@@ -48,7 +48,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
      */
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new AbstractQueryLogicTransformer() {
+        return new AbstractQueryLogicTransformer<Object,Object>() {
             
             @Override
             public Object transform(Object input) {

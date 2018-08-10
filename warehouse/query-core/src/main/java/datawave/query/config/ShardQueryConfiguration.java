@@ -22,7 +22,7 @@ import datawave.query.util.QueryStopwatch;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import org.apache.commons.collections.map.UnmodifiableMap;
+import org.apache.commons.collections4.map.UnmodifiableMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -689,7 +689,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     @SuppressWarnings("unchecked")
     public Map<String,String> getFilterOptions() {
-        return UnmodifiableMap.decorate(filterOptions);
+        return Collections.unmodifiableMap(filterOptions);
     }
     
     public List<String> getFilterClassNames() {

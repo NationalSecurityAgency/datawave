@@ -129,7 +129,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.trace.Span;
 import org.apache.accumulo.core.trace.Trace;
 import org.apache.accumulo.core.trace.thrift.TInfo;
-import org.apache.commons.collections.Transformer;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.commons.lang.StringUtils;

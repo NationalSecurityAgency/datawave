@@ -102,7 +102,7 @@ import org.apache.accumulo.core.trace.Span;
 import org.apache.accumulo.core.trace.Trace;
 import org.apache.accumulo.core.trace.Tracer;
 import org.apache.accumulo.core.trace.thrift.TInfo;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
