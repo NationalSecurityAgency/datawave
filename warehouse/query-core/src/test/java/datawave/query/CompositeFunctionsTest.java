@@ -270,12 +270,16 @@ public abstract class CompositeFunctionsTest {
                         "AND filter:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')",
 
                 "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAME,'MICHAEL','VINCENT','FRED','TONY') "+
-                        "AND filter:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')"
+                        "OR filter:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')"
+        };
+
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {
+                Collections.singletonList("CORLEONE"),
+                Collections.emptyList()
         };
         // @formatter:on
         
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }

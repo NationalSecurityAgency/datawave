@@ -1,6 +1,8 @@
 package datawave.query.jexl.visitors;
 
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
@@ -55,7 +57,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 String value = optionsList.get(i);
                 optionsMap.put(key, value);
             }
-            return ret;
+            return null;
         }
         return super.visit(node, optionsMap);
     }
@@ -89,6 +91,39 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private Object visit(ASTStringLiteral node, List<String> list) {
         list.add(node.image);
         return super.visit(node, list);
+    }
+    
+    /**
+     * If the visit to the ASTFunction node returned null (because it was the options function) then there could be an empty ASTReference node. This would
+     * generate a parseException in the jexl Parser unless the empty ASTReference node is also removed by returning null here.
+     * 
+     * @param node
+     * @param data
+     * @return
+     */
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        JexlNode n = (JexlNode) super.visit(node, data);
+        if (n.jjtGetNumChildren() == 0)
+            return null;
+        return n;
+    }
+    
+    /**
+     * If the visit to the ASTFunction node returned null (because it was the options function) then there could be an empty ASTReferenceExpression node. This
+     * would generate a parseException in the jexl Parser unless the empty ASTReferenceExpression node is also removed by returning null here.
+     *
+     * @param node
+     * @param data
+     * @return
+     */
+    @Override
+    public Object visit(ASTReferenceExpression node, Object data) {
+        JexlNode n = (JexlNode) super.visit(node, data);
+        if (n.jjtGetNumChildren() == 0)
+            return null;
+        return n;
+        
     }
     
     @SuppressWarnings("unchecked")
