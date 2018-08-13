@@ -39,6 +39,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         paris("input/paris-cities.csv", "paris"),
         london("input/london-cities.csv", "london"),
         rome("input/rome-cities.csv", "rome"),
+        italy("input/italy-cities.csv", "italy"),
         generic("input/generic-cities.csv", "generic"),
         multivalue("input/multivalue-cities.csv", "multi");
         
@@ -148,6 +149,10 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         
         static Collection<String> cityShards() {
             return Stream.of(CityShardId.values()).map(e -> e.getShardId()).collect(Collectors.toList());
+        }
+        
+        public Date getDate() {
+            return this.date;
         }
     }
     

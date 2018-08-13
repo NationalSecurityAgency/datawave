@@ -38,6 +38,16 @@ import java.util.Set;
 /**
  * Provides for the parsing and execution of a Jexl query string for test execution only. The {@link #evaluate()} method should produce the same results that
  * are produced from the production code base.
+ * <p>
+ * </P>
+ * <b>Current Limitations</b><br>
+ * <ul>
+ * <li>The not equal (!=) and not regex(!~) relationships do not work properly with multivalue fields when the field contain multiple values. A single value
+ * will work correctly. The following conversions should work:<br>
+ * a != 'b' => not (a == 'b')<br>
+ * a !~ 'a.*' => not(a =~ 'a.*)</li>
+ * <li>Only one data manager is available for processing results.</li>
+ * </ul>
  */
 public class QueryJexl {
     
@@ -181,17 +191,18 @@ public class QueryJexl {
                 try {
                     Integer.parseInt(value.image);
                 } catch (NumberFormatException nfe) {
-                    // don't normalize
-                    return;
-                }
-            }
-            // check for regex nodes
-            if (opNode instanceof ASTERNode || opNode instanceof ASTNRNode) {
-                if (!(norm instanceof NumberNormalizer)) {
-                    value.image = norm.normalizeRegex(value.image);
+                    throw new AssertionError("invalid integer(" + value.image + ")", nfe);
                 }
             } else {
-                value.image = norm.normalize(value.image);
+                // normalize all other values
+                // check for regex nodes
+                if (opNode instanceof ASTERNode || opNode instanceof ASTNRNode) {
+                    if (!(norm instanceof NumberNormalizer)) {
+                        value.image = norm.normalizeRegex(value.image);
+                    }
+                } else {
+                    value.image = norm.normalize(value.image);
+                }
             }
         }
     }
@@ -449,6 +460,11 @@ public class QueryJexl {
         @Override
         public boolean isMultiValueField(final String field) {
             return metadata.get(field).multiValue;
+        }
+        
+        @Override
+        protected Normalizer<?> getNormalizer(String field) {
+            return metadata.get(field).normalizer;
         }
     }
 }

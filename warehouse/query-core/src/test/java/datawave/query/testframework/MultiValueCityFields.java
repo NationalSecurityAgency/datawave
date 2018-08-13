@@ -10,7 +10,7 @@ import java.util.Set;
 /**
  * Base field configuration settings for the data in the generic-cities CSV file
  */
-public class MultiValueCityFields extends AbstractCityFields {
+public class MultiValueCityFields extends AbstractFields {
     
     private static final Collection<String> index = Arrays.asList(CityField.CITY.name(), CityField.STATE.name(), CityField.CONTINENT.name());
     private static final Collection<String> indexOnly = new HashSet<>();

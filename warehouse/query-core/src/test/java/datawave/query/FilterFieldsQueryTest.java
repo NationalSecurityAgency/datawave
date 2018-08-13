@@ -144,7 +144,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testZeroOccurrenceFunction() throws Exception {
-        log.info("------  test  ------");
+        log.info("------  testZeroOccurrenceFunction  ------");
         String cont = "europe";
         String query = CityField.CONTINENT.name() + " == '" + cont + "' and " + " filter:occurrence(" + CityField.CONTINENT.name() + ",'>', 1)";
         String expectQuery = CityField.CONTINENT.name() + " == 'no-such-name'";
@@ -193,6 +193,28 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             String query = CityField.CITY.name() + " == '" + city.name() + "' and " + "(" + CityField.STATE.name() + " == '" + state + "'" + " or "
                             + CityField.STATE.name() + " == '" + mizzu + "')";
             runTest(query, false, false);
+        }
+    }
+    
+    @Test
+    public void testRegexBlacklist() throws Exception {
+        log.info("------  testEqCityAndEqContinentBlackList  ------");
+        
+        String regex = "miss.*";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + CityField.STATE.name() + " =~ '" + regex + "'";
+            runTest(query, false, false);
+        }
+    }
+    
+    @Test
+    public void testRegexWhitelist() throws Exception {
+        log.info("------  testEqCityAndEqContinentBlackList  ------");
+        
+        String regex = "miss.*";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + CityField.STATE.name() + " =~ '" + regex + "'";
+            runTest(query, true, false);
         }
     }
     

@@ -1,6 +1,7 @@
 package datawave.query.testframework;
 
 import au.com.bytecode.opencsv.CSVReader;
+import datawave.data.normalizer.Normalizer;
 import datawave.query.testframework.CitiesDataType.CityField;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -106,6 +107,11 @@ public class CityDataManager extends AbstractDataManager {
         @Override
         public boolean isMultiValueField(final String field) {
             return metadata.get(field.toLowerCase()).multiValue;
+        }
+        
+        @Override
+        protected Normalizer<?> getNormalizer(String field) {
+            return metadata.get(field.toLowerCase()).normalizer;
         }
     }
 }

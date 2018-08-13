@@ -26,17 +26,23 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -53,6 +59,8 @@ import java.util.UUID;
 public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.TestResultParser {
     
     private static final Logger log = Logger.getLogger(AbstractFunctionalQuery.class);
+    
+    private static final Random rVal = new Random(System.currentTimeMillis());
     
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -97,6 +105,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected ShardQueryLogic logic;
     private QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
+    
+    @Rule
+    public final TemporaryFolder tmpDir = new TemporaryFolder();
     
     private final Set<Authorizations> authSet = new HashSet<>();
     
@@ -201,13 +212,35 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      *             test error condition
      */
     protected void runTest(final String query, final String expectQuery) throws Exception {
+        runTest(query, expectQuery, Collections.EMPTY_MAP);
+    }
+    
+    protected void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate) throws Exception {
+        QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startDate, endDate);
+        final Set<Map<String,String>> allData = jexl.evaluate();
+        final Set<String> expected = this.dataManager.getKeys(allData);
+        runTestQuery(expected, expectQuery, startDate, endDate);
+    }
+    
+    protected void runTest(final String query, final String expectQuery, final Map<String,String> options) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
         
         QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startEndDate[0], startEndDate[1]);
         final Set<Map<String,String>> allData = jexl.evaluate();
         final Set<String> expected = this.dataManager.getKeys(allData);
         
-        runTestQuery(expected, query, startEndDate[0], startEndDate[1]);
+        runTestQuery(expected, query, startEndDate[0], startEndDate[1], options);
+    }
+    
+    protected void runTest(final String query, final String expectQuery, final Map<String,String> options, final List<DocumentChecker> checkers)
+                    throws Exception {
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        
+        QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startEndDate[0], startEndDate[1]);
+        final Set<Map<String,String>> allData = jexl.evaluate();
+        final Set<String> expected = this.dataManager.getKeys(allData);
+        
+        runTestQuery(expected, query, startEndDate[0], startEndDate[1], options, checkers);
     }
     
     /**
@@ -262,7 +295,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected void runTestQuery(Collection<String> expected, String queryStr, Date startDate, Date endDate, Map<String,String> options,
                     List<DocumentChecker> checkers) throws Exception {
-        log.debug("  query(" + queryStr + ")  start(" + YMD_DateFormat.format(startDate) + ")  end(" + YMD_DateFormat.format(endDate) + ")");
+        log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startDate) + ")  end(" + YMD_DateFormat.format(endDate) + ")");
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startDate);
         q.setEndDate(endDate);
@@ -276,5 +309,57 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         GenericQueryConfiguration config = this.logic.initialize(connector, q, this.authSet);
         this.logic.setupQuery(config);
         testHarness.assertLogicResults(this.logic, expected, checkers);
+    }
+    
+    /**
+     * Configures the Ivarator cache to use a single HDFS directory.
+     *
+     * @throws IOException
+     *             error creating cache
+     */
+    protected void ivaratorConfig() throws IOException {
+        ivaratorConfig(1, false);
+    }
+    
+    /**
+     * Configures an Ivarator FST cache to use for a single HDFS directory.
+     * 
+     * @throws IOException
+     *             error creating cache
+     */
+    protected void ivaratorFstConfig() throws IOException {
+        ivaratorConfig(1, true);
+    }
+    
+    /**
+     * Configures the Ivarator cache. Each cache directory is created as a separate directory.
+     *
+     * @param hdfsLocations
+     *            number of HDFS locations to configure
+     * @param fst
+     *            when true screate a FST ivarator cache
+     * @throws IOException
+     *             error creating HDFS cache directory
+     */
+    protected void ivaratorConfig(final int hdfsLocations, final boolean fst) throws IOException {
+        final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
+        Assert.assertNotNull(hdfsConfig);
+        this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
+        
+        final String fstCache = (fst ? "fst-" : "");
+        final List<String> dirs = new ArrayList<>();
+        for (int d = 1; d <= hdfsLocations; d++) {
+            // avoid threading issues by using a random number as part of the directory path to create a distinct directory
+            int rand = rVal.nextInt(Integer.MAX_VALUE);
+            File ivCache = this.tmpDir.newFolder("ivarator.cache-" + fstCache + rand);
+            dirs.add(ivCache.toURI().toString());
+        }
+        String uriList = String.join(",", dirs);
+        log.info("hdfs dirs(" + uriList + ")");
+        if (fst) {
+            this.logic.setIvaratorFstHdfsBaseURIs(uriList);
+        } else {
+            this.logic.setIvaratorCacheBaseURIs(uriList);
+        }
     }
 }

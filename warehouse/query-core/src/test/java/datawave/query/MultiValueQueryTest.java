@@ -15,6 +15,10 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.GT_OP;
+
 /**
  * Performs query test for multivalue fields.
  * <p>
@@ -55,7 +59,7 @@ public class MultiValueQueryTest extends AbstractFunctionalQuery {
         log.debug("------  testMultiValue  ------");
         
         for (final TestCities city : TestCities.values()) {
-            String query = CityField.CITY.name() + " == '" + city.name() + "' and " + CityField.CONTINENT.name() + " > 'e'";
+            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.CONTINENT.name() + GT_OP + "'e'";
             runTest(query, query);
         }
     }
@@ -65,7 +69,7 @@ public class MultiValueQueryTest extends AbstractFunctionalQuery {
         log.debug("------  testSingleAndMultiValue  ------");
         
         for (final String state : TestStates) {
-            String query = CityField.STATE.name() + " == '" + state + "'";
+            String query = CityField.STATE.name() + EQ_OP + "'" + state + "'";
             runTest(query, query);
         }
     }
@@ -74,9 +78,9 @@ public class MultiValueQueryTest extends AbstractFunctionalQuery {
     public void testNotMatch() throws Exception {
         log.debug("------  testNotMatch  ------");
         
-        String[] states = {"no-match", "no-ohio"};
+        String[] states = {"'no-match'", "'no-ohio'"};
         for (final String state : states) {
-            String query = CityField.STATE.name() + " == '" + state + "'";
+            String query = CityField.STATE.name() + EQ_OP + state;
             runTest(query, query);
         }
     }

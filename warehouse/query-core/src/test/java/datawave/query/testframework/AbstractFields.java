@@ -10,7 +10,7 @@ import java.util.Set;
 /**
  * Base class implementation for setting field configuration. Classes should extend this class and initialize the settings.
  */
-public abstract class AbstractCityFields implements FieldConfig {
+public abstract class AbstractFields implements FieldConfig {
     
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     
@@ -37,7 +37,7 @@ public abstract class AbstractCityFields implements FieldConfig {
      * @param virtual
      *            mapping of virtual field entries
      */
-    protected AbstractCityFields(Collection<String> index, Collection<String> indexOnly, Collection<String> reverse, Collection<String> multivalue,
+    protected AbstractFields(Collection<String> index, Collection<String> indexOnly, Collection<String> reverse, Collection<String> multivalue,
                     Collection<Set<String>> composite, Collection<Set<String>> virtual) {
         this.indexFields.addAll(index);
         this.indexOnlyFields.addAll(indexOnly);
@@ -139,6 +139,6 @@ public abstract class AbstractCityFields implements FieldConfig {
     
     @Override
     public String toString() {
-        return "AbstractCityFields" + gson.toJson(this);
+        return "AbstractFields" + gson.toJson(this);
     }
 }
