@@ -4,12 +4,9 @@ import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.result.BaseQueryResponse;
 
-import org.apache.commons.collections.Transformer;
+import org.apache.commons.collections4.Transformer;
 
-/**
- * NOTE: The transform method may throw an EmptyObjectException when the TransformIterator is to call next instead of returning null.
- */
-public interface QueryLogicTransformer extends Transformer {
+public interface QueryLogicTransformer<I,O> extends Transformer<I,O> {
     
     /*
      * @return a jaxb response object that is specific to this QueryLogic
@@ -26,5 +23,5 @@ public interface QueryLogicTransformer extends Transformer {
      *             if the result is empty
      */
     @Override
-    Object transform(Object input) throws EmptyObjectException;
+    O transform(I input) throws EmptyObjectException;
 }

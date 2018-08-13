@@ -33,9 +33,9 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections.Transformer;
-import org.apache.commons.collections.functors.NOPTransformer;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.functors.NOPTransformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,7 +69,7 @@ public class ExtendedRunningQueryTest {
     @Mock
     TransformIterator transformIterator;
     
-    private Transformer transformer = NOPTransformer.getInstance();
+    private Transformer transformer = NOPTransformer.nopTransformer();
     
     @Before
     public void setup() {

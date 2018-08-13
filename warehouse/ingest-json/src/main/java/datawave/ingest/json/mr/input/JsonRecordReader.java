@@ -23,7 +23,7 @@ import datawave.ingest.json.config.helper.JsonDataTypeHelper;
 import datawave.ingest.json.config.helper.JsonIngestFlattener;
 import datawave.ingest.json.util.JsonObjectFlattener;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.collections.IteratorUtils;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.io.input.CountingInputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;

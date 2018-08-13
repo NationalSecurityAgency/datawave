@@ -3,8 +3,8 @@ package datawave.webservice.query.iterator;
 import datawave.webservice.query.logic.FlushableQueryLogicTransformer;
 import java.util.Iterator;
 
-import org.apache.commons.collections.Transformer;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import datawave.webservice.query.exception.EmptyObjectException;
 import org.apache.log4j.Logger;
 

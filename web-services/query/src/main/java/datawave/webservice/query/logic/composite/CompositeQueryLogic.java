@@ -25,10 +25,10 @@ import datawave.webservice.result.BaseResponse;
 
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Predicate;
-import org.apache.commons.collections.functors.NOPTransformer;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.Predicate;
+import org.apache.commons.collections4.functors.NOPTransformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
 /**
@@ -271,7 +271,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     public TransformIterator getTransformIterator(Query settings) {
         // The objects put into the pageQueue have already been transformed.
         // We will iterate over the pagequeue with the No-Op transformer
-        return new TransformIterator(results.iterator(), NOPTransformer.getInstance());
+        return new TransformIterator(results.iterator(), NOPTransformer.nopTransformer());
     }
     
     @Override

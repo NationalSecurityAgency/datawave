@@ -15,7 +15,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 
 public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidator {
     

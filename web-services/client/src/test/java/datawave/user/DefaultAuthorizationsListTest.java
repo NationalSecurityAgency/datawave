@@ -10,7 +10,7 @@ import java.util.TreeSet;
 import com.google.common.collect.Sets;
 import datawave.user.AuthorizationsListBase.SubjectIssuerDNPair;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

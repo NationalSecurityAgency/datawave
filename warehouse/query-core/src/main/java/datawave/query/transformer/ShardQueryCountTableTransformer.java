@@ -25,7 +25,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
-public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer implements CacheableLogic {
+public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<Entry<Long,ColumnVisibility>,EventBase> implements CacheableLogic {
     public static final String COUNT_CELL = "count";
     
     private Authorizations auths = null;
@@ -42,43 +42,35 @@ public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer i
     }
     
     @Override
-    public Object transform(Object input) {
-        if (input instanceof Entry<?,?>) {
-            Entry<?,?> untypedEntry = (Entry<?,?>) input;
-            if (!(untypedEntry.getKey() instanceof Long) || !(untypedEntry.getValue() instanceof ColumnVisibility)) {
-                throw new IllegalArgumentException("Invalid input type: " + input.getClass());
-            }
-            
-            Long count = (Long) untypedEntry.getKey();
-            ColumnVisibility vis = (ColumnVisibility) untypedEntry.getValue();
-            
-            Map<String,String> markings;
-            try {
-                markings = markingFunctions.translateFromColumnVisibilityForAuths(vis, auths);
-            } catch (Exception e1) {
-                throw new IllegalArgumentException("Unable to translate markings", e1);
-            }
-            
-            EventBase e = this.responseObjectFactory.getEvent();
-            e.setMarkings(markings);
-            
-            FieldBase field = this.makeField(COUNT_CELL, markings, vis, System.currentTimeMillis(), count);
-            e.setMarkings(markings);
-            
-            List<FieldBase> fields = new ArrayList<>();
-            fields.add(field);
-            e.setFields(fields);
-            
-            Metadata metadata = new Metadata();
-            metadata.setDataType(Constants.EMPTY_STRING);
-            metadata.setInternalId(field.getName()); // There is only one item returned for the entire query logic.
-            metadata.setRow(Constants.EMPTY_STRING);
-            e.setMetadata(metadata);
-            
-            return e;
-        } else {
-            throw new IllegalArgumentException("Invalid input type: " + input.getClass());
+    public EventBase transform(Entry<Long,ColumnVisibility> untypedEntry) {
+        
+        Long count = untypedEntry.getKey();
+        ColumnVisibility vis = untypedEntry.getValue();
+        
+        Map<String,String> markings;
+        try {
+            markings = markingFunctions.translateFromColumnVisibilityForAuths(vis, auths);
+        } catch (Exception e1) {
+            throw new IllegalArgumentException("Unable to translate markings", e1);
         }
+        
+        EventBase e = this.responseObjectFactory.getEvent();
+        e.setMarkings(markings);
+        
+        FieldBase field = this.makeField(COUNT_CELL, markings, vis, System.currentTimeMillis(), count);
+        e.setMarkings(markings);
+        
+        List<FieldBase> fields = new ArrayList<>();
+        fields.add(field);
+        e.setFields(fields);
+        
+        Metadata metadata = new Metadata();
+        metadata.setDataType(Constants.EMPTY_STRING);
+        metadata.setInternalId(field.getName()); // There is only one item returned for the entire query logic.
+        metadata.setRow(Constants.EMPTY_STRING);
+        e.setMetadata(metadata);
+        
+        return e;
     }
     
     private FieldBase makeField(String name, Map<String,String> markings, ColumnVisibility columnVisibility, Long timestamp, Object value) {

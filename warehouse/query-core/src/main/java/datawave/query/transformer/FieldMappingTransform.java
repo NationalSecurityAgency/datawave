@@ -9,8 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This transform will copy attributes with secondary field names to primary field names if the primary
- * field name does not already exist in the document.
+ * This transform will copy attributes with secondary field names to primary field names if the primary field name does not already exist in the document.
  */
 public class FieldMappingTransform extends DocumentTransform.DefaultDocumentTransform {
     private final Boolean reducedResponse;
