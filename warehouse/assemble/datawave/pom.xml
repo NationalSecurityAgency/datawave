@@ -552,6 +552,7 @@
                                     <directoryIncluded>false</directoryIncluded>
                                     <dependency>
                                         <includes>
+                                            <include>org.apache.commons:commons-collections4</include>
                                             <include>org.apache.commons:commons-jexl</include>
                                             <include>${project.groupId}:datawave-core</include>
                                             <include>${project.groupId}:datawave-balancers</include>
