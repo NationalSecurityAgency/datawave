@@ -1,7 +1,9 @@
 package datawave.query;
 
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.table.config.MetadataTableConfigHelper;
 import datawave.ingest.table.config.ShardTableConfigHelper;
+import datawave.ingest.table.config.TableConfigHelper;
 import datawave.query.tables.ShardQueryLogic;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -15,11 +17,13 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.log4j.Logger;
 
 import java.util.Iterator;
@@ -39,6 +43,9 @@ public final class QueryTestTableHelper {
     public static final String SHARD_RINDEX_TABLE_NAME = "shardReverseIndex";
     public static final String SHARD_DICT_INDEX_NAME = "shardTermDictionary";
     public static final String MODEL_TABLE_NAME = "DatawaveMetadata";
+    
+    private static final BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1000L).setMaxWriteThreads(1);
+    
     public final Connector connector;
     private final Logger log; // passed in for context when debugging
     
@@ -54,7 +61,7 @@ public final class QueryTestTableHelper {
                     TableNotFoundException {
         // create mock instance and connector
         InMemoryInstance i = new InMemoryInstance(instanceName);
-        connector = i.getConnector("root", new PasswordToken(""));
+        this.connector = i.getConnector("root", new PasswordToken(""));
         this.log = log;
         
         createTables();
@@ -108,39 +115,33 @@ public final class QueryTestTableHelper {
         tops.create(tableName);
     }
     
-    public void setupWriters(MockAccumuloRecordWriter recordWriter) throws TableNotFoundException {
-        BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1000L).setMaxWriteThreads(1);
-        recordWriter.addWriter(new Text(METADATA_TABLE_NAME), connector.createBatchWriter(METADATA_TABLE_NAME, bwCfg));
-        recordWriter.addWriter(new Text(DATE_INDEX_TABLE_NAME), connector.createBatchWriter(DATE_INDEX_TABLE_NAME, bwCfg));
-        recordWriter.addWriter(new Text(LOAD_DATES_METADATA_TABLE_NAME), connector.createBatchWriter(LOAD_DATES_METADATA_TABLE_NAME, bwCfg));
-        recordWriter.addWriter(new Text(SHARD_TABLE_NAME), connector.createBatchWriter(SHARD_TABLE_NAME, bwCfg));
-        recordWriter.addWriter(new Text(SHARD_INDEX_TABLE_NAME), connector.createBatchWriter(SHARD_INDEX_TABLE_NAME, bwCfg));
-        recordWriter.addWriter(new Text(SHARD_RINDEX_TABLE_NAME), connector.createBatchWriter(SHARD_RINDEX_TABLE_NAME, bwCfg));
-        recordWriter.addWriter(new Text(SHARD_DICT_INDEX_NAME), connector.createBatchWriter(SHARD_DICT_INDEX_NAME, bwCfg));
-        recordWriter.addWriter(new Text(MODEL_TABLE_NAME), connector.createBatchWriter(MODEL_TABLE_NAME, bwCfg));
-    }
-    
-    public void configureTables() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        configureShardIndex();
-        configureShardReverseIndex();
+    /**
+     * Configures all of the default tables and associates a {@link BatchWriterConfig} object for ach table.
+     * 
+     * @param writer
+     * @throws AccumuloSecurityException
+     * @throws AccumuloException
+     * @throws TableNotFoundException
+     */
+    public void configureTables(MockAccumuloRecordWriter writer) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+        configureAShardRelatedTable(writer, new MetadataTableConfigHelper(), ShardedDataTypeHandler.METADATA_TABLE_NAME, METADATA_TABLE_NAME);
+        configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_TNAME, SHARD_TABLE_NAME);
+        configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_GIDX_TNAME, SHARD_INDEX_TABLE_NAME);
+        configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_GRIDX_TNAME, SHARD_RINDEX_TABLE_NAME);
+        
+        writer.addWriter(new Text(SHARD_DICT_INDEX_NAME), connector.createBatchWriter(SHARD_DICT_INDEX_NAME, bwCfg));
+        
         // todo - configure the other tables...
     }
     
-    private void configureShardReverseIndex() throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        configureAShardRelatedTable(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, SHARD_RINDEX_TABLE_NAME);
-    }
-    
-    private void configureShardIndex() throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        configureAShardRelatedTable(ShardedDataTypeHandler.SHARD_GIDX_TNAME, SHARD_INDEX_TABLE_NAME);
-    }
-    
-    private void configureAShardRelatedTable(String keyForTableName, String tableName) throws AccumuloException, AccumuloSecurityException,
-                    TableNotFoundException {
-        ShardTableConfigHelper tableConfigHelper = new ShardTableConfigHelper();
+    private void configureAShardRelatedTable(MockAccumuloRecordWriter writer, TableConfigHelper helper, String keyForTableName, String tableName)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        log.debug("---------------  configure table (" + keyForTableName + ")  ---------------");
         Configuration tableConfig = new Configuration();
         tableConfig.set(keyForTableName, tableName);
-        tableConfigHelper.setup(tableName, tableConfig, log);
-        tableConfigHelper.configure(connector.tableOperations());
+        helper.setup(tableName, tableConfig, log);
+        helper.configure(connector.tableOperations());
+        writer.addWriter(new Text(tableName), connector.createBatchWriter(tableName, bwCfg));
     }
     
     public void overrideUidAggregator() throws AccumuloSecurityException, AccumuloException {
