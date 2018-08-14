@@ -14,12 +14,10 @@ public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner 
     
     @Override
     protected int calculateIndex(int index, int numPartitions, String tableName, int cutPointArrayLength) {
-        if (!isAssignedPartition(tableName, index)) {
-            assignPartitions(numPartitions, tableName, cutPointArrayLength);
-        }
         if (isAssignedPartition(tableName, index)) {
             return SPLIT_TO_REDUCER_MAP.get(tableName).get(index);
         }
+        assignPartitions(numPartitions, tableName, cutPointArrayLength);
         log.trace("Index was not found after recomputing the reducer map");
         return 0;
     }
