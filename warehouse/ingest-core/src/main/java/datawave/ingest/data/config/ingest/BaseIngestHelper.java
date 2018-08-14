@@ -1137,7 +1137,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     
     @Override
     public Multimap<String,NormalizedContentInterface> getCompositeFields(Multimap<String,NormalizedContentInterface> fields) {
-        return normalizeMap(getCompositeIngest().getCompositeFields(fields));
+        return getCompositeIngest().getCompositeFields(fields);
     }
     
     @Override

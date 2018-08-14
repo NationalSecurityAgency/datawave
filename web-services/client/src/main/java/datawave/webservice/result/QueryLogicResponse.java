@@ -69,8 +69,8 @@ public class QueryLogicResponse extends BaseResponse implements HtmlProvider {
         
         builder.append("<tr><th>Name</th><th>Description</th><th>Optional Parameters</th><th>Required Parameters</th><th>Example Queries</th><th>Response Class</th><th>AuditType</th><th>Query Syntax</th></tr>");
         
-        final String HTML = ".html";
-        final String JAXB = "/DataWave/doc/apidocs/jaxbdocs/";
+        final String html = ".html";
+        final String javadocs = "/DataWave/doc/javadocs/";
         
         int x = 0;
         for (QueryLogicDescription qld : this.queryLogicList) {
@@ -90,7 +90,7 @@ public class QueryLogicResponse extends BaseResponse implements HtmlProvider {
             
             String responseClassName = qld.getResponseClass();
             responseClassName = responseClassName.replaceAll("\\.", "/");
-            String url = JAXB + responseClassName + HTML;
+            String url = javadocs + responseClassName + html;
             String label = responseClassName.substring(responseClassName.lastIndexOf("/") + 1);
             
             builder.append("<td><a href='").append(url).append("'>" + label + "</a></td>");

@@ -1,31 +1,24 @@
 package datawave.query;
 
-import com.fasterxml.jackson.databind.AnnotationIntrospector;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.WiseGuysIngest;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -40,17 +33,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -188,13 +178,11 @@ public abstract class GroupingTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
         
-        DocumentTransformer transformer = (DocumentTransformer) logic.getTransformer(settings);
-        
+        DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
+        TransformIterator iter = new DatawaveTransformIterator(logic.iterator(), transformer);
         List<Object> eventList = new ArrayList<>();
-        
-        Set<Document> docs = new HashSet<Document>();
-        for (Entry<Key,Value> entry : logic) {
-            eventList.add(transformer.transform(entry));
+        while (iter.hasNext()) {
+            eventList.add(iter.next());
         }
         
         return (EventQueryResponseBase) transformer.createResponse(eventList);
@@ -222,13 +210,13 @@ public abstract class GroupingTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
         
-        DocumentTransformer transformer = (DocumentTransformer) logic.getTransformer(settings);
-        
+        DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
+        TransformIterator iter = new DatawaveTransformIterator(logic.iterator(), transformer);
         List<Object> eventList = new ArrayList<>();
-        
-        for (Entry<Key,Value> entry : logic) {
-            eventList.add(transformer.transform(entry));
+        while (iter.hasNext()) {
+            eventList.add(iter.next());
         }
+        
         BaseQueryResponse response = transformer.createResponse(eventList);
         
         // un-comment to look at the json output
@@ -239,7 +227,7 @@ public abstract class GroupingTest {
         Assert.assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
         
-        Assert.assertEquals("Got the wrong number of events", (long) eventQueryResponse.getTotalEvents(), 8);
+        Assert.assertEquals("Got the wrong number of events", 8, (long) eventQueryResponse.getReturnedEvents());
         
         for (EventBase event : eventQueryResponse.getEvents()) {
             
@@ -249,8 +237,7 @@ public abstract class GroupingTest {
             for (Object field : event.getFields()) {
                 FieldBase fieldBase = (FieldBase) field;
                 if (fieldBase.getName().equals("COUNT")) {
-                    value = (Integer) fieldBase.getTypedValue().getValue();
-                    
+                    value = Integer.valueOf(fieldBase.getValueString());
                 } else if (fieldBase.getName().equals("GEN")) {
                     genderKey = fieldBase.getValueString();
                 } else if (fieldBase.getName().equals("AG")) {

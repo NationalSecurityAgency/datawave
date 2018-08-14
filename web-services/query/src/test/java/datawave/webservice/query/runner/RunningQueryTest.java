@@ -40,7 +40,7 @@ import org.apache.accumulo.core.client.Connector;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

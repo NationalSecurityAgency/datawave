@@ -87,11 +87,21 @@ public final class TokenTtlTrie {
         private final List<Long> stateTtlList = new ArrayList<>();
         private final List<Integer> statePriorityList = new ArrayList<>();
         private final Set<Byte> delimiters = new HashSet<>();
+        private boolean isMerge;
+        
+        public enum MERGE_MODE {
+            ON, OFF
+        };
         
         Builder() {
+            this(MERGE_MODE.OFF);
+        }
+        
+        Builder(MERGE_MODE mergeMode) {
             transitionMaps.add(new HashMap<Byte,Integer>());
             stateTtlList.add(null);
             statePriorityList.add(null);
+            this.isMerge = mergeMode.equals(MERGE_MODE.ON);
         }
         
         public int size() {
@@ -128,9 +138,13 @@ public final class TokenTtlTrie {
                 }
             }
             int myPriority = ++entryCount;
+            // if this is a merge of two configs, override ttl with latest seen
             if (stateTtlList.get(curState) == null) {
                 stateTtlList.set(curState, ttl);
                 statePriorityList.set(curState, myPriority);
+            } else if (isMerge) {
+                // maintain original priority just update the ttl
+                stateTtlList.set(curState, ttl);
             } else {
                 throw new IllegalArgumentException(String.format("Token '%s'(#%d) already specified at index %d", new String(token),
                                 statePriorityList.get(curState), myPriority));

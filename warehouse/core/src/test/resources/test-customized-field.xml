@@ -1,0 +1,8 @@
+<ageoffConfiguration>
+    <rules>
+        <rule label="test">
+            <filterClass>datawave.ingest.util.cache.watch.TestFieldFilter</filterClass>
+            <isindextable>true</isindextable>
+        </rule>
+    </rules>
+</ageoffConfiguration>

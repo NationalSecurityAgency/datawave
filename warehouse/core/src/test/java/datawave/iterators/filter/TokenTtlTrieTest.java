@@ -1,14 +1,19 @@
 package datawave.iterators.filter;
 
+import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import datawave.iterators.filter.TokenTtlTrie.Builder.MERGE_MODE;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Assert;
 
 public class TokenTtlTrieTest {
     public static Logger log = Logger.getLogger(TokenTtlTrieTest.class);
@@ -34,12 +39,12 @@ public class TokenTtlTrieTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void tokensMayNotContainDelimiters() {
-        TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo,".getBytes(), 1).build();
+        new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo,".getBytes(), 1).build();
     }
     
     @Test(expected = IllegalArgumentException.class)
     public void tokensMustBeUnique() {
-        TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo".getBytes(), 1).addToken("foo".getBytes(), 2).build();
+        new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo".getBytes(), 1).addToken("foo".getBytes(), 2).build();
     }
     
     @Test
@@ -81,8 +86,36 @@ public class TokenTtlTrieTest {
         Assert.assertNull(trie.scan("b;ba,banana,bread,apple,pie".getBytes()));
     }
     
+    @Test
+    public void testParseAndMerge() {
+        String initial = "\"foo\" : 1ms\n" + "\"bar\" : 3ms\n" + "\"baz\" : 5ms\n" + "\"zip\" : 7ms\n";
+        
+        String override = "\"bar\" : 5ms\n" + "\"zip\" : 9ms\n";
+        
+        TokenTtlTrie trie = new TokenTtlTrie.Builder(MERGE_MODE.ON).setDelimiters("/".getBytes()).parse(initial + override).build();
+        // original values
+        assertThat(trie.scan("foo".getBytes()), is(equalTo(1L)));
+        assertThat(trie.scan("baz".getBytes()), is(equalTo(5L)));
+        // overridden values
+        assertThat(trie.scan("bar".getBytes()), is(equalTo(5L)));
+        assertThat(trie.scan("zip".getBytes()), is(equalTo(9L)));
+    }
+    
+    @Test
+    public void testParseWithWhiteSpaces() {
+        String initial = "\"baking powder\" : 1d\n\t\t\t\t" + "\"dried beans\" : 2d\n\t\t\t\t" + "\"baking soda\" : 3d\n\t\t\t\t"
+                        + "\"coffee grounds\" : 4d\n\t\t\t\t" + "\"coffee whole bean\" : 5d\n\t\t\t\t" + "\"coffee instant\" : 6d";
+        
+        TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(initial).build();
+        assertThat(trie.scan("baking powder".getBytes()), is(notNullValue()));
+        assertThat(trie.scan("dried beans".getBytes()), is(notNullValue()));
+        assertThat(trie.scan("baking soda".getBytes()), is(notNullValue()));
+        // not one of the ones we configured the tree with
+        assertThat(trie.scan("zip foo".getBytes()), is(nullValue()));
+    }
+    
     @Test(expected = IllegalArgumentException.class)
     public void parsedTokensMayNotContainDelimiters() {
-        TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).parse("\"foo,\":10s").build();
+        new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).parse("\"foo,\":10s").build();
     }
 }

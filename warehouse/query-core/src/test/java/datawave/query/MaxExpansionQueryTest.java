@@ -80,7 +80,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         log.info("------  testMaxUnfielded  ------");
         
         // set regex to match multiple fields
-        String regPhrase = " =~ '.*e'";
+        String regPhrase = RE_OP + "'.*e'";
         String expect = this.dataManager.convertAnyField(regPhrase);
         String query = Constants.ANY_FIELD + regPhrase;
         
@@ -100,7 +100,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
     public void testMaxValueRegexIndexOnly() throws Exception {
         log.info("------  testMaxValueRegexIndexOnly  ------");
         // set regex to match multiple fields
-        String city = AND_OP + "'rome'";
+        String city = EQ_OP + "'rome'";
         String code = RE_OP + "'.*a'";
         String query = CityField.CITY.name() + city + AND_OP + CityField.CODE.name() + code;
         
@@ -366,12 +366,13 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         String anyState = this.dataManager.convertAnyField(regexPhrase);
         String expect = anyState + AND_OP + CityField.COUNTRY.name() + EQ_OP + country;
         
+        this.logic.setQueryThreads(1);
         this.logic.setMaxValueExpansionThreshold(5);
         runTest(query, expect);
         
-        this.logic.setMaxValueExpansionThreshold(1);
-        ivaratorConfig();
-        runTest(query, expect);
+        // this.logic.setMaxValueExpansionThreshold(1);
+        // ivaratorConfig();
+        // runTest(query, expect);
     }
     
     @Test

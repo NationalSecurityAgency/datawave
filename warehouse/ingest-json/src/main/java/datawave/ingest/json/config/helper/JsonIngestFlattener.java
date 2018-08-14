@@ -11,7 +11,7 @@ import com.google.gson.stream.JsonToken;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.json.util.JsonObjectFlattener;
 import datawave.ingest.json.util.JsonObjectFlattenerImpl;
-import org.apache.commons.collections.IteratorUtils;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.hadoop.conf.Configuration;
 
 import java.io.File;

@@ -1,19 +1,19 @@
 package datawave.ingest.util.cache.watch;
 
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.ageoff.FilterRule;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.iterators.filter.ageoff.FilterRule;
 
 public class FileRuleWatcherTest {
     private static final String FILTER_CONFIGURATION_FILE = "/test-filter-rules.xml";
@@ -30,7 +30,6 @@ public class FileRuleWatcherTest {
         rulesByMatchPattern = new HashMap<>();
         filePath = new Path(this.getClass().getResource(FILTER_CONFIGURATION_FILE).toString());
         fs = filePath.getFileSystem(new Configuration());
-        FSDataInputStream inputStream = fs.open(filePath);
         watcher = new FileRuleWatcher(fs, filePath, 1);
         rules = watcher.loadContents(fs.open(filePath));
         Assert.assertEquals(5, rules.size());

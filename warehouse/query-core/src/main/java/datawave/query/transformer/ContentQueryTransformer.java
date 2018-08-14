@@ -18,10 +18,11 @@ import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
-public class ContentQueryTransformer extends BaseQueryLogicTransformer {
+public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,DefaultEvent> {
     
     private Authorizations auths = null;
     private Logger log = Logger.getLogger(ContentQueryTransformer.class);
@@ -32,50 +33,43 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer {
     }
     
     @Override
-    public Object transform(Object input) {
-        if (input instanceof Entry<?,?>) {
-            @SuppressWarnings("unchecked")
-            Entry<Key,org.apache.accumulo.core.data.Value> entry = (Entry<Key,org.apache.accumulo.core.data.Value>) input;
-            
-            if (entry.getKey() == null && entry.getValue() == null)
-                return null;
-            
-            if (null == entry.getKey() || null == entry.getValue()) {
-                throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
-            }
-            
-            ContentKeyValue ckv;
-            try {
-                ckv = ContentKeyValueFactory.parse(entry.getKey(), entry.getValue(), auths, markingFunctions);
-            } catch (Exception e1) {
-                throw new IllegalArgumentException("Unable to parse visibility", e1);
-            }
-            
-            DefaultEvent e = new DefaultEvent();
-            DefaultField field = new DefaultField();
-            
-            e.setMarkings(ckv.getMarkings());
-            
-            Metadata m = new Metadata();
-            m.setRow(ckv.getShardId());
-            m.setDataType(ckv.getDatatype());
-            m.setInternalId(ckv.getUid());
-            e.setMetadata(m);
-            
-            field.setMarkings(ckv.getMarkings());
-            field.setName(ckv.getViewName());
-            field.setTimestamp(entry.getKey().getTimestamp());
-            field.setValue(ckv.getContents());
-            
-            List<DefaultField> fields = new ArrayList<DefaultField>();
-            fields.add(field);
-            e.setFields(fields);
-            
-            return e;
-            
-        } else {
-            throw new IllegalArgumentException("Invalid input type: " + input.getClass());
+    public DefaultEvent transform(Entry<Key,Value> entry) {
+        
+        if (entry.getKey() == null && entry.getValue() == null)
+            return null;
+        
+        if (null == entry.getKey() || null == entry.getValue()) {
+            throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
         }
+        
+        ContentKeyValue ckv;
+        try {
+            ckv = ContentKeyValueFactory.parse(entry.getKey(), entry.getValue(), auths, markingFunctions);
+        } catch (Exception e1) {
+            throw new IllegalArgumentException("Unable to parse visibility", e1);
+        }
+        
+        DefaultEvent e = new DefaultEvent();
+        DefaultField field = new DefaultField();
+        
+        e.setMarkings(ckv.getMarkings());
+        
+        Metadata m = new Metadata();
+        m.setRow(ckv.getShardId());
+        m.setDataType(ckv.getDatatype());
+        m.setInternalId(ckv.getUid());
+        e.setMetadata(m);
+        
+        field.setMarkings(ckv.getMarkings());
+        field.setName(ckv.getViewName());
+        field.setTimestamp(entry.getKey().getTimestamp());
+        field.setValue(ckv.getContents());
+        
+        List<DefaultField> fields = new ArrayList<DefaultField>();
+        fields.add(field);
+        e.setFields(fields);
+        
+        return e;
         
     }
     

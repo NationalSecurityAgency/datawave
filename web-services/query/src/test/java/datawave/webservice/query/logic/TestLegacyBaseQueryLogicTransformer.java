@@ -10,6 +10,7 @@ import java.util.Map;
 
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 
 import org.junit.Test;
@@ -75,7 +76,7 @@ public class TestLegacyBaseQueryLogicTransformer {
         assertTrue("BaseQueryResponse should not be null", result1 == this.response);
     }
     
-    private class TestTransformer extends BaseQueryLogicTransformer {
+    private class TestTransformer extends BaseQueryLogicTransformer<Map.Entry<?,?>,EventBase> {
         BaseQueryResponse response;
         
         public TestTransformer(MarkingFunctions markingFunctions, BaseQueryResponse response) {
@@ -84,7 +85,7 @@ public class TestLegacyBaseQueryLogicTransformer {
         }
         
         @Override
-        public Object transform(Object arg0) {
+        public EventBase transform(Map.Entry<?,?> arg0) {
             return null;
         }
         

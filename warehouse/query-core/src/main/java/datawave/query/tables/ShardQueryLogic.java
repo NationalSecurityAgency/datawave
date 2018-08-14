@@ -41,7 +41,8 @@ import datawave.query.scheduler.SequentialScheduler;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
-import datawave.query.transformer.GroupingDocumentTransformer;
+import datawave.query.transformer.GroupingTransform;
+import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
@@ -160,23 +161,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     protected static final Logger log = ThreadConfigurableLogger.getLogger(ShardQueryLogic.class);
     
-    /**
-     * Set of datatypes to limit the query to.
-     */
-    public static final String DATATYPE_FILTER_SET = "datatype.filter.set";
-    
-    public static final String LIMIT_FIELDS = "limit.fields";
-    
-    public static final String GROUP_FIELDS = "group.fields";
-    
-    public static final String HIT_LIST = "hit.list";
-    
-    public static final String TYPE_METADATA_IN_HDFS = "type.metadata.in.hdfs";
-    
-    public static final String METADATA_TABLE_NAME = "model.table.name";
-    
-    public static final String RAW_TYPES = "raw.types";
-    
     public static final String NULL_BYTE = "\0";
     
     private String dateIndexTableName;
@@ -246,6 +230,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private boolean limitFieldsPreQueryEvaluation = false;
     private String limitFieldsField = null;
     private Set<String> groupFields = new HashSet<>(0);
+    private Set<String> uniqueFields = new HashSet<>(0);
     private boolean compressServerSideResults = false;
     private boolean indexOnlyFilterFunctionsEnabled = false;
     /**
@@ -467,6 +452,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setGroupFields(other.getGroupFields());
+        this.setUniqueFields(other.getUniqueFields());
         this.setCompressServerSideResults(other.isCompressServerSideResults());
         this.setQuerySyntaxParsers(other.getQuerySyntaxParsers());
         this.setMandatoryQuerySyntax(other.getMandatoryQuerySyntax());
@@ -557,24 +543,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '(' + (this.settings == null ? "empty" : this.settings.getId()) + ')');
         initialize(config, connection, settings, auths);
         return config;
-    }
-    
-    public String getLimitFieldsString(Query settings) throws ParseException {
-        Parameter parameter = settings.findParameter(QueryParameters.LIMIT_FIELDS);
-        String value = parameter.getParameterValue();
-        return value;
-    }
-    
-    public String getGroupFieldsString(Query settings) throws ParseException {
-        Parameter parameter = settings.findParameter(QueryParameters.GROUP_FIELDS);
-        String value = parameter.getParameterValue();
-        return value;
-    }
-    
-    public String getHitListString(Query settings) throws ParseException {
-        Parameter parameter = settings.findParameter(QueryParameters.HIT_LIST);
-        String value = parameter.getParameterValue();
-        return value;
     }
     
     protected String expandQueryMacros(String query) throws ParseException {
@@ -888,12 +856,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             reducedInSettings = Boolean.parseBoolean(reducedResponseStr);
         }
         boolean reduced = (this.isReducedResponse() || reducedInSettings);
-        DocumentTransformer transformer = null;
-        if (settings.findParameter(QueryOptions.GROUP_FIELDS).getParameterValue().length() > 0) {
-            transformer = new GroupingDocumentTransformer(this, settings, markingFunctions, responseObjectFactory, config.getGroupFields(), reduced);
-        } else {
-            transformer = new DocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
-        }
+        DocumentTransformer transformer = new DocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
         transformer.setContentFieldNames(contentFieldNames);
         transformer.setLogTimingDetails(this.logTimingDetails);
@@ -903,6 +866,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (config != null) {
             transformer.setProjectFields(config.getProjectFields());
             transformer.setBlacklistedFields(config.getBlacklistedFields());
+        }
+        if (settings.findParameter(QueryParameters.UNIQUE_FIELDS).getParameterValue().length() > 0) {
+            transformer.addTransform(new UniqueTransform(this, config.getUniqueFields()));
+        }
+        if (settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().length() > 0) {
+            transformer.addTransform(new GroupingTransform(this, config.getGroupFields()));
         }
         
         return transformer;
@@ -950,7 +919,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         
         // Get the datatype set if specified
-        String typeList = settings.findParameter(DATATYPE_FILTER_SET).getParameterValue().trim();
+        String typeList = settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue().trim();
         
         if (org.apache.commons.lang.StringUtils.isNotBlank(typeList)) {
             HashSet<String> typeFilter = new HashSet<>();
@@ -989,33 +958,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 setContentFieldNames(Collections.EMPTY_LIST);
             }
         }
-        
-        QueryLogicTransformer transformer = getTransformer(settings);
-        if (transformer instanceof WritesQueryMetrics) {
-            String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
-            if (org.apache.commons.lang.StringUtils.isNotBlank(logTimingDetailsStr)) {
-                this.logTimingDetails = Boolean.valueOf(logTimingDetailsStr);
-            }
-            if (this.logTimingDetails == true) {
-                // we have to collect the timing details on the iterator stack
-                // in order to log them
-                this.collectTimingDetails = true;
-            } else {
-                
-                String collectTimingDetailsStr = settings.findParameter(QueryOptions.COLLECT_TIMING_DETAILS).getParameterValue().trim();
-                if (org.apache.commons.lang.StringUtils.isNotBlank(collectTimingDetailsStr)) {
-                    this.collectTimingDetails = Boolean.valueOf(collectTimingDetailsStr);
-                }
-            }
-        } else {
-            // if the transformer can not process the timing metrics, then turn
-            // them off
-            this.logTimingDetails = false;
-            this.collectTimingDetails = false;
-        }
-        
-        config.setLogTimingDetails(this.logTimingDetails);
-        config.setCollectTimingDetails(this.collectTimingDetails);
         
         // Get the list of blacklisted fields. May be null.
         String tBlacklistedFields = settings.findParameter(QueryParameters.BLACKLISTED_FIELDS).getParameterValue().trim();
@@ -1059,16 +1001,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         
         // Get the LIMIT_FIELDS parameter if given
-        String limitFieldsString = settings.findParameter(QueryOptions.LIMIT_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(limitFieldsString)) {
-            String limitFields = settings.findParameter(QueryParameters.LIMIT_FIELDS).getParameterValue().trim();
-            if (org.apache.commons.lang.StringUtils.isNotBlank(limitFields)) {
-                List<String> limitFieldsList = Arrays.asList(StringUtils.split(limitFields, Constants.PARAM_VALUE_SEP));
-                
-                // Only set the limit fields if we were actually given some
-                if (!limitFieldsList.isEmpty()) {
-                    config.setLimitFields(new HashSet<>(limitFieldsList));
-                }
+        String limitFields = settings.findParameter(QueryParameters.LIMIT_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(limitFields)) {
+            List<String> limitFieldsList = Arrays.asList(StringUtils.split(limitFields, Constants.PARAM_VALUE_SEP));
+            
+            // Only set the limit fields if we were actually given some
+            if (!limitFieldsList.isEmpty()) {
+                config.setLimitFields(new HashSet<>(limitFieldsList));
             }
         }
         
@@ -1086,29 +1025,39 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         
         // Get the GROUP_FIELDS parameter if given
-        String groupFieldsString = settings.findParameter(QueryOptions.GROUP_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(groupFieldsString)) {
-            String groupFields = settings.findParameter(QueryOptions.GROUP_FIELDS).getParameterValue().trim();
-            if (org.apache.commons.lang.StringUtils.isNotBlank(groupFields)) {
-                List<String> groupFieldsList = Arrays.asList(StringUtils.split(groupFields, Constants.PARAM_VALUE_SEP));
-                
-                // Only set the group fields if we were actually given some
-                if (!groupFieldsList.isEmpty()) {
-                    config.setGroupFields(new HashSet<>(groupFieldsList));
-                    config.setProjectFields(new HashSet<>(groupFieldsList));
-                }
+        String groupFields = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(groupFields)) {
+            List<String> groupFieldsList = Arrays.asList(StringUtils.split(groupFields, Constants.PARAM_VALUE_SEP));
+            
+            // Only set the group fields if we were actually given some
+            if (!groupFieldsList.isEmpty()) {
+                this.setGroupFields(new HashSet<>(groupFieldsList));
+                config.setGroupFields(new HashSet<>(groupFieldsList));
+                config.setProjectFields(new HashSet<>(groupFieldsList));
+            }
+        }
+        
+        // Get the UNIQUE_FIELDS parameter if given
+        String uniqueFields = settings.findParameter(QueryParameters.UNIQUE_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(uniqueFields)) {
+            List<String> uniqueFieldsList = Arrays.asList(StringUtils.split(uniqueFields, Constants.PARAM_VALUE_SEP));
+            
+            // Only set the unique fields if we were actually given some
+            if (!uniqueFieldsList.isEmpty()) {
+                this.setUniqueFields(new HashSet<>(uniqueFieldsList));
+                config.setUniqueFields(new HashSet<>(uniqueFieldsList));
             }
         }
         
         // Get the HIT_LIST parameter if given
-        String hitListString = settings.findParameter(HIT_LIST).getParameterValue().trim();
+        String hitListString = settings.findParameter(QueryParameters.HIT_LIST).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(hitListString)) {
             Boolean hitListBool = Boolean.parseBoolean(hitListString);
             config.setHitList(hitListBool);
         }
         
         // Get the TYPE_METADATA_IN_HDFS parameter if given
-        String typeMetadataInHdfsString = settings.findParameter(TYPE_METADATA_IN_HDFS).getParameterValue().trim();
+        String typeMetadataInHdfsString = settings.findParameter(QueryParameters.TYPE_METADATA_IN_HDFS).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(typeMetadataInHdfsString)) {
             Boolean typeMetadataInHdfsBool = Boolean.parseBoolean(typeMetadataInHdfsString);
             config.setTypeMetadataInHdfs(typeMetadataInHdfsBool);
@@ -1129,7 +1078,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         
         // get the RAW_TYPES parameter if given
-        String rawTypesString = settings.findParameter(RAW_TYPES).getParameterValue().trim();
+        String rawTypesString = settings.findParameter(QueryParameters.RAW_TYPES).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(rawTypesString)) {
             Boolean rawTypesBool = Boolean.parseBoolean(rawTypesString);
             config.setRawTypes(rawTypesBool);
@@ -1271,6 +1220,34 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // Set the ReturnType for Documents coming out of the iterator stack
         config.setReturnType(DocumentSerialization.getReturnType(settings));
+        
+        QueryLogicTransformer transformer = getTransformer(settings);
+        if (transformer instanceof WritesQueryMetrics) {
+            String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
+            if (org.apache.commons.lang.StringUtils.isNotBlank(logTimingDetailsStr)) {
+                this.logTimingDetails = Boolean.valueOf(logTimingDetailsStr);
+            }
+            if (this.logTimingDetails == true) {
+                // we have to collect the timing details on the iterator stack
+                // in order to log them
+                this.collectTimingDetails = true;
+            } else {
+                
+                String collectTimingDetailsStr = settings.findParameter(QueryOptions.COLLECT_TIMING_DETAILS).getParameterValue().trim();
+                if (org.apache.commons.lang.StringUtils.isNotBlank(collectTimingDetailsStr)) {
+                    this.collectTimingDetails = Boolean.valueOf(collectTimingDetailsStr);
+                }
+            }
+        } else {
+            // if the transformer can not process the timing metrics, then turn
+            // them off
+            this.logTimingDetails = false;
+            this.collectTimingDetails = false;
+        }
+        
+        config.setLogTimingDetails(this.logTimingDetails);
+        config.setCollectTimingDetails(this.collectTimingDetails);
+        
         stopwatch.stop();
         
         if (null != selectedProfile) {
@@ -1541,6 +1518,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public Set<String> getGroupFields() {
         return this.groupFields;
+    }
+    
+    public Set<String> getUniqueFields() {
+        return uniqueFields;
+    }
+    
+    public void setUniqueFields(Set<String> uniqueFields) {
+        this.uniqueFields = uniqueFields;
     }
     
     public String getBlacklistedFieldsString() {
@@ -2186,8 +2171,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         params.add(QueryOptions.HIT_LIST);
         params.add(QueryOptions.TYPE_METADATA_IN_HDFS);
         params.add(QueryOptions.DATE_INDEX_TIME_TRAVEL);
-        params.add(QueryOptions.LIMIT_FIELDS);
-        params.add(QueryOptions.GROUP_FIELDS);
+        params.add(QueryParameters.LIMIT_FIELDS);
+        params.add(QueryParameters.GROUP_FIELDS);
+        params.add(QueryParameters.UNIQUE_FIELDS);
         params.add(QueryOptions.LOG_TIMING_DETAILS);
         return params;
     }

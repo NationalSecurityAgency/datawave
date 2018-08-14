@@ -22,7 +22,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.collections.map.LRUMap;
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 

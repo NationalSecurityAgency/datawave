@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-public class EventDataQueryExpressonVisitorTest {
+public class EventDataQueryExpressionVisitorTest {
     
     private static final String DATATYPE = "ingest";
     private static final String UID = "uid";
