@@ -198,7 +198,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testRegexBlacklist() throws Exception {
-        log.info("------  testEqCityAndEqContinentBlackList  ------");
+        log.info("------  testRegexBlacklist  ------");
         
         String regex = "miss.*";
         for (final TestCities city : TestCities.values()) {
@@ -209,7 +209,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testRegexWhitelist() throws Exception {
-        log.info("------  testEqCityAndEqContinentBlackList  ------");
+        log.info("------  testRegexWhitelist  ------");
         
         String regex = "miss.*";
         for (final TestCities city : TestCities.values()) {

@@ -44,7 +44,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
-        Set<String> virt = new HashSet(Arrays.asList(CityField.CITY.name(), CityField.CONTINENT.name()));
+        Set<String> virt = new HashSet<>(Arrays.asList(CityField.CITY.name(), CityField.CONTINENT.name()));
         generic.removeVirtualField(virt);
         generic.addIndexField(CityField.CODE.name());
         for (String idx : generic.getIndexFields()) {
@@ -222,7 +222,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     
     @Test(expected = FullTableScansDisallowedException.class)
     public void testErrorQuery() throws Exception {
-        log.info("------  testFieldOpField  ------");
+        log.info("------  testErrorQuery  ------");
         String query = "error-query";
         String expect = "a == 'a'";
         runTest(query, expect);

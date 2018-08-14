@@ -59,7 +59,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testCompoundAnd() throws Exception {
-        log.info("------  testAnd  ------");
+        log.info("------  testCompoundAnd  ------");
         String state = "'ohio'";
         String country = "'itaLY'";
         String code = "'ITa'";

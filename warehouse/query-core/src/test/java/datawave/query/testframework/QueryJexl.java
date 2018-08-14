@@ -197,9 +197,7 @@ public class QueryJexl {
                 // normalize all other values
                 // check for regex nodes
                 if (opNode instanceof ASTERNode || opNode instanceof ASTNRNode) {
-                    if (!(norm instanceof NumberNormalizer)) {
-                        value.image = norm.normalizeRegex(value.image);
-                    }
+                    value.image = norm.normalizeRegex(value.image);
                 } else {
                     value.image = norm.normalize(value.image);
                 }
