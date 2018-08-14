@@ -66,8 +66,10 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
     
     protected DatawaveFieldIndexListIteratorJexl(Builder builder) {
         super(builder);
-        this.values = new ArrayList<>(builder.values);
-        Collections.sort(this.values);
+        if (builder.values != null) {
+            this.values = new ArrayList<>(builder.values);
+            Collections.sort(this.values);
+        }
         this.fst = builder.fst;
     }
     
