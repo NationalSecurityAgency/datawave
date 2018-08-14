@@ -100,7 +100,7 @@ public class NonShardedSplitsFile {
                 tableSplits = splits.getSplits(table, reduceTasks - 1);
             } else if (splitsFileType.equals(SplitsFileType.UNTRIMMED)) {
                 tableSplits = splits.getSplits(table);
-            } else if (splitsFileType.equals(SplitsFileType.UNTRIMMED)) {
+            } else if (splitsFileType.equals(SplitsFileType.SPLITSANDLOCATIONS)) {
                 tableSplitsAndLocations = splits.getSplitsAndLocationByTable(table);
                 for (Text splitAndLocation : tableSplitsAndLocations.keySet()) {
                     out.println(table + "\t" + new String(Base64.encodeBase64(splitAndLocation.getBytes())) + "\t" + tableSplitsAndLocations.get(splitAndLocation));
