@@ -210,7 +210,7 @@ tables:
       cf: e
       cq: DT
       val: "NULL"
-      purpose: "The <b>e</b> column family denotes that NFN is a field that is contained within the given DT"
+      purpose: "The <b>e</b> column family denotes that NFN is a field that is contained within the given DT. <b>Note</b>: The absence of an <b>e</b> entry for a given NFN and the presence of <b>i</b> and/or <b>ri</b> entries denotes that the NFN is an <em>index-only</em> field"
 
     - row: NFN
       cf: i
