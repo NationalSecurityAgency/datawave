@@ -72,16 +72,13 @@ public class FieldConfigHelperTest {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         
         server.setExecutor(null);
-        server.createContext("/", new HttpHandler() {
-            @Override
-            public void handle(HttpExchange e) throws IOException {
-                e.sendResponseHeaders(200, 0);
-                e.getResponseHeaders().set("Content-Type", "text/xml");
-                
-                OutputStream responseBody = e.getResponseBody();
-                responseBody.write(resp.getBytes());
-                responseBody.close();
-            }
+        server.createContext("/", e -> {
+            e.sendResponseHeaders(200, 0);
+            e.getResponseHeaders().set("Content-Type", "text/xml");
+            
+            OutputStream responseBody = e.getResponseBody();
+            responseBody.write(resp.getBytes());
+            responseBody.close();
         });
         
         return server;

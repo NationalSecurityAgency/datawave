@@ -18,14 +18,7 @@ public class BatchedDocumentIterator implements Iterator<Entry<Key,Value>> {
     
     public BatchedDocumentIterator(PipelineIterator parent) {
         this.parent = parent;
-        sortedResponses = Sets.newTreeSet(new Comparator<Entry<Key,Value>>() {
-            
-            @Override
-            public int compare(Entry<Key,Value> o1, Entry<Key,Value> o2) {
-                return o1.getKey().compareTo(o2.getKey());
-            }
-            
-        });
+        sortedResponses = Sets.newTreeSet(Comparator.comparing(Entry::getKey));
     }
     
     @Override

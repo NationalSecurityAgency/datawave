@@ -917,57 +917,55 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected Future<?> fillSet(final Range boundingFiRange) {
         
         // create runnable
-        Runnable runnable = new Runnable() {
-            public void run() {
-                if (log.isDebugEnabled()) {
-                    log.debug("Starting fillSet(" + boundingFiRange + ')');
+        Runnable runnable = () -> {
+            if (log.isDebugEnabled()) {
+                log.debug("Starting fillSet(" + boundingFiRange + ')');
+            }
+            int scanned = 0;
+            int matched = 0;
+            QuerySpan querySpan = null;
+            SortedKeyValueIterator<Key,Value> source = null;
+            try {
+                source = getSourceCopy(false);
+                if (collectTimingDetails && source instanceof SourceTrackingIterator) {
+                    querySpan = ((SourceTrackingIterator) source).getQuerySpan();
                 }
-                int scanned = 0;
-                int matched = 0;
-                QuerySpan querySpan = null;
-                SortedKeyValueIterator<Key,Value> source = null;
-                try {
-                    source = getSourceCopy(false);
-                    if (collectTimingDetails && source instanceof SourceTrackingIterator) {
-                        querySpan = ((SourceTrackingIterator) source).getQuerySpan();
+                
+                // seek the source to a range covering the entire row....the bounding box will dictate the actual scan
+                source.seek(boundingFiRange, EMPTY_CFS, false);
+                scanned++;
+                DatawaveFieldIndexCachingIteratorJexl.this.scannedKeys.incrementAndGet();
+                
+                while (source.hasTop()) {
+                    checkTiming();
+                    
+                    // terminate if timed out or cancelled
+                    if (DatawaveFieldIndexCachingIteratorJexl.this.setControl.isCancelledQuery()) {
+                        break;
                     }
                     
-                    // seek the source to a range covering the entire row....the bounding box will dictate the actual scan
-                    source.seek(boundingFiRange, EMPTY_CFS, false);
+                    if (addKey(source.getTopKey(), source.getTopValue())) {
+                        matched++;
+                    }
+                    
+                    source.next();
                     scanned++;
                     DatawaveFieldIndexCachingIteratorJexl.this.scannedKeys.incrementAndGet();
-                    
-                    while (source.hasTop()) {
-                        checkTiming();
-                        
-                        // terminate if timed out or cancelled
-                        if (DatawaveFieldIndexCachingIteratorJexl.this.setControl.isCancelledQuery()) {
-                            break;
-                        }
-                        
-                        if (addKey(source.getTopKey(), source.getTopValue())) {
-                            matched++;
-                        }
-                        
-                        source.next();
-                        scanned++;
-                        DatawaveFieldIndexCachingIteratorJexl.this.scannedKeys.incrementAndGet();
-                    }
-                } catch (Exception e) {
-                    // throw the exception up which will be available via the Future
-                    log.error("Failed to complete fillSet(" + boundingFiRange + ")", e);
-                    throw new RuntimeException(e);
-                } finally {
-                    releaseSource(source);
-                    if (log.isDebugEnabled()) {
-                        StringBuilder builder = new StringBuilder();
-                        builder.append("Matched ").append(matched).append(" out of ").append(scanned).append(" for ").append(boundingFiRange).append(": ")
-                                        .append(DatawaveFieldIndexCachingIteratorJexl.this);
-                        log.debug(builder.toString());
-                    }
-                    if (collectTimingDetails && querySpanCollector != null && querySpan != null) {
-                        querySpanCollector.addQuerySpan(querySpan);
-                    }
+                }
+            } catch (Exception e) {
+                // throw the exception up which will be available via the Future
+                log.error("Failed to complete fillSet(" + boundingFiRange + ")", e);
+                throw new RuntimeException(e);
+            } finally {
+                releaseSource(source);
+                if (log.isDebugEnabled()) {
+                    StringBuilder builder = new StringBuilder();
+                    builder.append("Matched ").append(matched).append(" out of ").append(scanned).append(" for ").append(boundingFiRange).append(": ")
+                                    .append(DatawaveFieldIndexCachingIteratorJexl.this);
+                    log.debug(builder.toString());
+                }
+                if (collectTimingDetails && querySpanCollector != null && querySpan != null) {
+                    querySpanCollector.addQuerySpan(querySpan);
                 }
             }
         };

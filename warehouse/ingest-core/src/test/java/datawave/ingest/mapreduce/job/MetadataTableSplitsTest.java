@@ -205,138 +205,110 @@ public class MetadataTableSplitsTest {
         JobConf mocked = PowerMock.createMock(JobConf.class);
         
         mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String results = (String) EasyMock.getCurrentArguments()[1];
+            
+            if (mockConfiguration.containsKey(key)) {
                 
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String results = (String) EasyMock.getCurrentArguments()[1];
-                
-                if (mockConfiguration.containsKey(key)) {
-                    
-                    results = mockConfiguration.get(key);
-                }
-                
-                return results;
+                results = mockConfiguration.get(key);
             }
+            
+            return results;
         }).anyTimes();
         
         mocked.getLong(EasyMock.anyObject(String.class), EasyMock.anyLong());
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            long results = (Long) EasyMock.getCurrentArguments()[1];
+            
+            if (mockConfiguration.containsKey(key)) {
                 
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                long results = (Long) EasyMock.getCurrentArguments()[1];
-                
-                if (mockConfiguration.containsKey(key)) {
+                try {
                     
-                    try {
-                        
-                        results = Long.parseLong(mockConfiguration.get(key));
-                        
-                    } catch (Throwable t) {
-                        
-                        logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
-                    }
+                    results = Long.parseLong(mockConfiguration.get(key));
+                    
+                } catch (Throwable t) {
+                    
+                    logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
-                
-                return results;
             }
+            
+            return results;
         }).anyTimes();
         
         mocked.get(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
-                
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                
-                return mockConfiguration.get(key);
-            }
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            
+            return mockConfiguration.get(key);
         }).anyTimes();
         
         mocked.getBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            boolean results = (Boolean) EasyMock.getCurrentArguments()[1];
             
-            @Override
-            public Object answer() throws Throwable {
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                boolean results = (Boolean) EasyMock.getCurrentArguments()[1];
+            if (mockConfiguration.containsKey(key)) {
                 
-                if (mockConfiguration.containsKey(key)) {
+                try {
                     
-                    try {
-                        
-                        results = Boolean.parseBoolean(mockConfiguration.get(key));
-                        
-                    } catch (Throwable t) {
-                        
-                        logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
-                    }
+                    results = Boolean.parseBoolean(mockConfiguration.get(key));
+                    
+                } catch (Throwable t) {
+                    
+                    logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
-                
-                return results;
             }
+            
+            return results;
         }).anyTimes();
         
         mocked.getInt(EasyMock.anyObject(String.class), EasyMock.anyInt());
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            int results = (Integer) EasyMock.getCurrentArguments()[1];
+            
+            if (mockConfiguration.containsKey(key)) {
                 
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                int results = (Integer) EasyMock.getCurrentArguments()[1];
-                
-                if (mockConfiguration.containsKey(key)) {
+                try {
                     
-                    try {
-                        
-                        results = Integer.parseInt(mockConfiguration.get(key));
-                        
-                    } catch (Throwable t) {
-                        
-                        logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
-                    }
+                    results = Integer.parseInt(mockConfiguration.get(key));
+                    
+                } catch (Throwable t) {
+                    
+                    logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
-                
-                return results;
             }
+            
+            return results;
         }).anyTimes();
         
         mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
-                
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String value = (String) EasyMock.getCurrentArguments()[1];
-                
-                mockConfiguration.put(key, value);
-                
-                return null;
-            }
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String value = (String) EasyMock.getCurrentArguments()[1];
+            
+            mockConfiguration.put(key, value);
+            
+            return null;
         }).anyTimes();
         
         mocked.getStrings(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String[] results = null;
             
-            @Override
-            public Object answer() throws Throwable {
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String[] results = null;
-                
-                if (mockConfiguration.containsKey(key)) {
-                    results = StringUtils.getStrings(mockConfiguration.get(key));
-                }
-                
-                return results;
+            if (mockConfiguration.containsKey(key)) {
+                results = StringUtils.getStrings(mockConfiguration.get(key));
             }
+            
+            return results;
         }).anyTimes();
         
         PowerMock.replay(mocked);
@@ -349,139 +321,111 @@ public class MetadataTableSplitsTest {
         Configuration mocked = PowerMock.createMock(Configuration.class);
         
         mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String results = (String) EasyMock.getCurrentArguments()[1];
+            
+            if (mockConfiguration.containsKey(key)) {
                 
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String results = (String) EasyMock.getCurrentArguments()[1];
-                
-                if (mockConfiguration.containsKey(key)) {
-                    
-                    results = mockConfiguration.get(key);
-                }
-                
-                return results;
+                results = mockConfiguration.get(key);
             }
+            
+            return results;
         }).anyTimes();
         
         mocked.getLong(EasyMock.anyObject(String.class), EasyMock.anyLong());
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            long results = (Long) EasyMock.getCurrentArguments()[1];
+            
+            if (mockConfiguration.containsKey(key)) {
                 
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                long results = (Long) EasyMock.getCurrentArguments()[1];
-                
-                if (mockConfiguration.containsKey(key)) {
+                try {
                     
-                    try {
-                        
-                        results = Long.parseLong(mockConfiguration.get(key));
-                        
-                    } catch (Throwable t) {
-                        
-                        logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
-                    }
+                    results = Long.parseLong(mockConfiguration.get(key));
+                    
+                } catch (Throwable t) {
+                    
+                    logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
-                
-                return results;
             }
+            
+            return results;
         }).anyTimes();
         
         mocked.get(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
-                
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                
-                return mockConfiguration.get(key);
-            }
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            
+            return mockConfiguration.get(key);
         }).anyTimes();
         
         mocked.getBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            boolean results = (Boolean) EasyMock.getCurrentArguments()[1];
             
-            @Override
-            public Object answer() throws Throwable {
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                boolean results = (Boolean) EasyMock.getCurrentArguments()[1];
+            if (mockConfiguration.containsKey(key)) {
                 
-                if (mockConfiguration.containsKey(key)) {
+                try {
                     
-                    try {
-                        
-                        results = Boolean.parseBoolean(mockConfiguration.get(key));
-                        
-                    } catch (Throwable t) {
-                        
-                        logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
-                    }
+                    results = Boolean.parseBoolean(mockConfiguration.get(key));
+                    
+                } catch (Throwable t) {
+                    
+                    logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
-                
-                return results;
             }
+            
+            return results;
         }).anyTimes();
         
         mocked.getInt(EasyMock.anyObject(String.class), EasyMock.anyInt());
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            int results = (Integer) EasyMock.getCurrentArguments()[1];
+            
+            if (mockConfiguration.containsKey(key)) {
                 
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                int results = (Integer) EasyMock.getCurrentArguments()[1];
-                
-                if (mockConfiguration.containsKey(key)) {
+                try {
                     
-                    try {
-                        
-                        results = Integer.parseInt(mockConfiguration.get(key));
-                        
-                    } catch (Throwable t) {
-                        
-                        logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
-                    }
+                    results = Integer.parseInt(mockConfiguration.get(key));
+                    
+                } catch (Throwable t) {
+                    
+                    logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
                 }
-                
-                return results;
             }
+            
+            return results;
         }).anyTimes();
         
         mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
-                
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String value = (String) EasyMock.getCurrentArguments()[1];
-                
-                mockConfiguration.put(key, value);
-                
-                return null;
-            }
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String value = (String) EasyMock.getCurrentArguments()[1];
+            
+            mockConfiguration.put(key, value);
+            
+            return null;
         }).anyTimes();
         
         mocked.getStrings(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String[] results = null;
             
-            @Override
-            public Object answer() throws Throwable {
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String[] results = null;
+            if (mockConfiguration.containsKey(key)) {
                 
-                if (mockConfiguration.containsKey(key)) {
-                    
-                    results = StringUtils.getStrings(mockConfiguration.get(key));
-                }
-                
-                return results;
+                results = StringUtils.getStrings(mockConfiguration.get(key));
             }
+            
+            return results;
         }).anyTimes();
         
         PowerMock.replay(mocked);

@@ -827,12 +827,7 @@ public class ShardedTableTabletBalancerTest {
         }
         
         public Iterable<Pair<KeyExtent,Location>> getLocationProvider() {
-            return Iterables.transform(tabletLocs.entrySet(), new Function<Entry<KeyExtent,TServerInstance>,Pair<KeyExtent,Location>>() {
-                @Override
-                public Pair<KeyExtent,Location> apply(Entry<KeyExtent,TServerInstance> input) {
-                    return new Pair<>(input.getKey(), new Location(input.getValue()));
-                }
-            });
+            return Iterables.transform(tabletLocs.entrySet(), input -> new Pair<>(input.getKey(), new Location(input.getValue())));
         }
     }
     

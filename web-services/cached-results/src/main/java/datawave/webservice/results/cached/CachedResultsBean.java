@@ -2360,34 +2360,28 @@ public class CachedResultsBean {
                                 InputStream stderr = process.getErrorStream();
                                 final BufferedReader errReader = new BufferedReader(new InputStreamReader(stderr));
                                 try {
-                                    Thread outReadThread = new Thread() {
-                                        @Override
-                                        public void run() {
-                                            try {
-                                                String line = outReader.readLine();
-                                                while (line != null) {
-                                                    log.info(line);
-                                                    line = outReader.readLine();
-                                                }
-                                            } catch (IOException e) {
-                                                log.error("Error in readThread", e);
+                                    Thread outReadThread = new Thread(() -> {
+                                        try {
+                                            String line = outReader.readLine();
+                                            while (line != null) {
+                                                log.info(line);
+                                                line = outReader.readLine();
                                             }
+                                        } catch (IOException e) {
+                                            log.error("Error in readThread", e);
                                         }
-                                    };
-                                    Thread errReadThread = new Thread() {
-                                        @Override
-                                        public void run() {
-                                            try {
-                                                String line = errReader.readLine();
-                                                while (line != null) {
-                                                    log.error(line);
-                                                    line = errReader.readLine();
-                                                }
-                                            } catch (IOException e) {
-                                                log.error("Error in readThread", e);
+                                    });
+                                    Thread errReadThread = new Thread(() -> {
+                                        try {
+                                            String line = errReader.readLine();
+                                            while (line != null) {
+                                                log.error(line);
+                                                line = errReader.readLine();
                                             }
+                                        } catch (IOException e) {
+                                            log.error("Error in readThread", e);
                                         }
-                                    };
+                                    });
                                     outReadThread.setName(id + "-StdOutReadThread");
                                     outReadThread.start();
                                     errReadThread.setName(id + "-StdErrReadThread");

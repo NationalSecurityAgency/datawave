@@ -216,18 +216,9 @@ public class TermOffsetPopulator {
         FunctionReferenceVisitor visitor = new FunctionReferenceVisitor();
         query.jjtAccept(visitor, null);
         
-        Multimap<String,Function> functionsInNamespace = Multimaps.index(visitor.functions().get(ContentFunctions.CONTENT_FUNCTION_NAMESPACE),
-                        new com.google.common.base.Function<Function,String>() {
-                            public String apply(Function from) {
-                                return from.name();
-                            }
-                        });
+        Multimap<String,Function> functionsInNamespace = Multimaps.index(visitor.functions().get(ContentFunctions.CONTENT_FUNCTION_NAMESPACE), Function::name);
         
-        return Multimaps.filterKeys(functionsInNamespace, new Predicate<String>() {
-            public boolean apply(String input) {
-                return isContentFunctionTerm(input);
-            }
-        });
+        return Multimaps.filterKeys(functionsInNamespace, TermOffsetPopulator::isContentFunctionTerm);
     }
     
     /**

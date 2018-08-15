@@ -303,14 +303,11 @@ public class QueryMetricsWriter {
             // only old events should lack page numbers
             if (pages.get(0).getPageNumber() == -1) {
                 
-                Comparator<PageMetric> c = new Comparator<PageMetric>() {
-                    @Override
-                    public int compare(PageMetric m1, PageMetric m2) {
-                        CompareToBuilder builder = new CompareToBuilder();
-                        builder.append(m1.getPageRequested(), m2.getPageRequested());
-                        builder.append(m1.getPageReturned(), m2.getPageReturned());
-                        return builder.toComparison();
-                    }
+                Comparator<PageMetric> c = (m1, m2) -> {
+                    CompareToBuilder builder = new CompareToBuilder();
+                    builder.append(m1.getPageRequested(), m2.getPageRequested());
+                    builder.append(m1.getPageReturned(), m2.getPageReturned());
+                    return builder.toComparison();
                 };
                 
                 // Sort by pageRequested and pageReturned

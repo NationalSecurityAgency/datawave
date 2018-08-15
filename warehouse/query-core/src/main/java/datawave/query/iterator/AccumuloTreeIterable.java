@@ -50,14 +50,9 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
                 }
             }
             
-            Iterator<Entry<S,Document>> wrapper = TraceIterators.transform(tree, new Function<S,Entry<S,Document>>() {
-                
-                @Override
-                public Entry<S,Document> apply(S from) {
-                    Entry<S,Document> entry = Maps.immutableEntry(from, tree.document());
-                    return entry;
-                }
-                
+            Iterator<Entry<S,Document>> wrapper = TraceIterators.transform(tree, from -> {
+                Entry<S,Document> entry = Maps.immutableEntry(from, tree.document());
+                return entry;
             }, "Field Index");
             
             return Iterators.transform(wrapper, func);

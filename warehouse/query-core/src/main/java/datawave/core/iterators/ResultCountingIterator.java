@@ -144,14 +144,7 @@ public class ResultCountingIterator extends WrappingIterator {
                 // Merge the ColumnVisibilities
                 // Do not count the record if we can't parse its ColumnVisibility
                 try {
-                    ColumnVisibility cv = CV_CACHE.get(cvholder, new Callable<ColumnVisibility>() {
-                        
-                        @Override
-                        public ColumnVisibility call() throws Exception {
-                            return new ColumnVisibility(cvholder);
-                        }
-                        
-                    });
+                    ColumnVisibility cv = CV_CACHE.get(cvholder, () -> new ColumnVisibility(cvholder));
                     
                     columnVisibilities.add(cv);
                 } catch (Exception e) {

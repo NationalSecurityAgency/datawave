@@ -421,16 +421,13 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         
         BulkIteratorEnvironment myData = new BulkIteratorEnvironment(IteratorScope.scan);
         // ensure we create the iterators in priority order
-        Collections.sort(iterators, new Comparator<AccumuloIterator>() {
-            @Override
-            public int compare(AccumuloIterator o1, AccumuloIterator o2) {
-                if (o1.getPriority() < o2.getPriority()) {
-                    return -1;
-                } else if (o1.getPriority() > o2.getPriority()) {
-                    return 1;
-                } else {
-                    return o1.getIteratorName().compareTo(o2.getIteratorName());
-                }
+        Collections.sort(iterators, (o1, o2) -> {
+            if (o1.getPriority() < o2.getPriority()) {
+                return -1;
+            } else if (o1.getPriority() > o2.getPriority()) {
+                return 1;
+            } else {
+                return o1.getIteratorName().compareTo(o2.getIteratorName());
             }
         });
         for (AccumuloIterator iterator : iterators) {
@@ -451,61 +448,59 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     protected Future<SortedKeyValueIterator<Key,Value>> iterFromFile(final FileOperations ops, final Path path, final Configuration conf)
                     throws TableNotFoundException, IOException {
         
-        return executor.submit(new Callable<SortedKeyValueIterator<Key,Value>>() {
-            public SortedKeyValueIterator<Key,Value> call() throws Exception {
-                
-                if (callClosed.get()) {
-                    throw new IOException("Shutdown in progress");
-                }
-                
-                final FileSystem fs = FileSystem.newInstance(path.toUri(), conf);
-                
-                if (callClosed.get()) {
-                    fs.close();
-                    throw new IOException("Shutdown in progress");
-                }
-                
-                AtomicBoolean isSuccess = new AtomicBoolean(false);
-                
-                RfileCloseable closeable = new RfileCloseable();
-                
-                FileSKVIterator fileIterator = null;
-                
-                try {
-                    
-                    rfileReferences.add(closeable);
-                    
-                    closeable.setFileSystemReference(fs);
-                    
-                    // Path path = new Path(file);
-                    
-                    closeable.setInputStream(fs.open(path));
-                    
-                    long length = fs.getFileStatus(path).getLen();
-                    
-                    closeable.setBlockFile(new CachableBlockFile.Reader(closeable.getInputStream(), length, conf, null, null, acuTableConf));
-                    
-                    fileIterator = new RFile.Reader(closeable.getReader());
-                    
-                    closeable.setIterator(fileIterator);
-                    
-                    fileIterators.add(fileIterator);
-                    
-                    isSuccess.set(true);
-                } catch (Exception e) {
-                    if (null != fileIterator) {
-                        fileIterator.close();
-                    }
-                    closeable.close();
-                    throw e;
-                } finally {
-                    if (!isSuccess.get() || Thread.interrupted() || callClosed.get()) {
-                        closeable.close();
-                    }
-                }
-                
-                return fileIterator;
+        return executor.submit(() -> {
+            
+            if (callClosed.get()) {
+                throw new IOException("Shutdown in progress");
             }
+            
+            final FileSystem fs = FileSystem.newInstance(path.toUri(), conf);
+            
+            if (callClosed.get()) {
+                fs.close();
+                throw new IOException("Shutdown in progress");
+            }
+            
+            AtomicBoolean isSuccess = new AtomicBoolean(false);
+            
+            RfileCloseable closeable = new RfileCloseable();
+            
+            FileSKVIterator fileIterator = null;
+            
+            try {
+                
+                rfileReferences.add(closeable);
+                
+                closeable.setFileSystemReference(fs);
+                
+                // Path path = new Path(file);
+                
+                closeable.setInputStream(fs.open(path));
+                
+                long length = fs.getFileStatus(path).getLen();
+                
+                closeable.setBlockFile(new Reader(closeable.getInputStream(), length, conf, null, null, acuTableConf));
+                
+                fileIterator = new RFile.Reader(closeable.getReader());
+                
+                closeable.setIterator(fileIterator);
+                
+                fileIterators.add(fileIterator);
+                
+                isSuccess.set(true);
+            } catch (Exception e) {
+                if (null != fileIterator) {
+                    fileIterator.close();
+                }
+                closeable.close();
+                throw e;
+            } finally {
+                if (!isSuccess.get() || Thread.interrupted() || callClosed.get()) {
+                    closeable.close();
+                }
+            }
+            
+            return fileIterator;
         });
     }
     

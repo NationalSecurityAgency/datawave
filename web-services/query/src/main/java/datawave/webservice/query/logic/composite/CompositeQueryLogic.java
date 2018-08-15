@@ -147,19 +147,16 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         
         for (BaseQueryLogic<?> logic : queryLogics) {
             final BaseQueryLogic<?> queryLogic = logic;
-            int count = CollectionUtils.countMatches(queryLogics, new Predicate() {
-                @Override
-                public boolean evaluate(Object object) {
-                    if (object instanceof BaseQueryLogic<?>) {
-                        BaseQueryLogic<?> other = (BaseQueryLogic<?>) object;
-                        if (queryLogic.getClass().equals(other.getClass()) && queryLogic.getTableName().equals(other.getTableName())) {
-                            return true;
-                        } else {
-                            return false;
-                        }
+            int count = CollectionUtils.countMatches(queryLogics, object -> {
+                if (object instanceof BaseQueryLogic<?>) {
+                    BaseQueryLogic<?> other = (BaseQueryLogic<?>) object;
+                    if (queryLogic.getClass().equals(other.getClass()) && queryLogic.getTableName().equals(other.getTableName())) {
+                        return true;
                     } else {
                         return false;
                     }
+                } else {
+                    return false;
                 }
             });
             

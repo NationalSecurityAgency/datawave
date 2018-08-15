@@ -73,33 +73,23 @@ public class AbstractTableConfigHelperTest {
             }
             
             log.debug(EasyMock.anyObject(String.class));
-            EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+            EasyMock.expectLastCall().andAnswer(() -> {
                 
-                @Override
-                public Object answer() throws Throwable {
-                    
-                    String msg = (String) EasyMock.getCurrentArguments()[0];
-                    
-                    debugMessages.add(msg);
-                    
-                    return null;
-                }
+                String msg = (String) EasyMock.getCurrentArguments()[0];
                 
+                debugMessages.add(msg);
+                
+                return null;
             }).anyTimes();
             
             log.info(EasyMock.anyObject(String.class));
-            EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+            EasyMock.expectLastCall().andAnswer(() -> {
                 
-                @Override
-                public Object answer() throws Throwable {
-                    
-                    String msg = (String) EasyMock.getCurrentArguments()[0];
-                    
-                    infoMessages.add(msg);
-                    
-                    return null;
-                }
+                String msg = (String) EasyMock.getCurrentArguments()[0];
                 
+                infoMessages.add(msg);
+                
+                return null;
             }).anyTimes();
             
             PowerMock.replay(log);
@@ -523,116 +513,98 @@ public class AbstractTableConfigHelperTest {
         TableOperations mock = PowerMock.createMock(TableOperations.class);
         
         mock.getProperties(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            public Object answer() throws AccumuloException, TableNotFoundException {
+            AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED = true;
+            
+            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            
+            if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
                 
-                AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED = true;
-                
-                String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
-                
-                if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
-                    
-                    throw new TableNotFoundException(null, tableNameParameter, AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
-                }
-                
-                if (AbstractTableConfigHelperTest.GET_PROPERTIES_THROWS_ACCUMULO_EXCEPTION) {
-                    
-                    throw new AccumuloException(AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
-                }
-                
-                return tableProperties.entrySet();
+                throw new TableNotFoundException(null, tableNameParameter, AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
             }
             
+            if (AbstractTableConfigHelperTest.GET_PROPERTIES_THROWS_ACCUMULO_EXCEPTION) {
+                
+                throw new AccumuloException(AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
+            }
+            
+            return tableProperties.entrySet();
         }).anyTimes();
         
         mock.setProperty(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            public Object answer() throws TableNotFoundException, AccumuloSecurityException {
+            AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED = true;
+            
+            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            
+            if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
                 
-                AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED = true;
-                
-                String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
-                
-                if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
-                    
-                    throw new TableNotFoundException(null, tableNameParameter, AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
-                }
-                
-                if (AbstractTableConfigHelperTest.SET_PROPERTIES_THROWS_ACCUMULO_SECUIRTY_EXCEPTION) {
-                    
-                    throw new AccumuloSecurityException(AbstractTableConfigHelperTest.USER, SecurityErrorCode.PERMISSION_DENIED);
-                }
-                
-                String name = (String) EasyMock.getCurrentArguments()[1];
-                String value = (String) EasyMock.getCurrentArguments()[2];
-                
-                tableProperties.put(name, value);
-                return null;
+                throw new TableNotFoundException(null, tableNameParameter, AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
             }
             
+            if (AbstractTableConfigHelperTest.SET_PROPERTIES_THROWS_ACCUMULO_SECUIRTY_EXCEPTION) {
+                
+                throw new AccumuloSecurityException(AbstractTableConfigHelperTest.USER, SecurityErrorCode.PERMISSION_DENIED);
+            }
+            
+            String name = (String) EasyMock.getCurrentArguments()[1];
+            String value = (String) EasyMock.getCurrentArguments()[2];
+            
+            tableProperties.put(name, value);
+            return null;
         }).anyTimes();
         
         mock.getLocalityGroups(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            AbstractTableConfigHelperTest.ARE_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
+            
+            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            
+            if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
                 
-                AbstractTableConfigHelperTest.ARE_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
-                
-                String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
-                
-                if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
-                    
-                    throw new TableNotFoundException(null, tableNameParameter, AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
-                }
-                
-                if (AbstractTableConfigHelperTest.ARE_LOCALITY_GROUPS_CONFIGURED_THROWS_ACCUMULO_SECUIRTY_EXCEPTION) {
-                    
-                    throw new AccumuloSecurityException(AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE, SecurityErrorCode.DEFAULT_SECURITY_ERROR);
-                }
-                
-                return localityGroups;
+                throw new TableNotFoundException(null, tableNameParameter, AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
             }
             
+            if (AbstractTableConfigHelperTest.ARE_LOCALITY_GROUPS_CONFIGURED_THROWS_ACCUMULO_SECUIRTY_EXCEPTION) {
+                
+                throw new AccumuloSecurityException(AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE, SecurityErrorCode.DEFAULT_SECURITY_ERROR);
+            }
+            
+            return localityGroups;
         }).anyTimes();
         
         Map<String,Set<Text>> groups = new HashMap<>();
         
         mock.setLocalityGroups(EasyMock.anyObject(String.class), EasyMock.anyObject(groups.getClass()));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            AbstractTableConfigHelperTest.SET_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
+            
+            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            
+            if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
                 
-                AbstractTableConfigHelperTest.SET_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
-                
-                String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
-                
-                if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
-                    
-                    throw new TableNotFoundException(null, tableNameParameter, AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
-                }
-                
-                if (AbstractTableConfigHelperTest.SET_LOCALITY_GROUPS_CONFIGURED_THROWS_ACCUMULO_SECUIRTY_EXCEPTION) {
-                    
-                    throw new AccumuloSecurityException(AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE, SecurityErrorCode.DEFAULT_SECURITY_ERROR);
-                }
-                
-                if (AbstractTableConfigHelperTest.SET_LOCALITY_GROUPS_CONFIGURED_THROWS_ACCUMULO_EXCEPTION) {
-                    
-                    throw new AccumuloException(AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
-                }
-                
-                Map<String,Set<Text>> groups = (Map<String,Set<Text>>) EasyMock.getCurrentArguments()[1];
-                
-                localityGroups.putAll(groups);
-                
-                return null;
+                throw new TableNotFoundException(null, tableNameParameter, AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
             }
             
+            if (AbstractTableConfigHelperTest.SET_LOCALITY_GROUPS_CONFIGURED_THROWS_ACCUMULO_SECUIRTY_EXCEPTION) {
+                
+                throw new AccumuloSecurityException(AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE, SecurityErrorCode.DEFAULT_SECURITY_ERROR);
+            }
+            
+            if (AbstractTableConfigHelperTest.SET_LOCALITY_GROUPS_CONFIGURED_THROWS_ACCUMULO_EXCEPTION) {
+                
+                throw new AccumuloException(AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
+            }
+            
+            Map<String,Set<Text>> groups1 = (Map<String,Set<Text>>) EasyMock.getCurrentArguments()[1];
+            
+            localityGroups.putAll(groups1);
+            
+            return null;
         }).anyTimes();
         
         // prepare it for use...

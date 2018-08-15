@@ -648,14 +648,9 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                             this.includeHierarchyFields, this.includeHierarchyFields);
         }
         
-        Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, new Function<Key,Entry<DocumentData,Document>>() {
-            
-            @Override
-            public Entry<DocumentData,Document> apply(Key from) {
-                Entry<Key,Document> entry = Maps.immutableEntry(from, documentSpecificSource.document());
-                return docMapper.apply(entry);
-            }
-            
+        Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, from -> {
+            Entry<Key,Document> entry = Maps.immutableEntry(from, documentSpecificSource.document());
+            return docMapper.apply(entry);
         });
         
         // Take the document Keys and transform it into Entry<Key,Document>,

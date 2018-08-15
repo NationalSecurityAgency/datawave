@@ -3,7 +3,6 @@ package datawave.query;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
@@ -11,7 +10,11 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataHelper;
+import datawave.query.util.TypeMetadataWriter;
 import datawave.query.util.WiseGuysIngest;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
@@ -20,6 +23,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -34,8 +38,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
+import java.io.File;
+import java.io.IOException;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,10 +54,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.METADATA_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.*;
 
 /**
  * Tests the composite functions, the #JEXL lucene function, and the matchesAtLeastCountOf function
@@ -79,8 +81,7 @@ public abstract class CompositeFunctionsTest {
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -104,8 +105,7 @@ public abstract class CompositeFunctionsTest {
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -114,18 +114,41 @@ public abstract class CompositeFunctionsTest {
     
     protected Authorizations auths = new Authorizations("ALL");
     
-    protected Set<Authorizations> authSet = Collections.singleton(auths);
+    private Set<Authorizations> authSet = Collections.singleton(auths);
     
     @Inject
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
     
-    protected KryoDocumentDeserializer deserializer;
+    private static final String tempDirForCompositeFunctionsTest = "/tmp/TempDirForCompositeFunctionsTest";
+    
+    @BeforeClass
+    public static void beforeClass() {
+        // this will get property substituted into the TypeMetadataBridgeContext.xml file
+        // for the injection test (when this unit test is first created)
+        System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
+    }
+    
+    @AfterClass
+    public static void teardown() {
+        // maybe delete the temp folder here
+        File tempFolder = new File(tempDirForCompositeFunctionsTest);
+        if (tempFolder.exists()) {
+            try {
+                FileUtils.forceDelete(tempFolder);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        TypeRegistry.reset();
+    }
+    
+    private KryoDocumentDeserializer deserializer;
     
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     
     @Deployment
-    public static JavaArchive createDeployment() throws Exception {
+    public static JavaArchive createDeployment() {
         
         return ShrinkWrap
                         .create(JavaArchive.class)
@@ -139,11 +162,6 @@ public abstract class CompositeFunctionsTest {
                                                         + "</alternatives>"), "beans.xml");
     }
     
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
-    }
-    
     @Before
     public void setup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -152,11 +170,10 @@ public abstract class CompositeFunctionsTest {
         deserializer = new KryoDocumentDeserializer();
     }
     
-    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                    throws ParseException, Exception;
+    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
-                    throws ParseException, Exception {
+                    throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -174,10 +191,16 @@ public abstract class CompositeFunctionsTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
         
-        HashSet<String> expectedSet = new HashSet<String>(expected);
+        TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
+        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper();
+        typeMetadataHelper.initialize(connector, MODEL_TABLE_NAME, authSet);
+        Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
+        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
+        
+        HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
-        resultSet = new HashSet<String>();
-        Set<Document> docs = new HashSet<Document>();
+        resultSet = new HashSet<>();
+        Set<Document> docs = new HashSet<>();
         for (Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
             
@@ -228,7 +251,35 @@ public abstract class CompositeFunctionsTest {
         String[] queryStrings = {"UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAM,'MICHAEL','VINCENT','FREDO','TONY')",
                 "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAME,'MICHAEL','VINCENT','FRED','TONY')"};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE"), Collections.emptyList()};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+    }
+    
+    @Test
+    public void testMatchesAtLeastCountOfWithOptionsFunction() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        if (log.isDebugEnabled()) {
+            log.debug("testMatchesAtLeastCountOf");
+        }
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAM,'MICHAEL','VINCENT','FREDO','TONY') "+
+                        "AND filter:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')",
+
+                "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAME,'MICHAEL','VINCENT','FRED','TONY') "+
+                        "OR filter:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')"
+        };
+
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {
+                Collections.singletonList("CORLEONE"),
+                Collections.emptyList()
+        };
+        // @formatter:on
+        
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -249,8 +300,8 @@ public abstract class CompositeFunctionsTest {
                 "(UUID:C* OR UUID:S*) AND #TIME_FUNCTION(DEATH_DATE,BIRTH_DATE,'-','>','2522880000000L')",};
         // timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal)
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CAPONE"),
-                Arrays.asList("CAPONE"),};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Arrays.asList("CORLEONE", "CAPONE"),
+                Collections.singletonList("CAPONE"), Collections.singletonList("CAPONE"),};
         for (int i = 0; i < queryStrings.length; i++) {
             if (i == 3) {
                 logic.setParser(new LuceneToJexlQueryParser());
@@ -260,7 +311,7 @@ public abstract class CompositeFunctionsTest {
     }
     
     @Test
-    public void makeSureTheyCannotDoAnythingCrazy() throws Exception {
+    public void testAgainstUnsupportedCompositeStructures() {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -272,7 +323,7 @@ public abstract class CompositeFunctionsTest {
                 "UUID == 'CORLEONE' AND  filter:getAllMatches(NAME,'SANTINO').clear() == false",};
         
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList(), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.emptyList(), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             try {
                 runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
@@ -284,7 +335,7 @@ public abstract class CompositeFunctionsTest {
     }
     
     @Test
-    public void testWithIndexOnlyFieldsAndModelExpansion() throws Exception {
+    public void testWithIndexOnlyFieldsAndModelExpansion() {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -302,8 +353,8 @@ public abstract class CompositeFunctionsTest {
         };
         
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE"), Arrays.asList("CORLEONE"), Arrays.asList("CORLEONE", "SOPRANO"),
-                Arrays.asList("CAPONE"), Arrays.asList("CORLEONE"),};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Collections.singletonList("CORLEONE"),
+                Arrays.asList("CORLEONE", "SOPRANO"), Collections.singletonList("CAPONE"), Collections.singletonList("CORLEONE"),};
         for (int i = 0; i < queryStrings.length; i++) {
             try {
                 runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
@@ -329,8 +380,9 @@ public abstract class CompositeFunctionsTest {
                 "UUID == 'CORLEONE' AND filter:getAllMatches(NAM,'hubert').size() == 0",};
         
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE"), Arrays.asList("CORLEONE"), Arrays.asList("CORLEONE"), Arrays.asList(),
-                Arrays.asList(), Arrays.asList(), Arrays.asList("CORLEONE"), Arrays.asList("CORLEONE"),};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE"), Collections.singletonList("CORLEONE"),
+                Collections.singletonList("CORLEONE"), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+                Collections.singletonList("CORLEONE"), Collections.singletonList("CORLEONE"),};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -358,12 +410,12 @@ public abstract class CompositeFunctionsTest {
                 "UUID =~ '^[CS].*' AND filter:isNull(UUID) && filter:isNull(NULL1)"};
         
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList(),
+        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Collections.emptyList(),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
-                Arrays.asList(), Arrays.asList(),
+                Collections.emptyList(), Collections.emptyList(),
                 
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList(), Arrays.asList(),
-                Arrays.asList(),};
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Collections.emptyList(),
+                Collections.emptyList(), Collections.emptyList(),};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -392,11 +444,11 @@ public abstract class CompositeFunctionsTest {
                 "UUID =~ '^[CS].*' AND filter:isNotNull(UUID||NULL1)", "UUID =~ '^[CS].*' AND filter:isNotNull(ONE_NULL)",};
         
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList(), Arrays.asList(), Arrays.asList(),
-                Arrays.asList(), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
+        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Collections.emptyList(), Collections.emptyList(),
+                Collections.emptyList(), Collections.emptyList(), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
                 
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList(), Arrays.asList(), Arrays.asList(),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
@@ -417,7 +469,7 @@ public abstract class CompositeFunctionsTest {
                 "UUID =~ '^[CS].*' AND filter:includeRegex(NAM,'MICHAEL').size() + filter:includeRegex(NAM,'VINCENT').size() + filter:includeRegex(NAM,'FRED').size() + filter:includeRegex(NAM,'TONY').size() >= 3"};
         
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE"), Arrays.asList()};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE"), Collections.emptyList()};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -443,10 +495,11 @@ public abstract class CompositeFunctionsTest {
         
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("SOPRANO"), // family name starts with C or S
-                Arrays.asList("SOPRANO"), // family name starts with C or S
-                Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE"),
-                Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("SOPRANO"), Arrays.asList("SOPRANO"), Arrays.asList("CORLEONE")};
+                Collections.singletonList("SOPRANO"), // family name starts with C or S
+                Collections.singletonList("SOPRANO"), // family name starts with C or S
+                Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"),
+                Collections.singletonList("CORLEONE"), Arrays.asList("CORLEONE", "CAPONE"), Collections.singletonList("SOPRANO"),
+                Collections.singletonList("SOPRANO"), Collections.singletonList("CORLEONE")};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -463,7 +516,7 @@ public abstract class CompositeFunctionsTest {
         }
         String[] queryStrings = {"(UUID:C* OR UUID:S*) AND #MATCHES_AT_LEAST_COUNT_OF('3',NAM,'MICHAEL','VINCENT','FREDO','TONY')",};
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE"),};
+        List<String>[] expectedLists = new List[] {Collections.singletonList("CORLEONE"),};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -487,18 +540,52 @@ public abstract class CompositeFunctionsTest {
                 "UUID:CORLEONE AND #JEXL(\"filter:getAllMatches(NAM,'SANTINO').size() == 1\")"};
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {Arrays.asList("CAPONE", "CORLEONE"), // family name starts with 'C'
-                Arrays.asList("SOPRANO"), // family name is SOPRANO
+                Collections.singletonList("SOPRANO"), // family name is SOPRANO
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"), // family name starts with C or S
-                Arrays.asList("CORLEONE"), // family has child CONSTANZIA
+                Collections.singletonList("CORLEONE"), // family has child CONSTANZIA
                 Arrays.asList("CORLEONE", "CAPONE"), // family has child MICHAEL
-                Arrays.asList("CORLEONE"), Arrays.asList("CORLEONE")};
+                Collections.singletonList("CORLEONE"), Collections.singletonList("CORLEONE")};
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
     
     @Test
-    public void testRightOf() throws Exception {
+    public void testWithLuceneAndOptionsFunction() throws Exception {
+        logic.setParser(new LuceneToJexlQueryParser());
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        if (log.isDebugEnabled()) {
+            log.debug("testWithLucene");
+        }
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID:C* AND #OPTIONS('include.grouping.context', 'true')", // family name starts with 'C'
+                "UUID:SOPRANO AND #OPTIONS('include.grouping.context', 'true')", // family name is SOPRANO
+                "UUID:C* OR UUID:S*  AND #OPTIONS('include.grouping.context', 'true')", // family name starts with C or S
+                "(UUID:C* OR UUID:S*) AND #INCLUDE(NAM, 'CONSTANZIA')  AND #OPTIONS('include.grouping.context', 'true')", // family has child CONSTANZIA
+                "(UUID:C* OR UUID:S*) AND #INCLUDE(NAM, 'MICHAEL')  AND #OPTIONS('include.grouping.context', 'true')", // family has child MICHAEL
+                "#JEXL(\"$UUID == 'CORLEONE' AND filter:getAllMatches(NAM,'SANTINO').size() == 1\") AND #OPTIONS('include.grouping.context', 'true')", // test LUCENE function to deliver jexl
+                "UUID:CORLEONE AND #JEXL(\"filter:getAllMatches(NAM,'SANTINO').size() == 1\") AND #OPTIONS('include.grouping.context', 'true')"
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("CAPONE", "CORLEONE"), // family name starts with 'C'
+                Collections.singletonList("SOPRANO"), // family name is SOPRANO
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"), // family name starts with C or S
+                Collections.singletonList("CORLEONE"), // family has child CONSTANZIA
+                Arrays.asList("CORLEONE", "CAPONE"), // family has child MICHAEL
+                Collections.singletonList("CORLEONE"),
+                Collections.singletonList("CORLEONE")
+        };
+        // @formatter:on
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+    }
+    
+    @Test
+    public void testRightOf() {
         String[] inputs = {"NAME.grandparent_0.parent_0.child_0", "NAME.grandparent_0.parent_0.child_0",
                 "NAME.gggparent.ggparent.grandparent_0.parent_0.child_0",};
         String[] expected = {"child_0", "parent_0.child_0", "ggparent.grandparent_0.parent_0.child_0",};

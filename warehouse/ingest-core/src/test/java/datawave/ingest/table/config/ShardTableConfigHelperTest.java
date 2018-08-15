@@ -49,91 +49,73 @@ public class ShardTableConfigHelperTest {
         TableOperations mock = PowerMock.createMock(TableOperations.class);
         
         mock.getProperties(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            public Object answer() throws AccumuloException, TableNotFoundException {
+            AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED = true;
+            
+            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            
+            if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
                 
-                AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED = true;
-                
-                String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
-                
-                if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
-                    
-                    throw new TableNotFoundException(null, tableNameParameter, ShardTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
-                }
-                
-                return tableProperties.entrySet();
+                throw new TableNotFoundException(null, tableNameParameter, ShardTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
             }
             
+            return tableProperties.entrySet();
         }).anyTimes();
         
         mock.setProperty(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            public Object answer() throws TableNotFoundException, AccumuloSecurityException {
+            AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED = true;
+            
+            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            
+            if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
                 
-                AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED = true;
-                
-                String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
-                
-                if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
-                    
-                    throw new TableNotFoundException(null, tableNameParameter, ShardTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
-                }
-                
-                String name = (String) EasyMock.getCurrentArguments()[1];
-                String value = (String) EasyMock.getCurrentArguments()[2];
-                
-                tableProperties.put(name, value);
-                return null;
+                throw new TableNotFoundException(null, tableNameParameter, ShardTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
             }
             
+            String name = (String) EasyMock.getCurrentArguments()[1];
+            String value = (String) EasyMock.getCurrentArguments()[2];
+            
+            tableProperties.put(name, value);
+            return null;
         }).anyTimes();
         
         mock.getLocalityGroups(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            AbstractTableConfigHelperTest.ARE_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
+            
+            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            
+            if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
                 
-                AbstractTableConfigHelperTest.ARE_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
-                
-                String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
-                
-                if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
-                    
-                    throw new TableNotFoundException(null, tableNameParameter, ShardTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
-                }
-                
-                return localityGroups;
+                throw new TableNotFoundException(null, tableNameParameter, ShardTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
             }
             
+            return localityGroups;
         }).anyTimes();
         
         Map<String,Set<Text>> groups = new HashMap<>();
         
         mock.setLocalityGroups(EasyMock.anyObject(String.class), EasyMock.anyObject(groups.getClass()));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            AbstractTableConfigHelperTest.SET_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
+            
+            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            
+            if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
                 
-                AbstractTableConfigHelperTest.SET_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
-                
-                String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
-                
-                if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
-                    
-                    throw new TableNotFoundException(null, tableNameParameter, ShardTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
-                }
-                
-                Map<String,Set<Text>> groups = (Map<String,Set<Text>>) EasyMock.getCurrentArguments()[1];
-                
-                localityGroups.putAll(groups);
-                
-                return null;
+                throw new TableNotFoundException(null, tableNameParameter, ShardTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
             }
             
+            Map<String,Set<Text>> groups1 = (Map<String,Set<Text>>) EasyMock.getCurrentArguments()[1];
+            
+            localityGroups.putAll(groups1);
+            
+            return null;
         }).anyTimes();
         
         // prepare it for use...
@@ -152,45 +134,35 @@ public class ShardTableConfigHelperTest {
         Configuration mock = PowerMock.createMock(Configuration.class);
         
         mock.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String results = null;
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            String defaultValue = (String) EasyMock.getCurrentArguments()[1];
+            
+            if (configuration.containsKey(key)) {
                 
-                String results = null;
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                String defaultValue = (String) EasyMock.getCurrentArguments()[1];
+                results = configuration.get(key);
+            } else {
                 
-                if (configuration.containsKey(key)) {
-                    
-                    results = configuration.get(key);
-                } else {
-                    
-                    results = defaultValue;
-                }
-                
-                return results;
+                results = defaultValue;
             }
             
+            return results;
         }).anyTimes();
         
         mock.getBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
+            String key = (String) EasyMock.getCurrentArguments()[0];
+            boolean results = (Boolean) EasyMock.getCurrentArguments()[1];
+            
+            if (configuration.containsKey(key)) {
                 
-                String key = (String) EasyMock.getCurrentArguments()[0];
-                boolean results = (Boolean) EasyMock.getCurrentArguments()[1];
-                
-                if (configuration.containsKey(key)) {
-                    
-                    results = Boolean.parseBoolean(configuration.get(key));
-                }
-                
-                return results;
+                results = Boolean.parseBoolean(configuration.get(key));
             }
             
+            return results;
         }).anyTimes();
         
         PowerMock.replay(mock);
@@ -213,33 +185,23 @@ public class ShardTableConfigHelperTest {
         }
         
         log.debug(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
-                
-                String msg = (String) EasyMock.getCurrentArguments()[0];
-                
-                debugMessages.add(msg);
-                
-                return null;
-            }
+            String msg = (String) EasyMock.getCurrentArguments()[0];
             
+            debugMessages.add(msg);
+            
+            return null;
         }).anyTimes();
         
         log.info(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
+        EasyMock.expectLastCall().andAnswer(() -> {
             
-            @Override
-            public Object answer() throws Throwable {
-                
-                String msg = (String) EasyMock.getCurrentArguments()[0];
-                
-                infoMessages.add(msg);
-                
-                return null;
-            }
+            String msg = (String) EasyMock.getCurrentArguments()[0];
             
+            infoMessages.add(msg);
+            
+            return null;
         }).anyTimes();
         
         PowerMock.replay(log);

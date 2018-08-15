@@ -21,12 +21,7 @@ import com.google.common.collect.Sets;
 public class FieldIndexKeyDataTypeFilter implements Predicate<Key>, SeekingFilter {
     public static final Logger log = Logger.getLogger(FieldIndexKeyDataTypeFilter.class);
     
-    protected ThreadLocal<Text> textBuffer = new ThreadLocal<Text>() {
-        @Override
-        protected Text initialValue() {
-            return new Text();
-        }
-    };
+    protected ThreadLocal<Text> textBuffer = ThreadLocal.withInitial(Text::new);
     protected HashSet<ByteBuffer> patterns;
     
     /**

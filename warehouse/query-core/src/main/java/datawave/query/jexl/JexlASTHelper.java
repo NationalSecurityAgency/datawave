@@ -1299,12 +1299,7 @@ public class JexlASTHelper {
     }
     
     public static List<ASTReferenceExpression> wrapInParens(List<? extends JexlNode> intersections) {
-        return Lists.transform(intersections, new com.google.common.base.Function<JexlNode,ASTReferenceExpression>() {
-            @Override
-            public ASTReferenceExpression apply(JexlNode a) {
-                return JexlNodes.wrap(a);
-            }
-        });
+        return Lists.transform(intersections, (com.google.common.base.Function<JexlNode,ASTReferenceExpression>) JexlNodes::wrap);
     }
     
     /**

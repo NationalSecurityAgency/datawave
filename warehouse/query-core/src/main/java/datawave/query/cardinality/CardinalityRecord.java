@@ -235,21 +235,18 @@ public class CardinalityRecord implements Serializable {
         
         if (cardinalityRecord.getCardinalityMap().size() > 0) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    synchronized (file) {
-                        ObjectOutputStream oos = null;
-                        try {
-                            FileOutputStream fos = new FileOutputStream(file);
-                            oos = new ObjectOutputStream(fos);
-                            oos.writeObject(cardinalityRecord);
-                        } catch (Exception e) {
-                            log.error(e.getMessage(), e);
-                        } finally {
-                            IOUtils.closeQuietly(oos);
-                            file.notify();
-                        }
+            executor.execute(() -> {
+                synchronized (file) {
+                    ObjectOutputStream oos = null;
+                    try {
+                        FileOutputStream fos = new FileOutputStream(file);
+                        oos = new ObjectOutputStream(fos);
+                        oos.writeObject(cardinalityRecord);
+                    } catch (Exception e) {
+                        log.error(e.getMessage(), e);
+                    } finally {
+                        IOUtils.closeQuietly(oos);
+                        file.notify();
                     }
                 }
             });
