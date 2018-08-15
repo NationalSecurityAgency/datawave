@@ -15,12 +15,7 @@ public class DateIndexUtil {
     public static final String EVENT_DATE_TYPE = "EVENT";
     public static final String LOADED_DATE_TYPE = "LOADED";
     public static final String ACTIVITY_DATE_TYPE = "ACTIVITY";
-    public static final ThreadLocal<SimpleDateFormat> format = new ThreadLocal<SimpleDateFormat>() {
-        @Override
-        protected SimpleDateFormat initialValue() {
-            return new SimpleDateFormat("yyyyMMdd");
-        }
-    };
+    public static final ThreadLocal<SimpleDateFormat> format = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyyMMdd"));
     
     /**
      * Format the date into yyyyMMdd

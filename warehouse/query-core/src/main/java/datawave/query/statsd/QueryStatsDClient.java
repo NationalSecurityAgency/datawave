@@ -38,10 +38,7 @@ public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
     
     private static final Charset STATS_D_ENCODING = Charset.forName("UTF-8");
     
-    private static final StatsDClientErrorHandler NO_OP_HANDLER = new StatsDClientErrorHandler() {
-        @Override
-        public void handle(Exception e) { /* No-op */}
-    };
+    private static final StatsDClientErrorHandler NO_OP_HANDLER = e -> { /* No-op */};
     
     // the client
     private static NonBlockingUdpSender client = null;

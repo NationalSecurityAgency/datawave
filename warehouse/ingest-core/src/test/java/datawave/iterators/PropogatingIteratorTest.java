@@ -250,27 +250,13 @@ public class PropogatingIteratorTest {
         if (activateIteratorScope) {
             
             mock.getIteratorScope();
-            EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
-                
-                @Override
-                public Object answer() throws Throwable {
-                    
-                    return getIteratorScopeResults;
-                }
-            }).times(iteratorScopeCallCount);
+            EasyMock.expectLastCall().andAnswer(() -> getIteratorScopeResults).times(iteratorScopeCallCount);
         }
         
         if (activateIsFullCompaction) {
             
             mock.isFullMajorCompaction();
-            EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
-                
-                @Override
-                public Object answer() throws Throwable {
-                    
-                    return isFullMajorCompactionResults;
-                }
-            }).times(compactionCallCount);
+            EasyMock.expectLastCall().andAnswer(() -> isFullMajorCompactionResults).times(compactionCallCount);
         }
         
         PowerMock.replay(mock);
@@ -996,28 +982,23 @@ public class PropogatingIteratorTest {
         
         List<Future<List<Entry<Key,Value>>>> futures = Lists.newArrayList();
         for (int i = 0; i < 25; i++) {
-            futures.add(exec.submit(new Callable<List<Entry<Key,Value>>>() {
+            futures.add(exec.submit(() -> {
+                SortedKeyValueIterator<Key,Value> myitr = iter.deepCopy(env);
+                Random rand = new Random();
+                LockSupport.parkNanos(rand.nextInt(10));
                 
-                @Override
-                public List<Entry<Key,Value>> call() throws Exception {
-                    SortedKeyValueIterator<Key,Value> myitr = iter.deepCopy(env);
-                    Random rand = new Random();
-                    LockSupport.parkNanos(rand.nextInt(10));
-                    
-                    myitr.seek(new Range(), Collections.<ByteSequence> emptyList(), false);
-                    
-                    List<Entry<Key,Value>> resultList = Lists.newArrayList();
-                    
-                    Assert.assertTrue(myitr.hasTop());
-                    
-                    Key topKey = myitr.getTopKey();
-                    resultList.add(Maps.immutableEntry(topKey, myitr.getTopValue()));
-                    myitr.next();
-                    resultList.add(Maps.immutableEntry(myitr.getTopKey(), myitr.getTopValue()));
-                    
-                    return resultList;
-                }
+                myitr.seek(new Range(), Collections.<ByteSequence> emptyList(), false);
                 
+                List<Entry<Key,Value>> resultList = Lists.newArrayList();
+                
+                Assert.assertTrue(myitr.hasTop());
+                
+                Key topKey = myitr.getTopKey();
+                resultList.add(Maps.immutableEntry(topKey, myitr.getTopValue()));
+                myitr.next();
+                resultList.add(Maps.immutableEntry(myitr.getTopKey(), myitr.getTopValue()));
+                
+                return resultList;
             }));
         }
         

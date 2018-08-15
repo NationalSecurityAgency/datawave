@@ -118,49 +118,39 @@ public class InputFile implements Comparable<InputFile> {
     /**
      * A FIFO comparator
      */
-    public static final Comparator<InputFile> FIFO = new Comparator<InputFile>() {
-        
-        @Override
-        public int compare(InputFile o1, InputFile o2) {
-            int comparison = 0;
-            if (o1.timestamp < o2.timestamp) {
+    public static final Comparator<InputFile> FIFO = (o1, o2) -> {
+        int comparison = 0;
+        if (o1.timestamp < o2.timestamp) {
+            comparison = -1;
+        } else if (o1.timestamp > o2.timestamp) {
+            comparison = 1;
+        }
+        if (comparison == 0) {
+            if (o1.filesize < o2.filesize) {
                 comparison = -1;
-            } else if (o1.timestamp > o2.timestamp) {
+            } else if (o1.filesize > o2.filesize) {
                 comparison = 1;
             }
-            if (comparison == 0) {
-                if (o1.filesize < o2.filesize) {
-                    comparison = -1;
-                } else if (o1.filesize > o2.filesize) {
-                    comparison = 1;
-                }
-            }
-            if (comparison == 0) {
-                if (o1.blocksize < o2.blocksize) {
-                    comparison = -1;
-                } else if (o1.blocksize > o2.blocksize) {
-                    comparison = 1;
-                }
-            }
-            if (comparison == 0) {
-                comparison = o1.path.compareTo(o2.path);
-            }
-            return comparison;
         }
-        
+        if (comparison == 0) {
+            if (o1.blocksize < o2.blocksize) {
+                comparison = -1;
+            } else if (o1.blocksize > o2.blocksize) {
+                comparison = 1;
+            }
+        }
+        if (comparison == 0) {
+            comparison = o1.path.compareTo(o2.path);
+        }
+        return comparison;
     };
     
     /**
      * A LIFO comparator
      */
-    public static final Comparator<InputFile> LIFO = new Comparator<InputFile>() {
-        
-        @Override
-        public int compare(InputFile o1, InputFile o2) {
-            // simply a reverse of the FIFO comparison
-            return FIFO.compare(o2, o1);
-        }
-        
+    public static final Comparator<InputFile> LIFO = (o1, o2) -> {
+        // simply a reverse of the FIFO comparison
+        return FIFO.compare(o2, o1);
     };
     
     /*

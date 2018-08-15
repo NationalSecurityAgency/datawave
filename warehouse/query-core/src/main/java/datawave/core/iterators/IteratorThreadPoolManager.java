@@ -52,22 +52,18 @@ public class IteratorThreadPoolManager {
     private ThreadPoolExecutor createExecutorService(final String prop, final String name) {
         final ThreadPoolExecutor service = createExecutorService(getMaxThreads(prop), name + " (" + instanceId + ')');
         threadPools.put(name, service);
-        SimpleTimer.getInstance(AccumuloConfiguration.getDefaultConfiguration()).schedule(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    
-                    int max = getMaxThreads(prop);
-                    if (service.getMaximumPoolSize() != max) {
-                        log.info("Changing " + prop + " to " + max);
-                        service.setCorePoolSize(max);
-                        service.setMaximumPoolSize(max);
-                    }
-                } catch (Throwable t) {
-                    log.error(t, t);
+        SimpleTimer.getInstance(AccumuloConfiguration.getDefaultConfiguration()).schedule(() -> {
+            try {
+                
+                int max = getMaxThreads(prop);
+                if (service.getMaximumPoolSize() != max) {
+                    log.info("Changing " + prop + " to " + max);
+                    service.setCorePoolSize(max);
+                    service.setMaximumPoolSize(max);
                 }
+            } catch (Throwable t) {
+                log.error(t, t);
             }
-            
         }, 1000, 10 * 1000);
         return service;
     }
@@ -103,16 +99,13 @@ public class IteratorThreadPoolManager {
     }
     
     private Future<?> execute(String name, final Runnable task, final String taskName) {
-        return threadPools.get(name).submit(new Runnable() {
-            @Override
-            public void run() {
-                String oldName = Thread.currentThread().getName();
-                Thread.currentThread().setName(oldName + " -> " + taskName);
-                try {
-                    task.run();
-                } finally {
-                    Thread.currentThread().setName(oldName);
-                }
+        return threadPools.get(name).submit(() -> {
+            String oldName = Thread.currentThread().getName();
+            Thread.currentThread().setName(oldName + " -> " + taskName);
+            try {
+                task.run();
+            } finally {
+                Thread.currentThread().setName(oldName);
             }
         });
     }

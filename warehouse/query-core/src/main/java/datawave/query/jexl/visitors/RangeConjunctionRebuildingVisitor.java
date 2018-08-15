@@ -38,6 +38,7 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -189,7 +190,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
             if (config.getCompositeToFieldMap().keySet().contains(fieldName)) {
                 Set<JexlNode> delayedCompositePredicates = leaves.stream()
                                 .map(leaf -> CompositePredicateVisitor.findCompositePredicates(leaf, config.getCompositeToFieldMap().get(fieldName)))
-                                .flatMap(set -> set.stream()).collect(Collectors.toSet());
+                                .flatMap(Collection::stream).collect(Collectors.toSet());
                 if (delayedCompositePredicates != null && delayedCompositePredicates.size() == 1)
                     compositePredicate = delayedCompositePredicates.stream().findFirst().get();
             }

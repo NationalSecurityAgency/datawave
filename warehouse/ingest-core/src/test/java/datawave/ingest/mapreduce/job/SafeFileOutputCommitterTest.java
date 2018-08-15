@@ -442,12 +442,7 @@ public class SafeFileOutputCommitterTest {
     }
     
     static class RLFS extends RawLocalFileSystem {
-        private final ThreadLocal<Boolean> needNull = new ThreadLocal<Boolean>() {
-            @Override
-            protected Boolean initialValue() {
-                return true;
-            }
-        };
+        private final ThreadLocal<Boolean> needNull = ThreadLocal.withInitial(() -> true);
         
         public RLFS() {}
         
@@ -494,16 +489,13 @@ public class SafeFileOutputCommitterTest {
         try {
             for (int i = 0; i < taCtx.length; i++) {
                 final int taskIdx = i;
-                executor.submit(new Callable<Void>() {
-                    @Override
-                    public Void call() throws IOException, InterruptedException {
-                        final OutputCommitter outputCommitter = tof[taskIdx].getOutputCommitter(taCtx[taskIdx]);
-                        outputCommitter.setupTask(taCtx[taskIdx]);
-                        final RecordWriter rw = tof[taskIdx].getRecordWriter(taCtx[taskIdx]);
-                        writeOutput(rw, taCtx[taskIdx]);
-                        outputCommitter.commitTask(taCtx[taskIdx]);
-                        return null;
-                    }
+                executor.submit((Callable<Void>) () -> {
+                    final OutputCommitter outputCommitter = tof[taskIdx].getOutputCommitter(taCtx[taskIdx]);
+                    outputCommitter.setupTask(taCtx[taskIdx]);
+                    final RecordWriter rw = tof[taskIdx].getRecordWriter(taCtx[taskIdx]);
+                    writeOutput(rw, taCtx[taskIdx]);
+                    outputCommitter.commitTask(taCtx[taskIdx]);
+                    return null;
                 });
             }
         } finally {

@@ -57,12 +57,7 @@ public class QueryUtil {
         return params;
     }
     
-    private static ThreadLocal<LinkedBuffer> BUFFER = new ThreadLocal<LinkedBuffer>() {
-        @Override
-        protected LinkedBuffer initialValue() {
-            return LinkedBuffer.allocate(1024);
-        }
-    };
+    private static ThreadLocal<LinkedBuffer> BUFFER = ThreadLocal.withInitial(() -> LinkedBuffer.allocate(1024));
     
     public static <T extends Query> Mutation toMutation(T query, ColumnVisibility vis) {
         // Store by sid for backwards compatibility

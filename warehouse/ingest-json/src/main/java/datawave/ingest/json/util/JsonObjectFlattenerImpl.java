@@ -60,12 +60,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         }
         
         if (null == builder.nameNormalizer) {
-            this.nameNormalizer = new JsonElementNameNormalizer() {
-                @Override
-                public String normalizeElementName(String elementName, String parentKey) throws IllegalStateException {
-                    return defaultNormalizeJsonElementName(elementName);
-                }
-            };
+            this.nameNormalizer = (elementName, parentKey) -> defaultNormalizeJsonElementName(elementName);
         } else {
             this.nameNormalizer = builder.nameNormalizer;
         }

@@ -253,12 +253,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 Object o = null;
                 if (executor != null) {
                     if (future == null) {
-                        future = executor.submit(new Callable<Object>() {
-                            @Override
-                            public Object call() throws Exception {
-                                return iter.next();
-                            }
-                        });
+                        future = executor.submit(() -> iter.next());
                     }
                     try {
                         o = future.get(1, TimeUnit.MINUTES);

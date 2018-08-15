@@ -259,12 +259,9 @@ public class QueryExecutorBean implements QueryExecutor {
         traceInfos = queryTraceCache.putIfAbsent("traceInfos", infos);
         if (traceInfos == null)
             traceInfos = infos;
-        traceCacheListener = new CacheListener() {
-            @Override
-            public void cacheEntryModified(String key, Multimap<String,PatternWrapper> traceInfo) {
-                if ("traceInfos".equals(key)) {
-                    traceInfos = traceInfo;
-                }
+        traceCacheListener = (key, traceInfo) -> {
+            if ("traceInfos".equals(key)) {
+                traceInfos = traceInfo;
             }
         };
         queryTraceCache.addListener(traceCacheListener);
@@ -364,12 +361,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 log.error(e.getMessage(), e);
             }
         }
-        Collections.sort(logicConfigurationList, new Comparator<QueryLogicDescription>() {
-            @Override
-            public int compare(QueryLogicDescription ql1, QueryLogicDescription ql2) {
-                return ql1.getName().compareTo(ql2.getName());
-            }
-        });
+        Collections.sort(logicConfigurationList, Comparator.comparing(QueryLogicDescription::getName));
         response.setQueryLogicList(logicConfigurationList);
         
         return response;
@@ -1668,11 +1660,8 @@ public class QueryExecutorBean implements QueryExecutor {
             final Principal p = ctx.getCallerPrincipal();
             final String closeQueryId = queryId;
             try {
-                executor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        close(closeQueryId, p);
-                    }
+                executor.submit(() -> {
+                    close(closeQueryId, p);
                 });
             } catch (RejectedExecutionException e) {
                 // log only

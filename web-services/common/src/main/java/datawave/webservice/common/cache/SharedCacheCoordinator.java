@@ -599,30 +599,26 @@ public class SharedCacheCoordinator implements Serializable {
     public void watchForEvictions(final EvictionCallback callback) {
         ArgumentChecker.notNull(callback);
         
-        evictionPathCache.getListenable().addListener(new PathChildrenCacheListener() {
-            
-            @Override
-            public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
-                if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {
-                    // Call our eviction handler to do local eviction
-                    String path = event.getData().getPath();
-                    String dn = ZKPaths.getNodeFromPath(path);
-                    callback.evict(dn);
-                    
-                    // Now register ourselves under the eviction node that that once
-                    // a child for each running web server appears, the eviction node
-                    // can be cleaned up.
-                    String responsePath = ZKPaths.makePath(path, localName);
-                    try {
-                        if (curatorClient.checkExists().creatingParentContainersIfNeeded().forPath(responsePath) == null) {
-                            curatorClient.create().creatingParentContainersIfNeeded().forPath(responsePath);
+        evictionPathCache.getListenable().addListener((client, event) -> {
+            if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {
+                // Call our eviction handler to do local eviction
+                        String path = event.getData().getPath();
+                        String dn = ZKPaths.getNodeFromPath(path);
+                        callback.evict(dn);
+                        
+                        // Now register ourselves under the eviction node that that once
+                        // a child for each running web server appears, the eviction node
+                        // can be cleaned up.
+                        String responsePath = ZKPaths.makePath(path, localName);
+                        try {
+                            if (curatorClient.checkExists().creatingParentContainersIfNeeded().forPath(responsePath) == null) {
+                                curatorClient.create().creatingParentContainersIfNeeded().forPath(responsePath);
+                            }
+                        } catch (KeeperException.NodeExistsException e) {
+                            // ignored on purpose -- someone beat us to creating the node
                         }
-                    } catch (KeeperException.NodeExistsException e) {
-                        // ignored on purpose -- someone beat us to creating the node
                     }
-                }
-            }
-        });
+                });
     }
     
     /**

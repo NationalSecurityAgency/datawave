@@ -166,12 +166,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     
     private TreeMap<Text,String> reverseSortByShardIds(TreeMap<Text,String> shardIdToLocations) {
         // drop the dates after today's date
-        TreeMap<Text,String> shardIdsToTservers = Maps.newTreeMap(new Comparator<Text>() {
-            @Override
-            public int compare(Text o1, Text o2) {
-                return o2.compareTo(o1);
-            }
-        });
+        TreeMap<Text,String> shardIdsToTservers = Maps.newTreeMap((o1, o2) -> o2.compareTo(o1));
         shardIdsToTservers.putAll(shardIdToLocations);
         return shardIdsToTservers;
     }

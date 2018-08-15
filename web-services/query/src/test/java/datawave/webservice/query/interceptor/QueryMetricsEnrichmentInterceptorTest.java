@@ -208,12 +208,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
         writerContext.proceed();
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")))).andReturn(null);
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "REQUEST_STATS_NAME")))).andReturn(null);
-        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer(new IAnswer<QueryCall>() {
-            @Override
-            public QueryCall answer() throws Throwable {
-                return qcCapture.getValue();
-            }
-        });
+        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer((IAnswer<QueryCall>) qcCapture::getValue);
         expect(queryCache.get(isA(String.class))).andReturn(runningQuery);
         expect(runningQuery.getLogic()).andReturn(queryLogic);
         expect(queryLogic.getCollectQueryMetrics()).andReturn(true);
@@ -270,12 +265,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
         writerContext.proceed();
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")))).andReturn(null);
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "REQUEST_STATS_NAME")))).andReturn(null);
-        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer(new IAnswer<QueryCall>() {
-            @Override
-            public QueryCall answer() throws Throwable {
-                return qcCapture.getValue();
-            }
-        });
+        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer((IAnswer<QueryCall>) qcCapture::getValue);
         expect(queryCache.get(isA(String.class))).andReturn(runningQuery);
         expect(runningQuery.getLogic()).andReturn(queryLogic);
         expect(queryLogic.getCollectQueryMetrics()).andReturn(true);
@@ -333,12 +323,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
         expect(writerContext.getHeaders()).andReturn(writeHeaders);
         expect(writeHeaders.entrySet()).andReturn(new HashSet<Entry<String,List<Object>>>());
         writerContext.proceed();
-        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer(new IAnswer<QueryCall>() {
-            @Override
-            public QueryCall answer() throws Throwable {
-                return qcCapture.getValue();
-            }
-        });
+        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer((IAnswer<QueryCall>) qcCapture::getValue);
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")))).andReturn(null);
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "REQUEST_STATS_NAME")))).andReturn(null);
         expect(queryCache.get(isA(String.class))).andReturn(runningQuery);
@@ -405,12 +390,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
         writerContext.proceed();
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")))).andReturn(null);
         expect(writerContext.getProperty(eq((String) Whitebox.getInternalState(subject, "REQUEST_STATS_NAME")))).andReturn(null);
-        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer(new IAnswer<QueryCall>() {
-            @Override
-            public QueryCall answer() throws Throwable {
-                return qcCapture.getValue();
-            }
-        });
+        expect(writerContext.getProperty(QueryCall.class.getName())).andAnswer((IAnswer<QueryCall>) qcCapture::getValue);
         expect(queryCache.get(isA(String.class))).andReturn(runningQuery);
         expect(runningQuery.getLogic()).andReturn(queryLogic);
         expect(queryLogic.getCollectQueryMetrics()).andReturn(true);

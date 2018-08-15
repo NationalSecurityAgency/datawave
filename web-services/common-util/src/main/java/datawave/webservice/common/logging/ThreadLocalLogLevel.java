@@ -7,14 +7,7 @@ import org.apache.log4j.Level;
 
 public class ThreadLocalLogLevel {
     
-    static private ThreadLocal<Map<String,Level>> logToLevelMap = new ThreadLocal<Map<String,Level>>() {
-        
-        @Override
-        protected Map<String,Level> initialValue() {
-            return new HashMap<>();
-        }
-        
-    };
+    static private ThreadLocal<Map<String,Level>> logToLevelMap = ThreadLocal.withInitial(HashMap::new);
     
     static public void setLevel(String name, Level level) {
         

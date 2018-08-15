@@ -465,12 +465,7 @@ public class IngestJob implements Tool {
                 // current config.
                 if (distCpConfDir != null) {
                     distCpConf = new Configuration(false);
-                    FilenameFilter ff = new FilenameFilter() {
-                        @Override
-                        public boolean accept(File dir, String name) {
-                            return name.toLowerCase().endsWith("-site.xml");
-                        }
-                    };
+                    FilenameFilter ff = (dir, name) -> name.toLowerCase().endsWith("-site.xml");
                     for (String file : new File(distCpConfDir).list(ff)) {
                         Path path = new Path(distCpConfDir, file);
                         distCpConf.addResource(file.replace("-site", "-default"));

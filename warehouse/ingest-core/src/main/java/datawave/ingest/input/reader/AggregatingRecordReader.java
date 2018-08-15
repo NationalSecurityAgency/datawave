@@ -27,18 +27,8 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
     public AggregatingRecordReader() {
         delegate = new ReaderDelegate();
         delegate.setPositionAwareLineReader(this);
-        delegate.setNextKeyValueReader(new KeyValueReader() {
-            @Override
-            public boolean readKeyValue() throws IOException {
-                return readSuperNextKeyValue();
-            }
-        });
-        delegate.setCurrentValueReader(new ValueReader() {
-            @Override
-            public Text readValue() {
-                return readSuperCurrentValue();
-            }
-        });
+        delegate.setNextKeyValueReader(this::readSuperNextKeyValue);
+        delegate.setCurrentValueReader(this::readSuperCurrentValue);
     }
     
     private Text readSuperCurrentValue() {
