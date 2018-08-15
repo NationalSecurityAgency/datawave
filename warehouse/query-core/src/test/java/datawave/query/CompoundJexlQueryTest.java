@@ -1,5 +1,6 @@
 package datawave.query;
 
+import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -219,11 +220,12 @@ public class CompoundJexlQueryTest extends AbstractFunctionalQuery {
     public void testAnd_OrOr() throws Exception {
         log.info("------  testAnd_OrOr  ------");
         String state = "'miSSouri'";
+        String country = "'united states'";
         String num = "100";
         String code = "'iTa'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
-                            + CityField.STATE.name() + EQ_OP + state + OR_OP + CityField.NUM.name() + EQ_OP + num + ")";
+                            + CityField.COUNTRY.name() + EQ_OP + country + OR_OP + CityField.NUM.name() + EQ_OP + num + ")";
             runTest(query, query);
         }
     }
@@ -247,6 +249,18 @@ public class CompoundJexlQueryTest extends AbstractFunctionalQuery {
         log.info("------  testNumericAndRange  ------");
         String query = "((" + CityField.NUM.name() + GTE_OP + "30)" + AND_OP + "(" + CityField.NUM.name() + LTE_OP + "105))";
         runTest(query, query);
+    }
+    
+    @Test(expected = InvalidQueryException.class)
+    public void testErrorAnd_OrWithComposite() throws Exception {
+        log.info("------  testErrorAnd_OrWithComposite  ------");
+        String state = "'miSSouri'";
+        String code = "'iTa'";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
+                            + CityField.STATE.name() + EQ_OP + state + ")";
+            runTest(query, query);
+        }
     }
     
     // ============================================
