@@ -253,6 +253,19 @@ public abstract class HitsAreAlwaysIncludedTest {
     }
     
     @Test
+    public void testHitForIndexedQueryTermWithOptionsInQueryFunction() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        String queryString = "FOO_3_BAR == 'defg<cat>' and filter:options('include.grouping.context', 'true', "
+                        + "'hit.list', 'true', 'limit.fields', 'FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3')";
+        
+        Set<String> goodResults = Sets.newHashSet("FOO_1_BAR.FOO.3:good<cat>", "FOO_3_BAR.FOO.3:defg<cat>", "FOO_3.FOO.3.3:defg", "FOO_4.FOO.4.3:yes",
+                        "FOO_1.FOO.1.3:good");
+        
+        runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+    }
+    
+    @Test
     public void testHitForIndexedQueryOnUnrealmed() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");

@@ -41,7 +41,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         private static final ImmutableSet<String> dateBetweenFunctions = ImmutableSet.of("betweenDates", "betweenLoadDates");
         private static final String MATCHCOUNTOF = "matchesAtLeastCountOf";
         private static final String TIMEFUNCTION = "timeFunction";
-        
+        private static final String OPTIONS_FUNCTION = "options";
         private final ASTFunctionNode node;
         
         public EvaluationPhaseFilterJexlArgumentDescriptor(ASTFunctionNode node) {
