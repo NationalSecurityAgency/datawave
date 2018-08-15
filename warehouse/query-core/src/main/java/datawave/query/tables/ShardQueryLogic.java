@@ -879,7 +879,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Parse query parameters");
-        
         boolean rawDataOnly = false;
         String rawDataOnlyStr = settings.findParameter(QueryParameters.RAW_DATA_ONLY).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(rawDataOnlyStr)) {
