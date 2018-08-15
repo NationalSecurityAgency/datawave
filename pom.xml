@@ -34,11 +34,12 @@
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.avro>1.7.4</version.avro>
         <version.caffeine>2.6.2</version.caffeine>
-        <version.commons-beanutils>1.7.0</version.commons-beanutils>
+        <version.commons-beanutils>1.9.3</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-codec>1.10</version.commons-codec>
         <version.commons-collections>4.2</version.commons-collections>
         <version.commons-configuration>1.10</version.commons-configuration>
+        <version.commons-configuration2>2.3</version.commons-configuration2>
         <version.commons-io>2.5</version.commons-io>
         <version.commons-jexl>2.1.1</version.commons-jexl>
         <version.commons-lang>2.6</version.commons-lang>
@@ -55,7 +56,7 @@
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <!-- Can download cdh binary from https://www.cloudera.com/documentation/enterprise/release-notes/topics/cdh_vd_cdh_package_tarball_59.html#tarball_59x -->
-        <version.hadoop>2.6.0-cdh5.9.1</version.hadoop>
+        <version.hadoop>3.0.0-cdh6.1.0</version.hadoop>
         <version.hornetq>2.4.7.Final</version.hornetq>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.5</version.httpcomponents-httpclient>
@@ -70,6 +71,7 @@
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>3.6.10.Final</version.jgroups>
         <version.jjwt>0.7.0</version.jjwt>
+        <!--<version.jts>1.13</version.jts>-->
         <version.junit>4.12</version.junit>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
@@ -102,6 +104,8 @@
         <version.weld>2.3.5.Final</version.weld>
         <version.weld-se>2.3.5.Final</version.weld-se>
         <version.wildfly>10.1.0.Final</version.wildfly>
+        <version.woodstox-core>5.0.3</version.woodstox-core>
+        <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.11.0.SP4</version.xerces>
         <version.zookeeper>3.4.5-cdh5.9.1</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
@@ -150,6 +154,11 @@
                 <version>${version.jackson}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>${version.woodstox-core}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>annotations</artifactId>
                 <version>${version.googlecode-findbugs}</version>
@@ -181,7 +190,7 @@
             </dependency>
             <dependency>
                 <groupId>commons-beanutils</groupId>
-                <artifactId>commons-beanutils-core</artifactId>
+                <artifactId>commons-beanutils</artifactId>
                 <version>${version.commons-beanutils}</version>
                 <exclusions>
                     <exclusion>
@@ -586,6 +595,11 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-configuration2</artifactId>
+                <version>${version.commons-configuration2}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
