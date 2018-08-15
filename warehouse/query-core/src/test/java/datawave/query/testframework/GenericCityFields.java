@@ -33,7 +33,6 @@ public class GenericCityFields extends AbstractFields {
         Set<String> comp = new HashSet<>();
         comp.add(CityField.CITY.name());
         comp.add(CityField.STATE.name());
-        // composite does not work yet
         composite.add(comp);
         Set<String> virt = new HashSet<>();
         virt.add(CityField.CITY.name());
