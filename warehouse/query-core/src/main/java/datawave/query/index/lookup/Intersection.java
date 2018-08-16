@@ -64,6 +64,8 @@ public class Intersection implements IndexStream {
         delayedNodes = Lists.newArrayList();
         Iterator<? extends IndexStream> childrenItr = children.iterator();
         
+        boolean allExceededValueThreshold = true;
+        
         if (log.isTraceEnabled()) {
             log.trace("Constructor -- has children? " + childrenItr.hasNext());
         }
@@ -80,6 +82,8 @@ public class Intersection implements IndexStream {
                 if (StreamContext.NO_OP == stream.context())
                     continue;
                 
+                boolean exceededValueThreshold = false;
+                
                 if (stream.hasNext()) {
                     if (log.isTraceEnabled()) {
                         log.trace("Stream has next, so adding it to children " + stream.peek().second().getNode() + " " + key(stream));
@@ -94,6 +98,9 @@ public class Intersection implements IndexStream {
                         this.children.put(key(stream), stream);
                     } else {
                         
+                        if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context())
+                            exceededValueThreshold = true;
+                        
                         nodesMap.put(JexlStringBuildingVisitor.buildQueryWithoutParse(stream.currentNode()), stream.currentNode());
                         this.children.put(key(stream), stream);
                     }
@@ -101,6 +108,7 @@ public class Intersection implements IndexStream {
                     if (StreamContext.EXCEEDED_TERM_THRESHOLD == stream.context()) {
                         delayedNodes.add(stream.currentNode());
                     } else if (StreamContext.EXCEEDED_VALUE_THRESHOLD == stream.context()) {
+                        exceededValueThreshold = true;
                         absent = true;
                     } else if (StreamContext.ABSENT == stream.context()) {
                         absent = true;
@@ -115,6 +123,9 @@ public class Intersection implements IndexStream {
                         throw new DatawaveFatalQueryException(qe);
                     }
                 }
+                
+                if (!exceededValueThreshold)
+                    allExceededValueThreshold = false;
             }
             if (log.isTraceEnabled())
                 log.trace("size is " + this.children.size());
@@ -132,6 +143,10 @@ public class Intersection implements IndexStream {
             } else if (this.children.size() == 0 && delayedField) {
                 this.context = StreamContext.DELAYED_FIELD;
                 this.contextDebug = "delayed field";
+            } else if (allExceededValueThreshold) {
+                this.context = StreamContext.EXCEEDED_VALUE_THRESHOLD;
+                this.contextDebug = "all children exceeded value threshold";
+                next();
             } else {
                 this.context = StreamContext.PRESENT;
                 this.contextDebug = "children may intersect";

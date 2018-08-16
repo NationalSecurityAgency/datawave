@@ -2,11 +2,9 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 import datawave.data.type.NoOpType;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.composite.Composite;
@@ -16,28 +14,27 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.LiteralRange;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.collections4.keyvalue.DefaultMapEntry;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTCompositePredicate;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
@@ -46,17 +43,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
+
 /**
+ * This is a visitor which runs across the query tree and creates composite jexl nodes where applicable. Composite field mappings are determined via ingest
+ * configuration, and can be used to create a combined index from multiple fields.
  *
  */
 public class ExpandCompositeTerms extends RebuildingVisitor {
@@ -65,31 +66,12 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     
     private final ShardQueryConfiguration config;
     
+    private HashMap<JexlNode,Composite> jexlNodeToCompMap = new HashMap<>();
+    
     private static class ExpandData {
-        public JexlNode root;
-        public Collection<JexlNode> goners;
-        public Multimap<String,JexlNode> andEqualsNodes;
-        public LinkedHashMultimap<String,String> orderedCompositeToFieldMap;
-        public List<JexlNode> newNodes;
-        
-        /**
-         * @param root
-         *            The node that kicked off visitor
-         * @param andEqualsNodes
-         *            And equals nodes from ancestors
-         * @param orderedCompositeToFieldMap
-         *            Composite field map ordered from largest number of fields to least
-         * @param goners
-         *            Collection of nodes to be removed after finished
-         */
-        ExpandData(JexlNode root, Multimap<String,JexlNode> andEqualsNodes, LinkedHashMultimap<String,String> orderedCompositeToFieldMap,
-                        Collection<JexlNode> goners) {
-            this.root = root;
-            this.andEqualsNodes = andEqualsNodes;
-            this.orderedCompositeToFieldMap = orderedCompositeToFieldMap;
-            this.goners = goners;
-            this.newNodes = Lists.newArrayList();
-        }
+        public boolean foundComposite = false;
+        public Multimap<String,JexlNode> andedNodes = LinkedHashMultimap.create();
+        public Multimap<String,JexlNode> usedAndedNodes = LinkedHashMultimap.create();
     }
     
     private ExpandCompositeTerms(ShardQueryConfiguration config) {
@@ -101,8 +83,10 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * Expand all nodes which have multiple dataTypes for the field.
      *
      * @param config
+     *            Configuration parameters relevant to our query
      * @param script
-     * @return
+     *            The jexl node representing the query
+     * @return An expanded version of the passed-in script containing composite nodes
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, MetadataHelper helper, T script) {
@@ -117,501 +101,683 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         
-        return (T) script.jjtAccept(visitor, null);
-    }
-    
-    public Object visit(ASTNotNode node, Object data) {
-        // do not descend down not nodes
-        if (data instanceof ExpandData) {
-            return node;
-        }
-        
-        // return as normal
-        return super.visit(node, data);
+        return (T) script.jjtAccept(visitor, new ExpandData());
     }
     
     /**
-     * 
+     * Descends into each of the child nodes, and rebuilds the 'or' node with both the unmodified and modified nodes. Ancestor anded nodes are passed down to
+     * each child, and the foundComposite flag is passed up from the children.
+     *
      * @param node
+     *            An 'or' node from the original script
      * @param data
-     * @return
+     *            ExpandData, containing ancestor anded nodes, used anded nodes, and a flag indicating whether composites were found
+     * @return An expanded version of the 'or' node containing composite nodes, if found, or the original in node, if not found
      */
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        // Or nodes only valid under "AND" node so previous data is needed
-        if (data == null || !(data instanceof ExpandData)) {
+        ExpandData parentData = (ExpandData) data;
+        
+        // if we only have one child, just pass through
+        // this shouldn't ever really happen, but it could
+        if (node.jjtGetNumChildren() == 1)
             return super.visit(node, data);
+        
+        // iterate over the children and attempt to create composites
+        List<JexlNode> unmodifiedNodes = new ArrayList<>();
+        List<JexlNode> modifiedNodes = new ArrayList<>();
+        for (JexlNode child : children(node)) {
+            ExpandData eData = new ExpandData();
+            
+            // add the anded leaf nodes from our ancestors
+            eData.andedNodes.putAll(parentData.andedNodes);
+            
+            JexlNode processedNode = (JexlNode) child.jjtAccept(this, eData);
+            
+            // if composites were made, save the processed node,
+            // and keep track of the used anded nodes
+            if (eData.foundComposite) {
+                modifiedNodes.add(processedNode);
+                parentData.foundComposite = true;
+                parentData.usedAndedNodes.putAll(eData.usedAndedNodes);
+            } else
+                unmodifiedNodes.add(child);
         }
         
-        ExpandData eData = (ExpandData) data;
-        List<JexlNode> kidOtherNodes = Lists.newArrayList();
-        List<JexlNode> descendantCompositeNodes = Lists.newArrayList();
-        if (node != null) {
-            Multimap<String,Composite> foundCompositeMaps = getFoundCompositeMap(node, eData.andEqualsNodes, eData.orderedCompositeToFieldMap, eData.goners,
-                            kidOtherNodes, descendantCompositeNodes);
-            
-            JexlNode rebuiltChildOr = rebuildOrNode(foundCompositeMaps, kidOtherNodes, descendantCompositeNodes, eData.goners);
-            
-            if (rebuiltChildOr != null) {
-                this.printJexlNode(rebuiltChildOr, "New orNode: ");
-                
-                eData.goners.add(eData.root);
-                this.printWithMessage("added to goners:", eData.root);
-                
-                eData.newNodes.add(rebuiltChildOr);
-                return rebuiltChildOr;
-            }
-        }
+        List<JexlNode> processedNodes = new ArrayList<>();
+        processedNodes.addAll(unmodifiedNodes);
+        processedNodes.addAll(modifiedNodes);
         
-        return super.visit(node, data);
+        // if we found a composite, rebuild the or node,
+        // otherwise, return the original or node
+        if (parentData.foundComposite) {
+            return createUnwrappedOrNode(processedNodes);
+        } else
+            return node;
     }
     
     /**
+     * Rebuilds the current 'and' node, and attempts to create the best composites from the leaf and ancestor anded nodes available. First, we descend into the
+     * non-leaf nodes, and keep track of which leaf and anded nodes are used. We then attempt to create composites from the remaining leaf and anded nodes.
+     * Finally, any leftover, unused leaf nodes are anded at this level, while the used leaf nodes are passed down to the descendants and anded where
+     * appropriate.
      *
      * @param node
-     * @param eData
-     * @return
-     */
-    public JexlNode visit(ASTAndNode node, ExpandData eData) {
-        if (node != null) {
-            List<JexlNode> kidOtherNodes = Lists.newArrayList();
-            List<JexlNode> descendantCompositeNodes = Lists.newArrayList();
-            Multimap<String,Composite> foundCompositeMaps = getFoundCompositeMap(node, eData.andEqualsNodes, eData.orderedCompositeToFieldMap, eData.goners,
-                            kidOtherNodes, descendantCompositeNodes);
-            
-            if (log.isDebugEnabled()) {
-                log.debug("Found Composite Map: " + foundCompositeMaps);
-            }
-            
-            JexlNode rebuiltAndChild = rebuildAndNode(foundCompositeMaps, kidOtherNodes, descendantCompositeNodes, eData.goners);
-            
-            if (rebuiltAndChild != null) {
-                this.printJexlNode(rebuiltAndChild, "New AndNode: ");
-                
-                eData.goners.add(eData.root);
-                this.printWithMessage("added to goners:", eData.root);
-                
-                eData.newNodes.add(rebuiltAndChild);
-            }
-            
-            return rebuiltAndChild;
-        }
-        return null;
-    }
-    
-    /**
-     * If no composites can be formed, then process this node normally (return a copy of the incoming node)
+     *            An 'and' node from the original script
+     * @param data
+     *            ExpandData, containing ancestor anded nodes, used anded nodes, and a flag indicating whether composites were found
+     * @return An expanded version of the 'and' node containing composite nodes, if found, or the original in node, if not found
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        // Add and child nodes
-        if (data != null && data instanceof ExpandData) {
-            return this.visit(node, (ExpandData) data);
-        }
+        ExpandData parentData = (ExpandData) data;
         
-        Set<String> componentFields = new HashSet<>(config.getCompositeToFieldMap().values());
-        Collection<JexlNode> andChildrenGoners = Sets.newHashSet();
-        boolean hasEqNode = false;
-        for (JexlNode kid : JexlNodes.children(node)) {
-            while ((kid instanceof ASTReference || kid instanceof ASTReferenceExpression || kid instanceof ASTAndNode) && kid.jjtGetNumChildren() == 1)
-                kid = kid.jjtGetChild(0);
-            if (CompositeUtils.LEAF_NODE_CLASSES.contains(kid.getClass()) && componentFields.contains(JexlASTHelper.getIdentifier(kid))) {
-                hasEqNode = true;
-                break;
-            } else if (kid instanceof ASTAndNode) {
-                List<JexlNode> others = new ArrayList<>();
-                Map<LiteralRange<?>,List<JexlNode>> boundedRangesIndexAgnostic = JexlASTHelper.getBoundedRangesIndexAgnostic(kid, others, true, 1);
-                for (LiteralRange range : boundedRangesIndexAgnostic.keySet()) {
-                    if (componentFields.contains(range.getFieldName())) {
-                        hasEqNode = true;
-                        break;
-                    }
+        // ignore marked nodes
+        if (QueryPropertyMarkerVisitor.instanceOfAny(node))
+            return node;
+        
+        // if we only have one child, just pass through
+        // this shouldn't ever really happen, but it could
+        if (node.jjtGetNumChildren() == 1)
+            return super.visit(node, data);
+        
+        // first, find all leaf nodes
+        // note: an 'and' node defining a range over a single term is considered a leaf node for our purposes
+        List<JexlNode> nonLeafNodes = new ArrayList<>();
+        Multimap<String,JexlNode> leafNodes = getLeafNodes(node, nonLeafNodes);
+        
+        // if this is a 'leaf' range node, check to see if a composite can be made
+        if (leafNodes.size() == 1 && leafNodes.containsValue(node)) {
+            // attempt to build a composite
+            return visitLeafNode(node, parentData);
+        }
+        // otherwise, process the 'and' node as usual
+        else {
+            
+            Multimap<String,JexlNode> usedLeafNodes = LinkedHashMultimap.create();
+            
+            // process the non-leaf nodes first
+            List<JexlNode> processedNonLeafNodes = processNonLeafNodes(parentData, nonLeafNodes, leafNodes, usedLeafNodes);
+            
+            // remove the used nodes from the leaf and anded nodes
+            leafNodes.values().removeAll(usedLeafNodes.values());
+            parentData.andedNodes.values().removeAll(parentData.usedAndedNodes.values());
+            
+            // next, process the remaining leaf nodes
+            List<JexlNode> processedLeafNodes = processUnusedLeafNodes(parentData, leafNodes, usedLeafNodes);
+            
+            // again, remove the used nodes from the leaf and anded nodes
+            leafNodes.values().removeAll(usedLeafNodes.values());
+            parentData.andedNodes.values().removeAll(parentData.usedAndedNodes.values());
+            
+            // rebuild the node if composites are found
+            if (parentData.foundComposite) {
+                List<JexlNode> processedNodes = new ArrayList<>();
+                processedNodes.addAll(processedLeafNodes);
+                processedNodes.addAll(processedNonLeafNodes);
+                
+                // rebuild the node
+                JexlNode rebuiltNode = createUnwrappedAndNode(processedNodes);
+                
+                // distribute the used nodes into the rebuilt node
+                if (!usedLeafNodes.values().isEmpty()) {
+                    // first we need to trim the used nodes to eliminate any wrapping nodes
+                    // i.e. reference, reference expression, or single child and/or nodes
+                    List<JexlNode> leafNodesToDistribute = usedLeafNodes.values().stream().map(this::getLeafNode).collect(Collectors.toList());
+                    rebuiltNode = DistributeAndedNodes.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToCompMap);
                 }
-                if (hasEqNode)
-                    break;
+                
+                return rebuiltNode;
             }
+            
+            return node;
         }
-        
-        if (!hasEqNode) {
-            return super.visit(node, data); // no equal nodes to build
-        }
-        
-        Multimap<String,String> compositeToFieldMap = config.getCompositeToFieldMap();
-        LinkedHashMultimap<String,String> orderedCompositeToFieldMap = orderByCollectionSize(compositeToFieldMap);
-        
-        Multimap<String,JexlNode> andChildrenEqualsNodes = ArrayListMultimap.create(); // all the ASTEQNodes
-        
-        printWithMessage("Looking for composite keys in: ", node);
-        ExpandData nodeData = new ExpandData(node, andChildrenEqualsNodes, orderedCompositeToFieldMap, andChildrenGoners);
-        JexlNode andNode = this.visit(node, nodeData);
-        if (andNode == null) {
-            return super.visit(node, data); // got no composites, carry on
-        }
-        
-        this.printJexlNode(andNode, "And here's my new and node:");
-        return andNode;
     }
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        if (data == null) {
-            String fieldName = JexlASTHelper.getIdentifier(node);
-            if (fieldName != null && config.getCompositeToFieldMap().containsKey(fieldName)) {
-                Object expression = JexlASTHelper.getLiteralValue(node);
-                // if this is an overloaded composite field, convert ASTEQNode to range
-                if (expression != null && CompositeIngest.isOverloadedCompositeField(config.getCompositeToFieldMap(), fieldName)) {
-                    JexlNode lowerBound = JexlNodeFactory.buildNode((ASTGENode) null, fieldName, expression.toString());
-                    JexlNode upperBound = JexlNodeFactory.buildNode((ASTLTNode) null, fieldName, CompositeUtils.getExclusiveUpperBound(expression.toString()));
-                    return JexlNodeFactory.createAndNode(Arrays.asList(lowerBound, upperBound));
-                }
-            }
-        }
-        return super.visit(node, data);
+        return visitLeafNode(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTLTNode node, Object data) {
+        return visitLeafNode(node, data);
     }
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        if (data == null) {
-            String fieldName = JexlASTHelper.getIdentifier(node);
-            if (fieldName != null && config.getCompositeToFieldMap().containsKey(fieldName)) {
-                Object expression = JexlASTHelper.getLiteralValue(node);
-                if (expression != null && CompositeIngest.isOverloadedCompositeField(config.getCompositeToFieldMap(), fieldName)) {
-                    return JexlNodeFactory.buildNode((ASTGENode) null, fieldName, CompositeUtils.getInclusiveLowerBound(expression.toString()));
-                }
-            }
-        }
-        return super.visit(node, data);
+        return visitLeafNode(node, data);
     }
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        if (data == null) {
-            String fieldName = JexlASTHelper.getIdentifier(node);
-            if (fieldName != null && config.getCompositeToFieldMap().containsKey(fieldName)) {
-                Object expression = JexlASTHelper.getLiteralValue(node);
-                if (expression != null && CompositeIngest.isOverloadedCompositeField(config.getCompositeToFieldMap(), fieldName)) {
-                    return JexlNodeFactory.buildNode((ASTLTNode) null, fieldName, CompositeUtils.getExclusiveUpperBound(expression.toString()));
-                }
-            }
+        return visitLeafNode(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        return visitLeafNode(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTERNode node, Object data) {
+        return visitLeafNode(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTNRNode node, Object data) {
+        return visitLeafNode(node, data);
+    }
+    
+    // let's avoid != for now
+    @Override
+    public Object visit(ASTNENode node, Object data) {
+        return node;
+    }
+    
+    // let's avoid not nodes for now
+    @Override
+    public Object visit(ASTNotNode node, Object data) {
+        return node;
+    }
+    
+    // don't descend into function nodes
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        return node;
+    }
+    
+    // don't descend into delayed predicates
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        // ignore marked nodes
+        if (!QueryPropertyMarkerVisitor.instanceOfAny(node)) {
+            return super.visit(node, data);
         }
-        return super.visit(node, data);
+        return node;
+    }
+    
+    // don't descend into delayed predicates
+    @Override
+    public Object visit(ASTReferenceExpression node, Object data) {
+        // ignore marked nodes
+        if (!QueryPropertyMarkerVisitor.instanceOfAny(node))
+            return super.visit(node, data);
+        return node;
     }
     
     /**
+     * Attempts to create composites using both the leaf nodes and the anded nodes from our ancestors. Each of the composites created must contain at least one
+     * of the leaf nodes in order to be valid. The used leaf nodes are passed back via the usedLeafNodes param. The used anded nodes are passed back via the
+     * parentData.
      *
-     * @param foundCompositeMaps
-     * @param otherNodes
-     * @param descendantCompositeNodes
-     * @param goners
-     * @return
+     * @param parentData
+     *            Contains the ancestor anded nodes, anded nodes used to create the returned composites, and a flag indicating whether composites were found
+     * @param nonLeafNodes
+     *            A collection of non-leaf child nodes, from the parent node
+     * @param leafNodes
+     *            A multimap of leaf child nodes, keyed by field name, from the parent node
+     * @param usedLeafNodes
+     *            A multimap of used leaf child nodes, keyed by field name, used to create the returned composites
+     * @return A list of modified and unmodified non-leaf child nodes, from the parent node
      */
-    private JexlNode rebuildOrNode(Multimap<String,Composite> foundCompositeMaps, Collection<JexlNode> otherNodes,
-                    Collection<JexlNode> descendantCompositeNodes, Collection<JexlNode> goners) {
-        List<JexlNode> nodeList = getNodeList(foundCompositeMaps);
-        if (nodeList.size() > 0 || descendantCompositeNodes.size() > 0) {
-            nodeList.addAll(otherNodes);
-            nodeList.addAll(descendantCompositeNodes);
-            nodeList.removeAll(goners);
+    private List<JexlNode> processNonLeafNodes(ExpandData parentData, Collection<JexlNode> nonLeafNodes, Multimap<String,JexlNode> leafNodes,
+                    Multimap<String,JexlNode> usedLeafNodes) {
+        // descend into the child nodes, passing the anded leaf nodes down,
+        // in order to determine whether or not composites can be made
+        List<JexlNode> unmodifiedNodes = new ArrayList<>();
+        List<JexlNode> modifiedNodes = new ArrayList<>();
+        for (JexlNode nonLeafNode : nonLeafNodes) {
+            ExpandData eData = new ExpandData();
             
-            JexlNode orNode;
-            // if there's more than one node, wrap any and nodes
-            if (nodeList.size() > 1) {
-                for (int i = 0; i < nodeList.size(); i++)
-                    if (nodeList.get(i) instanceof ASTAndNode)
-                        nodeList.set(i, JexlNodeFactory.wrap(nodeList.get(i)));
-                orNode = JexlNodeFactory.createOrNode(nodeList);
+            // add the anded leaf nodes from our ancestors
+            eData.andedNodes.putAll(parentData.andedNodes);
+            
+            // add our anded leaf nodes
+            eData.andedNodes.putAll(leafNodes);
+            
+            // descend into the non-leaf node to see if composites can be made
+            JexlNode processedNode = (JexlNode) nonLeafNode.jjtAccept(this, eData);
+            
+            // if composites were made, save the processed node, and determine which leaf
+            // nodes were used from this and node (if any)
+            if (eData.foundComposite) {
+                parentData.foundComposite = true;
+                modifiedNodes.add(processedNode);
+                for (Entry<String,JexlNode> usedAndedNode : eData.usedAndedNodes.entries())
+                    if (leafNodes.containsEntry(usedAndedNode.getKey(), usedAndedNode.getValue()))
+                        usedLeafNodes.put(usedAndedNode.getKey(), usedAndedNode.getValue());
+                    else
+                        parentData.usedAndedNodes.put(usedAndedNode.getKey(), usedAndedNode.getValue());
             } else
-                orNode = nodeList.get(0);
-            
-            if (log.isTraceEnabled()) {
-                PrintingVisitor.printQuery(orNode);
-            }
-            return orNode;
+                unmodifiedNodes.add(nonLeafNode);
         }
-        return null;
-    }
-    
-    private JexlNode rebuildAndNode(Multimap<String,Composite> foundCompositeMaps, List<JexlNode> otherNodes, Collection<JexlNode> descendantCompositeNodes,
-                    Collection<JexlNode> goners) {
-        List<JexlNode> nodeList = getNodeList(foundCompositeMaps);
-        if ((nodeList != null && !nodeList.isEmpty()) || (descendantCompositeNodes != null && !descendantCompositeNodes.isEmpty())) {
-            nodeList.addAll(otherNodes);
-            nodeList.addAll(descendantCompositeNodes);
-            nodeList.removeAll(goners);
-            
-            JexlNode andNode;
-            // if there's more than one node, wrap any and nodes
-            if (nodeList.size() > 1) {
-                for (int i = 0; i < nodeList.size(); i++)
-                    if (nodeList.get(i) instanceof ASTAndNode)
-                        nodeList.set(i, JexlNodeFactory.wrap(nodeList.get(i)));
-                andNode = JexlNodeFactory.createAndNode(nodeList);
-            } else
-                andNode = nodeList.get(0);
-            
-            if (log.isTraceEnabled()) {
-                PrintingVisitor.printQuery(andNode);
-            }
-            return andNode;
-        }
-        return null;
+        
+        // add unmodified nodes, then modified nodes
+        List<JexlNode> processedNodes = new ArrayList<>();
+        processedNodes.addAll(unmodifiedNodes);
+        processedNodes.addAll(modifiedNodes);
+        
+        return processedNodes;
     }
     
     /**
-     * Forms a jexl node for each found composite map and returns it as a list
-     * 
-     * @param foundCompositeMaps
-     *            {@code Composite Name -> Collection<Composites>}
-     * @return List of composite nodes
+     * Attempts to create composites using the remaining leaf and anded nodes from our ancestors. Each of the composites created must contain at least one of
+     * the leaf nodes in order to be valid. The used leaf nodes are passed back via the usedLeafNodes param. The used anded nodes are passed back via the
+     * parentData.
+     *
+     * @param parentData
+     *            Contains the ancestor anded nodes, anded nodes used to create the returned composites, and a flag indicating whether composites were found
+     * @param leafNodes
+     *            A multimap of leaf child nodes, keyed by field name, from the parent node
+     * @param usedLeafNodes
+     *            A multimap of used leaf child nodes, keyed by field name, used to create the returned composites
+     * @return A list of modified and unmodified leaf child nodes, from the parent node
      */
-    private List<JexlNode> getNodeList(Multimap<String,Composite> foundCompositeMaps) {
-        List<JexlNode> nodeList = Lists.newArrayList();
-        for (Composite comp : foundCompositeMaps.values()) {
-            List<JexlNode> nodes = new ArrayList<>();
-            List<String> appendedExpressions = new ArrayList<>();
+    private List<JexlNode> processUnusedLeafNodes(ExpandData parentData, Multimap<String,JexlNode> leafNodes, Multimap<String,JexlNode> usedLeafNodes) {
+        // use the remaining leaf and anded nodes to generate composites
+        // note: the used leaf and anded nodes are removed in 'processNonLeafNodes'
+        List<Composite> foundComposites = findComposites(leafNodes, parentData.andedNodes, usedLeafNodes, parentData.usedAndedNodes);
+        
+        List<JexlNode> compositeLeafNodes = new ArrayList<>();
+        
+        // if we found some composites
+        if (!foundComposites.isEmpty()) {
+            List<JexlNode> compositeNodes = createCompositeNodes(foundComposites);
             
-            boolean includeOldData = false;
-            if (config.getCompositeTransitionDates().containsKey(comp.compositeName)) {
-                Date transitionDate = config.getCompositeTransitionDates().get(comp.compositeName);
-                if (config.getBeginDate().compareTo(transitionDate) < 0)
-                    includeOldData = true;
-            }
-            
-            comp.getNodesAndExpressions(nodes, appendedExpressions, includeOldData);
-            
-            // if this is true, then it indicates that we are dealing with a query containing an overloaded composite
-            // field which only contained the first component term. This means that we are running a query against
-            // the base composite term, and thus need to expand our ranges to fully include both the composite and
-            // non-composite events in our range.
-            boolean expandRangeForBaseTerm = CompositeIngest.isOverloadedCompositeField(config.getCompositeToFieldMap(), comp.compositeName)
-                            && comp.jexlNodeList.size() == 1;
-            
-            List<JexlNode> finalNodes = new ArrayList<>();
-            for (int i = 0; i < nodes.size(); i++) {
-                JexlNode node = nodes.get(i);
-                String appendedExpression = appendedExpressions.get(i);
-                JexlNode newNode = null;
-                if (node instanceof ASTGTNode) {
-                    if (expandRangeForBaseTerm)
-                        newNode = JexlNodeFactory.buildNode((ASTGENode) null, comp.compositeName, CompositeUtils.getInclusiveLowerBound(appendedExpression));
-                    else
-                        newNode = JexlNodeFactory.buildNode((ASTGTNode) null, comp.compositeName, appendedExpression);
-                } else if (node instanceof ASTGENode) {
-                    newNode = JexlNodeFactory.buildNode((ASTGENode) null, comp.compositeName, appendedExpression);
-                } else if (node instanceof ASTLTNode) {
-                    newNode = JexlNodeFactory.buildNode((ASTLTNode) null, comp.compositeName, appendedExpression);
-                } else if (node instanceof ASTLENode) {
-                    if (expandRangeForBaseTerm)
-                        newNode = JexlNodeFactory.buildNode((ASTLTNode) null, comp.compositeName, CompositeUtils.getExclusiveUpperBound(appendedExpression));
-                    else
-                        newNode = JexlNodeFactory.buildNode((ASTLENode) null, comp.compositeName, appendedExpression);
-                } else if (node instanceof ASTERNode) {
-                    newNode = JexlNodeFactory.buildERNode(comp.compositeName, appendedExpression);
-                } else if (node instanceof ASTNENode) {
-                    newNode = JexlNodeFactory.buildNode((ASTNENode) null, comp.compositeName, appendedExpression);
-                } else if (node instanceof ASTEQNode) {
-                    // if this is for an overloaded composite field, which only includes the base term, convert to range
-                    if (expandRangeForBaseTerm) {
-                        JexlNode lowerBound = JexlNodeFactory.buildNode((ASTGENode) null, comp.compositeName, appendedExpression);
-                        JexlNode upperBound = JexlNodeFactory.buildNode((ASTLTNode) null, comp.compositeName,
-                                        CompositeUtils.getExclusiveUpperBound(appendedExpression));
-                        newNode = JexlNodeFactory.createAndNode(Arrays.asList(lowerBound, upperBound));
-                    } else {
-                        newNode = JexlNodeFactory.buildEQNode(comp.compositeName, appendedExpression);
-                    }
-                } else {
-                    log.error("Invalid or unknown node type for composite map.");
-                }
+            // add the composite nodes to our list of processed nodes
+            if (!compositeNodes.isEmpty()) {
+                parentData.foundComposite = true;
                 
-                finalNodes.add(newNode);
-            }
-            
-            if (finalNodes.size() > 1) {
-                JexlNode finalNode = JexlNodeFactory.createUnwrappedAndNode(finalNodes);
-                if (comp.jexlNodeList.size() > 1) {
-                    JexlNode delayedNode = ASTDelayedPredicate.create(ASTCompositePredicate.create(JexlNodeFactory.createUnwrappedAndNode(comp.jexlNodeList
-                                    .stream().map(JexlNodeFactory::wrap).collect(Collectors.toList()))));
-                    finalNode = JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(JexlNodeFactory.wrap(finalNode), delayedNode));
-                }
-                nodeList.add(finalNode);
-            } else {
-                JexlNode finalNode = finalNodes.get(0);
-                if (comp.jexlNodeList.size() > 1 && !(finalNode instanceof ASTEQNode)) {
-                    JexlNode delayedNode = ASTDelayedPredicate.create(ASTCompositePredicate.create(JexlNodeFactory.createUnwrappedAndNode(comp.jexlNodeList
-                                    .stream().map(JexlNodeFactory::wrap).collect(Collectors.toList()))));
-                    finalNode = JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(finalNode, delayedNode));
-                }
-                nodeList.add(finalNode);
-            }
-            
-            if (!CompositeIngest.isOverloadedCompositeField(config.getCompositeToFieldMap(), comp.compositeName)) {
-                config.getIndexedFields().add(comp.compositeName);
-                config.getQueryFieldsDatatypes().put(comp.compositeName, new NoOpType());
+                compositeLeafNodes.add(createUnwrappedAndNode(compositeNodes));
             }
         }
+        
+        leafNodes.values().removeAll(usedLeafNodes.values());
+        
+        List<JexlNode> unmodifiedLeafNodes = new ArrayList<>();
+        List<JexlNode> modifiedLeafNodes = new ArrayList<>();
+        
+        // finally, for any remaining leaf nodes at this level, visit
+        // them, and add them to our list of processed nodes
+        // note: if we encounter a composite here, it represents an
+        // overloaded composite whose bounds were adjusted
+        for (JexlNode remainingLeafNode : leafNodes.values()) {
+            ExpandData eData = new ExpandData();
+            JexlNode processedNode = (JexlNode) remainingLeafNode.jjtAccept(this, eData);
+            
+            if (eData.foundComposite) {
+                parentData.foundComposite = true;
+                modifiedLeafNodes.add(processedNode);
+            } else {
+                unmodifiedLeafNodes.add(remainingLeafNode);
+            }
+        }
+        
+        List<JexlNode> processedLeafNodes = new ArrayList<>();
+        processedLeafNodes.addAll(unmodifiedLeafNodes);
+        processedLeafNodes.addAll(modifiedLeafNodes);
+        processedLeafNodes.addAll(compositeLeafNodes);
+        
+        return processedLeafNodes;
+    }
+    
+    /**
+     * Attempts to form jexl nodes from the composites
+     * 
+     * @param composites
+     *            A list of composites from which jexl nodes should be created
+     * @return A list of jexl nodes created from the given composites
+     */
+    private List<JexlNode> createCompositeNodes(List<Composite> composites) {
+        List<JexlNode> nodeList = Lists.newArrayList();
+        for (Composite comp : composites)
+            nodeList.add(createCompositeNode(comp));
         return nodeList;
     }
     
     /**
+     * Attempts to form a jexl node from the composite
      *
-     * @param child
-     * @param andChildrenEqualsNodes
-     * @param orderedCompositeToFieldMap
-     * @param childrenGoners
-     * @param otherNodes
-     * @return found composite nodes
+     * @param composite
+     *            A list of composites from which jexl nodes should be created
+     * @return A list of jexl nodes created from the given composite
      */
-    private Multimap<String,Composite> getFoundCompositeMap(ASTAndNode child, Multimap<String,JexlNode> andChildrenEqualsNodes,
-                    LinkedHashMultimap<String,String> orderedCompositeToFieldMap, Collection<JexlNode> childrenGoners, Collection<JexlNode> otherNodes,
-                    Collection<JexlNode> descendantCompositeNodes) {
-        Multimap<String,JexlNode> childrenLeafNodes = getChildLeafNodes(child, otherNodes);
-        searchDescendants(andChildrenEqualsNodes, orderedCompositeToFieldMap, childrenGoners, otherNodes, descendantCompositeNodes, childrenLeafNodes);
+    private JexlNode createCompositeNode(Composite composite) {
+        List<Class<? extends JexlNode>> nodeClasses = new ArrayList<>();
+        List<String> appendedExpressions = new ArrayList<>();
         
-        Multimap<String,Composite> leafFound = getFoundCompositeMapAnd(andChildrenEqualsNodes, childrenLeafNodes, orderedCompositeToFieldMap);
-        fixAndGoners(leafFound, andChildrenEqualsNodes, childrenGoners);
+        boolean includeOldData = false;
+        if (config.getCompositeTransitionDates().containsKey(composite.compositeName)) {
+            Date transitionDate = config.getCompositeTransitionDates().get(composite.compositeName);
+            if (config.getBeginDate().compareTo(transitionDate) < 0)
+                includeOldData = true;
+        }
         
-        cleanOtherNodes(childrenLeafNodes, otherNodes);
+        composite.getNodesAndExpressions(nodeClasses, appendedExpressions, includeOldData);
         
-        return leafFound;
-    }
-    
-    private Multimap<String,Composite> getFoundCompositeMap(ASTOrNode child, Multimap<String,JexlNode> andChildrenEqualsNodes,
-                    LinkedHashMultimap<String,String> orderedCompositeToFieldMap, Collection<JexlNode> childrenGoners, Collection<JexlNode> otherNodes,
-                    Collection<JexlNode> descendantCompositeNodes) {
-        Multimap<String,JexlNode> childrenLeafNodes = getChildLeafNodes(child, otherNodes);
-        searchDescendants(andChildrenEqualsNodes, orderedCompositeToFieldMap, childrenGoners, otherNodes, descendantCompositeNodes, null);
+        // if this is true, then it indicates that we are dealing with a query containing an overloaded composite
+        // field which only contained the first component term. This means that we are running a query against
+        // the base composite term, and thus need to expand our ranges to fully include both the composite and
+        // non-composite events in our range.
+        boolean expandRangeForBaseTerm = CompositeIngest.isOverloadedCompositeField(config.getCompositeToFieldMap(), composite.compositeName)
+                        && composite.jexlNodeList.size() == 1;
         
-        Multimap<String,Composite> leafFound = getFoundCompositeMapOr(andChildrenEqualsNodes, childrenLeafNodes, orderedCompositeToFieldMap);
-        fixOrGoners(leafFound, andChildrenEqualsNodes, childrenGoners);
+        List<JexlNode> finalNodes = new ArrayList<>();
+        for (int i = 0; i < nodeClasses.size(); i++) {
+            Class<? extends JexlNode> nodeClass = nodeClasses.get(i);
+            String appendedExpression = appendedExpressions.get(i);
+            JexlNode newNode = null;
+            if (nodeClass.equals(ASTGTNode.class)) {
+                if (expandRangeForBaseTerm)
+                    newNode = JexlNodeFactory.buildNode((ASTGENode) null, composite.compositeName, CompositeUtils.getInclusiveLowerBound(appendedExpression));
+                else
+                    newNode = JexlNodeFactory.buildNode((ASTGTNode) null, composite.compositeName, appendedExpression);
+            } else if (nodeClass.equals(ASTGENode.class)) {
+                newNode = JexlNodeFactory.buildNode((ASTGENode) null, composite.compositeName, appendedExpression);
+            } else if (nodeClass.equals(ASTLTNode.class)) {
+                newNode = JexlNodeFactory.buildNode((ASTLTNode) null, composite.compositeName, appendedExpression);
+            } else if (nodeClass.equals(ASTLENode.class)) {
+                if (expandRangeForBaseTerm)
+                    newNode = JexlNodeFactory.buildNode((ASTLTNode) null, composite.compositeName, CompositeUtils.getExclusiveUpperBound(appendedExpression));
+                else
+                    newNode = JexlNodeFactory.buildNode((ASTLENode) null, composite.compositeName, appendedExpression);
+            } else if (nodeClass.equals(ASTERNode.class)) {
+                newNode = JexlNodeFactory.buildERNode(composite.compositeName, appendedExpression);
+            } else if (nodeClass.equals(ASTNENode.class)) {
+                newNode = JexlNodeFactory.buildNode((ASTNENode) null, composite.compositeName, appendedExpression);
+            } else if (nodeClass.equals(ASTEQNode.class)) {
+                // if this is for an overloaded composite field, which only includes the base term, convert to range
+                if (expandRangeForBaseTerm) {
+                    JexlNode lowerBound = JexlNodeFactory.buildNode((ASTGENode) null, composite.compositeName, appendedExpression);
+                    JexlNode upperBound = JexlNodeFactory.buildNode((ASTLTNode) null, composite.compositeName,
+                                    CompositeUtils.getExclusiveUpperBound(appendedExpression));
+                    newNode = createUnwrappedAndNode(Arrays.asList(lowerBound, upperBound));
+                } else {
+                    newNode = JexlNodeFactory.buildEQNode(composite.compositeName, appendedExpression);
+                }
+            } else {
+                log.error("Invalid or unknown node type for composite map.");
+            }
+            
+            finalNodes.add(newNode);
+        }
         
-        cleanOtherNodes(childrenLeafNodes, otherNodes);
-        
-        // Other nodes exist restore all and goners
-        if (otherNodes.size() > 0 && !childrenGoners.isEmpty()) {
-            for (Entry<String,JexlNode> andChildEqualsNode : andChildrenEqualsNodes.entries()) {
-                childrenGoners.remove(andChildEqualsNode.getValue());
+        JexlNode finalNode;
+        if (finalNodes.size() > 1) {
+            finalNode = createUnwrappedAndNode(finalNodes);
+            if (composite.jexlNodeList.size() > 1) {
+                JexlNode delayedNode = ASTDelayedPredicate.create(ASTCompositePredicate.create(createUnwrappedAndNode(composite.jexlNodeList.stream()
+                                .map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList()))));
+                finalNode = createUnwrappedAndNode(Arrays.asList(JexlNodeFactory.wrap(finalNode), delayedNode));
+            }
+        } else {
+            finalNode = finalNodes.get(0);
+            if (composite.jexlNodeList.size() > 1 && !(finalNode instanceof ASTEQNode)) {
+                JexlNode delayedNode = ASTDelayedPredicate.create(ASTCompositePredicate.create(createUnwrappedAndNode(composite.jexlNodeList.stream()
+                                .map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList()))));
+                finalNode = createUnwrappedAndNode(Arrays.asList(finalNode, delayedNode));
             }
         }
         
-        return leafFound;
+        if (!CompositeIngest.isOverloadedCompositeField(config.getCompositeToFieldMap(), composite.compositeName)) {
+            config.getIndexedFields().add(composite.compositeName);
+            config.getQueryFieldsDatatypes().put(composite.compositeName, new NoOpType());
+        }
+        
+        // save a mapping of generated composites to their component parts for later processing
+        jexlNodeToCompMap.put(finalNode, composite);
+        
+        return finalNode;
+    }
+    
+    private JexlNode visitLeafNode(JexlNode node, Object data) {
+        if (data instanceof ExpandData)
+            return visitLeafNode(node, (ExpandData) data);
+        return node;
     }
     
     /**
-     * Form the composite map based on child leaf nodes and available composite keys
+     * The default leaf node visitor, which uses the anded nodes to determine whether a composite can be formed with this leaf node.
      *
-     * @param andChildNodeMap
-     *            Ancestors "and" nodes
-     * @param leafNodeMap
-     *            {@code Leaf nodes, List<JexlNode> = bounded range; JexlNode = EqNode, ErNode, NeNode}
-     * @param compositeToFieldMap
-     *            Composite fields ordered from most fields to least
-     * @return valid matched composite indexes
+     * @param node
+     *            A leaf node from the original script
+     * @param eData
+     *            ExpandData, containing ancestor anded nodes, used anded nodes, and a flag indicating whether composites were found
+     * @return Returns a composite node if one can be made, otherwise returns the original node
      */
-    private Multimap<String,Composite> getFoundCompositeMapAnd(Multimap<String,JexlNode> andChildNodeMap, Multimap<String,JexlNode> leafNodeMap,
-                    Multimap<String,String> compositeToFieldMap) {
+    private JexlNode visitLeafNode(JexlNode node, ExpandData eData) {
+        String fieldName = (node instanceof ASTAndNode) ? JexlASTHelper.getIdentifier(node.jjtGetChild(0)) : JexlASTHelper.getIdentifier(node);
         
-        Multimap<String,Composite> foundCompositeMap = ArrayListMultimap.create();
+        Multimap<String,JexlNode> leafNodes = LinkedHashMultimap.create();
+        leafNodes.put(fieldName, node);
         
-        // if this is an overloaded composite field, we need to also add a mapping to itself in order to ensure
-        // that the ranges are expanded to include composite and non-composite terms. We add this as the last
-        // composite mapping to ensure that it is only created in the event that no other composites can be formed.
-        Set<Entry<String,Collection<String>>> overloadedEntries = new HashSet<>();
-        for (Map.Entry<String,Collection<String>> entry : compositeToFieldMap.asMap().entrySet()) {
-            if (CompositeIngest.isOverloadedCompositeField(entry.getValue(), entry.getKey()))
-                overloadedEntries.add(new DefaultMapEntry(entry.getKey(), Arrays.asList(entry.getKey())));
-        }
+        List<Composite> foundComposites = findComposites(leafNodes, eData.andedNodes, eData.usedAndedNodes);
         
-        for (Set<Entry<String,Collection<String>>> entries : new Set[] {compositeToFieldMap.asMap().entrySet(), overloadedEntries}) {
-            // look at each potential composite name to see if its fields are all available as keys in the childNodeMap
-            for (Map.Entry<String,Collection<String>> entry : entries) {
-                // Is this a query against a composite field with old data whose date range predates the transition date?
-                if (isQueryAgainstCompositeWithOldDataPriorToTransitionDate(entry.getKey()))
-                    continue;
-                
-                // Did we find a larger key containing this one
-                if (isCompositeFieldContainedInFoundMapWithList(foundCompositeMap, entry.getValue()))
-                    continue;
-                
-                // Is a child node part of the key?
-                if (containsAnyCompositeNodes(entry.getValue(), leafNodeMap.keySet()) == false)
-                    continue;
-                
-                // first see if valid fields for the composite are available in the 'or' and 'and' nodes
-                Set<String> leafNodeKeySet = (leafNodeMap != null) ? Sets.newHashSet(leafNodeMap.keySet()) : null;
-                Set<String> andChildKeySet = (andChildNodeMap != null) ? andChildNodeMap.keySet() : null;
-                if (this.containsAllCompositeNodes(entry.getValue(), leafNodeKeySet, andChildKeySet) == false)
-                    continue;
-                
-                // i can make a composite....
-                // the entry.value() collection is sorted in the correct order for the fields
-                String compositeName = entry.getKey();
-                List<Composite> comps = Lists.newArrayList();
-                Composite baseComp = new Composite(compositeName);
-                comps.add(baseComp);
-                List<String> compositeFields = new ArrayList<>(entry.getValue());
-                Multimap<String,JexlNode> usedLeafNodes = HashMultimap.create();
-                for (int i = 0; i < compositeFields.size(); i++) {
-                    String compField = compositeFields.get(i);
-                    Collection nodes = Lists.newArrayList();
-                    
-                    if (leafNodeMap != null) {
-                        for (JexlNode node : leafNodeMap.get(compField)) {
-                            if (isNodeValid(node, i, compositeFields.size(), config.getFixedLengthFields().contains(compField))) {
-                                nodes.add(node);
-                                usedLeafNodes.put(compField, node);
-                            }
-                        }
-                    }
-                    
-                    if (andChildNodeMap != null) {
-                        for (JexlNode node : andChildNodeMap.get(compField))
-                            if (isNodeValid(node, i, compositeFields.size(), config.getFixedLengthFields().contains(compField)))
-                                nodes.add(node);
-                    }
-                    
-                    // if at any point we run out of eligible nodes, then we have failed to build the composite, and need to stop
-                    if (nodes.isEmpty()) {
-                        comps = null;
-                        break;
-                    }
-                    
-                    boolean wildCardFound = updateComposites(comps, nodes);
-                    if (wildCardFound) {
-                        // Wild card can introduce single value comp keys and comps with out leaf nodes
-                        cleanInValidCompositeNodes(comps, usedLeafNodes);
-                        break;
-                    }
-                }
-                
-                // remove all of the leaf nodes that were successfully used, but if they were used
-                // to make a composite range, or an unbounded composite, make sure they are not goners
-                for (Entry<String,JexlNode> usedLeafEntry : usedLeafNodes.entries()) {
-                    String compName = usedLeafEntry.getKey();
-                    JexlNode node = usedLeafEntry.getValue();
-                    
-                    boolean isGoner = true;
-                    for (Composite comp : comps) {
-                        int nodeIdx = comp.jexlNodeList.indexOf(node);
-                        if (nodeIdx < 0) {
-                            isGoner = false;
-                            break;
-                        }
-                    }
-                    
-                    if (isGoner) {
-                        leafNodeMap.remove(compName, node);
-                    }
-                }
-                
-                if (comps != null && comps.size() > 0) {
-                    foundCompositeMap.putAll(compositeName, comps);
-                }
+        JexlNode resultNode = node;
+        
+        // if composites were found, create JexlNodes from them
+        if (!foundComposites.isEmpty()) {
+            List<JexlNode> compositeNodes = createCompositeNodes(foundComposites);
+            
+            if (!compositeNodes.isEmpty()) {
+                eData.foundComposite = true;
+                resultNode = createUnwrappedAndNode(compositeNodes);
             }
         }
         
-        return foundCompositeMap;
+        return resultNode;
     }
     
+    private List<Composite> findComposites(Multimap<String,JexlNode> leafNodes, Multimap<String,JexlNode> andedNodes, Multimap<String,JexlNode> usedAndedNodes) {
+        return findComposites(leafNodes, andedNodes, null, usedAndedNodes);
+    }
+    
+    /**
+     * Using the leaf nodes and anded nodes passed in, attempts to create composites from those nodes. The generated composites are required to contain at least
+     * one of the leaf nodes.
+     *
+     * @param leafNodes
+     *            A multimap of leaf child nodes, keyed by field name, from the parent node
+     * @param andedNodes
+     *            A multimap of anded nodes, keyed by field name, passed down from our ancestors
+     * @param usedLeafNodes
+     *            A multimap of used leaf child nodes, keyed by field name, used to create the returned composites
+     * @param usedAndedNodes
+     *            A multimap of used anded nodes, keyed by field name, used to create the returned composites
+     * @return A list of composites which can be created from the given leaf and anded nodes
+     */
+    private List<Composite> findComposites(Multimap<String,JexlNode> leafNodes, Multimap<String,JexlNode> andedNodes, Multimap<String,JexlNode> usedLeafNodes,
+                    Multimap<String,JexlNode> usedAndedNodes) {
+        
+        // determine what composites can be made with these fields
+        Multimap<String,String> filteredCompositeToFieldMap = getFilteredCompositeToFieldMap(leafNodes.keySet(), andedNodes.keySet());
+        
+        // TODO: Update this to use some kind of cardinality-based heuristic to sort the composites
+        // order the composite to field map in order of preference
+        filteredCompositeToFieldMap = orderByCollectionSize(filteredCompositeToFieldMap);
+        
+        // for each of the required fields, if is is an overloaded composite field,
+        // we may need to create or tweak the leaf node's range, so we add a self-mapping
+        for (String requiredField : leafNodes.keySet())
+            if (CompositeIngest.isOverloadedCompositeField(config.getCompositeToFieldMap(), requiredField))
+                filteredCompositeToFieldMap.put(requiredField, requiredField);
+        
+        return findComposites(filteredCompositeToFieldMap, leafNodes, andedNodes, usedLeafNodes, usedAndedNodes);
+    }
+    
+    /**
+     * Returns a map containing only the composites that could be created from the given set of required and other fields
+     *
+     * @param requiredFields
+     *            A collection of fields, of which at least one must be present in each returned composite field mapping
+     * @param otherFields
+     *            A collection of other fields at our disposal for creating composites
+     * @return A multimap of composite fields, and their component fields which can be created with the given fields
+     */
+    private Multimap<String,String> getFilteredCompositeToFieldMap(Collection<String> requiredFields, Collection<String> otherFields) {
+        List<String> allFields = new ArrayList<>();
+        allFields.addAll(requiredFields);
+        allFields.addAll(otherFields);
+        
+        // determine which composites can be made
+        Multimap<String,String> compositeToFieldMap = LinkedHashMultimap.create();
+        for (String compositeField : config.getCompositeToFieldMap().keySet()) {
+            Collection<String> componentFields = new ArrayList<>(config.getCompositeToFieldMap().get(compositeField));
+            
+            // determine whether one of our required fields is present
+            boolean requiredFieldPresent = componentFields.stream().filter(fieldName -> requiredFields.contains(fieldName)).findAny().isPresent();
+            
+            // if a required field is present, and we have all of the
+            // fields needed to make the composite, add it to our list
+            if (requiredFieldPresent && allFields.containsAll(componentFields))
+                compositeToFieldMap.putAll(compositeField, componentFields);
+        }
+        return compositeToFieldMap;
+    }
+    
+    /**
+     * Returns a list of composites that can be generated from the given leaf nodes and anded nodes. The used leaf nodes and anded nodes will be returned via
+     * their respective parameters.
+     *
+     * @param filteredCompositeToFieldMap
+     *            A multimap of composite fields, and their component fields which can be created with the given leaf and anded nodes
+     * @param leafNodes
+     *            A multimap of leaf child nodes, keyed by field name, from the parent node
+     * @param andedNodes
+     *            A multimap of anded nodes, keyed by field name, passed down from our ancestors
+     * @param usedLeafNodes
+     *            A multimap of used leaf child nodes, keyed by field name, used to create the returned composites
+     * @param usedAndedNodes
+     *            A multimap of used anded nodes, keyed by field name, used to create the returned composites
+     * @return A list of composites which can be created from the given leaf and anded nodes
+     */
+    private List<Composite> findComposites(Multimap<String,String> filteredCompositeToFieldMap, Multimap<String,JexlNode> leafNodes,
+                    Multimap<String,JexlNode> andedNodes, Multimap<String,JexlNode> usedLeafNodes, Multimap<String,JexlNode> usedAndedNodes) {
+        List<Composite> composites = new ArrayList<>();
+        
+        // once a leaf node is used to create a composite, take it out of the rotation
+        Multimap<String,JexlNode> remainingLeafNodes = LinkedHashMultimap.create();
+        remainingLeafNodes.putAll(leafNodes);
+        
+        // once an anded node is used to create a composite, take it out of the rotation
+        Multimap<String,JexlNode> remainingAndedNodes = LinkedHashMultimap.create();
+        remainingAndedNodes.putAll(andedNodes);
+        
+        // look at each potential composite name to see if its fields are all available as keys in the childNodeMap
+        for (Map.Entry<String,Collection<String>> compositeToFieldMap : filteredCompositeToFieldMap.asMap().entrySet()) {
+            String compositeField = compositeToFieldMap.getKey();
+            List<String> componentFields = new ArrayList<>(compositeToFieldMap.getValue());
+            
+            // is this a query against a composite field with old data whose date range predates the transition date?
+            if (CompositeIngest.isOverloadedCompositeField(config.getCompositeToFieldMap(), compositeField)
+                            && config.getCompositeTransitionDates().containsKey(compositeField)) {
+                Date transitionDate = config.getCompositeTransitionDates().get(compositeField);
+                if (config.getEndDate().compareTo(transitionDate) < 0)
+                    continue;
+            }
+            
+            // @formatter:off
+            boolean leafNodeFieldPresent = componentFields.stream().
+                    anyMatch(componentField -> remainingLeafNodes.keySet().contains(componentField));
+            // @formatter:on
+            
+            // only build this composite if one of the components is a leaf node
+            if (!leafNodeFieldPresent)
+                continue;
+            
+            // @formatter:off
+            boolean allRequiredFieldsPresent = !componentFields.stream().
+                    anyMatch(componentField -> !(remainingLeafNodes.keySet().contains(componentField) || remainingAndedNodes.keySet().contains(componentField)));
+            // @formatter:on
+            
+            // only build this composite if we have all of the required component fields
+            if (!allRequiredFieldsPresent)
+                continue;
+            
+            // we have what we need to make a composite
+            List tempComposites = new ArrayList<>();
+            Composite baseComp = new Composite(compositeField);
+            tempComposites.add(baseComp);
+            
+            // keep track of the used nodes
+            Multimap<String,JexlNode> tempUsedLeafNodes = LinkedHashMultimap.create();
+            Multimap<String,JexlNode> tempUsedAndedNodes = LinkedHashMultimap.create();
+            
+            // traverse component nodes in order and add them to the
+            // composite, creating additional nodes when necessary
+            for (int i = 0; i < componentFields.size(); i++) {
+                String componentField = componentFields.get(i);
+                Collection nodes = Lists.newArrayList();
+                
+                // add any required leaf nodes
+                for (JexlNode node : remainingLeafNodes.get(componentField)) {
+                    JexlNode trimmedNode = getLeafNode(node);
+                    if (trimmedNode != null && isNodeValid(trimmedNode, i, componentFields.size(), config.getFixedLengthFields().contains(componentField))) {
+                        nodes.add(trimmedNode);
+                        tempUsedLeafNodes.put(componentField, node);
+                    }
+                }
+                
+                // add any required anded nodes
+                for (JexlNode node : remainingAndedNodes.get(componentField)) {
+                    JexlNode trimmedNode = getLeafNode(node);
+                    if (trimmedNode != null && isNodeValid(trimmedNode, i, componentFields.size(), config.getFixedLengthFields().contains(componentField))) {
+                        nodes.add(trimmedNode);
+                        tempUsedAndedNodes.put(componentField, node);
+                    }
+                }
+                
+                // if at any point we run out of eligible nodes, then we have failed to build the composite, and need to stop
+                if (nodes.isEmpty()) {
+                    tempComposites.clear();
+                    break;
+                }
+                
+                tempComposites = updateComposites(tempComposites, nodes);
+                
+                // if our updated composites list is empty,
+                // then we failed to update the composites
+                if (tempComposites.isEmpty())
+                    break;
+            }
+            
+            if (!tempComposites.isEmpty()) {
+                // save the found composites
+                composites.addAll(tempComposites);
+                
+                // keep track of the used nodes
+                if (usedLeafNodes != null)
+                    usedLeafNodes.putAll(tempUsedLeafNodes);
+                if (usedAndedNodes != null)
+                    usedAndedNodes.putAll(tempUsedAndedNodes);
+                
+                // take the used nodes out of the rotation
+                for (Entry<String,JexlNode> usedNode : tempUsedLeafNodes.entries())
+                    remainingLeafNodes.remove(usedNode.getKey(), usedNode.getValue());
+                for (Entry<String,JexlNode> usedNode : tempUsedAndedNodes.entries())
+                    remainingAndedNodes.remove(usedNode.getKey(), usedNode.getValue());
+            }
+        }
+        
+        return composites;
+    }
+    
+    /**
+     * This method is used to determine whether the given node will produce a valid composite in the given position, given the total number of fields in this
+     * composite.
+     *
+     * @param node
+     *            The node to check for validity
+     * @param position
+     *            The position this component node will occupy in the composite
+     * @param numCompFields
+     *            The number of component fields in the composite
+     * @param isFixedLengthField
+     *            Whether or not the field produces ranges over values of fixed length Used to determine whether this field can be used to generate a composite
+     *            range
+     * @return A boolean indicating whether the composite would be valid
+     */
     private boolean isNodeValid(JexlNode node, int position, int numCompFields, boolean isFixedLengthField) {
         // if this is an equals node, the position doesn't matter
         if (node instanceof ASTEQNode) {
@@ -630,252 +796,48 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     }
     
     /**
-     * Form the composite map based on child leaf nodes and available composite keys
-     *
-     * @param andChildNodeMap
-     *            Ancestors "and" nodes
-     * @param leafNodeMap
-     *            Leaf nodes, {@code List<JexlNode> = bounded range; JexlNode = EqNode, ErNode, NeNode}
-     * @param compositeToFieldMap
-     *            Composite fields ordered from most fields to least
-     * @return valid matched composite indexes
-     */
-    private Multimap<String,Composite> getFoundCompositeMapOr(Multimap<String,JexlNode> andChildNodeMap, Multimap<String,JexlNode> leafNodeMap,
-                    Multimap<String,String> compositeToFieldMap) {
-        
-        Multimap<String,Composite> foundCompositeMap = ArrayListMultimap.create();
-        
-        // if this is an overloaded composite field, we need to also add a mapping to itself in order to ensure
-        // that the ranges are expanded to include composite and non-composite terms. We add this as the last
-        // composite mapping to ensure that it is only created in the event that no other composites can be formed.
-        Set<Entry<String,Collection<String>>> overloadedEntries = new HashSet<>();
-        for (Map.Entry<String,Collection<String>> entry : compositeToFieldMap.asMap().entrySet()) {
-            if (CompositeIngest.isOverloadedCompositeField(entry.getValue(), entry.getKey()))
-                overloadedEntries.add(new DefaultMapEntry(entry.getKey(), Arrays.asList(entry.getKey())));
-        }
-        
-        for (Set<Entry<String,Collection<String>>> entries : new Set[] {compositeToFieldMap.asMap().entrySet(), overloadedEntries}) {
-            // look at each potential composite name to see if its fields are all available as keys in the childNodeMap
-            for (Map.Entry<String,Collection<String>> entry : entries) {
-                // Is this a query against a composite field with old data whose date range predates the transition date?
-                if (isQueryAgainstCompositeWithOldDataPriorToTransitionDate(entry.getKey()))
-                    continue;
-                
-                // Did we find a larger key containing this one
-                if (isCompositeFieldContainedInFoundMapWithList(foundCompositeMap, entry.getValue()))
-                    continue;
-                
-                // Is a child node part of the key?
-                if (containsAnyCompositeNodes(entry.getValue(), leafNodeMap.keySet()) == false)
-                    continue;
-                
-                // first see if valid fields for the composite are available in the 'or' and 'and' nodes
-                Set<String> leafNodeKeySet = (leafNodeMap != null) ? Sets.newHashSet(leafNodeMap.keySet()) : null;
-                Set<String> andChildKeySet = (andChildNodeMap != null) ? andChildNodeMap.keySet() : null;
-                List<String> compositeFields = new ArrayList<>(entry.getValue());
-                for (String orLeafKey : leafNodeKeySet) {
-                    if (this.containsAllCompositeNodes(entry.getValue(), Sets.newHashSet(orLeafKey), andChildKeySet)) {
-                        // i can make a composite....
-                        // the entry.value() collection is sorted in the correct order for the fields
-                        String compositeName = entry.getKey();
-                        List<Composite> comps = Lists.newArrayList();
-                        Composite baseComp = new Composite(compositeName);
-                        comps.add(baseComp);
-                        Multimap<String,JexlNode> usedLeafNodes = HashMultimap.create();
-                        for (int i = 0; i < compositeFields.size(); i++) {
-                            String compField = compositeFields.get(i);
-                            Collection nodes = Lists.newArrayList();
-                            
-                            // Track if a leaf node has been found, if not skip putting the found comps
-                            if (leafNodeMap != null && compField.equalsIgnoreCase(orLeafKey)) {
-                                for (JexlNode node : leafNodeMap.get(compField)) {
-                                    if (isNodeValid(node, i, compositeFields.size(), config.getFixedLengthFields().contains(compField))) {
-                                        nodes.add(node);
-                                        usedLeafNodes.put(compField, node);
-                                    }
-                                }
-                            }
-                            
-                            if (andChildNodeMap != null) {
-                                for (JexlNode node : andChildNodeMap.get(compField))
-                                    if (isNodeValid(node, i, compositeFields.size(), config.getFixedLengthFields().contains(compField)))
-                                        nodes.add(node);
-                            }
-                            
-                            // if at any point we run out of eligible nodes, then we have failed to build the composite, and need to stop
-                            if (nodes.isEmpty()) {
-                                comps = null;
-                                break;
-                            }
-                            
-                            boolean wildCardFound = updateComposites(comps, nodes);
-                            if (wildCardFound) {
-                                cleanInValidCompositeNodes(comps, usedLeafNodes);
-                                break;
-                            }
-                        }
-                        
-                        // remove all of the leaf nodes that were successfully used
-                        for (String compName : usedLeafNodes.keySet())
-                            leafNodeMap.get(compName).removeAll(usedLeafNodes.get(compName));
-                        
-                        if (comps != null && comps.size() > 0) {
-                            foundCompositeMap.putAll(compositeName, comps);
-                        }
-                    }
-                }
-            }
-        }
-        
-        return foundCompositeMap;
-    }
-    
-    /**
-     * Search descendants for matching indexes. childrenLeafNodes are passed down as "and" nodes.
-     *
-     * @param andChildrenEqualsNodes
-     * @param orderedCompositeToFieldMap
-     * @param childrenGoners
-     * @param otherNodes
-     * @param descendantCompositeNodes
-     * @param childrenLeafNodes
-     */
-    private void searchDescendants(Multimap<String,JexlNode> andChildrenEqualsNodes, LinkedHashMultimap<String,String> orderedCompositeToFieldMap,
-                    Collection<JexlNode> childrenGoners, Collection<JexlNode> otherNodes, Collection<JexlNode> descendantCompositeNodes,
-                    Multimap<String,JexlNode> childrenLeafNodes) {
-        for (JexlNode kid : otherNodes) {
-            Multimap<String,JexlNode> kidEqualsNodes = ArrayListMultimap.create();
-            kidEqualsNodes.putAll(andChildrenEqualsNodes);
-            if (childrenLeafNodes != null) {
-                for (Entry<String,JexlNode> leafNode : childrenLeafNodes.entries()) {
-                    kidEqualsNodes.put(leafNode.getKey(), leafNode.getValue());
-                }
-            }
-            
-            ExpandData kidData = new ExpandData(kid, kidEqualsNodes, orderedCompositeToFieldMap, childrenGoners);
-            kid.jjtAccept(this, kidData);
-            if (kidData.newNodes.size() > 0)
-                descendantCompositeNodes.addAll(kidData.newNodes);
-        }
-        
-        // Remove all goner nodes from others
-        otherNodes.removeAll(childrenGoners);
-        if (childrenLeafNodes != null) {
-            Iterator<Entry<String,JexlNode>> childLeafNodeIter = childrenLeafNodes.entries().iterator();
-            while (childLeafNodeIter.hasNext()) {
-                Entry<String,JexlNode> node = childLeafNodeIter.next();
-                if (childrenGoners.contains(node.getValue())) {
-                    childLeafNodeIter.remove();
-                }
-            }
-        }
-    }
-    
-    private void cleanOtherNodes(Multimap<String,JexlNode> childrenLeafNodes, Collection<JexlNode> otherNodes) {
-        for (Entry<String,JexlNode> otherEqualsNode : childrenLeafNodes.entries()) {
-            otherNodes.add(otherEqualsNode.getValue());
-        }
-    }
-    
-    /**
+     * This method will add the given nodes to the passed in composites. If an invalid composite is produced as a result of adding in one of the nodes, we will
+     * abort creation of this composite.
      *
      * @param composites
      *            Composite objects being tracked for a given key
      * @param nodes
      *            Collection of nodes matching a single field
-     * @return boolean if a wildcard or bounded range nodes were found.
+     * @return A list of updated composites
      */
-    private boolean updateComposites(List<Composite> composites, Collection<JexlNode> nodes) {
-        int nodeSize = (nodes == null) ? 0 : nodes.size();
-        boolean wildCardFound = false;
+    private List<Composite> updateComposites(List<Composite> composites, Collection<JexlNode> nodes) {
+        List<Composite> updatedComposites = new ArrayList<>();
         
-        if (nodeSize == 0) {
-            return wildCardFound; // No nodes do nothing
-        } else if (nodeSize == 1) {
-            // Only one node cloning is not required
-            JexlNode node = nodes.iterator().next();
-            Iterator<Composite> compNodeListIter = composites.iterator();
-            List<Composite> compRanges = new ArrayList<>();
-            while (compNodeListIter.hasNext()) {
-                Composite comp = compNodeListIter.next();
+        // add each of the nodes to each of the composites
+        for (JexlNode node : nodes) {
+            for (Composite composite : composites) {
+                Composite updatedComposite;
                 
-                // at this point, if this is an and node, it is a bounded range
-                if (node instanceof ASTAndNode) {
-                    comp = CompositeRange.clone(comp);
-                    compNodeListIter.remove();
-                    compRanges.add(comp);
+                // at this point, an 'and' node represents a range
+                if (node instanceof ASTAndNode)
+                    updatedComposite = CompositeRange.clone(composite);
+                else
+                    updatedComposite = (nodes.size() > 1) ? composite : composite.clone();
+                
+                // update the composite
+                addFieldToComposite(updatedComposite, node);
+                
+                // is it valid? if not, we can't build the composite
+                if (!updatedComposite.isValid()) {
+                    updatedComposites.clear();
+                    break;
                 }
                 
-                addFieldToComposite(comp, node);
-                if (CompositeUtils.WILDCARD_NODE_CLASSES.contains(node.getClass()) || !comp.isValid()) {
-                    wildCardFound = true;
-                }
+                updatedComposites.add(updatedComposite);
             }
-            composites.addAll(compRanges);
-        } else { // > 1
-            Iterator<JexlNode> nodesIter = nodes.iterator();
-            List<Composite> cloneComps = Lists.newArrayList();
-            while (nodesIter.hasNext()) {
-                for (Composite comp : composites) {
-                    JexlNode node = nodesIter.next();
-                    Composite newComp;
-                    comp.clone();
-                    
-                    // at this point, if this is an and node, it is a bounded range
-                    if (node instanceof ASTAndNode) {
-                        newComp = CompositeRange.clone(comp);
-                    } else {
-                        newComp = comp.clone();
-                    }
-                    
-                    addFieldToComposite(newComp, node);
-                    
-                    cloneComps.add(newComp);
-                    if (CompositeUtils.WILDCARD_NODE_CLASSES.contains(node.getClass()) || !newComp.isValid()) {
-                        wildCardFound = true;
-                    }
-                    continue;
-                }
-            }
-            composites.clear();
-            composites.addAll(cloneComps);
+            
+            // if we don't have any updated
+            // composites, something went wrong
+            if (updatedComposites.isEmpty())
+                break;
         }
         
-        return wildCardFound;
-    }
-    
-    /**
-     * Remove all composites that only have 1 or fewer nodes or first node is range or regex
-     * 
-     * @param composites
-     *            List of found composite indexes
-     */
-    private void cleanInValidCompositeNodes(List<Composite> composites, Multimap<String,JexlNode> usedLeafNodes) {
-        Multimap<String,JexlNode> actualUsedLeafNodes = ArrayListMultimap.create();
-        Iterator<Composite> compositesIter = composites.iterator();
-        while (compositesIter.hasNext()) {
-            Composite comp = compositesIter.next();
-            if (!comp.isValid()) {
-                // when we remove a composite, we need to make sure we remove its jexl nodes from the used leaf nodes
-                for (JexlNode node : comp.jexlNodeList) {
-                    if (node instanceof ASTAndNode)
-                        usedLeafNodes.remove(JexlASTHelper.getIdentifier(node.jjtGetChild(0)), node);
-                    else
-                        usedLeafNodes.remove(JexlASTHelper.getIdentifier(node), node);
-                }
-                compositesIter.remove();
-            } else {
-                // keep track of the leaf nodes that were ACTUALLY used
-                for (JexlNode node : comp.jexlNodeList) {
-                    if (node instanceof ASTAndNode)
-                        actualUsedLeafNodes.put(JexlASTHelper.getIdentifier(node.jjtGetChild(0)), node);
-                    else
-                        actualUsedLeafNodes.put(JexlASTHelper.getIdentifier(node), node);
-                }
-            }
-        }
-        usedLeafNodes.clear();
-        usedLeafNodes.putAll(actualUsedLeafNodes);
+        return updatedComposites;
     }
     
     /**
@@ -909,7 +871,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     private void addFieldToCompositeRange(CompositeRange composite, JexlNode node) {
         List<JexlNode> nodes = new ArrayList<>();
         if (node instanceof ASTAndNode) {
-            nodes.addAll(Arrays.asList(JexlNodes.children(node)));
+            nodes.addAll(Arrays.asList(children(node)));
         } else {
             nodes.add(node);
         }
@@ -946,139 +908,6 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     }
     
     /**
-     * This function allows the addition of only fields that are included in every found composite, in case of "or" parent node Does nothing if foundComposites
-     * is empty
-     * 
-     * @param foundComposites
-     * @param andChildNodeMap
-     * @param goners
-     */
-    private void fixOrGoners(Multimap<String,Composite> foundComposites, Multimap<String,JexlNode> andChildNodeMap, Collection<JexlNode> goners) {
-        fixOrGoners(foundComposites, andChildNodeMap, goners, false);
-    }
-    
-    private void fixOrGoners(Multimap<String,Composite> foundComposites, Multimap<String,JexlNode> andChildNodeMap, Collection<JexlNode> goners, boolean addOnly) {
-        // No composites were created
-        if (foundComposites.isEmpty()) {
-            return;
-        }
-        
-        for (Entry<String,JexlNode> andNodeEntry : andChildNodeMap.entries()) {
-            final JexlNode andNode = andNodeEntry.getValue();
-            boolean goner = isGoner(foundComposites.values(), andNode);
-            
-            if (goner) {
-                goners.add(andNode);
-            } else {
-                if (!addOnly)
-                    goners.remove(andNode);
-            }
-        }
-    }
-    
-    private void fixAndGoners(Multimap<String,Composite> foundComposites, Multimap<String,JexlNode> andChildNodeMap, Collection<JexlNode> goners) {
-        fixAndGoners(foundComposites, andChildNodeMap, goners, false);
-    }
-    
-    /**
-     * Fix and goners differs from fixOrGoners in that any match in an "and" and it can be removed.
-     * 
-     * @param foundComposites
-     * @param andChildNodeMap
-     * @param goners
-     * @param addOnly
-     */
-    private void fixAndGoners(Multimap<String,Composite> foundComposites, Multimap<String,JexlNode> andChildNodeMap, Collection<JexlNode> goners,
-                    boolean addOnly) {
-        // No composites were created
-        if (foundComposites.isEmpty()) {
-            return;
-        }
-        
-        for (Entry<String,JexlNode> andNodeEntry : andChildNodeMap.entries()) {
-            final JexlNode andNode = andNodeEntry.getValue();
-            boolean goner = isGoner(foundComposites.values(), andNode);
-            
-            if (goner) {
-                goners.add(andNode);
-            } else {
-                if (!addOnly)
-                    goners.remove(andNode);
-            }
-        }
-    }
-    
-    private boolean isGoner(Collection<Composite> foundList, JexlNode node) {
-        if (foundList == null || foundList.size() <= 0) {
-            return false;
-        }
-        
-        for (Composite foundComposite : foundList)
-            if (!foundComposite.contains(node))
-                return false;
-        
-        return true;
-    }
-    
-    private boolean isQueryAgainstCompositeWithOldDataPriorToTransitionDate(String field) {
-        if (config.getCompositeTransitionDates().containsKey(field)) {
-            Date transitionDate = config.getCompositeTransitionDates().get(field);
-            if (config.getEndDate().compareTo(transitionDate) < 0)
-                return true;
-        }
-        return false;
-    }
-    
-    /**
-     *
-     * @param foundCompositeMap
-     * @param compositeFields
-     * @return
-     */
-    private boolean isCompositeFieldContainedInFoundMapWithList(Multimap<String,Composite> foundCompositeMap, Collection<String> compositeFields) {
-        for (Map.Entry<String,Composite> foundEntry : foundCompositeMap.entries()) {
-            if (foundEntry.getValue().fieldNameList.containsAll(compositeFields)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    private boolean containsAnyCompositeNodes(Collection<String> fieldsInComposite, Set<String> fieldsInNodes) {
-        for (String field : fieldsInComposite) {
-            if (fieldsInNodes.contains(field)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * Does the union of field sets contains all fieldsInComposite
-     * 
-     * @param fieldsInComposite
-     *            collection of field names that are required
-     * @param fieldSets
-     *            find field names in these sets
-     * @return join(fieldsInOrNodes, fieldsInAndNodes).containsAll(fieldsInComposite)
-     */
-    private boolean containsAllCompositeNodes(Collection<String> fieldsInComposite, Set<String>... fieldSets) {
-        // make a copy of the fieldsInComposite so I can test by removing fields
-        Set<String> tempFieldsInComposite = Sets.newHashSet(fieldsInComposite);
-        for (Set<String> fieldSet : fieldSets) {
-            if (fieldSet != null) {
-                tempFieldsInComposite.removeAll(fieldSet);
-            }
-        }
-        
-        // If removed from both sets and used all the composite fields
-        if (tempFieldsInComposite.isEmpty()) {
-            return true;
-        }
-        return false;
-    }
-    
-    /**
      * This function is to order collections by size, this is useful so building composites can skip shorter composites ex. if KEY1_KEY2_KEY3 existed we would
      * not want to create KEY1_KEY2 or KEY1_KEY3 so could be skipped.
      * 
@@ -1101,12 +930,23 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         return orderedMm;
     }
     
-    private Multimap<String,JexlNode> getChildLeafNodes(JexlNode child, Collection<JexlNode> otherNodes) {
+    /**
+     * This method checks each of the child nodes, and returns those which are leaf nodes. Range nodes are also considered leaf nodes for our purposes. If the
+     * root node is a range node, then that node will be returned. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed
+     * through in search of the actual leaf node.
+     *
+     * @param rootNode
+     *            The node whose children we will check
+     * @param otherNodes
+     *            Non-leaf child nodes of the root node
+     * @return A multimap of field name to leaf node
+     */
+    private Multimap<String,JexlNode> getLeafNodes(JexlNode rootNode, Collection<JexlNode> otherNodes) {
         Multimap<String,JexlNode> childrenLeafNodes = ArrayListMultimap.create();
         
-        if (child instanceof ASTAndNode) {
+        if (rootNode instanceof ASTAndNode) {
             // check to see if this node is a range node, if so, this is our leaf node
-            JexlNode leafKid = getChildLeafNode(child);
+            JexlNode leafKid = getLeafNode(rootNode);
             if (leafKid != null) {
                 String kidFieldName;
                 if (leafKid instanceof ASTAndNode) {
@@ -1114,13 +954,13 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                 } else {
                     kidFieldName = JexlASTHelper.getIdentifier(leafKid);
                 }
-                childrenLeafNodes.put(kidFieldName, leafKid);
+                childrenLeafNodes.put(kidFieldName, rootNode);
             }
         }
         
         if (childrenLeafNodes.isEmpty()) {
-            for (JexlNode kid : JexlNodes.children(child)) {
-                JexlNode leafKid = getChildLeafNode(kid);
+            for (JexlNode child : children(rootNode)) {
+                JexlNode leafKid = getLeafNode(child);
                 if (leafKid != null) {
                     String kidFieldName;
                     if (leafKid instanceof ASTAndNode) {
@@ -1128,9 +968,12 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                     } else {
                         kidFieldName = JexlASTHelper.getIdentifier(leafKid);
                     }
-                    childrenLeafNodes.put(kidFieldName, leafKid);
+                    // note: we save the actual direct sibling of the and node, including
+                    // any reference nodes. those will be trimmed off later
+                    childrenLeafNodes.put(kidFieldName, child);
                 } else {
-                    otherNodes.add(kid);
+                    if (otherNodes != null)
+                        otherNodes.add(child);
                 }
             }
         }
@@ -1138,26 +981,27 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     }
     
     /**
-     * Find the only child leaf node or null
-     * 
+     * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
+     * actual leaf node.
+     *
      * @param node
-     *            JexlNode to descend
-     * @return direct and only descendant leaf node
+     *            The node whose children we will check
+     * @return The found leaf node, or null
      */
-    private JexlNode getChildLeafNode(JexlNode node) {
+    private JexlNode getLeafNode(JexlNode node) {
         if (node instanceof ASTReference) {
-            return getChildLeafNode((ASTReference) node);
+            return getLeafNode((ASTReference) node);
         }
         
         if (node instanceof ASTReferenceExpression) {
-            return getChildLeafNode((ASTReferenceExpression) node);
+            return getLeafNode((ASTReferenceExpression) node);
         }
         
         if (node instanceof ASTAndNode) {
-            return getChildLeafNode((ASTAndNode) node);
+            return getLeafNode((ASTAndNode) node);
         }
         
-        if (CompositeUtils.LEAF_NODE_CLASSES.contains(node.getClass())) {
+        if (CompositeUtils.VALID_LEAF_NODE_CLASSES.contains(node.getClass())) {
             return node;
         }
         
@@ -1165,119 +1009,112 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     }
     
     /**
-     * Find the only child leaf node or null
-     * 
-     * @param node
-     *            JexlNode to descend
-     * @return direct and only descendant leaf node
-     */
-    private JexlNode getChildLeafNode(ASTReference node) {
-        if (node.jjtGetNumChildren() == 1) {
-            JexlNode kid = node.jjtGetChild(0);
-            if (kid instanceof ASTReferenceExpression) {
-                return getChildLeafNode((ASTReferenceExpression) kid);
-            }
-        }
-        return null;
-    }
-    
-    /**
-     * Find the only child leaf node or null
-     * 
-     * @param node
-     *            JexlNode to descend
-     * @return direct and only descendant leaf node
-     */
-    private JexlNode getChildLeafNode(ASTReferenceExpression node) {
-        if (node instanceof ASTReferenceExpression && node.jjtGetNumChildren() == 1) {
-            JexlNode kid = node.jjtGetChild(0);
-            if (CompositeUtils.LEAF_NODE_CLASSES.contains(kid.getClass())) {
-                return kid;
-            } else if (kid instanceof ASTAndNode) {
-                return getChildLeafNode((ASTAndNode) kid);
-            } else {
-                return getChildLeafNode(kid);
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Find the only child leaf node or null
+     * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
+     * actual leaf node.
      *
      * @param node
-     *            JexlNode to descend
-     * @return direct and only descendant leaf node
+     *            The node whose children we will check
+     * @return The found leaf node, or null
      */
-    private JexlNode getChildLeafNode(ASTAndNode node) {
-        if (node.jjtGetNumChildren() == 1) {
-            return getChildLeafNode(node.jjtGetChild(0));
-        } else if (node.jjtGetNumChildren() == 2) {
-            JexlNode beginNode = node.jjtGetChild(0);
-            JexlNode endNode = node.jjtGetChild(1);
-            if ((beginNode instanceof ASTGTNode || beginNode instanceof ASTGENode) && (endNode instanceof ASTLTNode || endNode instanceof ASTLENode)) {
-                String beginFieldName = JexlASTHelper.getIdentifier(beginNode);
-                String endFieldName = JexlASTHelper.getIdentifier(endNode);
-                if (beginFieldName.equals(endFieldName))
-                    return node;
+    private JexlNode getLeafNode(ASTReference node) {
+        // ignore marked nodes
+        if (!QueryPropertyMarkerVisitor.instanceOfAny(node)) {
+            if (node.jjtGetNumChildren() == 1) {
+                JexlNode kid = node.jjtGetChild(0);
+                if (kid instanceof ASTReferenceExpression) {
+                    return getLeafNode((ASTReferenceExpression) kid);
+                }
             }
         }
         return null;
     }
     
     /**
-     * Find the first direct descendant AND node
-     * 
+     * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
+     * actual leaf node.
+     *
      * @param node
-     *            JexlNode to descend
-     * @return direct descendant AND node
+     *            The node whose children we will check
+     * @return The found leaf node, or null
      */
-    private ASTAndNode getChildAndNode(JexlNode node) {
-        if (node instanceof ASTReference) {
-            return getChildAndNode((ASTReference) node);
-        }
-        
-        if (node instanceof ASTReferenceExpression) {
-            return getChildAndNode((ASTReferenceExpression) node);
-        }
-        return null;
-    }
-    
-    /**
-     * Find the first direct descendant AND node
-     * 
-     * @param node
-     *            JexlNode to descend
-     * @return direct descendant AND node
-     */
-    private ASTAndNode getChildAndNode(ASTReference node) {
-        if (node.jjtGetNumChildren() == 1) {
-            JexlNode kid = node.jjtGetChild(0);
-            if (kid instanceof ASTReferenceExpression) {
-                return getChildAndNode((ASTReferenceExpression) kid);
-            }
-        }
-        return null;
-    }
-    
-    /**
-     * Find the first direct descendant AND node
-     * 
-     * @param node
-     *            JexlNode to descend
-     * @return direct descendant AND node
-     */
-    private ASTAndNode getChildAndNode(ASTReferenceExpression node) {
-        if (node instanceof ASTReferenceExpression && node.jjtGetNumChildren() == 1) {
-            JexlNode kid = node.jjtGetChild(0);
-            if (kid instanceof ASTAndNode) {
-                return (ASTAndNode) kid;
-            } else {
-                return getChildAndNode(kid);
+    private JexlNode getLeafNode(ASTReferenceExpression node) {
+        // ignore marked nodes
+        if (!QueryPropertyMarkerVisitor.instanceOfAny(node)) {
+            if (node instanceof ASTReferenceExpression && node.jjtGetNumChildren() == 1) {
+                JexlNode kid = node.jjtGetChild(0);
+                if (kid instanceof ASTAndNode) {
+                    return getLeafNode((ASTAndNode) kid);
+                } else if (CompositeUtils.VALID_LEAF_NODE_CLASSES.contains(kid.getClass())) {
+                    return kid;
+                } else {
+                    return getLeafNode(kid);
+                }
             }
         }
         
+        return null;
+    }
+    
+    /**
+     * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
+     * actual leaf node.
+     *
+     * @param node
+     *            The node whose children we will check
+     * @return The found leaf node, or null
+     */
+    private JexlNode getLeafNode(ASTAndNode node) {
+        // ignore marked nodes
+        if (!QueryPropertyMarkerVisitor.instanceOfAny(node)) {
+            if (node.jjtGetNumChildren() == 1) {
+                return getLeafNode(node.jjtGetChild(0));
+            } else if (node.jjtGetNumChildren() == 2) {
+                JexlNode beginNode = node.jjtGetChild(0);
+                JexlNode endNode = node.jjtGetChild(1);
+                if ((beginNode instanceof ASTGTNode || beginNode instanceof ASTGENode) && (endNode instanceof ASTLTNode || endNode instanceof ASTLENode)) {
+                    String beginFieldName = JexlASTHelper.getIdentifier(beginNode);
+                    String endFieldName = JexlASTHelper.getIdentifier(endNode);
+                    if (beginFieldName.equals(endFieldName))
+                        return node;
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * This is a helper method which will attempt to create an 'and' node from the given jexl nodes. If a single node is passed, we will just return that node
+     * instead of creating an unnecessary 'and' wrapper node.
+     *
+     * @param jexlNodes
+     *            The nodes to 'and' together
+     * @return An 'and' node comprised of the jexlNodes, or if a single jexlNode was passed in, we simply return that node.
+     */
+    private static JexlNode createUnwrappedAndNode(Collection<JexlNode> jexlNodes) {
+        if (jexlNodes != null && !jexlNodes.isEmpty()) {
+            if (jexlNodes.size() == 1)
+                return jexlNodes.stream().findFirst().get();
+            else
+                return JexlNodeFactory.createUnwrappedAndNode(jexlNodes);
+        }
+        return null;
+    }
+    
+    /**
+     * This is a helper method which will attempt to create an 'or' node from the given jexl nodes. If a single node is passed, we will just return that node
+     * instead of creating an unnecessary 'or' wrapper node.
+     *
+     * @param jexlNodes
+     *            The nodes to 'or' together
+     * @return An 'or' node comprised of the jexlNodes, or if a single jexlNode was passed in, we simply return that node.
+     */
+    private static JexlNode createUnwrappedOrNode(Collection<JexlNode> jexlNodes) {
+        if (jexlNodes != null && !jexlNodes.isEmpty()) {
+            if (jexlNodes.size() == 1)
+                return jexlNodes.stream().findFirst().get();
+            else
+                return JexlNodeFactory.createUnwrappedOrNode(jexlNodes);
+        }
         return null;
     }
     
@@ -1311,4 +1148,291 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         }
     }
     
+    /**
+     * This is a visitor which is used to fully distribute anded nodes into a given node. The visitor will only distribute the anded nodes to those descendant
+     * nodes within the tree with which they are not already anded (via a composite).
+     *
+     */
+    private static class DistributeAndedNodes extends RebuildingVisitor {
+        private JexlNode initialNode = null;
+        private List<JexlNode> andedNodes;
+        private Map<JexlNode,Composite> compositeNodes;
+        
+        private static class DistAndData {
+            Set<JexlNode> usedAndedNodes = new HashSet<>();
+        }
+        
+        private DistributeAndedNodes(List<JexlNode> andedNodes, Map<JexlNode,Composite> compositeNodes) {
+            this.andedNodes = andedNodes;
+            this.compositeNodes = compositeNodes;
+        }
+        
+        /**
+         * Distribute the anded node, making sure to 'and' it in at the highest possible level of the tree. This version takes a map of composite nodes to their
+         * component nodes, so that we can better check composite nodes to see if they already include the anded node. That is to say, we will not 'and' a
+         * composite node with one of it's component nodes.
+         *
+         * @param script
+         *            The node that we will be distributing the anded nodes into
+         * @param andedNodes
+         *            The nodes which we will be distributing into the root node
+         * @param compositeNodes
+         *            A map of generated composite jexl nodes to the composite object used to create that node
+         * @return An updated script with the anded nodes distributed throughout
+         */
+        @SuppressWarnings("unchecked")
+        public static JexlNode distributeAndedNode(JexlNode script, List<JexlNode> andedNodes, Map<JexlNode,Composite> compositeNodes) {
+            DistributeAndedNodes visitor = new DistributeAndedNodes(andedNodes, compositeNodes);
+            DistAndData foundData = new DistAndData();
+            JexlNode resultNode = (JexlNode) script.jjtAccept(visitor, foundData);
+            
+            if (!foundData.usedAndedNodes.containsAll(andedNodes)) {
+                List<JexlNode> nodes = new ArrayList<>();
+                nodes.addAll(andedNodes.stream().filter(node -> !foundData.usedAndedNodes.contains(node)).map(RebuildingVisitor::copy)
+                                .collect(Collectors.toList()));
+                nodes.add(resultNode);
+                
+                return createUnwrappedAndNode(nodes);
+            }
+            
+            return resultNode;
+        }
+        
+        /**
+         * Checks each of the child nodes, and determines how the anded nodes should be applied.
+         *
+         * @param node
+         *            The node that we will be distributing the anded nodes into
+         * @param data
+         *            The nodes which we will be distributing into the root node
+         * @return An updated script with the anded nodes distributed throughout
+         */
+        @Override
+        public Object visit(ASTOrNode node, Object data) {
+            DistAndData parentData = (DistAndData) data;
+            
+            if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
+                initialNode = node;
+            
+            // if this node is one of the anded nodes, or a composite
+            // comprised of one of the anded nodes, halt recursion
+            List<JexlNode> usedAndedNodes = usesAndedNodes(node);
+            if (!usedAndedNodes.isEmpty()) {
+                parentData.usedAndedNodes.addAll(usedAndedNodes);
+                return node;
+            }
+            
+            // don't descend into composite nodes, and don't copy them
+            // this logic is dependent upon identifying composite nodes by their address
+            if (compositeNodes.containsKey(node)) {
+                return node;
+            }
+            
+            boolean rebuildNode = false;
+            
+            // check each child node
+            List<JexlNode> nodesMissingEverything = new ArrayList<>();
+            List<JexlNode> nodesWithEverything = new ArrayList<>();
+            Map<JexlNode,List<JexlNode>> nodesMissingSomething = new LinkedHashMap<>();
+            for (JexlNode child : children(node)) {
+                DistAndData foundData = new DistAndData();
+                JexlNode processedChild = (JexlNode) child.jjtAccept(this, foundData);
+                
+                if (processedChild != child)
+                    rebuildNode = true;
+                
+                if (foundData.usedAndedNodes.isEmpty())
+                    nodesMissingEverything.add(processedChild);
+                else if (!foundData.usedAndedNodes.containsAll(andedNodes)) {
+                    List<JexlNode> missingAndedNodes = new ArrayList<>();
+                    missingAndedNodes.addAll(andedNodes);
+                    missingAndedNodes.removeAll(foundData.usedAndedNodes);
+                    nodesMissingSomething.put(processedChild, missingAndedNodes);
+                } else
+                    nodesWithEverything.add(processedChild);
+            }
+            
+            // if none of the children are missing anything, we're done
+            if (nodesWithEverything.size() == node.jjtGetNumChildren()) {
+                parentData.usedAndedNodes.addAll(andedNodes);
+                if (rebuildNode)
+                    return createUnwrappedOrNode(nodesWithEverything);
+                else
+                    return node;
+            }
+            // if all of the children are missing everything, we're done
+            // note: we shouldn't need to rebuild the or node because if the children
+            // are missing everything, it implies that the children were left as-is
+            else if (nodesMissingEverything.size() == node.jjtGetNumChildren()) {
+                return node;
+            }
+            
+            // if we got here, then there are some nodes missing SOMETHING, and we have work to do
+            List<JexlNode> rebuiltChildren = new ArrayList<>();
+            
+            // for children missing at least one andedNode -> go through each one, and make a new call to 'distributeAndedNode' passing only the missing
+            // andedNodes
+            for (Entry<JexlNode,List<JexlNode>> childEntry : nodesMissingSomething.entrySet())
+                rebuiltChildren.add(DistributeAndedNodes.distributeAndedNode(childEntry.getKey(), childEntry.getValue(), compositeNodes));
+            
+            // for children missing everything -> 'or' them together, then 'and' them with the full set of andedNodes
+            List<JexlNode> nodeList = andedNodes.stream().map(RebuildingVisitor::copy).collect(Collectors.toList());
+            
+            nodeList.add(createUnwrappedOrNode(nodesMissingEverything));
+            
+            rebuiltChildren.add(createUnwrappedAndNode(nodeList));
+            
+            // for children with everything -> keep those as-is
+            rebuiltChildren.addAll(nodesWithEverything);
+            
+            parentData.usedAndedNodes.addAll(andedNodes);
+            
+            return createUnwrappedOrNode(rebuiltChildren);
+        }
+        
+        /**
+         * Checks each of the child nodes, and determines how the anded nodes should be applied.
+         *
+         * @param node
+         *            The node that we will be distributing the anded nodes into
+         * @param data
+         *            The nodes which we will be distributing into the root node
+         * @return An updated script with the anded nodes distributed throughout
+         */
+        @Override
+        public Object visit(ASTAndNode node, Object data) {
+            DistAndData parentData = (DistAndData) data;
+            
+            if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
+                initialNode = node;
+            
+            // if this node is one of the anded nodes, or a composite
+            // comprised of one of the anded nodes, halt recursion
+            List<JexlNode> usedAndedNodes = usesAndedNodes(node);
+            if (!usedAndedNodes.isEmpty()) {
+                parentData.usedAndedNodes.addAll(usedAndedNodes);
+                return node;
+            }
+            
+            // don't descend into composite nodes, and don't copy them
+            // this logic is dependent upon identifying composite nodes by their address
+            if (compositeNodes.containsKey(node)) {
+                return node;
+            }
+            
+            // check each child node to see how many of the desired andedNodes are present
+            List<JexlNode> rebuiltChildren = new ArrayList<>();
+            for (JexlNode child : children(node)) {
+                DistAndData foundData = new DistAndData();
+                rebuiltChildren.add((JexlNode) child.jjtAccept(this, foundData));
+                
+                parentData.usedAndedNodes.addAll(foundData.usedAndedNodes);
+            }
+            
+            // are some anded nodes missing, and is this the initial node?
+            if (!parentData.usedAndedNodes.containsAll(andedNodes) && node.equals(initialNode)) {
+                // 'and' with the missing anded nodes, and return
+                List<JexlNode> nodes = new ArrayList<>();
+                nodes.addAll(andedNodes.stream().filter(andedNode -> !parentData.usedAndedNodes.contains(andedNode)).map(RebuildingVisitor::copy)
+                                .collect(Collectors.toList()));
+                nodes.add(node);
+                
+                // this is probably unnecessary, but to be safe, let's set it
+                parentData.usedAndedNodes.addAll(andedNodes);
+                
+                return createUnwrappedAndNode(nodes);
+            }
+            
+            return createUnwrappedAndNode(rebuiltChildren);
+        }
+        
+        @Override
+        public Object visit(ASTEQNode node, Object data) {
+            visitInternal(node, data);
+            return node;
+        }
+        
+        @Override
+        public Object visit(ASTNENode node, Object data) {
+            visitInternal(node, data);
+            return node;
+        }
+        
+        @Override
+        public Object visit(ASTLTNode node, Object data) {
+            visitInternal(node, data);
+            return node;
+        }
+        
+        @Override
+        public Object visit(ASTGTNode node, Object data) {
+            visitInternal(node, data);
+            return node;
+        }
+        
+        @Override
+        public Object visit(ASTLENode node, Object data) {
+            visitInternal(node, data);
+            return node;
+        }
+        
+        @Override
+        public Object visit(ASTGENode node, Object data) {
+            visitInternal(node, data);
+            return node;
+        }
+        
+        @Override
+        public Object visit(ASTERNode node, Object data) {
+            visitInternal(node, data);
+            return node;
+        }
+        
+        @Override
+        public Object visit(ASTNRNode node, Object data) {
+            visitInternal(node, data);
+            return node;
+        }
+        
+        @Override
+        public Object visit(ASTFunctionNode node, Object data) {
+            visitInternal(node, data);
+            return node;
+        }
+        
+        @Override
+        public Object visit(ASTReference node, Object data) {
+            visitInternal(node, data);
+            return super.visit(node, data);
+        }
+        
+        @Override
+        public Object visit(ASTReferenceExpression node, Object data) {
+            visitInternal(node, data);
+            return super.visit(node, data);
+        }
+        
+        /**
+         * Used to determine whether this is a composite node, and if so, which of the anded nodes does it have as components
+         *
+         * @param node
+         *            The node to check for anded components
+         * @return A list of anded jexl nodes used to create the composite node
+         */
+        private List<JexlNode> usesAndedNodes(JexlNode node) {
+            List<JexlNode> usedAndedNodes = new ArrayList<>();
+            for (JexlNode andedNode : andedNodes)
+                if (compositeNodes.containsKey(node) && compositeNodes.get(node).contains(andedNode))
+                    usedAndedNodes.add(andedNode);
+            return usedAndedNodes;
+        }
+        
+        private void visitInternal(JexlNode node, Object data) {
+            if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
+                initialNode = node;
+            
+            DistAndData parentData = (DistAndData) data;
+            parentData.usedAndedNodes.addAll(usesAndedNodes(node));
+        }
+    }
 }

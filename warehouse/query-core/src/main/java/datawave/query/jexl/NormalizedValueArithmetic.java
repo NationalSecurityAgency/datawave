@@ -16,32 +16,47 @@ public class NormalizedValueArithmetic extends JexlArithmetic {
     }
     
     @Override
-    public boolean matches(Object left, Object right) {
-        return true;
-    }
-    
-    @Override
     public boolean equals(Object left, Object right) {
-        return left.toString().compareTo(right.toString()) == 0;
+        if ((left == right) || (left == null) || (right == null)) {
+            return false;
+        } else {
+            return left.toString().compareTo(right.toString()) == 0;
+        }
     }
     
     @Override
     public boolean lessThan(Object left, Object right) {
-        return left.toString().compareTo(right.toString()) < 0;
+        if ((left == right) || (left == null) || (right == null)) {
+            return false;
+        } else {
+            return left.toString().compareTo(right.toString()) < 0;
+        }
     }
     
     @Override
     public boolean greaterThan(Object left, Object right) {
-        return left.toString().compareTo(right.toString()) > 0;
+        if ((left == right) || (left == null) || (right == null)) {
+            return false;
+        } else {
+            return left.toString().compareTo(right.toString()) > 0;
+        }
     }
     
     @Override
     public boolean lessThanOrEqual(Object left, Object right) {
-        return left.toString().compareTo(right.toString()) <= 0;
+        if ((left == right) || (left == null) || (right == null)) {
+            return false;
+        } else {
+            return left.toString().compareTo(right.toString()) <= 0;
+        }
     }
     
     @Override
     public boolean greaterThanOrEqual(Object left, Object right) {
-        return left.toString().compareTo(right.toString()) >= 0;
+        if ((left == right) || (left == null) || (right == null)) {
+            return false;
+        } else {
+            return left.toString().compareTo(right.toString()) >= 0;
+        }
     }
 }

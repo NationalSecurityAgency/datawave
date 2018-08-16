@@ -477,9 +477,18 @@ public class MetadataHelper implements ApplicationContextAware {
         Set<String> fields = new HashSet<>();
         fields.addAll(getIndexOnlyFields(ingestTypeFilter));
         fields.addAll(getTermFrequencyFields(ingestTypeFilter));
-        for (String compField : getFieldToCompositeMap(ingestTypeFilter).keySet())
-            if (!CompositeIngest.isOverloadedCompositeField(getCompositeToFieldMap(ingestTypeFilter), compField))
-                fields.add(compField);
+        Multimap<String,String> compToFieldMap = getCompositeToFieldMap(ingestTypeFilter);
+        for (String compField : compToFieldMap.keySet()) {
+            if (!CompositeIngest.isOverloadedCompositeField(compToFieldMap, compField)) {
+                // a composite is only a non-event field if it is composed from 1 or more non-event fields
+                for (String componentField : compToFieldMap.get(compField)) {
+                    if (fields.contains(componentField)) {
+                        fields.add(compField);
+                        break;
+                    }
+                }
+            }
+        }
         
         return Collections.unmodifiableSet(fields);
     }
@@ -872,11 +881,11 @@ public class MetadataHelper implements ApplicationContextAware {
      * @return An unmodifiable Multimap
      * @throws TableNotFoundException
      */
-    public Multimap<String,String> getFieldToCompositeMap() throws TableNotFoundException {
+    public Multimap<String,String> getCompositeToFieldMap() throws TableNotFoundException {
         return this.allFieldMetadataHelper.getCompositeToFieldMap();
     }
     
-    public Multimap<String,String> getFieldToCompositeMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
+    public Multimap<String,String> getCompositeToFieldMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
         
         return this.allFieldMetadataHelper.getCompositeToFieldMap(ingestTypeFilter);
     }
@@ -1053,20 +1062,6 @@ public class MetadataHelper implements ApplicationContextAware {
      */
     public Type<?> getDatatypeFromClass(Class<? extends Type<?>> datatypeClass) throws InstantiationException, IllegalAccessException {
         return this.allFieldMetadataHelper.getDatatypeFromClass(datatypeClass);
-    }
-    
-    /**
-     * returns a map of compositeFieldName to an ordered list of the field names it uses. If called multiple time, it returns the same cached map.
-     * 
-     * @return
-     * @throws TableNotFoundException
-     */
-    public Multimap<String,String> getCompositeToFieldMap() throws TableNotFoundException {
-        return this.getCompositeToFieldMap(null);
-    }
-    
-    public Multimap<String,String> getCompositeToFieldMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
-        return this.allFieldMetadataHelper.getCompositeToFieldMap(ingestTypeFilter);
     }
     
     /**

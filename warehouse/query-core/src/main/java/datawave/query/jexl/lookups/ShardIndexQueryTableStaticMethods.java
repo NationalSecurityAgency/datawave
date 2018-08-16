@@ -187,6 +187,7 @@ public class ShardIndexQueryTableStaticMethods {
             patterns.add(literal.toString());
         }
         
+        // TODO: Add proper support for regex against overloaded composite fields
         for (Type<?> normalizer : dataTypes) {
             if (literal instanceof String) {
                 try {

@@ -2,7 +2,6 @@ package datawave.query.composite;
 
 import datawave.query.jexl.JexlNodeFactory;
 import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -101,40 +100,40 @@ public class CompositeRange extends Composite {
     }
     
     @Override
-    public void getNodesAndExpressions(List<JexlNode> nodes, List<String> expressions, boolean includeOldData) {
+    public void getNodesAndExpressions(List<Class<? extends JexlNode>> nodeClasses, List<String> expressions, boolean includeOldData) {
         if (includeOldData) {
             expressions.add(getFullyInclusiveLowerBoundExpression());
-            nodes.add(JexlNodeFactory.buildNode((ASTGENode) null, (String) null, (String) null));
+            nodeClasses.add(ASTGENode.class);
         } else {
-            JexlNode lowerBoundNode = getLowerBoundNode();
+            Class<? extends JexlNode> lowerBoundNodeClass = getLowerBoundNodeClass();
             String lowerBoundExpression = getLowerBoundExpression();
-            if (lowerBoundNode != null && lowerBoundExpression != null && !lowerBoundExpression.equals("")) {
-                nodes.add(lowerBoundNode);
+            if (lowerBoundNodeClass != null && lowerBoundExpression != null && !lowerBoundExpression.equals("")) {
+                nodeClasses.add(lowerBoundNodeClass);
                 expressions.add(lowerBoundExpression);
             }
         }
-        JexlNode upperBoundNode = getUpperBoundNode();
+        Class<? extends JexlNode> upperBoundNodeClass = getUpperBoundNodeClass();
         String upperBoundExpression = getUpperBoundExpression();
-        if (upperBoundNode != null && upperBoundExpression != null && !upperBoundExpression.equals("")) {
-            nodes.add(upperBoundNode);
+        if (upperBoundNodeClass != null && upperBoundExpression != null && !upperBoundExpression.equals("")) {
+            nodeClasses.add(upperBoundNodeClass);
             expressions.add(upperBoundExpression);
         }
     }
     
-    private JexlNode getLowerBoundNode() {
+    private Class<? extends JexlNode> getLowerBoundNodeClass() {
         boolean isUnbounded = isLowerUnbounded();
-        JexlNode node = getNodeClass(jexlNodeListLowerBound);
-        if (isUnbounded && node instanceof ASTGTNode)
-            return JexlNodeFactory.buildNode((ASTGENode) null, compositeName, "");
-        return node;
+        Class<? extends JexlNode> nodeClass = getNodeClass(jexlNodeListLowerBound);
+        if (isUnbounded && nodeClass.equals(ASTGTNode.class))
+            return ASTGENode.class;
+        return nodeClass;
     }
     
-    private JexlNode getUpperBoundNode() {
+    private Class<? extends JexlNode> getUpperBoundNodeClass() {
         boolean isUnbounded = isUpperUnbounded();
-        JexlNode node = getNodeClass(jexlNodeListUpperBound);
-        if (isUnbounded && node instanceof ASTLENode)
-            return JexlNodeFactory.buildNode((ASTLTNode) null, compositeName, "");
-        return node;
+        Class<? extends JexlNode> nodeClass = getNodeClass(jexlNodeListUpperBound);
+        if (isUnbounded && nodeClass.equals(ASTLENode.class))
+            return ASTLTNode.class;
+        return nodeClass;
     }
     
     // used to handle special case where our index is overloaded and runs against legacy (i.e. non-composite) data

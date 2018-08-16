@@ -47,6 +47,14 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
     
     private QueryPropertyMarkerVisitor() {}
     
+    public static boolean instanceOfAny(JexlNode node) {
+        return instanceOfAny(node, null);
+    }
+    
+    public static boolean instanceOfAny(JexlNode node, List<JexlNode> sourceNodes) {
+        return instanceOf(node, null, sourceNodes);
+    }
+    
     public static boolean instanceOf(JexlNode node, Class<? extends QueryPropertyMarker> type, List<JexlNode> sourceNodes) {
         QueryPropertyMarkerVisitor visitor = new QueryPropertyMarkerVisitor();
         

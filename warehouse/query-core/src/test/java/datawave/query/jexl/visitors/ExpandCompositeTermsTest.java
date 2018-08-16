@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import datawave.data.normalizer.Normalizer;
 import datawave.query.config.ShardQueryConfiguration;
@@ -15,6 +16,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Date;
@@ -30,24 +32,32 @@ public class ExpandCompositeTermsTest {
     
     private static final Set<String> INDEX_FIELDS = Sets.newHashSet("MAKE", "COLOR", "WHEELS", "TEAM", "NAME", "POINTS");
     
-    ShardQueryConfiguration conf = new ShardQueryConfiguration();
-    Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
+    ShardQueryConfiguration conf;
+    
+    private static Multimap<String,String> compositeToFieldMap;
     
     String[] originalQueries = {"MAKE == 'Ford' && COLOR == 'red'", "MAKE == 'Ford' && COLOR == 'red' && MAKE_COLOR == 'Fordred'",
             "(MAKE == 'Ford' && WHEELS == 3) && COLOR == 'red'"};
     
+    @BeforeClass
+    public static void beforeClass() {
+        Multimap<String,String> multimap = LinkedListMultimap.create();
+        multimap.clear();
+        multimap.put("MAKE_COLOR", "MAKE");
+        multimap.put("MAKE_COLOR", "COLOR");
+        multimap.put("COLOR_WHEELS", "COLOR");
+        multimap.put("COLOR_WHEELS", "WHEELS");
+        multimap.put("TEAM_NAME_POINTS", "TEAM");
+        multimap.put("TEAM_NAME_POINTS", "NAME");
+        multimap.put("TEAM_NAME_POINTS", "POINTS");
+        multimap.put("TEAM_POINTS", "TEAM");
+        multimap.put("TEAM_POINTS", "POINTS");
+        compositeToFieldMap = Multimaps.unmodifiableMultimap(multimap);
+    }
+    
     @Before
     public void before() {
-        compositeToFieldMap.clear();
-        compositeToFieldMap.put("MAKE_COLOR", "MAKE");
-        compositeToFieldMap.put("MAKE_COLOR", "COLOR");
-        compositeToFieldMap.put("COLOR_WHEELS", "COLOR");
-        compositeToFieldMap.put("COLOR_WHEELS", "WHEELS");
-        compositeToFieldMap.put("TEAM_NAME_POINTS", "TEAM");
-        compositeToFieldMap.put("TEAM_NAME_POINTS", "NAME");
-        compositeToFieldMap.put("TEAM_NAME_POINTS", "POINTS");
-        compositeToFieldMap.put("TEAM_POINTS", "TEAM");
-        compositeToFieldMap.put("TEAM_POINTS", "POINTS");
+        conf = new ShardQueryConfiguration();
         conf.setCompositeToFieldMap(compositeToFieldMap);
     }
     
@@ -61,7 +71,7 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test2() throws Exception {
         String query = "WINNER=='blue' && TEAM=='gold' && POINTS==11";
-        String expected = "(TEAM_POINTS == 'gold\uDBFF\uDFFF11' && WINNER == 'blue')";
+        String expected = "WINNER == 'blue' && TEAM_POINTS == 'gold􏿿11'";
         
         runTestQuery(query, expected);
     }
@@ -69,27 +79,27 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test3() throws Exception {
         String query = "WINNER=='blue' && TEAM=='gold' && NAME=='gold-8' && POINTS==11";
-        runTestQuery(query, "(TEAM_NAME_POINTS == 'gold\uDBFF\uDFFFgold-8\uDBFF\uDFFF11' && WINNER == 'blue')");
+        runTestQuery(query, "WINNER == 'blue' && TEAM_NAME_POINTS == 'gold􏿿gold-8􏿿11'");
     }
     
     @Test
     public void test4a() throws Exception {
         String query = "WINNER=='blue' && TEAM=='gold' && NAME=='gold-8' && (POINTS > 10 && POINTS <= 11)";
-        String expected = "(((TEAM_NAME_POINTS > 'gold􏿿gold-8􏿿10' && TEAM_NAME_POINTS <= 'gold􏿿gold-8􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-8' && (POINTS > 10 && POINTS <= 11)))))) && WINNER == 'blue')";
+        String expected = "WINNER == 'blue' && (TEAM_NAME_POINTS > 'gold􏿿gold-8􏿿10' && TEAM_NAME_POINTS <= 'gold􏿿gold-8􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-8' && (POINTS > 10 && POINTS <= 11)))))";
         runTestQuery(query, expected);
     }
     
     @Test
     public void test4b() throws Exception {
         String query = "WINNER=='blue' && (TEAM=='gold') && (NAME=='gold-8') && (POINTS > 10 && POINTS <= 11)";
-        String expected = "(((TEAM_NAME_POINTS > 'gold􏿿gold-8􏿿10' && TEAM_NAME_POINTS <= 'gold􏿿gold-8􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-8' && (POINTS > 10 && POINTS <= 11)))))) && WINNER == 'blue')";
+        String expected = "WINNER == 'blue' && (TEAM_NAME_POINTS > 'gold􏿿gold-8􏿿10' && TEAM_NAME_POINTS <= 'gold􏿿gold-8􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-8' && (POINTS > 10 && POINTS <= 11)))))";
         runTestQuery(query, expected);
     }
     
     @Test
     public void test5() throws Exception {
         String query = "WINNER=='blue' && TEAM=='gold' && NAME=='gold-1' && (POINTS > 4 && POINTS <= 5 || POINTS > 0 && POINTS < 2)";
-        String expected = "(WINNER == 'blue' && (((TEAM_NAME_POINTS > 'gold􏿿gold-1􏿿4' && TEAM_NAME_POINTS <= 'gold􏿿gold-1􏿿5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-1' && (POINTS > 4 && POINTS <= 5)))))) || ((TEAM_NAME_POINTS > 'gold􏿿gold-1􏿿0' && TEAM_NAME_POINTS < 'gold􏿿gold-1􏿿2') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-1' && (POINTS > 0 && POINTS < 2))))))))";
+        String expected = "WINNER == 'blue' && (((TEAM_NAME_POINTS > 'gold􏿿gold-1􏿿4' && TEAM_NAME_POINTS <= 'gold􏿿gold-1􏿿5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-1' && (POINTS > 4 && POINTS <= 5)))))) || ((TEAM_NAME_POINTS > 'gold􏿿gold-1􏿿0' && TEAM_NAME_POINTS < 'gold􏿿gold-1􏿿2') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-1' && (POINTS > 0 && POINTS < 2)))))))";
         runTestQuery(query, expected);
     }
     
@@ -103,8 +113,20 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test7a() throws Exception {
         String query = "WINNER == 'blue' && TEAM=='gold' && ( NAME=='gold-1' || NAME=='gold-2' && (POINTS > 10 && POINTS <= 11))";
-        String expected = "(WINNER == 'blue' && TEAM == 'gold' && (NAME == 'gold-1' || ((TEAM_NAME_POINTS > 'gold􏿿gold-2􏿿10' && TEAM_NAME_POINTS <= 'gold􏿿gold-2􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-2' && (POINTS > 10 && POINTS <= 11))))))))";
+        String expected = "WINNER == 'blue' && ((TEAM == 'gold' && NAME == 'gold-1') || ((TEAM_NAME_POINTS > 'gold􏿿gold-2􏿿10' && TEAM_NAME_POINTS <= 'gold􏿿gold-2􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-2' && (POINTS > 10 && POINTS <= 11)))))))";
         runTestQuery(query, expected);
+    }
+    
+    @Test
+    public void test7aa() throws Exception {
+        ShardQueryConfiguration myConf = new ShardQueryConfiguration();
+        myConf.setCompositeToFieldMap(compositeToFieldMap);
+        
+        Set<String> indexedFields = Sets.newHashSet("MAKE", "COLOR", "WHEELS", "TEAM", "NAME", "POINTS");
+        
+        String query = "WINNER == 'blue' && COLOR == 'red' && TEAM=='gold' && ( WHEELS == 4 || NOM=='gold-1' || NOM=='gold-2' && (POINTS > 10 && POINTS <= 11))";
+        String expected = "WINNER == 'blue' && ((TEAM == 'gold' && COLOR_WHEELS == 'red􏿿4') || (COLOR == 'red' && NOM == 'gold-2' && (TEAM_POINTS > 'gold􏿿10' && TEAM_POINTS <= 'gold􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 10 && POINTS <= 11)))))) || (COLOR == 'red' && TEAM == 'gold' && NOM == 'gold-1'))";
+        runTestQuery(query, expected, indexedFields, myConf);
     }
     
     @Test
@@ -136,14 +158,14 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test8() throws Exception {
         String query = "COLOR =~ '.*ed' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE == 'honda') && TYPE == 'truck'";
-        String expected = "((WHEELS == '4' || WHEELS == '+aE4') && COLOR =~ '.*ed' && TYPE == 'truck' && ((MAKE_COLOR =~ 'honda􏿿.*ed' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (MAKE == 'honda' && COLOR =~ '.*ed'))))) || MAKE_COLOR == 'honda'))";
+        String expected = "TYPE == 'truck' && (WHEELS == '4' || WHEELS == '+aE4') && ((COLOR =~ '.*ed' && MAKE_COLOR == 'honda') || (MAKE_COLOR =~ 'honda􏿿.*ed' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (MAKE == 'honda' && COLOR =~ '.*ed'))))))";
         runTestQuery(query, expected);
     }
     
     @Test
     public void test9() throws Exception {
         String query = "WINNER == 'blue' && TEAM == 'gold' && NAME != 'gold-1' && (POINTS > 4 && POINTS <= 5 || POINTS > 0 && POINTS < 2)";
-        String expected = "(WINNER == 'blue' && NAME != 'gold-1' && (((TEAM_POINTS > 'gold􏿿4' && TEAM_POINTS <= 'gold􏿿5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 4 && POINTS <= 5)))))) || ((TEAM_POINTS > 'gold􏿿0' && TEAM_POINTS < 'gold􏿿2') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 0 && POINTS < 2))))))))";
+        String expected = "WINNER == 'blue' && NAME != 'gold-1' && (((TEAM_POINTS > 'gold􏿿4' && TEAM_POINTS <= 'gold􏿿5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 4 && POINTS <= 5)))))) || ((TEAM_POINTS > 'gold􏿿0' && TEAM_POINTS < 'gold􏿿2') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 0 && POINTS < 2)))))))";
         runTestQuery(query, expected);
     }
     
@@ -157,7 +179,7 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test11() throws Exception {
         String query = "WINNER == 'blue' && TEAM == 'gold' && NAME != 'gold-1' && (POINTS > 4 && POINTS <= 5 || POINTS > 0 && POINTS < 2)";
-        String expected = "(WINNER == 'blue' && NAME != 'gold-1' && (((TEAM_POINTS > 'gold􏿿4' && TEAM_POINTS <= 'gold􏿿5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 4 && POINTS <= 5)))))) || ((TEAM_POINTS > 'gold􏿿0' && TEAM_POINTS < 'gold􏿿2') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 0 && POINTS < 2))))))))";
+        String expected = "WINNER == 'blue' && NAME != 'gold-1' && (((TEAM_POINTS > 'gold􏿿4' && TEAM_POINTS <= 'gold􏿿5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 4 && POINTS <= 5)))))) || ((TEAM_POINTS > 'gold􏿿0' && TEAM_POINTS < 'gold􏿿2') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 0 && POINTS < 2)))))))";
         runTestQuery(query, expected);
     }
     
@@ -249,7 +271,7 @@ public class ExpandCompositeTermsTest {
         conf.setFixedLengthFields(fieldSet);
         
         String query = "GEO >= '0100' && WKT_BYTE_LENGTH <= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'";
-        String expected = "(GEO >= '0100' && WKT_BYTE_LENGTH <= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "')";
+        String expected = "WKT_BYTE_LENGTH <= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "' && GEO >= '0100'";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -272,7 +294,7 @@ public class ExpandCompositeTermsTest {
         conf.setFixedLengthFields(fieldSet);
         
         String query = "GEO <= '0103' && WKT_BYTE_LENGTH >= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'";
-        String expected = "(GEO < '0104' && WKT_BYTE_LENGTH >= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "')";
+        String expected = "WKT_BYTE_LENGTH >= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "' && GEO < '0104'";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -296,7 +318,7 @@ public class ExpandCompositeTermsTest {
         
         String query = "((((GEO >= '0202' && GEO <= '020d'))) || (((GEO >= '030a' && GEO <= '0335'))) || (((GEO >= '0428' && GEO <= '0483'))) || (((GEO >= '0500aa' && GEO <= '050355'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))) && ((WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '"
                         + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'))";
-        String expected = "(((GEO >= '0202􏿿+AE0' && GEO <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))) || ((GEO >= '030a􏿿+AE0' && GEO <= '0335􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))) || ((GEO >= '0428􏿿+AE0' && GEO <= '0483􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))) || ((GEO >= '0500aa􏿿+AE0' && GEO <= '050355􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))) || ((GEO >= '1f0aaaaaaaaaaaaaaa􏿿+AE0' && GEO <= '1f36c71c71c71c71c7􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))";
+        String expected = "(((((GEO >= '0202􏿿+AE0' && GEO <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))) || ((((GEO >= '030a􏿿+AE0' && GEO <= '0335􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))) || ((((GEO >= '0428􏿿+AE0' && GEO <= '0483􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))) || ((((GEO >= '0500aa􏿿+AE0' && GEO <= '050355􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))) || ((((GEO >= '1f0aaaaaaaaaaaaaaa􏿿+AE0' && GEO <= '1f36c71c71c71c71c7􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -460,12 +482,12 @@ public class ExpandCompositeTermsTest {
         
         // EQ, convert to range [keep base - use GE, increment base - use LT]
         query = "GEO == '0202'";
-        expected = "(GEO >= '0202' && GEO < '0203')";
+        expected = "GEO >= '0202' && GEO < '0203'";
         runTestQuery(query, expected, indexedFields, conf);
         
         // Unbounded range w/ composite term
         query = "GEO >= '0202' && WKT < '" + upperBound + "'";
-        expected = "(GEO >= '0202' && WKT < '" + upperBound + "')";
+        expected = "WKT < '" + upperBound + "' && GEO >= '0202'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO >= '0202' && WKT > '" + upperBound + "'";
@@ -477,7 +499,7 @@ public class ExpandCompositeTermsTest {
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO <= '0202' && WKT > '" + upperBound + "'";
-        expected = "(GEO < '0203' && WKT > '" + upperBound + "')";
+        expected = "WKT > '" + upperBound + "' && GEO < '0203'";
         runTestQuery(query, expected, indexedFields, conf);
         
         // Unbounded range w/out composite term
@@ -663,12 +685,12 @@ public class ExpandCompositeTermsTest {
         
         // EQ, convert to range [keep base - use GE, increment base - use LT]
         query = "GEO == '0202'";
-        expected = "(GEO >= '0202' && GEO < '0203')";
+        expected = "GEO >= '0202' && GEO < '0203'";
         runTestQuery(query, expected, indexedFields, conf);
         
         // Unbounded range w/ composite term
         query = "GEO >= '0202' && WKT < '" + upperBound + "'";
-        expected = "(GEO >= '0202' && WKT < '" + upperBound + "')";
+        expected = "WKT < '" + upperBound + "' && GEO >= '0202'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO >= '0202' && WKT > '" + upperBound + "'";
@@ -680,7 +702,7 @@ public class ExpandCompositeTermsTest {
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO <= '0202' && WKT > '" + upperBound + "'";
-        expected = "(GEO < '0203' && WKT > '" + upperBound + "')";
+        expected = "WKT > '" + upperBound + "' && GEO < '0203'";
         runTestQuery(query, expected, indexedFields, conf);
         
         // Unbounded range w/out composite term
@@ -939,7 +961,7 @@ public class ExpandCompositeTermsTest {
         conf.setFixedLengthFields(fieldSet);
         
         String query = "((((GEO >= '0202' && GEO <= '020d'))) || (((GEO >= '030a' && GEO <= '0335'))) || (((GEO >= '0428' && GEO <= '0483'))) || (((GEO >= '0500aa' && GEO <= '050355'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))) && ((WKT >= '+AE0' && WKT < '+bE4'))";
-        String expected = "(((GEO >= '0202􏿿+AE0' && GEO < '020d􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((GEO >= '030a􏿿+AE0' && GEO < '0335􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((GEO >= '0428􏿿+AE0' && GEO < '0483􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((GEO >= '0500aa􏿿+AE0' && GEO < '050355􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((GEO >= '1f0aaaaaaaaaaaaaaa􏿿+AE0' && GEO < '1f36c71c71c71c71c7􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT >= '+AE0' && WKT < '+bE4')))))))";
+        String expected = "(((((GEO >= '0202􏿿+AE0' && GEO < '020d􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO >= '030a􏿿+AE0' && GEO < '0335􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO >= '0428􏿿+AE0' && GEO < '0483􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO >= '0500aa􏿿+AE0' && GEO < '050355􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO >= '1f0aaaaaaaaaaaaaaa􏿿+AE0' && GEO < '1f36c71c71c71c71c7􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT >= '+AE0' && WKT < '+bE4')))))))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -958,7 +980,7 @@ public class ExpandCompositeTermsTest {
         indexedFields.add("GEO");
         
         String query = "((((GEO >= '0202' && GEO <= '020d'))) || (((GEO >= '030a' && GEO <= '0335'))) || (((GEO >= '0428' && GEO <= '0483'))) || (((GEO >= '0500aa' && GEO <= '050355'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))) && ((WKT >= '+AE0' && WKT < '+bE4'))";
-        String expected = "((WKT >= '+AE0' && WKT < '+bE4') && ((GEO >= '0202' && GEO < '020e') || (GEO >= '030a' && GEO < '0336') || (GEO >= '0428' && GEO < '0484') || (GEO >= '0500aa' && GEO < '050356') || (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO < '1f36c71c71c71c71c8')))";
+        String expected = "((((GEO >= '0202' && GEO <= '020d'))) || (((GEO >= '030a' && GEO <= '0335'))) || (((GEO >= '0428' && GEO <= '0483'))) || (((GEO >= '0500aa' && GEO <= '050355'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))) && ((WKT >= '+AE0' && WKT < '+bE4'))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -981,7 +1003,7 @@ public class ExpandCompositeTermsTest {
         conf.setFixedLengthFields(fieldSet);
         
         String query = "((((GEO >= '0202' && GEO <= '020d'))) || (((GEO >= '030a' && GEO <= '0335'))) || (((GEO >= '0428' && GEO <= '0483'))) || (((GEO >= '0500aa' && GEO <= '050355'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))) && ((WKT >= '+AE0' && WKT < '+bE4'))";
-        String expected = "(((GEO_WKT >= '0202􏿿+AE0' && GEO_WKT < '020d􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((GEO_WKT >= '030a􏿿+AE0' && GEO_WKT < '0335􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((GEO_WKT >= '0428􏿿+AE0' && GEO_WKT < '0483􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((GEO_WKT >= '0500aa􏿿+AE0' && GEO_WKT < '050355􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((GEO_WKT >= '1f0aaaaaaaaaaaaaaa􏿿+AE0' && GEO_WKT < '1f36c71c71c71c71c7􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT >= '+AE0' && WKT < '+bE4')))))))";
+        String expected = "(((((GEO_WKT >= '0202􏿿+AE0' && GEO_WKT < '020d􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO_WKT >= '030a􏿿+AE0' && GEO_WKT < '0335􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO_WKT >= '0428􏿿+AE0' && GEO_WKT < '0483􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO_WKT >= '0500aa􏿿+AE0' && GEO_WKT < '050355􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO_WKT >= '1f0aaaaaaaaaaaaaaa􏿿+AE0' && GEO_WKT < '1f36c71c71c71c71c7􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT >= '+AE0' && WKT < '+bE4')))))))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1054,9 +1076,9 @@ public class ExpandCompositeTermsTest {
         String query = "(GEO == '0202' || ((GEO >= '030a' && GEO <= '0335'))) && WKT == '" + normNum + "'";
         String expected = "(((GEO >= '0202' && GEO <= '0202􏿿" + normNum
                         + "') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && WKT == '" + normNum
-                        + "'))))) || ((GEO >= '030a' && GEO <= '0335􏿿" + normNum
+                        + "'))))) || (((GEO >= '030a' && GEO <= '0335􏿿" + normNum
                         + "') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && WKT == '" + normNum
-                        + "'))))))";
+                        + "')))))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1078,7 +1100,7 @@ public class ExpandCompositeTermsTest {
         String normNum = Normalizer.NUMBER_NORMALIZER.normalize("55");
         
         String query = "(GEO == '0202' || ((GEO >= '030a' && GEO <= '0335'))) && WKT == '" + normNum + "'";
-        String expected = "(GEO == '0202􏿿+bE5.5' || ((GEO >= '030a􏿿+bE5.5' && GEO <= '0335􏿿+bE5.5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && WKT == '+bE5.5'))))))";
+        String expected = "(GEO == '0202􏿿+bE5.5' || (((GEO >= '030a􏿿+bE5.5' && GEO <= '0335􏿿+bE5.5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && WKT == '+bE5.5')))))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1134,7 +1156,20 @@ public class ExpandCompositeTermsTest {
         runTestQuery(query, expected, indexedFields, conf);
     }
     
+    // this is testing that distribution of anded nodes into an or node is working
+    @Test
+    public void test30() throws Exception {
+        String query = "MAKE == 'london' && ((CODE == 'ita' || CODE == 'iTa') || COLOR == 'missouri' || NUM == '+cE1')";
+        String expected = "((MAKE == 'london' && (CODE == 'ita' || CODE == 'iTa' || NUM == '+cE1')) || MAKE_COLOR == 'london􏿿missouri')";
+        
+        runTestQuery(query, expected);
+    }
+    
     void runTestQuery(String query, String expected) throws ParseException {
+        runTestQuery(query, expected, INDEX_FIELDS, conf);
+    }
+    
+    void runTestQuery(String query, String expected, ShardQueryConfiguration conf) throws ParseException {
         runTestQuery(query, expected, INDEX_FIELDS, conf);
     }
     
