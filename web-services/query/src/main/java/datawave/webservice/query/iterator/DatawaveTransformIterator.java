@@ -1,6 +1,6 @@
 package datawave.webservice.query.iterator;
 
-import datawave.webservice.query.logic.FlushableQueryLogicTransformer;
+import datawave.webservice.query.logic.Flushable;
 import java.util.Iterator;
 
 import org.apache.commons.collections4.Transformer;
@@ -8,10 +8,10 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import datawave.webservice.query.exception.EmptyObjectException;
 import org.apache.log4j.Logger;
 
-public class DatawaveTransformIterator extends TransformIterator {
+public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
     
     private Logger log = Logger.getLogger(DatawaveTransformIterator.class);
-    private Object next = null;
+    private O next = null;
     
     public DatawaveTransformIterator() {
         super();
@@ -35,9 +35,9 @@ public class DatawaveTransformIterator extends TransformIterator {
     }
     
     @Override
-    public Object next() {
+    public O next() {
         
-        Object o = null;
+        O o = null;
         if (next == null) {
             o = getNext();
         } else {
@@ -47,10 +47,10 @@ public class DatawaveTransformIterator extends TransformIterator {
         return o;
     }
     
-    private Object getNext() {
+    private O getNext() {
         
         boolean done = false;
-        Object o = null;
+        O o = null;
         while (super.hasNext() && !done) {
             try {
                 o = super.next();
@@ -60,11 +60,11 @@ public class DatawaveTransformIterator extends TransformIterator {
             }
         }
         // see if there are any results cached by the transformer
-        if (o == null && getTransformer() instanceof FlushableQueryLogicTransformer) {
+        if (o == null && getTransformer() instanceof Flushable) {
             done = false;
             while (!done) {
                 try {
-                    o = ((FlushableQueryLogicTransformer) getTransformer()).flush();
+                    o = ((Flushable<O>) getTransformer()).flush();
                     done = true;
                 } catch (EmptyObjectException e) {
                     // not yet done, so continue flushing

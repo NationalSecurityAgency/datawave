@@ -20,8 +20,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
-import com.beust.jcommander.internal.Sets;
-
 public class GroupingDocumentTransformer extends DocumentTransformer {
     
     private static final Logger log = Logger.getLogger(GroupingDocumentTransformer.class);
@@ -155,7 +153,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
     
     private void getListKeyCounts(EventBase e, Multiset<Collection<FieldBase<?>>> multiset) {
         
-        Set<String> expandedGroupFieldsList = Sets.newLinkedHashSet();
+        Set<String> expandedGroupFieldsList = new LinkedHashSet<>();
         List<FieldBase<?>> fields = e.getFields();
         Multimap<String,String> fieldToFieldWithContextMap = this.getFieldToFieldWithGroupingContextMap(fields, expandedGroupFieldsList);
         if (log.isTraceEnabled())

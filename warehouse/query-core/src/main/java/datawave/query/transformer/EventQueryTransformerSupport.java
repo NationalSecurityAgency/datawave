@@ -1,15 +1,10 @@
 package datawave.query.transformer;
 
 import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
 import com.google.common.collect.Lists;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
-import datawave.query.Constants;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.EventFields;
-import datawave.query.parser.EventFields.FieldValue;
-import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.cachedresults.CacheableLogic;
@@ -29,13 +24,9 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;

@@ -2,7 +2,7 @@ package datawave.webservice.query.logic;
 
 import datawave.webservice.query.exception.EmptyObjectException;
 
-public interface FlushableQueryLogicTransformer<I,O> extends QueryLogicTransformer<I,O> {
+public interface Flushable<T> {
     
     /**
      * The flush method is used to return an results that were cached from the calls to transform(Object). If this method will be called multiple times until a
@@ -12,6 +12,6 @@ public interface FlushableQueryLogicTransformer<I,O> extends QueryLogicTransform
      * @throws EmptyObjectException
      *             if the current cached result is empty, and flush should be called again.
      */
-    Object flush() throws EmptyObjectException;
+    T flush() throws EmptyObjectException;
     
 }

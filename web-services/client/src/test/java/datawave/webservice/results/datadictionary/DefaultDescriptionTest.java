@@ -1,6 +1,5 @@
 package datawave.webservice.results.datadictionary;
 
-import com.beust.jcommander.internal.Lists;
 import org.junit.Test;
 
 import javax.xml.bind.JAXBContext;
@@ -11,7 +10,7 @@ import javax.xml.bind.annotation.XmlSchema;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -42,7 +41,7 @@ public class DefaultDescriptionTest {
         dicField.setFieldName("myField");
         dicField.setDescriptions(descs);
         
-        List<DefaultDictionaryField> dicFields = Lists.newArrayList();
+        List<DefaultDictionaryField> dicFields = new ArrayList<DefaultDictionaryField>();
         dicFields.add(dicField);
         
         DefaultFields dicFieldsList = new DefaultFields();

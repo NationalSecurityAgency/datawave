@@ -1,22 +1,13 @@
 package datawave.query.transformer;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import com.google.common.base.Preconditions;
 import datawave.data.type.StringType;
 import datawave.marking.MarkingFunctions;
-import datawave.query.attributes.Cardinality;
-import datawave.query.attributes.Content;
-import datawave.query.attributes.FieldValueCardinality;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Cardinality;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.FieldValueCardinality;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogic;
@@ -25,12 +16,19 @@ import datawave.webservice.query.result.event.FieldCardinalityBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.FacetQueryResponseBase;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Value>,FacetsBase> {
     
