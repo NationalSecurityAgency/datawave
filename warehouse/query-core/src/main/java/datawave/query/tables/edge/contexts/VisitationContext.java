@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import datawave.edge.model.EdgeModelAware;
+import datawave.edge.util.EdgeKeyUtil;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.Constants;
 
@@ -156,20 +157,10 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      */
     private Range buildRange(IdentityContext source) {
         String rowID = getLeadingLiteral(source, false);
-        Key startKey, endKey;
-        if (includeStats || source.getOperation().equals(EQUALS_REGEX)) {
-            startKey = new Key(new Text(rowID));
-        } else {
-            startKey = new Key(new Text(rowID + "\0"));
-        }
         
-        if (source.getOperation().equals(EQUALS_REGEX)) {
-            endKey = new Key(rowID + Constants.MAX_UNICODE_STRING);
-        } else {
-            endKey = new Key(rowID + "\1");
-        }
+        boolean isRegexRange = source.getOperation().equals(EQUALS_REGEX);
+        return EdgeKeyUtil.createEscapedRange(rowID, isRegexRange, includeStats, true);
         
-        return new Range(startKey, endKey);
     }
     
     /**
@@ -181,23 +172,13 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
         String rowSource = getLeadingLiteral(source, false);
         String rowSink = getLeadingLiteral(sink, true);
         Set<Range> rangeSet = new HashSet<>(2);
-        Key startKey, endKey;
         
         if (includeStats) {
-            startKey = new Key(new Text(rowSource));
-            endKey = new Key(new Text(rowSource + "\0"));
-            rangeSet.add(new Range(startKey, endKey));
+            rangeSet.add(EdgeKeyUtil.createEscapedRange(rowSource, false, includeStats, false));
         }
         
-        startKey = new Key(new Text(rowSource + "\0" + rowSink));
-        
-        if (sink.getOperation().equals(EQUALS_REGEX)) {
-            endKey = new Key(rowSource + "\0" + rowSink + Constants.MAX_UNICODE_STRING);
-        } else {
-            endKey = new Key(rowSource + "\0" + rowSink + "\1");
-        }
-        
-        rangeSet.add((new Range(startKey, endKey)));
+        boolean isSinkRegex = sink.getOperation().equals(EQUALS_REGEX);
+        rangeSet.add(EdgeKeyUtil.createEscapedRange(rowSource, rowSink, isSinkRegex));
         
         return rangeSet;
     }
