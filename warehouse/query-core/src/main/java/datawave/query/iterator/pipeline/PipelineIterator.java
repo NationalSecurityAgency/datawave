@@ -132,20 +132,10 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
                 }
             }
             return next;
-        } catch (InterruptedException | IterationInterruptedException e) {
-            // cancel out existing executions, and exit gracefully
+        } catch (Exception e) {
+            // cancel out existing executions
             cancel();
-            return null;
-        } catch (ExecutionException e) {
-            // cancel out existing executions and throw the exception up
-            // unless interrupted
-            cancel();
-            // if a interrupted exception, then exit gracefully
-            Throwable t = e.getCause();
-            if (t instanceof InterruptedException || t instanceof IterationInterruptedException) {
-                return null;
-            }
-            // otherwise pass the exception up
+            log.error("Failed to retrieve evaluation pipeline result", e);
             throw new RuntimeException("Failed to retrieve evaluation pipeline result", e);
         }
     }
@@ -213,26 +203,47 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
         // get the next evaluated result
         Tuple2<Future<?>,Pipeline> nextFuture = evaluationQueue.poll();
         
-        // wait for it to complete if not already done
-        if (!nextFuture.first().isDone()) {
-            long start = System.currentTimeMillis();
-            
-            nextFuture.first().get(waitMs, TimeUnit.MILLISECONDS);
-            
-            if (log.isDebugEnabled()) {
-                long wait = System.currentTimeMillis() - start;
-                log.debug("Waited " + wait + "ms for the top evaluation in a queue of " + evaluationQueue.size() + " pipelines");
+        Entry<Key,Value> result = null;
+        try {
+            if (log.isTraceEnabled()) {
+                Key docKey = nextFuture.second().getSource().getKey();
+                log.trace("Polling for result from " + docKey);
             }
+            
+            // wait for it to complete if not already done
+            if (!nextFuture.first().isDone()) {
+                long start = System.currentTimeMillis();
+                
+                nextFuture.first().get(waitMs, TimeUnit.MILLISECONDS);
+                
+                if (log.isDebugEnabled()) {
+                    long wait = System.currentTimeMillis() - start;
+                    log.debug("Waited " + wait + "ms for the top evaluation in a queue of " + evaluationQueue.size() + " pipelines");
+                }
+            }
+            
+            // call get to ensure that we throw any exception that occurred
+            nextFuture.first().get();
+            
+            // pull the result
+            result = nextFuture.second().getResult();
+            
+            if (log.isTraceEnabled()) {
+                Key docKey = nextFuture.second().getSource().getKey();
+                log.trace("Polling for result from " + docKey + " was " + (result == null ? "empty" : "successful"));
+            }
+            
+            // record the last evaluated key
+            lastKeyEvaluated = nextFuture.second().getSource().getKey();
+        } catch (Exception e) {
+            Key docKey = nextFuture.second().getSource().getKey();
+            log.error("Failed polling for result from " + docKey + "; cancelling remaining evaluations and flushing results", e);
+            cancel();
+            throw e;
+        } finally {
+            // return the pipeline for reuse
+            pipelines.checkIn(nextFuture.second());
         }
-        
-        // pull the result
-        Entry<Key,Value> result = nextFuture.second().getResult();
-        
-        // record the last evaluated key
-        lastKeyEvaluated = nextFuture.second().getSource().getKey();
-        
-        // return the pipeline for reuse
-        pipelines.checkIn(nextFuture.second());
         
         // start a new evaluation if we can
         if (docSource.hasNext()) {
@@ -265,6 +276,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
             nextFuture.first().cancel(true);
             pipelines.checkIn(nextFuture.second());
         }
+        results.clear();
     }
     
     public void startPipeline() {
@@ -293,6 +305,9 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
     }
     
     private void evaluate(Key key, Document document, NestedQuery<Key> nestedQuery) {
+        if (log.isTraceEnabled()) {
+            log.trace("Adding evaluation of " + key + " to pipeline");
+        }
         Pipeline pipeline = pipelines.checkOut(key, document, nestedQuery);
         
         evaluationQueue.add(new Tuple2<Future<?>,Pipeline>(IteratorThreadPoolManager.executeEvaluation(pipeline, pipeline.toString()), pipeline));

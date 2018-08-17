@@ -45,6 +45,7 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.trace.instrument.Span;
 import org.apache.accumulo.trace.instrument.Trace;
+import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.builder.CompareToBuilder;
@@ -366,14 +367,40 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
      * 
      * @param e
      */
-    private void handleException(Exception e) {
-        // if this is an IterationInterruptedException, then we can ignore and return silently
+    private void handleException(Exception e) throws IOException {
         Throwable reason = e;
+        
+        // We need to pass IOException, IteratorInterruptedException, and TabletClosedExceptions up to the Tablet as they are
+        // handled specially to ensure that the client will retry the scan elsewhere
+        IOException ioe = null;
+        RuntimeException re = null;
+        if (reason instanceof IOException)
+            ioe = (IOException) reason;
+        if (reason instanceof IterationInterruptedException)
+            re = (RuntimeException) reason;
+        if (reason instanceof TabletClosedException)
+            re = (RuntimeException) reason;
+        
         int depth = 1;
-        while (reason.getCause() != null && reason.getCause() != reason && depth < 100) {
+        while (re == null && ioe == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
             reason = reason.getCause();
+            if (reason instanceof IOException)
+                ioe = (IOException) reason;
+            if (reason instanceof IterationInterruptedException)
+                re = (RuntimeException) reason;
+            if (reason instanceof TabletClosedException)
+                re = (RuntimeException) reason;
             depth++;
         }
+        
+        if (re != null) {
+            log.error("Query interrupted " + queryId, re);
+            throw re;
+        } else if (ioe != null) {
+            log.error("Query io exception " + queryId, ioe);
+            throw ioe;
+        }
+        
         if (!(reason instanceof IterationInterruptedException)) {
             log.error("Failure for query " + queryId + " : " + reason.getMessage());
             throw new RuntimeException("Failure for query " + queryId + " " + query, e);

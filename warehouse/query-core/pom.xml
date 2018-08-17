@@ -191,6 +191,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-tserver</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>datawave</groupId>
             <artifactId>datawave-ingest-configuration</artifactId>
             <version>${project.version}</version>
@@ -205,6 +210,16 @@
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
