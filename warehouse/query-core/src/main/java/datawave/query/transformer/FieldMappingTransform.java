@@ -4,7 +4,6 @@ import datawave.query.attributes.Document;
 import org.apache.accumulo.core.data.Key;
 
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -13,7 +12,7 @@ import java.util.Map;
  */
 public class FieldMappingTransform extends DocumentTransform.DefaultDocumentTransform {
     private final Boolean reducedResponse;
-    private Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
+    private Map<String,List<String>> primaryToSecondaryFieldMap;
     
     public FieldMappingTransform(Map<String,List<String>> primaryToSecondaryFieldMap, Boolean reducedResponse) {
         this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;

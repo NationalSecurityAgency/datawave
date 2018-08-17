@@ -252,11 +252,10 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     private Collection<? extends RuleConfig> loadParentRuleConfigs(Node parent) throws IOException {
         Collection<RuleConfig> rules = new ArrayList<>();
         String parentPathStr = parent.getTextContent();
-        URL resource = this.getClass().getResource(parentPathStr);
-        if (resource == null) {
-            throw new IllegalArgumentException("Invalid parent config path specified, resource " + parentPathStr + " not found!");
+        if (null == parentPathStr || parentPathStr.isEmpty()) {
+            throw new IllegalArgumentException("Invalid parent config path, none specified!");
         }
-        Path parentPath = new Path(resource.toString());
+        Path parentPath = new Path(parentPathStr);
         if (!fs.exists(parentPath)) {
             throw new IllegalArgumentException("Invalid parent config path specified, " + parentPathStr + " does not exist!");
         }

@@ -3,4 +3,4 @@ TEST_DESCRIPTION="Gets DataWave's deployed query logics (configured by QueryLogi
 TEST_URL_OPTS="-X GET ${URI_ROOT}/Query/listQueryLogic"
 EXPECTED_RESPONSE_TYPE="application/xml"
 EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=true
+EXPECTED_RESPONSE_BODY_ASSERTION=false

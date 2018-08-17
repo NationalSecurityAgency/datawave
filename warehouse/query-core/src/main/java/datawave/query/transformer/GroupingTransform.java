@@ -1,6 +1,5 @@
 package datawave.query.transformer;
 
-import com.beust.jcommander.internal.Sets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.HashMultiset;
@@ -25,6 +24,7 @@ import org.apache.log4j.Logger;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -158,13 +158,13 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     private void getListKeyCounts(Entry<Key,Document> e) {
         
-        Set<String> expandedGroupFieldsList = Sets.newLinkedHashSet();
+        Set<String> expandedGroupFieldsList = new LinkedHashSet<>();
         Multimap<String,String> fieldToFieldWithContextMap = this.getFieldToFieldWithGroupingContextMap(e.getValue(), expandedGroupFieldsList);
         if (log.isTraceEnabled())
             log.trace("got a new fieldToFieldWithContextMap:" + fieldToFieldWithContextMap);
         int longest = this.longestValueList(fieldToFieldWithContextMap);
         for (int i = 0; i < longest; i++) {
-            Collection<Attribute<?>> fieldCollection = Sets.newHashSet();
+            Collection<Attribute<?>> fieldCollection = new HashSet();
             for (String fieldListItem : expandedGroupFieldsList) {
                 if (log.isTraceEnabled())
                     log.trace("fieldListItem:" + fieldListItem);

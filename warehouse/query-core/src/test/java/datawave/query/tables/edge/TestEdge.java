@@ -3,9 +3,11 @@ package datawave.query.tables.edge;
 import java.util.ArrayList;
 import java.util.List;
 
+import datawave.data.normalizer.AbstractNormalizer;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
 
@@ -49,12 +51,19 @@ public class TestEdge {
     
     public boolean statsEdge = false;
     
+    protected AbstractNormalizer<String> normalizer;
+    
     public TestEdge() {
         
     }
     
     public static TestEdge createEdge(String source, String sink, String dateStr, String dataType, String fromRel, String toRel, String fromSource,
                     String toSource, String visibility, long timestamp) {
+        return createEdge(source, sink, dateStr, dataType, fromRel, toRel, fromSource, toSource, visibility, timestamp, null);
+    }
+    
+    public static TestEdge createEdge(String source, String sink, String dateStr, String dataType, String fromRel, String toRel, String fromSource,
+                    String toSource, String visibility, long timestamp, AbstractNormalizer<String> normalizer) {
         
         TestEdge retVal = new TestEdge();
         retVal.source = source;
@@ -67,12 +76,19 @@ public class TestEdge {
         retVal.dateStr = dateStr;
         retVal.visibility = visibility;
         retVal.timestamp = timestamp;
+        retVal.normalizer = normalizer;
         return retVal;
     }
     
     // Construct a stats edge
     public static TestEdge createEdge(String source, String dateStr, String statsType, String dataType, String toRel, String toSource, String visibility,
                     long timestamp) {
+        return createEdge(source, dateStr, statsType, dataType, toRel, toSource, visibility, timestamp, null);
+    }
+    
+    // Construct a stats edge
+    public static TestEdge createEdge(String source, String dateStr, String statsType, String dataType, String toRel, String toSource, String visibility,
+                    long timestamp, AbstractNormalizer<String> normalizer) {
         
         TestEdge retVal = new TestEdge();
         retVal.source = source;
@@ -84,6 +100,7 @@ public class TestEdge {
         retVal.visibility = visibility;
         retVal.timestamp = timestamp;
         retVal.statsEdge = true;
+        retVal.normalizer = normalizer;
         return retVal;
     }
     
@@ -138,22 +155,42 @@ public class TestEdge {
         return new Text(colqsb.toString());
     }
     
+    protected String formatRow(String source) {
+        String tempSource = source;
+        if (normalizer != null) {
+            tempSource = normalizer.normalize(source);
+        }
+        tempSource = StringEscapeUtils.escapeJava(tempSource);
+        return tempSource;
+    }
+    
+    protected String formatRow(String source, String sink) {
+        String tempSource = source, tempSink = sink;
+        if (normalizer != null) {
+            tempSource = normalizer.normalize(tempSource);
+            tempSink = normalizer.normalize(tempSink);
+        }
+        tempSource = StringEscapeUtils.escapeJava(tempSource);
+        tempSink = StringEscapeUtils.escapeJava(tempSink);
+        return tempSource + "\0" + tempSink;
+    }
+    
     public List<Mutation> getMutations(boolean protobufEdgeFormat) {
         ArrayList<Mutation> retVal = new ArrayList<Mutation>();
         
         if (statsEdge) {
-            Mutation mut = new Mutation(getSource());
+            Mutation mut = new Mutation(formatRow(getSource()));
             mut.put(getStatsColumnFamily(protobufEdgeFormat), getStatsColumnQualifier(protobufEdgeFormat), new ColumnVisibility(getVisibility()),
                             getTimestamp(), getValue());
             retVal.add(mut);
             
         } else {
-            Mutation mut = new Mutation(getSource() + "\0" + getSink());
+            Mutation mut = new Mutation(formatRow(getSource(), getSink()));
             mut.put(getColumnFamily(false, protobufEdgeFormat), getColumnQualifier(false, protobufEdgeFormat), new ColumnVisibility(getVisibility()),
                             getTimestamp(), getValue());
             retVal.add(mut);
             if (isBidirectional()) {
-                Mutation mut2 = new Mutation(getSink() + "\0" + getSource());
+                Mutation mut2 = new Mutation(formatRow(getSink(), getSource()));
                 mut2.put(getColumnFamily(true, protobufEdgeFormat), getColumnQualifier(true, protobufEdgeFormat), new ColumnVisibility(getVisibility()),
                                 getTimestamp(), getValue());
                 retVal.add(mut2);

@@ -1,61 +1,28 @@
 package datawave.query.transformer;
 
-import datawave.webservice.query.logic.FlushableQueryLogicTransformer;
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
+import com.google.common.base.Preconditions;
 import datawave.marking.MarkingFunctions;
-import datawave.query.DocumentSerialization;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.TimingMetadata;
-import datawave.query.function.LogTiming;
-import datawave.query.function.deserializer.DocumentDeserializer;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.iterator.profile.QuerySpan;
-import datawave.query.cardinality.CardinalityConfiguration;
-import datawave.query.cardinality.CardinalityRecord;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.util.StringUtils;
-import datawave.util.time.DateHelper;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.Flushable;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
-import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.event.Metadata;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.EventQueryResponseBase;
-
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Transforms a document into a web service Event Object.
@@ -65,7 +32,7 @@ import com.google.common.collect.Sets;
  *
  */
 public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Value>,EventBase> implements WritesQueryMetrics, WritesResultCardinalities,
-                FlushableQueryLogicTransformer<Entry<Key,Value>,EventBase> {
+                Flushable<EventBase> {
     
     private static final Logger log = Logger.getLogger(DocumentTransformerSupport.class);
     
@@ -92,7 +59,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
     }
     
     @Override
-    public Object flush() throws EmptyObjectException {
+    public EventBase flush() throws EmptyObjectException {
         Entry<Key,Document> documentEntry = null;
         boolean flushedObjectFound = false;
         for (DocumentTransform transform : transforms) {

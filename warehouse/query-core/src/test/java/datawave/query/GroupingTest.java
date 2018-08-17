@@ -17,6 +17,8 @@ import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
@@ -179,7 +181,7 @@ public abstract class GroupingTest {
         logic.setupQuery(config);
         
         DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
-        TransformIterator iter = new DatawaveTransformIterator(logic.iterator(), transformer);
+        TransformIterator<Map.Entry<Key,Value>,EventBase> iter = new DatawaveTransformIterator<>(logic.iterator(), transformer);
         List<Object> eventList = new ArrayList<>();
         while (iter.hasNext()) {
             eventList.add(iter.next());
