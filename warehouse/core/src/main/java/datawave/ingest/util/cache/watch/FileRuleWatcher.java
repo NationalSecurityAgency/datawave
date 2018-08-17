@@ -252,8 +252,16 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     private Collection<? extends RuleConfig> loadParentRuleConfigs(Node parent) throws IOException {
         Collection<RuleConfig> rules = new ArrayList<>();
         String parentPathStr = parent.getTextContent();
+        
         if (null == parentPathStr || parentPathStr.isEmpty()) {
             throw new IllegalArgumentException("Invalid parent config path, none specified!");
+        }
+        // look for file on classpath first
+        URL resource = this.getClass().getResource(parentPathStr);
+        // if found, update path to fully qualified version, other wise try to use the provided path
+        // as it may be resolvable outside of the class path i.e. hdfs:///path/to/the/parent.xml
+        if (null != resource) {
+            parentPathStr = resource.toString();
         }
         Path parentPath = new Path(parentPathStr);
         if (!fs.exists(parentPath)) {
