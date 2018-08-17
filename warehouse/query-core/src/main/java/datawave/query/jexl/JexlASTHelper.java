@@ -337,6 +337,20 @@ public class JexlASTHelper {
         return node;
     }
     
+    /**
+     * This is the opposite of dereference in that this will climb back up reference and reference expression nodes that only contain one child.
+     * 
+     * @param node
+     * @return the parent reference/referenceexpression or this node
+     */
+    public static JexlNode rereference(JexlNode node) {
+        while (node.jjtGetParent().jjtGetNumChildren() == 1
+                        && (node.jjtGetParent() instanceof ASTReference || node.jjtGetParent() instanceof ASTReferenceExpression)) {
+            node = node.jjtGetParent();
+        }
+        return node;
+    }
+    
     public static IdentifierOpLiteral getIdentifierOpLiteral(JexlNode node) {
         // ensure we have the pattern we expect here
         if (node.jjtGetNumChildren() == 2) {
@@ -1095,7 +1109,7 @@ public class JexlASTHelper {
                 if (includeDelayed || !isDelayedPredicate(child)) {
                     getRangeOperatorNodes(child, clz, nodes, otherNodes, datatypeFilterSet, helper, nonIndexedRangeNodes, includeDelayed, maxDepth - 1);
                 } else if (otherNodes != null) {
-                    otherNodes.add(child);
+                    otherNodes.add(JexlASTHelper.rereference(child));
                 }
             } else if (RANGE_NODE_CLASSES.contains(child.getClass())) {
                 
@@ -1104,7 +1118,7 @@ public class JexlASTHelper {
                 String fieldName = JexlASTHelper.getIdentifier(child);
                 
                 if (hasMethod && otherNodes != null) {
-                    otherNodes.add(child);
+                    otherNodes.add(JexlASTHelper.rereference(child));
                     
                 } else if (nonIndexedRangeNodes != null) {
                     try {
@@ -1124,7 +1138,7 @@ public class JexlASTHelper {
             } else {
                 // else, one of the other nodes or subtrees
                 if (otherNodes != null) {
-                    otherNodes.add(child);
+                    otherNodes.add(JexlASTHelper.rereference(child));
                 }
             }
         }
