@@ -9,6 +9,7 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.*;
 
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
@@ -101,6 +102,8 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
                         || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
             return super.visit(node, data);
+        } else if (JexlASTHelper.dereference(node) instanceof ASTAssignment) {
+            return super.visit(node, data);
         } else if (node.jjtGetParent() instanceof ASTAndNode) {
             ASTAndNode andNode = JexlNodes.newInstanceOfType(((ASTAndNode) (node.jjtGetParent())));
             andNode.image = node.jjtGetParent().image;
@@ -150,6 +153,8 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
             return super.visit(node, data);
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
                         || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+            return super.visit(node, data);
+        } else if (JexlASTHelper.dereference(node) instanceof ASTAssignment) {
             return super.visit(node, data);
         } else if (node.jjtGetParent() instanceof ASTAndNode) {
             ASTAndNode andNode = JexlNodes.newInstanceOfType(((ASTAndNode) (node.jjtGetParent())));

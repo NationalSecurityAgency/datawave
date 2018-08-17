@@ -536,6 +536,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-tserver</artifactId>
+                <version>${version.accumulo}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
                 <version>${version.avro}</version>
