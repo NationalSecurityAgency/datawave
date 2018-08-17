@@ -553,12 +553,18 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAssignment node, Object data) {
+        boolean requiresParens = !(node.jjtGetParent() instanceof ASTReferenceExpression);
         StringBuilder sb = (StringBuilder) data;
+        if (requiresParens)
+            sb.append('(');
         for (int i = 0; i < node.jjtGetNumChildren(); ++i) {
             node.jjtGetChild(i).jjtAccept(this, sb);
             sb.append(" = ");
         }
         sb.setLength(sb.length() - " = ".length());
+        if (requiresParens) {
+            sb.append(')');
+        }
         return sb;
     }
 }
