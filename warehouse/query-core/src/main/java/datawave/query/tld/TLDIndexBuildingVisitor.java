@@ -135,6 +135,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setDatatypeFilter(datatypeFilter);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
+        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can

@@ -60,7 +60,7 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
         includes.add(itr);
     }
     
-    public void canBuildDocument(boolean forceDocumentBuild) {
+    public void forceDocumentBuild(boolean forceDocumentBuild) {
         this.forceDocumentBuild = forceDocumentBuild;
     }
     
