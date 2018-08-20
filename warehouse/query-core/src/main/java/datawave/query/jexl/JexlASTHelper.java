@@ -309,7 +309,7 @@ public class JexlASTHelper {
      * @return the parent reference/referenceexpression or this node
      */
     public static JexlNode rereference(JexlNode node) {
-        while (node.jjtGetParent().jjtGetNumChildren() == 1
+        while (node.jjtGetParent() != null && node.jjtGetParent().jjtGetNumChildren() == 1
                         && (node.jjtGetParent() instanceof ASTReference || node.jjtGetParent() instanceof ASTReferenceExpression)) {
             node = node.jjtGetParent();
         }
