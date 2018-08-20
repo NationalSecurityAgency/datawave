@@ -435,17 +435,15 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         }
         
         if (re != null) {
-            log.error("Query interrupted " + queryId, re);
+            log.error("Query interrupted " + queryId, e);
             throw re;
         } else if (ioe != null) {
-            log.error("Query io exception " + queryId, ioe);
+            log.error("Query io exception " + queryId, e);
             throw ioe;
         }
         
-        if (!(reason instanceof IterationInterruptedException)) {
-            log.error("Failure for query " + queryId + " : " + reason.getMessage());
-            throw new RuntimeException("Failure for query " + queryId + " " + query, e);
-        }
+        log.error("Failure for query " + queryId + " : " + reason.getMessage());
+        throw new RuntimeException("Failure for query " + queryId + " " + query, e);
     }
     
     /**
