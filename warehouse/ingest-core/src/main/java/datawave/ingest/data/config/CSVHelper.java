@@ -114,6 +114,9 @@ public class CSVHelper extends DataTypeHelperImpl {
     /** Partial configuration key for specifying CSV fields that a record must have. */
     public static final String REQUIRED_FIELDS = ".data.fields.required";
     
+    /** Pattern used to prevent matching escaped multivalue field separators when splitting multivalued fields */
+    public static final String BACKSLASH_ESCAPE_LOOKBEHIND_PATTERN = "(?<!\\\\)";
+    
     public static enum ThresholdAction {
         FAIL, DROP, REPLACE, TRUNCATE
     }
@@ -285,6 +288,15 @@ public class CSVHelper extends DataTypeHelperImpl {
         return multiValueSeparator;
     }
     
+    /**
+     *
+     * @return a pattern based on the multivalueseparator value that will not match that value preceeded by a '\\' (backslash) character. Useful as an argument
+     *         to the String.split(..) function or similar methods
+     */
+    public String getEscapeSafeMultiValueSeparatorPattern() {
+        return BACKSLASH_ESCAPE_LOOKBEHIND_PATTERN + getMultiValueSeparator();
+    }
+    
     public int getMultiFieldSizeThreshold() {
         return multiFieldSizeThreshold;
     }
@@ -331,5 +343,20 @@ public class CSVHelper extends DataTypeHelperImpl {
     
     public Set<String> getFieldWhitelist() {
         return fieldWhitelist;
+    }
+    
+    /**
+     * Remove the escape characters from escaped multi value separators in field value
+     * 
+     * @param fieldValue
+     *            the field value to clean
+     * @return the cleaned field value
+     */
+    public String cleanEscapedMultivalueSeparators(String fieldValue) {
+        // remove escaped multvalue separators.
+        if (fieldValue.contains("\\" + getMultiValueSeparator())) {
+            fieldValue = fieldValue.replaceAll("\\\\" + getMultiValueSeparator(), getMultiValueSeparator());
+        }
+        return fieldValue;
     }
 }

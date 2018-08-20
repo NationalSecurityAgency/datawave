@@ -48,7 +48,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -63,10 +62,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
+import static datawave.query.QueryTestTableHelper.*;
 
 /**
  *
@@ -81,7 +77,7 @@ import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
  */
 public class IfThisTestFailsThenHitTermsAreBroken {
     
-    static enum WhatKindaRange {
+    enum WhatKindaRange {
         SHARD, DOCUMENT;
     }
     
@@ -173,7 +169,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
     }
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Multimap<String,String> expectedHitTerms) throws ParseException, Exception {
+                    Multimap<String,String> expectedHitTerms) throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -318,7 +314,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("type.metadata.in.hdfs", "true");
         extraParameters.put("hit.list", "true");
-        
+        // @formatter:off
         String[] queryStrings = {
                 // sanity check. I got the 2 documents
                 "UUID == 'First' || UUID == 'Second'",
@@ -340,15 +336,22 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                 "NAME == 'Haiqu' && BAR == 'BAR' && filter:occurrence(NAME, '==', 3)",
                 
                 "UUID == 'First' && filter:isNotNull(NAME)"
-        
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
                 // just the expected uuids. I should always get both documents, the real test is in the hit terms
-                Arrays.asList("First", "Second"), Arrays.asList("First", "Second"), Arrays.asList("First", "Second"), Arrays.asList("First"),
-                Arrays.asList("Second"), Arrays.asList("Second"), Arrays.asList("Second"), Arrays.asList("Second"), Arrays.asList("Second"),
-                Arrays.asList("First")};
-        
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("First")
+        };
+        // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters,
                             ArrayListMultimap.create(expectedHitTerms[i]));

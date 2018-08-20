@@ -1,40 +1,18 @@
 package datawave.query;
 
-import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
-
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.WiseGuysIngest;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -51,6 +29,23 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import javax.inject.Inject;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import static datawave.query.QueryTestTableHelper.*;
 
 /**
  * Loads some data in a mock accumulo table and then issues queries against the table using the shard query table.
@@ -75,8 +70,7 @@ public abstract class FunctionalSetTest {
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -98,8 +92,7 @@ public abstract class FunctionalSetTest {
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
@@ -147,11 +140,10 @@ public abstract class FunctionalSetTest {
         deserializer = new KryoDocumentDeserializer();
     }
     
-    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                    throws ParseException, Exception;
+    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
     
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, Connector connector)
-                    throws ParseException, Exception {
+                    throws Exception {
         log.debug("runTestQuery");
         log.trace("Creating QueryImpl");
         QueryImpl settings = new QueryImpl();
@@ -218,15 +210,18 @@ public abstract class FunctionalSetTest {
         if (log.isDebugEnabled()) {
             log.debug("testMethodAsArgumentToMethod");
         }
-        String[] queryStrings = {//
-        // this makes sure that the JexlStringBuildingVisitor will parse the method as a method argument
-        "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')).isEmpty() == false && "
+        // @formatter:off
+        String[] queryStrings = {
+                // this makes sure that the JexlStringBuildingVisitor will parse the method as a method argument
+                "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')).isEmpty() == false && "
                         + "AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')).containsAll(AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE'))) == true"
-        
         };
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {//
-        Arrays.asList("SOPRANO")};
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("SOPRANO")
+        };
+        // @formatter:on
+        
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -241,27 +236,44 @@ public abstract class FunctionalSetTest {
         if (log.isDebugEnabled()) {
             log.debug("testMinMax");
         }
-        String[] queryStrings = {"AG.min() > 10", // model expands to AGE.min() > 10 || ETA.min() > 10
-                "AG.max() == 40", "AG.max() >= 40", "AG.min() < 10",
+        // @formatter:off
+        String[] queryStrings = {
+                "AG.min() > 10", // model expands to AGE.min() > 10 || ETA.min() > 10
+                "AG.max() == 40",
+                "AG.max() >= 40",
+                "AG.min() < 10",
                 
-                "AG.greaterThan(39).size() >= 1", "AG.compareWith(40,'==').size() == 1",
+                "AG.greaterThan(39).size() >= 1",
+                "AG.compareWith(40,'==').size() == 1",
                 
-                "BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'", "DEATH_DATE.max() - BIRTH_DATE.min() > 1000*60*60*24", // one day
+                "BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'",
+                "DEATH_DATE.max() - BIRTH_DATE.min() > 1000*60*60*24", // one day
                 "DEATH_DATE.max() - BIRTH_DATE.min() > 1000*60*60*24*5 + 1000*60*60*24*7", // 5 plus 7 days for the calculator-deprived
                 "DEATH_DATE.min() < '20160301120000'",
                 
                 "AG.size() > 0", // model expands to AGE.size() > 0 || ETA.size() > 0
-                "ETA.size() > 0", "AGE.size() > 0"};
+                "ETA.size() > 0",
+                "AGE.size() > 0"
+        };
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"),
-                Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList(),
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList(),
                 
-                Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
                 
-                Arrays.asList("CAPONE"), Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"), Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("CAPONE"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
                 
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"), Arrays.asList("CORLEONE"), Arrays.asList("SOPRANO", "CAPONE"),};
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE"),
+                Arrays.asList("SOPRANO", "CAPONE"),};
+        // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -275,6 +287,7 @@ public abstract class FunctionalSetTest {
         if (log.isDebugEnabled()) {
             log.debug("testFunctionsAsArguments");
         }
+        // @formatter:off
         String[] queryStrings = {
                 
                 "10 <= AG && AG <= 18", //
@@ -315,7 +328,7 @@ public abstract class FunctionalSetTest {
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] { //
         
-        Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18"
+                Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18",
                 Arrays.asList("SOPRANO", "CORLEONE"), // "18 >= AG && 10 <= AG",
                 Arrays.asList("SOPRANO", "CORLEONE"), // "AGE == 18"
@@ -333,6 +346,7 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("SOPRANO"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
                 Arrays.asList() // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
         };
+        // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -346,20 +360,16 @@ public abstract class FunctionalSetTest {
         if (log.isDebugEnabled()) {
             log.debug("testConcatMethods");
         }
-        String[] queryStrings = {//
-        
-        "UUID == 'SOPRANO' && NAM.min().hashCode() != 0", //
-        
+        // @formatter:off
+        String[] queryStrings = {
+                "UUID == 'SOPRANO' && NAM.min().hashCode() != 0",
         };
-        List<String>[] expectedLists = new List[] { //
-        
-        Arrays.asList("SOPRANO"), //
-        
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("SOPRANO"),
         };
+        // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
-        
     }
-    
 }
