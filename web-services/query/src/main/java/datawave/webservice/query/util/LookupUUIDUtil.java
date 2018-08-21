@@ -537,12 +537,18 @@ public class LookupUUIDUtil {
         
         // Perform the lookup
         boolean allEventMockResponse = (uuidQueryResponse instanceof AllEventMockResponse);
-        if (null != validatedCriteria.getStreamingOutputHeaders()) {
-            contentResponse = (T) this.lookupStreamedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
-                            allEventMockResponse);
-        } else {
-            contentResponse = (T) this.lookupPagedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
-                            allEventMockResponse);
+        try {
+            if (null != validatedCriteria.getStreamingOutputHeaders()) {
+                contentResponse = (T) this.lookupStreamedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
+                                allEventMockResponse);
+            } else {
+                contentResponse = (T) this.lookupPagedContent(queryName, validatedCriteria, batchedContentQueryStrings, endDate, expireDate, userAuths,
+                                allEventMockResponse);
+            }
+        } catch (NoResultsException e) {
+            // close the original lookupId query and re-throw
+            queryExecutor.close(uuidQueryResponse.getQueryId());
+            throw e;
         }
         
         return contentResponse;
