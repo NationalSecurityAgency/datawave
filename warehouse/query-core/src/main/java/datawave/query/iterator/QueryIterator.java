@@ -373,36 +373,47 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         // We need to pass IOException, IteratorInterruptedException, and TabletClosedExceptions up to the Tablet as they are
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
-        RuntimeException re = null;
+        IterationInterruptedException iie = null;
+        TabletClosedException tce = null;
         if (reason instanceof IOException)
             ioe = (IOException) reason;
         if (reason instanceof IterationInterruptedException)
-            re = (RuntimeException) reason;
+            iie = (IterationInterruptedException) reason;
         if (reason instanceof TabletClosedException)
-            re = (RuntimeException) reason;
+            tce = (TabletClosedException) reason;
         
         int depth = 1;
-        while (re == null && ioe == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
+        while (tce == null && iie == null && ioe == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
             reason = reason.getCause();
             if (reason instanceof IOException)
                 ioe = (IOException) reason;
             if (reason instanceof IterationInterruptedException)
-                re = (RuntimeException) reason;
+                iie = (IterationInterruptedException) reason;
             if (reason instanceof TabletClosedException)
-                re = (RuntimeException) reason;
+                tce = (TabletClosedException) reason;
             depth++;
         }
         
-        if (re != null) {
-            log.error("Query interrupted " + queryId, e);
-            throw re;
+        // NOTE: Only logging debug here because the Tablet/LookupTask will log the exception as a WARN if we actually have an problem here
+        if (iie != null) {
+            // exit gracefully if we are yielding as an iie is expected in this case
+            if ((this.yield != null) && this.yield.hasYielded()) {
+                log.debug("Query yielded " + queryId);
+                return;
+            } else {
+                log.debug("Query interrupted " + queryId, e);
+                throw iie;
+            }
+        } else if (tce != null) {
+            log.debug("Query tablet closed " + queryId, e);
+            throw tce;
         } else if (ioe != null) {
-            log.error("Query io exception " + queryId, e);
+            log.debug("Query io exception " + queryId, e);
             throw ioe;
+        } else {
+            log.error("Failure for query " + queryId, e);
+            throw new RuntimeException("Failure for query " + queryId, e);
         }
-        
-        log.error("Failure for query " + queryId + " : " + reason.getMessage());
-        throw new RuntimeException("Failure for query " + queryId + " " + query, e);
     }
     
     /**
