@@ -1,5 +1,8 @@
 package datawave.query.language.functions.jexl;
 
+import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.functions.QueryFunctionsDescriptor;
+import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.language.functions.QueryFunction;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -10,7 +13,7 @@ import java.util.ArrayList;
 public class Options extends JexlQueryFunction {
     
     public Options() {
-        super("options", new ArrayList<String>());
+        super(QueryFunctions.OPTIONS_FUNCTION, new ArrayList<>());
     }
     
     /**
@@ -30,14 +33,18 @@ public class Options extends JexlQueryFunction {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         
-        sb.append("(");
-        int x = 0;
-        while (x < parameterList.size()) {
-            String key = parameterList.get(x++);
-            String value = parameterList.get(x++);
-            sb.append("filter:options(").append(escapeString(key)).append(", ").append(escapeString(value)).append(")");
+        sb.append(QueryFunctions.QUERY_FUNCTION_NAMESPACE).append(':').append(QueryFunctions.OPTIONS_FUNCTION);
+        if (parameterList.isEmpty()) {
+            sb.append("()");
+        } else {
+            char separator = '(';
+            for (String parm : parameterList) {
+                sb.append(separator).append(escapeString(parm));
+                separator = ',';
+            }
+            sb.append(')');
         }
-        sb.append(")");
+        
         return sb.toString();
     }
     

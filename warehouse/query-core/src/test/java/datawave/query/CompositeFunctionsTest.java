@@ -57,7 +57,7 @@ import java.util.UUID;
 import static datawave.query.QueryTestTableHelper.*;
 
 /**
- * Tests the composite functions, the #JEXL lucene function, and the matchesAtLeastCountOf function
+ * Tests the composite functions, the #JEXL lucene function, the matchesAtLeastCountOf function. and others
  * 
  */
 public abstract class CompositeFunctionsTest {
@@ -267,10 +267,10 @@ public abstract class CompositeFunctionsTest {
         // @formatter:off
         String[] queryStrings = {
                 "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAM,'MICHAEL','VINCENT','FREDO','TONY') "+
-                        "AND filter:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')",
+                        "AND f:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')",
 
                 "UUID =~ '^[CS].*' AND filter:matchesAtLeastCountOf(3,NAME,'MICHAEL','VINCENT','FRED','TONY') "+
-                        "OR filter:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')"
+                        "OR f:options('type.metadata.in.hdfs','true','include.grouping.context','true','hit.list','true')"
         };
 
         @SuppressWarnings("unchecked")

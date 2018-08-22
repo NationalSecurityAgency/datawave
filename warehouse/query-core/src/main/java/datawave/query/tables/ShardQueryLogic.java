@@ -866,12 +866,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (config != null) {
             transformer.setProjectFields(config.getProjectFields());
             transformer.setBlacklistedFields(config.getBlacklistedFields());
-        }
-        if (settings.findParameter(QueryParameters.UNIQUE_FIELDS).getParameterValue().length() > 0) {
-            transformer.addTransform(new UniqueTransform(this, config.getUniqueFields()));
-        }
-        if (settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().length() > 0) {
-            transformer.addTransform(new GroupingTransform(this, config.getGroupFields()));
+            if (config.getUniqueFields() != null && !config.getUniqueFields().isEmpty()) {
+                transformer.addTransform(new UniqueTransform(this, config.getUniqueFields()));
+            }
+            if (config.getGroupFields() != null && !config.getGroupFields().isEmpty()) {
+                transformer.addTransform(new GroupingTransform(this, config.getGroupFields()));
+            }
         }
         
         return transformer;

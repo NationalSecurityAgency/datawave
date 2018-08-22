@@ -19,6 +19,9 @@ import java.util.Set;
 public class QueryFunctions {
     
     public static final String QUERY_FUNCTION_NAMESPACE = "f";
+    public static final String OPTIONS_FUNCTION = "options";
+    public static final String UNIQUE_FUNCTION = "unique";
+    public static final String GROUPBY_FUNCTION = "groupby";
     
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
     
