@@ -40,6 +40,10 @@ public class WiseGuysIngest {
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000l;
     
+    public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
+    public static final String sopranoUID = UID.builder().newId("Soprano".toString().getBytes(), (Date) null).toString();
+    public static final String caponeUID = UID.builder().newId("Capone".toString().getBytes(), (Date) null).toString();
+    
     protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
         if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
             return ipAddressType.normalize(colVal.getValue());
@@ -68,10 +72,6 @@ public class WiseGuysIngest {
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         Mutation mutation = null;
-        
-        String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
-        String sopranoUID = UID.builder().newId("Soprano".toString().getBytes(), (Date) null).toString();
-        String caponeUID = UID.builder().newId("Capone".toString().getBytes(), (Date) null).toString();
         
         try {
             // write the shard table :
