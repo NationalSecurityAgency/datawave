@@ -58,6 +58,21 @@ public class EventMapperTest {
     }
     
     @Test
+    public void shouldHandleNullRawData() throws IOException {
+        // some RecordReaders may null out raw data entirely because they pass data to their
+        // handlers in other ways. Verify that the EventMapper can handle this case.
+        record.setRawData(null);
+        
+        driver.setInput(new LongWritable(1), record);
+        driver.run();
+        
+        Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
+        
+        // two fields mutations + LOAD_DATE + ORIG_FILE + RAW_FILE
+        assertEquals(5, written.size());
+    }
+    
+    @Test
     public void shouldNotWriteMetricsByDefault() throws IOException {
         driver.setInput(new LongWritable(1), record);
         driver.run();
