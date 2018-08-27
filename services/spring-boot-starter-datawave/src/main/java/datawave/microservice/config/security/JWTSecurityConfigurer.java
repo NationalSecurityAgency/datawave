@@ -7,10 +7,9 @@ import datawave.microservice.authorization.jwt.JWTAuthenticationProvider;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
-import org.springframework.boot.autoconfigure.security.SpringBootWebSecurityConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -37,20 +36,17 @@ import java.util.List;
  * Configures security for the spring boot application. This config ensures that only listed certificate DNs can call us, and that we look up the proxied
  * users/servers using the supplied authorization service.
  */
-@Order(SecurityProperties.ACCESS_OVERRIDE_ORDER)
+@Order(SecurityProperties.BASIC_AUTH_ORDER - 2)
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true, jsr250Enabled = true)
 @ConditionalOnProperty(name = "security.jwt.enabled", matchIfMissing = true)
 public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
-    private final ManagementServerProperties managementServerProperties;
     private final DatawaveSecurityProperties securityProperties;
     private final JWTAuthenticationProvider jwtAuthenticationProvider;
     private final AuthenticationEntryPoint authenticationEntryPoint;
     
-    public JWTSecurityConfigurer(ManagementServerProperties managementServerProperties, DatawaveSecurityProperties securityProperties,
-                    JWTAuthenticationProvider jwtAuthenticationProvider) {
-        this.managementServerProperties = managementServerProperties;
+    public JWTSecurityConfigurer(DatawaveSecurityProperties securityProperties, JWTAuthenticationProvider jwtAuthenticationProvider) {
         this.securityProperties = securityProperties;
         this.jwtAuthenticationProvider = jwtAuthenticationProvider;
         this.authenticationEntryPoint = new Http403ForbiddenEntryPoint();
@@ -58,19 +54,21 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
     
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        // Allow unauthenticated access to actuator info and health endpoints.
+        http.authorizeRequests().requestMatchers(EndpointRequest.to("info", "health")).permitAll();
+        
+        // Require users to have one of the defined manager roles for accessing any actuator endpoint other
+        // than info or health (see above).
+        if (!securityProperties.getManagerRoles().isEmpty()) {
+            http = http.authorizeRequests().requestMatchers(EndpointRequest.toAnyEndpoint())
+                            .hasAnyAuthority(securityProperties.getManagerRoles().toArray(new String[0])).and();
+        }
+        
         // Apply this configuration to all requests...
         http = http.requestMatchers().anyRequest().and();
-        // Explicitly allow actuator (management) requests. Normally if we're using the actuator interfaces, the security for them is configured separately.
-        // However, if we disable that security, then this one will apply and would require that all requests be authorized which would then defeat the
-        // purpose of setting management.security.enabled to false. Therefore, we explicitly allow those interfaces here knowing that, if management security
-        // is enabled, that configuration will take precedence over this one.
-        http.authorizeRequests().antMatchers(managementServerProperties.getContextPath() + "/**").permitAll();
         
         if (securityProperties.isRequireSsl()) {
             http.requiresChannel().anyRequest().requiresSecure();
-        }
-        if (!securityProperties.isEnableCsrf()) {
-            http.csrf().disable();
         }
         
         AllowedCallersFilter allowedCallersFilter = new AllowedCallersFilter(securityProperties);
@@ -78,6 +76,8 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
         
         // Allow CORS requests
         http.cors();
+        // Disable CSRF protection since we're not using cookies anyway
+        http.csrf().disable();
         // Send the Referrer-Policy header in the response
         http.headers().referrerPolicy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN);
         // Set the Content-Security-Policy header
@@ -92,8 +92,6 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
         http.addFilterBefore(allowedCallersFilter, X509AuthenticationFilter.class);
         // Allow JWT authentication
         http.addFilterAfter(jwtFilter, AllowedCallersFilter.class);
-        
-        SpringBootWebSecurityConfiguration.configureHeaders(http.headers(), securityProperties.getHeaders());
     }
     
     @Override

@@ -1,5 +1,6 @@
 package datawave.microservice.audit.log.config;
 
+import datawave.microservice.audit.common.AuditMessage;
 import datawave.microservice.audit.common.AuditMessageHandler;
 import datawave.microservice.audit.log.LogAuditor;
 import datawave.webservice.common.audit.AuditParameters;
@@ -13,7 +14,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.SubscribableChannel;
 
 import javax.annotation.Resource;
-import java.util.Map;
 
 @Configuration
 @EnableBinding(LogAuditConfig.LogAuditBinding.class)
@@ -28,7 +28,7 @@ public class LogAuditConfig {
         return new AuditMessageHandler(msgHandlerAuditParams, logAuditor) {
             @Override
             @StreamListener(LogAuditBinding.NAME)
-            public void onMessage(Map<String,String> msg) throws Exception {
+            public void onMessage(AuditMessage msg) throws Exception {
                 super.onMessage(msg);
             }
         };

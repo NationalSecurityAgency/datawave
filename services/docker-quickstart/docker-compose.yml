@@ -1,7 +1,7 @@
 version: '2.2'
 services:
   discovery:
-    image: consul:1.0.3
+    image: consul:1.2.2
     hostname: discovery
     environment:
       - 'CONSUL_LOCAL_CONFIG={"datacenter": "demo_dc", "disable_update_check": true}'
@@ -14,7 +14,7 @@ services:
       - demo
 
   messaging:
-    image: rabbitmq:3.7.2-alpine
+    image: rabbitmq:3.7.7-alpine
     volumes:
       - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
     environment:
@@ -37,7 +37,7 @@ services:
     image: datawave/config-service
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,native
+      - --spring.profiles.active=consul,native,open_actuator
       - --spring.cloud.consul.host=discovery
       - --spring.cloud.config.server.native.searchLocations=file:///microservice-config
     environment:

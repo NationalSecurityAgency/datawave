@@ -1,13 +1,19 @@
 server:
-  context-path: /${spring.application.name}
+  servlet.context-path: /${spring.application.name}
   port: 8443
   ssl:
     client-auth: WANT
 
 management:
-  context-path: /mgmt
-  security:
-    roles: Administrator,JBossAdministrator
+  endpoints:
+    web:
+      # Actuator services show up under the /mgmt context path, and users with either Administrator or JBossAdministrator can access.
+      base-path: "/mgmt"
+      # Include all actuator endpoints in the web frontend. We'll secure most of them with a default security configuration.
+      exposure:
+        include: "*"
+  # Show details on the health endpoint only when the user is authorized. Otherwise just show simple up/down status.
+  endpoint.health.show-details: when-authorized
 
 info:
   build:
@@ -15,19 +21,16 @@ info:
     groupId: "@project.groupId@"
     artifactId: "@project.artifactId@"
 
-endpoints:
-  health:
-    sensitive: false
-
-security:
-  sessions: STATELESS
-  basic.enabled: false
-  enable-csrf: false
-  user.password: passwordNotUsed
-  jwt.ttl: 86400
-  issuers-required: true
-
 spring:
+  security:
+    user.password: passwordNotUsed
+    datawave:
+      # JWTs live for 1 day by default
+      jwt.ttl: 86400
+      # An issuer DN must always be supplied along with a subject DN
+      issuers-required: true
+      # Allow users with Administrator or JBossAdministrator roles to access the sensitive actuator endpoints.
+      manager-roles: Administrator,JBossAdministrator
   rabbitmq:
     host: ${MESSAGING_SERVER_HOSTNAME:localhost}
   cloud:

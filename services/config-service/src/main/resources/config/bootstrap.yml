@@ -1,11 +1,11 @@
 server:
   port: 8888
-  context-path: '/${spring.application.name}'
+  servlet.context-path: '/${spring.application.name}'
 
 management:
-  context-path: '/mgmt'
-  security:
-    enabled: false
+  endpoints:
+    web:
+      base-path: "/mgmt"
 
 logging:
   level:
@@ -76,13 +76,13 @@ spring:
       # Allow the default Consul host to be overridden via an environment variable
       host: ${CONSUL_HOST:localhost}
       discovery:
-        healthCheckPath: ${server.context-path}${management.context-path}/health
+        healthCheckPath: ${server.servlet.context-path}${management.endpoints.web.base-path}/health
         healthCheckInterval: 15s
         # We need the configPath tag in Consul to match our context path so that when
         # clients auto-discover the config server, they will know how to build a full
         # path to the config service.
         tags:
-          configPath=${server.context-path}
+          configPath=${server.servlet.context-path}
       # Allow a long time for the Consul agent to become available.
       retry:
         max-attempts: 120
@@ -107,3 +107,13 @@ management:
   health:
     rabbit:
       enabled: false
+
+---
+
+spring:
+  profiles: 'open_actuator'
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

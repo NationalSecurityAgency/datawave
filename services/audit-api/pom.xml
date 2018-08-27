@@ -4,13 +4,13 @@
     <parent>
         <artifactId>datawave-microservice-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.2</version>
+        <version>1.3-SNAPSHOT</version>
     </parent>
     <artifactId>audit-api</artifactId>
     <version>1.3-SNAPSHOT</version>
     <properties>
         <version.accumulo>1.8.1</version.accumulo>
-        <version.guava>24.1-jre</version.guava>
+        <version.guava>25.1-jre</version.guava>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -49,6 +49,10 @@
                         <groupId>org.slf4j</groupId>
                     </exclusion>
                     <exclusion>
+                        <artifactId>commons-logging</artifactId>
+                        <groupId>commons-logging</groupId>
+                    </exclusion>
+                    <exclusion>
                         <artifactId>junit</artifactId>
                         <groupId>junit</groupId>
                     </exclusion>
@@ -60,6 +64,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+            <version>${version.guava}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>

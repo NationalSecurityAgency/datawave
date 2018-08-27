@@ -4,7 +4,7 @@
     <parent>
         <artifactId>datawave-microservice-service-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.1</version>
+        <version>1.2-SNAPSHOT</version>
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave</artifactId>
@@ -13,9 +13,10 @@
         <version.dropwizard-metrics>3.1.5</version.dropwizard-metrics>
         <version.jzlib>1.1.3</version.jzlib>
         <version.metrics-spring>3.1.3</version.metrics-spring>
-        <version.microservice.authorization.api>1.2</version.microservice.authorization.api>
-        <version.microservice.metrics.reporter>1.1</version.microservice.metrics.reporter>
-        <version.springfox>2.6.1</version.springfox>
+        <version.microservice.authorization.api>1.3-SNAPSHOT</version.microservice.authorization.api>
+        <version.microservice.metrics.reporter>1.2-SNAPSHOT</version.microservice.metrics.reporter>
+        <version.springfox>2.9.2</version.springfox>
+        <version.swagger>1.5.21</version.swagger>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -46,6 +47,13 @@
                 <version>${version.microservice.metrics.reporter}</version>
             </dependency>
             <dependency>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>${version.swagger}</version>
+            </dependency>
+            <!--
+                TEMPORARILY REMOVED DUE TO UPGRADE ISSUES
+            <dependency>
                 <groupId>io.springfox</groupId>
                 <artifactId>springfox-swagger-ui</artifactId>
                 <version>${version.springfox}</version>
@@ -55,6 +63,7 @@
                 <artifactId>springfox-swagger2</artifactId>
                 <version>${version.springfox}</version>
             </dependency>
+            -->
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -83,6 +92,12 @@
             <artifactId>metrics-reporter</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-annotations</artifactId>
+        </dependency>
+        <!--
+             TEMPORARILY REMOVED DUE TO UPGRADE ISSUES
+        <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger-ui</artifactId>
         </dependency>
@@ -90,13 +105,10 @@
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger2</artifactId>
         </dependency>
+        -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-actuator-docs</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

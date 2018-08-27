@@ -1,5 +1,6 @@
 package datawave.microservice.authorization.config;
 
+import org.springframework.boot.autoconfigure.security.SecurityPrerequisite;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
@@ -12,8 +13,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Datawave-specific extensions to {@link SecurityProperties}
  */
-@ConfigurationProperties(prefix = "security")
-public class DatawaveSecurityProperties extends SecurityProperties {
+@ConfigurationProperties(prefix = "spring.security.datawave")
+public class DatawaveSecurityProperties implements SecurityPrerequisite {
     @NestedConfigurationProperty
     private final Jwt jwt = new Jwt();
     private boolean useTrustedSubjectHeaders;
@@ -21,6 +22,8 @@ public class DatawaveSecurityProperties extends SecurityProperties {
     private boolean issuersRequired;
     private boolean enforceAllowedCallers = true;
     private List<String> allowedCallers = new ArrayList<>();
+    private boolean requireSsl;
+    private List<String> managerRoles = new ArrayList<>();
     
     public boolean isUseTrustedSubjectHeaders() {
         return useTrustedSubjectHeaders;
@@ -58,8 +61,24 @@ public class DatawaveSecurityProperties extends SecurityProperties {
         return allowedCallers;
     }
     
+    public boolean isRequireSsl() {
+        return requireSsl;
+    }
+    
+    public void setRequireSsl(boolean requireSsl) {
+        this.requireSsl = requireSsl;
+    }
+    
     public void setAllowedCallers(@NotNull List<String> allowedCallers) {
         this.allowedCallers = allowedCallers;
+    }
+    
+    public List<String> getManagerRoles() {
+        return managerRoles;
+    }
+    
+    public void setManagerRoles(List<String> managerRoles) {
+        this.managerRoles = managerRoles;
     }
     
     public Jwt getJwt() {

@@ -27,7 +27,7 @@ public class AuditMessageHandlerTest {
         
         AuditMessageHandler auditMessageHandler = new AuditMessageHandler(new AuditParameters(), auditor);
         
-        auditMessageHandler.onMessage(auditParams.toMap());
+        auditMessageHandler.onMessage(AuditMessage.fromParams(auditParams));
         
         Map<String,String> received = auditor.getAuditParameters().toMap();
         Map<String,String> expected = auditParams.toMap();

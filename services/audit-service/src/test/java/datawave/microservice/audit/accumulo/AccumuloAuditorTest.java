@@ -179,10 +179,10 @@ public class AccumuloAuditorTest {
         }
         
         @Bean
-        public Connector connector(AccumuloAuditProperties accumuloAuditProperties, Instance accumuloInstance) throws AccumuloSecurityException,
-                        AccumuloException {
-            return accumuloInstance.getConnector(accumuloAuditProperties.getAccumuloConfig().getUsername(), new PasswordToken(accumuloAuditProperties
-                            .getAccumuloConfig().getPassword()));
+        public Connector connector(AccumuloAuditProperties accumuloAuditProperties, Instance accumuloInstance)
+                        throws AccumuloSecurityException, AccumuloException {
+            return accumuloInstance.getConnector(accumuloAuditProperties.getAccumuloConfig().getUsername(),
+                            new PasswordToken(accumuloAuditProperties.getAccumuloConfig().getPassword()));
         }
     }
 }
