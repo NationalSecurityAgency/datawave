@@ -44,12 +44,12 @@ public class AccumuloArgsTest {
             .build();
         TestArg other = new TestArg();
         String[] argv = {
-                "-u", "Steve", 
+                "--user", "Steve", 
                 "--password", "zekret", 
-                "-i", "instance", 
-                "-z", "localhost:2181", 
-                "-t", "testTable",
-                "-c", "magenta"
+                "--instance", "instance", 
+                "--zookeepers", "localhost:2181", 
+                "--table", "testTable",
+                "--color", "magenta"
                 };
         JCommander.newBuilder()
             .addObject(args)

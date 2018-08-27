@@ -58,13 +58,13 @@ public class AccumuloArgs {
         required = true)
     private String instance;
     
-    @Parameter(names = {"-z", "-zookeepers"}, 
+    @Parameter(names = {"-z", "--zookeepers"}, 
         description = "Zookeepr connection URL",
         converter = PasswordConverter.class,
         required = true)
     private String zookeepers;
     
-    @Parameter(names = {"-t", "-table"},
+    @Parameter(names = {"-t", "--table"},
         description = "Optional arg to specify a specific table to interact with",
         converter = PasswordConverter.class,
         required = true)
