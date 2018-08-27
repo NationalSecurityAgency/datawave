@@ -116,8 +116,10 @@ public class FileRuleLoadContentsMergeFiltersTest {
         // the time check is ts > cutoffTimestamp, so + 1 will let exact offsetInDays to pass this
         long timestamp = anchorTime - (offsetInDays * MILLIS_IN_DAY) + 1;
         Key key = TestTrieFilter.create(data, timestamp);
-        assertThat(failedExpectationMessage(data, offsetInDays, expectation), filter.accept(filterOptions.getAgeOffPeriod(anchorTime), key, value),
-                        is(expectation));
+        // @formatter:off
+        assertThat(failedExpectationMessage(data, offsetInDays, expectation),
+            filter.accept(filterOptions.getAgeOffPeriod(anchorTime), key, value), is(expectation));
+        // @formatter:on
     }
     
     private String failedExpectationMessage(String data, long offsetInDays, boolean expectation) {

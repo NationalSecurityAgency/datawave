@@ -2,7 +2,6 @@ package datawave.ingest.util.cache.watch;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -142,16 +141,30 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             }
             NodeList rules = docElement.getElementsByTagName("rule");
             // parse each node in rules and create a rule config
-            ruleConfigs.addAll(IntStream.range(0, rules.getLength()).mapToObj(i -> getRuleConfigForNode(rules, i)).collect(Collectors.toList()));
+            // @formatter:off
+            ruleConfigs.addAll(IntStream.range(0, rules.getLength())
+                .mapToObj(i -> getRuleConfigForNode(rules, i))
+                .collect(Collectors.toList()));
             
-            boolean shouldMerge = ruleConfigs.stream().anyMatch(c -> c.isMerge);
+            // are there any configs with matching labels?
+            boolean shouldMerge = ruleConfigs.stream()
+                .collect(Collectors.groupingBy(RuleConfig::getLabel))
+                .size() > 0;
             if (shouldMerge) {
                 // split into labeled and unlabled configs
-                Collection<RuleConfig> labledConfigs = ruleConfigs.stream().filter(r -> !r.getLabel().isEmpty()).collect(Collectors.toList());
-                Collection<RuleConfig> unlabledConfigs = ruleConfigs.stream().filter(r -> r.getLabel().isEmpty()).collect(Collectors.toList());
+                Collection<RuleConfig> labledConfigs = ruleConfigs.stream()
+                    .filter(r -> !r.getLabel().isEmpty())
+                    .collect(Collectors.toList());
+                Collection<RuleConfig> unlabledConfigs = ruleConfigs.stream()
+                    .filter(r -> r.getLabel().isEmpty())
+                    .collect(Collectors.toList());
                 // merge configs that map to the same label
                 Collection<RuleConfig> merged = labledConfigs.stream()
-                                .collect(Collectors.toMap(RuleConfig::getLabel, Function.identity(), (rule1, rule2) -> mergeRules(rule1, rule2))).values();
+                    .collect(Collectors.toMap(
+                        RuleConfig::getLabel, Function.identity(),
+                        (rule1, rule2) -> mergeRules(rule1, rule2)))
+                    .values();
+                // @formatter:on
                 // return combined list of merged and unlabled
                 unlabledConfigs.addAll(merged);
                 return unlabledConfigs;
@@ -172,13 +185,19 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             rule2.ttlValue = rule1.ttlValue;
             rule2.ttlUnits = rule1.ttlUnits;
             rule2.extendedOptions.putAll(rule1.extendedOptions);
-            rule2.matchPattern += "\n" + rule1.matchPattern;
+            // only append rules if there is something there to append
+            if (null != rule1.matchPattern && !rule1.matchPattern.isEmpty()) {
+                rule2.matchPattern += "\n" + rule1.matchPattern;
+            }
             return rule2;
         } else if (rule2.isMerge) {
             rule1.ttlValue = rule2.ttlValue;
             rule1.ttlUnits = rule2.ttlUnits;
             rule1.extendedOptions.putAll(rule2.extendedOptions);
-            rule1.matchPattern += "\n" + rule2.matchPattern;
+            // only append rules if there is something there to append
+            if (null != rule2.matchPattern && !rule2.matchPattern.isEmpty()) {
+                rule1.matchPattern += "\n" + rule2.matchPattern;
+            }
             return rule1;
         }
         // neither is a merge rule, so just pick highest priority?
@@ -256,14 +275,8 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         if (null == parentPathStr || parentPathStr.isEmpty()) {
             throw new IllegalArgumentException("Invalid parent config path, none specified!");
         }
-        // look for file on classpath first
-        URL resource = this.getClass().getResource(parentPathStr);
-        // if found, update path to fully qualified version, other wise try to use the provided path
-        // as it may be resolvable outside of the class path i.e. hdfs:///path/to/the/parent.xml
-        if (null != resource) {
-            parentPathStr = resource.toString();
-        }
-        Path parentPath = new Path(parentPathStr);
+        // loading parent relative to dir that child is in.
+        Path parentPath = new Path(this.filePath.getParent(), parentPathStr);
         if (!fs.exists(parentPath)) {
             throw new IllegalArgumentException("Invalid parent config path specified, " + parentPathStr + " does not exist!");
         }

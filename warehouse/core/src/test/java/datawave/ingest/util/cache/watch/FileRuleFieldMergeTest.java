@@ -7,6 +7,8 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -42,6 +44,18 @@ public class FileRuleFieldMergeTest {
         assertThat(isIndexTable(parentFilter), is(false));
         
         assertThat(isIndexTable(childFilter), is(true));
+    }
+    
+    @Test
+    public void verifyInheritedParentConfigs() throws IOException {
+        // parent config fields
+        // <fields>alpha,beta,gamma,delta</fields>
+        // since child is index config, field should be in the column family
+        Key key = new Key("row", "alpha", "cq", "vis", 0);
+        assertThat(childFilter.accept(key, new Value()), is(false));
+        
+        key = new Key("row", "beta", "cq", "vis", Long.MAX_VALUE);
+        assertThat(childFilter.accept(key, new Value()), is(true));
     }
     
     private Boolean isIndexTable(TestFieldFilter filter) {

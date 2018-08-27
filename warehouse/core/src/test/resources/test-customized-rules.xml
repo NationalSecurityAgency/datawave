@@ -1,5 +1,5 @@
 <ageoffConfiguration>
-    <parent>/test-root-rules.xml</parent>
+    <parent>test-root-rules.xml</parent>
     <rules>
     	<!-- by specifying merge mode the match patterns of any rules with the 
     		same labels will be concatenated -->
