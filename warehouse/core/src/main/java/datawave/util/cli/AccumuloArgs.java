@@ -69,6 +69,9 @@ public class AccumuloArgs {
         converter = PasswordConverter.class,
         required = true)
     private String table;
+
+    @Parameter(names = {"-h", "--help"}, help = true)
+    private boolean help;
     // @formatter:on
     
     public String user() {
