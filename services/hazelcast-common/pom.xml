@@ -4,11 +4,11 @@
     <parent>
         <artifactId>datawave-microservice-service-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.2-SNAPSHOT</version>
+        <version>1.2</version>
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>hazelcast-common</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2</version>
     <dependencies>
         <dependency>
             <groupId>com.hazelcast</groupId>

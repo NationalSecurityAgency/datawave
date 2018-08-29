@@ -4,16 +4,16 @@
     <parent>
         <artifactId>datawave-microservice-service-parent</artifactId>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <version>1.2-SNAPSHOT</version>
+        <version>1.2</version>
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>audit-service</artifactId>
-    <version>1.4-SNAPSHOT</version>
+    <version>1.4</version>
     <description>DATAWAVE Auditing Microservice</description>
     <properties>
         <version.in-memory-accumulo>1.8.1</version.in-memory-accumulo>
-        <version.microservice.audit-api>1.3-SNAPSHOT</version.microservice.audit-api>
-        <version.microservice.starter>1.2-SNAPSHOT</version.microservice.starter>
+        <version.microservice.audit-api>1.3</version.microservice.audit-api>
+        <version.microservice.starter>1.2</version.microservice.starter>
     </properties>
     <dependencyManagement>
         <dependencies>

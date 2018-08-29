@@ -34,7 +34,8 @@ public class AuthorizationOperations {
     private final BusProperties busProperties;
     
     @Autowired
-    public AuthorizationOperations(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService, ApplicationContext appCtx, BusProperties busProperties) {
+    public AuthorizationOperations(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService, ApplicationContext appCtx,
+                    BusProperties busProperties) {
         this.tokenHandler = tokenHandler;
         this.cachedDatawaveUserService = cachedDatawaveUserService;
         this.appCtx = appCtx;
