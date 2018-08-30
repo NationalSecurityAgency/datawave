@@ -155,6 +155,8 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMaxEvaluationPipelines(1);
         deserializer = new KryoDocumentDeserializer();
+        
+        System.out.println(">>> FullTableScanEnabled: " + logic.isFullTableScanEnabled());
     }
     
     public void debugQuery(String tableName) throws Exception {

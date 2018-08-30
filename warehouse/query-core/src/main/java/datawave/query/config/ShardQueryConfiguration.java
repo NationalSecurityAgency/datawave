@@ -3,7 +3,6 @@ package datawave.query.config;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.data.type.NoOpType;
@@ -16,6 +15,7 @@ import datawave.query.UnindexType;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.model.QueryModel;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.UniversalSet;
@@ -53,174 +53,193 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Webservice QueryTable and apply them to this configuration object
  */
 public class ShardQueryConfiguration extends GenericQueryConfiguration {
+    public static final String PARAM_VALUE_SEP_STR = new String(new char[] {Constants.PARAM_VALUE_SEP});
     @SuppressWarnings("unused")
     private static final long serialVersionUID = -4354990715046146110L;
     private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
-    
-    public static final String PARAM_VALUE_SEP_STR = new String(new char[] {Constants.PARAM_VALUE_SEP});
-    
+    // is this a tld query
+    protected boolean tldQuery = false;
+    protected Map<String,String> filterOptions = new HashMap<>();
+    protected boolean disableIndexOnlyDocuments = false;
+    protected QueryStopwatch timers = new QueryStopwatch();
+    protected int maxScannerBatchSize = 2000; // TODO -- 1000 in ShardQueryLogic
+    /**
+     * Index batch size is the size of results use for each index lookup
+     */
+    protected int maxIndexBatchSize = 200; // TODO -- 1000 in ShardQueryLogic
+    protected boolean allTermsIndexOnly;
+    protected String password = "";
+    protected long maxIndexScanTimeMillis = Long.MAX_VALUE;
+    protected boolean collapseUids = false;
+    protected boolean sequentialScheduler = false;
+    protected boolean collectTimingDetails = false;
+    protected boolean logTimingDetails = false;
+    protected boolean sendTimingToStatsd = true; // TODO -- this is true in ShardQueryLogic, previously false in this config
+    protected String statsdHost = "localhost";
+    protected int statsdPort = 8125;
+    protected int statsdMaxQueueSize = 500;
+    protected boolean limitAnyFieldLookups = true; // TODO -- this is false by default in ShardQueryLogic
+    protected boolean bypassExecutabilityCheck = false;
+    /**
+     * Allows for back off of scanners.
+     */
+    protected boolean backoffEnabled = false;
+    /**
+     * Allows for the unsorted UIDs feature (see SortedUIDsRequiredVisitor)
+     */
+    protected boolean unsortedUIDsEnabled = true;
+    /**
+     * Allows us to serialize query iterator
+     */
+    protected boolean serializeQueryIterator = false;
+    /**
+     * Used to enable the SourceThreadTrackingIterator on the tservers
+     */
+    protected boolean debugMultithreadedSources = false;
+    /**
+     * Used to enable Event Field Value filtering in the TLD based on Query Expressions
+     */
+    protected boolean dataQueryExpressionFilterEnabled = false;
+    /**
+     * Used to enable sorting query ranges from most to least granular for queries which contain geowave fields in ThreadedRangeBundler
+     */
+    protected boolean sortGeoWaveQueryRanges = false;
+    /**
+     * Used to determine how many ranges the ThreadedRangeBundler should buffer before returning a range to the caller
+     */
+    protected int numRangesToBuffer = 0;
+    /**
+     * Used to determine how long to allow the ThreadedRangeBundler to buffer ranges before returning a range to the caller
+     */
+    protected long rangeBufferTimeoutMillis = 0;
+    /**
+     * Used to determine the poll interval when buffering ranges in ThreadedRangeBundler
+     */
+    protected long rangeBufferPollMillis = 100;
+    /**
+     * Used to determine the maximum number of query ranges to generate per tier when performing a geowave query.
+     */
+    protected int geoWaveMaxExpansion = 800;
+    /**
+     * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
+     */
+    protected int geoWaveMaxEnvelopes = 4;
     private String shardTableName = "shard";
     private String indexTableName = "shardIndex";
     private String reverseIndexTableName = "shardReverseIndex";
     private String metadataTableName = "DatawaveMetadata";
     private String dateIndexTableName = "DateIndex";
-    private String indexStatsTableName = "indexStats";
-    
+    private String indexStatsTableName = "indexStats"; // TODO -- "shardIndexStats" from ShardQueryLogic
     private String defaultDateTypeName = "EVENT";
-    
-    // should we cleanup the shards and days hints that are sent to the
-    // tservers?
+    // should we cleanup the shards and days hints that are sent to the tservers?
     private boolean cleanupShardsAndDaysQueryHints = true;
-    
     // BatchScanner and query results options
-    private Integer numQueryThreads = 100;
-    private Integer numLookupThreads = 100;
-    private Integer numDateIndexThreads = 100;
+    private Integer numQueryThreads = 100; // TODO -- 8 in ShardQueryLogic
+    private Integer numLookupThreads = 100; // TODO -- 8 in ShardQueryLogic
+    private Integer numDateIndexThreads = 100; // TODO -- 8 in ShardQueryLogic
     private Integer maxDocScanTimeout = -1;
-    
     // A counter used to uniquely identify FSTs generated in the
     // PushdownLargeFieldedListsVisitor
     private AtomicInteger fstCount = new AtomicInteger(0);
-    
     // the percent shards marked when querying the date index after which the
     // shards are collapsed down to the entire day.
     private float collapseDatePercentThreshold = 0.99f;
-    
     // Do we drop to a full-table scan if the query is not "optimized"
-    private Boolean fullTableScanEnabled = false;
-    
+    private Boolean fullTableScanEnabled = true; // TODO -- this was true by default in the ShardQueryLogic, was previously false in config
     private List<String> realmSuffixExclusionPatterns = null;
-    
     // A default normalizer to use
     private Class<? extends Type<?>> defaultType = NoOpType.class;
-    
     private SimpleDateFormat shardDateFormatter = new SimpleDateFormat("yyyyMMdd");
-    
     // Enrichment properties
-    private Boolean useEnrichers = true;
-    private List<String> enricherClassNames = Collections.singletonList("datawave.query.enrich.DatawaveTermFrequencyEnricher");
-    
-    // is this a tld query
-    protected boolean tldQuery = false;
-    
+    private Boolean useEnrichers = true; // TODO -- this was false by default in ShardQueryLogic
+    private List<String> enricherClassNames = Collections.singletonList("datawave.query.enrich.DatawaveTermFrequencyEnricher"); // TODO -- this was null in
+                                                                                                                                // ShardQueryLogic
     // Filter properties
-    private Boolean useFilters = true;
-    private List<String> filterClassNames = new ArrayList<>(Collections.singletonList("datawave.query.filter.DatawavePhraseFilter"));
+    private Boolean useFilters = true; // TODO -- this is false by default in ShardQueryLogic
+    private List<String> filterClassNames = null; // TODO -- previously was new
+                                                  // ArrayList<>(Collections.singletonList("datawave.query.filter.DatawavePhraseFilter"));
     private List<String> indexFilteringClassNames = new ArrayList<>();
-    protected Map<String,String> filterOptions = new HashMap<>();
-    
     // Used for ignoring 'd' and 'tf' column family in `shard`
     private Set<String> nonEventKeyPrefixes = new HashSet<>(Arrays.asList("d", "tf"));
-    
     // Default to having no unevaluatedFields
     private Set<String> unevaluatedFields = Collections.emptySet();
-    
     // Filter results on datatypes. Default to having no filters
     private Set<String> datatypeFilter = UniversalSet.instance();
-    
     // A set of sorted index holes
     private List<IndexHole> indexHoles = new ArrayList<>();
-    
     // Limit fields returned per event
     private Set<String> projectFields = Collections.emptySet();
     private Set<String> blacklistedFields = new HashSet<>(0);
-    
     private Set<String> indexedFields = Sets.newHashSet();
     private Set<String> normalizedFields = Sets.newHashSet();
     private Multimap<String,Type<?>> dataTypes = HashMultimap.create();
     private Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
     private Multimap<String,Type<?>> normalizedFieldsDatatypes = HashMultimap.create();
-    
     private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
     private Set<String> fixedLengthFields = new HashSet<>();
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
-    
     private boolean sortedUIDs = true;
-    
     // The fields in the the query that are tf fields
     private Set<String> queryTermFrequencyFields = Collections.emptySet();
-    
     // Are we required to get term frequencies (i.e. does the query contain content functions)
     private boolean termFrequenciesRequired = false;
-    
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
-    
     /**
      * should limit fields be applied early
      */
     private boolean limitFieldsPreQueryEvaluation = false;
-    
     /**
      * when <code>limitFieldsPreQueryEvaluation = true</code> this field will be used to record which fields were limited
      */
     private String limitFieldsField = null;
-    
     private boolean hitList = false;
-    
     private boolean typeMetadataInHdfs = false;
-    
     private boolean dateIndexTimeTravel = false;
-    
     // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
     private long beginDateCap = -1;
-    
-    private boolean failOutsideValidDateRange = false;
-    
+    private boolean failOutsideValidDateRange = true; // TODO -- this is true by default in the ShardQueryLogic, previously was false here.
     private boolean rawTypes = false;
-    
     // Used to choose how "selective" a term is (indexStats)
     private double minSelectivity = -1.0;
     // Used to add the event datatype to the event as an event field.
     private boolean includeDataTypeAsField = false;
-    
     // Used to add the event RECORD_ID to the event as an event field
     private boolean includeRecordId = true;
-    
     // Used to add the CHILD_COUNT, DESCENDANT_COUNT, HAS_CHILDREN and/or
     // PARENT_UID as event fields,
     // plus various options for output and optimization
     private boolean includeHierarchyFields = false;
     private Map<String,String> hierarchyFieldOptions = Collections.emptyMap();
-    
     // Used to set the ShardEventEvaluating iterator INCLUDE_GROUPING_CONTEXT
     private boolean includeGroupingContext = false;
-    
     // Used to create arbitrary document permutations prior to evaluation and/or returning documents.
     private List<String> documentPermutations = Collections.emptyList();
-    
     // Used to filter out masked values when the unmasked value is available
     private boolean filterMaskedValues = true;
-    
     private boolean reducedResponse = false;
-    
+    /**
+     * By default enable shortcut evaluation
+     */
     private volatile boolean allowShortcutEvaluation = true;
-    
     private boolean bypassAccumulo = false;
-    
+    /**
+     * By default don't use speculative scanning.
+     */
     private boolean speculativeScanning = false;
-    
     private boolean disableEvaluation = false;
-    
-    protected boolean disableIndexOnlyDocuments = false;
-    
     private boolean containsIndexOnlyTerms = false;
-    
     private boolean containsCompositeTerms = false;
     /**
      * By default enable field index only evaluation (aggregation of document post evaluation)
      */
     private boolean allowFieldIndexEvaluation = true;
-    
     /**
      * By default enable using term frequency instead of field index when possible for value lookup
      */
     private boolean allowTermFrequencyLookup = true;
-    
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
-    
     // Threshold values used in the new RangeCalculator
-    
     private int eventPerDayThreshold = 10000;
     private int shardsPerDayThreshold = 10;
     private int maxTermThreshold = 2500;
@@ -229,152 +248,318 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     private int maxValueExpansionThreshold = 5000;
     private int maxOrExpansionThreshold = 500;
     private int maxOrExpansionFstThreshold = 750;
-    
     private long yieldThresholdMs = Long.MAX_VALUE;
-    
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
-    
     private String zookeeperConfig = null;
-    
     private List<String> ivaratorCacheBaseURIs = null;
     private String ivaratorFstHdfsBaseURIs = null;
     private int ivaratorCacheBufferSize = 10000;
     private long ivaratorCacheScanPersistThreshold = 100000L;
     private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
-    
     private int maxFieldIndexRangeSplit = 11;
     private int ivaratorMaxOpenFiles = 100;
     private int maxIvaratorSources = 33;
     private int maxEvaluationPipelines = 25;
     private int maxPipelineCachedResults = 25;
-    
     private boolean expandAllTerms = false;
-    
-    // Adding the ability to precache the query model for performance sake. If
-    // this is null
+    // Adding the ability to pre-cache the query model for performance sake. If this is null
     // then the query model will be pulled from the MetadataHelper
     private QueryModel queryModel = null;
-    
     private String modelName = null;
-    private String modelTableName = null;
-    
+    private String modelTableName = "DatawaveMetadata"; // TODO -- defaults to "DatawaveMetadata" in ShardQueryLogic
     // limit expanded terms to only those fields that are defined in the chosen
     // model. drop others
     private boolean shouldLimitTermExpansionToModel = false;
-    
     private Query query = null;
-    
-    protected QueryStopwatch timers = new QueryStopwatch();
-    
     private boolean compressServerSideResults = false;
-    
     private boolean indexOnlyFilterFunctionsEnabled = false;
-    
     private boolean compositeFilterFunctionsEnabled = false;
     
-    protected int maxScannerBatchSize = 2000;
-    
-    /**
-     * Index batch size is the size of results use for each index lookup
-     */
-    protected int maxIndexBatchSize = 200;
-    
-    protected boolean allTermsIndexOnly;
-    
-    protected String password;
-    
-    protected long maxIndexScanTimeMillis = Long.MAX_VALUE;
-    
-    protected boolean collapseUids = false;
-    
-    protected boolean sequentialScheduler = false;
-    
-    protected boolean collectTimingDetails = false;
-    
-    protected boolean logTimingDetails = false;
-    
-    protected boolean sendTimingToStatsd = true;
-    protected String statsdHost = "localhost";
-    protected int statsdPort = 8125;
-    protected int statsdMaxQueueSize = 500;
-    
-    protected boolean limitAnyFieldLookups = true;
-    
-    protected Set<String> groupFields;
-    
     protected int groupFieldsBatchSize;
-    
-    protected Set<String> uniqueFields;
-    
     private boolean accrueStats = false;
-    
+    private Set<String> groupFields = new HashSet<>(0);
+    private Set<String> uniqueFields = new HashSet<>(0);
     private boolean cacheModel = false;
-    
-    protected boolean bypassExecutabilityCheck = false;
-    
-    /**
-     * Allows for back off of scanners.
-     */
-    protected boolean backoffEnabled = false;
-    
-    /**
-     * Allows for the unsorted UIDs feature (see SortedUIDsRequiredVisitor)
-     */
-    protected boolean unsortedUIDsEnabled = true;
-    
-    /**
-     * Allows us to serialize query iterator
-     */
-    protected boolean serializeQueryIterator = false;
-    
-    /**
-     * Used to enable the SourceThreadTrackingIterator on the tservers
-     */
-    protected boolean debugMultithreadedSources = false;
-    
-    /**
-     * Used to enable Event Field Value filtering in the TLD based on Query Expressions
-     */
-    protected boolean dataQueryExpressionFilterEnabled = false;
-    
-    /**
-     * Used to enable sorting query ranges from most to least granular for queries which contain geowave fields in ThreadedRangeBundler
-     */
-    protected boolean sortGeoWaveQueryRanges = false;
-    
-    /**
-     * Used to determine how many ranges the ThreadedRangeBundler should buffer before returning a range to the caller
-     */
-    protected int numRangesToBuffer = 0;
-    
-    /**
-     * Used to determine how long to allow the ThreadedRangeBundler to buffer ranges before returning a range to the caller
-     */
-    protected long rangeBufferTimeoutMillis = 0;
-    
-    /**
-     * Used to determine the poll interval when buffering ranges in ThreadedRangeBundler
-     */
-    protected long rangeBufferPollMillis = 100;
-    
-    /**
-     * Used to determine the maximum number of query ranges to generate per tier when performing a geowave query.
-     */
-    protected int geoWaveMaxExpansion = 800;
-    
-    /**
-     * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
-     */
-    protected int geoWaveMaxEnvelopes = 4;
-    
     /**
      * should the sizes of documents be tracked for this query
      */
     private boolean trackSizes = true;
     
     public ShardQueryConfiguration() {
+        super();
         query = new QueryImpl();
+    }
+    
+    /**
+     * Simple copy constructor, persists all variables in the ShardQueryConfiguration. Will honor overrides provided via supplied query parameters.
+     *
+     * @param other
+     *            - another ShardQueryConfiguration
+     */
+    public ShardQueryConfiguration(ShardQueryConfiguration other) {
+        
+        // Normally set via super constructor
+        this.setTableName(other.getTableName());
+        this.setMaxQueryResults(other.getMaxQueryResults());
+        this.setMaxRowsToScan(other.getMaxRowsToScan());
+        this.setUndisplayedVisibilities(null == other.getUndisplayedVisibilities() ? null : Sets.newHashSet(other.getUndisplayedVisibilities()));
+        this.setBaseIteratorPriority(other.getBaseIteratorPriority());
+        
+        // Set core variables
+        // Table names
+        this.setShardTableName(other.getShardTableName());
+        this.setIndexTableName(other.getIndexTableName());
+        this.setReverseIndexTableName(other.getReverseIndexTableName());
+        this.setMetadataTableName(other.getMetadataTableName());
+        this.setDateIndexTableName(other.getDateIndexTableName());
+        this.setIndexStatsTableName(other.getIndexStatsTableName());
+        
+        this.setDefaultDateTypeName(other.getDefaultDateTypeName());
+        this.setCleanupShardsAndDaysQueryHints(other.isCleanupShardsAndDaysQueryHints());
+        
+        this.setNumQueryThreads(other.getNumQueryThreads());
+        this.setNumIndexLookupThreads(other.getNumIndexLookupThreads());
+        this.setNumDateIndexThreads(other.getNumDateIndexThreads());
+        this.setMaxDocScanTimeout(other.getMaxDocScanTimeout());
+        
+        this.setFstCount(other.getFstCount());
+        this.setCollapseDatePercentThreshold(other.getCollapseDatePercentThreshold());
+        this.setFullTableScanEnabled(other.getFullTableScanEnabled());
+        this.setRealmSuffixExclusionPatterns(other.getRealmSuffixExclusionPatterns());
+        
+        this.setDefaultType(other.getDefaultType());
+        this.setShardDateFormatter(other.getShardDateFormatter());
+        
+        // Enrichment properties
+        this.setUseEnrichers(other.getUseEnrichers());
+        this.setEnricherClassNames(null == other.getEnricherClassNames() ? null : Lists.newArrayList(other.getEnricherClassNames()));
+        // is config a tld query logic
+        this.setTldQuery(other.isTldQuery());
+        // Filter properties
+        this.setUseFilters(other.getUseFilters());
+        this.setFilterClassNames(other.getFilterClassNames());
+        this.setIndexFilteringClassNames(other.getIndexFilteringClassNames());
+        this.putFilterOptions(other.getFilterOptions());
+        
+        this.setNonEventKeyPrefixes(null == other.getNonEventKeyPrefixes() ? null : Sets.newHashSet(other.getNonEventKeyPrefixes()));
+        this.setUnevaluatedFields(null == other.getUnevaluatedFields() ? null : Sets.newHashSet(other.getUnevaluatedFields()));
+        this.setDatatypeFilter(null == other.getDatatypeFilter() ? null : Sets.newHashSet(other.getDatatypeFilter()));
+        
+        this.setIndexHoles(null == other.getIndexHoles() ? null : Lists.newArrayList(other.getIndexHoles()));
+        this.setProjectFields(other.getProjectFields());
+        this.setBlacklistedFields(other.getBlacklistedFields());
+        this.setIndexedFields(other.getIndexedFields());
+        
+        // Set Datatypes
+        this.setDataTypes(other.getDataTypes());
+        this.setQueryFieldsDatatypes(other.getQueryFieldsDatatypes());
+        this.setNormalizedFieldsDatatypes(other.getNormalizedFieldsDatatypes());
+        
+        this.setCompositeToFieldMap(other.getCompositeToFieldMap());
+        this.setFixedLengthFields(other.getFixedLengthFields());
+        this.setCompositeTransitionDates(other.getCompositeTransitionDates());
+        this.setSortedUIDs(other.isSortedUIDs());
+        this.setQueryTermFrequencyFields(other.getQueryTermFrequencyFields());
+        this.setTermFrequenciesRequired(other.isTermFrequenciesRequired());
+        this.setLimitFields(other.getLimitFields());
+        this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
+        this.setLimitFieldsField(other.getLimitFieldsField());
+        this.setHitList(other.isHitList());
+        this.setTypeMetadataInHdfs(other.isTypeMetadataInHdfs());
+        this.setDateIndexTimeTravel(other.isDateIndexTimeTravel());
+        this.setBeginDateCap(other.getBeginDateCap());
+        this.setFailOutsideValidDateRange(other.isFailOutsideValidDateRange());
+        this.setRawTypes(other.isRawTypes());
+        this.setMinSelectivity(other.getMinSelectivity());
+        this.setIncludeDataTypeAsField(other.getIncludeDataTypeAsField());
+        this.setIncludeRecordId(other.getIncludeRecordId());
+        this.setIncludeHierarchyFields(other.getIncludeHierarchyFields());
+        this.setHierarchyFieldOptions(other.getHierarchyFieldOptions());
+        // ShardEventEvaluatingIterator options
+        this.setIncludeGroupingContext(other.getIncludeGroupingContext());
+        this.setDocumentPermutations(other.getDocumentPermutations());
+        this.setFilterMaskedValues(other.getFilterMaskedValues());
+        this.setReducedResponse(other.isReducedResponse());
+        
+        this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
+        this.setBypassAccumulo(other.getBypassAccumulo());
+        this.setSpeculativeScanning(other.getSpeculativeScanning());
+        this.setDisableEvaluation(other.isDisableEvaluation());
+        this.setDisableIndexOnlyDocuments(other.disableIndexOnlyDocuments());
+        this.setContainsIndexOnlyTerms(other.isContainsIndexOnlyTerms());
+        this.setContainsCompositeTerms(other.isContainsCompositeTerms());
+        this.setAllowFieldIndexEvaluation(other.isAllowFieldIndexEvaluation());
+        this.setAllowTermFrequencyLookup(other.isAllowTermFrequencyLookup());
+        this.setReturnType(other.getReturnType());
+        
+        // Pass down the RangeCalculator options
+        this.setEventPerDayThreshold(other.getEventPerDayThreshold());
+        this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
+        this.setMaxTermThreshold(other.getMaxTermThreshold());
+        this.setMaxDepthThreshold(other.getMaxDepthThreshold());
+        this.setMaxUnfieldedExpansionThreshold(other.getMaxUnfieldedExpansionThreshold());
+        this.setMaxValueExpansionThreshold(other.getMaxValueExpansionThreshold());
+        this.setMaxOrExpansionThreshold(other.getMaxOrExpansionThreshold());
+        this.setMaxOrExpansionFstThreshold(other.getMaxOrExpansionFstThreshold());
+        
+        this.setYieldThresholdMs(other.getYieldThresholdMs());
+        
+        this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
+        this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
+        this.setZookeeperConfig(other.getZookeeperConfig());
+        
+        this.setIvaratorCacheBaseURIs(other.getIvaratorCacheBaseURIs());
+        this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
+        this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
+        this.setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
+        this.setIvaratorCacheScanTimeout(other.getIvaratorCacheScanTimeout());
+        
+        this.setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
+        this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
+        this.setMaxIvaratorSources(other.getMaxIvaratorSources());
+        this.setMaxEvaluationPipelines(other.getMaxEvaluationPipelines());
+        this.setMaxPipelineCachedResults(other.getMaxPipelineCachedResults());
+        
+        this.setExpandAllTerms(other.isExpandAllTerms());
+        this.setQueryModel(other.getQueryModel());
+        this.setModelName(other.getModelName());
+        this.setModelTableName(other.getModelTableName());
+        this.setLimitTermExpansionToModel(other.isExpansionLimitedToModelContents());
+        
+        this.setQuery(other.getQuery());
+        this.setCompressServerSideResults(other.isCompressServerSideResults());
+        // Allow index-only JEXL functions, which can potentially use a huge
+        // amount of memory, to be turned on or off
+        this.setIndexOnlyFilterFunctionsEnabled(other.isIndexOnlyFilterFunctionsEnabled());
+        
+        this.setMetadataTableName(other.getMetadataTableName());
+        this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
+        this.setMaxScannerBatchSize(other.getMaxScannerBatchSize());
+        this.setMaxIndexBatchSize(other.getMaxIndexBatchSize());
+        this.setAllTermsIndexOnly(other.allTermsIndexOnly());
+        
+        this.setAccumuloPassword(other.getAccumuloPassword());
+        this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
+        this.setCollapseUids(other.getCollapseUids());
+        this.setSequentialScheduler(other.getSequentialScheduler());
+        
+        this.setAccrueStats(other.getAccrueStats());
+        this.setCollectTimingDetails(other.getCollectTimingDetails());
+        this.setLogTimingDetails(other.getLogTimingDetails());
+        this.setSendTimingToStatsd(other.getSendTimingToStatsd());
+        this.setStatsdHost(other.getStatsdHost());
+        this.setStatsdPort(other.getStatsdPort());
+        this.setStatsdMaxQueueSize(other.getStatsdMaxQueueSize());
+        
+        this.setLimitAnyFieldLookups(other.getLimitAnyFieldLookups());
+        this.setGroupFields(other.getGroupFields());
+        this.setUniqueFields(other.getUniqueFields());
+        
+        this.setCacheModel(other.getCacheModel());
+        this.setBypassExecutabilityCheck(other.bypassExecutabilityCheck());
+        this.setBackoffEnabled(other.getBackoffEnabled());
+        this.setUnsortedUIDsEnabled(other.getUnsortedUIDsEnabled());
+        this.setSerializeQueryIterator(other.getSerializeQueryIterator());
+        this.setDebugMultithreadedSources(other.isDebugMultithreadedSources());
+        this.setDataQueryExpressionFilterEnabled(other.isDataQueryExpressionFilterEnabled());
+        
+        this.setSortGeoWaveQueryRanges(other.isSortGeoWaveQueryRanges());
+        this.setNumRangesToBuffer(other.getNumRangesToBuffer());
+        this.setRangeBufferTimeoutMillis(other.getRangeBufferTimeoutMillis());
+        this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
+        
+        this.setGeoWaveMaxExpansion(other.getGeoWaveMaxExpansion());
+        this.setGeoWaveMaxEnvelopes(other.getGeoWaveMaxEnvelopes());
+        
+        this.setSortedUIDs(other.isSortedUIDs());
+        this.setTrackSizes(other.isTrackSizes());
+        
+        // Lastly, honor overrides passed in via query parameters
+        Set<QueryImpl.Parameter> parameterSet = query.getParameters();
+        for (QueryImpl.Parameter parameter : parameterSet) {
+            String name = parameter.getParameterName();
+            String value = parameter.getParameterValue();
+            if (name.equals(QueryParameters.HIT_LIST)) {
+                this.setHitList(Boolean.parseBoolean(value));
+            }
+            if (name.equals(QueryParameters.TYPE_METADATA_IN_HDFS)) {
+                this.setTypeMetadataInHdfs(Boolean.parseBoolean(value));
+            }
+            if (name.equals(QueryParameters.DATE_INDEX_TIME_TRAVEL)) {
+                this.setDateIndexTimeTravel(Boolean.parseBoolean(value));
+            }
+            if (name.equals(QueryParameters.PARAMETER_MODEL_NAME)) {
+                this.setMetadataTableName(value);
+            }
+        }
+    }
+    
+    /**
+     * Simple copy constructor, creates ShardQueryConfiguration from a ShardQueryLogic
+     * 
+     * @param configuredLogic
+     */
+    public ShardQueryConfiguration(ShardQueryLogic configuredLogic) {
+        this(configuredLogic.getConfig());
+    }
+    
+    /**
+     * Factory method that instantiates an fresh ShardQueryConfiguration
+     *
+     * @return - a clean ShardQueryConfiguration
+     */
+    public static ShardQueryConfiguration create() {
+        return new ShardQueryConfiguration();
+    }
+    
+    /**
+     * Factory method that returns a copy of the provided ShardQueryConfiguration
+     *
+     * @param other
+     *            - another instance of a ShardQueryConfiguration
+     * @return - copy of provided ShardQueryConfiguration
+     */
+    public static ShardQueryConfiguration create(ShardQueryConfiguration other) {
+        return new ShardQueryConfiguration(other);
+    }
+    
+    /**
+     * Factory method that creates a ShardQueryConfiguration from a ShardQueryLogic
+     *
+     * @param shardQueryLogic
+     *            - a configured ShardQueryLogic
+     * @return - a ShardQueryConfiguration
+     */
+    public static ShardQueryConfiguration create(ShardQueryLogic shardQueryLogic) {
+        ShardQueryConfiguration config = new ShardQueryConfiguration(shardQueryLogic);
+        
+        if (-1 == shardQueryLogic.getMaxResults()) {
+            config.setMaxQueryResults(Long.MAX_VALUE);
+        }
+        return config;
+    }
+    
+    /**
+     * Factory method that creates a ShardQueryConfiguration from a ShardQueryLogic and a Query
+     *
+     * @param shardQueryLogic
+     *            - a configured ShardQueryLogic
+     * @param query
+     *            - a configured Query object
+     * @return - a ShardQueryConfiguration
+     */
+    public static ShardQueryConfiguration create(ShardQueryLogic shardQueryLogic, Query query) {
+        ShardQueryConfiguration config = create(shardQueryLogic);
+        config.setQuery(query);
+        return config;
+    }
+    
+    /**
+     * @return
+     */
+    public String getAccumuloPassword() {
+        return new String(this.password);
     }
     
     /**
@@ -385,13 +570,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     public void setAccumuloPassword(String password) {
         this.password = password;
         
-    }
-    
-    /**
-     * @return
-     */
-    public String getAccumuloPassword() {
-        return new String(this.password);
     }
     
     /**
@@ -529,36 +707,36 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         return datatypeFilter;
     }
     
-    public String getDatatypeFilterAsString() {
-        return org.apache.commons.lang.StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
-    }
-    
     public void setDatatypeFilter(Set<String> typeFilter) {
         this.datatypeFilter = typeFilter;
+    }
+    
+    public String getDatatypeFilterAsString() {
+        return StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
     }
     
     public Set<String> getProjectFields() {
         return projectFields;
     }
     
-    public String getProjectFieldsAsString() {
-        return org.apache.commons.lang.StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
-    }
-    
     public void setProjectFields(Set<String> projectFields) {
         this.projectFields = projectFields;
+    }
+    
+    public String getProjectFieldsAsString() {
+        return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
     }
     
     public Set<String> getBlacklistedFields() {
         return blacklistedFields;
     }
     
-    public String getBlacklistedFieldsAsString() {
-        return StringUtils.join(this.getBlacklistedFields(), Constants.PARAM_VALUE_SEP);
-    }
-    
     public void setBlacklistedFields(Set<String> blacklistedFields) {
         this.blacklistedFields = blacklistedFields;
+    }
+    
+    public String getBlacklistedFieldsAsString() {
+        return StringUtils.join(this.getBlacklistedFields(), Constants.PARAM_VALUE_SEP);
     }
     
     public Boolean getUseEnrichers() {
@@ -573,12 +751,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         return enricherClassNames;
     }
     
-    public String getEnricherClassNamesAsString() {
-        return StringUtils.join(this.getEnricherClassNames(), Constants.PARAM_VALUE_SEP);
-    }
-    
     public void setEnricherClassNames(List<String> enricherClassNames) {
         this.enricherClassNames = enricherClassNames;
+    }
+    
+    public String getEnricherClassNamesAsString() {
+        return StringUtils.join(this.getEnricherClassNames(), Constants.PARAM_VALUE_SEP);
     }
     
     public boolean isTldQuery() {
@@ -739,12 +917,17 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.defaultType = defaultType;
     }
     
-    public Set<String> getNonEventKeyPrefixes() {
-        return nonEventKeyPrefixes;
+    public void setDefaultType(String className) {
+        try {
+            setDefaultType((Class<? extends Type<?>>) Class.forName(className));
+        } catch (ClassNotFoundException ex) {
+            log.warn("Class name: " + className + " not found, defaulting to NoOpNormalizer.class");
+            setDefaultType(NoOpType.class);
+        }
     }
     
-    public String getNonEventKeyPrefixesAsString() {
-        return StringUtils.join(this.getNonEventKeyPrefixes(), Constants.PARAM_VALUE_SEP);
+    public Set<String> getNonEventKeyPrefixes() {
+        return nonEventKeyPrefixes;
     }
     
     public void setNonEventKeyPrefixes(Collection<String> nonEventKeyPrefixes) {
@@ -755,12 +938,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         }
     }
     
-    public Set<String> getUnevaluatedFields() {
-        return unevaluatedFields;
+    public String getNonEventKeyPrefixesAsString() {
+        return StringUtils.join(this.getNonEventKeyPrefixes(), Constants.PARAM_VALUE_SEP);
     }
     
-    public String getUnevaluatedFieldsAsString() {
-        return StringUtils.join(this.unevaluatedFields, Constants.PARAM_VALUE_SEP);
+    public Set<String> getUnevaluatedFields() {
+        return unevaluatedFields;
     }
     
     public void setUnevaluatedFields(Collection<String> unevaluatedFields) {
@@ -771,16 +954,29 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         }
     }
     
+    /**
+     * Join unevaluated fields together on comma
+     * 
+     * @return
+     */
+    public String getUnevaluatedFieldsAsString() {
+        return StringUtils.join(this.unevaluatedFields, Constants.PARAM_VALUE_SEP);
+    }
+    
+    public void setUnevaluatedFields(String unevaluatedFieldList) {
+        this.setUnevaluatedFields(Arrays.asList(unevaluatedFieldList.split(PARAM_VALUE_SEP_STR)));
+    }
+    
     public int getEventPerDayThreshold() {
         return eventPerDayThreshold;
     }
     
-    public int getShardsPerDayThreshold() {
-        return shardsPerDayThreshold;
-    }
-    
     public void setEventPerDayThreshold(int eventPerDayThreshold) {
         this.eventPerDayThreshold = eventPerDayThreshold;
+    }
+    
+    public int getShardsPerDayThreshold() {
+        return shardsPerDayThreshold;
     }
     
     public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
@@ -815,25 +1011,25 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         return maxValueExpansionThreshold;
     }
     
-    public void setMaxScannerBatchSize(final int size) {
-        this.maxScannerBatchSize = size;
+    public void setMaxValueExpansionThreshold(int maxValueExpansionThreshold) {
+        this.maxValueExpansionThreshold = maxValueExpansionThreshold;
     }
     
     public int getMaxScannerBatchSize() {
         return this.maxScannerBatchSize;
     }
     
-    public void setMaxIndexBatchSize(final int size) {
-        if (size >= 1)
-            this.maxIndexBatchSize = size;
+    public void setMaxScannerBatchSize(final int size) {
+        this.maxScannerBatchSize = size;
     }
     
     public int getMaxIndexBatchSize() {
         return this.maxIndexBatchSize;
     }
     
-    public void setMaxValueExpansionThreshold(int maxValueExpansionThreshold) {
-        this.maxValueExpansionThreshold = maxValueExpansionThreshold;
+    public void setMaxIndexBatchSize(final int size) {
+        if (size >= 1)
+            this.maxIndexBatchSize = size;
     }
     
     public int getMaxOrExpansionThreshold() {
@@ -1008,7 +1204,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     public String getNormalizedFieldNormalizersAsString() {
         
-        if (null == this.getNormalizedFields()) {
+        if (null == this.getNormalizedFields() || this.getNormalizedFields().isEmpty()) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
@@ -1028,10 +1224,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         return indexedFields;
     }
     
-    public void setIndexedFields(Set<String> indexedFields) {
-        this.indexedFields = Sets.newHashSet(indexedFields);
-    }
-    
     public void setIndexedFields(Multimap<String,Type<?>> indexedFieldsAndTypes) {
         this.indexedFields = Sets.newHashSet(indexedFieldsAndTypes.keySet());
         for (Entry<String,Type<?>> entry : indexedFieldsAndTypes.entries()) {
@@ -1039,6 +1231,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
                 this.indexedFields.remove(entry.getKey());
             }
         }
+    }
+    
+    public void setIndexedFields(Set<String> indexedFields) {
+        this.indexedFields = Sets.newHashSet(indexedFields);
     }
     
     public Set<String> getNormalizedFields() {
@@ -1065,20 +1261,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.dataTypes = dataTypes;
     }
     
-    public void setQueryFieldsDatatypes(Multimap<String,Type<?>> queryFieldsDatatypes) {
-        this.queryFieldsDatatypes = queryFieldsDatatypes;
-    }
-    
     public Multimap<String,Type<?>> getQueryFieldsDatatypes() {
         return queryFieldsDatatypes;
     }
     
-    public void setCompositeToFieldMap(Multimap<String,String> compositeToFieldMap) {
-        this.compositeToFieldMap = compositeToFieldMap;
+    public void setQueryFieldsDatatypes(Multimap<String,Type<?>> queryFieldsDatatypes) {
+        this.queryFieldsDatatypes = queryFieldsDatatypes;
     }
     
     public Multimap<String,String> getCompositeToFieldMap() {
         return compositeToFieldMap;
+    }
+    
+    public void setCompositeToFieldMap(Multimap<String,String> compositeToFieldMap) {
+        this.compositeToFieldMap = compositeToFieldMap;
     }
     
     public Set<String> getFixedLengthFields() {
@@ -1106,7 +1302,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.normalizedFields = Sets.newHashSet(normalizedFieldsDatatypes.keySet());
     }
     
-    public Collection<String> getLimitFields() {
+    public Set<String> getLimitFields() {
         return limitFields;
     }
     
@@ -1115,7 +1311,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     }
     
     public String getLimitFieldsAsString() {
-        return org.apache.commons.lang.StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
+        return StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
     }
     
     public boolean isLimitFieldsPreQueryEvaluation() {
@@ -1167,7 +1363,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     }
     
     public String getGroupFieldsAsString() {
-        return org.apache.commons.lang.StringUtils.join(this.getGroupFields(), Constants.PARAM_VALUE_SEP);
+        return StringUtils.join(this.getGroupFields(), Constants.PARAM_VALUE_SEP);
     }
     
     public int getGroupFieldsBatchSize() {
@@ -1191,15 +1387,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     }
     
     public String getUniqueFieldsAsString() {
-        return org.apache.commons.lang.StringUtils.join(this.getUniqueFields(), Constants.PARAM_VALUE_SEP);
-    }
-    
-    public void setHitList(boolean hitList) {
-        this.hitList = hitList;
+        return StringUtils.join(this.getUniqueFields(), Constants.PARAM_VALUE_SEP);
     }
     
     public boolean isHitList() {
         return this.hitList;
+    }
+    
+    public void setHitList(boolean hitList) {
+        this.hitList = hitList;
     }
     
     public boolean isTypeMetadataInHdfs() {
@@ -1210,12 +1406,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.typeMetadataInHdfs = typeMetadataInHdfs;
     }
     
-    public void setRawTypes(boolean rawTypes) {
-        this.rawTypes = rawTypes;
-    }
-    
     public boolean isRawTypes() {
         return this.rawTypes;
+    }
+    
+    public void setRawTypes(boolean rawTypes) {
+        this.rawTypes = rawTypes;
     }
     
     public double getMinSelectivity() {
@@ -1486,12 +1682,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         return shouldLimitTermExpansionToModel;
     }
     
-    public void setMaxIndexScanTimeMillis(long maxTime) {
-        this.maxIndexScanTimeMillis = maxTime;
-    }
-    
     public long getMaxIndexScanTimeMillis() {
         return maxIndexScanTimeMillis;
+    }
+    
+    public void setMaxIndexScanTimeMillis(long maxTime) {
+        this.maxIndexScanTimeMillis = maxTime;
     }
     
     public boolean getCollapseUids() {
@@ -1518,204 +1714,29 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.limitAnyFieldLookups = limitAnyFieldLookups;
     }
     
-    public void setAllowShortcutEvaluation(boolean allowShortcutEvaluation) {
-        this.allowShortcutEvaluation = allowShortcutEvaluation;
-    }
-    
     public boolean getAllowShortcutEvaluation() {
         return allowShortcutEvaluation;
     }
     
-    public void setBypassAccumulo(boolean bypassAccumulo) {
-        this.bypassAccumulo = bypassAccumulo;
+    public void setAllowShortcutEvaluation(boolean allowShortcutEvaluation) {
+        this.allowShortcutEvaluation = allowShortcutEvaluation;
     }
     
     public boolean getBypassAccumulo() {
         return bypassAccumulo;
     }
     
-    // copy constructor
-    public ShardQueryConfiguration(ShardQueryConfiguration copy) {
-        
-        // normally set via super constructor
-        this.setTableName(copy.getTableName());
-        this.setMaxQueryResults(copy.getMaxQueryResults());
-        this.setMaxRowsToScan(copy.getMaxRowsToScan());
-        
-        this.setUndisplayedVisibilities(null == copy.getUndisplayedVisibilities() ? null : Sets.newHashSet(copy.getUndisplayedVisibilities()));
-        this.setBaseIteratorPriority(copy.getBaseIteratorPriority());
-        
-        this.setMaxQueryResults(copy.getMaxQueryResults());
-        
-        this.setMaxRowsToScan(copy.getMaxRowsToScan());
-        this.setNumQueryThreads(copy.getNumQueryThreads());
-        this.setDefaultType(copy.getDefaultType());
-        
-        // Table names
-        this.setShardTableName(copy.getShardTableName());
-        this.setIndexTableName(copy.getIndexTableName());
-        this.setReverseIndexTableName(copy.getReverseIndexTableName());
-        this.setMetadataTableName(copy.getMetadataTableName());
-        this.setDateIndexTableName(copy.getDateIndexTableName());
-        this.setQueryModel(copy.getQueryModel());
-        this.setModelTableName(copy.getModelTableName());
-        this.setIndexStatsTableName(copy.getIndexStatsTableName());
-        
-        this.setDefaultDateTypeName(copy.getDefaultDateTypeName());
-        
-        this.setIndexHoles(copy.getIndexHoles());
-        
-        // Set document permutations list
-        this.setDocumentPermutations(copy.getDocumentPermutations());
-        
-        this.setSequentialScheduler(copy.getSequentialScheduler());
-        // Enrichment properties
-        this.setUseEnrichers(copy.getUseEnrichers());
-        this.setEnricherClassNames(null == copy.getEnricherClassNames() ? null : Lists.newArrayList(copy.getEnricherClassNames()));
-        
-        // is config a tld query logic
-        this.setTldQuery(copy.isTldQuery());
-        
-        // Filter properties
-        this.setUseFilters(copy.getUseFilters());
-        this.setFilterClassNames(copy.getFilterClassNames());
-        this.setIndexFilteringClassNames(copy.getIndexFilteringClassNames());
-        this.putFilterOptions(copy.getFilterOptions());
-        
-        this.setFullTableScanEnabled(copy.getFullTableScanEnabled());
-        this.setRealmSuffixExclusionPatterns(copy.getRealmSuffixExclusionPatterns());
-        this.setNonEventKeyPrefixes(null == copy.getNonEventKeyPrefixes() ? null : Sets.newHashSet(copy.getNonEventKeyPrefixes()));
-        this.setUnevaluatedFields(null == copy.getUnevaluatedFields() ? null : Sets.newHashSet(copy.getUnevaluatedFields()));
-        this.setMinSelectivity(copy.getMinSelectivity());
-        
-        this.setFilterMaskedValues(copy.getFilterMaskedValues());
-        
-        this.setIncludeDataTypeAsField(copy.getIncludeDataTypeAsField());
-        this.setIncludeRecordId(copy.getIncludeRecordId());
-        this.setIncludeHierarchyFields(copy.getIncludeHierarchyFields());
-        this.setHierarchyFieldOptions(null == copy.getHierarchyFieldOptions() ? null : Maps.newHashMap(copy.getHierarchyFieldOptions()));
-        this.setBlacklistedFields(null == copy.getBlacklistedFields() ? null : Sets.newHashSet(copy.getBlacklistedFields()));
-        
-        // ShardEventEvaluatingIterator options
-        this.setIncludeGroupingContext(copy.getIncludeGroupingContext());
-        
-        // Pass down the RangeCalculator options
-        this.setEventPerDayThreshold(copy.getEventPerDayThreshold());
-        this.setShardsPerDayThreshold(copy.getShardsPerDayThreshold());
-        this.setMaxTermThreshold(copy.getMaxTermThreshold());
-        this.setMaxDepthThreshold(copy.getMaxDepthThreshold());
-        this.setMaxUnfieldedExpansionThreshold(copy.getMaxUnfieldedExpansionThreshold());
-        this.setMaxValueExpansionThreshold(copy.getMaxValueExpansionThreshold());
-        this.setMaxOrExpansionThreshold(copy.getMaxOrExpansionThreshold());
-        this.setMaxOrExpansionFstThreshold(copy.getMaxOrExpansionFstThreshold());
-        
-        this.setExpandAllTerms(copy.isExpandAllTerms());
-        
-        this.setHdfsSiteConfigURLs(copy.getHdfsSiteConfigURLs());
-        this.setHdfsFileCompressionCodec(copy.getHdfsFileCompressionCodec());
-        this.setZookeeperConfig(copy.getZookeeperConfig());
-        
-        this.setIvaratorCacheBaseURIs(copy.getIvaratorCacheBaseURIs());
-        this.setIvaratorFstHdfsBaseURIs(copy.getIvaratorFstHdfsBaseURIs());
-        this.setIvaratorCacheBufferSize(copy.getIvaratorCacheBufferSize());
-        this.setIvaratorCacheScanPersistThreshold(copy.getIvaratorCacheScanPersistThreshold());
-        this.setIvaratorCacheScanTimeout(copy.getIvaratorCacheScanTimeout());
-        
-        this.setMaxFieldIndexRangeSplit(copy.getMaxFieldIndexRangeSplit());
-        this.setIvaratorMaxOpenFiles(copy.getIvaratorMaxOpenFiles());
-        this.setMaxIvaratorSources(copy.getMaxIvaratorSources());
-        this.setMaxEvaluationPipelines(copy.getMaxEvaluationPipelines());
-        this.setMaxPipelineCachedResults(copy.getMaxPipelineCachedResults());
-        
-        this.setYieldThresholdMs(copy.getYieldThresholdMs());
-        
-        this.setReducedResponse(copy.isReducedResponse());
-        this.setDisableEvaluation(copy.isDisableEvaluation());
-        this.setDisableIndexOnlyDocuments(copy.disableIndexOnlyDocuments());
-        this.setHitList(copy.isHitList());
-        this.setTypeMetadataInHdfs(copy.isTypeMetadataInHdfs());
-        this.setCompressServerSideResults(copy.isCompressServerSideResults());
-        this.setMetadataTableName(copy.metadataTableName);
-        
-        // Allow index-only JEXL functions, which can potentially use a huge
-        // amount of memory, to be turned on or off
-        this.setIndexOnlyFilterFunctionsEnabled(copy.isIndexOnlyFilterFunctionsEnabled());
-        
-        this.setAccumuloPassword(copy.getAccumuloPassword());
-        
-        this.setCollapseUids(copy.getCollapseUids());
-        
-        this.setMaxIndexScanTimeMillis(copy.getMaxIndexScanTimeMillis());
-        
-        this.setAllowShortcutEvaluation(copy.getAllowShortcutEvaluation());
-        
-        this.setAllowFieldIndexEvaluation(copy.isAllowFieldIndexEvaluation());
-        
-        this.setAllowTermFrequencyLookup(copy.isAllowTermFrequencyLookup());
-        
-        this.setLimitFields(new HashSet<>(copy.getLimitFields()));
-        this.setLimitFieldsPreQueryEvaluation(copy.isLimitFieldsPreQueryEvaluation());
-        this.setLimitFieldsField(copy.getLimitFieldsField());
-        this.setGroupFields(copy.getGroupFields());
-        this.setGroupFieldsBatchSize(copy.getGroupFieldsBatchSize());
-        this.setUniqueFields(copy.getUniqueFields());
-        this.setQuery(copy.getQuery());
-        Set<QueryImpl.Parameter> parameterSet = query.getParameters();
-        for (QueryImpl.Parameter parameter : parameterSet) {
-            String name = parameter.getParameterName();
-            String value = parameter.getParameterValue();
-            if (name.equals(QueryParameters.HIT_LIST)) {
-                this.setHitList(Boolean.parseBoolean(value));
-            }
-            if (name.equals(QueryParameters.TYPE_METADATA_IN_HDFS)) {
-                this.setTypeMetadataInHdfs(Boolean.parseBoolean(value));
-            }
-            if (name.equals(QueryParameters.DATE_INDEX_TIME_TRAVEL)) {
-                this.setDateIndexTimeTravel(Boolean.parseBoolean(value));
-            }
-            if (name.equals(QueryParameters.PARAMETER_MODEL_NAME)) {
-                this.setMetadataTableName(value);
-            }
-        }
-        
-        this.setBeginDateCap(copy.getBeginDateCap());
-        this.setFailOutsideValidDateRange(copy.isFailOutsideValidDateRange());
-        
-        this.setLogTimingDetails(copy.getLogTimingDetails());
-        this.setCollectTimingDetails(copy.getCollectTimingDetails());
-        this.setSendTimingToStatsd(copy.getSendTimingToStatsd());
-        this.setStatsdHost(copy.getStatsdHost());
-        this.setStatsdPort(copy.getStatsdPort());
-        this.setStatsdMaxQueueSize(copy.getStatsdMaxQueueSize());
-        
-        this.setQuery(query);
-        this.setCollapseDatePercentThreshold(copy.getCollapseDatePercentThreshold());
-        this.setSerializeQueryIterator(copy.getSerializeQueryIterator());
-        this.fstCount = copy.fstCount;
-        
-        this.setDebugMultithreadedSources(copy.isDebugMultithreadedSources());
-        
-        this.setDataQueryExpressionFilterEnabled(copy.isDataQueryExpressionFilterEnabled());
-        
-        this.setSortGeoWaveQueryRanges(copy.isSortGeoWaveQueryRanges());
-        this.setNumRangesToBuffer(copy.getNumRangesToBuffer());
-        this.setRangeBufferTimeoutMillis(copy.getRangeBufferTimeoutMillis());
-        this.setRangeBufferPollMillis(copy.getRangeBufferPollMillis());
-        
-        this.setGeoWaveMaxExpansion(copy.getGeoWaveMaxExpansion());
-        this.setGeoWaveMaxEnvelopes(copy.getGeoWaveMaxEnvelopes());
-        
-        this.setSortedUIDs(copy.isSortedUIDs());
-        this.setTrackSizes(copy.isTrackSizes());
+    public void setBypassAccumulo(boolean bypassAccumulo) {
+        this.bypassAccumulo = bypassAccumulo;
+    }
+    
+    public boolean getAccrueStats() {
+        return accrueStats;
     }
     
     public void setAccrueStats(boolean accrueStats) {
         this.accrueStats = accrueStats;
         
-    }
-    
-    public boolean getAccrueStats() {
-        return accrueStats;
     }
     
     public List<IndexHole> getIndexHoles() {
@@ -1726,13 +1747,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.indexHoles = indexHoles;
     }
     
+    public boolean getCollectTimingDetails() {
+        return collectTimingDetails;
+    }
+    
     public void setCollectTimingDetails(boolean collectTimingDetails) {
         this.collectTimingDetails = collectTimingDetails;
         
-    }
-    
-    public boolean getCollectTimingDetails() {
-        return collectTimingDetails;
     }
     
     public boolean getLogTimingDetails() {
@@ -1787,6 +1808,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         return fstCount;
     }
     
+    public void setFstCount(AtomicInteger fstCount) {
+        this.fstCount = fstCount;
+    }
+    
     public boolean getCacheModel() {
         return cacheModel;
     }
@@ -1795,20 +1820,24 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.cacheModel = cacheModel;
     }
     
-    public void setBypassExecutabilityCheck() {
-        bypassExecutabilityCheck = true;
-    }
-    
     public boolean bypassExecutabilityCheck() {
         return bypassExecutabilityCheck;
     }
     
-    public void setBackoffEnabled(boolean backoffEnabled) {
-        this.backoffEnabled = backoffEnabled;
+    public void setBypassExecutabilityCheck() {
+        bypassExecutabilityCheck = true;
+    }
+    
+    public void setBypassExecutabilityCheck(boolean bypassExecutabilityCheck) {
+        this.bypassExecutabilityCheck = bypassExecutabilityCheck;
     }
     
     public boolean getBackoffEnabled() {
         return backoffEnabled;
+    }
+    
+    public void setBackoffEnabled(boolean backoffEnabled) {
+        this.backoffEnabled = backoffEnabled;
     }
     
     public boolean getUnsortedUIDsEnabled() {
@@ -1819,12 +1848,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         this.unsortedUIDsEnabled = unsortedUIDsEnabled;
     }
     
-    public void setSpeculativeScanning(boolean speculativeScanning) {
-        this.speculativeScanning = speculativeScanning;
-    }
-    
     public boolean getSpeculativeScanning() {
         return speculativeScanning;
+    }
+    
+    public void setSpeculativeScanning(boolean speculativeScanning) {
+        this.speculativeScanning = speculativeScanning;
     }
     
     public boolean getSerializeQueryIterator() {

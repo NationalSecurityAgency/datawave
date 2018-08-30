@@ -21,7 +21,6 @@ import datawave.query.QueryParameters;
 import datawave.query.iterators.FieldIndexCountingIterator;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.config.ShardQueryConfigurationFactory;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.FieldIndexCountQueryTransformer;
@@ -94,7 +93,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         }
         
         // I'm using this config object in a pinch, we should probably create a custom one.
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(this, settings);
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(this, settings);
         config.setConnector(connection);
         config.setAuthorizations(auths);
         
