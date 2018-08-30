@@ -4,8 +4,6 @@ spring:
   cloud:
     bus:
       enabled: false
-    discovery:
-      enabled: false
     consul:
       enabled: false
     config:

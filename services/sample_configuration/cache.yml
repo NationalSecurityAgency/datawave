@@ -1,10 +1,8 @@
-security:
-  jwt:
-    enabled: false
-
-management:
+spring:
   security:
-    enabled: false
+    datawave:
+      jwt:
+        enabled: false
 
 hazelcast:
   server:

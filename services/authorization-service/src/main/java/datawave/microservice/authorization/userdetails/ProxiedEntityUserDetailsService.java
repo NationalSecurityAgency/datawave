@@ -6,7 +6,6 @@ import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserService;
-import datawave.security.authorization.SubjectIssuerDNPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -6,8 +6,6 @@ import datawave.webservice.common.audit.Auditor.AuditType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
 public class AuditMessageHandler {
     
     private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -21,9 +19,9 @@ public class AuditMessageHandler {
         this.auditor = auditor;
     }
     
-    public void onMessage(Map<String,String> msg) throws Exception {
+    public void onMessage(AuditMessage msg) throws Exception {
         try {
-            AuditParameters ap = msgHandlerAuditParams.fromMap(msg);
+            AuditParameters ap = msgHandlerAuditParams.fromMap(msg.getAuditParameters());
             if (!ap.getAuditType().equals(AuditType.NONE)) {
                 auditor.audit(ap);
             }

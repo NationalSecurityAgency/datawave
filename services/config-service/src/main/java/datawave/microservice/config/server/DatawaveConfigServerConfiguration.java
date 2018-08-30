@@ -4,6 +4,7 @@ import org.eclipse.jgit.api.TransportConfigCallback;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.config.server.config.ConfigServerProperties;
 import org.springframework.cloud.config.server.environment.EnvironmentRepository;
+import org.springframework.cloud.config.server.environment.MultipleJGitEnvironmentProperties;
 import org.springframework.cloud.config.server.environment.MultipleJGitEnvironmentRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,9 @@ public class DatawaveConfigServerConfiguration {
     private ConfigurableEnvironment environment;
     
     @Autowired
+    private MultipleJGitEnvironmentProperties properties;
+    
+    @Autowired
     private ConfigServerProperties server;
     
     @Autowired(required = false)
@@ -25,7 +29,7 @@ public class DatawaveConfigServerConfiguration {
     
     @Bean
     public EnvironmentRepository environmentRepository() {
-        MultipleJGitEnvironmentRepository repository = new DatawaveJGitEnvironmentRepository(environment);
+        MultipleJGitEnvironmentRepository repository = new DatawaveJGitEnvironmentRepository(environment, properties);
         repository.setTransportConfigCallback(this.transportConfigCallback);
         if (this.server.getDefaultLabel() != null) {
             repository.setDefaultLabel(this.server.getDefaultLabel());

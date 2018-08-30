@@ -7,6 +7,7 @@ import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.config.environment.Environment;
+import org.springframework.cloud.config.server.environment.MultipleJGitEnvironmentProperties;
 import org.springframework.cloud.config.server.environment.MultipleJGitEnvironmentRepository;
 import org.springframework.core.env.ConfigurableEnvironment;
 
@@ -17,8 +18,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
 public class DatawaveJGitEnvironmentRepository extends MultipleJGitEnvironmentRepository {
     private boolean initialized = false;
     
-    public DatawaveJGitEnvironmentRepository(ConfigurableEnvironment environment) {
-        super(environment);
+    public DatawaveJGitEnvironmentRepository(ConfigurableEnvironment environment, MultipleJGitEnvironmentProperties properties) {
+        super(environment, properties);
     }
     
     @Override

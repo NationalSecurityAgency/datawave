@@ -2,8 +2,10 @@ server:
   ssl:
     client-auth: NEED
 
-security:
-  use-trusted-subject-headers: true
+spring:
+  security:
+    datawave:
+      use-trusted-subject-headers: true
 
 mock:
   users:

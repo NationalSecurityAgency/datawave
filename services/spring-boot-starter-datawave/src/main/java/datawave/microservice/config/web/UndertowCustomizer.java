@@ -1,15 +1,15 @@
 package datawave.microservice.config.web;
 
 import io.undertow.Undertow;
-import io.undertow.UndertowOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
-import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
-import org.springframework.boot.context.embedded.undertow.UndertowEmbeddedServletContainerFactory;
+import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.boot.web.embedded.undertow.ConfigurableUndertowWebServerFactory;
+import org.springframework.boot.web.server.AbstractConfigurableWebServerFactory;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
@@ -20,8 +20,8 @@ import org.xnio.Options;
  * configuring both the secure and non-secure listeners.
  */
 @Component
-@ConditionalOnClass({Undertow.class, UndertowEmbeddedServletContainerFactory.class})
-public class UndertowCustomizer implements EmbeddedServletContainerCustomizer, ApplicationContextAware {
+@ConditionalOnClass({Undertow.class, ConfigurableUndertowWebServerFactory.class})
+public class UndertowCustomizer implements WebServerFactoryCustomizer<ConfigurableUndertowWebServerFactory>, ApplicationContextAware {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     
     @Value("${undertow.enable.http2:true}")
@@ -32,7 +32,8 @@ public class UndertowCustomizer implements EmbeddedServletContainerCustomizer, A
     
     private ApplicationContext applicationContext;
     
-    private DatawaveServerProperties serverProperties;
+    private ServerProperties serverProperties;
+    private DatawaveServerProperties datawaveServerProperties;
     
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -40,31 +41,25 @@ public class UndertowCustomizer implements EmbeddedServletContainerCustomizer, A
     }
     
     @Override
-    public void customize(ConfigurableEmbeddedServletContainer container) {
-        if (!(container instanceof UndertowEmbeddedServletContainerFactory)) {
-            logger.error("Container {} is not an UndertowEmbeddedServletContainer. Cannot configure.", container.getClass());
-            return;
-        }
-        final UndertowEmbeddedServletContainerFactory undertowContainer = (UndertowEmbeddedServletContainerFactory) container;
-        
-        serverProperties = applicationContext.getBean(DatawaveServerProperties.class);
-        
-        if (enableHttp2) {
-            undertowContainer.addBuilderCustomizers(c -> c.setServerOption(UndertowOptions.ENABLE_HTTP2, true));
-        }
+    public void customize(ConfigurableUndertowWebServerFactory factory) {
+        serverProperties = applicationContext.getBean(ServerProperties.class);
+        datawaveServerProperties = applicationContext.getBean(DatawaveServerProperties.class);
         
         // @formatter:off
-        undertowContainer.addBuilderCustomizers(c -> {
+        factory.addBuilderCustomizers(c -> {
             if (useDaemonThreads) {
                 // Tell XNIO to use Daemon threads
                 c.setWorkerOption(Options.THREAD_DAEMON, true);
             }
 
-            // If we're using ssl and also want a non-secure listener, then add it here since the parent won't configure both
-            if (serverProperties.getSsl() != null && serverProperties.getSsl().isEnabled() && serverProperties.getNonSecurePort() != null &&
-                    serverProperties.getNonSecurePort() >= 0) {
-                String host = undertowContainer.getAddress() == null ? "0.0.0.0" : undertowContainer.getAddress().getHostAddress();
-                c.addHttpListener(serverProperties.getNonSecurePort(), host);
+            if (factory instanceof AbstractConfigurableWebServerFactory) {
+                AbstractConfigurableWebServerFactory undertowFactory = (AbstractConfigurableWebServerFactory) factory;
+                // If we're using ssl and also want a non-secure listener, then add it here since the parent won't configure both
+                if (serverProperties.getSsl() != null && serverProperties.getSsl().isEnabled() && datawaveServerProperties.getNonSecurePort() != null &&
+                        datawaveServerProperties.getNonSecurePort() >= 0) {
+                    String host = undertowFactory.getAddress() == null ? "0.0.0.0" : undertowFactory.getAddress().getHostAddress();
+                    c.addHttpListener(datawaveServerProperties.getNonSecurePort(), host);
+                }
             }
         });
         // @formatter:on

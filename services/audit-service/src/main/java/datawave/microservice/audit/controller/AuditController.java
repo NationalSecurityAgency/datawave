@@ -1,5 +1,6 @@
 package datawave.microservice.audit.controller;
 
+import datawave.microservice.audit.common.AuditMessage;
 import datawave.microservice.audit.config.AuditServiceConfig;
 import datawave.webservice.common.audit.AuditParameters;
 import org.slf4j.Logger;
@@ -32,12 +33,13 @@ public class AuditController {
     }
     
     private void sendMessage(AuditParameters parameters) {
-        messageChannel.send(MessageBuilder.withPayload(parameters.toMap()).build());
+        messageChannel.send(MessageBuilder.withPayload(AuditMessage.fromParams(parameters)).build());
     }
     
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
     @RequestMapping(path = "/audit", method = RequestMethod.POST)
     public String audit(@RequestParam MultiValueMap<String,String> parameters) {
+        log.trace("Received audit request with parameters {}", parameters);
         restAuditParams.clear();
         restAuditParams.validate(parameters);
         sendMessage(restAuditParams);
