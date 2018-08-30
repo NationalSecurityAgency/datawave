@@ -11,9 +11,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * This is a specialized version of the CSV Helper intended to be used with the NYC Taxi & Limousine Commission dataset. This class sets up some configuration
- * properties for the NYCTLC data type, in order to enable dynamic field parsing based on the fields present in the header of the CSV. While the fields are
- * validated against a list of known fields, unknown fields are allowed.
+ * This is a specialized version of the CSV Helper intended to be used with the NYC Taxi &amp; Limousine Commission dataset. This class sets up some
+ * configuration properties for the NYCTLC data type, in order to enable dynamic field parsing based on the fields present in the header of the CSV. While the
+ * fields are validated against a list of known fields, unknown fields are allowed.
  */
 public class NYCTLCHelper extends CSVHelper {
     

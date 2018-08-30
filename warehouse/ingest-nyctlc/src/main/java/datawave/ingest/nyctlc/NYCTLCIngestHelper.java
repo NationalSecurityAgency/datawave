@@ -19,8 +19,8 @@ import static datawave.ingest.data.config.CSVHelper.DATA_SEP;
 import static datawave.ingest.data.config.CSVHelper.PROCESS_EXTRA_FIELDS;
 
 /**
- * This is a specialized version of the CSV Ingest Helper intended to be used with the NYC Taxi & Limousine Commission dataset. This class is responsible for
- * creating derived geometry fields, created from the lat/lon pairings. This enables downstream creation of GeoWave indices against these fields.
+ * This is a specialized version of the CSV Ingest Helper intended to be used with the NYC Taxi &amp; Limousine Commission dataset. This class is responsible
+ * for creating derived geometry fields, created from the lat/lon pairings. This enables downstream creation of GeoWave indices against these fields.
  */
 public class NYCTLCIngestHelper extends CSVIngestHelper {
     

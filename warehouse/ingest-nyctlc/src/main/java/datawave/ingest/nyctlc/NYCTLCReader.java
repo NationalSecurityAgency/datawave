@@ -15,9 +15,9 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import java.io.IOException;
 
 /**
- * This is a specialized version of the CSV Reader intended to be used with the NYC Taxi & Limousine Commission dataset. This CSV reader reads the first line of
- * the CSV in order to determine what fields are present in the data. Then, each line of the CSV is modified to include a mapping of the field name (as defined
- * in the header) to each applicable value. These key/value pairings are conceptually treated as 'extra fields'.
+ * This is a specialized version of the CSV Reader intended to be used with the NYC Taxi &amp; Limousine Commission dataset. This CSV reader reads the first
+ * line of the CSV in order to determine what fields are present in the data. Then, each line of the CSV is modified to include a mapping of the field name (as
+ * defined in the header) to each applicable value. These key/value pairings are conceptually treated as 'extra fields'.
  */
 public class NYCTLCReader extends CSVReaderBase {
     
