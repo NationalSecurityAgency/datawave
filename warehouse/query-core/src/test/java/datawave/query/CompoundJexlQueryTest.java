@@ -251,8 +251,8 @@ public class CompoundJexlQueryTest extends AbstractFunctionalQuery {
         runTest(query, query);
     }
     
-    @Test(expected = InvalidQueryException.class)
-    public void testErrorAnd_OrWithComposite() throws Exception {
+    @Test
+    public void testAnd_OrWithComposite() throws Exception {
         log.info("------  testErrorAnd_OrWithComposite  ------");
         String state = "'miSSouri'";
         String code = "'iTa'";
