@@ -1,0 +1,33 @@
+Ingesting NYC Taxi & Limousine Commission data into Accumulo with DATAWAVE
+=================================================================
+
+0. Set up Hadoop, ZooKeeper, Accumulo and Datawave. This may be difficult depending on your level of experience, but this is not the documentation to help you with this.
+
+1. Download some NYC Taxi & Limousine Commission CSVs (or you can use the sample file in src/test/resources/input) and put it in HDFS (preferrably uncompressed for splitting of mappers)
+	For example: hdfs dfs -put *.csv ${HDFS_BASE_DIR}/nyctlc
+
+2. If they don't already exist, you need to create the following files:
+     ~/.m2/datawave/properties/{your-environment}-passwords.properties
+     ~/.m2/datawave/properties/{your-environment}.properties
+
+3. In your properties file configure the following parameters
+
+    1. Add the nyctlc data type to one of the ingest data types properties (*INGEST_DATA_TYPES)
+    	For example: LIVE_INGEST_DATA_TYPES=nyctlc
+    	
+    2. Set the flag maker property:
+    	FLAG_MAKER_CONFIG=${DATAWAVE_INGEST_HOME}/config/NYCTLCFlagMakerConfig.xml
+
+4. Check over the configuration files to make sure the desired values and properties are set:
+	-  ./warehouse/configuration-core/src/main/resources/config/nyctlc-config.xml
+	-  ./warehouse/configuration-core/src/main/resources/config/NYCTLCFlagMakerConfig.xml
+    
+5. Build DATAWAVE: `mvn package -Passemble`
+
+6. Follow the general DATAWAVE README for deploying from this step.
+
+7. Ensure your NYC Taxi & Limousine Commission data is in HDFS in `${HDFS_BASE_DIR}/nyctlc`, uncompressed for those really large files (so you get more than one mapper).
+
+8. Run ${DATAWAVE_INGEST_HOME}/bin/system/start-ingest.sh
+
+9. Watch for mapreduce jobs to launch on the job tracker page.

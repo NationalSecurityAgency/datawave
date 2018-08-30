@@ -28,28 +28,28 @@
 	</property>
 
 	<property>
-	    <name>QueryMetrics_e.table.config.class</name>
+	    <name>${query.metrics.table.basename}_e.table.config.class</name>
 	    <value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 	</property>
 	
 	<property>
-	    <name>QueryMetrics_i.table.config.class</name>
+	    <name>${query.metrics.table.basename}_i.table.config.class</name>
 	    <value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 	</property>
 
 	<property>
-	    <name>QueryMetrics_r.table.config.class</name>
+	    <name>${query.metrics.table.basename}_r.table.config.class</name>
 	    <value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 	</property>
 
 	<property>
-	    <name>QueryMetrics_m.table.config.class</name>
+	    <name>${query.metrics.table.basename}_m.table.config.class</name>
 	    <value>datawave.ingest.table.config.MetadataTableConfigHelper</value>
 	</property>
 
     <property>
         <name>metadata.table.name</name>
-        <value>QueryMetrics_m</value>
+        <value>${query.metrics.table.basename}_m</value>
     </property>
 
     <property>
@@ -64,13 +64,13 @@
 
     <property>
         <name>sharded.table.names</name>
-        <value>QueryMetrics_e</value>
+        <value>${query.metrics.table.basename}_e</value>
         <description>Comma-separated list of tables that need to pull splits from accumulo</description>
     </property>
 
     <property>
         <name>shard.table.name</name>
-        <value>QueryMetrics_e</value>
+        <value>${query.metrics.table.basename}_e</value>
     </property>
 
     <property>
@@ -81,12 +81,12 @@
 
     <property>
         <name>shard.global.index.table.name</name>
-        <value>QueryMetrics_i</value>
+        <value>${query.metrics.table.basename}_i</value>
     </property>
 
     <property>
         <name>shard.global.rindex.table.name</name>
-        <value>QueryMetrics_r</value>
+        <value>${query.metrics.table.basename}_r</value>
     </property>
 
 	<property>
@@ -145,12 +145,12 @@
 
 	<property>
 		<name>querymetrics.data.category.index</name>
-		<value>AUTHORIZATIONS,BEGIN_DATE,CREATE_CALL_TIME,CREATE_DATE,DOC_RANGES,ELAPSED_TIME,END_DATE,ERROR_CODE,ERROR_MESSAGE,FI_RANGES,HOST,JUSTIFICATION,LIFECYCLE,NEGATIVE_SELECTORS,NEXT_COUNT,NUM_PAGES,NUM_RESULTS,NUM_UPDATES,POSITIVE_SELECTORS,PROXY_SERVERS,QUERY,QUERY_ID,QUERY_TYPE,QUERY_LOGIC,SETUP_TIME,USER,SEEK_COUNT,SOURCE_COUNT,SYSTEM_FROM,QUERY_NAME,PARAMETERS,EXTERNAL_QUERY_ID</value>
+		<value>AUTHORIZATIONS,BEGIN_DATE,CREATE_CALL_TIME,CREATE_DATE,DOC_RANGES,ELAPSED_TIME,END_DATE,ERROR_CODE,ERROR_MESSAGE,FI_RANGES,HOST,LIFECYCLE,NEGATIVE_SELECTORS,NEXT_COUNT,NUM_PAGES,NUM_RESULTS,NUM_UPDATES,POSITIVE_SELECTORS,PROXY_SERVERS,QUERY,QUERY_ID,QUERY_TYPE,QUERY_LOGIC,SETUP_TIME,USER,SEEK_COUNT,SOURCE_COUNT,QUERY_NAME,PARAMETERS</value>
 	</property>
 
 	<property>
 		<name>querymetrics.data.category.index.reverse</name>
-		<value>ERROR_CODE,ERROR_MESSAGE,HOST,JUSTIFICATION,NEGATIVE_SELECTORS,POSITIVE_SELECTORS,PROXY_SERVERS,QUERY,QUERY_ID,QUERY_TYPE,QUERY_LOGIC,USER,SYSTEM_FROM,QUERY_NAME,PARAMETERS,EXTERNAL_QUERY_ID</value>
+		<value>ERROR_CODE,ERROR_MESSAGE,HOST,NEGATIVE_SELECTORS,POSITIVE_SELECTORS,PROXY_SERVERS,QUERY,QUERY_ID,QUERY_TYPE,QUERY_LOGIC,USER,QUERY_NAME,PARAMETERS</value>
 	</property>
 
 	<property>

@@ -2,6 +2,7 @@ package datawave.query.composite;
 
 import com.google.common.collect.Sets;
 import datawave.query.Constants;
+import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -9,6 +10,7 @@ import org.apache.commons.jexl2.parser.ASTGTNode;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -20,9 +22,9 @@ import java.util.Set;
 public class CompositeUtils {
     
     public static final String SEPARATOR = Constants.MAX_UNICODE_STRING;
-    public static final Set<Class<?>> WILDCARD_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTNENode.class, ASTERNode.class);
-    public static final Set<Class<?>> LEAF_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTEQNode.class, ASTNENode.class, ASTERNode.class, ASTGTNode.class,
-                    ASTGENode.class, ASTLTNode.class, ASTLENode.class);
+    public static final Set<Class<?>> INVALID_LEAF_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTNENode.class);
+    public static final Set<Class<?>> VALID_LEAF_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTEQNode.class, ASTERNode.class, ASTGTNode.class, ASTGENode.class,
+                    ASTLTNode.class, ASTLENode.class, ASTAndNode.class);
     
     public static String getInclusiveLowerBound(String lowerBound) {
         return incrementBound(lowerBound);

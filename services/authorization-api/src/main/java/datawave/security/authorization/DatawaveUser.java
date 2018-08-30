@@ -54,8 +54,8 @@ public class DatawaveUser implements Serializable {
         this.unmodifiableAuths = Collections.unmodifiableCollection(this.auths);
         this.roles = roles == null ? Collections.emptyList() : new LinkedHashSet<>(roles);
         this.unmodifiableRoles = Collections.unmodifiableCollection(this.roles);
-        this.roleToAuthMapping = roleToAuthMapping == null ? LinkedHashMultimap.create() : Multimaps.unmodifiableMultimap(LinkedHashMultimap
-                        .create(roleToAuthMapping));
+        this.roleToAuthMapping = roleToAuthMapping == null ? LinkedHashMultimap.create()
+                        : Multimaps.unmodifiableMultimap(LinkedHashMultimap.create(roleToAuthMapping));
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
     }

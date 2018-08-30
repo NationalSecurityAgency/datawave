@@ -1,5 +1,6 @@
 package datawave.query.language.functions.lucene;
 
+import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.QueryFunction;
 import datawave.query.search.WildcardFieldedFilter;
 import datawave.webservice.query.exception.BadRequestQueryException;
@@ -14,7 +15,7 @@ import java.util.List;
 
 public class Options extends LuceneQueryFunction {
     public Options() {
-        super("options", new ArrayList<String>());
+        super(QueryFunctions.OPTIONS_FUNCTION, new ArrayList<String>());
     }
     
     @Override

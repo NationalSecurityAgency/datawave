@@ -79,12 +79,6 @@ public abstract class GroupingTest {
                         throws Exception {
             super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
         }
-        
-        @Override
-        protected EventQueryResponseBase runTestQueryWithoutGrouping(String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                        throws Exception {
-            return super.runTestQueryWithoutGrouping(querystr, startDate, endDate, extraParms, connector);
-        }
     }
     
     @RunWith(Arquillian.class)
@@ -109,12 +103,6 @@ public abstract class GroupingTest {
         protected void runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
                         throws Exception {
             super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
-        }
-        
-        @Override
-        protected EventQueryResponseBase runTestQueryWithoutGrouping(String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                        throws Exception {
-            return super.runTestQueryWithoutGrouping(querystr, startDate, endDate, extraParms, connector);
         }
     }
     
@@ -156,38 +144,6 @@ public abstract class GroupingTest {
         
         logic.setFullTableScanEnabled(true);
         deserializer = new KryoDocumentDeserializer();
-    }
-    
-    protected abstract EventQueryResponseBase runTestQueryWithoutGrouping(String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                    throws Exception;
-    
-    protected EventQueryResponseBase runTestQueryWithoutGrouping(String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Connector connector) throws Exception {
-        log.debug("runTestQuery");
-        log.trace("Creating QueryImpl");
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(startDate);
-        settings.setEndDate(endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(querystr);
-        settings.setParameters(extraParms);
-        settings.setId(UUID.randomUUID());
-        
-        log.debug("query: " + settings.getQuery());
-        log.debug("logic: " + settings.getQueryLogicName());
-        
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
-        logic.setupQuery(config);
-        
-        DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
-        TransformIterator<Map.Entry<Key,Value>,EventBase> iter = new DatawaveTransformIterator<>(logic.iterator(), transformer);
-        List<Object> eventList = new ArrayList<>();
-        while (iter.hasNext()) {
-            eventList.add(iter.next());
-        }
-        
-        return (EventQueryResponseBase) transformer.createResponse(eventList);
     }
     
     protected abstract void runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
@@ -277,4 +233,28 @@ public abstract class GroupingTest {
         
         runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
     }
+    
+    @Test
+    public void testGroupingUsingFunction() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*' && f:groupby('AG','GEN')";
+        
+        Map<String,Integer> expectedMap = new HashMap<>();
+        expectedMap.put("FEMALE-18", 2);
+        expectedMap.put("MALE-30", 1);
+        expectedMap.put("MALE-34", 1);
+        expectedMap.put("MALE-16", 1);
+        expectedMap.put("MALE-40", 2);
+        expectedMap.put("MALE-20", 2);
+        expectedMap.put("MALE-24", 1);
+        expectedMap.put("MALE-22", 2);
+        
+        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+    }
+    
 }

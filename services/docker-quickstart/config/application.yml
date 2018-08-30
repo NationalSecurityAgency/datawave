@@ -1,5 +1,5 @@
 server:
-  context-path: /${spring.application.name}
+  servlet.context-path: /${spring.application.name}
   port: 8443
   non-secure-port: 8080
   ssl:
@@ -12,23 +12,18 @@ server:
     key-store-password: 'ChangeIt'
 
 management:
-  context-path: /mgmt
-  security:
-    roles: Administrator,JBossAdministrator
-
-endpoints:
-  health:
-    sensitive: false
-
-security:
-  sessions: STATELESS
-  enable-csrf: false
-  user.password: passwordNotUsed
-  jwt.ttl: 86400
-  issuers-required: true
-  enforce-allowed-callers: false
+  endpoints.web.base-path: "/mgmt"
+  endpoints.web.exposure.include: "*"
+  endpoint.health.show-details: when-authorized
 
 spring:
+  security:
+    user.password: passwordNotUsed
+    datawave:
+      jwt.ttl: 86400
+      issuers-required: true
+      enforce-allowed-callers: false
+      manager-roles: Administrator,JBossAdministrator
   # Enable service discovery using Consul
   cloud:
     discovery:
@@ -38,7 +33,7 @@ spring:
       host: discovery
       discovery:
         port: ${server.non-secure-port}
-        health-check-path: ${server.context-path}${management.context-path}/health
+        health-check-path: ${server.servlet.context-path}${management.endpoints.web.base-path}/health
         health-check-interval: 15s
         instance-id: ${spring.application.name}:${vcap.application.instance_id:${spring.application.instance_id:${random.value}}}
       # Allow a long time for the Consul agent to become available.

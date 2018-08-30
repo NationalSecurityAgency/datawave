@@ -47,8 +47,8 @@ public class AccumuloAuditor implements Auditor {
     @Override
     public void audit(AuditParameters msg) throws Exception {
         if (!msg.getAuditType().equals(AuditType.NONE)) {
-            try (BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L)
-                            .setMaxWriteThreads(1))) {
+            try (BatchWriter writer = connector.createBatchWriter(tableName,
+                            new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1))) {
                 Mutation m = new Mutation(formatter.format(msg.getQueryDate()));
                 m.put(new Text(msg.getUserDn()), new Text(""), msg.getColviz(), new Value(msg.toString().getBytes()));
                 writer.addMutation(m);

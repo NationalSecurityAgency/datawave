@@ -51,47 +51,53 @@ public class Composite {
                         + expressionList + "]";
     }
     
-    protected JexlNode getNodeClass(List<JexlNode> jexlNodeList) {
+    protected Class<? extends JexlNode> getNodeClass(List<JexlNode> jexlNodeList) {
         JexlNode lastNode = null;
-        boolean allEqSoFar = true;
+        boolean allEqOrRegexSoFar = true;
+        boolean regexFound = false;
         for (JexlNode node : jexlNodeList) {
             if (node != null) {
-                if (allEqSoFar && node instanceof ASTEQNode)
+                if (!(node instanceof ASTEQNode || node instanceof ASTERNode)) {
                     lastNode = node;
-                else if (!(node instanceof ASTEQNode)) {
-                    lastNode = node;
-                    allEqSoFar = false;
+                    allEqOrRegexSoFar = false;
+                } else if (allEqOrRegexSoFar) {
+                    if (node instanceof ASTEQNode && !regexFound)
+                        lastNode = node;
+                    else if (node instanceof ASTERNode) {
+                        regexFound = true;
+                        lastNode = node;
+                    }
                 }
             } else
                 break;
         }
-        return lastNode;
+        return lastNode.getClass();
     }
     
-    public void getNodesAndExpressions(List<JexlNode> nodes, List<String> expressions, boolean includeOldData) {
-        nodes.addAll(Arrays.asList(getNodeClass(jexlNodeList)));
+    public void getNodesAndExpressions(List<Class<? extends JexlNode>> nodeClasses, List<String> expressions, boolean includeOldData) {
+        nodeClasses.addAll(Arrays.asList(getNodeClass(jexlNodeList)));
         expressions.addAll(Arrays.asList(getAppendedExpressions()));
         
         if (includeOldData) {
             JexlNode node = jexlNodeList.get(0);
             if (node instanceof ASTGTNode) {
-                nodes.clear();
+                nodeClasses.clear();
                 expressions.clear();
                 
                 expressions.add(CompositeUtils.getInclusiveLowerBound(expressionList.get(0)));
-                nodes.add(JexlNodeFactory.buildNode((ASTGENode) null, (String) null, (String) null));
+                nodeClasses.add(ASTGENode.class);
             } else if (node instanceof ASTGENode || node instanceof ASTEQNode) {
                 String origExpression = expressions.get(0);
                 
-                nodes.clear();
+                nodeClasses.clear();
                 expressions.clear();
                 
                 expressions.add(expressionList.get(0));
-                nodes.add(JexlNodeFactory.buildNode((ASTGENode) null, (String) null, (String) null));
+                nodeClasses.add(ASTGENode.class);
                 
                 if (node instanceof ASTEQNode) {
                     expressions.add(origExpression);
-                    nodes.add(JexlNodeFactory.buildNode((ASTLENode) null, (String) null, (String) null));
+                    nodeClasses.add(ASTLENode.class);
                 }
             }
         }
@@ -131,20 +137,29 @@ public class Composite {
         if (jexlNodeList.isEmpty())
             return false;
         
-        boolean allEqNodes = true;
+        boolean hasRegexNodes = false;
+        boolean hasEqNodes = false;
         boolean hasGTOrGENodes = false;
         boolean hasLTOrLENodes = false;
         for (int i = 0; i < jexlNodeList.size(); i++) {
             JexlNode node = jexlNodeList.get(i);
+            Class nodeClass = node.getClass();
             
+            // if this is an invalid leaf node, or not a valid leaf node, we're done
+            if (CompositeUtils.INVALID_LEAF_NODE_CLASSES.contains(nodeClass) || !CompositeUtils.VALID_LEAF_NODE_CLASSES.contains(nodeClass))
+                return false;
+            
+            hasEqNodes |= (node instanceof ASTEQNode);
+            hasRegexNodes |= (node instanceof ASTERNode);
             hasGTOrGENodes |= (node instanceof ASTGTNode || node instanceof ASTGENode);
             hasLTOrLENodes |= (node instanceof ASTLTNode || node instanceof ASTLENode);
+            
+            // can't combine opposing bounds
             if (hasGTOrGENodes && hasLTOrLENodes)
                 return false;
             
-            // if this is a regex or not equals node, and this is either not the last node,
-            // or was preceeded by something other than an equals node
-            if (CompositeUtils.WILDCARD_NODE_CLASSES.contains(node.getClass()) && ((i + 1) != jexlNodeList.size() || !allEqNodes))
+            // can't combine regex with bounds
+            if (hasRegexNodes && (hasGTOrGENodes || hasLTOrLENodes))
                 return false;
         }
         

@@ -1,11 +1,19 @@
 spring:
   autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration
+    exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
+
+  security:
+    user.password: passwordNotUsed
+    datawave:
+      jwt.ttl: 3600
+      issuers-required: true
+      allowed-callers:
+        - "cn=test.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us<cn=testcorp ca, ou=security, o=testcorp, c=us>"
 
 server:
   port: 0
   non-secure-port: 0
-  context-path: /authorization
+  servlet.context-path: /authorization
   ssl:
     client-auth: NEED
     trust-store: classpath:ssl/rootCA.p12
@@ -16,16 +24,9 @@ server:
     key-store-password: LetMeIn
 
 management:
-  context-path: /mgmt
-
-security:
-  sessions: STATELESS
-  enable-csrf: false
-  user.password: passwordNotUsed
-  jwt.ttl: 3600
-  issuers-required: true
-  allowed-callers:
-    - "cn=test.testcorp.com, ou=microservices, ou=development, o=testcorp, c=us<cn=testcorp ca, ou=security, o=testcorp, c=us>"
+  endpoints:
+    web:
+      base-path: "/mgmt"
 
 logging:
   level:

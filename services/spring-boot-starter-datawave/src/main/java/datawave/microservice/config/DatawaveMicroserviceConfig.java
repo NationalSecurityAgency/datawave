@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 public class DatawaveMicroserviceConfig {
     @Bean
     @ConditionalOnMissingBean(search = SearchStrategy.CURRENT)
-    public ServerProperties serverProperties() {
+    public DatawaveServerProperties datawaveServerProperties() {
         return new DatawaveServerProperties();
     }
     

@@ -3,14 +3,6 @@ server:
   ssl:
     enabled: false
 
-security:
-  jwt:
-    enabled: false
-
-management:
-  security:
-    enabled: false
-
 hazelcast:
   server:
     initialMergeDelaySeconds: 50
@@ -28,6 +20,10 @@ hazelcast:
                 </hazelcast>
 
 spring:
+  security:
+    datawave:
+      jwt:
+        enabled: false
   cloud:
     consul:
       discovery:

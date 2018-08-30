@@ -8,8 +8,10 @@ server:
 # using HTTP (e.g., behind a load-balancer that does SSL termination and calls using HTTP rather
 # than paying the penalty to set up a new SSL connection -- only do this if you are behind a
 # firewall and trust those with access)
-security:
-  use-trusted-subject-headers: true
+spring:
+  security:
+    datawave:
+      use-trusted-subject-headers: true
 
 logging:
   level:

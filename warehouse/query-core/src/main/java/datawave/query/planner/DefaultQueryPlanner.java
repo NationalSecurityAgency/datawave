@@ -35,6 +35,7 @@ import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
+import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
@@ -595,7 +596,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         stopwatch.stop();
         
-        if (query.contains("filter:options")) {
+        if (query.contains(QueryFunctions.QUERY_FUNCTION_NAMESPACE + ':')) {
             // only do the extra tree visit if the function is present
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - parse out queryOptions from options function");
             Map<String,String> optionsMap = new HashMap<>();

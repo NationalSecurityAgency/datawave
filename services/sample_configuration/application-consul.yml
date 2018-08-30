@@ -15,7 +15,7 @@ spring:
       discovery:
         scheme: https
         hostname: localhost
-        health-check-path: ${server.context-path}${management.context-path}/health
+        health-check-path: ${server.servlet.context-path}${management.endpoints.web.base-path}/health
         health-check-interval: 15s
         # Generate a unique instance ID when registering with Consul so that we can scale to more than one copy of a service
         instance-id: ${spring.application.name}:${vcap.application.instance_id:${spring.application.instance_id:${random.value}}}

@@ -1,6 +1,7 @@
 package datawave.microservice.audit;
 
 //import datawave.common.test.integration.IntegrationTest;
+import datawave.microservice.audit.common.AuditMessage;
 import datawave.microservice.audit.config.AuditServiceConfig;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
@@ -12,9 +13,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -151,7 +152,10 @@ public class AuditServiceTest {
         ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
         assertEquals(response.getStatusCode().value(), HttpStatus.OK.value());
         
-        Map<String,Object> received = ((Message<Map<String,Object>>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll()).getPayload();
+        @SuppressWarnings("unchecked")
+        Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
+        assertNotNull(msg);
+        Map<String,String> received = msg.getPayload().getAuditParameters();
         Map<String,String> expected = uri.getQueryParams().toSingleValueMap();
         
         for (String param : expected.keySet()) {
@@ -179,7 +183,10 @@ public class AuditServiceTest {
         ResponseEntity<String> response = jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
         assertEquals(response.getStatusCode().value(), HttpStatus.OK.value());
         
-        Map<String,Object> received = ((Message<Map<String,Object>>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll()).getPayload();
+        @SuppressWarnings("unchecked")
+        Message<AuditMessage> msg = (Message<AuditMessage>) messageCollector.forChannel(auditSourceBinding.auditSource()).poll();
+        assertNotNull(msg);
+        Map<String,String> received = msg.getPayload().getAuditParameters();
         Map<String,String> expected = uri.getQueryParams().toSingleValueMap();
         
         for (String param : expected.keySet()) {

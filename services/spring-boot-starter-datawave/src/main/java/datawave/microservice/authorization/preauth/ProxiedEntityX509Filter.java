@@ -156,7 +156,8 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
             } else {
                 Collection<String> issuers = Arrays.asList(ProxiedEntityUtils.splitProxiedDNs(proxiedIssuers, true));
                 if (issuers.size() != entities.size()) {
-                    logger.warn("Failing authorization since issuers list (" + proxiedIssuers + ") and entities list (" + proxiedSubjects + ") don't match up.");
+                    logger.warn("Failing authorization since issuers list (" + proxiedIssuers + ") and entities list (" + proxiedSubjects
+                                    + ") don't match up.");
                     throw new BadCredentialsException("Invalid proxied entities chain.");
                 }
                 Iterator<String> issIt = issuers.iterator();

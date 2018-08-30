@@ -5,7 +5,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import datawave.microservice.authorization.config.DatawaveSecurityProperties;
 import datawave.security.authorization.JWTTokenHandler;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.boot.context.embedded.Ssl;
+import org.springframework.boot.web.server.Ssl;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

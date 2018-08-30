@@ -1,10 +1,9 @@
 package datawave.microservice.config.web;
 
-import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "server", ignoreInvalidFields = true)
-public class DatawaveServerProperties extends ServerProperties {
+public class DatawaveServerProperties {
     private Integer nonSecurePort = null;
     
     public Integer getNonSecurePort() {

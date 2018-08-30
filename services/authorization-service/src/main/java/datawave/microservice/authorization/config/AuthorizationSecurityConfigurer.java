@@ -4,7 +4,6 @@ import datawave.microservice.authorization.jwt.JWTAuthenticationFilter;
 import datawave.microservice.authorization.jwt.JWTAuthenticationProvider;
 import datawave.microservice.authorization.preauth.ProxiedEntityX509Filter;
 import datawave.microservice.config.security.JWTSecurityConfigurer;
-import org.springframework.boot.actuate.autoconfigure.ManagementServerProperties;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Configuration;
@@ -29,7 +28,7 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
  * X-ProxiedEntitiesChain/X-ProxiedIssuersChain header so that the caller is proxying for itself. This is a convenience used for testing when one would like a
  * user to be able to directly access the authorization service (e.g., from a web browser).
  */
-@Order(SecurityProperties.ACCESS_OVERRIDE_ORDER - 1)
+@Order(SecurityProperties.BASIC_AUTH_ORDER - 3)
 @Configuration
 @EnableWebSecurity
 @EnableCaching
@@ -38,10 +37,10 @@ public class AuthorizationSecurityConfigurer extends JWTSecurityConfigurer {
     private final DatawaveSecurityProperties securityProperties;
     private final AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService;
     
-    public AuthorizationSecurityConfigurer(ManagementServerProperties managementServerProperties, DatawaveSecurityProperties securityProperties,
+    public AuthorizationSecurityConfigurer(DatawaveSecurityProperties securityProperties,
                     AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService,
                     JWTAuthenticationProvider jwtAuthenticationProvider) {
-        super(managementServerProperties, securityProperties, jwtAuthenticationProvider);
+        super(securityProperties, jwtAuthenticationProvider);
         this.securityProperties = securityProperties;
         this.authenticationUserDetailsService = authenticationUserDetailsService;
     }

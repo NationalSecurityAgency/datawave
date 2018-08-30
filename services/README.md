@@ -4,8 +4,8 @@ This module contains DATAWAVE external services. These are microservices that
 are intended to work in conjunction with, and eventually replace, the Wildfly
 based DATAWAVE web service.
 
-DATAWAVE microservices are built on top of [Spring Cloud](http://cloud.spring.io/spring-cloud-static/Edgware.SR3/single/spring-cloud.html) 
-and [Spring Boot](https://docs.spring.io/spring-boot/docs/1.5.13.RELEASE/reference/htmlsingle/).
+DATAWAVE microservices are built on top of [Spring Cloud](http://cloud.spring.io/spring-cloud-static/Finchley.SR1/single/spring-cloud.html) 
+and [Spring Boot](https://docs.spring.io/spring-boot/docs/2.0.4.RELEASE/reference/htmlsingle/).
 
 ## Why Microservices?
 
@@ -154,10 +154,10 @@ There are three ways to issue a refresh:
 1. Send a POST message with an empty body to `/<servicename>/mgmt/refresh` on the
    service you wish to refresh. This will cause all beans annotated wih `RefreshScope`
    to be re-created behind their proxies.
-2. Send a POST message with an empty body to `/<servicename>/mgmt/bus/refresh?destination=<otherservicename>:**`
+2. Send a POST message with an empty body to `/<servicename>/mgmt/bus-refresh?destination=<otherservicename>:**`
    on any service. This will cause all running instances of `<otherservice>` that are
    listening on the event bus to refresh.
-3. Send a POST message with an empty body to `/<servicename>/mgmt/bus/refresh` on
+3. Send a POST message with an empty body to `/<servicename>/mgmt/bus-refresh` on
    any service when using RabbitMQ. The service in question and all other services
    using RabbitMQ will be refreshed.
    
@@ -179,7 +179,7 @@ Next, build the DATAWAVE microservices.
 
 ```bash
 cd /path/to/datawave/services
-mvn clean install
+mvn -Pexec clean install
 # You can add -DskipTests to skip running unit tests
 # You can add -Pdocker to build Docker images
 ```
@@ -189,14 +189,14 @@ configuration repository.
 
 ```bash
 cd /path/to/datawave/services
-java -jar config-service/target/config-service*.jar --spring.profiles.active=dev,nomessaging,native --spring.cloud.config.server.native.searchLocations=file://$PWD/sample_configuration 
+java -jar config-service/target/config-service*-exec.jar --spring.profiles.active=dev,nomessaging,native,open_actuator --spring.cloud.config.server.native.searchLocations=file://$PWD/sample_configuration 
 ```
 
 Now launch the authorization service.
 
 ```bash
 cd /path/to/datawave/services
-java -jar authorization-service/target/authorization-service*.jar --spring.profiles.active=dev,nomessaging,mock 
+java -jar authorization-service/target/authorization-service*-exec.jar --spring.profiles.active=dev,nomessaging,mock 
 ```
 
 Once all services are running, you should be able to hit some of the 
@@ -213,7 +213,7 @@ following URLs:
 You may see an exception from either the authorization or config service due to
 an "Illegal key size". If you see this exception, it means you JRE/JDK does not
 have the Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction
-Policy files installed. See [here](http://cloud.spring.io/spring-cloud-static/Edgware.RELEASE/single/spring-cloud.html#_cloud_native_applications) 
+Policy files installed. See [here](http://cloud.spring.io/spring-cloud-static/Finchley.SR1/single/spring-cloud.html#_cloud_native_applications) 
 for more information.
 
 If you wish to run the audit service, it requires RabbitMQ. You must first
@@ -232,7 +232,7 @@ audit service as follows:
 
 ```bash
 cd /path/to/datawave/services
-java -jar audit/service/target/audit-service*.jar --spring.profiles.active=dev 
+java -jar audit-service/target/audit-service*-exec.jar --spring.profiles.active=dev 
 ```
 
 Once the audit service is running, you can call it by passing the JWT you 
@@ -244,6 +244,10 @@ curl -k -H "Authorization: Bearer <insert JWT text here>" https://localhost:8743
 # Optional: save JWT in a text file, then pass it for future calls:
 # curl -k <specify certificate info> https://localhost:8643/authorization/v1/authorize > /tmp/jwt.txt
 # curl -q -k -H "Authorization: Bearer $(</tmp/jwt.txt)" https://localhost:8743/audit/mgmt/health
+# NOTE: if you are using the supplied configuration, the test user cert will work:
+# export PKI_DIR=spring-boot-starter-datawave/src/main/resources/pki
+# curl --fail --cacert $PKI_DIR/ca.pem -E $PKI_DIR/user.pem https://localhost:8643/authorization/v1/authorize > /tmp/jwt.txt
+# curl -q --fail --cacert $PKI_DIR/ca.pem -H "Authorization: Bearer $(</tmp/jwt.txt)" https://localhost:8743/audit/mgmt/health
 ```
 
 You can send an audit request by posting to the `/v1/audit` endpoint. The following
@@ -318,7 +322,7 @@ run the authorization service with consul, but without RabbitMQ support, you
 would run:
 
 ```bash
-java -jar authorization-service/target/authorization-service*.jar --spring.profiles.active=dev,consul,nomessaging
+java -jar authorization-service/target/authorization-service*-exec.jar --spring.profiles.active=dev,consul,nomessaging
 ```
 
 If you intend to run Consul and alo use RabbitMQ, then you must define a service
@@ -354,7 +358,7 @@ To tun the Hazelcast service, execute the following. Note that running the
 Hazelcast service requires Consul.
 
 ```bash
-java -jar hazelcast/server/target/hazelcast-server-*.jar --spring.profiles.active=dev,consul,nomessaging
+java -jar hazelcast-service/target/hazelcast-server-*-exec.jar --spring.profiles.active=dev,consul,nomessaging
 ```
 
 Remove the `,nomessaging` if you are using RabbitMQ. If you want to run more
@@ -363,13 +367,13 @@ non-secure port for each copy. For example, you could run a second and third
 copy with:
 
 ```bash
-java -jar hazelcast/server/target/hazelcast-server-*.jar --spring.profiles.active=dev,consul,nomessaging --cachePort=8843
+java -jar hazelcast-service/target/hazelcast-server-*-exec.jar --spring.profiles.active=dev,consul,nomessaging --cachePort=8843
 ```
 
 and
 
 ```bash
-java -jar hazelcast/server/target/hazelcast-server-*.jar --spring.profiles.active=dev,consul,nomessaging --cachePort=8943
+java -jar hazelcast-service/target/hazelcast-server-*-exec.jar --spring.profiles.active=dev,consul,nomessaging --cachePort=8943
 ```
 
 To configure the authorization service to run the Hazelcast client, you can
