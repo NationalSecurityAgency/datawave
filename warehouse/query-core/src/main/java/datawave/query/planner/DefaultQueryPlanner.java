@@ -473,6 +473,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFieldsAsString(), true);
+        addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFieldsAsString(), true);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TYPE_METADATA_IN_HDFS, Boolean.toString(config.isTypeMetadataInHdfs()), true);

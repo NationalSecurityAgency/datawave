@@ -171,7 +171,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     protected UniqueTransform uniqueTransform = null;
     
     protected GroupingTransform groupingTransform;
-    
+
     protected boolean groupingContextAddedByMe = false;
     
     protected TypeMetadata typeMetadataWithNonIndexed = null;
@@ -369,27 +369,28 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             
             this.serializedDocuments = pipelineIter;
             
-            // apply the grouping transform if requested
+            // apply the grouping transform if requested and if the batch size is greater than zero
+            // if the batch size is 0, then grouping is computed only on the web server
             GroupingTransform groupify = getGroupingTransform();
-            if (groupify != null) {
-                
+            if (groupify != null && this.groupFieldsBatchSize > 0) {
+
                 // transform Entries from Key,Value to Key,Document
                 Iterator<Entry<Key,Document>> docIterator = Iterators.transform(this.serializedDocuments, new Function<Entry<Key,Value>,Entry<Key,Document>>() {
                     KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
-                    
+
                     @Nullable
                     @Override
                     public Entry<Key,Document> apply(@Nullable Entry<Key,Value> keyValueEntry) {
                         return dser.apply(keyValueEntry);
                     }
                 });
-                
-                docIterator = groupingTransform.getGroupingIterator(docIterator);
-                
+
+                docIterator = groupingTransform.getGroupingIterator(docIterator, this.groupFieldsBatchSize);
+
                 // transform Entries from Key,Document to Key,Value
                 this.serializedDocuments = Iterators.transform(docIterator, new Function<Entry<Key,Document>,Entry<Key,Value>>() {
                     KryoDocumentSerializer ser = new KryoDocumentSerializer(false);
-                    
+
                     @Nullable
                     @Override
                     public Entry<Key,Value> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {

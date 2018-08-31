@@ -43,6 +43,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     private LinkedList<Document> documents = null;
     private Map<String,String> reverseModelMapping = null;
     
+    private boolean pending;
+    
     public GroupingTransform(BaseQueryLogic<Entry<Key,Value>> logic, Collection<String> groupFieldsSet) {
         this.groupFieldsSet = new HashSet<>(groupFieldsSet);
         if (logic != null) {
@@ -82,7 +84,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      *            an iterator source
      * @return the flushed value that is an aggregation from the source iterator
      */
-    public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in) {
+    public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in, int max) {
         
         return new Iterator<Entry<Key,Document>>() {
             
@@ -90,7 +92,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             @Override
             public boolean hasNext() {
-                while (in.hasNext()) {
+                for (int i = 0; i < max && in.hasNext(); i++) {
                     GroupingTransform.this.apply(in.next());
                 }
                 next = GroupingTransform.this.flush();
@@ -109,6 +111,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     public Entry<Key,Document> flush() {
         if (documents == null) {
             documents = new LinkedList<>();
+        }
+        if (!multiset.isEmpty()) {
             if (log.isTraceEnabled()) {
                 log.trace("flush will use the multiset:" + multiset);
             }
@@ -138,6 +142,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             if (log.isTraceEnabled()) {
                 log.trace("flushing out " + entry);
             }
+            multiset.clear();
             return entry;
         }
         return null;
