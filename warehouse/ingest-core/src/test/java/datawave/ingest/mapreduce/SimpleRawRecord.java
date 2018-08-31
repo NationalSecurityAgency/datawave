@@ -255,8 +255,7 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
         if (len > 0) {
             rawData = new byte[len];
             dataInput.readFully(rawData);
-        }
-        else {
+        } else {
             rawData = null;
         }
     }

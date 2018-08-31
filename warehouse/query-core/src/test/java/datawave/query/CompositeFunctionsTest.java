@@ -40,6 +40,7 @@ import org.junit.runner.RunWith;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -65,9 +66,13 @@ public abstract class CompositeFunctionsTest {
     @RunWith(Arquillian.class)
     public static class ShardRange extends CompositeFunctionsTest {
         protected static Connector connector = null;
+        private static final String tempDirForCompositeFunctionsTest = "/tmp/TempDirForCompositeFunctionsTestShardRange";
         
         @BeforeClass
         public static void setUp() throws Exception {
+            // this will get property substituted into the TypeMetadataBridgeContext.xml file
+            // for the injection test (when this unit test is first created)
+            System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
             connector = qtth.connector;
@@ -80,6 +85,20 @@ public abstract class CompositeFunctionsTest {
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
         }
         
+        @AfterClass
+        public static void teardown() {
+            // maybe delete the temp folder here
+            File tempFolder = new File(tempDirForCompositeFunctionsTest);
+            if (tempFolder.exists()) {
+                try {
+                    FileUtils.forceDelete(tempFolder);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            TypeRegistry.reset();
+        }
+        
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, connector);
@@ -89,9 +108,13 @@ public abstract class CompositeFunctionsTest {
     @RunWith(Arquillian.class)
     public static class DocumentRange extends CompositeFunctionsTest {
         protected static Connector connector = null;
+        private static final String tempDirForCompositeFunctionsTest = "/tmp/TempDirForCompositeFunctionsTestDocumentRange";
         
         @BeforeClass
         public static void setUp() throws Exception {
+            // this will get property substituted into the TypeMetadataBridgeContext.xml file
+            // for the injection test (when this unit test is first created)
+            System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);
             connector = qtth.connector;
@@ -102,6 +125,20 @@ public abstract class CompositeFunctionsTest {
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
             PrintUtility.printTable(connector, auths, METADATA_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+        }
+        
+        @AfterClass
+        public static void teardown() {
+            // maybe delete the temp folder here
+            File tempFolder = new File(tempDirForCompositeFunctionsTest);
+            if (tempFolder.exists()) {
+                try {
+                    FileUtils.forceDelete(tempFolder);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            TypeRegistry.reset();
         }
         
         @Override
@@ -119,29 +156,6 @@ public abstract class CompositeFunctionsTest {
     @Inject
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
-    
-    private static final String tempDirForCompositeFunctionsTest = "/tmp/TempDirForCompositeFunctionsTest";
-    
-    @BeforeClass
-    public static void beforeClass() {
-        // this will get property substituted into the TypeMetadataBridgeContext.xml file
-        // for the injection test (when this unit test is first created)
-        System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
-    }
-    
-    @AfterClass
-    public static void teardown() {
-        // maybe delete the temp folder here
-        File tempFolder = new File(tempDirForCompositeFunctionsTest);
-        if (tempFolder.exists()) {
-            try {
-                FileUtils.forceDelete(tempFolder);
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        }
-        TypeRegistry.reset();
-    }
     
     private KryoDocumentDeserializer deserializer;
     
