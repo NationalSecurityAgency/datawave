@@ -30,7 +30,7 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     private String rawFileName = "";
     private long rawRecordNumber = 0;
     private long rawRecordTimestamp = 0;
-    private byte[] rawData = new byte[0];
+    private byte[] rawData = null;
     private Object auxData;
     private ColumnVisibility visibility;
     
@@ -224,8 +224,12 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
         dataOutput.writeLong(rawRecordNumber);
         dataOutput.writeLong(rawRecordTimestamp);
         
-        dataOutput.writeInt(rawData.length);
-        dataOutput.write(rawData);
+        if (rawData == null) {
+            dataOutput.writeInt(0);
+        } else {
+            dataOutput.writeInt(rawData.length);
+            dataOutput.write(rawData);
+        }
         
         // skipping auxData and visibility for now
     }
@@ -248,8 +252,13 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
         rawRecordTimestamp = dataInput.readLong();
         
         int len = dataInput.readInt();
-        rawData = new byte[len];
-        dataInput.readFully(rawData);
+        if (len > 0) {
+            rawData = new byte[len];
+            dataInput.readFully(rawData);
+        }
+        else {
+            rawData = null;
+        }
     }
     
     @Override
