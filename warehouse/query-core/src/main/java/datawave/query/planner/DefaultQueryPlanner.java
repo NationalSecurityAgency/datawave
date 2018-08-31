@@ -867,11 +867,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
                 queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields);
             } catch (CannotExpandUnfieldedTermFatalException e) {
-                stopwatch.stop();
+                
+                // Another portion of the query may satisfy queryability criteria, do not explicitly fail
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ",
                                 queryData.getQuery()));
                 log.info(qe);
-                throw new NoResultsException(qe);
             } catch (InstantiationException | TableNotFoundException | IllegalAccessException e) {
                 stopwatch.stop();
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
