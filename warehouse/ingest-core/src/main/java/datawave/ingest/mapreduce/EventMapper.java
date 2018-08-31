@@ -398,15 +398,17 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         boolean reprocessedNDCPush = false;
         
         byte[] rawData = value.getRawData();
-        long rawDataBytes = rawData.length;
-        getCounter(context, IngestInput.LINE_BYTES.toString(), "TOTAL").increment(rawDataBytes);
-        long minBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").getValue();
-        if (rawDataBytes < minBytes) {
-            getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").setValue(rawDataBytes);
-        }
-        long maxBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").getValue();
-        if (rawDataBytes > maxBytes) {
-            getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").setValue(rawDataBytes);
+        if (rawData != null) {
+            long rawDataBytes = rawData.length;
+            getCounter(context, IngestInput.LINE_BYTES.toString(), "TOTAL").increment(rawDataBytes);
+            long minBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").getValue();
+            if (rawDataBytes < minBytes) {
+                getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").setValue(rawDataBytes);
+            }
+            long maxBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").getValue();
+            if (rawDataBytes > maxBytes) {
+                getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").setValue(rawDataBytes);
+            }
         }
         
         // First lets clear this event from the error table if we are reprocessing a previously errored event
