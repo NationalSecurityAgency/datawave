@@ -907,14 +907,15 @@ public class QueryOptions implements OptionDescriber {
     public void setGroupFields(Set<String> groupFields) {
         this.groupFields = groupFields;
     }
-
+    
     public int getGroupFieldsBatchSize() {
         return groupFieldsBatchSize;
     }
-
+    
     public void setGroupFieldsBatchSize(int groupFieldsBatchSize) {
         this.groupFieldsBatchSize = groupFieldsBatchSize;
     }
+    
     public Set<String> getUniqueFields() {
         return uniqueFields;
     }
@@ -1295,14 +1296,13 @@ public class QueryOptions implements OptionDescriber {
                 this.getGroupFields().add(param);
             }
         }
-
+        
         if (options.containsKey(GROUP_FIELDS_BATCH_SIZE)) {
             String groupFieldsBatchSize = options.get(GROUP_FIELDS_BATCH_SIZE);
             int batchSize = Integer.parseInt(groupFieldsBatchSize);
             this.setGroupFieldsBatchSize(batchSize);
         }
-
-
+        
         if (options.containsKey(UNIQUE_FIELDS)) {
             String uniqueFields = options.get(UNIQUE_FIELDS);
             for (String param : Splitter.on(',').omitEmptyStrings().trimResults().split(uniqueFields)) {

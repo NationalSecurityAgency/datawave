@@ -11,9 +11,9 @@ import org.apache.log4j.Logger;
 import java.util.Map;
 
 public class QueryOptionsSwitch {
-
+    
     private static final Logger log = ThreadConfigurableLogger.getLogger(QueryOptionsSwitch.class);
-
+    
     public static void apply(Map<String,String> optionsMap, ShardQueryConfiguration config) {
         for (Map.Entry<String,String> entry : optionsMap.entrySet()) {
             String key = entry.getKey();
@@ -40,8 +40,8 @@ public class QueryOptionsSwitch {
                 case QueryParameters.GROUP_FIELDS_BATCH_SIZE:
                     try {
                         config.setGroupFieldsBatchSize(Integer.parseInt(value));
-                    } catch(Exception ex) {
-                        log.warn("Could not parse "+value+" as group.fields.batch.size");
+                    } catch (Exception ex) {
+                        log.warn("Could not parse " + value + " as group.fields.batch.size");
                     }
                     break;
                 case QueryParameters.UNIQUE_FIELDS:

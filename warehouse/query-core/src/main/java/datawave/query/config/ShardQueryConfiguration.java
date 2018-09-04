@@ -303,7 +303,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     protected boolean limitAnyFieldLookups = true;
     
     protected Set<String> groupFields;
-
+    
     protected int groupFieldsBatchSize;
     
     protected Set<String> uniqueFields;
@@ -1170,19 +1170,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     public String getGroupFieldsAsString() {
         return org.apache.commons.lang.StringUtils.join(this.getGroupFields(), Constants.PARAM_VALUE_SEP);
     }
-
+    
     public int getGroupFieldsBatchSize() {
         return groupFieldsBatchSize;
     }
-
+    
     public void setGroupFieldsBatchSize(int groupFieldsBatchSize) {
         this.groupFieldsBatchSize = groupFieldsBatchSize;
     }
-
+    
     public String getGroupFieldsBatchSizeAsString() {
-        return ""+groupFieldsBatchSize;
+        return "" + groupFieldsBatchSize;
     }
-
+    
     public Set<String> getUniqueFields() {
         return uniqueFields;
     }

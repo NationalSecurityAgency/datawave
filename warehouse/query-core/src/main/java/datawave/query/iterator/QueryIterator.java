@@ -171,7 +171,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     protected UniqueTransform uniqueTransform = null;
     
     protected GroupingTransform groupingTransform;
-
+    
     protected boolean groupingContextAddedByMe = false;
     
     protected TypeMetadata typeMetadataWithNonIndexed = null;
@@ -367,36 +367,34 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             
             pipelineIter.startPipeline();
             
-            this.serializedDocuments = pipelineIter;
+            // gather Key,Document Entries from the pipelines
+            Iterator<Entry<Key,Document>> pipelineDocuments = pipelineIter;
+            
+            // now apply the unique transform if requested
+            UniqueTransform uniquify = getUniqueTransform();
+            if (uniquify != null) {
+                pipelineDocuments = Iterators.filter(pipelineDocuments, uniquify.getUniquePredicate());
+            }
             
             // apply the grouping transform if requested and if the batch size is greater than zero
             // if the batch size is 0, then grouping is computed only on the web server
             GroupingTransform groupify = getGroupingTransform();
             if (groupify != null && this.groupFieldsBatchSize > 0) {
-
-                // transform Entries from Key,Value to Key,Document
-                Iterator<Entry<Key,Document>> docIterator = Iterators.transform(this.serializedDocuments, new Function<Entry<Key,Value>,Entry<Key,Document>>() {
-                    KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
-
-                    @Nullable
-                    @Override
-                    public Entry<Key,Document> apply(@Nullable Entry<Key,Value> keyValueEntry) {
-                        return dser.apply(keyValueEntry);
-                    }
-                });
-
-                docIterator = groupingTransform.getGroupingIterator(docIterator, this.groupFieldsBatchSize);
-
-                // transform Entries from Key,Document to Key,Value
-                this.serializedDocuments = Iterators.transform(docIterator, new Function<Entry<Key,Document>,Entry<Key,Value>>() {
-                    KryoDocumentSerializer ser = new KryoDocumentSerializer(false);
-
-                    @Nullable
-                    @Override
-                    public Entry<Key,Value> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
-                        return ser.apply(keyDocumentEntry);
-                    }
-                });
+                
+                pipelineDocuments = groupingTransform.getGroupingIterator(pipelineDocuments, this.groupFieldsBatchSize);
+            }
+            
+            if (this.getReturnType() == ReturnType.kryo) {
+                // Serialize the Document using Kryo
+                this.serializedDocuments = Iterators.transform(pipelineDocuments, new KryoDocumentSerializer(isReducedResponse(), isCompressResults()));
+            } else if (this.getReturnType() == ReturnType.writable) {
+                // Use the Writable interface to serialize the Document
+                this.serializedDocuments = Iterators.transform(pipelineDocuments, new WritableDocumentSerializer(isReducedResponse()));
+            } else if (this.getReturnType() == ReturnType.tostring) {
+                // Just return a toString() representation of the document
+                this.serializedDocuments = Iterators.transform(pipelineDocuments, new ToStringDocumentSerializer(isReducedResponse()));
+            } else {
+                throw new IllegalArgumentException("Unknown return type of: " + this.getReturnType());
             }
             
             // now add the result count to the keys (required when not sorting UIDs)
@@ -683,7 +681,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
      * @param documentSpecificSource
      * @return iterator of keys and values
      */
-    public Iterator<Entry<Key,Value>> createDocumentPipeline(SortedKeyValueIterator<Key,Value> deepSourceCopy,
+    public Iterator<Entry<Key,Document>> createDocumentPipeline(SortedKeyValueIterator<Key,Value> deepSourceCopy,
                     final NestedQueryIterator<Key> documentSpecificSource, QuerySpanCollector querySpanCollector) {
         
         QuerySpan trackingSpan = null;
@@ -803,12 +801,6 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         // remove the composite entries
         documents = Iterators.transform(documents, this.getCompositeProjection());
         
-        // now apply the unique transform if requested
-        UniqueTransform uniquify = getUniqueTransform();
-        if (uniquify != null) {
-            documents = Iterators.filter(documents, uniquify.getUniquePredicate());
-        }
-        
         // Filter out any Documents which are empty (e.g. due to attribute
         // projection or visibility filtering)
         if (gatherTimingDetails()) {
@@ -849,18 +841,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             documents = new PipelineQuerySpanCollectionIterator(querySpanCollector, trackingSpan, documents);
         }
         
-        if (this.getReturnType() == ReturnType.kryo) {
-            // Serialize the Document using Kryo
-            return Iterators.transform(documents, new KryoDocumentSerializer(isReducedResponse(), isCompressResults()));
-        } else if (this.getReturnType() == ReturnType.writable) {
-            // Use the Writable interface to serialize the Document
-            return Iterators.transform(documents, new WritableDocumentSerializer(isReducedResponse()));
-        } else if (this.getReturnType() == ReturnType.tostring) {
-            // Just return a toString() representation of the document
-            return Iterators.transform(documents, new ToStringDocumentSerializer(isReducedResponse()));
-        } else {
-            throw new IllegalArgumentException("Unknown return type of: " + this.getReturnType());
-        }
+        return documents;
     }
     
     protected Iterator<Entry<Key,Document>> getEvaluation(SortedKeyValueIterator<Key,Value> sourceDeepCopy, Iterator<Entry<Key,Document>> documents,

@@ -243,7 +243,7 @@ public abstract class GroupingTest {
         // @formatter:on
         
         extraParameters.put("group.fields", "AG,GEN");
-
+        
         runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
     }
     
@@ -290,26 +290,25 @@ public abstract class GroupingTest {
         
         runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
     }
-
+    
     @Test
     public void testGrouping4() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
-
+        
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
-
+        
         String queryString = "UUID =~ '^[CS].*'";
-
+        
         Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
-
+        
         extraParameters.put("group.fields", "GEN");
         extraParameters.put("group.fields.batch.size", "0");
-
+        
         runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
     }
-
-
+    
     @Test
     public void testGroupingUsingFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();

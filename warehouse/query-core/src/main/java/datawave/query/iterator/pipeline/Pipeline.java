@@ -26,9 +26,9 @@ public class Pipeline implements Runnable {
     private DocumentSpecificNestedIterator documentSpecificSource = new DocumentSpecificNestedIterator(null);
     
     // the result
-    private Entry<Key,Value> result = null;
+    private Entry<Key,Document> result = null;
     // the pipeline
-    private Iterator<Entry<Key,Value>> iterator = null;
+    private Iterator<Entry<Key,Document>> iterator = null;
     
     private QuerySpanCollector querySpanCollector = null;
     
@@ -37,7 +37,7 @@ public class Pipeline implements Runnable {
         this.iterator = null;
     }
     
-    public void setSourceIterator(Iterator<Entry<Key,Value>> sourceIter) {
+    public void setSourceIterator(Iterator<Entry<Key,Document>> sourceIter) {
         this.iterator = sourceIter;
     }
     
@@ -58,7 +58,7 @@ public class Pipeline implements Runnable {
         this.documentSpecificSource.setDocumentKey(null);
     }
     
-    public Entry<Key,Value> getResult() {
+    public Entry<Key,Document> getResult() {
         return result;
     }
     

@@ -1037,14 +1037,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 config.setProjectFields(new HashSet<>(groupFieldsList));
             }
         }
-
+        
         String groupFieldsBatchSizeString = settings.findParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(groupFieldsBatchSizeString)) {
             int groupFieldsBatchSize = Integer.parseInt(groupFieldsBatchSizeString);
             this.setGroupFieldsBatchSize(groupFieldsBatchSize);
             config.setGroupFieldsBatchSize(groupFieldsBatchSize);
         }
-
         
         // Get the UNIQUE_FIELDS parameter if given
         String uniqueFields = settings.findParameter(QueryParameters.UNIQUE_FIELDS).getParameterValue().trim();
@@ -1528,14 +1527,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public Set<String> getGroupFields() {
         return this.groupFields;
     }
-
+    
     public void setGroupFieldsBatchSize(int groupFieldsBatchSize) {
         this.groupFieldsBatchSize = groupFieldsBatchSize;
     }
-
+    
     public int getGroupFieldsBatchSize() {
         return this.groupFieldsBatchSize;
     }
+    
     public Set<String> getUniqueFields() {
         return uniqueFields;
     }
