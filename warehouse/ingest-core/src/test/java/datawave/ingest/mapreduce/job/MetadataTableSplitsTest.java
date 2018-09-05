@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+
 import org.apache.accumulo.fate.zookeeper.ZooCache;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
@@ -24,6 +25,8 @@ import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.reflect.Whitebox;
 
+import static org.junit.Assert.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -31,7 +34,9 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MetadataTableSplitsTest {
     
