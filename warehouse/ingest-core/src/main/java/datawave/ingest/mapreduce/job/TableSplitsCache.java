@@ -49,6 +49,11 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     private static final short DEFAULT_MAX_SPLIT_DECREASE = 42;
     private static final double DEFAULT_MAX_SPLIT_PERCENTAGE_DECREASE = .5;
     private static final boolean DEFAULT_REFRESH_SPLITS = true;
+    
+    private static final Logger log = Logger.getLogger(MetadataTableSplits.class);
+    
+    private final Configuration conf;
+    private AccumuloHelper cbHelper = null;
     private Path splitsPath = null;
     private Map<String,List<Text>> splits = null;
     private Map<String,Map<Text,String>> splitLocations = null;
@@ -57,14 +62,25 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         SortedMap<KeyExtent,String> tabletLocations = new TreeMap<>();
         SortedMap<Text,String> tabletLocationsByEndRow = new TreeMap<>();
         
-        MetadataServicer.forTableName(new ClientContext(this.cbHelper.getInstance(), this.cbHelper.getCredentials(), this.cbHelper.getZookeeperConfig()), table)
-                        .getTabletLocations(tabletLocations);
+        MetadataServicer.forTableName(getClientContext(), table).getTabletLocations(tabletLocations);
         for (Map.Entry<KeyExtent,String> entry : tabletLocations.entrySet()) {
+            // Note that if the tablet is currently in transition, then the "location" (entry.getValue()) will be null
+            String value = entry.getValue();
+            if (null == value) {
+                if (log.isDebugEnabled()) {
+                    log.debug("tablet location for " + entry.getKey() + " is null");
+                }
+                continue;
+            }
             if (entry.getKey().getEndRow() != null) {
-                tabletLocationsByEndRow.put(entry.getKey().getEndRow(), entry.getValue());
+                tabletLocationsByEndRow.put(entry.getKey().getEndRow(), value);
             }
         }
         return tabletLocationsByEndRow;
+    }
+    
+    private ClientContext getClientContext() throws AccumuloSecurityException {
+        return new ClientContext(this.cbHelper.getInstance(), this.cbHelper.getCredentials(), this.cbHelper.getZookeeperConfig());
     }
     
     /**
@@ -191,15 +207,12 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         
     }
     
-    private boolean exceedsMaxSplitsDeviation(Map<String,Integer> tmpSplitsPerTable) {
+    boolean exceedsMaxSplitsDeviation(Map<String,Integer> tmpSplitsPerTable) throws IOException {
         Map<String,Integer> currentSplitsPerTable = getCurrentSplitsPerTable();
         if (!currentSplitsPerTable.isEmpty()) {
             Set<String> currentTables = currentSplitsPerTable.keySet();
             for (String tableName : currentTables) {
-                if (currentSplitsPerTable.get(tableName) * (1 - conf.getDouble(MAX_SPLIT_PERCENTAGE_DECREASE, DEFAULT_MAX_SPLIT_PERCENTAGE_DECREASE)) > tmpSplitsPerTable
-                                .get(tableName)
-                                && currentSplitsPerTable.get(tableName) - tmpSplitsPerTable.get(tableName) > conf.getInt(MAX_SPLIT_DECREASE,
-                                                DEFAULT_MAX_SPLIT_DECREASE)) {
+                if (tableExceedsMaxSplitDeviation(tmpSplitsPerTable.get(tableName), currentSplitsPerTable.get(tableName), tableName)) {
                     log.warn(tableName
                                     + "Splits have decreased by greater than MAX_SPLIT_DECREASE or MAX_SPLIT_PERCENTAGE_DECREASE. Splits file will not be replaced. To force replacement, delete the current file and run generateSplitsFile.sh");
                     return true;
@@ -208,6 +221,12 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         }
         return false;
         
+    }
+    
+    boolean tableExceedsMaxSplitDeviation(Integer newCount, Integer currentCount, String tableName) {
+        double maxSplitPercentDecrease = conf.getDouble(MAX_SPLIT_PERCENTAGE_DECREASE, DEFAULT_MAX_SPLIT_PERCENTAGE_DECREASE);
+        int maxSplitDecrease = conf.getInt(MAX_SPLIT_DECREASE, DEFAULT_MAX_SPLIT_DECREASE);
+        return currentCount * (1 - maxSplitPercentDecrease) > newCount && currentCount - newCount > maxSplitDecrease;
     }
     
     private Map<String,Integer> getCurrentSplitsPerTable() {
@@ -297,17 +316,18 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     }
     
     /**
-     *
      * @param table
      * @return map of splits to tablet locations for the table
      * @throws IOException
      */
     public Map<Text,String> getSplitsAndLocationByTable(String table) throws IOException {
-        Map<Text,String> tableSplitsAndLocations;
         if (null == this.splitLocations)
             read();
-        tableSplitsAndLocations = this.splitLocations.get(table) == null ? new HashMap<>() : this.splitLocations.get(table);
-        return tableSplitsAndLocations;
+        if (this.splitLocations.containsKey(table)) {
+            return Collections.unmodifiableMap(this.splitLocations.get(table));
+        } else {
+            return Collections.emptyMap();
+        }
     }
     
     /**
@@ -317,7 +337,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     public Map<String,Map<Text,String>> getSplitsAndLocation() throws IOException {
         if (null == this.splitLocations)
             read();
-        return splitLocations;
+        return Collections.unmodifiableMap(splitLocations);
     }
     
 }

@@ -35,6 +35,7 @@ public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner 
                 tempSplitReducerMap.put(-i - 1, i);
             }
         }
+        
         SPLIT_TO_REDUCER_MAP.put(tableName, tempSplitReducerMap);
     }
     
