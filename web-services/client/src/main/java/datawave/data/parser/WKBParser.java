@@ -19,7 +19,7 @@ public class WKBParser extends GeometryParser {
         try {
             byte[] wkbBytes = BaseEncoding.base64().decode(geoString);
             geom = new WKBReader().read(wkbBytes);
-        } catch (com.vividsolutions.jts.io.ParseException e) {
+        } catch (Exception e) {
             if (log.isTraceEnabled())
                 log.trace("Cannot parse WKB geometry from [" + geoString + "]");
         }
