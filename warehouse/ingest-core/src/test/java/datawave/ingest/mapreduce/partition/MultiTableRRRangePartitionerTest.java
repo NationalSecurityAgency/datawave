@@ -71,7 +71,7 @@ public class MultiTableRRRangePartitionerTest {
     
     @Test(expected = RuntimeException.class)
     public void testEmptySplitsThrowsException() throws IOException, URISyntaxException {
-        mockContextForLocalCacheFile(createUrl(splitsFileName));
+        mockContextForLocalCacheFile(createUrl("full_empty_splits.txt"));
         getPartition("23432");
     }
     

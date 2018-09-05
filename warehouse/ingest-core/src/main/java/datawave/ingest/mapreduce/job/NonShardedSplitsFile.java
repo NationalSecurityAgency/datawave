@@ -95,7 +95,7 @@ public class NonShardedSplitsFile {
         
         private void outputSplitsForTable(MetadataTableSplits splits, PrintStream out, String table, SplitsFileType splitsFileType) throws IOException {
             Collection<Text> tableSplits = null;
-            Map<Text, String> tableSplitsAndLocations;
+            Map<Text,String> tableSplitsAndLocations;
             if (splitsFileType.equals(SplitsFileType.TRIMMEDBYNUMBER)) {
                 tableSplits = splits.getSplits(table, reduceTasks - 1);
             } else if (splitsFileType.equals(SplitsFileType.UNTRIMMED)) {
@@ -103,7 +103,8 @@ public class NonShardedSplitsFile {
             } else if (splitsFileType.equals(SplitsFileType.SPLITSANDLOCATIONS)) {
                 tableSplitsAndLocations = splits.getSplitsAndLocationByTable(table);
                 for (Text splitAndLocation : tableSplitsAndLocations.keySet()) {
-                    out.println(table + "\t" + new String(Base64.encodeBase64(splitAndLocation.getBytes())) + "\t" + tableSplitsAndLocations.get(splitAndLocation));
+                    out.println(table + "\t" + new String(Base64.encodeBase64(splitAndLocation.getBytes())) + "\t"
+                                    + tableSplitsAndLocations.get(splitAndLocation));
                     if (log.isTraceEnabled()) {
                         log.trace(table + " split: " + splitAndLocation);
                     }
@@ -146,7 +147,7 @@ public class NonShardedSplitsFile {
     
     public static class Reader {
         private Map<String,Text[]> splits;
-        private Map<String, Map<Text,String>> splitsAndLocations;
+        private Map<String,Map<Text,String>> splitsAndLocations;
         
         public Reader(Configuration conf, Path[] filesToCheck, SplitsFileType splitsFileType) throws IOException {
             Path cacheFile = findSplitsFile(conf, filesToCheck, splitsFileType);
@@ -163,7 +164,7 @@ public class NonShardedSplitsFile {
             boolean isSameTable;
             boolean hasSplits = false;
             boolean hasLocations = false;
-
+            
             try (BufferedReader in = new BufferedReader(new FileReader(cacheFile.toString()))) {
                 String line;
                 while ((line = in.readLine()) != null) {
@@ -171,7 +172,7 @@ public class NonShardedSplitsFile {
                     isSameTable = parts[0].equals(previousTableName);
                     hasSplits = parts.length > 1;
                     hasLocations = parts.length > 2;
-
+                    
                     if (isFirstLine) {
                         previousTableName = parts[0];
                         isFirstLine = false;
@@ -189,7 +190,7 @@ public class NonShardedSplitsFile {
                     }
                 }
             } finally {
-                //Add the last batch
+                // Add the last batch
                 saveLastSplitForTable(cutPoints, cutPointsAndLocations, splits, splitsAndLocations, previousTableName, hasSplits, hasLocations);
             }
         }
@@ -197,18 +198,19 @@ public class NonShardedSplitsFile {
         public Map<String,Text[]> getSplitsByTable() {
             return splits;
         }
-
+        
         public Map<String,Map<Text,String>> getSplitsAndLocationsByTable() {
             return splitsAndLocations;
         }
-
-        private void saveLastSplitForTable(ArrayList<Text> cutPoints, SortedMap<Text, String> cutPointsAndLocations, Map<String,Text[]> splits, Map<String,Map<Text,String>> splitsAndLocations, String previousTableName, boolean hasSplits, boolean hasLocations) {
+        
+        private void saveLastSplitForTable(ArrayList<Text> cutPoints, SortedMap<Text,String> cutPointsAndLocations, Map<String,Text[]> splits,
+                        Map<String,Map<Text,String>> splitsAndLocations, String previousTableName, boolean hasSplits, boolean hasLocations) {
             Collections.sort(cutPoints);
             if (hasLocations) {
                 splitsAndLocations.put(previousTableName, cutPointsAndLocations);
                 log.info("Adding cut points and locations for the table: " + previousTableName);
                 splits.put(previousTableName, cutPointsAndLocations.keySet().toArray(new Text[cutPointsAndLocations.size()]));
-            }else if (hasSplits) {
+            } else if (hasSplits) {
                 splits.put(previousTableName, cutPoints.toArray(new Text[cutPoints.size()]));
                 log.info("Adding cut points for table: " + previousTableName);
             }

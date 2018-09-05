@@ -32,7 +32,7 @@ public class MultiTableRangePartitionerTest {
     
     @Test
     public void testGoodSplitsFile() throws IOException, URISyntaxException {
-        mockContextForLocalCacheFile(createUrl("trimmed_splits.txt"));
+        mockContextForLocalCacheFile(createUrl("TRIMMEDBYNUMBERsplits.txt"));
         Assert.assertEquals(5, getPartition());
     }
     
