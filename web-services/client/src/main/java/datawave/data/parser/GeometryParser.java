@@ -14,6 +14,9 @@ public abstract class GeometryParser implements Comparable<GeometryParser> {
     
     @Override
     public int compareTo(GeometryParser other) {
-        return this.getPriority() - other.getPriority();
+        int compare = this.getPriority() - other.getPriority();
+        if (compare == 0)
+            compare = this.getClass().getName().compareTo(other.getClass().getName());
+        return compare;
     }
 }
