@@ -135,10 +135,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         // only expand if we have non doc specific ranges.
                         if (!RangeDefinition.allDocSpecific(input.getRanges())) {
                             if (!evaluatedPreviously) {
-                                // if we have an hdfs cached base URI, then we can
-                                // pushdown large fielded lists to an ivarator
-                                if (config.getIvaratorFstHdfsBaseURIs() != null && config.getHdfsSiteConfigURLs() != null
-                                                && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
+                                // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
+                                if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
                                     if (null == script)
                                         script = JexlASTHelper.parseJexlQuery(query);
                                     try {
@@ -276,16 +274,23 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         
         URI hdfsQueryCacheUri = getFstHdfsQueryCacheUri(config, settings);
         
-        FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
-        // Find large lists of values against the same field and push down into
-        // an Ivarator
-        return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri.toString());
+        if (hdfsQueryCacheUri != null) {
+            FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
+            // Find large lists of values against the same field and push down into
+            // an Ivarator
+            return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri.toString());
+        } else {
+            return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, null, null);
+        }
     }
     
     protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
-        String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
-        int index = new Random().nextInt(choices.length);
-        Path path = new Path(choices[index], settings.getId().toString());
-        return path.toUri();
+        if (config.getIvaratorFstHdfsBaseURIs() != null) {
+            String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
+            int index = new Random().nextInt(choices.length);
+            Path path = new Path(choices[index], settings.getId().toString());
+            return path.toUri();
+        }
+        return null;
     }
 }

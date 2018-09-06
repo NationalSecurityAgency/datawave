@@ -104,7 +104,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                 children.addAll(subsetChildrenCopies);
             }
             // if past our threshold, then add a ExceededValueThresholdMarker with an OR of this subset to the children list
-            else if (subsetChildrenCopies.size() >= config.getMaxOrExpansionThreshold()) {
+            else if (subsetChildrenCopies.size() >= config.getMaxOrExpansionThreshold() && isIndexed(field)) {
                 log.info("Pushing down large (" + subsetChildrenCopies.size() + ") fielded list for " + field);
                 
                 // turn the subset of children into a list of values
@@ -138,6 +138,10 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         }
         
         return children(newNode, children.toArray(new JexlNode[children.size()]));
+    }
+    
+    protected boolean isIndexed(String field) {
+        return config.getIndexedFields().contains(JexlASTHelper.deconstructIdentifier(field));
     }
     
     /**
