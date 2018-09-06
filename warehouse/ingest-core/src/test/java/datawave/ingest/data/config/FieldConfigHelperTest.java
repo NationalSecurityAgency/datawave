@@ -1,7 +1,5 @@
 package datawave.ingest.data.config;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import datawave.TestBaseIngestHelper;
 import datawave.data.type.DateType;
@@ -18,18 +16,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Scanner;
 
-import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class FieldConfigHelperTest {
     
