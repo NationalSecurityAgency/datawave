@@ -304,7 +304,7 @@ public abstract class GroupingTest {
         Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
         
         extraParameters.put("group.fields", "GEN");
-        extraParameters.put("group.fields.batch.size", "0");
+        // extraParameters.put("group.fields.batch.size", "0");
         
         runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
     }

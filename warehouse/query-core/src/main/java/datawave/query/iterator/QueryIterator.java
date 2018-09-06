@@ -370,6 +370,16 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             // gather Key,Document Entries from the pipelines
             Iterator<Entry<Key,Document>> pipelineDocuments = pipelineIter;
             
+            if (log.isTraceEnabled()) {
+                pipelineDocuments = Iterators.filter(pipelineDocuments, new Predicate<Entry<Key,Document>>() {
+                    @Override
+                    public boolean apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
+                        log.trace("after pipeline, keyDocumentEntry:" + keyDocumentEntry);
+                        return true;
+                    }
+                });
+            }
+            
             // now apply the unique transform if requested
             UniqueTransform uniquify = getUniqueTransform();
             if (uniquify != null) {
@@ -382,6 +392,17 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             if (groupify != null && this.groupFieldsBatchSize > 0) {
                 
                 pipelineDocuments = groupingTransform.getGroupingIterator(pipelineDocuments, this.groupFieldsBatchSize);
+                
+                if (log.isTraceEnabled()) {
+                    pipelineDocuments = Iterators.filter(pipelineDocuments, new Predicate<Entry<Key,Document>>() {
+                        @Override
+                        public boolean apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
+                            log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
+                            return true;
+                        }
+                    });
+                }
+                
             }
             
             if (this.getReturnType() == ReturnType.kryo) {
@@ -395,6 +416,17 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 this.serializedDocuments = Iterators.transform(pipelineDocuments, new ToStringDocumentSerializer(isReducedResponse()));
             } else {
                 throw new IllegalArgumentException("Unknown return type of: " + this.getReturnType());
+            }
+            
+            if (log.isTraceEnabled()) {
+                KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
+                this.serializedDocuments = Iterators.filter(this.serializedDocuments, new Predicate<Entry<Key,Value>>() {
+                    @Override
+                    public boolean apply(@Nullable Entry<Key,Value> keyValueEntry) {
+                        log.trace("after serializing, keyValueEntry:" + dser.apply(keyValueEntry));
+                        return true;
+                    }
+                });
             }
             
             // now add the result count to the keys (required when not sorting UIDs)
@@ -413,6 +445,16 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 // to store the timing metadata
                 this.serializedDocuments = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, r, this.serializedDocuments,
                                 this.getReturnType(), this.isReducedResponse(), this.isCompressResults());
+            }
+            if (log.isTraceEnabled()) {
+                KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
+                this.serializedDocuments = Iterators.filter(this.serializedDocuments, new Predicate<Entry<Key,Value>>() {
+                    @Override
+                    public boolean apply(@Nullable Entry<Key,Value> keyValueEntry) {
+                        log.debug("finally, considering:" + dser.apply(keyValueEntry));
+                        return true;
+                    }
+                });
             }
             
             // Determine if we have items to return

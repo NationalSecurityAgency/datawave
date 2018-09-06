@@ -19,14 +19,17 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
+import org.springframework.util.Assert;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -43,7 +46,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     private LinkedList<Document> documents = null;
     private Map<String,String> reverseModelMapping = null;
     
-    private boolean pending;
+    private List<Key> keys = new ArrayList<>();
     
     public GroupingTransform(BaseQueryLogic<Entry<Key,Value>> logic, Collection<String> groupFieldsSet) {
         this.groupFieldsSet = new HashSet<>(groupFieldsSet);
@@ -123,7 +126,9 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 } catch (Exception e) {
                     throw new IllegalStateException("Unable to merge column visibilities: " + fieldVisibilities.get(entry), e);
                 }
-                Key docKey = new Key("grouping", toString(fieldDatatypes.get(entry)) + '\u0000', "", vis, -1);
+                // grab a key from those saved during getListKeyCounts
+                Assert.notEmpty(keys, "no available keys for grouping results");
+                Key docKey = keys.get(0);
                 Document d = new Document(docKey, true);
                 
                 for (Attribute base : entry) {
@@ -203,22 +208,23 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         return max;
     }
     
-    private void getListKeyCounts(Entry<Key,Document> e) {
+    private void getListKeyCounts(Entry<Key,Document> entry) {
         
         if (log.isTraceEnabled()) {
-            log.trace("get list key counts for:" + e);
+            log.trace("get list key counts for:" + entry);
         }
+        keys.add(entry.getKey());
         int count = 1;
         Set<String> expandedGroupFieldsList = new LinkedHashSet<>();
         // if the incoming Documents have been aggregated on the tserver, they will have a COUNT field.
         // use the value in the COUNT field as a loop max when the fields are put into the multiset
         // During the flush operation, a new COUNT field will be created based on the number of unique
         // field sets in the multiset
-        if (e.getValue().getDictionary().containsKey("COUNT")) {
-            TypeAttribute countTypeAttribute = ((TypeAttribute) e.getValue().getDictionary().get("COUNT"));
+        if (entry.getValue().getDictionary().containsKey("COUNT")) {
+            TypeAttribute countTypeAttribute = ((TypeAttribute) entry.getValue().getDictionary().get("COUNT"));
             count = ((BigDecimal) countTypeAttribute.getType().getDelegate()).intValue();
         }
-        Multimap<String,String> fieldToFieldWithContextMap = this.getFieldToFieldWithGroupingContextMap(e.getValue(), expandedGroupFieldsList);
+        Multimap<String,String> fieldToFieldWithContextMap = this.getFieldToFieldWithGroupingContextMap(entry.getValue(), expandedGroupFieldsList);
         if (log.isTraceEnabled())
             log.trace("got a new fieldToFieldWithContextMap:" + fieldToFieldWithContextMap);
         int longest = this.longestValueList(fieldToFieldWithContextMap);
@@ -250,8 +256,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 for (int j = 0; j < count; j++) {
                     multiset.add(fieldCollection);
                 }
-                fieldDatatypes.put(fieldCollection, getDataType(e));
-                fieldVisibilities.put(fieldCollection, getColumnVisibility(e));
+                fieldDatatypes.put(fieldCollection, getDataType(entry));
+                fieldVisibilities.put(fieldCollection, getColumnVisibility(entry));
                 if (log.isTraceEnabled())
                     log.trace("added fieldList to the map:" + fieldCollection);
             } else {
