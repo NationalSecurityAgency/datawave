@@ -13,9 +13,9 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Options extends LuceneQueryFunction {
-    public Options() {
-        super(QueryFunctions.OPTIONS_FUNCTION, new ArrayList<String>());
+public class Unique extends LuceneQueryFunction {
+    public Unique() {
+        super(QueryFunctions.UNIQUE_FUNCTION, new ArrayList<String>());
     }
     
     @Override
@@ -39,6 +39,6 @@ public class Options extends LuceneQueryFunction {
     
     @Override
     public QueryFunction duplicate() {
-        return new Options();
+        return new Unique();
     }
 }

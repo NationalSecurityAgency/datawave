@@ -1,9 +1,11 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
 import datawave.query.QueryParameters;
 import datawave.query.jexl.functions.QueryFunctions;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
@@ -13,6 +15,7 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringJoiner;
 
 /**
@@ -21,6 +24,9 @@ import java.util.StringJoiner;
  */
 public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(QueryOptionsFromQueryVisitor.class);
+    
+    private static Set<String> RESERVED = Sets.newHashSet(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
+                    QueryFunctions.UNIQUE_FUNCTION, QueryFunctions.GROUPBY_FUNCTION);
     
     private List<String> optionsList = new ArrayList<>();
     
@@ -106,6 +112,39 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
      * @return
      */
     private Object visit(ASTStringLiteral node, List<String> list) {
+        list.add(node.image);
+        return super.visit(node, list);
+    }
+    
+    /**
+     * if the passed data is a List, call the method that collects the node image strings
+     *
+     * @param node
+     *            an identifier
+     * @param data
+     *            userData
+     * @return the rebuilt node
+     */
+    @Override
+    public Object visit(ASTIdentifier node, Object data) {
+        if (!RESERVED.contains(node.image)) {
+            if (data instanceof List) {
+                return this.visit(node, (List) data);
+            }
+        }
+        return super.visit(node, data);
+    }
+    
+    /**
+     * collect the node.image strings into the passed List
+     *
+     * @param node
+     *            the ASTIdentifier that is a child of the f:options function
+     * @param list
+     *            a list for collecting the child image strings (the property key/values)
+     * @return
+     */
+    private Object visit(ASTIdentifier node, List<String> list) {
         list.add(node.image);
         return super.visit(node, list);
     }

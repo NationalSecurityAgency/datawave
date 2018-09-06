@@ -13,6 +13,7 @@
         <bean class="datawave.query.language.functions.jexl.IsNotNull"/>
         <bean class="datawave.query.language.functions.jexl.Include"/>
         <bean class="datawave.query.language.functions.jexl.Exclude"/>
+        <bean class="datawave.query.language.functions.jexl.GeoFunction"/>
         <bean class="datawave.query.language.functions.jexl.Loaded"/>
         <bean class="datawave.query.language.functions.jexl.DateFunction"/>
         <bean class="datawave.query.language.functions.jexl.OccurrenceFunction"/>
@@ -21,6 +22,9 @@
         <bean class="datawave.query.language.functions.jexl.GetAllMatches"/>
         <bean class="datawave.query.language.functions.jexl.MatchesAtLeastCountOf"/>
         <bean class="datawave.query.language.functions.jexl.TimeFunction"/>
+        <bean class="datawave.query.language.functions.jexl.Jexl"/>
+        <bean class="datawave.query.language.functions.jexl.Options"/>
+        <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.CoveredBy"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Covers"/>
