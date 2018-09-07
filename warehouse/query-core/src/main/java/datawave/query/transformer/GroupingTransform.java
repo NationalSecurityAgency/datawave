@@ -9,13 +9,12 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultimap;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
-import datawave.query.model.QueryModel;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
+import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.query.logic.BaseQueryLogic;
-import java.util.HashSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -24,6 +23,8 @@ import org.apache.log4j.Logger;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
@@ -44,9 +45,11 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     public GroupingTransform(BaseQueryLogic<Entry<Key,Value>> logic, Collection<String> groupFieldsSet) {
         this.groupFieldsSet = new HashSet<>(groupFieldsSet);
-        QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
-        if (model != null) {
-            reverseModelMapping = model.getReverseQueryMapping();
+        if (logic != null) {
+            QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
+            if (model != null) {
+                reverseModelMapping = model.getReverseQueryMapping();
+            }
         }
         if (log.isTraceEnabled())
             log.trace("groupFieldsSet:" + this.groupFieldsSet);
@@ -55,6 +58,9 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     @Nullable
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
+        if (log.isTraceEnabled()) {
+            log.trace("apply to " + keyDocumentEntry);
+        }
         if (keyDocumentEntry != null) {
             getListKeyCounts(keyDocumentEntry);
         }
@@ -69,13 +75,45 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         return new Key(fieldName);
     }
     
+    /**
+     * Aggregate items from the incoming iterator and supply them via the flush method
+     * 
+     * @param in
+     *            an iterator source
+     * @return the flushed value that is an aggregation from the source iterator
+     */
+    public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in) {
+        
+        return new Iterator<Entry<Key,Document>>() {
+            
+            Entry<Key,Document> next;
+            
+            @Override
+            public boolean hasNext() {
+                while (in.hasNext()) {
+                    GroupingTransform.this.apply(in.next());
+                }
+                next = GroupingTransform.this.flush();
+                return next != null;
+            }
+            
+            @Override
+            public Entry<Key,Document> next() {
+                return next;
+            }
+        };
+        
+    }
+    
     @Override
     public Entry<Key,Document> flush() {
         if (documents == null) {
-            Map<String,String> markings = Maps.newHashMap();
             documents = new LinkedList<>();
+            if (log.isTraceEnabled()) {
+                log.trace("flush will use the multiset:" + multiset);
+            }
             for (Collection<Attribute<?>> entry : multiset.elementSet()) {
-                ColumnVisibility vis = null;
+                ColumnVisibility vis;
                 try {
                     vis = toColumnVisibility(fieldVisibilities.get(entry));
                 } catch (Exception e) {
@@ -96,7 +134,11 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         }
         if (!documents.isEmpty()) {
             Document d = documents.pop();
-            return Maps.immutableEntry(d.getMetadata(), d);
+            Entry<Key,Document> entry = Maps.immutableEntry(d.getMetadata(), d);
+            if (log.isTraceEnabled()) {
+                log.trace("flushing out " + entry);
+            }
+            return entry;
         }
         return null;
     }
@@ -158,13 +200,25 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     private void getListKeyCounts(Entry<Key,Document> e) {
         
+        if (log.isTraceEnabled()) {
+            log.trace("get list key counts for:" + e);
+        }
+        int count = 1;
         Set<String> expandedGroupFieldsList = new LinkedHashSet<>();
+        // if the incoming Documents have been aggregated on the tserver, they will have a COUNT field.
+        // use the value in the COUNT field as a loop max when the fields are put into the multiset
+        // During the flush operation, a new COUNT field will be created based on the number of unique
+        // field sets in the multiset
+        if (e.getValue().getDictionary().containsKey("COUNT")) {
+            TypeAttribute countTypeAttribute = ((TypeAttribute) e.getValue().getDictionary().get("COUNT"));
+            count = ((BigDecimal) countTypeAttribute.getType().getDelegate()).intValue();
+        }
         Multimap<String,String> fieldToFieldWithContextMap = this.getFieldToFieldWithGroupingContextMap(e.getValue(), expandedGroupFieldsList);
         if (log.isTraceEnabled())
             log.trace("got a new fieldToFieldWithContextMap:" + fieldToFieldWithContextMap);
         int longest = this.longestValueList(fieldToFieldWithContextMap);
         for (int i = 0; i < longest; i++) {
-            Collection<Attribute<?>> fieldCollection = new HashSet();
+            Collection<Attribute<?>> fieldCollection = new HashSet<>();
             for (String fieldListItem : expandedGroupFieldsList) {
                 if (log.isTraceEnabled())
                     log.trace("fieldListItem:" + fieldListItem);
@@ -174,10 +228,9 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                         log.trace("gtNames:" + gtNames);
                         log.trace("fieldToFieldWithContextMap:" + fieldToFieldWithContextMap + " did not contain " + fieldListItem);
                     }
-                    continue;
                 } else {
                     String gtName = gtNames.iterator().next();
-                    if (fieldListItem.equals(gtName) == false) {
+                    if (!fieldListItem.equals(gtName)) {
                         fieldToFieldWithContextMap.remove(fieldListItem, gtName);
                     }
                     if (log.isTraceEnabled()) {
@@ -188,7 +241,10 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 }
             }
             if (fieldCollection.size() == expandedGroupFieldsList.size()) {
-                multiset.add(fieldCollection);
+                // see above comment about the COUNT field
+                for (int j = 0; j < count; j++) {
+                    multiset.add(fieldCollection);
+                }
                 fieldDatatypes.put(fieldCollection, getDataType(e));
                 fieldVisibilities.put(fieldCollection, getColumnVisibility(e));
                 if (log.isTraceEnabled())

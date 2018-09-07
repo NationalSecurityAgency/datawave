@@ -12,6 +12,7 @@ import com.google.common.collect.UnmodifiableIterator;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
+import datawave.marking.MarkingFunctionsFactory;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.AttributeKeepFilter;
@@ -31,6 +32,7 @@ import datawave.query.function.LimitFields;
 import datawave.query.function.MaskedValueFilterFactory;
 import datawave.query.function.MaskedValueFilterInterface;
 import datawave.query.function.RemoveGroupingContext;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
@@ -59,6 +61,7 @@ import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
+import datawave.query.transformer.GroupingTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
 import datawave.query.transformer.UniqueTransform;
@@ -167,6 +170,8 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     
     protected UniqueTransform uniqueTransform = null;
     
+    protected GroupingTransform groupingTransform;
+    
     protected boolean groupingContextAddedByMe = false;
     
     protected TypeMetadata typeMetadataWithNonIndexed = null;
@@ -203,7 +208,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             log.trace("QueryIterator init()");
         }
         
-        if (!validateOptions(new SourcedOptions<String,String>(source, env, options))) {
+        if (!validateOptions(new SourcedOptions<>(source, env, options))) {
             throw new IllegalArgumentException("Could not initialize QueryIterator with " + options.toString());
         }
         
@@ -299,14 +304,12 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             this.range = range;
             
             // determine whether this is a teardown/rebuild range
-            boolean reseek = false;
             long resultCount = 0;
             if (!range.isStartKeyInclusive()) {
                 // see if we have a count in the cf
                 Key startKey = range.getStartKey();
                 String[] parts = StringUtils.split(startKey.getColumnFamily().toString(), '\0');
                 if (parts.length == 3) {
-                    reseek = true;
                     resultCount = NumericalEncoder.decode(parts[0]).longValue();
                     // remove the count from the range
                     startKey = new Key(startKey.getRow(), new Text(parts[1] + '\0' + parts[2]), startKey.getColumnQualifier(), startKey.getColumnVisibility(),
@@ -365,6 +368,35 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             pipelineIter.startPipeline();
             
             this.serializedDocuments = pipelineIter;
+            
+            // apply the grouping transform if requested
+            GroupingTransform groupify = getGroupingTransform();
+            if (groupify != null) {
+                
+                // transform Entries from Key,Value to Key,Document
+                Iterator<Entry<Key,Document>> docIterator = Iterators.transform(this.serializedDocuments, new Function<Entry<Key,Value>,Entry<Key,Document>>() {
+                    KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
+                    
+                    @Nullable
+                    @Override
+                    public Entry<Key,Document> apply(@Nullable Entry<Key,Value> keyValueEntry) {
+                        return dser.apply(keyValueEntry);
+                    }
+                });
+                
+                docIterator = groupingTransform.getGroupingIterator(docIterator);
+                
+                // transform Entries from Key,Document to Key,Value
+                this.serializedDocuments = Iterators.transform(docIterator, new Function<Entry<Key,Document>,Entry<Key,Value>>() {
+                    KryoDocumentSerializer ser = new KryoDocumentSerializer(false);
+                    
+                    @Nullable
+                    @Override
+                    public Entry<Key,Value> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
+                        return ser.apply(keyDocumentEntry);
+                    }
+                });
+            }
             
             // now add the result count to the keys (required when not sorting UIDs)
             // Cannot do this on document specific ranges as the count would place the keys outside the initial range
@@ -483,7 +515,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 if (log.isTraceEnabled())
                     log.trace("Adding " + myRange + " from seekrange " + seekRange);
                 
-                /**
+                /*
                  * Only perform the following checks if start key is not infinite and document range is specified
                  */
                 if (null != seekRange && !seekRange.isInfiniteStartKey()) {
@@ -505,7 +537,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                     
                 }
                 
-                JexlArithmetic myArithmetic = this.arithmetic;
+                JexlArithmetic myArithmetic;
                 if (arithmetic instanceof StatefulArithmetic) {
                     myArithmetic = ((StatefulArithmetic) arithmetic).clone();
                 } else {
@@ -539,7 +571,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 // Seek() the boolean logic stuff
                 ((SeekableIterator) subDocIter).seek(myRange, columnFamilies, inclusive);
                 
-                NestedQuery<Key> nestedQueryObj = new NestedQuery<Key>();
+                NestedQuery<Key> nestedQueryObj = new NestedQuery<>();
                 nestedQueryObj.setQuery(queries.getValue());
                 nestedQueryObj.setIterator(subDocIter);
                 nestedQueryObj.setQueryScript(myScript);
@@ -548,7 +580,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 nests.add(nestedQueryObj);
             }
             
-            docIter = new NestedQueryIterator<Key>(nests);
+            docIter = new NestedQueryIterator<>(nests);
             
             // now lets start off the nested iterator
             docIter.initialize();
@@ -849,7 +881,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 variables = VariableNameVisitor.parseQuery(jexlEvaluationFunction.parse(query));
             }
             
-            final Iterator<Tuple2<Key,Document>> tupleItr = Iterators.transform(documents, new EntryToTuple<Key,Document>());
+            final Iterator<Tuple2<Key,Document>> tupleItr = Iterators.transform(documents, new EntryToTuple<>());
             
             // get the function we use for the tf functionality. Note we are
             // getting an additional source deep copy for this function
@@ -950,7 +982,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                                             .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(),
                                             isTrackSizes())));
             
-            Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<Key,Document>());
+            Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<>());
             
             // Inject the document permutations if required
             if (!this.getDocumentPermutations().isEmpty()) {
@@ -1274,7 +1306,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         Set<String> indexedFields = new HashSet<String>(this.getTypeMetadata().keySet());
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
-        SatisfactionVisitor satisfactionVisitor = new SatisfactionVisitor(getNonEventFields(), indexedFields, Collections.<String> emptySet(),
+        SatisfactionVisitor satisfactionVisitor = new SatisfactionVisitor(getNonEventFields(), indexedFields, Collections.emptySet(),
                         isQueryFullySatisfiedInitialState);
         return satisfactionVisitor;
     }
@@ -1338,6 +1370,18 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             }
         }
         return uniqueTransform;
+    }
+    
+    protected GroupingTransform getGroupingTransform() {
+        if (groupingTransform == null && getGroupFields() != null & !getGroupFields().isEmpty()) {
+            synchronized (getGroupFields()) {
+                if (groupingTransform == null) {
+                    groupingTransform = new GroupingTransform(null, getGroupFields());
+                    groupingTransform.initialize(null, MarkingFunctionsFactory.createMarkingFunctions());
+                }
+            }
+        }
+        return groupingTransform;
     }
     
 }
