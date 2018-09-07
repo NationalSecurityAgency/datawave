@@ -17,6 +17,17 @@ package datawave.query.language.builder.jexl;
  * limitations under the License.
  */
 
+import datawave.query.language.functions.jexl.JexlQueryFunction;
+import datawave.query.language.parser.jexl.JexlFunctionNode;
+import datawave.query.language.parser.jexl.JexlNode;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
+import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.FunctionQueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.apache.lucene.search.TermQuery;
+
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,31 +35,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import datawave.query.language.functions.jexl.JexlQueryFunction;
-import datawave.query.language.parser.jexl.JexlFunctionNode;
-import datawave.query.language.parser.jexl.JexlNode;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.NotFoundQueryException;
-
-import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
-import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.FunctionQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.search.TermQuery;
-
 /**
  * Builds a {@link TermQuery} object from a {@link FieldQueryNode} object.
  */
 public class FunctionQueryNodeBuilder implements QueryBuilder {
     
-    private Map<String,JexlQueryFunction> allowedFunctionMap = Collections.synchronizedMap(new HashMap<String,JexlQueryFunction>());
+    private Map<String,JexlQueryFunction> allowedFunctionMap = Collections.synchronizedMap(new HashMap<>());
     
     public FunctionQueryNodeBuilder(List<JexlQueryFunction> allowedFunctions) {
         setAllowedFunctions(allowedFunctions);
     }
     
-    public JexlNode build(QueryNode queryNode) throws QueryNodeException {
+    public JexlNode build(QueryNode queryNode) {
         JexlNode returnNode = null;
         
         int depth = 0;

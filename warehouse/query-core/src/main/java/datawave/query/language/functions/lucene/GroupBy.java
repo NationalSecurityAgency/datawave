@@ -2,7 +2,6 @@ package datawave.query.language.functions.lucene;
 
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.QueryFunction;
-import datawave.query.search.WildcardFieldedFilter;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
@@ -13,9 +12,9 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Unique extends LuceneQueryFunction {
-    public Unique() {
-        super(QueryFunctions.UNIQUE_FUNCTION, new ArrayList<>());
+public class GroupBy extends LuceneQueryFunction {
+    public GroupBy() {
+        super(QueryFunctions.GROUPBY_FUNCTION, new ArrayList<>());
     }
     
     @Override
@@ -39,6 +38,6 @@ public class Unique extends LuceneQueryFunction {
     
     @Override
     public QueryFunction duplicate() {
-        return new Unique();
+        return new GroupBy();
     }
 }

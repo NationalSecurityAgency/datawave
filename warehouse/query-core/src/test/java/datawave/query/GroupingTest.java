@@ -5,6 +5,8 @@ import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.language.parser.jexl.JexlControlledQueryParser;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.WiseGuysIngest;
@@ -333,6 +335,33 @@ public abstract class GroupingTest {
         // @formatter:on
         
         runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+    }
+    
+    @Test
+    public void testGroupingUsingLuceneFunction() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "(UUID:C* or UUID:S* ) and #GROUPBY('AG','GEN')";
+        
+        // @formatter:off
+        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+                .put("FEMALE-18", 2)
+                .put("MALE-30", 1)
+                .put("MALE-34", 1)
+                .put("MALE-16", 1)
+                .put("MALE-40", 2)
+                .put("MALE-20", 2)
+                .put("MALE-24", 1)
+                .put("MALE-22", 2)
+                .build();
+        // @formatter:on
+        logic.setParser(new LuceneToJexlQueryParser());
+        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+        logic.setParser(new JexlControlledQueryParser());
     }
     
 }

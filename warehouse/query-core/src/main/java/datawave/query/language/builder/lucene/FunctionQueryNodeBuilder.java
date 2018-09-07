@@ -46,7 +46,7 @@ import org.apache.lucene.search.TermQuery;
  */
 public class FunctionQueryNodeBuilder implements QueryBuilder {
     
-    private Map<String,LuceneQueryFunction> allowedFunctionMap = Collections.synchronizedMap(new HashMap<String,LuceneQueryFunction>());
+    private Map<String,LuceneQueryFunction> allowedFunctionMap = Collections.synchronizedMap(new HashMap<>());
     
     public FunctionQueryNodeBuilder() {
         addFunction(new IsNull());

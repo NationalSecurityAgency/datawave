@@ -72,7 +72,7 @@ public class QueryFunctions {
                 }
             }
         }
-        return Collections.<String> emptySet();
+        return Collections.emptySet();
     }
     
     public static Collection<?> between(Iterable<?> values, String left, String right) {
@@ -86,7 +86,7 @@ public class QueryFunctions {
                 return matches;
             }
         }
-        return Collections.<String> emptySet();
+        return Collections.emptySet();
     }
     
     public static Collection<?> between(Object field, float left, float right) {
@@ -119,7 +119,7 @@ public class QueryFunctions {
                 return Collections.singleton(getHitTermString(field));
             }
         }
-        return Collections.<String> emptySet();
+        return Collections.emptySet();
     }
     
     public static Collection<?> between(Iterable<?> values, float left, float right) {
@@ -133,7 +133,7 @@ public class QueryFunctions {
                 return matches;
             }
         }
-        return Collections.<String> emptySet();
+        return Collections.emptySet();
     }
     
     public static Collection<?> between(Object fieldValue, long left, long right) {
