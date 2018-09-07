@@ -31,7 +31,7 @@ import datawave.query.util.Tuple2;
  * This is the iterator that handles the evaluation pipelines. Essentially it will queue up N evaluations. On each hasNext and next call, it will pull the
  * results ready from the top and cache the non-null results in a results queue.
  */
-public class PipelineIterator implements Iterator<Entry<Key,Value>> {
+public class PipelineIterator implements Iterator<Entry<Key,Document>> {
     
     private static final Logger log = Logger.getLogger(PipelineIterator.class);
     final protected YieldCallbackWrapper<Key> yield;
@@ -40,7 +40,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
     final protected PipelinePool pipelines;
     final protected Queue<Tuple2<Future<?>,Pipeline>> evaluationQueue;
     protected Key lastKeyEvaluated = null;
-    final protected Queue<Entry<Key,Value>> results;
+    final protected Queue<Entry<Key,Document>> results;
     final protected int maxResults;
     final protected QuerySpanCollector querySpanCollector;
     final protected QuerySpan querySpan;
@@ -73,7 +73,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      */
     @Override
     public boolean hasNext() {
-        Entry<Key,Value> next = getNext(false);
+        Entry<Key,Document> next = getNext(false);
         if (log.isTraceEnabled()) {
             log.trace("QueryIterator.hasNext() -> " + (next == null ? null : next.getKey()));
         }
@@ -86,8 +86,8 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      * @see java.util.Iterator#next()
      */
     @Override
-    public Entry<Key,Value> next() {
-        Entry<Key,Value> next = getNext(true);
+    public Entry<Key,Document> next() {
+        Entry<Key,Document> next = getNext(true);
         if (log.isTraceEnabled()) {
             log.trace("QueryIterator.next() -> " + (next == null ? null : next.getKey()));
         }
@@ -100,7 +100,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      * @param remove
      * @return the next non-null entry. null if there are no more entries to get.
      */
-    private Entry<Key,Value> getNext(boolean remove) {
+    private Entry<Key,Document> getNext(boolean remove) {
         try {
             if (log.isTraceEnabled()) {
                 log.trace("getNext(" + remove + ") start: " + evaluationQueue.size() + " cached: " + results.size());
@@ -123,7 +123,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
             }
             
             // get/remove and return the next result, null if we are done
-            Entry<Key,Value> next = null;
+            Entry<Key,Document> next = null;
             if (!results.isEmpty()) {
                 if (remove) {
                     next = results.poll();
@@ -147,7 +147,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      * @throws InterruptedException
      */
     private void cacheNextResult() throws InterruptedException, ExecutionException {
-        Entry<Key,Value> result = null;
+        Entry<Key,Document> result = null;
         
         long startMs = System.currentTimeMillis();
         while (!evaluationQueue.isEmpty() && result == null) {
@@ -199,11 +199,11 @@ public class PipelineIterator implements Iterator<Entry<Key,Value>> {
      * @throws InterruptedException
      * @throws ExecutionException
      */
-    private Entry<Key,Value> poll(long waitMs) throws InterruptedException, ExecutionException, TimeoutException {
+    private Entry<Key,Document> poll(long waitMs) throws InterruptedException, ExecutionException, TimeoutException {
         // get the next evaluated result
         Tuple2<Future<?>,Pipeline> nextFuture = evaluationQueue.poll();
         
-        Entry<Key,Value> result = null;
+        Entry<Key,Document> result = null;
         try {
             if (log.isTraceEnabled()) {
                 Key docKey = nextFuture.second().getSource().getKey();

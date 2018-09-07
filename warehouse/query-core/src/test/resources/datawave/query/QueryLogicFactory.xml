@@ -119,7 +119,7 @@
         <property name="includeHierarchyFields" value="false" />	<!-- was ${include.hierarchy.fields} -->
         <property name="baseIteratorPriority" value="100" />	<!-- was ${beq.baseIteratorPriority} -->
         <!-- property name="accumuloPassword" value="${accumulo.user.password}" />	 -->
-        <property name="collapseUids" value="true" />	<!-- was ${query.collapse.uids} -->
+        <property name="collapseUids" value="false" />	<!-- was ${query.collapse.uids} -->
         <property name="useEnrichers" value="true" />
         <property name="contentFieldNames">
             <list value-type="java.lang.String">

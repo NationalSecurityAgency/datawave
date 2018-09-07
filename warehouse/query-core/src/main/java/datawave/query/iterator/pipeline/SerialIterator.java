@@ -20,7 +20,7 @@ public class SerialIterator extends PipelineIterator {
     
     protected Pipeline currentPipeline;
     
-    protected Entry<Key,Value> result = null;
+    protected Entry<Key,Document> result = null;
     
     public SerialIterator(NestedIterator<Key> documents, int maxPipelines, int maxCachedResults, QuerySpanCollector querySpanCollector, QuerySpan querySpan,
                     QueryIterator sourceIterator, SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env,
@@ -50,8 +50,8 @@ public class SerialIterator extends PipelineIterator {
     }
     
     @Override
-    public Entry<Key,Value> next() {
-        Entry<Key,Value> returnResult = result;
+    public Entry<Key,Document> next() {
+        Entry<Key,Document> returnResult = result;
         result = null;
         return returnResult;
     }

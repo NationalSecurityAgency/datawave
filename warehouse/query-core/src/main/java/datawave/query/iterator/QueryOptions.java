@@ -121,6 +121,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String LIMIT_FIELDS_PRE_QUERY_EVALUATION = "limit.fields.pre.query.evaluation";
     public static final String LIMIT_FIELDS_FIELD = "limit.fields.field";
     public static final String GROUP_FIELDS = "group.fields";
+    public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
     public static final String TYPE_METADATA_IN_HDFS = "type.metadata.in.hdfs";
     public static final String HITS_ONLY = "hits.only";
@@ -245,6 +246,7 @@ public class QueryOptions implements OptionDescriber {
     protected String limitFieldsField = null;
     
     protected Set<String> groupFields = Sets.newHashSet();
+    protected int groupFieldsBatchSize = Integer.MAX_VALUE;
     protected Set<String> uniqueFields = Sets.newHashSet();
     
     protected Set<String> hitsOnlySet = new HashSet<>();
@@ -428,6 +430,7 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsPreQueryEvaluation = other.limitFieldsPreQueryEvaluation;
         this.limitFieldsField = other.limitFieldsField;
         this.groupFields = other.groupFields;
+        this.groupFieldsBatchSize = other.groupFieldsBatchSize;
         this.hitsOnlySet = other.hitsOnlySet;
         
         this.compressedMappings = other.compressedMappings;
@@ -905,6 +908,14 @@ public class QueryOptions implements OptionDescriber {
         this.groupFields = groupFields;
     }
     
+    public int getGroupFieldsBatchSize() {
+        return groupFieldsBatchSize;
+    }
+    
+    public void setGroupFieldsBatchSize(int groupFieldsBatchSize) {
+        this.groupFieldsBatchSize = groupFieldsBatchSize;
+    }
+    
     public Set<String> getUniqueFields() {
         return uniqueFields;
     }
@@ -994,6 +1005,7 @@ public class QueryOptions implements OptionDescriber {
                         "Classes implementing DocumentPermutation which can transform the document prior to evaluation (e.g. expand/mutate fields).");
         options.put(LIMIT_FIELDS, "limit fields");
         options.put(GROUP_FIELDS, "group fields");
+        options.put(GROUP_FIELDS_BATCH_SIZE, "group fields.batch.size");
         options.put(UNIQUE_FIELDS, "unique fields");
         options.put(HIT_LIST, "hit list");
         options.put(NON_INDEXED_DATATYPES, "Normalizers to apply only at aggregation time");
@@ -1285,6 +1297,12 @@ public class QueryOptions implements OptionDescriber {
             }
         }
         
+        if (options.containsKey(GROUP_FIELDS_BATCH_SIZE)) {
+            String groupFieldsBatchSize = options.get(GROUP_FIELDS_BATCH_SIZE);
+            int batchSize = Integer.parseInt(groupFieldsBatchSize);
+            this.setGroupFieldsBatchSize(batchSize);
+        }
+        
         if (options.containsKey(UNIQUE_FIELDS)) {
             String uniqueFields = options.get(UNIQUE_FIELDS);
             for (String param : Splitter.on(',').omitEmptyStrings().trimResults().split(uniqueFields)) {
@@ -1312,7 +1330,7 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(POSTPROCESSING_CLASSES)) {
             this.postProcessingFunctions = options.get(POSTPROCESSING_CLASSES);
             // test parsing of the functions
-            getPostProcessingChain(new WrappingIterator<Entry<Key,Document>>());
+            getPostProcessingChain(new WrappingIterator<>());
         }
         
         if (options.containsKey(NON_INDEXED_DATATYPES)) {
@@ -1522,9 +1540,8 @@ public class QueryOptions implements OptionDescriber {
      *
      * @param data
      * @return
-     * @throws IOException
      */
-    public static Map<String,Set<String>> buildFieldDataTypeMap(String data) throws IOException {
+    public static Map<String,Set<String>> buildFieldDataTypeMap(String data) {
         
         Map<String,Set<String>> mapping = new HashMap<>();
         
@@ -1552,7 +1569,7 @@ public class QueryOptions implements OptionDescriber {
         return mapping;
     }
     
-    public static Set<String> fetchDatatypeKeys(String data) throws IOException {
+    public static Set<String> fetchDatatypeKeys(String data) {
         Set<String> keys = Sets.newHashSet();
         if (data != null) {
             String[] entries = StringUtils.split(data, ';');
@@ -1573,7 +1590,7 @@ public class QueryOptions implements OptionDescriber {
         return keys;
     }
     
-    public static TypeMetadata buildTypeMetadata(String data) throws IOException {
+    public static TypeMetadata buildTypeMetadata(String data) {
         return new TypeMetadata(data);
     }
     
@@ -1612,9 +1629,8 @@ public class QueryOptions implements OptionDescriber {
      *
      * @param map
      * @return
-     * @throws IOException
      */
-    public static String buildFieldNormalizerString(Multimap<String,Type<?>> map) throws IOException {
+    public static String buildFieldNormalizerString(Multimap<String,Type<?>> map) {
         StringBuilder sb = new StringBuilder();
         
         for (String fieldName : map.keySet()) {
