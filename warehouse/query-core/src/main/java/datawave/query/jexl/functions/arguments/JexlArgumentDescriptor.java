@@ -42,7 +42,7 @@ public interface JexlArgumentDescriptor {
      * @param attributeFactory
      * @param filterMap
      */
-    public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap);
+    void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap);
     
     /**
      * Get the entire set of fields that are referenced by this function. If you need subsets of fields required to satisfy the function, then use fieldSets()
@@ -103,7 +103,7 @@ public interface JexlArgumentDescriptor {
             if (b instanceof ASTOrNode) {
                 for (String field2 : JexlASTHelper.getIdentifierNames(b)) {
                     for (Set<String> fields1 : a) {
-                        Set<String> fields = new HashSet<String>();
+                        Set<String> fields = new HashSet<>();
                         fields.addAll(fields1);
                         fields.add(field2);
                         fieldSets.add(fields);
@@ -125,7 +125,7 @@ public interface JexlArgumentDescriptor {
             Set<Set<String>> fieldSets = new HashSet<>();
             for (Set<String> fields2 : b) {
                 for (Set<String> fields1 : a) {
-                    Set<String> fields = new HashSet<String>();
+                    Set<String> fields = new HashSet<>();
                     fields.addAll(fields1);
                     fields.addAll(fields2);
                     fieldSets.add(fields);

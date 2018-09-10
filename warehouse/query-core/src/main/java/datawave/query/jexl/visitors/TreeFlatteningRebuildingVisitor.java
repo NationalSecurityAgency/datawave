@@ -70,7 +70,7 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     }
     
     private boolean isBoundedRange(ASTAndNode node) {
-        List<JexlNode> otherNodes = new ArrayList<JexlNode>();
+        List<JexlNode> otherNodes = new ArrayList<>();
         Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, false);
         if (ranges.size() == 1 && otherNodes.isEmpty()) {
             return true;

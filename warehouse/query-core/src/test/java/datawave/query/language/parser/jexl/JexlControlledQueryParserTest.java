@@ -82,7 +82,7 @@ public class JexlControlledQueryParserTest {
         allowedFields.add("9001_1");
         parser.setAllowedFields(allowedFields);
         
-        Map<String,Set<String>> includedValMap = new HashMap<String,Set<String>>();
+        Map<String,Set<String>> includedValMap = new HashMap<>();
         Set<String> includedValSet1 = new HashSet<>();
         includedValSet1.add("John");
         includedValSet1.add("Doe");
@@ -103,7 +103,7 @@ public class JexlControlledQueryParserTest {
         allowedFields.add("9001_1");
         parser.setAllowedFields(allowedFields);
         
-        Map<String,Set<String>> excludedValMap = new HashMap<String,Set<String>>();
+        Map<String,Set<String>> excludedValMap = new HashMap<>();
         Set<String> excludedValSet = new HashSet<>();
         excludedValSet.add("John");
         excludedValSet.add("Doe");
@@ -127,13 +127,13 @@ public class JexlControlledQueryParserTest {
         allowedFields.add("9001_1");
         parser.setAllowedFields(allowedFields);
         
-        Map<String,Set<String>> includedValMap = new HashMap<String,Set<String>>();
+        Map<String,Set<String>> includedValMap = new HashMap<>();
         Set<String> includedValSet = new HashSet<>();
         includedValSet.add("John");
         includedValMap.put("$1337_1", includedValSet);
         parser.setIncludedValues(includedValMap);
         
-        Map<String,Set<String>> excludedValMap = new HashMap<String,Set<String>>();
+        Map<String,Set<String>> excludedValMap = new HashMap<>();
         Set<String> excludedValSet = new HashSet<>();
         excludedValSet.add("Doe");
         excludedValMap.put("$1337_1", excludedValSet);

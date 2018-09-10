@@ -15,7 +15,7 @@ public class Exclude extends JexlQueryFunction {
     WildcardFieldedFilter.BooleanType type = null;
     
     public Exclude() {
-        super("exclude", new ArrayList<String>());
+        super("exclude", new ArrayList<>());
     }
     
     @Override

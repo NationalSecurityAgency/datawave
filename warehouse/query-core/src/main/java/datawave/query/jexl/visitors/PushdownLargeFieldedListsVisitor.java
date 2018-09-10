@@ -85,12 +85,12 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         Multimap<String,JexlNode> nodes = getNodesByField(children(node));
         
         ArrayList<JexlNode> children = newArrayList();
-        List<String> fields = new ArrayList<String>(nodes.keySet());
+        List<String> fields = new ArrayList<>(nodes.keySet());
         Collections.sort(fields);
         for (String field : fields) {
             // recurse on the children in this subset
             Collection<JexlNode> subsetChildren = nodes.get(field);
-            List<JexlNode> subsetChildrenCopies = new ArrayList<JexlNode>();
+            List<JexlNode> subsetChildrenCopies = new ArrayList<>();
             for (JexlNode child : subsetChildren) {
                 JexlNode copiedChild = (JexlNode) child.jjtAccept(this, data);
                 if (copiedChild != null) {
@@ -108,7 +108,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                 log.info("Pushing down large (" + subsetChildrenCopies.size() + ") fielded list for " + field);
                 
                 // turn the subset of children into a list of values
-                SortedSet<String> values = new TreeSet<String>();
+                SortedSet<String> values = new TreeSet<>();
                 for (JexlNode child : subsetChildrenCopies) {
                     values.add(String.valueOf(JexlASTHelper.getLiteralValue(child)));
                 }

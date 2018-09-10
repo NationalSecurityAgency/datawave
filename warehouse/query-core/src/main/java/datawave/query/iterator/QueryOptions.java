@@ -698,7 +698,7 @@ public class QueryOptions implements OptionDescriber {
     }
     
     public Set<String> getAllIndexOnlyFields() {
-        Set<String> allIndexOnlyFields = new HashSet<String>();
+        Set<String> allIndexOnlyFields = new HashSet<>();
         // index only fields are by definition not in the event
         if (indexOnlyFields != null)
             allIndexOnlyFields.addAll(indexOnlyFields);
@@ -717,7 +717,7 @@ public class QueryOptions implements OptionDescriber {
      * @return
      */
     public Set<String> getNonEventFields() {
-        Set<String> nonEventFields = new HashSet<String>();
+        Set<String> nonEventFields = new HashSet<>();
         // index only fields are by definition not in the event
         if (indexOnlyFields != null)
             nonEventFields.addAll(indexOnlyFields);

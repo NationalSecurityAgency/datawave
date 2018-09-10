@@ -45,7 +45,7 @@ import org.powermock.api.easymock.PowerMock;
 public class MultiRFileOutputFormatterTest {
     
     private static final String JOB_ID = "job_201109071404_1";
-    private List<String> filenames = new ArrayList<String>();
+    private List<String> filenames = new ArrayList<>();
     protected static final Logger logger = Logger.getLogger(MultiRFileOutputFormatterTest.class);
     protected static Map<String,String> mockedConfiguration = new HashMap<>();
     
@@ -376,7 +376,7 @@ public class MultiRFileOutputFormatterTest {
         return new MultiRFileOutputFormatter() {
             @Override
             protected Set<String> getTableList() {
-                Set<String> tables = new HashSet<String>();
+                Set<String> tables = new HashSet<>();
                 tables.add("shard");
                 tables.add("shardIndex");
                 return tables;
@@ -384,10 +384,10 @@ public class MultiRFileOutputFormatterTest {
             
             @Override
             protected void setTableIdsAndConfigs() {
-                tableConfigs = new HashMap<String,ConfigurationCopy>();
+                tableConfigs = new HashMap<>();
                 tableConfigs.put("shard", null);
                 tableConfigs.put("shardIndex", null);
-                tableIds = new HashMap<String,String>();
+                tableIds = new HashMap<>();
                 tableIds.put("shard", "1");
                 tableIds.put("shardIndex", "2");
             }
@@ -399,7 +399,7 @@ public class MultiRFileOutputFormatterTest {
             
             @Override
             protected Map<Text,String> getShardLocations(String tableName) throws IOException {
-                Map<Text,String> locations = new HashMap<Text,String>();
+                Map<Text,String> locations = new HashMap<>();
                 locations.put(new Text("20100101_1"), "server1");
                 locations.put(new Text("20100101_2"), "server2");
                 return locations;
@@ -449,7 +449,7 @@ public class MultiRFileOutputFormatterTest {
         conf = new Configuration();
         conf.set("mapred.output.dir", "/tmp");
         conf.set(MultiRFileOutputFormatter.CONFIGURED_TABLE_NAMES, "shard,shardIndex");
-        Map<String,Path> shardedTableMapFiles = new HashMap<String,Path>();
+        Map<String,Path> shardedTableMapFiles = new HashMap<>();
         shardedTableMapFiles.put("shard", new Path("/tmp/shard"));
         ShardedTableMapFile.addToConf(conf, shardedTableMapFiles);
     }

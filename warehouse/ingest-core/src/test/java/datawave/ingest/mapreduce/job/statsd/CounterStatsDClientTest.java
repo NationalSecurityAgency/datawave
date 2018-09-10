@@ -70,7 +70,7 @@ public class CounterStatsDClientTest {
         public String host;
         public int port;
         public boolean stopped = false;
-        public List<String> messages = new ArrayList<String>();
+        public List<String> messages = new ArrayList<>();
         
         public TestCounterStatsDClient(CounterToStatsDConfiguration config) {
             super(config);

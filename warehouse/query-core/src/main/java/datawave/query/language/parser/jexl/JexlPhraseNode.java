@@ -8,7 +8,7 @@ public class JexlPhraseNode extends JexlNode {
     private List<String> wordList = new ArrayList<>();
     
     public JexlPhraseNode(String field, List<String> wordList) {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
         this.field = field;
         this.wordList = wordList;
     }

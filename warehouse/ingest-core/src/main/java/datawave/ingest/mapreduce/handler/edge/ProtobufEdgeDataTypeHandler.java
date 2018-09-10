@@ -148,7 +148,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     long futureDelta, pastDelta;
     long newFormatStartDate;
     
-    public static enum FailurePolicy {
+    public enum FailurePolicy {
         CONTINUE, FAIL_JOB
     }
     
@@ -309,7 +309,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             Map<String,Set<EdgeDefinition>> blacklistedEdges = new HashMap<>();
             for (String dType : edges.keySet()) {
                 if (!blacklistedEdges.containsKey(dType)) {
-                    blacklistedEdges.put(dType, new HashSet<EdgeDefinition>());
+                    blacklistedEdges.put(dType, new HashSet<>());
                 }
                 for (EdgeDefinition edgeDef : edges.get(dType).getEdges()) {
                     if (isBlacklistField(dType, edgeDef.getSourceFieldName()) || isBlacklistField(dType, edgeDef.getSinkFieldName())) {
@@ -371,7 +371,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         Map<String,Set<EdgeDefinition>> preconditionEdges = new HashMap<>();
         for (String dType : edges.keySet()) {
             if (!preconditionEdges.containsKey(dType)) {
-                preconditionEdges.put(dType, new HashSet<EdgeDefinition>());
+                preconditionEdges.put(dType, new HashSet<>());
             }
             for (EdgeDefinition edgeDef : edges.get(dType).getEdges()) {
                 if (edgeDef.hasJexlPrecondition()) {
@@ -819,12 +819,12 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
         Set<Metadata> fwdMetaSet = eventMetadataRegistry.get(fwdMetaKey);
         if (null == fwdMetaSet) {
-            fwdMetaSet = new HashSet<Metadata>();
+            fwdMetaSet = new HashSet<>();
             eventMetadataRegistry.put(fwdMetaKey, fwdMetaSet);
         }
         Set<Metadata> revMetaSet = eventMetadataRegistry.get(revMetaKey);
         if (null == revMetaSet) {
-            revMetaSet = new HashSet<Metadata>();
+            revMetaSet = new HashSet<>();
             eventMetadataRegistry.put(revMetaKey, revMetaSet);
         }
         
@@ -1173,7 +1173,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                     String colfams[] = StringUtils.split(s, ':', false);
                     if (colfams.length > 1) {
                         if (!locs.containsKey(colfams[0])) {
-                            locs.put(colfams[0], new HashSet<Text>());
+                            locs.put(colfams[0], new HashSet<>());
                         }
                         for (int i = 1; i < colfams.length; i++) {
                             locs.get(colfams[0]).add(new Text(colfams[i]));
@@ -1243,7 +1243,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     
     @Override
     public String[] getTableNames(Configuration conf) {
-        List<String> tableNames = new ArrayList<String>();
+        List<String> tableNames = new ArrayList<>();
         tableNames.add(ConfigurationHelper.isNull(conf, EDGE_TABLE_NAME, String.class));
         if (conf.getBoolean(EDGE_TABLE_METADATA_ENABLE, this.enableMetadata)) {
             tableNames.add(ConfigurationHelper.isNull(conf, METADATA_TABLE_NAME, String.class));

@@ -385,7 +385,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     private long getLongProperty(final String prop, final long defaultValue) {
         if (this.myEnv != null && this.myEnv.getConfig() != null) {
             AccumuloConfiguration conf = this.myEnv.getConfig();
-            Map<String,String> properties = new TreeMap<String,String>();
+            Map<String,String> properties = new TreeMap<>();
             conf.getProperties(properties, new AccumuloConfiguration.MatchFilter(prop));
             if (properties.containsKey(prop)) {
                 return Long.parseLong(properties.get(prop));

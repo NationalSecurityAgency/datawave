@@ -569,7 +569,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     
     public static IteratorSetting configureVisibilityPruning(int stackPosition, Set<Authorizations> auths, Set<String> unDisplayed) {
         
-        Set<String> myUnDisplayedVisibilities = Sets.newTreeSet(unDisplayed == null ? new TreeSet<String>() : unDisplayed);
+        Set<String> myUnDisplayedVisibilities = Sets.newTreeSet(unDisplayed == null ? new TreeSet<>() : unDisplayed);
         
         IteratorSetting is = new IteratorSetting(stackPosition, VisibilityPruningIterator.class);
         String stringifiedBlacklist = StringUtils.join(myUnDisplayedVisibilities.iterator(), ',');

@@ -290,9 +290,9 @@ public abstract class AbstractVersionFilter<A> {
             final String trimmedLowerCase = dataType.trim().toLowerCase();
             if ((null != trimmedLowerCase) && !trimmedLowerCase.isEmpty()) {
                 // Create the map
-                final Map<String,String> dataTypeConfig = new HashMap<String,String>();
+                final Map<String,String> dataTypeConfig = new HashMap<>();
                 if (mappedConfigs.isEmpty()) {
-                    mappedConfigs = new HashMap<String,Map<String,String>>();
+                    mappedConfigs = new HashMap<>();
                 }
                 
                 // Fill in the default version pattern
@@ -345,7 +345,7 @@ public abstract class AbstractVersionFilter<A> {
                 unmappedConfigs = gson.fromJson(jsonFormattedConfigs, Collection.class);
             } catch (final Exception e) {
                 final Object singleConfig = gson.fromJson(jsonFormattedConfigs, Map.class);
-                unmappedConfigs = new ArrayList<Object>(1);
+                unmappedConfigs = new ArrayList<>(1);
                 unmappedConfigs.add(singleConfig);
             }
             
@@ -353,7 +353,7 @@ public abstract class AbstractVersionFilter<A> {
             // and fi fieldnames. Future mappings may include parameters for more complex version
             // validation.
             if (null != unmappedConfigs && !unmappedConfigs.isEmpty()) {
-                mappedConfigs = new HashMap<String,Map<String,String>>(unmappedConfigs.size());
+                mappedConfigs = new HashMap<>(unmappedConfigs.size());
                 for (final Object object : unmappedConfigs) {
                     // Extract the data type and overall config
                     final String dataType;
@@ -363,7 +363,7 @@ public abstract class AbstractVersionFilter<A> {
                         dataType = unmappedConfig.get(KEY_DATA_TYPE);
                     } else if (object instanceof CharSequence) {
                         dataType = object.toString();
-                        unmappedConfig = new HashMap<String,String>(3);
+                        unmappedConfig = new HashMap<>(3);
                         unmappedConfig.put(KEY_DATA_TYPE, dataType);
                     } else {
                         dataType = null;
@@ -451,8 +451,8 @@ public abstract class AbstractVersionFilter<A> {
                 
                 // Handle multiple data type mappings
                 if (configs.size() > 1) {
-                    dataTypesToPatterns = new HashMap<String,String>();
-                    dataTypesToFieldNames = new HashMap<String,String>();
+                    dataTypesToPatterns = new HashMap<>();
+                    dataTypesToFieldNames = new HashMap<>();
                     for (final Entry<String,Map<String,String>> entry : configs.entrySet()) {
                         final String dataType = entry.getKey();
                         final Map<String,String> config = entry.getValue();

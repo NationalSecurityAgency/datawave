@@ -145,7 +145,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
             Collection<Range> ranges = forwardMap.get(key);
             try {
                 bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
-                                Collections.<String> emptySet(), Collections.singleton(key), false, true);
+                                Collections.emptySet(), Collections.singleton(key), false, true);
                 
                 bs.setResourceClass(BatchResource.class);
             } catch (Exception e) {

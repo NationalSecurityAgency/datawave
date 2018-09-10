@@ -33,7 +33,7 @@ public class JexlNodeFactory {
     public static final Set<Class<?>> REAL_NUMBERS = Sets.<Class<?>> newHashSet(BigDecimal.class, Double.class, Float.class);
     public static final Set<Class<?>> NATURAL_NUMBERS = Sets.<Class<?>> newHashSet(Long.class, BigInteger.class, Integer.class, Short.class, Byte.class);
     
-    public static enum ContainerType {
+    public enum ContainerType {
         OR_NODE, AND_NODE
     }
     
@@ -67,7 +67,7 @@ public class JexlNodeFactory {
             // node with a new fieldname, wrapped with a marker node
             if (valuesForField.isThresholdExceeded()) {
                 // create a set of nodes wrapping each pattern
-                List<String> patterns = new ArrayList<String>(fieldsToValues.getPatterns() == null ? new ArrayList<String>() : fieldsToValues.getPatterns());
+                List<String> patterns = new ArrayList<>(fieldsToValues.getPatterns() == null ? new ArrayList<>() : fieldsToValues.getPatterns());
                 if (patterns.isEmpty()) {
                     JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(orgNode, field));
                     

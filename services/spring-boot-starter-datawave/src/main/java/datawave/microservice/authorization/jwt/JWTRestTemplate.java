@@ -33,7 +33,7 @@ public class JWTRestTemplate extends RestTemplate {
         if (additionalHeaders != null) {
             additionalHeaders.forEach(headers::put);
         }
-        return new RequestEntity<T>(body, headers, method, uri.toUri());
+        return new RequestEntity<>(body, headers, method, uri.toUri());
     }
     
     public <T> ResponseEntity<T> exchange(ProxiedUserDetails currentUser, HttpMethod method, UriComponents uri, Class<T> responseType)

@@ -168,7 +168,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         Connector connector = null;
         
         try {
-            connector = connectionFactory.getConnection(Priority.ADMIN, new HashMap<String,String>());
+            connector = connectionFactory.getConnection(Priority.ADMIN, new HashMap<>());
             connectorAuthorizations = connector.securityOperations().getUserAuthorizations(connector.whoami()).toString();
             connectorAuthorizationCollection = Lists.newArrayList(StringUtils.split(connectorAuthorizations, ","));
             reload();
@@ -203,7 +203,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         Connector connector = null;
         
         try {
-            connector = this.connectionFactory.getConnection(Priority.ADMIN, new HashMap<String,String>());
+            connector = this.connectionFactory.getConnection(Priority.ADMIN, new HashMap<>());
             AbstractColumnBasedHandler<Key> handler = new ContentQueryMetricsHandler<>();
             createAndConfigureTablesIfNecessary(handler.getTableNames(conf), connector.tableOperations(), conf);
         } catch (Exception e) {

@@ -195,7 +195,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected static final Collection<ByteSequence> EMPTY_CFS = Collections.EMPTY_LIST;
     
     // These are the ranges to scan in the field index
-    private final List<Range> boundingFiRanges = new ArrayList<Range>();
+    private final List<Range> boundingFiRanges = new ArrayList<>();
     private Text fiRow = null;
     
     // This is the fieldname of interest
@@ -731,7 +731,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         setupRowBasedHdfsBackedSet(sourceRow);
         
         // for each range, fork off a runnable
-        List<Future<?>> futures = new ArrayList<Future<?>>(boundingFiRanges.size());
+        List<Future<?>> futures = new ArrayList<>(boundingFiRanges.size());
         if (log.isDebugEnabled()) {
             log.debug("Processing " + boundingFiRanges + " for " + this);
         }
@@ -791,7 +791,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         // create a set if needed (does not actually need to be thread safe as we are only using one thread in this case)
         if (this.threadSafeSet == null) {
-            this.threadSafeSet = new TreeSet<KeyValueSerializable>();
+            this.threadSafeSet = new TreeSet<>();
         } else {
             this.threadSafeSet.clear();
         }
@@ -1034,7 +1034,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 this.createdRowDir = false;
             }
             
-            this.set = new HdfsBackedSortedSet<KeyValueSerializable>(null, hdfsBackedSetBufferSize, fs, rowDir, maxOpenFiles);
+            this.set = new HdfsBackedSortedSet<>(null, hdfsBackedSetBufferSize, fs, rowDir, maxOpenFiles);
             this.threadSafeSet = Collections.synchronizedSortedSet(this.set);
             this.currentRow = row;
             this.setControl.takeOwnership(row, this);

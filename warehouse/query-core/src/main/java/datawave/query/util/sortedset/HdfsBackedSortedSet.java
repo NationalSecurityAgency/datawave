@@ -52,7 +52,7 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
     
     @Override
     public void clear() {
-        // This will be a new ArrayList<FileSortedSet<E>>() containing the same FileSortedSets
+        // This will be a new ArrayList<>() containing the same FileSortedSets
         List<FileSortedSet<E>> sortedSets = super.getSets();
         // Clear will call clear on each of the FileSortedSets, clear the container, and null the buffer
         super.clear();

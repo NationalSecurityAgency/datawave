@@ -15,7 +15,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 public class MatchesAtLeastCountOf extends JexlQueryFunction {
     
     public MatchesAtLeastCountOf() {
-        super("matches_at_least_count_of", new ArrayList<String>());
+        super("matches_at_least_count_of", new ArrayList<>());
     }
     
     @Override

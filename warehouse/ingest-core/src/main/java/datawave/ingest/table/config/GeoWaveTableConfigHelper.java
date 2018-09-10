@@ -29,7 +29,7 @@ public class GeoWaveTableConfigHelper implements TableConfigHelper {
     private static final int STATS_COMBINER_PRIORITY = 10;
     private static final String STATISTICS_COMBINER_NAME = "STATS_COMBINER";
     
-    private static enum GeoWaveTableType {
+    private enum GeoWaveTableType {
         UNKNOWN, GEOWAVE_METADATA, SPATIAL_IDX, SPATIAL_TEMPORAL_IDX
     }
     
@@ -85,11 +85,11 @@ public class GeoWaveTableConfigHelper implements TableConfigHelper {
     
     private void configureMetadata(final TableOperations tops) {
         // Add Iterators
-        final List<IteratorConfig> iterators = new ArrayList<IteratorConfig>();
+        final List<IteratorConfig> iterators = new ArrayList<>();
         
         // Stats Merging Iterator
         final IteratorSetting.Column adapterColumn = new IteratorSetting.Column(GeoWaveMetadata.STATISTICS_CF);
-        final Map<String,String> options = new HashMap<String,String>();
+        final Map<String,String> options = new HashMap<>();
         options.put(MergingCombiner.COLUMNS_OPTION, ColumnSet.encodeColumns(adapterColumn.getFirst(), adapterColumn.getSecond()));
         iterators.add(new IteratorConfig(EnumSet.allOf(IteratorUtil.IteratorScope.class), STATS_COMBINER_PRIORITY, STATISTICS_COMBINER_NAME,
                         MergingCombiner.class.getName(), new BasicOptionProvider(options)));
@@ -186,7 +186,7 @@ public class GeoWaveTableConfigHelper implements TableConfigHelper {
                     }
                     if (!exists) {
                         if (configuredOptions == null) {
-                            configuredOptions = iteratorConfig.getOptions(new HashMap<String,String>());
+                            configuredOptions = iteratorConfig.getOptions(new HashMap<>());
                         }
                         tops.attachIterator(tableName, new IteratorSetting(iteratorConfig.getIteratorPriority(), iteratorConfig.getIteratorName(),
                                         iteratorConfig.getIteratorClass(), configuredOptions), configuredScopes);
@@ -203,7 +203,7 @@ public class GeoWaveTableConfigHelper implements TableConfigHelper {
         if (tops.exists(tableName)) {
             final Map<String,Set<Text>> localityGroups = tops.getLocalityGroups(tableName);
             
-            final Set<Text> groupSet = new HashSet<Text>();
+            final Set<Text> groupSet = new HashSet<>();
             
             groupSet.add(new Text(localityGroup));
             

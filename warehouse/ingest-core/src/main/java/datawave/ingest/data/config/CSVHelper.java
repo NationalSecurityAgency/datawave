@@ -117,7 +117,7 @@ public class CSVHelper extends DataTypeHelperImpl {
     /** Pattern used to prevent matching escaped multivalue field separators when splitting multivalued fields */
     public static final String BACKSLASH_ESCAPE_LOOKBEHIND_PATTERN = "(?<!\\\\)";
     
-    public static enum ThresholdAction {
+    public enum ThresholdAction {
         FAIL, DROP, REPLACE, TRUNCATE
     }
     

@@ -23,7 +23,7 @@ class StatsDClient {
     private final String prefix;
     private final NonBlockingUdpSender sender;
     
-    private ThreadLocal<NumberFormat> numberFormat = new ThreadLocal<NumberFormat>() {
+    private ThreadLocal<NumberFormat> numberFormat = new ThreadLocal<>() {
         @Override
         protected NumberFormat initialValue() {
             NumberFormat formatter = NumberFormat.getInstance(Locale.US);

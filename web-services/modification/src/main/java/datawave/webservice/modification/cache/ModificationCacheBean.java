@@ -126,7 +126,7 @@ public class ModificationCacheBean {
                 String fieldName = e.getKey().getRow().toString();
                 log.trace("fieldname = " + fieldName);
                 if (null == cache.get(datatype))
-                    cache.put(datatype, new HashSet<String>());
+                    cache.put(datatype, new HashSet<>());
                 cache.get(datatype).add(fieldName);
             }
             log.trace("cache size = " + cache.size());

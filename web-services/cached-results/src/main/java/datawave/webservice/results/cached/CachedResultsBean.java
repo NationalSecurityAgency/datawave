@@ -243,8 +243,8 @@ public class CachedResultsBean {
     
     private static final String IMPORT_FILE = "replication_scripts/import.sh";
     
-    private static Map<String,RunningQuery> loadingQueryMap = Collections.synchronizedMap(new HashMap<String,RunningQuery>());
-    private static Set<String> loadingQueries = Collections.synchronizedSet(new HashSet<String>());
+    private static Map<String,RunningQuery> loadingQueryMap = Collections.synchronizedMap(new HashMap<>());
+    private static Set<String> loadingQueries = Collections.synchronizedSet(new HashSet<>());
     private URL importFileUrl = null;
     private CachedResultsParameters cp = new CachedResultsParameters();
     
@@ -402,7 +402,7 @@ public class CachedResultsBean {
                 
                 queryMetric = rq.getMetric().duplicate();
                 // clear page times
-                queryMetric.setPageTimes(new ArrayList<QueryMetric.PageMetric>());
+                queryMetric.setPageTimes(new ArrayList<>());
                 // will throw IllegalArgumentException if not defined
                 logic = rq.getLogic();
                 // need to clone the logic here because the QueryExpirationBean will call close on

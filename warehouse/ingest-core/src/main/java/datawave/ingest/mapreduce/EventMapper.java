@@ -285,7 +285,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         // Do not load the type twice
         if (!typeMap.containsKey(typeStr)) {
             
-            typeMap.put(typeStr, new ArrayList<DataTypeHandler<K1>>());
+            typeMap.put(typeStr, new ArrayList<>());
             
             long myInterval = context.getConfiguration().getLong(typeStr + "." + DISCARD_INTERVAL, interval);
             

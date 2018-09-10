@@ -121,7 +121,7 @@ public class LogAuditorTest {
     }
     
     static class TestAppender extends AbstractAppender {
-        private final List<LogEvent> log = new ArrayList<LogEvent>();
+        private final List<LogEvent> log = new ArrayList<>();
         
         protected TestAppender() {
             super("TestAppender", null, null);

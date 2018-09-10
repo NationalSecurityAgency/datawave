@@ -3139,7 +3139,7 @@ public class ExtendedQueryExecutorBeanTest {
         BaseQueryResponse response = PowerMock.createMock(BaseQueryResponse.class);
         ManagedExecutorService executor = PowerMock.createMock(ManagedExecutorService.class);
         
-        expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<String,String>());
+        expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<>());
         expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
         expect(uuidType.getDefinedView()).andReturn("abc");
         expect(lookupUUIDUtil.createUUIDQueryAndNext(isA(GetUUIDCriteria.class))).andReturn(response);
@@ -3172,7 +3172,7 @@ public class ExtendedQueryExecutorBeanTest {
         BaseQueryResponse response = PowerMock.createMock(BaseQueryResponse.class);
         ManagedExecutorService executor = PowerMock.createMock(ManagedExecutorService.class);
         
-        expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<String,String>());
+        expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<>());
         expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
         expect(uuidType.getDefinedView()).andReturn("abc");
         expect(lookupUUIDUtil.createUUIDQueryAndNext(isA(GetUUIDCriteria.class))).andReturn(response);
@@ -3243,7 +3243,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(principal.getShortName()).andReturn(userSid);
         expect(principal.getUserDN()).andReturn(userDNpair);
         expect(principal.getDNs()).andReturn(new String[] {userDN});
-        expect(this.principal.getProxyServers()).andReturn(new HashSet<String>(0)).anyTimes();
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.queryLogic1.getMaxPageSize()).andReturn(10).anyTimes();
@@ -3335,7 +3335,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.toMap()).andReturn(map);
         expect(this.query.getColumnVisibility()).andReturn(authorization);
         this.query.populateMetric(anyObject(QueryMetric.class));
-        expect(this.queryLogic1.getSelectors(this.query)).andReturn(new ArrayList<String>());
+        expect(this.queryLogic1.getSelectors(this.query)).andReturn(new ArrayList<>());
         expect(this.auditor.audit(map)).andReturn(null);
         expectLastCall().andThrow(new Exception("EXPECTED EXCEPTION IN AUDIT"));
         cache.unlock(queryName);

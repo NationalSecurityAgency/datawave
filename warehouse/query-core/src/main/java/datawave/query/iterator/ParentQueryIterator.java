@@ -65,7 +65,7 @@ public class ParentQueryIterator extends QueryIterator {
                                         this.includeHierarchyFields), new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata,
                                         this.isIncludeGroupingContext(), this.includeRecordId, this.parentDisableIndexOnlyDocuments, null)));
         
-        Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(parentDocuments, new TupleToEntry<Key,Document>());
+        Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(parentDocuments, new TupleToEntry<>());
         retDocuments = Iterators.transform(retDocuments, new ParentQueryIterator.KeepAllFlagSetter());
         return retDocuments;
     }

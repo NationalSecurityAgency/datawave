@@ -125,7 +125,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         
         // Set up the ColumnBasedHandler
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
-        ContentCSVColumnBasedHandler<Text> csvHandler = new ContentCSVColumnBasedHandler<Text>();
+        ContentCSVColumnBasedHandler<Text> csvHandler = new ContentCSVColumnBasedHandler<>();
         csvHandler.setup(context);
         
         // Set up the Reader

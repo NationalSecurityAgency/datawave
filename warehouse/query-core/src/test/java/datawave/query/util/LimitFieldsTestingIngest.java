@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class LimitFieldsTestingIngest {
     
-    public static enum WhatKindaRange {
+    public enum WhatKindaRange {
         SHARD, DOCUMENT;
     }
     

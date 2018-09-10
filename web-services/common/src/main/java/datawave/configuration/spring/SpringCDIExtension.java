@@ -125,7 +125,7 @@ public class SpringCDIExtension implements Extension {
             
             @Override
             public Set<Annotation> getQualifiers() {
-                return Sets.newHashSet((Annotation) new AnnotationLiteral<Default>() {}, new AnnotationLiteral<Any>() {});
+                return Sets.newHashSet(new AnnotationLiteral<Default>() {}, new AnnotationLiteral<Any>() {});
             }
             
             @Override

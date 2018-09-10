@@ -45,7 +45,7 @@ public class DatawaveKey {
     protected Key key;
     protected KeyType myType;
     
-    public static enum KeyType {
+    public enum KeyType {
         EVENT, INDEX_EVENT, INDEX, TERM_OFFSETS, OTHER;
     }
     

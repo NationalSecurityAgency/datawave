@@ -119,7 +119,7 @@ public class ContentJsonColumnBasedHandlerTest {
         
         // Set up the ColumnBasedHandler
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
-        ContentJsonColumnBasedHandler<Text> jsonHandler = new ContentJsonColumnBasedHandler<Text>();
+        ContentJsonColumnBasedHandler<Text> jsonHandler = new ContentJsonColumnBasedHandler<>();
         jsonHandler.setup(context);
         
         // Set up the Reader

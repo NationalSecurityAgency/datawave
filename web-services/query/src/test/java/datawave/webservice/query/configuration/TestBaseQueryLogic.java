@@ -42,7 +42,7 @@ public class TestBaseQueryLogic {
         expect(this.copy.getTableName()).andReturn("tableName");
         expect(this.copy.getMaxResults()).andReturn(Long.MAX_VALUE);
         expect(this.copy.getMaxRowsToScan()).andReturn(10L);
-        expect(this.copy.getUndisplayedVisibilities()).andReturn(new HashSet<String>());
+        expect(this.copy.getUndisplayedVisibilities()).andReturn(new HashSet<>());
         expect(this.copy.getMaxPageSize()).andReturn(25);
         expect(this.copy.getPageByteTrigger()).andReturn(1024L);
         expect(this.copy.getCollectQueryMetrics()).andReturn(false);

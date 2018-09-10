@@ -347,7 +347,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 // Count the history entries if history is going to be inserted.
                 if (insertHistory && (MODE.INSERT.equals(mode) || MODE.UPDATE.equals(mode))) {
                     List<Pair<Key,Value>> fieldHistoryList = getField(con, userAuths, shardId, datatype, eventUid, "HISTORY_" + fieldName, null,
-                                    new HashMap<String,String>(), null);
+                                    new HashMap<>(), null);
                     
                     for (Pair<Key,Value> p : fieldHistoryList) {
                         if (p.getFirst().getColumnQualifier().find(mr.getFieldValue()) > -1) {

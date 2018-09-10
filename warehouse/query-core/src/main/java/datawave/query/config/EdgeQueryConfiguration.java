@@ -23,7 +23,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
     // ACTIVITY_LOAD => apply date range to load date in value of edges generated using activity date
     // ANY => apply date range to regardless of date type
     // ANY_LOAD => apply date range to load date in value of edges generated using any date
-    public static enum dateType {
+    public enum dateType {
         EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD
     };
     

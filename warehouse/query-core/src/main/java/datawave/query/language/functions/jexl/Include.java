@@ -15,7 +15,7 @@ public class Include extends JexlQueryFunction {
     WildcardFieldedFilter.BooleanType type = null;
     
     public Include() {
-        super("include", new ArrayList<String>());
+        super("include", new ArrayList<>());
     }
     
     @Override

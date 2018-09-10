@@ -495,7 +495,7 @@ public class EdgeKey {
     public static final byte COL_SEPARATOR_BYTE = '/';
     public static final char COL_SUB_SEPARATOR = '-';
     
-    public static enum STATS_TYPE {
+    public enum STATS_TYPE {
         DURATION, ACTIVITY, LINKS;
         
         public static STATS_TYPE getStatsType(String statsLabel) {
@@ -532,7 +532,7 @@ public class EdgeKey {
      * Likewise, an "ACTIVITY*" type is simply a general term denoting that date in the edge key is associated with some other date value within the raw record,
      * not the event date (or 'shard date').
      */
-    public static enum DATE_TYPE {
+    public enum DATE_TYPE {
         ACTIVITY_ONLY("C"), EVENT_ONLY("A"), ACTIVITY_AND_EVENT("B"), OLD_EVENT("");
         
         String abbreviation;
@@ -557,7 +557,7 @@ public class EdgeKey {
         
     }
     
-    public static enum EDGE_FORMAT {
+    public enum EDGE_FORMAT {
         STANDARD(2), STATS(1), UNKNOWN(0);
         
         private final int splitLength;
@@ -585,7 +585,7 @@ public class EdgeKey {
      * 
      * indices assume colf and colq are in a single list.
      */
-    public static enum EDGE_VERSION {
+    public enum EDGE_VERSION {
         /* 0 1 2 3 4 5 6 7 */
         
         STATS_BASE(5, 1, 2, 3, 4, 5, -1, -1, -1, EDGE_FORMAT.STATS, false, false), /* STATS / STATTYPE / TYPE / RELATIONSHIP / CATEGORY : YYYYMMDD */

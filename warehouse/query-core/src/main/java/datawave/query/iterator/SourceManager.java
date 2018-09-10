@@ -49,14 +49,14 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
         this.initialSize = initialSize;
         child = new SourceManager(source);
         sourceQueue = null;
-        sourceQueue = new LinkedList<SourceManager>();
+        sourceQueue = new LinkedList<>();
     }
     
     public SourceManager(SortedKeyValueIterator<Key,Value> source) {
         this.initialSize = 0;
         this.child = null;
         originalSource = source;
-        sourceQueue = new LinkedList<SourceManager>();
+        sourceQueue = new LinkedList<>();
     }
     
     public SourceManager(SourceManager nextSource, boolean root) {

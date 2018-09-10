@@ -50,7 +50,7 @@ public class GlobalIndexUidAggregatorTest {
     @Test
     public void testLessThanMax() throws Exception {
         agg.reset();
-        List<String> savedUUIDs = new ArrayList<String>();
+        List<String> savedUUIDs = new ArrayList<>();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX - 1; i++) {
             Builder b = createNewUidList();
@@ -75,7 +75,7 @@ public class GlobalIndexUidAggregatorTest {
     @Test
     public void testEqualsMax() throws Exception {
         agg.reset();
-        List<String> savedUUIDs = new ArrayList<String>();
+        List<String> savedUUIDs = new ArrayList<>();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX; i++) {
             Builder b = createNewUidList();
@@ -101,7 +101,7 @@ public class GlobalIndexUidAggregatorTest {
     @Test
     public void testMoreThanMax() throws Exception {
         agg.reset();
-        List<String> savedUUIDs = new ArrayList<String>();
+        List<String> savedUUIDs = new ArrayList<>();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX + 10; i++) {
             Builder b = createNewUidList();
@@ -124,7 +124,7 @@ public class GlobalIndexUidAggregatorTest {
     @Test
     public void testManyRemoval() throws Exception {
         agg.reset();
-        List<String> savedUUIDs = new ArrayList<String>();
+        List<String> savedUUIDs = new ArrayList<>();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX / 2; i++) {
             Builder b = createNewUidList();

@@ -25,7 +25,7 @@ public class LiteralRangeSerializer implements JsonSerializer<LiteralRange<Strin
         Boolean lowerInclusive = (obj.get("LI") == null ? null : obj.get("LI").getAsBoolean());
         Boolean upperInclusive = (obj.get("UI") == null ? null : obj.get("UI").getAsBoolean());
         
-        return new LiteralRange<String>(lower, lowerInclusive, upper, upperInclusive, fieldName, operand);
+        return new LiteralRange<>(lower, lowerInclusive, upper, upperInclusive, fieldName, operand);
     }
     
     @Override

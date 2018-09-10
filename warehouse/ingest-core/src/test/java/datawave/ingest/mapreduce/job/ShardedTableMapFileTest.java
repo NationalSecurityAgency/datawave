@@ -176,7 +176,7 @@ public class ShardedTableMapFileTest {
     @Test
     public void testWriteSplitsFileNewPath() throws Exception {
         Configuration conf = new Configuration();
-        Path file = createSplitsFile(new HashMap<Text,String>(), conf, 0);
+        Path file = createSplitsFile(new HashMap<>(), conf, 0);
         
         SequenceFile.Reader reader = new SequenceFile.Reader(conf, SequenceFile.Reader.file(file));
         Text key = new Text();

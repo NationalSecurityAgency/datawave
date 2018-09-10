@@ -106,7 +106,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection(Priority.HIGH, new HashMap<String,String>());
+        Connector con = bean.getConnection(Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
@@ -120,7 +120,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<String,String>());
+        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
@@ -134,7 +134,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<String,String>());
+        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
@@ -148,7 +148,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("METRICS", Priority.HIGH, new HashMap<String,String>());
+        Connector con = bean.getConnection("METRICS", Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(metricsConnection, ((WrappedConnector) con).getReal());

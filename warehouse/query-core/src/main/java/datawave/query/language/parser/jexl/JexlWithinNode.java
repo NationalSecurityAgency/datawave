@@ -9,7 +9,7 @@ public class JexlWithinNode extends JexlNode {
     private Integer distance = null;
     
     public JexlWithinNode(String field, List<String> wordList, Integer distance) {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
         this.field = field;
         this.wordList = wordList;
         this.distance = distance;

@@ -427,7 +427,7 @@ public class ProtubufEdgeDeleteModeTest {
                 }
             }
             
-            Set<String> keyPrint = new TreeSet<String>();
+            Set<String> keyPrint = new TreeSet<>();
             
             // check edge keys
             for (Key k : edgeKeys) {

@@ -155,7 +155,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         FacetQueryResponseBase response = responseObjectFactory.getFacetQueryResponse();
-        Set<ColumnVisibility> combinedColumnVisibility = new HashSet<ColumnVisibility>();
+        Set<ColumnVisibility> combinedColumnVisibility = new HashSet<>();
         
         for (Object result : resultList) {
             FacetsBase facet = (FacetsBase) result;

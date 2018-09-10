@@ -69,7 +69,7 @@ public class CreatedQueryLogicCacheBean {
         if (null == from) {
             return null;
         }
-        return new Pair<QueryLogic<?>,Connector>(from.logic, from.cxn);
+        return new Pair<>(from.logic, from.cxn);
     };
     
     // returns the logic and connection fields in a triple as a pair

@@ -172,7 +172,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     private String defaultDateTypeName = "EVENT";
     
-    private List<IndexHole> indexHoles = new ArrayList<IndexHole>();
+    private List<IndexHole> indexHoles = new ArrayList<>();
     
     // should we remove the shards and days hint from the queries before sending
     // to the tservers?
@@ -323,6 +323,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected List<PushDownRule> pushDownRules = Collections.emptyList();
     private boolean shouldLimitTermExpansionToModel = false;
     
+    /**
+     * when set to true, causes the {@datawave.query.index.lookup.CondensedUidIterator} to ignore UIDs, forcing a shard specific range
+     */
     protected boolean collapseUids = false;
     
     protected long maxIndexScanTimeMillis = Long.MAX_VALUE;
@@ -1833,7 +1836,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setFilterOptions(final Map<String,String> options) {
         if (null != options) {
-            filterOptions = new HashMap<String,String>(options);
+            filterOptions = new HashMap<>(options);
         } else {
             filterOptions = null;
         }

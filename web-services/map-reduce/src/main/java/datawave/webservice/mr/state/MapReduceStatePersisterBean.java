@@ -135,7 +135,7 @@ import java.util.concurrent.TimeUnit;
 @Stateless
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class MapReduceStatePersisterBean {
-    public static enum MapReduceState {
+    public enum MapReduceState {
         STARTED, RUNNING, SUCCEEDED, FAILED, KILLED
     }
     

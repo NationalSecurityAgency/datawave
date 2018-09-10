@@ -47,7 +47,7 @@ public class MetricsSummaryFormatter {
     }
     
     private List<Text> asListofTexts() {
-        List<Text> result = new ArrayList<Text>(builders.size());
+        List<Text> result = new ArrayList<>(builders.size());
         for (StringBuilder builder : builders) {
             result.add(new Text(builder.toString()));
         }
@@ -56,7 +56,7 @@ public class MetricsSummaryFormatter {
     
     private void resetFormattedFields(String prefix) {
         if (builders == null) {
-            builders = new ArrayList<StringBuilder>();
+            builders = new ArrayList<>();
         } else {
             builders.clear();
         }

@@ -11,7 +11,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 public class OccurrenceFunction extends JexlQueryFunction {
     
     public OccurrenceFunction() {
-        super("occurrence", new ArrayList<String>());
+        super("occurrence", new ArrayList<>());
     }
     
     @Override

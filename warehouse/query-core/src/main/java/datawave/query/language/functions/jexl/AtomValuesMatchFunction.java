@@ -15,7 +15,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 public class AtomValuesMatchFunction extends JexlQueryFunction {
     
     public AtomValuesMatchFunction() {
-        super("atom_values_match", new ArrayList<String>());
+        super("atom_values_match", new ArrayList<>());
     }
     
     @Override

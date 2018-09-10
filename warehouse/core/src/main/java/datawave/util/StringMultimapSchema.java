@@ -89,7 +89,7 @@ public class StringMultimapSchema implements Schema<Multimap<String,String>> {
         private Collection<String> values;
         
         public Entry() {
-            this.values = new ArrayList<String>();
+            this.values = new ArrayList<>();
         }
         
         public Entry(String key, Collection<String> values) {

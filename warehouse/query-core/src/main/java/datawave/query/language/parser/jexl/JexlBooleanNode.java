@@ -11,11 +11,11 @@ public class JexlBooleanNode extends JexlNode {
     private Type type = null;
     
     private JexlBooleanNode() {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
     }
     
     public JexlBooleanNode(Type type) {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
         this.type = type;
     }
     

@@ -368,7 +368,7 @@ public class BulkIngestMapFileLoaderTest {
     
     @Before
     public void setup() throws Exception {
-        systemProperties = new ArrayList<String>();
+        systemProperties = new ArrayList<>();
         
         testDriverLevel = BulkIngestMapFileLoaderTest.logger.getLevel();
         BulkIngestMapFileLoaderTest.logger.setLevel(Level.ALL);
@@ -1678,7 +1678,7 @@ public class BulkIngestMapFileLoaderTest {
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
             
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(), null, true,
-                            false, false, false, new HashMap<String,Boolean>(), false, false);
+                            false, false, false, new HashMap<>(), false, false);
             
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
             

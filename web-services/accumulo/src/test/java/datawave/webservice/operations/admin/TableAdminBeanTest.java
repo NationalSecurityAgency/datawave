@@ -37,7 +37,7 @@ public class TableAdminBeanTest {
     }
     
     private void setConnectionFactory(AccumuloConnectionFactory.Priority priority) throws Exception {
-        Map<String,String> trackingMap = new HashMap<String,String>();
+        Map<String,String> trackingMap = new HashMap<>();
         expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(priority, trackingMap)).andReturn(connector);
         connectionFactory.returnConnection(connector);

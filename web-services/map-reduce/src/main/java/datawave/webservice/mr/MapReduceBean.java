@@ -396,7 +396,7 @@ public class MapReduceBean {
         // Ensure that the user has the required roles and has passed the required auths
         if (null != job.getRequiredRoles() || null != job.getRequiredAuths()) {
             try {
-                canRunJob(datawavePrincipal, new MultivaluedMapImpl<String,String>(), job.getRequiredRoles(), job.getRequiredAuths());
+                canRunJob(datawavePrincipal, new MultivaluedMapImpl<>(), job.getRequiredRoles(), job.getRequiredAuths());
             } catch (UnauthorizedQueryException qe) {
                 // user does not have all of the required roles or did not pass the required auths
                 response.addException(qe);

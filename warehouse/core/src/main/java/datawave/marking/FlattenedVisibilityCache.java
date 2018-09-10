@@ -13,7 +13,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
  *
  */
 public class FlattenedVisibilityCache {
-    private static Map<ColumnVisibility,byte[]> flattenedVisCache = Collections.synchronizedMap(new HashMap<ColumnVisibility,byte[]>());
+    private static Map<ColumnVisibility,byte[]> flattenedVisCache = Collections.synchronizedMap(new HashMap<>());
     
     /**
      * Create a flattened visibility, using the cache if possible

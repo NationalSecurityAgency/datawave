@@ -273,7 +273,7 @@ public class CompositeQueryLogicTest {
     }
     
     public static class TestQueryLogic2 extends TestQueryLogic {
-        private Map<Key,Value> data = new ConcurrentHashMap<Key,Value>();
+        private Map<Key,Value> data = new ConcurrentHashMap<>();
         
         public Map<Key,Value> getData() {
             return data;
@@ -360,7 +360,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -390,7 +390,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -410,7 +410,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -430,7 +430,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -450,7 +450,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -485,7 +485,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -503,7 +503,7 @@ public class CompositeQueryLogicTest {
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
-        List<Object> results = new ArrayList<Object>();
+        List<Object> results = new ArrayList<>();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (null == o)
@@ -552,7 +552,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -570,7 +570,7 @@ public class CompositeQueryLogicTest {
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
-        List<Object> results = new ArrayList<Object>();
+        List<Object> results = new ArrayList<>();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (null == o)
@@ -596,7 +596,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoDataLogic1() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.add(logic1);
@@ -615,7 +615,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.serialize());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -633,7 +633,7 @@ public class CompositeQueryLogicTest {
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
-        List<Object> results = new ArrayList<Object>();
+        List<Object> results = new ArrayList<>();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (null == o)
@@ -659,7 +659,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoDataLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.add(logic1);
@@ -678,7 +678,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.serialize());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -696,7 +696,7 @@ public class CompositeQueryLogicTest {
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
-        List<Object> results = new ArrayList<Object>();
+        List<Object> results = new ArrayList<>();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (null == o)
@@ -722,7 +722,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoData() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.add(logic1);
@@ -732,7 +732,7 @@ public class CompositeQueryLogicTest {
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.serialize());
         settings.setQuery("FOO == 'BAR'");
-        settings.setParameters(new HashSet<QueryImpl.Parameter>());
+        settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
@@ -747,7 +747,7 @@ public class CompositeQueryLogicTest {
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
-        List<Object> results = new ArrayList<Object>();
+        List<Object> results = new ArrayList<>();
         while (iter.hasNext()) {
             Object o = iter.next();
             if (null == o)
@@ -762,7 +762,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCanRunQueryLogic() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
@@ -785,7 +785,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCanRunQueryLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
@@ -810,7 +810,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCannotRunQueryLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<BaseQueryLogic<?>>();
+        List<BaseQueryLogic<?>> logics = new ArrayList<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
@@ -833,5 +833,4 @@ public class CompositeQueryLogicTest {
         Assert.assertEquals(0, c.getQueryLogics().size());
         
     }
-    
 }

@@ -22,13 +22,13 @@ public class EventField implements Serializable, Message<EventField> {
     
     private static final long serialVersionUID = -1133131083937142620L;
     
-    private static enum FIELD_BASE implements FieldAccessor {
+    private enum FIELD_BASE implements FieldAccessor {
         SOURCE(1, "sourceField"), SINK(2, "sinkField"), ENRICHMENT(3, "enrichmentField"), ENRICHMENT_INDEX(4, "enrichmentIndex"), UNKNOWN(0, "UNKNOWN");
         
         final int fn;
         final String name;
         
-        private FIELD_BASE(int fn, String name) {
+        FIELD_BASE(int fn, String name) {
             this.fn = fn;
             this.name = name;
         }

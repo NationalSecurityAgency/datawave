@@ -57,7 +57,7 @@ public class TabletLocationHashPartitionerTest {
                 locationsToUse.add("" + tserverNum);
             }
         }
-        Set<Integer> partitionsUsed = new HashSet<Integer>();
+        Set<Integer> partitionsUsed = new HashSet<>();
         
         int collisions = 0;
         for (String location : locationsToUse) {

@@ -181,8 +181,8 @@ public class EdgeValueTest {
         builder.setSinkValue("sink<ds2>");
         builder.setBitmask(0x801);
         builder.setCount((long) (0x8010));
-        builder.setDuration(new ArrayList<Long>(Arrays.asList(new Long[] {5L, 4L})));
-        builder.setHours(new ArrayList<Long>(Arrays.asList(new Long[] {12L, 13L})));
+        builder.setDuration(new ArrayList<>(Arrays.asList(new Long[] {5L, 4L})));
+        builder.setHours(new ArrayList<>(Arrays.asList(new Long[] {12L, 13L})));
         
         Value value = builder.build().encode();
         
@@ -208,8 +208,8 @@ public class EdgeValueTest {
         assertEquals("sink<ds2>", eValue.getSinkValue());
         assertEquals(0x801, eValue.getBitmask().intValue());
         assertEquals(0x8010, eValue.getCount().longValue());
-        assertEquals(new ArrayList<Long>(Arrays.asList(new Long[] {5L, 4L})), eValue.getDuration());
-        assertEquals(new ArrayList<Long>(Arrays.asList(new Long[] {12L, 13L})), eValue.getHours());
+        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {5L, 4L})), eValue.getDuration());
+        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {12L, 13L})), eValue.getHours());
     }
     
     @Test
@@ -231,8 +231,8 @@ public class EdgeValueTest {
         assertEquals("sink<ds2>", eValue.getSinkValue());
         assertEquals(0x801, eValue.getBitmask().intValue());
         assertEquals(0x8010, eValue.getCount().longValue());
-        assertEquals(new ArrayList<Long>(Arrays.asList(new Long[] {5L, 4L})), eValue.getDuration());
-        assertEquals(new ArrayList<Long>(Arrays.asList(new Long[] {12L, 13L})), eValue.getHours());
+        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {5L, 4L})), eValue.getDuration());
+        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {12L, 13L})), eValue.getHours());
         
         stream = new BufferedInputStream(ClassLoader.getSystemResourceAsStream("EdgeValue.3.x.bytes"));
         bytes = new ByteArrayOutputStream();
@@ -250,8 +250,8 @@ public class EdgeValueTest {
         assertEquals("sink<ds2>", eValue.getSinkValue());
         assertEquals(0x801, eValue.getBitmask().intValue());
         assertEquals(0x8010, eValue.getCount().longValue());
-        assertEquals(new ArrayList<Long>(Arrays.asList(new Long[] {5L, 4L})), eValue.getDuration());
-        assertEquals(new ArrayList<Long>(Arrays.asList(new Long[] {12L, 13L})), eValue.getHours());
+        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {5L, 4L})), eValue.getDuration());
+        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {12L, 13L})), eValue.getHours());
     }
     
 }

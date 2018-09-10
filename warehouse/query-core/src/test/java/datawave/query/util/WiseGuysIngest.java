@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 public class WiseGuysIngest {
     
-    public static enum WhatKindaRange {
+    public enum WhatKindaRange {
         SHARD, DOCUMENT;
     }
     

@@ -85,7 +85,7 @@ public class AncestorQueryIterator extends QueryIterator {
         // contains an "anded" chain of newly configured predicates following the existing
         // fieldIndexKeyDataTypeFilter value (assuming it is defined with something other than the default
         // "ALWAYS_TRUE" KeyIdentity.Function).
-        fieldIndexKeyDataTypeFilter = parseIndexFilteringChain(new SourcedOptions<String,String>(source, env, options));
+        fieldIndexKeyDataTypeFilter = parseIndexFilteringChain(new SourcedOptions<>(source, env, options));
         
         disableIndexOnlyDocuments = false;
     }

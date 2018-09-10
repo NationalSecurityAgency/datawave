@@ -288,7 +288,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 fields.put("LOGIN_TIME", Long.toString(storedQueryMetric.getLoginTime()));
             }
             
-            Map<Long,PageMetric> storedPageMetricMap = new HashMap<Long,PageMetric>();
+            Map<Long,PageMetric> storedPageMetricMap = new HashMap<>();
             List<PageMetric> storedPageMetrics = storedQueryMetric.getPageTimes();
             if (storedPageMetrics != null) {
                 for (PageMetric p : storedPageMetrics) {

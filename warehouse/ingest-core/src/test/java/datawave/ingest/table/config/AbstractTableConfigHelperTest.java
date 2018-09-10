@@ -134,7 +134,7 @@ public class AbstractTableConfigHelperTest {
                 TableOperations tops = parent.mockUpTableOperations();
                 Logger log = createMockLogger();
                 Map<String,Set<Text>> newLocalityGroups = new HashMap<>();
-                newLocalityGroups.put("hello, world!", new HashSet<Text>());
+                newLocalityGroups.put("hello, world!", new HashSet<>());
                 
                 this.setLocalityGroupConfigurationIfNecessary(AbstractTableConfigHelperTest.TABLE_NAME, newLocalityGroups, tops, log);
                 
@@ -199,7 +199,7 @@ public class AbstractTableConfigHelperTest {
             Map<String,Set<Text>> newLocalityGroups = new HashMap<>();
             TableOperations tops = parent.mockUpTableOperations();
             
-            newLocalityGroups.put("hello, world!", new HashSet<Text>());
+            newLocalityGroups.put("hello, world!", new HashSet<>());
             
             overrideAreLocalityGroupsConfigured = true;
             resultsForAreLocalityGroupsConfigured = true;
@@ -218,7 +218,7 @@ public class AbstractTableConfigHelperTest {
             Assert.assertFalse("AreAggregatorsConfigured() unexpectedly found a family", results);
             
             newLocalityGroups.clear();
-            newLocalityGroups.put(AbstractTableConfigHelperTest.FIXED_KEYS[0], new HashSet<Text>());
+            newLocalityGroups.put(AbstractTableConfigHelperTest.FIXED_KEYS[0], new HashSet<>());
             
             results = this.areLocalityGroupsConfigured(tableName, newLocalityGroups, tops);
             

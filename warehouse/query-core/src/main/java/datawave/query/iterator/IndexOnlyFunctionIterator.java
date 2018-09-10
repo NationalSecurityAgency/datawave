@@ -245,7 +245,7 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
             final Iterator<Entry<Key,Document>> documents = this.initializeFetch(fieldName, keyToDocumentData);
             
             // Populate the document
-            final Iterator<Tuple2<Key,Document>> tupleItr = Iterators.transform(documents, new EntryToTuple<Key,Document>());
+            final Iterator<Tuple2<Key,Document>> tupleItr = Iterators.transform(documents, new EntryToTuple<>());
             final EmptyTermFrequencyFunction tfFunction = new EmptyTermFrequencyFunction();
             final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext,

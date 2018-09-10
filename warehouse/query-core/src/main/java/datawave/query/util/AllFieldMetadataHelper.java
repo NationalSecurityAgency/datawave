@@ -562,7 +562,7 @@ public class AllFieldMetadataHelper {
         
         Multimap<String,String> expansionFields = loadExpansionFields();
         
-        Set<String> fields = new HashSet<String>();
+        Set<String> fields = new HashSet<>();
         if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
             fields.addAll(expansionFields.values());
         } else {
@@ -584,7 +584,7 @@ public class AllFieldMetadataHelper {
         
         Multimap<String,String> contentFields = loadContentFields();
         
-        Set<String> fields = new HashSet<String>();
+        Set<String> fields = new HashSet<>();
         if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
             fields.addAll(contentFields.values());
         } else {

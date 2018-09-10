@@ -33,7 +33,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 /**
  * <p>
  * Iterator used for global index lookups in ShardIndexQueryTable. This iterator will aggregate information by date for a fieldValue, fieldName, and datatype.
- * If there are multiple sets of column visilibities for a given combination, then the count appears for the combined visibilities. This iterator is set up in
+ * If there are multiple sets of column visibilities for a given combination, then the count appears for the combined visibilities. This iterator is set up in
  * the ShardIndexQueryTable and is constructed with a source iterator which is already filtering the requested datatypes (GlobalIndexDataTypeFilter), term(s)
  * (GlobalIndexTermMatchingFilter), and date range (GlobalIndexDateRangeFilter) as desired by the client.
  * </p>

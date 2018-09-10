@@ -15,7 +15,7 @@ import java.util.List;
 
 public class Options extends LuceneQueryFunction {
     public Options() {
-        super(QueryFunctions.OPTIONS_FUNCTION, new ArrayList<String>());
+        super(QueryFunctions.OPTIONS_FUNCTION, new ArrayList<>());
     }
     
     @Override

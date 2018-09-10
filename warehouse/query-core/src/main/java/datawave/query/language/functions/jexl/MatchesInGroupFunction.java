@@ -15,7 +15,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 public class MatchesInGroupFunction extends JexlQueryFunction {
     
     public MatchesInGroupFunction() {
-        super("matches_in_group", new ArrayList<String>());
+        super("matches_in_group", new ArrayList<>());
     }
     
     @Override

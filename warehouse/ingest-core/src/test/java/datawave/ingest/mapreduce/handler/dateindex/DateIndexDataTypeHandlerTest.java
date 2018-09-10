@@ -61,7 +61,7 @@ public class DateIndexDataTypeHandlerTest {
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
         
-        handler = new DateIndexDataTypeHandler<Text>();
+        handler = new DateIndexDataTypeHandler<>();
         handler.setup(new TaskAttemptContextImpl(conf, new TaskAttemptID()));
     }
     

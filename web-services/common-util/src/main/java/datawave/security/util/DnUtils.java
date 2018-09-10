@@ -71,8 +71,8 @@ public class DnUtils {
     public static Collection<String> buildNormalizedDNList(String subjectDN, String issuerDN, String proxiedSubjectDNs, String proxiedIssuerDNs) {
         subjectDN = normalizeDN(subjectDN);
         issuerDN = normalizeDN(issuerDN);
-        List<String> dnList = new ArrayList<String>();
-        HashSet<String> subjects = new HashSet<String>();
+        List<String> dnList = new ArrayList<>();
+        HashSet<String> subjects = new HashSet<>();
         String subject = subjectDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1");
         dnList.add(subject);
         subjects.add(subject);
@@ -168,7 +168,7 @@ public class DnUtils {
         private NpeUtils() {}
         
         static {
-            List<String> npeOUs = new ArrayList<String>();
+            List<String> npeOUs = new ArrayList<>();
             String ouString = System.getProperty(NPE_OU_PROPERTY, PROPS.getProperty(NPE_OU_PROPERTY));
             if (null == ouString || ouString.isEmpty()) {
                 throw new IllegalStateException("No '" + NPE_OU_PROPERTY + "' value has been configured");

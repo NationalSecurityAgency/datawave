@@ -26,7 +26,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
      * Using a set instead of a list so that duplicate UIDs are filtered out of the list. This might happen in the case of rows with masked fields that share a
      * UID.
      */
-    private HashSet<String> uids = new HashSet<String>();
+    private HashSet<String> uids = new HashSet<>();
     
     public GlobalIndexUidAggregator(int max) {
         this.maxUids = max;
@@ -39,17 +39,17 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     /**
      * List of UIDs to remove.
      */
-    private HashSet<String> uidsToRemove = new HashSet<String>();
+    private HashSet<String> uidsToRemove = new HashSet<>();
     
     /**
      * List of UIDs to remove.
      */
-    private HashSet<String> quarantinedIds = new HashSet<String>();
+    private HashSet<String> quarantinedIds = new HashSet<>();
     
     /**
      * List of UIDs to remove.
      */
-    private HashSet<String> releasedUids = new HashSet<String>();
+    private HashSet<String> releasedUids = new HashSet<>();
     
     /**
      * flag for whether or not we have seen ignore
@@ -256,7 +256,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
         if ((seenIgnore && count > maxUids) || quarantinedIds.size() > 0)
             return true;
         
-        HashSet<String> uidsCopy = new HashSet<String>(uids);
+        HashSet<String> uidsCopy = new HashSet<>(uids);
         uidsCopy.removeAll(uidsToRemove);
         
         if (log.isDebugEnabled()) {

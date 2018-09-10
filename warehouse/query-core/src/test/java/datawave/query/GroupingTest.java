@@ -142,6 +142,7 @@ public abstract class GroupingTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(true);
+        logic.setMaxEvaluationPipelines(1);
         deserializer = new KryoDocumentDeserializer();
     }
     
@@ -306,7 +307,6 @@ public abstract class GroupingTest {
         Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
         
         extraParameters.put("group.fields", "GEN");
-        // extraParameters.put("group.fields.batch.size", "0");
         
         runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
     }

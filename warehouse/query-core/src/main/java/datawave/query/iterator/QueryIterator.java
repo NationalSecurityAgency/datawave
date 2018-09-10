@@ -1283,7 +1283,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         }
         
         // determine the list of indexed fields
-        Set<String> indexedFields = new HashSet<String>(this.getTypeMetadata().keySet());
+        Set<String> indexedFields = new HashSet<>(this.getTypeMetadata().keySet());
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
         return c.newInstance().setSource(this, this.myEnvironment).setTimeFilter(this.getTimeFilter()).setTypeMetadata(this.getTypeMetadata())
@@ -1327,7 +1327,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     protected SatisfactionVisitor createSatisfiabilityVisitor(boolean isQueryFullySatisfiedInitialState) {
         
         // determine the list of indexed fields
-        Set<String> indexedFields = new HashSet<String>(this.getTypeMetadata().keySet());
+        Set<String> indexedFields = new HashSet<>(this.getTypeMetadata().keySet());
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
         SatisfactionVisitor satisfactionVisitor = new SatisfactionVisitor(getNonEventFields(), indexedFields, Collections.emptySet(),

@@ -268,7 +268,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        List<JexlNode> otherNodes = new ArrayList<JexlNode>();
+        List<JexlNode> otherNodes = new ArrayList<>();
         Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, true);
         if (ranges.size() == 1 && otherNodes.isEmpty()) {
             LiteralRange<?> range = ranges.keySet().iterator().next();
@@ -348,7 +348,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     }
     
     public static Set<String> extractNormalizedAttributes(AttributeFactory attrFactory, String fieldName, String fieldValue, Key key) {
-        final Set<String> normalizedAttributes = new HashSet<String>();
+        final Set<String> normalizedAttributes = new HashSet<>();
         
         final Queue<Attribute<?>> attrQueue = new LinkedList<>();
         attrQueue.add(attrFactory.create(fieldName, fieldValue, key, true));

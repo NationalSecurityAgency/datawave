@@ -10,25 +10,20 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringJoiner;
 
 /**
  * Visits the query tree and if there is a f:options function, extracts the parameters into a Map
  *
  */
 public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
-    private static final Logger log = Logger.getLogger(QueryOptionsFromQueryVisitor.class);
     
     private static Set<String> RESERVED = Sets.newHashSet(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
                     QueryFunctions.UNIQUE_FUNCTION, QueryFunctions.GROUPBY_FUNCTION);
-    
-    private List<String> optionsList = new ArrayList<>();
     
     /**
      * If the passed userData is a Map, type cast and call the method to begin collection of the function arguments
@@ -60,26 +55,30 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private Object visit(ASTFunctionNode node, Map<String,String> optionsMap) {
         // if this is the f:options function, create a List for the userData to be passed to the child nodes
         if (node.jjtGetChild(0).image.equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
-            if (node.jjtGetChild(1).image.equals(QueryFunctions.OPTIONS_FUNCTION)) {
-                List<String> optionsList = new ArrayList<>();
-                Object ret = this.visit(node, optionsList);
-                // Parse the options List pairs into the map as key,value,key,value....
-                for (int i = 0; i + 1 < optionsList.size(); i++) {
-                    String key = optionsList.get(i++);
-                    String value = optionsList.get(i);
-                    optionsMap.put(key, value);
+            switch (node.jjtGetChild(1).image) {
+                case QueryFunctions.OPTIONS_FUNCTION: {
+                    List<String> optionsList = new ArrayList<>();
+                    this.visit(node, optionsList);
+                    // Parse the options List pairs into the map as key,value,key,value....
+                    for (int i = 0; i + 1 < optionsList.size(); i++) {
+                        String key = optionsList.get(i++);
+                        String value = optionsList.get(i);
+                        optionsMap.put(key, value);
+                    }
+                    return null;
                 }
-                return null;
-            } else if (node.jjtGetChild(1).image.equals(QueryFunctions.UNIQUE_FUNCTION)) {
-                List<String> optionsList = new ArrayList<>();
-                Object ret = this.visit(node, optionsList);
-                optionsMap.put(QueryParameters.UNIQUE_FIELDS, Joiner.on(',').join(optionsList));
-                return null;
-            } else if (node.jjtGetChild(1).image.equals(QueryFunctions.GROUPBY_FUNCTION)) {
-                List<String> optionsList = new ArrayList<>();
-                Object ret = this.visit(node, optionsList);
-                optionsMap.put(QueryParameters.GROUP_FIELDS, Joiner.on(',').join(optionsList));
-                return null;
+                case QueryFunctions.UNIQUE_FUNCTION: {
+                    List<String> optionsList = new ArrayList<>();
+                    this.visit(node, optionsList);
+                    optionsMap.put(QueryParameters.UNIQUE_FIELDS, Joiner.on(',').join(optionsList));
+                    return null;
+                }
+                case QueryFunctions.GROUPBY_FUNCTION: {
+                    List<String> optionsList = new ArrayList<>();
+                    this.visit(node, optionsList);
+                    optionsMap.put(QueryParameters.GROUP_FIELDS, Joiner.on(',').join(optionsList));
+                    return null;
+                }
             }
         }
         return super.visit(node, optionsMap);

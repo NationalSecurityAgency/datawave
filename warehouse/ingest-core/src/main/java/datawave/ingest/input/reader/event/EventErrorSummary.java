@@ -379,7 +379,7 @@ public class EventErrorSummary implements Cloneable, JexlContext {
     }
     
     /*** The JexlContext implementation: get, set, and has ***/
-    private Map<String,Object> context = new HashMap<String,Object>();
+    private Map<String,Object> context = new HashMap<>();
     
     @Override
     public Object get(String name) {

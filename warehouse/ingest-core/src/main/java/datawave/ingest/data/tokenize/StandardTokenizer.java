@@ -63,7 +63,7 @@ public class StandardTokenizer extends Tokenizer {
     private static final int DEFAULT_META_BREAK_INCREMENT = 10;
     private int metaBreakIncrement = DEFAULT_META_BREAK_INCREMENT;
     
-    private static final Map<String,Integer> DEFAULT_TYPED_TOKEN_LENGTHS = new HashMap<String,Integer>();
+    private static final Map<String,Integer> DEFAULT_TYPED_TOKEN_LENGTHS = new HashMap<>();
     {
         DEFAULT_TYPED_TOKEN_LENGTHS.put("<FILE>", Integer.valueOf(1024));
         DEFAULT_TYPED_TOKEN_LENGTHS.put("<URL>", Integer.valueOf(1024));
@@ -71,7 +71,7 @@ public class StandardTokenizer extends Tokenizer {
     }
     
     /** Token typed truncation rules. */
-    private final Map<String,Integer> typedTokenTruncateLength = new HashMap<String,Integer>(DEFAULT_TYPED_TOKEN_LENGTHS);
+    private final Map<String,Integer> typedTokenTruncateLength = new HashMap<>(DEFAULT_TYPED_TOKEN_LENGTHS);
     
     // this tokenizer generates three attributes:
     // offset, positionIncrement and type

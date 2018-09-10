@@ -26,7 +26,7 @@ class DedupingIterator implements Iterator<Entry<Key,Value>> {
         this.delegate = iterator;
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (DEBUG) {
-            this.seen = new HashSet<ByteSequence>();
+            this.seen = new HashSet<>();
         }
         getNext();
     }

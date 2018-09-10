@@ -48,7 +48,7 @@ public class Intersection implements IndexStream {
     private TreeMultimap<String,IndexStream> children;
     private final StreamContext context;
     private final String contextDebug;
-    private final List<String> childrenContextDebug = new ArrayList<String>();
+    private final List<String> childrenContextDebug = new ArrayList<>();
     Multimap<String,JexlNode> nodesMap = ArrayListMultimap.create();
     private Tuple2<String,IndexInfo> next;
     private JexlNode currNode;
@@ -385,7 +385,7 @@ public class Intersection implements IndexStream {
         
         protected UidIntersector uidIntersector = new IndexInfo();
         
-        protected IdentityHashMap<IndexStream,Object> children = new IdentityHashMap<IndexStream,Object>();
+        protected IdentityHashMap<IndexStream,Object> children = new IdentityHashMap<>();
         
         protected List<ConcurrentScannerInitializer> todo = Lists.newArrayList();
         

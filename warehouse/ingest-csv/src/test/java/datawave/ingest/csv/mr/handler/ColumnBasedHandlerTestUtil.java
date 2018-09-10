@@ -109,8 +109,8 @@ public class ColumnBasedHandlerTestUtil {
             
         }
         
-        Set<Key> keys = new HashSet<Key>();
-        Set<String> errors = new TreeSet<String>();
+        Set<Key> keys = new HashSet<>();
+        Set<String> errors = new TreeSet<>();
         
         /**
          * The following only prints out the missing/extra keys, no test is actually performed until the end. This is done so all errors are known before
@@ -258,7 +258,7 @@ public class ColumnBasedHandlerTestUtil {
             }
         }
         
-        Set<String> keyPrint = new TreeSet<String>();
+        Set<String> keyPrint = new TreeSet<>();
         
         for (Key k : shardKeys) {
             keyPrint.add("shard key: " + k.getRow() + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "

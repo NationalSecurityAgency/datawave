@@ -648,7 +648,7 @@ public class MetadataTableSplitsTest {
         int reducers = 487;
         int numsplits = 195365;
         // generate the initial splits
-        List<Text> splits = new ArrayList<Text>(numsplits);
+        List<Text> splits = new ArrayList<>(numsplits);
         for (int i = 0; i < numsplits; i++) {
             splits.add(new Text(Integer.toString(i)));
         }

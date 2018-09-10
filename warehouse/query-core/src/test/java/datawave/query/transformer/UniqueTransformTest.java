@@ -117,7 +117,7 @@ public class UniqueTransformTest {
     }
     
     private int countUniqueness(List<Document> input, Set<String> fields) {
-        Set<String> uniqueValues = new HashSet<String>();
+        Set<String> uniqueValues = new HashSet<>();
         for (Document d : input) {
             Multimap<String,String> values = HashMultimap.create();
             for (String docField : d.getDictionary().keySet()) {

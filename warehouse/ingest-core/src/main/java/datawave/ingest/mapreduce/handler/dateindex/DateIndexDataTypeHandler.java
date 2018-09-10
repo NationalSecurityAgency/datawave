@@ -129,7 +129,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
     public Set<String> getFields(Type dataType, String type) {
         Multimap<String,String> typeToFields = dataTypeToTypeToFields.get(dataType.typeName());
         if (typeToFields != null) {
-            return Collections.unmodifiableSet(new HashSet<String>(typeToFields.get(type)));
+            return Collections.unmodifiableSet(new HashSet<>(typeToFields.get(type)));
         } else {
             return Collections.emptySet();
         }
@@ -138,7 +138,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
     public Set<String> getFields(Type dataType) {
         Multimap<String,String> typeToFields = dataTypeToTypeToFields.get(dataType.typeName());
         if (typeToFields != null) {
-            return Collections.unmodifiableSet(new HashSet<String>(typeToFields.values()));
+            return Collections.unmodifiableSet(new HashSet<>(typeToFields.values()));
         } else {
             return Collections.emptySet();
         }
@@ -165,7 +165,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         // now get the dates to be index for this datatype
         dataTypeToTypeToFields = new HashMap<>();
         for (Type dataType : registry.getTypes()) {
-            Set<String> typeToFieldsSet = new HashSet<String>();
+            Set<String> typeToFieldsSet = new HashSet<>();
             typeToFieldsSet.addAll(conf.getTrimmedStringCollection("all" + DATEINDEX_TYPE_TO_FIELDS));
             typeToFieldsSet.addAll(conf.getTrimmedStringCollection(dataType.typeName() + DATEINDEX_TYPE_TO_FIELDS));
             Multimap<String,String> typeToFields = HashMultimap.create();

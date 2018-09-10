@@ -51,7 +51,7 @@ public class LookupUUIDUtil {
     private static final String CONTENT_QUERY = "ContentQuery";
     private static final String DASH = "-";
     private static final String DOCUMENT_FIELD_NAME = "DOCUMENT:";
-    private static final List<FieldBase> EMPTY_FIELDS = new ArrayList<FieldBase>(0);
+    private static final List<FieldBase> EMPTY_FIELDS = new ArrayList<>(0);
     private static final String EVENT_TYPE_NAME = "event";
     private static final String FORWARD_SLASH = "/";
     
@@ -90,7 +90,7 @@ public class LookupUUIDUtil {
     
     private final QueryExecutor queryExecutor;
     
-    private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<String,UUIDType>());
+    private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
     
     MultivaluedMap<String,String> defaultOptionalParams;
     
@@ -567,7 +567,7 @@ public class LookupUUIDUtil {
             //
             // DOCUMENT:shardId/datatype/uid [DOCUMENT:shardId/datatype/uid]*
             //
-            MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<String,String>();
+            MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
             queryParameters.putAll(this.defaultOptionalParams);
             queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
             queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
@@ -680,7 +680,7 @@ public class LookupUUIDUtil {
             }
             contentQuery.append(contentQueryString);
         }
-        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<String,String>();
+        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putAll(this.defaultOptionalParams);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
@@ -719,7 +719,7 @@ public class LookupUUIDUtil {
         final String queryId = mergedResponse.getQueryId();
         
         // Initialize a list to collect all queried events
-        final List<EventBase> mergedEvents = new LinkedList<EventBase>(mergedResponse.getEvents());
+        final List<EventBase> mergedEvents = new LinkedList<>(mergedResponse.getEvents());
         
         // Get each set of next events, remove irrelevant information, and merge them into the main response
         try {
@@ -755,7 +755,7 @@ public class LookupUUIDUtil {
                 }
             }
         } else {
-            guttedEvents = new ArrayList<EventBase>(0);
+            guttedEvents = new ArrayList<>(0);
         }
         
         return guttedEvents;

@@ -71,7 +71,7 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
         }
         
         if (null == this.shardHashes.get(tableName)) {
-            Map<Text,Integer> hashedForTable = new HashMap<Text,Integer>();
+            Map<Text,Integer> hashedForTable = new HashMap<>();
             
             for (Map.Entry<Text,String> entry : ShardedTableMapFile.getShardIdToLocations(conf, tableName).entrySet()) {
                 hashedForTable.put(entry.getKey(), entry.getValue().toString().hashCode());

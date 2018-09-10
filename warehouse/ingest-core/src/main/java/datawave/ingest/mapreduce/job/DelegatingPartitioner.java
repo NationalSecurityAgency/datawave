@@ -101,7 +101,7 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
     
     // looks at the property that specifies which tables have custom partitioners and registers each of those partitioners
     private void createDelegatesForTables() throws ClassNotFoundException {
-        tableOffsets = new HashMap<Text,Integer>();
+        tableOffsets = new HashMap<>();
         String commaSeparatedTableNames = conf.get(TABLE_NAMES_WITH_CUSTOM_PARTITIONERS);
         if (commaSeparatedTableNames == null) {
             log.info("No custom partitioners found");

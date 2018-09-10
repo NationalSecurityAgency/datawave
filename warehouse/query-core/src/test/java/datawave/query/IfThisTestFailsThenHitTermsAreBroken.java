@@ -194,10 +194,10 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
         typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
         
-        HashSet<String> expectedSet = new HashSet<String>(expected);
+        HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
-        resultSet = new HashSet<String>();
-        Set<Document> docs = new HashSet<Document>();
+        resultSet = new HashSet<>();
+        Set<Document> docs = new HashSet<>();
         for (Entry<Key,Value> entry : logic) {
             
             Document d = deserializer.apply(entry).getValue();

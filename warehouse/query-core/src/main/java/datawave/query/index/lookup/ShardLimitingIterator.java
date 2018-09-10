@@ -36,7 +36,7 @@ public class ShardLimitingIterator implements Iterator<Entry<Key,Value>> {
     private static final Logger log = Logger.getLogger(ShardLimitingIterator.class);
     
     public ShardLimitingIterator(Iterator<Entry<Key,Value>> kvIter, int maxShardsPerDay) {
-        this.kvIter = new PeekingIterator<Entry<Key,Value>>(kvIter);
+        this.kvIter = new PeekingIterator<>(kvIter);
         this.maxShardsPerDay = maxShardsPerDay;
         currentQueue = Queues.newArrayDeque();
     }

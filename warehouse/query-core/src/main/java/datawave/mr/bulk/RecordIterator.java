@@ -356,7 +356,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         }
         
         if (initRanges) {
-            rangeQueue = new LinkedList<Range>();
+            rangeQueue = new LinkedList<>();
             rangeQueue.addAll(ranges);
         }
         
@@ -409,7 +409,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         List<AccumuloIterator> iterators = BulkInputFormat.getIterators(conf);
         List<AccumuloIteratorOption> options = BulkInputFormat.getIteratorOptions(conf);
         
-        Map<String,IteratorSetting> scanIterators = new HashMap<String,IteratorSetting>();
+        Map<String,IteratorSetting> scanIterators = new HashMap<>();
         for (AccumuloIterator iterator : iterators) {
             scanIterators.put(iterator.getIteratorName(), new IteratorSetting(iterator.getPriority(), iterator.getIteratorName(), iterator.getIteratorClass()));
         }

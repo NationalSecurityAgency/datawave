@@ -131,7 +131,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             
             final List<Entry<Key,Value>> attrs; // Assign only once for
                                                 // efficiency
-            final Set<Key> docKeys = new HashSet<Key>();
+            final Set<Key> docKeys = new HashSet<>();
             if (source.hasTop()) {
                 attrs = this.collectDocumentAttributes(from.getKey(), docKeys, keyRange);
                 this.appendHierarchyFields(attrs, keyRange, from.getKey());

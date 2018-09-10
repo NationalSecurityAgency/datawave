@@ -164,7 +164,7 @@ public class JavaRegexAnalyzer {
      */
     public void setRegex(String regex) throws JavaRegexParseException {
         regexParts = null;
-        List<RegexPart> partList = new ArrayList<RegexPart>();
+        List<RegexPart> partList = new ArrayList<>();
         
         // parse on '\' characters,
         // then walk forward from each one to determine the escaped character or character class, parsing on '[' and ']' characters
@@ -179,7 +179,7 @@ public class JavaRegexAnalyzer {
         boolean quoted = false;
         
         // keeping track of paren and bracket nesting
-        LinkedList<String> parensAndBrackets = new LinkedList<String>();
+        LinkedList<String> parensAndBrackets = new LinkedList<>();
         
         // remember if we are inside any brackets to enable distinguishing between LITERAL and REGEX
         int bracketCount = 0;
@@ -463,7 +463,7 @@ public class JavaRegexAnalyzer {
         hasWildCard = false;
         
         // a stack of literal builders used for nested capturing groups. If empty then we are at the top level.
-        LinkedList<StringBuilder> literalBuilders = new LinkedList<StringBuilder>();
+        LinkedList<StringBuilder> literalBuilders = new LinkedList<>();
         // the current literal builder
         StringBuilder literalBuilder = new StringBuilder();
         // appendLiteral is set false once we have found a regex and we need to terminate with what we have
@@ -528,11 +528,11 @@ public class JavaRegexAnalyzer {
         boolean appendLiteral = true;
         
         // a stack of literal builders used for nested capturing groups. If empty then we are at the top level.
-        LinkedList<StringBuilder> literalBuilders = new LinkedList<StringBuilder>();
+        LinkedList<StringBuilder> literalBuilders = new LinkedList<>();
         // the current literal builder
         StringBuilder literalBuilder = new StringBuilder();
         // a stack of atLeastOnce flags which tracks with the literalBuilders stack
-        LinkedList<Boolean> atLeastOnceFlags = new LinkedList<Boolean>();
+        LinkedList<Boolean> atLeastOnceFlags = new LinkedList<>();
         // the current atLeastOnce flag
         boolean atLeastOnce = true;
         
@@ -756,7 +756,7 @@ public class JavaRegexAnalyzer {
     }
     
     private boolean allDigits(RegexPart[] tuple) {
-        LinkedList<Boolean> negatedCharClass = new LinkedList<Boolean>();
+        LinkedList<Boolean> negatedCharClass = new LinkedList<>();
         boolean negated = false;
         for (RegexPart part : tuple) {
             switch (part.type) {
@@ -814,7 +814,7 @@ public class JavaRegexAnalyzer {
             type = RegexType.REGEX;
         }
         List<RegexPart[]> parts = splitParts(this.regexParts, new RegexPart(Character.toString(character), type, false));
-        List<String> regex = new ArrayList<String>();
+        List<String> regex = new ArrayList<>();
         for (RegexPart[] part : parts) {
             regex.add(getRegex(part));
         }
@@ -831,7 +831,7 @@ public class JavaRegexAnalyzer {
      * @throws JavaRegexParseException
      */
     private List<RegexPart[]> splitParts(RegexPart[] parts, RegexPart separator) throws JavaRegexParseException {
-        LinkedList<RegexPart[]> tuples = new LinkedList<RegexPart[]>();
+        LinkedList<RegexPart[]> tuples = new LinkedList<>();
         int start = 0;
         int level = 0;
         int separationLevel = 0;
@@ -929,10 +929,10 @@ public class JavaRegexAnalyzer {
     private int[] countMatchedChars(RegexPart[] parts) throws JavaRegexParseException {
         
         // a stack of ranges used for nested capturing groups with alternates. If empty then we are at the top level.
-        LinkedList<LinkedList<int[]>> groups = new LinkedList<LinkedList<int[]>>();
+        LinkedList<LinkedList<int[]>> groups = new LinkedList<>();
         
         // the current alternates. If empty then we have no alternates
-        LinkedList<int[]> alternates = new LinkedList<int[]>();
+        LinkedList<int[]> alternates = new LinkedList<>();
         
         // the current bounds
         int[] bounds = new int[2];
@@ -980,7 +980,7 @@ public class JavaRegexAnalyzer {
                             alternates.addLast(bounds);
                             groups.addLast(alternates);
                             bounds = new int[2];
-                            alternates = new LinkedList<int[]>();
+                            alternates = new LinkedList<>();
                         } else if (part.regex.equals(")")) {
                             if (alternates.isEmpty()) {
                                 throw new JavaRegexParseException("Found an illegal close ')' to a group without the open '('", column);

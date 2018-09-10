@@ -33,7 +33,7 @@ public class ColumnVisibilityHelper {
             }
             byte[] expression = columnVisibility.getExpression();
             if (authorizations != null) {
-                HashSet<VisibilityEvaluator> ve = new HashSet<VisibilityEvaluator>();
+                HashSet<VisibilityEvaluator> ve = new HashSet<>();
                 for (Authorizations a : authorizations)
                     ve.add(new VisibilityEvaluator(a));
                 removeUnsatisfiedTopLevelOrNodes(ve, expression, node);

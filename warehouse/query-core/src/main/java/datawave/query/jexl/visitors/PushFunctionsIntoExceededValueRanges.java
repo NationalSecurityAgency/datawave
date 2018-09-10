@@ -62,7 +62,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         Set<JexlNode> functionNodes = new HashSet<>();
         Multimap<String,JexlNode> functionNodesByField = HashMultimap.create();
         Multimap<String,JexlNode> exceededValueRangeNodes = HashMultimap.create();
-        List<JexlNode> children = new ArrayList<JexlNode>();
+        List<JexlNode> children = new ArrayList<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
             if (isSingleFieldFunctionNode(child)) {

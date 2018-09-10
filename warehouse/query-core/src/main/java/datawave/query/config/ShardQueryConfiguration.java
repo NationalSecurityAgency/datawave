@@ -700,7 +700,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     @SuppressWarnings("unchecked")
     public void setFilterClassNames(List<String> filterClassNames) {
-        this.filterClassNames = new ArrayList<String>((filterClassNames != null ? filterClassNames : Collections.EMPTY_LIST));
+        this.filterClassNames = new ArrayList<>((filterClassNames != null ? filterClassNames : Collections.EMPTY_LIST));
     }
     
     /**
@@ -725,7 +725,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
      */
     @SuppressWarnings("unchecked")
     public void setIndexFilteringClassNames(List<String> classNames) {
-        this.indexFilteringClassNames = new ArrayList<String>((classNames != null ? classNames : Collections.EMPTY_LIST));
+        this.indexFilteringClassNames = new ArrayList<>((classNames != null ? classNames : Collections.EMPTY_LIST));
     }
     
     public String getFilterClassNamesAsString() {
