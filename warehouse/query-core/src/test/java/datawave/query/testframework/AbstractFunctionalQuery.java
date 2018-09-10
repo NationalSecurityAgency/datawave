@@ -103,7 +103,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected Authorizations auths;
     protected String documentKey;
     protected ShardQueryLogic logic;
-    private QueryLogicTestHarness testHarness;
+    protected QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
     
     @Rule
