@@ -18,7 +18,7 @@
     <bean id="EdgeQuery" scope="prototype" parent="baseQueryLogic" class="datawave.query.edge.DefaultExtendedEdgeQueryLogic">
         <property name="tableName" value="${edge.table.name}" />
         <property name="edgeQueryModel" ref="edgeQueryModel" />
-        <property name="modelTableName" value="DatawaveMetadata" />
+        <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE_EDGE" />
         <property name="maxResults" value="25000" />
         <property name="maxRowsToScan" value="-1" />

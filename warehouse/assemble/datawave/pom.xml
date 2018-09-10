@@ -302,7 +302,7 @@
                                             <artifactId>datawave-ingest-scripts</artifactId>
                                         </artifactItem>
                                     </artifactItems>
-                                    <includes>bin/ingest/ingest-versions.sh,bin/ingest/ingest-env.sh,bin/system/install.sh</includes>
+                                    <includes>bin/ingest/ingest-versions.sh,bin/ingest/ingest-env.sh,bin/ingest/tables-env.sh,bin/system/install.sh</includes>
                                     <outputDirectory>${project.build.directory}/archive-tmp</outputDirectory>
                                 </configuration>
                             </execution>
