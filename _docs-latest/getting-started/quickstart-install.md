@@ -16,6 +16,8 @@ summary: |
 ### Prerequisites
 
 * Linux, Bash, and an Internet connection to `wget` tarballs
+* You should be able to [ssh to localhost without a passphrase](https://hadoop.apache.org/docs/r2.9.1/hadoop-project-dist/hadoop-common/SingleCluster.html#Setup_passphraseless_ssh)
+  * Note that the quickstart's Hadoop install will set up passphrase-less ssh for you automatically, *unless* it detects that you already have a private/public key pair generated
 
 ### System Recommendations
 
