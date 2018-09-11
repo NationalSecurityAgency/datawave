@@ -324,7 +324,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private boolean shouldLimitTermExpansionToModel = false;
     
     /**
-     * when set to true, causes the {@datawave.query.index.lookup.CondensedUidIterator} to ignore UIDs, forcing a shard specific range
+     * when set to true, causes the {@link datawave.query.index.lookup.CondensedUidIterator} to ignore UIDs, forcing a shard specific range
      */
     protected boolean collapseUids = false;
     
