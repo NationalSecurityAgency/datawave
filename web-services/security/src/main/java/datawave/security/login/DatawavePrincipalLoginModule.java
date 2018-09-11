@@ -5,7 +5,9 @@ import java.security.KeyStore;
 import java.security.Principal;
 import java.security.acl.Group;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Map;
@@ -27,6 +29,7 @@ import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.auth.DatawaveCredential;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.util.StringUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.jboss.logging.Logger;
 import org.jboss.security.JSSESecurityDomain;
@@ -50,6 +53,12 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
     private boolean trustedHeaderLogin;
     
     private String blacklistUserRole = null;
+    
+    /**
+     * Required roles are a set of roles such that each entity in a proxy chain must have at least one of the required roles. If that is not the case, then the
+     * login module will ensure that none of the required roles are included in the response to getRoleSets.
+     */
+    private Set<String> requiredRoles = new HashSet<>();
     
     @Inject
     private DatawaveUserService datawaveUserService;
@@ -99,6 +108,16 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
         if (blacklistUserRole != null && "".equals(blacklistUserRole.trim()))
             blacklistUserRole = null;
         
+        option = (String) options.get("requiredRoles");
+        if (option != null) {
+            requiredRoles.clear();
+            requiredRoles.addAll(Arrays.asList(StringUtils.split(option, ':', false)));
+        } else {
+            requiredRoles.add("AuthorizedUser");
+            requiredRoles.add("AuthorizedServer");
+            requiredRoles.add("AuthorizedQueryServer");
+        }
+        
         if (trace)
             log.trace("exit: initialize(Subject, CallbackHandler, Map, Map)");
     }
@@ -132,6 +151,11 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             Collection<String> cpRoleSets = principal.getPrimaryUser().getRoles();
             if (cpRoleSets != null) {
                 roles.addAll(cpRoleSets);
+                // We are requiring that at every entity in the call chain has at least one of the required roles.
+                // If any entity has none of them, then exclude all of the required roles from the computed final set.
+                if (principal.getProxiedUsers().stream().anyMatch(u -> Collections.disjoint(u.getRoles(), requiredRoles))) {
+                    roles.removeAll(requiredRoles);
+                }
             }
             StringBuilder buf = new StringBuilder("[" + roles.size() + "] Groups for " + targetUser + " {");
             if (roles.size() > 0) {
