@@ -161,24 +161,18 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected Scheduler scheduler = null;
     protected EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer = null;
     protected ShardQueryConfiguration config = ShardQueryConfiguration.create();
-    protected List<PushDownRule> pushDownRules = Collections.emptyList();
     protected MetadataHelperFactory metadataHelperFactory = null;
     protected DateIndexHelperFactory dateIndexHelperFactory = null;
     protected Function<String,String> queryMacroFunction;
     protected Map<String,Profile> configuredProfiles = Maps.newHashMap();
     protected Profile selectedProfile = null;
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
-    private String readAheadQueueSize = "0";
-    private String readAheadTimeOut = "0";
-    private String nonEventKeyColFams = "d" + Constants.PARAM_VALUE_SEP + "tf";
     // Map of syntax names to QueryParser classes
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     private Set<String> mandatoryQuerySyntax = null;
     private QueryPlanner planner = null;
     private QueryParser parser = null;
-    private List<String> contentFieldNames = Collections.emptyList();
-    private String dateIndexHelperTableName = null;
-    private Set<Authorizations> dateIndexHelperAuthorizations = Sets.newHashSet();
+    
     private CardinalityConfiguration cardinalityConfiguration = null;
     
     /**
@@ -206,12 +200,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         // Set ShardQueryConfiguration variables
         this.config = ShardQueryConfiguration.create(other);
         
-        // Set ShardQueryLogic-specific variables
-        this.setReadAheadQueueSize(other.getReadAheadQueueSize());
-        this.setReadAheadTimeOut(other.getReadAheadTimeOut());
-        
         this.setFilterClassNames(other.getFilterClassNames());
-        this.setNonEventKeyColFams(other.getNonEventKeyColFams());
         
         this.setQuerySyntaxParsers(other.getQuerySyntaxParsers());
         this.setMandatoryQuerySyntax(other.getMandatoryQuerySyntax());
@@ -226,10 +215,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setScheduler(other.getScheduler());
         this.setContentFieldNames(other.getContentFieldNames());
         this.setEventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer());
-        
-        this.setPushDownRules(other.getPushDownRules());
-        this.setDateIndexHelperTableName(other.getDateIndexHelperTableName());
-        this.setDateIndexHelperAuthorizations(other.getDateIndexHelperAuthorizations());
         
         log.trace("copy CTOR setting metadataHelperFactory to " + other.getMetadataHelperFactory());
         this.setMetadataHelperFactory(other.getMetadataHelperFactory());
@@ -408,9 +393,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (this.queryModel == null)
             loadQueryModel(metadataHelper, config);
         
-        getQueryPlanner().setCreateUidsIteratorClass(getCreateUidsIteratorClass());
-        getQueryPlanner().setUidIntersector(getUidIntersector());
-        
         validateConfiguration(config);
         
         if (getCardinalityConfiguration() != null && (config.getBlacklistedFields().size() > 0 || config.getProjectFields().size() > 0)) {
@@ -502,7 +484,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     private DateIndexHelper prepareDateIndexHelper(Connector connection, String dateIndexTableName, Set<Authorizations> auths) {
         DateIndexHelper dateIndexHelper = this.dateIndexHelperFactory.createDateIndexHelper();
-        return dateIndexHelper.initialize(connection, dateIndexTableName, auths, getIndexLookupThreads(), getCollapseDatePercentThreshold());
+        return dateIndexHelper.initialize(connection, dateIndexTableName, auths, getDateIndexThreads(), getCollapseDatePercentThreshold());
     }
     
     @Override
@@ -587,7 +569,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         boolean reduced = (this.isReducedResponse() || reducedInSettings);
         DocumentTransformer transformer = new DocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
-        transformer.setContentFieldNames(contentFieldNames);
+        transformer.setContentFieldNames(config.getContentFieldNames());
         transformer.setLogTimingDetails(this.getLogTimingDetails());
         transformer.setCardinalityConfiguration(cardinalityConfiguration);
         transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
@@ -1133,14 +1115,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.config = config;
     }
     
-    public String getNonEventKeyColFams() {
-        return nonEventKeyColFams;
-    }
-    
-    public void setNonEventKeyColFams(String nonEventKeyColFams) {
-        this.nonEventKeyColFams = nonEventKeyColFams;
-    }
-    
     @Override
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
         return AccumuloConnectionFactory.Priority.NORMAL;
@@ -1496,22 +1470,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.config.setCollapseDatePercentThreshold(collapseDatePercentThreshold);
     }
     
-    public String getReadAheadQueueSize() {
-        return readAheadQueueSize;
-    }
-    
-    public void setReadAheadQueueSize(String readAheadQueueSize) {
-        this.readAheadQueueSize = readAheadQueueSize;
-    }
-    
-    public String getReadAheadTimeOut() {
-        return readAheadTimeOut;
-    }
-    
-    public void setReadAheadTimeOut(String readAheadTimeOut) {
-        this.readAheadTimeOut = readAheadTimeOut;
-    }
-    
     public List<String> getEnricherClassNames() {
         return this.config.getEnricherClassNames();
     }
@@ -1778,11 +1736,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public List<String> getContentFieldNames() {
-        return contentFieldNames;
+        return this.config.getContentFieldNames();
     }
     
     public void setContentFieldNames(List<String> contentFieldNames) {
-        this.contentFieldNames = contentFieldNames;
+        this.config.setContentFieldNames(contentFieldNames);
     }
     
     public CloseableIterable<QueryData> getQueries() {
@@ -2230,29 +2188,5 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setSettings(Query settings) {
         this.config.setQuery(settings);
-    }
-    
-    public String getDateIndexHelperTableName() {
-        return dateIndexHelperTableName;
-    }
-    
-    public void setDateIndexHelperTableName(String dateIndexHelperTableName) {
-        this.dateIndexHelperTableName = dateIndexHelperTableName;
-    }
-    
-    public List<PushDownRule> getPushDownRules() {
-        return pushDownRules;
-    }
-    
-    public void setPushDownRules(List<PushDownRule> pushDownRules) {
-        this.pushDownRules = pushDownRules;
-    }
-    
-    public Set<Authorizations> getDateIndexHelperAuthorizations() {
-        return dateIndexHelperAuthorizations;
-    }
-    
-    public void setDateIndexHelperAuthorizations(Set<Authorizations> dateIndexHelperAuthorizations) {
-        this.dateIndexHelperAuthorizations = dateIndexHelperAuthorizations;
     }
 }
