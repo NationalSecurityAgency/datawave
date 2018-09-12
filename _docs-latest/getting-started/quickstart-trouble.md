@@ -79,6 +79,8 @@ Hadoop needs password-less ssh. You should be able to do this without being prom
 ```bash
   $ ssh localhost
 ```
+* Note that the quickstart's Hadoop install will set up password-less ssh for you automatically, *unless* it detects that you already have ssh keys
+* Get help [here](https://hadoop.apache.org/docs/r2.9.1/hadoop-project-dist/hadoop-common/SingleCluster.html#Setup_passphraseless_ssh)
 
 ## View Status of Services
 
