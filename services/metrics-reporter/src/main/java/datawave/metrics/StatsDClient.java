@@ -15,23 +15,17 @@ class StatsDClient {
     
     private static final Charset STATS_D_ENCODING = Charset.forName("UTF-8");
     
-    private static final StatsDClientErrorHandler NO_OP_HANDLER = new StatsDClientErrorHandler() {
-        @Override
-        public void handle(Exception e) { /* No-op */}
-    };
+    private static final StatsDClientErrorHandler NO_OP_HANDLER = e -> { /* No-op */};
     
     private final String prefix;
     private final NonBlockingUdpSender sender;
     
-    private ThreadLocal<NumberFormat> numberFormat = new ThreadLocal<>() {
-        @Override
-        protected NumberFormat initialValue() {
-            NumberFormat formatter = NumberFormat.getInstance(Locale.US);
-            formatter.setGroupingUsed(false);
-            formatter.setMaximumFractionDigits(19);
-            return formatter;
-        }
-    };
+    private ThreadLocal<NumberFormat> numberFormat = ThreadLocal.withInitial(() -> {
+        NumberFormat formatter = NumberFormat.getInstance(Locale.US);
+        formatter.setGroupingUsed(false);
+        formatter.setMaximumFractionDigits(19);
+        return formatter;
+    });
     
     public StatsDClient(String prefix, String hostname, int port) throws StatsDClientException {
         this(prefix, hostname, port, NO_OP_HANDLER);
