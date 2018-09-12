@@ -12,10 +12,10 @@ baseurl: /datawave
 default_branch: master
 
 # latest minor release
-latest_minor_release: 2.1
+latest_minor_release: 2.2
 
 # latest release
-latest_release: 2.1.0
+latest_release: 2.2.12
 
 # max news posts to display on the home page
 num_home_posts: 8
@@ -36,6 +36,7 @@ google_analytics:
 exclude:
   - .idea/
   - .gitignore
+  - README.md
 
 # TODO: establish feedback mechanism...
 feedback_subject_line:
@@ -56,23 +57,20 @@ kramdown:
 ##########################################################
 # Docs collection definitions...
 
-# The "docs-latest" collection renders _docs-latest folder contents to the configured permalink path (e.g., _site/docs/2.1/*).
+# The "docs-latest" collection renders _docs-latest folder contents to the configured permalink path (e.g., _site/docs/2.2/*).
 
 # As for how we manage doc updates for a new release, the most straightforward approach is probably just to copy the
 # existing _docs-latest to a backup folder, e.g., _docs-2-1, make any necessary updates to _docs-latest content for
 # the new release, and then reconfigure below as needed.
 
 collections:
-  docs-latest:
+  docs-2-1:
     output: true
     permalink: "/docs/2.1/:path"
 
-# Example of how we might make docs collections available for older versions of DataWave
-# (note: periods not allowed in collection names)...
-#
-# docs-1-0
-#   output: true
-#   permalink: "/docs/1.0/:path"
+  docs-latest:
+    output: true
+    permalink: "/docs/2.2/:path"
 
 ##########################################################
 # Frontmatter defaults
@@ -128,16 +126,27 @@ defaults:
   -
     scope:
       path: ""
-      type: "docs-latest"
+      type: "docs-2-1"
     values:
       layout: "docs"
-      title_prefix: "DataWave Docs - "
+      title_prefix: "DataWave 2.1 Docs - "
       sidebar: docs-2-1-sidebar
       show_summary: true
       skip_title_for_h1: false
       toc: true
       topnav: topnav
-
+  -
+    scope:
+      path: ""
+      type: "docs-latest"
+    values:
+      layout: "docs"
+      title_prefix: "DataWave Docs - "
+      sidebar: docs-2-2-sidebar
+      show_summary: true
+      skip_title_for_h1: false
+      toc: true
+      topnav: topnav
 
 # this description is used in /feed.xml
 description: "DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data"
@@ -146,5 +155,3 @@ description: "DataWave is a Java-based ingest and query framework that leverages
 
 whitelist: [jekyll-redirect-from]
 plugins: [jekyll-redirect-from]
-
-exclude: [README.md]
