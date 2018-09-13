@@ -79,7 +79,7 @@ public class FieldNameAliaserNormalizer {
                     if (indexAliasStr.length() > 0) {
                         String[] parts = StringUtils.split(indexAliasStr, ':');
                         if (parts.length == 2) {
-                            HashSet<String> aliases = new HashSet<String>();
+                            HashSet<String> aliases = new HashSet<>();
                             for (String alias : StringUtils.split(parts[1], ',')) {
                                 aliases.add(canonicalizeFieldName(alias, FIELD.NAME));
                             }

@@ -28,7 +28,7 @@ import static org.apache.hadoop.mapreduce.Mapper.*;
  */
 public class StatsDEnabledClassesTest {
     
-    public static enum TestCounters {
+    public enum TestCounters {
         COUNTER1, COUNTER2
     }
     

@@ -97,7 +97,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     @Override
     public void addSecurityMarking(String domain, String marking) {
         if (null == securityMarkings) {
-            securityMarkings = new HashMap<String,String>();
+            securityMarkings = new HashMap<>();
         }
         securityMarkings.put(domain, marking);
         syncSecurityMarkingsToFields();

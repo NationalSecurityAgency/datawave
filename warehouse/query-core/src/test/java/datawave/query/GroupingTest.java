@@ -1,9 +1,12 @@
 package datawave.query;
 
+import com.google.common.collect.ImmutableMap;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.language.parser.jexl.JexlControlledQueryParser;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.WiseGuysIngest;
@@ -15,10 +18,7 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
-import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
@@ -84,7 +84,6 @@ public abstract class GroupingTest {
     @RunWith(Arquillian.class)
     public static class DocumentRange extends GroupingTest {
         protected static Connector connector = null;
-        private static Authorizations auths = new Authorizations("ALL");
         
         @BeforeClass
         public static void setUp() throws Exception {
@@ -119,7 +118,7 @@ public abstract class GroupingTest {
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     
     @Deployment
-    public static JavaArchive createDeployment() throws Exception {
+    public static JavaArchive createDeployment() {
         
         return ShrinkWrap
                         .create(JavaArchive.class)
@@ -143,6 +142,7 @@ public abstract class GroupingTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(true);
+        logic.setMaxEvaluationPipelines(1);
         deserializer = new KryoDocumentDeserializer();
     }
     
@@ -164,6 +164,7 @@ public abstract class GroupingTest {
         
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
+        // logic.setMaxEvaluationPipelines(1);
         
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
@@ -185,7 +186,7 @@ public abstract class GroupingTest {
         Assert.assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
         
-        Assert.assertEquals("Got the wrong number of events", 8, (long) eventQueryResponse.getReturnedEvents());
+        Assert.assertEquals("Got the wrong number of events", expected.size(), (long) eventQueryResponse.getReturnedEvents());
         
         for (EventBase event : eventQueryResponse.getEvents()) {
             
@@ -194,17 +195,29 @@ public abstract class GroupingTest {
             Integer value = null;
             for (Object field : event.getFields()) {
                 FieldBase fieldBase = (FieldBase) field;
-                if (fieldBase.getName().equals("COUNT")) {
-                    value = Integer.valueOf(fieldBase.getValueString());
-                } else if (fieldBase.getName().equals("GEN")) {
-                    genderKey = fieldBase.getValueString();
-                } else if (fieldBase.getName().equals("AG")) {
-                    ageKey = fieldBase.getValueString();
+                switch (fieldBase.getName()) {
+                    case "COUNT":
+                        value = Integer.valueOf(fieldBase.getValueString());
+                        break;
+                    case "GEN":
+                        genderKey = fieldBase.getValueString();
+                        break;
+                    case "AG":
+                        ageKey = fieldBase.getValueString();
+                        break;
                 }
             }
             
             log.debug("mapping is " + genderKey + "-" + ageKey + " count:" + value);
-            Assert.assertEquals(expected.get(genderKey + "-" + ageKey), value);
+            String key;
+            if (genderKey.length() > 0 && ageKey.length() > 0) {
+                key = genderKey + "-" + ageKey;
+            } else if (genderKey.length() > 0) {
+                key = genderKey;
+            } else {
+                key = ageKey;
+            }
+            Assert.assertEquals(expected.get(key), value);
         }
         
     }
@@ -217,19 +230,83 @@ public abstract class GroupingTest {
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
         
-        String queryString = "UUID =~ '^[CS].*'";
+        String queryString = "UUID =~ '^[CS].*' && f:options('group.fields.batch.size','6')";
         
-        Map<String,Integer> expectedMap = new HashMap<>();
-        expectedMap.put("FEMALE-18", 2);
-        expectedMap.put("MALE-30", 1);
-        expectedMap.put("MALE-34", 1);
-        expectedMap.put("MALE-16", 1);
-        expectedMap.put("MALE-40", 2);
-        expectedMap.put("MALE-20", 2);
-        expectedMap.put("MALE-24", 1);
-        expectedMap.put("MALE-22", 2);
+        // @formatter:off
+        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+                .put("FEMALE-18", 2)
+                .put("MALE-30", 1)
+                .put("MALE-34", 1)
+                .put("MALE-16", 1)
+                .put("MALE-40", 2)
+                .put("MALE-20", 2)
+                .put("MALE-24", 1)
+                .put("MALE-22", 2)
+                .build();
+        // @formatter:on
         
         extraParameters.put("group.fields", "AG,GEN");
+        
+        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+    }
+    
+    @Test
+    public void testGrouping2() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        // @formatter:off
+        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+                .put("18", 2)
+                .put("30", 1)
+                .put("34", 1)
+                .put("16", 1)
+                .put("40", 2)
+                .put("20", 2)
+                .put("24", 1)
+                .put("22", 2)
+                .build();
+        // @formatter:on
+        extraParameters.put("group.fields", "AG");
+        
+        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+    }
+    
+    @Test
+    public void testGrouping3() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
+        
+        extraParameters.put("group.fields", "GEN");
+        
+        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+    }
+    
+    @Test
+    public void testGrouping4() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
+        
+        extraParameters.put("group.fields", "GEN");
         
         runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
     }
@@ -244,17 +321,47 @@ public abstract class GroupingTest {
         
         String queryString = "UUID =~ '^[CS].*' && f:groupby('AG','GEN')";
         
-        Map<String,Integer> expectedMap = new HashMap<>();
-        expectedMap.put("FEMALE-18", 2);
-        expectedMap.put("MALE-30", 1);
-        expectedMap.put("MALE-34", 1);
-        expectedMap.put("MALE-16", 1);
-        expectedMap.put("MALE-40", 2);
-        expectedMap.put("MALE-20", 2);
-        expectedMap.put("MALE-24", 1);
-        expectedMap.put("MALE-22", 2);
+        // @formatter:off
+        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+                .put("FEMALE-18", 2)
+                .put("MALE-30", 1)
+                .put("MALE-34", 1)
+                .put("MALE-16", 1)
+                .put("MALE-40", 2)
+                .put("MALE-20", 2)
+                .put("MALE-24", 1)
+                .put("MALE-22", 2)
+                .build();
+        // @formatter:on
         
         runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+    }
+    
+    @Test
+    public void testGroupingUsingLuceneFunction() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "(UUID:C* or UUID:S* ) and #GROUPBY('AG','GEN')";
+        
+        // @formatter:off
+        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+                .put("FEMALE-18", 2)
+                .put("MALE-30", 1)
+                .put("MALE-34", 1)
+                .put("MALE-16", 1)
+                .put("MALE-40", 2)
+                .put("MALE-20", 2)
+                .put("MALE-24", 1)
+                .put("MALE-22", 2)
+                .build();
+        // @formatter:on
+        logic.setParser(new LuceneToJexlQueryParser());
+        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+        logic.setParser(new JexlControlledQueryParser());
     }
     
 }

@@ -98,7 +98,7 @@ public final class TokenTtlTrie {
         }
         
         Builder(MERGE_MODE mergeMode) {
-            transitionMaps.add(new HashMap<Byte,Integer>());
+            transitionMaps.add(new HashMap<>());
             stateTtlList.add(null);
             statePriorityList.add(null);
             this.isMerge = mergeMode.equals(MERGE_MODE.ON);
@@ -131,7 +131,7 @@ public final class TokenTtlTrie {
                     curState = transMap.get(b);
                 } else {
                     curState = transitionMaps.size();
-                    transitionMaps.add(new HashMap<Byte,Integer>());
+                    transitionMaps.add(new HashMap<>());
                     stateTtlList.add(null);
                     statePriorityList.add(null);
                     transMap.put(b, curState);

@@ -1191,13 +1191,13 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     private void clipRanges(Map<String,Map<KeyExtent,List<Range>>> binnedRanges) {
         // truncate the ranges to within the tablets... this makes it easier to know what work
         // needs to be redone when failures occurs and tablets have merged or split
-        Map<String,Map<KeyExtent,List<Range>>> binnedRanges2 = new HashMap<String,Map<KeyExtent,List<Range>>>();
+        Map<String,Map<KeyExtent,List<Range>>> binnedRanges2 = new HashMap<>();
         for (Entry<String,Map<KeyExtent,List<Range>>> entry : binnedRanges.entrySet()) {
-            Map<KeyExtent,List<Range>> tabletMap = new HashMap<KeyExtent,List<Range>>();
+            Map<KeyExtent,List<Range>> tabletMap = new HashMap<>();
             binnedRanges2.put(entry.getKey(), tabletMap);
             for (Entry<KeyExtent,List<Range>> tabletRanges : entry.getValue().entrySet()) {
                 Range tabletRange = tabletRanges.getKey().toDataRange();
-                List<Range> clippedRanges = new ArrayList<Range>();
+                List<Range> clippedRanges = new ArrayList<>();
                 tabletMap.put(tabletRanges.getKey(), clippedRanges);
                 for (Range range : tabletRanges.getValue())
                     clippedRanges.add(tabletRange.clip(range));
@@ -1306,7 +1306,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
     
     @Override
-    public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
+    public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) {
         
         return new RecordReaderBase<Key,Value>() {
             @Override

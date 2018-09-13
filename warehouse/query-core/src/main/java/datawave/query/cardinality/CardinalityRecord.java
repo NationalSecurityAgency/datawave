@@ -92,7 +92,7 @@ public class CardinalityRecord implements Serializable {
             if (valueMap.containsKey(s)) {
                 valueLists.add(valueMap.get(s));
             } else {
-                valueLists.add(new ArrayList<String>());
+                valueLists.add(new ArrayList<>());
                 if (log.isTraceEnabled()) {
                     log.trace("Cardinalty field " + s + " of configured field " + field + " not found");
                 }
@@ -115,16 +115,16 @@ public class CardinalityRecord implements Serializable {
     }
     
     protected <T> List<List<T>> cartesianProduct(List<List<T>> lists) {
-        List<List<T>> resultLists = new ArrayList<List<T>>();
+        List<List<T>> resultLists = new ArrayList<>();
         if (lists.size() == 0) {
-            resultLists.add(new ArrayList<T>());
+            resultLists.add(new ArrayList<>());
             return resultLists;
         } else {
             List<T> firstList = lists.get(0);
             List<List<T>> remainingLists = cartesianProduct(lists.subList(1, lists.size()));
             for (T condition : firstList) {
                 for (List<T> remainingList : remainingLists) {
-                    ArrayList<T> resultList = new ArrayList<T>();
+                    ArrayList<T> resultList = new ArrayList<>();
                     resultList.add(condition);
                     resultList.addAll(remainingList);
                     resultLists.add(resultList);

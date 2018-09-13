@@ -1,29 +1,47 @@
 package datawave.query.index.lookup;
 
-import static com.google.common.collect.Iterators.concat;
-import static com.google.common.collect.Iterators.filter;
-import static com.google.common.collect.Iterators.transform;
-
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import datawave.data.type.Type;
+import datawave.query.CloseableIterable;
+import datawave.query.Constants;
+import datawave.query.UnindexType;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.index.lookup.IndexStream.StreamContext;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.visitors.BaseVisitor;
+import datawave.query.jexl.visitors.DepthVisitor;
+import datawave.query.jexl.visitors.EvaluationRendering;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.planner.QueryPlan;
+import datawave.query.tables.RangeStreamScanner;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.SessionOptions;
+import datawave.query.tld.CreateTLDUidsIterator;
+import datawave.query.util.MetadataHelper;
+import datawave.query.util.QueryScannerHelper;
+import datawave.query.util.Tuple2;
+import datawave.query.util.Tuples;
+import datawave.util.StringUtils;
+import datawave.util.time.DateHelper;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.PreConditionFailedQueryException;
+import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -55,49 +73,26 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-import datawave.data.type.Type;
-import datawave.query.index.lookup.IndexStream.StreamContext;
-import datawave.query.CloseableIterable;
-import datawave.query.Constants;
-import datawave.query.UnindexType;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.visitors.BaseVisitor;
-import datawave.query.jexl.visitors.DepthVisitor;
-import datawave.query.jexl.visitors.EvaluationRendering;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import datawave.query.planner.QueryPlan;
-import datawave.query.tld.CreateTLDUidsIterator;
-import datawave.query.tables.RangeStreamScanner;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.tables.SessionOptions;
-import datawave.query.util.MetadataHelper;
-import datawave.query.util.QueryScannerHelper;
-import datawave.query.util.Tuple2;
-import datawave.query.util.Tuples;
-import datawave.util.StringUtils;
-import datawave.util.time.DateHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.PreConditionFailedQueryException;
-import datawave.webservice.query.exception.QueryException;
+import static com.google.common.collect.Iterators.*;
 
 public class RangeStream extends BaseVisitor implements CloseableIterable<QueryPlan> {
     
@@ -129,7 +124,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     /**
      * Intended to reduce the cost of repeated calls to helper.getAllFields
      */
-    protected Set<String> helperAllFieldsCache = new HashSet<String>();
+    protected Set<String> helperAllFieldsCache = new HashSet<>();
     
     private int maxScannerBatchSize;
     
@@ -369,11 +364,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     return ScannerStream.unknownField(union.currentNode(), union);
                 default:
                     return ScannerStream.unknownField(node, union);
-                    // }
             }
-            
         }
-        
     }
     
     @Override
@@ -419,7 +411,6 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     return ScannerStream.unknownField(build.currentNode(), build);
                 default:
                     return ScannerStream.unknownField(node, build);
-                    // }
             }
         }
     }
@@ -651,7 +642,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     private boolean isWithinBoundedRange(JexlNode node) {
         if (node.jjtGetParent() instanceof ASTAndNode) {
-            List<JexlNode> otherNodes = new ArrayList<JexlNode>();
+            List<JexlNode> otherNodes = new ArrayList<>();
             Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) (node.jjtGetParent()), otherNodes, false);
             if (ranges.size() == 1 && otherNodes.isEmpty()) {
                 return true;
@@ -993,7 +984,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     }
     
     @Override
-    public void close() throws IOException {
+    public void close() {
         streamExecutor.shutdownNow();
         executor.shutdownNow();
     }

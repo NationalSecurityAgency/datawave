@@ -64,7 +64,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
         Comparator<NestedIterator<T>> itrComp = Util.nestedIteratorComparator();
         
         transformer = Util.keyTransformer();
-        transforms = new HashMap<T,T>();
+        transforms = new HashMap<>();
         
         includeHeads = TreeMultimap.create(keyComp, itrComp);
         includeHeads = initSubtree(includeHeads, includes, transformer, transforms, true);

@@ -112,7 +112,7 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
             endKey = new Key(rowId, new Text(fiName.toString() + Constants.NULL_BYTE_STRING));
             return new RangeSplitter(new Range(startKey, true, endKey, true), getMaxRangeSplit());
         } else {
-            List<Range> ranges = new ArrayList<Range>();
+            List<Range> ranges = new ArrayList<>();
             for (String value : values) {
                 ranges.add(buildBoundingRange(rowId, fiName, new Text(value)));
             }

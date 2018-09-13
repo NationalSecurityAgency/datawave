@@ -195,7 +195,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
      */
     @Override
     public IteratorOptions describeOptions() {
-        return new IteratorOptions("", "", Collections.<String,String> emptyMap(), Collections.<String> emptyList());
+        return new IteratorOptions("", "", Collections.emptyMap(), Collections.emptyList());
     }
     
     @Override

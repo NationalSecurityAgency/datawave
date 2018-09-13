@@ -215,13 +215,14 @@ public class JsonIngestHelperTest {
         URL data = JsonIngestHelperTest.class.getResource("/input/my.json");
         Assert.assertNotNull(data);
         
+        conf.set("myjson.data.process.extra.fields", String.valueOf(!parseHeaderOnly));
+        
         dataFile = new File(data.toURI());
         Path p = new Path(dataFile.toURI().toString());
         split = new FileSplit(p, 0, dataFile.length(), null);
         ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         
         JsonRecordReader reader = new JsonRecordReader();
-        reader.setParseHeaderOnly(parseHeaderOnly);
         reader.initialize(split, ctx);
         return reader;
     }

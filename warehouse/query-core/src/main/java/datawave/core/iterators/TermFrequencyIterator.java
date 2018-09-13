@@ -39,9 +39,9 @@ public class TermFrequencyIterator extends WrappingIterator {
     protected Key topKey = null;
     protected Value topValue = null;
     
-    protected List<FieldValue> fieldValues = new ArrayList<FieldValue>();
+    protected List<FieldValue> fieldValues = new ArrayList<>();
     
-    public static final Collection<ByteSequence> EMPTY_COL_FAMS = new ArrayList<ByteSequence>();
+    public static final Collection<ByteSequence> EMPTY_COL_FAMS = new ArrayList<>();
     
     public static final int MAX_SCAN_BEFORE_SEEK = 32;
     // The min distance before we seek. If there are less than 5 characters that match, then seek.

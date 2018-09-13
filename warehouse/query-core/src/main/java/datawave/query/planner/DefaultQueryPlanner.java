@@ -429,7 +429,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         // add the geo query comparator to sort by geo range granularity if this is a geo query
         List<Comparator<QueryPlan>> queryPlanComparators = null;
         if (config.isSortGeoWaveQueryRanges()) {
-            List<String> geoFields = new ArrayList<String>();
+            List<String> geoFields = new ArrayList<>();
             for (String fieldName : config.getIndexedFields()) {
                 for (Type type : config.getQueryFieldsDatatypes().get(fieldName)) {
                     if (type instanceof GeometryType) {
@@ -473,6 +473,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFieldsAsString(), true);
+        addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFieldsAsString(), true);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TYPE_METADATA_IN_HDFS, Boolean.toString(config.isTypeMetadataInHdfs()), true);
@@ -867,6 +868,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
                 queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields);
             } catch (CannotExpandUnfieldedTermFatalException e) {
+                // The visitor will only throw this if we cannot expand a term that is not nested in an or.
+                // Hence this query would return no results.
                 stopwatch.stop();
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ",
                                 queryData.getQuery()));
@@ -1043,7 +1046,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
             List<String> debugOutput = null;
             if (log.isDebugEnabled()) {
-                debugOutput = new ArrayList<String>(32);
+                debugOutput = new ArrayList<>(32);
             }
             if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
                 queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
@@ -1081,7 +1084,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 // reexpand
                 List<String> debugOutput = null;
                 if (log.isDebugEnabled()) {
-                    debugOutput = new ArrayList<String>(32);
+                    debugOutput = new ArrayList<>(32);
                 }
                 
                 // Unless config.isExandAllTerms is true, this may set some of
@@ -1372,11 +1375,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
             }
             log.info("Adding date filters for the following fields: " + dateIndexData.getFields());
             // now for each field, add an expression to filter that date
-            List<JexlNode> andChildren = new ArrayList<JexlNode>();
+            List<JexlNode> andChildren = new ArrayList<>();
             for (int i = 0; i < queryTree.jjtGetNumChildren(); i++) {
                 andChildren.add(JexlNodeFactory.createExpression(queryTree.jjtGetChild(i)));
             }
-            List<JexlNode> orChildren = new ArrayList<JexlNode>();
+            List<JexlNode> orChildren = new ArrayList<>();
             for (String field : dateIndexData.getFields()) {
                 orChildren.add(createDateFilter(dateType, field, config.getBeginDate(), config.getEndDate()));
             }
@@ -1835,7 +1838,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         // required
         List<String> debugOutput = null;
         if (log.isDebugEnabled()) {
-            debugOutput = new ArrayList<String>(32);
+            debugOutput = new ArrayList<>(32);
         }
         STATE state = ExecutableDeterminationVisitor.getState(queryTree, config, metadataHelper, debugOutput);
         if (log.isDebugEnabled()) {

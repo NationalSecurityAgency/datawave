@@ -15,7 +15,7 @@ public class GetAllMatches extends JexlQueryFunction {
     WildcardFieldedFilter.BooleanType type = null;
     
     public GetAllMatches() {
-        super("get_all_matches", new ArrayList<String>());
+        super("get_all_matches", new ArrayList<>());
     }
     
     @Override

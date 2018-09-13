@@ -32,7 +32,7 @@ public class CachedRunningQueryTest {
     @Before
     public void setup() throws Exception {
         crq = PowerMock.createPartialMock(CachedRunningQuery.class, "initialize");
-        PowerMock.field(CachedRunningQuery.class, "variableFields").set(crq, new TreeSet<String>());
+        PowerMock.field(CachedRunningQuery.class, "variableFields").set(crq, new TreeSet<>());
         List<String> columns = new ArrayList<>();
         columns.add("foo.bar");
         columns.add("hey.there");

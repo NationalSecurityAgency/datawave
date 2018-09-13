@@ -25,11 +25,11 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
     @Override
     public Tuple3<Key,Document,Map<String,Object>> apply(Tuple2<Key,Document> from) {
         Document merged = from.second();
-        Map<String,Object> map = new HashMap<String,Object>();
+        Map<String,Object> map = new HashMap<>();
         Attribute<?> docKeyAttr = merged.get(Document.DOCKEY_FIELD_NAME);
         
         // gather the set of doc keys
-        Set<Key> docKeys = new HashSet<Key>();
+        Set<Key> docKeys = new HashSet<>();
         if (docKeyAttr == null) {
             docKeys.add(from.first());
         } else if (docKeyAttr instanceof DocumentKey) {

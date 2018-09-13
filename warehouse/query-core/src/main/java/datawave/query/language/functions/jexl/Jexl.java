@@ -10,7 +10,7 @@ import datawave.query.language.functions.QueryFunction;
 public class Jexl extends JexlQueryFunction {
     
     public Jexl() {
-        super("jexl", new ArrayList<String>());
+        super("jexl", new ArrayList<>());
     }
     
     @Override

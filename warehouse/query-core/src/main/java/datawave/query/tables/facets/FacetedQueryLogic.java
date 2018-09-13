@@ -150,8 +150,8 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         
         filterList.add(filter);
         
-        Iterator<Entry<Key,Value>> returnIter = new MergedReadAhead<Entry<Key,Value>>(facetedConfig, iterator, new FacetedFunction(deserializer, serializer,
-                        functionList), filterList);
+        Iterator<Entry<Key,Value>> returnIter = new MergedReadAhead<>(facetedConfig, iterator, new FacetedFunction(deserializer, serializer, functionList),
+                        filterList);
         
         iterator = returnIter;
         

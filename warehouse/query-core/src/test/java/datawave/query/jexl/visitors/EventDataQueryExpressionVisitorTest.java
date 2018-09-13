@@ -65,7 +65,7 @@ public class EventDataQueryExpressionVisitorTest {
             String[] input = testData[i];
             String[] expected = testData[i + 1];
             Set<String> output = EventDataQueryExpressionVisitor.extractNormalizedAttributes(attrFactory, input[0], input[1], metadata);
-            Set<String> missing = new TreeSet<String>();
+            Set<String> missing = new TreeSet<>();
             for (String s : expected) {
                 if (!output.remove(s)) {
                     missing.add(s);
@@ -609,7 +609,7 @@ public class EventDataQueryExpressionVisitorTest {
     
     @Test
     public void testExpandedFunctionQuery() throws Exception {
-        Set<String> contentFields = new HashSet<String>();
+        Set<String> contentFields = new HashSet<>();
         contentFields.add("FOO");
         contentFields.add("BAR");
         

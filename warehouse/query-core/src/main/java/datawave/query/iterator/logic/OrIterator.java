@@ -77,7 +77,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T>, C
         Comparator<NestedIterator<T>> itrComp = Util.nestedIteratorComparator();
         
         transformer = Util.keyTransformer();
-        transforms = new HashMap<T,T>();
+        transforms = new HashMap<>();
         
         includeHeads = TreeMultimap.create(keyComp, itrComp);
         initSubtree(includeHeads, includes, transformer, transforms, false);

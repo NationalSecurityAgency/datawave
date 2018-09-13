@@ -196,7 +196,7 @@ public class MultiValueCompositeIndexTest {
         
         setupConfiguration(conf);
         
-        AbstractColumnBasedHandler<Text> dataTypeHandler = new AbstractColumnBasedHandler<Text>();
+        AbstractColumnBasedHandler<Text> dataTypeHandler = new AbstractColumnBasedHandler<>();
         dataTypeHandler.setup(new TaskAttemptContextImpl(conf, new TaskAttemptID()));
         
         TestIngestHelper ingestHelper = new TestIngestHelper();

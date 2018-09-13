@@ -18,7 +18,7 @@ public class Loaded extends JexlQueryFunction {
     private static final Set<String> COMMANDS = Sets.newHashSet("after", "before", "between");
     
     public Loaded() {
-        super("loaded", new ArrayList<String>());
+        super("loaded", new ArrayList<>());
     }
     
     @Override

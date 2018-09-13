@@ -14,7 +14,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 public class GetAllMatches extends LuceneQueryFunction {
     public GetAllMatches() {
-        super("getAllMatches", new ArrayList<String>());
+        super("getAllMatches", new ArrayList<>());
     }
     
     @Override

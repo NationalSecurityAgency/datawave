@@ -26,7 +26,7 @@ public class SharedTriState implements Closeable, SharedTriStateReader, Listenab
     
     private static Logger log = Logger.getLogger(SharedTriState.class);
     
-    public static enum STATE {
+    public enum STATE {
         NEEDS_UPDATE(0), UPDATING(1), UPDATED(2);
         private final int value;
         private static final Map<Integer,STATE> typesByValue = new HashMap<>();

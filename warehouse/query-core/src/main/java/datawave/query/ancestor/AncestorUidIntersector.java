@@ -29,7 +29,7 @@ public class AncestorUidIntersector implements UidIntersector {
             String baseUid = TLD.parseRootPointerFromId(match1.getUid());
             Tuple2<ArrayList<IndexMatch>,ArrayList<IndexMatch>> indexMatchLists = correlatedUids.get(baseUid);
             if (indexMatchLists == null) {
-                indexMatchLists = new Tuple2<>(new ArrayList<IndexMatch>(), new ArrayList<IndexMatch>());
+                indexMatchLists = new Tuple2<>(new ArrayList<>(), new ArrayList<>());
                 correlatedUids.put(baseUid, indexMatchLists);
             }
             indexMatchLists.first().add(match1);
@@ -40,7 +40,7 @@ public class AncestorUidIntersector implements UidIntersector {
             String baseUid = TLD.parseRootPointerFromId(match2.getUid());
             Tuple2<ArrayList<IndexMatch>,ArrayList<IndexMatch>> indexMatchLists = correlatedUids.get(baseUid);
             if (indexMatchLists == null) {
-                indexMatchLists = new Tuple2<>(new ArrayList<IndexMatch>(), new ArrayList<IndexMatch>());
+                indexMatchLists = new Tuple2<>(new ArrayList<>(), new ArrayList<>());
                 correlatedUids.put(baseUid, indexMatchLists);
             }
             indexMatchLists.second().add(match2);

@@ -72,7 +72,7 @@ public class NYCTLCColumnBasedHandlerTest {
         
         // Set up the ColumnBasedHandler
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
-        AbstractColumnBasedHandler<Text> abstractHandler = new AbstractColumnBasedHandler<Text>();
+        AbstractColumnBasedHandler<Text> abstractHandler = new AbstractColumnBasedHandler<>();
         abstractHandler.setup(context);
         
         // Set up the Reader

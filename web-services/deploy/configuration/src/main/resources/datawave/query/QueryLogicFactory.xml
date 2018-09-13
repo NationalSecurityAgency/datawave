@@ -34,6 +34,8 @@
         <bean class="datawave.query.language.functions.jexl.MatchesAtLeastCountOf"/>
         <bean class="datawave.query.language.functions.jexl.TimeFunction"/>
         <bean class="datawave.query.language.functions.jexl.Jexl"/>
+        <bean class="datawave.query.language.functions.jexl.Options"/>
+        <bean class="datawave.query.language.functions.jexl.Unique"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.CoveredBy"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Covers"/>

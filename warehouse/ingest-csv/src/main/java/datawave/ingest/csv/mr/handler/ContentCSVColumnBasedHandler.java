@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class ContentCSVColumnBasedHandler<KEYIN> extends ContentIndexingColumnBasedHandler<KEYIN> {
     
-    private Map<String,Set<String>> subtypeFieldTokenizationWhitelistMap = new HashMap<String,Set<String>>();
+    private Map<String,Set<String>> subtypeFieldTokenizationWhitelistMap = new HashMap<>();
     
     @Override
     public void setup(TaskAttemptContext context) {

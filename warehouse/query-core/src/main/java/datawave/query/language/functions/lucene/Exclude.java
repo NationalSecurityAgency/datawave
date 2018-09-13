@@ -15,7 +15,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 public class Exclude extends LuceneQueryFunction {
     public Exclude() {
-        super("exclude", new ArrayList<String>());
+        super("exclude", new ArrayList<>());
     }
     
     @Override

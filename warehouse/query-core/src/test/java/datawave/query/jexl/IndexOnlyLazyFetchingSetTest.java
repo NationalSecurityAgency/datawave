@@ -52,7 +52,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testClear_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         
         // Set expectations, looping twice to simulate the 2 fetch sequences occurring before and after the
         // clear() invocation. Although size() is called 3 times, only the first and last should result in a
@@ -92,7 +92,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testContains_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations
@@ -121,7 +121,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testContainsAll_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations
@@ -147,7 +147,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testIterator_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         
         // Set expectations
         for (int i = 0; i < 2; i++) {
@@ -215,7 +215,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testRemove_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations
@@ -241,7 +241,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testRemoveAll_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations
@@ -267,7 +267,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testRetainAll_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations
@@ -326,7 +326,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
     public void testToArray_HappyPath() throws Exception {
         // Create test input
         String fieldName = "HEAD";
-        Collection<Object> values = new HashSet<Object>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
+        Collection<Object> values = new HashSet<>(Arrays.asList("value1", new StringBuilder("value2"), "value3"));
         Iterator<Object> iterator = values.iterator();
         
         // Set expectations

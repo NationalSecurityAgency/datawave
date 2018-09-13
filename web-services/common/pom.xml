@@ -226,6 +226,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-tserver</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.deltaspike.core</groupId>
             <artifactId>deltaspike-core-impl</artifactId>
             <scope>runtime</scope>
@@ -303,7 +308,7 @@
                         <configuration>
                             <outputDirectory>lib</outputDirectory>
                             <!-- just grab the non-provided runtime dependencies -->
-                            <includeArtifactIds>stream,accumulo-trace,accumulo-tracer,zookeeper,commons-pool2,spring-core,spring-asm,spring-aop,spring-beans,spring-context,spring-context-support,spring-expression,commons-lang,accumulo-core,libthrift,guava,jul-to-slf4j-stub,hadoop-auth,hadoop-common,hadoop-hdfs,hadoop-mapreduce-client-core,hadoop-yarn-api,hadoop-yarn-common,hadoop-mapreduce-client-common,hadoop-mapreduce-client-shuffle,hadoop-mapreduce-client-jobclient,hadoop-yarn-client,httpcore,httpclient,avro,commons-compress,xz,commons-vfs2,accumulo-start,commons-configuration,accumulo-fate,json-simple,aopalliance,curator-client,curator-framework,curator-recipes</includeArtifactIds>
+                            <includeArtifactIds>stream,accumulo-trace,accumulo-tracer,accumulo-tserver,zookeeper,commons-pool2,spring-core,spring-asm,spring-aop,spring-beans,spring-context,spring-context-support,spring-expression,commons-lang,accumulo-core,libthrift,guava,jul-to-slf4j-stub,hadoop-auth,hadoop-common,hadoop-hdfs,hadoop-mapreduce-client-core,hadoop-yarn-api,hadoop-yarn-common,hadoop-mapreduce-client-common,hadoop-mapreduce-client-shuffle,hadoop-mapreduce-client-jobclient,hadoop-yarn-client,httpcore,httpclient,avro,commons-compress,xz,commons-vfs2,accumulo-start,commons-configuration,accumulo-fate,json-simple,aopalliance,curator-client,curator-framework,curator-recipes</includeArtifactIds>
                             <excludeTransitive>true</excludeTransitive>
                         </configuration>
                     </execution>

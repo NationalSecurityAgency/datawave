@@ -169,6 +169,10 @@ public class MetadataTableSplitsTest {
         Assert.assertNotNull("MetadataTableSplitsTest#setup failed to load test cache directory.", url);
         mockConfiguration.put(MetadataTableSplits.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf(Path.SEPARATOR)));
     }
+
+    public void setSplitsCacheDir(String splitsCacheDir) {
+        mockConfiguration.put(MetadataTableSplits.SPLITS_CACHE_DIR, splitsCacheDir);
+    }
     
     @After
     public void teardown() {
@@ -485,15 +489,15 @@ public class MetadataTableSplitsTest {
     public void testUpdateNoFile() throws IOException {
         logger.info("testUpdateNoFile called...");
         setupConfiguration();
+        setSplitsCacheDir(String.format("/random/dir%s/must/not/exist", (int)(Math.random() * 100) + 1));
         try {
             MetadataTableSplits uut = new MetadataTableSplits(createMockJobConf());
             uut.update();
             Assert.assertNotNull("MetadataTableSplits constructor failed to construct an instance.", uut);
             Assert.assertNull("MetadataTableSplits should have no splits", uut.getSplits());
-            
         } finally {
             
-            logger.info("testGetSplitsContention completed.");
+            logger.info("testUpdateNoFile completed.");
         }
         
     }
@@ -648,7 +652,7 @@ public class MetadataTableSplitsTest {
         int reducers = 487;
         int numsplits = 195365;
         // generate the initial splits
-        List<Text> splits = new ArrayList<Text>(numsplits);
+        List<Text> splits = new ArrayList<>(numsplits);
         for (int i = 0; i < numsplits; i++) {
             splits.add(new Text(Integer.toString(i)));
         }

@@ -122,8 +122,8 @@ public class GeoWaveMetadata implements RawRecordMetadata {
         if (features != null) {
             for (final SimpleFeature feature : features) {
                 if (feature.getDefaultGeometry() != null) {
-                    final DataStoreEntryInfo ingestInfo = DataStoreUtils.getIngestInfo(dataAdapter, index, feature, new UniformVisibilityWriter<SimpleFeature>(
-                                    new GlobalVisibilityHandler<SimpleFeature,Object>(StringUtils.stringFromBinary(visibility))));
+                    final DataStoreEntryInfo ingestInfo = DataStoreUtils.getIngestInfo(dataAdapter, index, feature, new UniformVisibilityWriter<>(
+                                    new GlobalVisibilityHandler<>(StringUtils.stringFromBinary(visibility))));
                     
                     bboxStats.entryIngested(ingestInfo, feature);
                     rowStats.entryIngested(ingestInfo, feature);
@@ -134,7 +134,7 @@ public class GeoWaveMetadata implements RawRecordMetadata {
     
     private Set<SimpleFeature> createSimpleFeature(final IngestHelperInterface helper, final RawRecordContainer event,
                     final Multimap<String,NormalizedContentInterface> fields) throws ParseException {
-        final Set<SimpleFeature> features = new HashSet<SimpleFeature>();
+        final Set<SimpleFeature> features = new HashSet<>();
         for (final SimpleFeature feature : GeoWaveDataTypeHandler.eventToSimpleFeatures(helper, event, fields, builder, flattenGeometry))
             features.add(FeatureDataUtils.defaultCRSTransform(feature, originalType, reprojectedType, transform));
         return features;

@@ -285,7 +285,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         // Do not load the type twice
         if (!typeMap.containsKey(typeStr)) {
             
-            typeMap.put(typeStr, new ArrayList<DataTypeHandler<K1>>());
+            typeMap.put(typeStr, new ArrayList<>());
             
             long myInterval = context.getConfiguration().getLong(typeStr + "." + DISCARD_INTERVAL, interval);
             
@@ -398,15 +398,17 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         boolean reprocessedNDCPush = false;
         
         byte[] rawData = value.getRawData();
-        long rawDataBytes = rawData.length;
-        getCounter(context, IngestInput.LINE_BYTES.toString(), "TOTAL").increment(rawDataBytes);
-        long minBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").getValue();
-        if (rawDataBytes < minBytes) {
-            getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").setValue(rawDataBytes);
-        }
-        long maxBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").getValue();
-        if (rawDataBytes > maxBytes) {
-            getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").setValue(rawDataBytes);
+        if (rawData != null) {
+            long rawDataBytes = rawData.length;
+            getCounter(context, IngestInput.LINE_BYTES.toString(), "TOTAL").increment(rawDataBytes);
+            long minBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").getValue();
+            if (rawDataBytes < minBytes) {
+                getCounter(context, IngestInput.LINE_BYTES.toString(), "MIN").setValue(rawDataBytes);
+            }
+            long maxBytes = getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").getValue();
+            if (rawDataBytes > maxBytes) {
+                getCounter(context, IngestInput.LINE_BYTES.toString(), "MAX").setValue(rawDataBytes);
+            }
         }
         
         // First lets clear this event from the error table if we are reprocessing a previously errored event

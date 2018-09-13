@@ -68,13 +68,13 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
         return SCHEMA;
     }
     
-    private static enum DICT_BASE implements FieldAccessor {
+    private enum DICT_BASE implements FieldAccessor {
         METADATA(1, "metadataField"), TOTAL(2, "totalResults"), UNKNOWN(0, "UNKNOWN");
         
         final int fn;
         final String name;
         
-        private DICT_BASE(int fn, String name) {
+        DICT_BASE(int fn, String name) {
             this.fn = fn;
             this.name = name;
         }

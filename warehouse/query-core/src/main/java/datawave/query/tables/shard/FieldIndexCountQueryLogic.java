@@ -113,7 +113,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 if (null != this.fieldValues && !this.fieldValues.isEmpty()) {
                     for (Type<?> norm : normalizerSet) {
                         if (null == normalizedFieldValues) {
-                            normalizedFieldValues = new HashSet<String>();
+                            normalizedFieldValues = new HashSet<>();
                         }
                         for (String val : this.fieldValues) {
                             try {
@@ -310,13 +310,13 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
             throw new IllegalArgumentException("Query was empty or not parseable");
         }
         if (this.queryModel != null) {
-            this.fieldNames = new ArrayList<String>(queryModel.getMappingsForAlias(fieldName));
+            this.fieldNames = new ArrayList<>(queryModel.getMappingsForAlias(fieldName));
             if (this.fieldNames.isEmpty()) {
                 // try using original fieldname
                 this.fieldNames.add(fieldName);
             }
         } else {
-            this.fieldNames = new ArrayList<String>(Collections.singletonList(fieldName));
+            this.fieldNames = new ArrayList<>(Collections.singletonList(fieldName));
         }
         if (null == this.fieldNames || this.fieldNames.isEmpty()) {
             throw new IllegalArgumentException("Do not have valid field name to query on.");
@@ -352,14 +352,14 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
     private void configTypeFilter(ShardQueryConfiguration config, Query settings) {
         // Get the datatype set if specified
         if (null == settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)) {
-            config.setDatatypeFilter(new HashSet<String>());
+            config.setDatatypeFilter(new HashSet<>());
             return;
         }
         
         String typeList = settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue();
         HashSet<String> typeFilter;
         if (null != typeList && 0 != typeList.length()) {
-            typeFilter = new HashSet<String>();
+            typeFilter = new HashSet<>();
             typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
             
             if (!typeFilter.isEmpty()) {
@@ -411,7 +411,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         if (logger.isTraceEnabled()) {
             logger.trace("buildSummary");
         }
-        Map<String,Tuple> summary = new HashMap<String,Tuple>();
+        Map<String,Tuple> summary = new HashMap<>();
         String cf;
         StringBuilder mapKeyBuilder = new StringBuilder();
         String mapKey;
@@ -477,7 +477,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         private final MarkingFunctions tupleMarkingFunctions;
         private long count = 0L;
         private long maxTimestamp = 0L;
-        Set<Text> uniqueVisibilities = new HashSet<Text>();
+        Set<Text> uniqueVisibilities = new HashSet<>();
         
         public Tuple(MarkingFunctions mf) {
             tupleMarkingFunctions = mf;
@@ -501,7 +501,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         
         public ColumnVisibility getColumnVisibility() {
             try {
-                Set<ColumnVisibility> columnVisibilities = new HashSet<ColumnVisibility>();
+                Set<ColumnVisibility> columnVisibilities = new HashSet<>();
                 for (Text t : this.uniqueVisibilities) {
                     columnVisibilities.add(new ColumnVisibility(t));
                 }
@@ -545,7 +545,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
     
     @Override
     public Set<String> getOptionalQueryParameters() {
-        Set<String> params = new TreeSet<String>();
+        Set<String> params = new TreeSet<>();
         params.add(QueryParameters.PARAMETER_MODEL_NAME);
         params.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
         params.add(QueryParameters.DATATYPE_FILTER_SET);

@@ -223,7 +223,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
     
     @Override
     public String[] getTableNames(final Configuration conf) {
-        final List<String> tableNames = new ArrayList<String>(2);
+        final List<String> tableNames = new ArrayList<>(2);
         
         final TypeRegistry registry = TypeRegistry.getInstance(conf);
         final String dataName = conf.get(DataTypeHelper.Properties.DATA_NAME_OVERRIDE, conf.get(DataTypeHelper.Properties.DATA_NAME));
@@ -299,7 +299,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
     
     private Set<SimpleFeature> createSimpleFeatures(final IngestHelperInterface helper, final RawRecordContainer event,
                     final Multimap<String,NormalizedContentInterface> fields) throws ParseException {
-        final Set<SimpleFeature> features = new HashSet<SimpleFeature>();
+        final Set<SimpleFeature> features = new HashSet<>();
         for (final SimpleFeature feature : eventToSimpleFeatures(helper, event, fields, builder, flattenGeometry))
             features.add(FeatureDataUtils.defaultCRSTransform(feature, originalType, reprojectedType, transform));
         return features;
@@ -316,7 +316,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
         if (geomAttrib == null || !fields.containsKey(geomAttrib.getLocalName()) || fields.get(geomAttrib.getLocalName()).size() == 0)
             return features;
         
-        final ArrayList<String> geomValues = new ArrayList<String>();
+        final ArrayList<String> geomValues = new ArrayList<>();
         
         // process non-geometry attributes from the event
         for (final AttributeDescriptor attrib : simpleFeatureType.getAttributeDescriptors()) {
@@ -331,7 +331,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
             if (values.size() == 0)
                 continue;
             
-            final ArrayList<String> stringValues = new ArrayList<String>(values.size());
+            final ArrayList<String> stringValues = new ArrayList<>(values.size());
             for (final NormalizedContentInterface value : values)
                 stringValues.add(value.getEventFieldValue());
             
@@ -376,7 +376,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
                 if (String.class.isAssignableFrom(binding)) {
                     builder.set(attrib.getName(), Joiner.on(';').skipNulls().join(stringValues));
                 } else if (Geometry.class.isAssignableFrom(binding)) {
-                    final ArrayList<Geometry> geomList = new ArrayList<Geometry>(stringValues.size());
+                    final ArrayList<Geometry> geomList = new ArrayList<>(stringValues.size());
                     for (final String stringValue : stringValues)
                         geomList.add(GeometryNormalizer.parseGeometry(stringValue));
                     builder.set(attrib.getName(), new GeometryFactory().createGeometryCollection(geomList.toArray(new Geometry[geomList.size()])));
@@ -400,7 +400,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
             }
         } else {
             // create a single feature with all geometries
-            final ArrayList<Geometry> geomList = new ArrayList<Geometry>(geomValues.size());
+            final ArrayList<Geometry> geomList = new ArrayList<>(geomValues.size());
             for (final String geomValue : geomValues)
                 geomList.add(GeometryNormalizer.parseGeometry(geomValue));
             builder.set(geomAttrib.getName(), new GeometryFactory().createGeometryCollection(geomList.toArray(new Geometry[geomList.size()])));
@@ -413,8 +413,8 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
     private List<KeyValue> entryToKeyValues(final SimpleFeature feature, final byte[] visibility) {
         final List<KeyValue> keyValues = new ArrayList<>();
         if (feature.getDefaultGeometry() != null) {
-            final DataStoreEntryInfo ingestInfo = DataStoreUtils.getIngestInfo(dataAdapter, index, feature, new UniformVisibilityWriter<SimpleFeature>(
-                            new GlobalVisibilityHandler<SimpleFeature,Object>(StringUtils.stringFromBinary(visibility))));
+            final DataStoreEntryInfo ingestInfo = DataStoreUtils.getIngestInfo(dataAdapter, index, feature, new UniformVisibilityWriter<>(
+                            new GlobalVisibilityHandler<>(StringUtils.stringFromBinary(visibility))));
             
             final List<DataStoreEntryInfo.FieldInfo<?>> fieldInfoList = DataStoreUtils.composeFlattenedFields(ingestInfo.getFieldInfo(), index.getIndexModel(),
                             dataAdapter);
@@ -476,7 +476,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
             for (final byte[] bytes : fieldInfoBytesList) {
                 allFields.put(bytes);
             }
-            final DataStoreEntryInfo.FieldInfo<?> composite = new DataStoreEntryInfo.FieldInfo<T>(new PersistentValue<T>(COMPOSITE_CQ, null), // unnecessary
+            final DataStoreEntryInfo.FieldInfo<?> composite = new DataStoreEntryInfo.FieldInfo<T>(new PersistentValue<>(COMPOSITE_CQ, null), // unnecessary
                             allFields.array(), entry.getKey().getBytes());
             retVal.add(composite);
         }

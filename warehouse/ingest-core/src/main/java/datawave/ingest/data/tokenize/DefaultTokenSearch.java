@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 public class DefaultTokenSearch implements TokenSearch {
     private static Logger logger = LoggerFactory.getLogger(DefaultTokenSearch.class);
     
-    private static final HashMap<String,CharArraySet> stopwordCache = new HashMap<String,CharArraySet>();
+    private static final HashMap<String,CharArraySet> stopwordCache = new HashMap<>();
     
     protected final CharArraySet stopwords;
     
@@ -258,7 +258,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public List<String> getSynonyms(String term, String termType, boolean includeTerm) {
-        return new ArrayList<String>(getSynonyms(dezone(term), termType, includeTerm));
+        return new ArrayList<>(getSynonyms(dezone(term), termType, includeTerm));
     }
     
     protected static String[] dezone(String term) {
@@ -307,7 +307,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public Collection<String> emailAddressTokens(String[] zw, boolean reverse_indexing, boolean includeTerm) {
-        Set<String> synonyms = new LinkedHashSet<String>();
+        Set<String> synonyms = new LinkedHashSet<>();
         
         String addr = zw[0];
         String zone = zw[1];
@@ -360,7 +360,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public List<String> emailAddressTokens(String term, boolean reverse_indexing, boolean includeTerm) {
-        return new ArrayList<String>(emailAddressTokens(dezone(term), reverse_indexing, includeTerm));
+        return new ArrayList<>(emailAddressTokens(dezone(term), reverse_indexing, includeTerm));
     }
     
     /*
@@ -370,7 +370,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public Collection<String> ipAddressTokens(String[] zw, boolean reverse_indexing, boolean includeTerm) {
-        Set<String> synonyms = new LinkedHashSet<String>();
+        Set<String> synonyms = new LinkedHashSet<>();
         
         String addr = zw[0];
         String zone = zw[1];
@@ -393,7 +393,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public List<String> ipAddressTokens(String term, boolean reverse_indexing, boolean includeTerm) {
-        return new ArrayList<String>(ipAddressTokens(dezone(term), reverse_indexing, includeTerm));
+        return new ArrayList<>(ipAddressTokens(dezone(term), reverse_indexing, includeTerm));
     }
     
     /*
@@ -403,7 +403,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public List<String> timestampTokens(String term, boolean reverse_indexing, boolean includeTerm) {
-        return new ArrayList<String>(timestampTokens(dezone(term), reverse_indexing, includeTerm));
+        return new ArrayList<>(timestampTokens(dezone(term), reverse_indexing, includeTerm));
     }
     
     /*
@@ -416,7 +416,7 @@ public class DefaultTokenSearch implements TokenSearch {
         if (reverse_indexing)
             return Collections.emptyList();
         
-        Set<String> synonyms = new LinkedHashSet<String>();
+        Set<String> synonyms = new LinkedHashSet<>();
         
         String tstamp = zw[0].toLowerCase();
         String zone = zw[1];
@@ -458,7 +458,7 @@ public class DefaultTokenSearch implements TokenSearch {
         if (reverse_indexing)
             return Collections.emptyList();
         
-        Set<String> synonyms = new LinkedHashSet<String>();
+        Set<String> synonyms = new LinkedHashSet<>();
         
         String zlc = zw[0].toLowerCase();
         String zone = zw[1];
@@ -585,7 +585,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public List<String> filePathTokens(String term, boolean reverse_indexing, boolean includeTerm) {
-        return new ArrayList<String>(filePathTokens(dezone(term), reverse_indexing, includeTerm));
+        return new ArrayList<>(filePathTokens(dezone(term), reverse_indexing, includeTerm));
     }
     
     /*
@@ -599,7 +599,7 @@ public class DefaultTokenSearch implements TokenSearch {
         if (reverse_indexing)
             return Collections.emptyList();
         
-        Set<String> synonyms = new LinkedHashSet<String>();
+        Set<String> synonyms = new LinkedHashSet<>();
         
         String lc = zw[0].toLowerCase();
         String zone = zw[1];
@@ -640,7 +640,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public List<String> httpRequestTokens(String term, boolean reverse_indexing, boolean includeTerm) {
-        return new ArrayList<String>(httpRequestTokens(dezone(term), reverse_indexing, includeTerm));
+        return new ArrayList<>(httpRequestTokens(dezone(term), reverse_indexing, includeTerm));
     }
     
     /*
@@ -650,7 +650,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public Collection<String> dirtyTokens(String[] zw, boolean includeTerm) {
-        Set<String> synonyms = new LinkedHashSet<String>();
+        Set<String> synonyms = new LinkedHashSet<>();
         
         String lc = zw[0].toLowerCase();
         String zone = zw[1];
@@ -677,7 +677,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public List<String> dirtyTokens(String term, boolean includeTerm) {
-        return new ArrayList<String>(dirtyTokens(dezone(term), includeTerm));
+        return new ArrayList<>(dirtyTokens(dezone(term), includeTerm));
     }
     
     private final String urlDecode(String input) throws UnsupportedEncodingException {
@@ -703,7 +703,7 @@ public class DefaultTokenSearch implements TokenSearch {
         if (reverse_indexing)
             return Collections.emptyList();
         
-        Set<String> synonyms = new LinkedHashSet<String>();
+        Set<String> synonyms = new LinkedHashSet<>();
         
         String lc_url = zw[0].toLowerCase();
         String zone = zw[1];
@@ -859,7 +859,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public List<String> urlTokens(String term, boolean reverse_indexing, boolean includeTerm) {
-        return new ArrayList<String>(urlTokens(dezone(term), reverse_indexing, includeTerm));
+        return new ArrayList<>(urlTokens(dezone(term), reverse_indexing, includeTerm));
     }
     
     /*
@@ -893,7 +893,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public Collection<String> getTermSynonyms(String[] term, boolean includeTerm) {
-        Set<String> synonyms = new LinkedHashSet<String>();
+        Set<String> synonyms = new LinkedHashSet<>();
         
         if (term[1] == null)
             term[1] = "";
@@ -934,7 +934,7 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public List<String> getTermSynonyms(String term, boolean includeTerm) {
-        return new ArrayList<String>(getTermSynonyms(dezone(term), includeTerm));
+        return new ArrayList<>(getTermSynonyms(dezone(term), includeTerm));
     }
     
     /**

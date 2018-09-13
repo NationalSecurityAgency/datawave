@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 public abstract class ModificationOperation<T extends ModificationOperation> {
     
     @XmlEnum(String.class)
-    public static enum OPERATIONMODE {
+    public enum OPERATIONMODE {
         INSERT, UPDATE, DELETE, REPLACE, KEEP
     }
     

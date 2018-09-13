@@ -83,7 +83,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
                 }
                 return (shardId.hashCode() & Integer.MAX_VALUE);
             case "collapse":
-                ArrayList<Text> keys = new ArrayList<Text>(assignments.keySet());
+                ArrayList<Text> keys = new ArrayList<>(assignments.keySet());
                 Collections.sort(keys);
                 int closestAssignment = Collections.binarySearch(keys, shardId);
                 if (closestAssignment >= 0) {

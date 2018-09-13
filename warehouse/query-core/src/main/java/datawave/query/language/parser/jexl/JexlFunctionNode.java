@@ -11,11 +11,11 @@ public class JexlFunctionNode extends JexlNode {
     private JexlQueryFunction function = null;
     
     private JexlFunctionNode() {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
     }
     
     public JexlFunctionNode(JexlQueryFunction function, List<String> parameterList, int depth, QueryNode parent) {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
         
         this.function = function;
         this.function.initialize(parameterList, depth, parent);

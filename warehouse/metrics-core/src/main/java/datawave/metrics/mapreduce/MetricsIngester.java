@@ -278,8 +278,8 @@ public class MetricsIngester extends Configured implements Tool {
         }
         
         Collection<Pair<Text,Text>> columns = new ArrayList<>();
-        columns.add(new Pair<Text,Text>(new Text("e"), null));
-        columns.add(new Pair<Text,Text>(new Text("info"), null));
+        columns.add(new Pair<>(new Text("e"), null));
+        columns.add(new Pair<>(new Text("info"), null));
         
         AccumuloInputFormat.fetchColumns(job, columns);
         

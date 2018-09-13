@@ -208,7 +208,7 @@ public class NGramTokenizationStrategyTest {
     @Test
     public void testTokenize_WeightedLengthPruningWithUndefinedMaxNGramCount() throws Exception {
         // Create test input
-        final Vector<NormalizedContentInterface> ncis = new Vector<NormalizedContentInterface>();
+        final Vector<NormalizedContentInterface> ncis = new Vector<>();
         int fieldNameExtension = 1;
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 10));
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 10));
@@ -246,7 +246,7 @@ public class NGramTokenizationStrategyTest {
         BloomFilter<String> result1 = subject.newFilter(ncis.size()); // Create filter, which forces weighting calculation
         subject.setFilter(this.filter); // Set the new filter
         
-        Map<String,Integer> result3 = new HashMap<String,Integer>();
+        Map<String,Integer> result3 = new HashMap<>();
         int result2 = 0;
         for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value
             int tokenized = subject.tokenize(nci, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
@@ -270,7 +270,7 @@ public class NGramTokenizationStrategyTest {
     @Test
     public void testTokenize_WeightedLengthPruningWithAllUnderweightValues() throws Exception {
         // Create test input
-        final Vector<NormalizedContentInterface> ncis = new Vector<NormalizedContentInterface>();
+        final Vector<NormalizedContentInterface> ncis = new Vector<>();
         int fieldNameExtension = 1;
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 5));
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 4));
@@ -304,7 +304,7 @@ public class NGramTokenizationStrategyTest {
         BloomFilter<String> result1 = subject.newFilter(ncis.size()); // Create filter, which forces weighting calculation
         subject.setFilter(this.filter); // Set the new filter
         
-        Map<String,Integer> result3 = new HashMap<String,Integer>();
+        Map<String,Integer> result3 = new HashMap<>();
         int result2 = 0;
         for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value
             int tokenized = subject.tokenize(nci, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
@@ -329,7 +329,7 @@ public class NGramTokenizationStrategyTest {
     @Test
     public void testTokenize_WeightedLengthPruningWithMinorityOfOverweightValues() throws Exception {
         // Create test input
-        final Vector<NormalizedContentInterface> ncis = new Vector<NormalizedContentInterface>();
+        final Vector<NormalizedContentInterface> ncis = new Vector<>();
         int fieldNameExtension = 1;
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 5));
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 4));
@@ -390,7 +390,7 @@ public class NGramTokenizationStrategyTest {
         BloomFilter<String> result1 = subject.newFilter(ncis.size()); // Create filter, which forces weighting calculation
         subject.setFilter(this.filter); // Set the new filter
         
-        Map<String,Integer> result3 = new HashMap<String,Integer>();
+        Map<String,Integer> result3 = new HashMap<>();
         int result2 = 0;
         for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value
             int tokenized = subject.tokenize(nci, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
@@ -425,7 +425,7 @@ public class NGramTokenizationStrategyTest {
     @Test
     public void testTokenize_WeightedLengthPruningWithMajorityOfOverweightValues() throws Exception {
         // Create test input
-        final Vector<NormalizedContentInterface> ncis = new Vector<NormalizedContentInterface>();
+        final Vector<NormalizedContentInterface> ncis = new Vector<>();
         int fieldNameExtension = 1;
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 3));
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 4));
@@ -464,7 +464,7 @@ public class NGramTokenizationStrategyTest {
         BloomFilter<String> result1 = subject.newFilter(ncis.size()); // Create filter, which forces weighting calculation
         subject.setFilter(this.filter); // Set the new filter
         
-        Map<String,Integer> result3 = new HashMap<String,Integer>();
+        Map<String,Integer> result3 = new HashMap<>();
         int result2 = 0;
         for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value
             int tokenized = subject.tokenize(nci, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
@@ -489,7 +489,7 @@ public class NGramTokenizationStrategyTest {
     @Test
     public void testTokenize_StrategyStack() throws Exception {
         // Create test input
-        final Vector<NormalizedContentInterface> ncis = new Vector<NormalizedContentInterface>();
+        final Vector<NormalizedContentInterface> ncis = new Vector<>();
         int fieldNameExtension = 1;
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 5));
         ncis.add(this.createNormalizedFieldAndValue(fieldNameExtension++, 4));
@@ -539,7 +539,7 @@ public class NGramTokenizationStrategyTest {
         subject.setFilter(this.filter); // Set the new filter
         
         int result2 = 0;
-        Map<String,Integer> result3 = new HashMap<String,Integer>();
+        Map<String,Integer> result3 = new HashMap<>();
         Exception result4 = null;
         try {
             for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value

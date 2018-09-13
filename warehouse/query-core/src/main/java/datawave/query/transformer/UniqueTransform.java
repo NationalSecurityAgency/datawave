@@ -38,7 +38,7 @@ import java.util.TreeMap;
 
 /**
  * This is a iterator that will filter documents base on a uniqueness across a set of configured fields. Only the first instance of an event with a unique set
- * of those fields will be returned.
+ * of those fields will be returned. This transform is thread safe.
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
     
@@ -123,16 +123,18 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private boolean isDuplicate(Document document) throws IOException {
         byte[] bytes = getBytes(document);
         ByteSequence byteSeq = new ArrayByteSequence(bytes);
-        if (bloom.mightContain(bytes)) {
-            if (DEBUG && !seen.contains(byteSeq)) {
-                throw new IllegalStateException("This event is 1 in 1Q!");
-            } else {
-                return true;
+        synchronized (bloom) {
+            if (bloom.mightContain(bytes)) {
+                if (DEBUG && !seen.contains(byteSeq)) {
+                    throw new IllegalStateException("This event is 1 in 1Q!");
+                } else {
+                    return true;
+                }
             }
-        }
-        bloom.put(bytes);
-        if (DEBUG) {
-            seen.add(byteSeq);
+            bloom.put(bytes);
+            if (DEBUG) {
+                seen.add(byteSeq);
+            }
         }
         return false;
     }

@@ -171,7 +171,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     private CompositeIngest compositeIngest;
     private VirtualIngest virtualIngest;
     
-    public static enum FailurePolicy {
+    public enum FailurePolicy {
         DROP, LEAVE, FAIL
     }
     

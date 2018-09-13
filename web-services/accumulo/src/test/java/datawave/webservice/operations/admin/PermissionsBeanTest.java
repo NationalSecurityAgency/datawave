@@ -35,7 +35,7 @@ public class PermissionsBeanTest {
         field.setAccessible(true);
         field.set(permissionsBean, connectionFactory);
         
-        Map<String,String> trackingMap = new HashMap<String,String>();
+        Map<String,String> trackingMap = new HashMap<>();
         expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap)).andReturn(connector);
         connectionFactory.returnConnection(connector);

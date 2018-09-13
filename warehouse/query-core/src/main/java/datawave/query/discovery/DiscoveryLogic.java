@@ -284,8 +284,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         // When seperating by colvis leave visibilities in tact
         if (config.getSeparateCountsByColVis()) {
-            bs.addScanIterator(configureVisibilityPruning(config.getBaseIteratorPriority() + 49, new HashSet<Authorizations>(),
-                            config.getUndisplayedVisibilities()));
+            bs.addScanIterator(configureVisibilityPruning(config.getBaseIteratorPriority() + 49, new HashSet<>(), config.getUndisplayedVisibilities()));
         } else {
             bs.addScanIterator(configureVisibilityPruning(config.getBaseIteratorPriority() + 49, config.getAuthorizations(),
                             config.getUndisplayedVisibilities()));
@@ -396,7 +395,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     @SuppressWarnings("unchecked")
     public static Pair<Set<Range>,Set<Range>> makeRanges(DiscoveryQueryConfiguration config, Set<Text> familiesToSeek, MetadataHelper metadataHelper)
                     throws TableNotFoundException, ExecutionException {
-        Set<Range> forwardRanges = new HashSet<Range>();
+        Set<Range> forwardRanges = new HashSet<>();
         for (Entry<String,String> literalAndField : config.getLiterals().entries()) {
             String literal = literalAndField.getKey(), field = literalAndField.getValue();
             // if we're _ANYFIELD_, then use null when making the literal range
@@ -418,7 +417,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                 continue;
             }
         }
-        Set<Range> reverseRanges = new HashSet<Range>();
+        Set<Range> reverseRanges = new HashSet<>();
         for (Entry<String,String> patternAndField : config.getPatterns().entries()) {
             String pattern = patternAndField.getKey(), field = patternAndField.getValue();
             // if we're _ANYFIELD_, then use null when making the literal range
@@ -493,10 +492,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                     log.debug("Attempting to normalize [" + value + "] with [" + dataType.getClass() + "]");
                     String normalizedLower = normalization.normalize(dataType, field, value.getLower().toString());
                     String normalizedUpper = normalization.normalize(dataType, field, value.getUpper().toString());
-                    normalizedValuesToFields.put(
-                                    field,
-                                    new LiteralRange<String>(normalizedLower, value.isLowerInclusive(), normalizedUpper, value.isUpperInclusive(), value
-                                                    .getFieldName(), value.getNodeOperand()));
+                    normalizedValuesToFields.put(field, new LiteralRange<>(normalizedLower, value.isLowerInclusive(), normalizedUpper,
+                                    value.isUpperInclusive(), value.getFieldName(), value.getNodeOperand()));
                     log.debug("Normalization succeeded!");
                 } catch (Exception exception) {
                     log.debug("Normalization failed.");

@@ -33,6 +33,7 @@ public class JsonRecordReaderTest {
         conf.addResource(ClassLoader.getSystemResource("config/ingest/json-ingest-config.xml"));
         
         conf.set("myjson.data.json.flattener.mode", mode.name());
+        conf.set("myjson.data.process.extra.fields", String.valueOf(!parseHeaderOnly));
         
         URL data = JsonRecordReaderTest.class.getResource("/input/my.json");
         Assert.assertNotNull(data);
@@ -46,7 +47,6 @@ public class JsonRecordReaderTest {
         ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         
         JsonRecordReader reader = new JsonRecordReader();
-        reader.setParseHeaderOnly(parseHeaderOnly);
         reader.initialize(split, ctx);
         return reader;
     }

@@ -36,7 +36,7 @@ public class QueryFunctions {
     }
     
     public static Collection<?> length(Object field, long lower, long upper) {
-        Set<String> matches = Collections.<String> emptySet();
+        Set<String> matches = Collections.emptySet();
         String fieldValue = ValueTuple.getNormalizedStringValue(field);
         if (upper < lower)
             throw new IllegalArgumentException("upper bound must be greater than the lower bound");
@@ -53,7 +53,7 @@ public class QueryFunctions {
                 return matches;
             }
         }
-        return Collections.<String> emptySet();
+        return Collections.emptySet();
     }
     
     public static Collection<?> between(Object field, String left, String right) {
@@ -72,7 +72,7 @@ public class QueryFunctions {
                 }
             }
         }
-        return Collections.<String> emptySet();
+        return Collections.emptySet();
     }
     
     public static Collection<?> between(Iterable<?> values, String left, String right) {
@@ -86,7 +86,7 @@ public class QueryFunctions {
                 return matches;
             }
         }
-        return Collections.<String> emptySet();
+        return Collections.emptySet();
     }
     
     public static Collection<?> between(Object field, float left, float right) {
@@ -119,7 +119,7 @@ public class QueryFunctions {
                 return Collections.singleton(getHitTermString(field));
             }
         }
-        return Collections.<String> emptySet();
+        return Collections.emptySet();
     }
     
     public static Collection<?> between(Iterable<?> values, float left, float right) {
@@ -133,7 +133,7 @@ public class QueryFunctions {
                 return matches;
             }
         }
-        return Collections.<String> emptySet();
+        return Collections.emptySet();
     }
     
     public static Collection<?> between(Object fieldValue, long left, long right) {

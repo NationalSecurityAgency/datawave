@@ -244,7 +244,7 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
     
     @Override
     public Attribute<?> reduceToKeep() {
-        Set<Attribute<? extends Comparable<?>>> replacements = new HashSet<Attribute<? extends Comparable<?>>>();
+        Set<Attribute<? extends Comparable<?>>> replacements = new HashSet<>();
         for (Iterator<Attribute<? extends Comparable<?>>> it = this.attributes.iterator(); it.hasNext();) {
             Attribute<?> attr = it.next();
             this._count -= attr.size();

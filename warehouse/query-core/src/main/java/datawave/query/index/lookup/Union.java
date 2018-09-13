@@ -30,7 +30,7 @@ public class Union implements IndexStream {
     protected final List<JexlNode> childrenNodes;
     protected final StreamContext context;
     protected final String contextDebug;
-    protected final List<String> childrenContextDebug = new ArrayList<String>();
+    protected final List<String> childrenContextDebug = new ArrayList<>();
     protected JexlNode currNode = null;
     protected List<JexlNode> delayedNodes;
     protected Tuple2<String,IndexInfo> next;
@@ -39,7 +39,7 @@ public class Union implements IndexStream {
     
     @SuppressWarnings({"unchecked", "rawtypes"})
     public Union(Iterable<? extends IndexStream> children) {
-        this.children = new PriorityQueue(16, PeekOrdering.make(new TupleComparator<String,IndexInfo>()));
+        this.children = new PriorityQueue(16, PeekOrdering.make(new TupleComparator<>()));
         this.childrenNodes = Lists.newArrayList();
         delayedNodes = Lists.newArrayList();
         int childrenCount = 0;

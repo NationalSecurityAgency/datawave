@@ -78,7 +78,7 @@ public class IdTranslatorBean {
     final static private String ID_TRANS_LOGIC = "IdTranslationQuery";
     final static private String ID_TRANS_TLD_LOGIC = "IdTranslationTLDQuery";
     
-    private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<String,UUIDType>());
+    private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
     
     @PostConstruct
     public void init() {

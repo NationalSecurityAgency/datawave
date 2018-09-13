@@ -30,7 +30,7 @@ public class IteratorThreadPoolManager {
     private ExecutorService evaluationThreadPool;
     private static final int DEFAULT_THREAD_POOL_SIZE = 100;
     
-    private Map<String,ExecutorService> threadPools = new TreeMap<String,ExecutorService>();
+    private Map<String,ExecutorService> threadPools = new TreeMap<>();
     
     private ServerConfigurationFactory confFactory;
     
@@ -69,7 +69,7 @@ public class IteratorThreadPoolManager {
     }
     
     private ThreadPoolExecutor createExecutorService(int maxThreads, String name) {
-        ThreadPoolExecutor pool = new ThreadPoolExecutor(maxThreads, maxThreads, 5 * 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(maxThreads, maxThreads, 5 * 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
                         new NamingThreadFactory(name));
         pool.allowCoreThreadTimeOut(true);
         return pool;
@@ -78,7 +78,7 @@ public class IteratorThreadPoolManager {
     private int getMaxThreads(final String prop) {
         if (this.confFactory != null) {
             AccumuloConfiguration conf = this.confFactory.getConfiguration();
-            Map<String,String> properties = new TreeMap<String,String>();
+            Map<String,String> properties = new TreeMap<>();
             conf.getProperties(properties, new AccumuloConfiguration.MatchFilter(prop));
             if (properties.containsKey(prop)) {
                 return Integer.parseInt(properties.get(prop));

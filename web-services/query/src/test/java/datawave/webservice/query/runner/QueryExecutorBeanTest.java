@@ -450,7 +450,7 @@ public class QueryExecutorBeanTest {
             }
         };
         
-        Set<Prediction> predictions = new HashSet<Prediction>();
+        Set<Prediction> predictions = new HashSet<>();
         predictions.add(new Prediction("source", 1));
         EasyMock.expect(predictor.predict(EasyMock.eq(testMetric))).andReturn(predictions);
         
@@ -659,7 +659,7 @@ public class QueryExecutorBeanTest {
         metric.setLifecycle(Lifecycle.DEFINED);
         System.out.println(metric.toString());
         
-        Set<Prediction> predictions = new HashSet<Prediction>();
+        Set<Prediction> predictions = new HashSet<>();
         predictions.add(new Prediction("source", 1));
         EasyMock.expect(predictor.predict(metric)).andReturn(predictions);
         

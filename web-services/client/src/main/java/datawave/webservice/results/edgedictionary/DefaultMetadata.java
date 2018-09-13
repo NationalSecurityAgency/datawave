@@ -149,7 +149,7 @@ public class DefaultMetadata extends MetadataBase<DefaultMetadata> implements Se
         return SCHEMA;
     }
     
-    private static enum METAFIELD_BASE implements FieldAccessor {
+    private enum METAFIELD_BASE implements FieldAccessor {
         EDGE_TYPE(1, "edgeType"),
         EDGE_RELATIONSHIP(2, "edgeRelationship"),
         EDGE_ATTRIBUTE1(3, "edgeAttribute1Source"),
@@ -161,7 +161,7 @@ public class DefaultMetadata extends MetadataBase<DefaultMetadata> implements Se
         final int fn;
         final String name;
         
-        private METAFIELD_BASE(int fieldNumber, String fieldName) {
+        METAFIELD_BASE(int fieldNumber, String fieldName) {
             this.fn = fieldNumber;
             this.name = fieldName;
         }

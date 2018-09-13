@@ -251,7 +251,7 @@ public interface VirtualIngest {
                 String[] value = config.getStrings(prefix + key, (String[]) null);
                 if (value != null) {
                     String concatValue = "";
-                    ArrayList<String> escapedValue = new ArrayList<String>();
+                    ArrayList<String> escapedValue = new ArrayList<>();
                     for (int i = 0; i < value.length; i++) {
                         concatValue += value[i];
                         if (i != value.length - 1)

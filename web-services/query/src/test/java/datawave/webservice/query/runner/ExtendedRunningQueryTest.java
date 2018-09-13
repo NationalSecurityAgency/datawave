@@ -151,7 +151,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getBeginDate()).andReturn(beginDate);
         expect(this.query.getEndDate()).andReturn(endDate);
         expect(this.query.getExpirationDate()).andReturn(expirationDate);
-        expect(this.query.getParameters()).andReturn(new HashSet<Parameter>());
+        expect(this.query.getParameters()).andReturn(new HashSet<>());
         expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
         expect(this.query.getUserDN()).andReturn(userDN).times(2);
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
@@ -230,7 +230,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getBeginDate()).andReturn(beginDate);
         expect(this.query.getEndDate()).andReturn(endDate);
         expect(this.query.getExpirationDate()).andReturn(expirationDate);
-        expect(this.query.getParameters()).andReturn(new HashSet<Parameter>());
+        expect(this.query.getParameters()).andReturn(new HashSet<>());
         expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
         expect(this.query.getUserDN()).andReturn(userDN).times(2);
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);

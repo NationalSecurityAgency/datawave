@@ -14,7 +14,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 public class Include extends LuceneQueryFunction {
     public Include() {
-        super("include", new ArrayList<String>());
+        super("include", new ArrayList<>());
     }
     
     @Override

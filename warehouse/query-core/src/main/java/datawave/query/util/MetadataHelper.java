@@ -621,8 +621,8 @@ public class MetadataHelper implements ApplicationContextAware {
         
         Scanner scan = ScannerHelper.createScanner(connector, modelTableName, auths);
         scan.setRange(new Range());
-        Set<String> modelNames = new HashSet<String>();
-        Set<Text> ignoreColfs = new HashSet<Text>();
+        Set<String> modelNames = new HashSet<>();
+        Set<Text> ignoreColfs = new HashSet<>();
         ignoreColfs.addAll(metadataIndexColfs);
         ignoreColfs.addAll(metadataNormalizedColfs);
         ignoreColfs.addAll(metadataTypeColfs);
@@ -1141,7 +1141,7 @@ public class MetadataHelper implements ApplicationContextAware {
         
         Multimap<String,String> expansionFields = this.allFieldMetadataHelper.loadExpansionFields();
         
-        Set<String> fields = new HashSet<String>();
+        Set<String> fields = new HashSet<>();
         if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
             fields.addAll(expansionFields.values());
         } else {
@@ -1163,7 +1163,7 @@ public class MetadataHelper implements ApplicationContextAware {
         
         Multimap<String,String> contentFields = this.allFieldMetadataHelper.loadContentFields();
         
-        Set<String> fields = new HashSet<String>();
+        Set<String> fields = new HashSet<>();
         if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
             fields.addAll(contentFields.values());
         } else {

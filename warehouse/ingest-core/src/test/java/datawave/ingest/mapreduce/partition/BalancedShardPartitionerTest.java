@@ -72,8 +72,8 @@ public class BalancedShardPartitionerTest {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
         new TestShardGenerator(conf, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard", "errorShard");
         partitioner.setConf(conf);
-        assertEquals(new HashSet<String>(Arrays.asList(new String[] {"shard", "errorShard"})),
-                        new HashSet<String>(conf.getStringCollection(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES)));
+        assertEquals(new HashSet<>(Arrays.asList(new String[] {"shard", "errorShard"})),
+                        new HashSet<>(conf.getStringCollection(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES)));
         
         // For a shard from today, we can assume that they're well balanced.
         // If offsetting is working, they will not go to the same partitions
@@ -144,7 +144,7 @@ public class BalancedShardPartitionerTest {
             String shardId = formattedDay + ("_" + i);
             int partition = partitioner.getPartition(new BulkIngestKey(new Text(tableName), new Key(shardId)), new Value(), NUM_REDUCE_TASKS);
             if (!reducers.containsKey(partition)) {
-                reducers.put(partition, new ArrayList<String>());
+                reducers.put(partition, new ArrayList<>());
             }
             reducers.get(partition).add(shardId);
         }

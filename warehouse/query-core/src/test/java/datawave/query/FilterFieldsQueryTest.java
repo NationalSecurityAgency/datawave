@@ -101,14 +101,47 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
-    public void testConjunctionAnyField() throws Exception {
-        log.info("------  testConjunctionAnyField  ------");
+    // <<<<<<< HEAD
+    // public void testConjunctionAnyField() throws Exception {
+    // log.info("------  testConjunctionAnyField  ------");
+    // String noMatchPhrase = EQ_OP + "'no-match-found'";
+    // String nothingPhrase = EQ_OP + "'nothing-here'";
+    // String query = Constants.ANY_FIELD + noMatchPhrase + AND_OP + Constants.ANY_FIELD + nothingPhrase;
+    // =======
+    public void testDisjunctionAnyField_withMatch() throws Exception {
+        log.info("------  testDisjunctionAnyField with a matching phrase ------");
+        String noMatchPhrase = EQ_OP + "'no-match-found'";
+        String matchingPhrase = EQ_OP + "'rome'";
+        String query = Constants.ANY_FIELD + noMatchPhrase + OR_OP + Constants.ANY_FIELD + matchingPhrase;
+        String anyNoMatch = this.dataManager.convertAnyField(noMatchPhrase);
+        String anyMatch = this.dataManager.convertAnyField(matchingPhrase);
+        String expect = anyNoMatch + OR_OP + anyMatch;
+        runTest(query, expect, true, false);
+    }
+    
+    @Test
+    public void testConjunctionAnyField_noMatch() throws Exception {
+        log.info("------  testConjunctionAnyField with no matching phrases ------");
         String noMatchPhrase = EQ_OP + "'no-match-found'";
         String nothingPhrase = EQ_OP + "'nothing-here'";
         String query = Constants.ANY_FIELD + noMatchPhrase + AND_OP + Constants.ANY_FIELD + nothingPhrase;
+        // >>>>>>> master
         String anyNoMatch = this.dataManager.convertAnyField(noMatchPhrase);
         String anyNothing = this.dataManager.convertAnyField(nothingPhrase);
         String expect = anyNoMatch + AND_OP + anyNothing;
+        runTest(query, expect, true, false);
+    }
+    
+    @Test
+    public void testConjunctionAnyField_withMatch() throws Exception {
+        log.info("------  testConjunctionAnyField with a matching phrase ------");
+        String noMatchPhrase = " == 'no-match-found'";
+        String matchingPhrase = " == 'rome'";
+        String op = " and ";
+        String query = Constants.ANY_FIELD + noMatchPhrase + op + Constants.ANY_FIELD + matchingPhrase;
+        String anyNoMatch = this.dataManager.convertAnyField(noMatchPhrase);
+        String anyMatch = this.dataManager.convertAnyField(matchingPhrase);
+        String expect = anyNoMatch + op + anyMatch;
         runTest(query, expect, true, false);
     }
     

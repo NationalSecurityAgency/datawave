@@ -176,7 +176,7 @@ public class TestEdge {
     }
     
     public List<Mutation> getMutations(boolean protobufEdgeFormat) {
-        ArrayList<Mutation> retVal = new ArrayList<Mutation>();
+        ArrayList<Mutation> retVal = new ArrayList<>();
         
         if (statsEdge) {
             Mutation mut = new Mutation(formatRow(getSource()));

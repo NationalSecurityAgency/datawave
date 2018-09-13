@@ -91,13 +91,13 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
         // a range, etc
         int maxCapacity = (int) maxRanges > 0 ? (int) maxRanges : 1000;
         if (builder.getQueryPlanComparators() != null && !builder.getQueryPlanComparators().isEmpty()) {
-            Comparator<QueryPlan> comparator = (builder.getQueryPlanComparators().size() > 1) ? new MultiComparator<QueryPlan>(
-                            builder.getQueryPlanComparators()) : builder.getQueryPlanComparators().iterator().next();
+            Comparator<QueryPlan> comparator = (builder.getQueryPlanComparators().size() > 1) ? new MultiComparator<>(builder.getQueryPlanComparators())
+                            : builder.getQueryPlanComparators().iterator().next();
             
             PriorityBlockingQueue<QueryPlan> nonblockingRangeQueue = new PriorityBlockingQueue<>(maxCapacity, comparator);
-            rangeQueue = new BoundedBlockingQueue<QueryPlan>(maxCapacity, nonblockingRangeQueue);
+            rangeQueue = new BoundedBlockingQueue<>(maxCapacity, nonblockingRangeQueue);
         } else {
-            rangeQueue = new ArrayBlockingQueue<QueryPlan>(maxCapacity);
+            rangeQueue = new ArrayBlockingQueue<>(maxCapacity);
         }
         
         this.numRangesToBuffer = builder.getNumRangesToBuffer();

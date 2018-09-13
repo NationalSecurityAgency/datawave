@@ -64,7 +64,7 @@ public class LookupUUIDConfiguration {
     }
     
     public MultivaluedMap<String,String> optionalParamsToMap() {
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+        MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
         if (this.columnVisibility != null) {
             p.putSingle(QueryParameters.QUERY_VISIBILITY, this.columnVisibility);
         }

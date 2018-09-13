@@ -135,7 +135,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
                 ClientConfiguration zkConfig = ClientConfiguration.loadDefault().withInstance(entry.getValue().getInstance())
                                 .withZkHosts(entry.getValue().getZookeepers());
                 ZooKeeperInstance instance = new ZooKeeperInstance(zkConfig);
-                Map<String,String> confMap = new HashMap<String,String>();
+                Map<String,String> confMap = new HashMap<>();
                 confMap.put(DistributedTrace.TRACER_ZK_HOST, instance.getZooKeepers());
                 confMap.put(DistributedTrace.TRACER_ZK_PATH, ZooUtil.getRoot(instance) + Constants.ZTRACERS);
                 confMap.put(DistributedTrace.TRACE_HOST_PROPERTY, InetAddress.getLocalHost().getHostName());
@@ -173,7 +173,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
                     throws Exception {
         Connector c = null;
         try {
-            c = pool.borrowObject(new HashMap<String,String>());
+            c = pool.borrowObject(new HashMap<>());
             
             Pair<String,PasswordToken> pair = instances.get(cache.getInstance().getInstanceID());
             String user = "root";
@@ -252,7 +252,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      * @throws Exception
      */
     public Connector getConnection(final String cpn, final Priority priority, final Map<String,String> tm) throws Exception {
-        final Map<String,String> trackingMap = (tm != null) ? tm : new HashMap<String,String>();
+        final Map<String,String> trackingMap = (tm != null) ? tm : new HashMap<>();
         final String poolName = (cpn != null) ? cpn : defaultPoolName;
         
         if (!priority.equals(Priority.ADMIN)) {

@@ -90,7 +90,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
      * NON_EXECUTABLE means that the expression cannot be executed against the index IGNORABLE means that it does not matter the executable state of the
      * underlying expression ERROR means that we have an expression that is index only but yet cannot be run against the index (negation, delayed prefix)
      */
-    public static enum STATE {
+    public enum STATE {
         EXECUTABLE, PARTIAL, NON_EXECUTABLE, IGNORABLE, ERROR
     }
     
@@ -206,7 +206,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         STATE state;
         boolean containsIgnorable = false;
         // all children must be executable for a script to be executable
-        Set<STATE> states = new HashSet<STATE>();
+        Set<STATE> states = new HashSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             states.add((STATE) (node.jjtGetChild(i).jjtAccept(this, data)));
         }
@@ -242,7 +242,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         STATE state;
         boolean containsIgnorable = false;
         // all children must be executable for a script to be executable
-        Set<STATE> states = new HashSet<STATE>();
+        Set<STATE> states = new HashSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             states.add((STATE) (node.jjtGetChild(i).jjtAccept(this, data)));
         }
@@ -264,7 +264,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     protected STATE allOrSome(JexlNode node, Object data) {
         STATE state;
         boolean containsIgnorable = false;
-        Set<STATE> states = new HashSet<STATE>();
+        Set<STATE> states = new HashSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             states.add((STATE) (node.jjtGetChild(i).jjtAccept(this, data + PREFIX)));
         }
@@ -304,7 +304,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     protected STATE executableUnlessItIsnt(JexlNode node, Object data) {
         STATE state;
         boolean containsIgnorable = false;
-        Set<STATE> states = new HashSet<STATE>();
+        Set<STATE> states = new HashSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             states.add((STATE) (node.jjtGetChild(i).jjtAccept(this, data + PREFIX)));
         }
@@ -504,7 +504,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     private boolean isWithinBoundedRange(JexlNode node) {
         if (node.jjtGetParent() instanceof ASTAndNode) {
-            List<JexlNode> otherNodes = new ArrayList<JexlNode>();
+            List<JexlNode> otherNodes = new ArrayList<>();
             Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) (node.jjtGetParent()), otherNodes, false);
             if (ranges.size() == 1 && otherNodes.isEmpty()) {
                 return true;

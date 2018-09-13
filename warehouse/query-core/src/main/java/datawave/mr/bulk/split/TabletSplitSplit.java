@@ -97,7 +97,7 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
      * @throws InterruptedException
      */
     public String[] getLocations() throws IOException, InterruptedException {
-        HashSet<String> hosts = new HashSet<String>();
+        HashSet<String> hosts = new HashSet<>();
         for (InputSplit s : splits) {
             String[] hints = s.getLocations();
             if (hints != null && hints.length > 0) {

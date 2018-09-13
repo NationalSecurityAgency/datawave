@@ -195,8 +195,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         if (service != null)
             service.shutdownNow();
         this.threadCount = threads;
-        service = new ThreadPoolExecutor(threads, threads, 120, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(), new BatchReaderThreadFactory(threadId,
-                        this));
+        service = new ThreadPoolExecutor(threads, threads, 120, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), new BatchReaderThreadFactory(threadId, this));
         service = MoreExecutors.listeningDecorator(service);
         return this;
     }

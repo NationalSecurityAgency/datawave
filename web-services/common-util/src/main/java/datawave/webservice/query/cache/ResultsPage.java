@@ -7,7 +7,7 @@ import java.util.List;
  * 
  */
 public class ResultsPage {
-    public static enum Status {
+    public enum Status {
         NONE, PARTIAL, COMPLETE
     };
     

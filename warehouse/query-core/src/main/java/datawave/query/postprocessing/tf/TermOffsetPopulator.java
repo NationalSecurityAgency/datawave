@@ -106,7 +106,7 @@ public class TermOffsetPopulator {
     protected Range getRange(Set<Key> keys) {
         // building a range from the begining of the term frequencies for the first datatype\0uid
         // to the end of the term frequencies for the last datatype\0uid
-        List<String> dataTypeUids = new ArrayList<String>();
+        List<String> dataTypeUids = new ArrayList<>();
         Text row = null;
         for (Key key : keys) {
             row = key.getRow();
@@ -269,7 +269,7 @@ public class TermOffsetPopulator {
     private static Set<String> getNormalizedTerms(String originalTerm, String zone, Multimap<String,Class<? extends Type<?>>> dataTypes,
                     Map<Class<? extends Type<?>>,Type<?>> dataTypeCacheMap) {
         
-        Set<String> normalizedTerms = new HashSet<String>();
+        Set<String> normalizedTerms = new HashSet<>();
         
         Collection<Class<? extends Type<?>>> dataTypesForZone = dataTypes.get(zone);
         if (dataTypesForZone.isEmpty()) {
@@ -348,7 +348,7 @@ public class TermOffsetPopulator {
         for (String key : contentFieldValues.keySet()) {
             Collection<String> contentValues = contentFieldValues.get(key);
             Collection<String> queryValues = queryFieldValues.get(key);
-            Set<String> intersection = new HashSet<String>(contentValues);
+            Set<String> intersection = new HashSet<>(contentValues);
             intersection.retainAll(queryValues);
             if (!intersection.isEmpty()) {
                 termFrequencyFieldValues.putAll(key, intersection);

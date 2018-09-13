@@ -374,7 +374,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         try {
             analyzer = new JavaRegexAnalyzer(String.valueOf(JexlASTHelper.getLiteralValue(node)));
             
-            LiteralRange<String> range = new LiteralRange<String>(JexlASTHelper.getIdentifier(node), NodeOperand.AND);
+            LiteralRange<String> range = new LiteralRange<>(JexlASTHelper.getIdentifier(node), NodeOperand.AND);
             range.updateLower(analyzer.getLeadingOrTrailingLiteral(), true);
             range.updateUpper(analyzer.getLeadingOrTrailingLiteral() + Constants.MAX_UNICODE_STRING, true);
             return range;
@@ -388,7 +388,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         try {
             analyzer = new JavaRegexAnalyzer(String.valueOf(JexlASTHelper.getLiteralValue(node)));
             
-            LiteralRange<String> range = new LiteralRange<String>(JexlASTHelper.getIdentifier(node), NodeOperand.AND);
+            LiteralRange<String> range = new LiteralRange<>(JexlASTHelper.getIdentifier(node), NodeOperand.AND);
             range.updateLower(analyzer.getLeadingOrTrailingLiteral(), true);
             range.updateUpper(analyzer.getLeadingOrTrailingLiteral() + Constants.MAX_UNICODE_STRING, true);
             
@@ -1457,7 +1457,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setIvaratorSources(SourceFactory sourceFactory, int maxIvaratorSources) {
         this.ivaratorSources = new SourcePool(sourceFactory, maxIvaratorSources);
-        this.ivaratorSource = new ThreadLocalPooledSource<Key,Value>(ivaratorSources);
+        this.ivaratorSource = new ThreadLocalPooledSource<>(ivaratorSources);
         return this;
     }
     

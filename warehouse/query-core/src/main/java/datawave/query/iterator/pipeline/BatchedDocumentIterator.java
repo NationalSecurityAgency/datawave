@@ -5,15 +5,16 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.SortedSet;
 
+import datawave.query.attributes.Document;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
 import com.google.common.collect.Sets;
 
-public class BatchedDocumentIterator implements Iterator<Entry<Key,Value>> {
+public class BatchedDocumentIterator implements Iterator<Entry<Key,Document>> {
     
-    SortedSet<Entry<Key,Value>> sortedResponses = null;
-    Iterator<Entry<Key,Value>> subIter = null;
+    SortedSet<Entry<Key,Document>> sortedResponses = null;
+    Iterator<Entry<Key,Document>> subIter = null;
     private PipelineIterator parent;
     
     public BatchedDocumentIterator(PipelineIterator parent) {
@@ -39,7 +40,7 @@ public class BatchedDocumentIterator implements Iterator<Entry<Key,Value>> {
     }
     
     @Override
-    public Entry<Key,Value> next() {
+    public Entry<Key,Document> next() {
         return subIter.next();
     }
     

@@ -34,7 +34,7 @@ public class DateIndexDateAggregatorTest {
     @Test
     public void testMerge() throws Exception {
         agg.reset();
-        Set<Integer> shards = new HashSet<Integer>();
+        Set<Integer> shards = new HashSet<>();
         for (int i = 0; i <= 20; i++) {
             shards.add(i);
             shards.add(i * 3);
@@ -63,7 +63,7 @@ public class DateIndexDateAggregatorTest {
     @Test
     public void testMerge2() throws Exception {
         agg.reset();
-        Set<Integer> shards = new HashSet<Integer>();
+        Set<Integer> shards = new HashSet<>();
         for (int i = 0; i <= 20; i++) {
             shards.add(i);
             shards.add(i * 5);
@@ -91,7 +91,7 @@ public class DateIndexDateAggregatorTest {
     
     @Test
     public void testIncrementalMerge() throws Exception {
-        Set<Integer> shards = new HashSet<Integer>();
+        Set<Integer> shards = new HashSet<>();
         for (int i = 0; i <= 20; i++) {
             shards.add(i);
             shards.add(i * 3);
@@ -106,7 +106,7 @@ public class DateIndexDateAggregatorTest {
         }
         
         while (values.size() > 1) {
-            List<Value> subValues = new ArrayList<Value>();
+            List<Value> subValues = new ArrayList<>();
             int len = Math.min(3, values.size());
             for (int i = 0; i < len; i++) {
                 subValues.add(values.remove(values.size() - 1));
@@ -129,7 +129,7 @@ public class DateIndexDateAggregatorTest {
     
     @Test
     public void testIncrementalMerge2() throws Exception {
-        Set<Integer> shards = new HashSet<Integer>();
+        Set<Integer> shards = new HashSet<>();
         for (int i = 0; i <= 20; i++) {
             shards.add(i);
             shards.add(i * 5);
@@ -144,7 +144,7 @@ public class DateIndexDateAggregatorTest {
         }
         
         while (values.size() > 1) {
-            List<Value> subValues = new ArrayList<Value>();
+            List<Value> subValues = new ArrayList<>();
             int len = Math.min(3, values.size());
             for (int i = 0; i < len; i++) {
                 subValues.add(values.remove(values.size() - 1));

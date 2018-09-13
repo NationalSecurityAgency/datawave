@@ -42,7 +42,7 @@ public class Chain extends JexlQueryFunction {
     private Map<String,Parameter> parameterMap = new HashMap<>();
     
     public Chain() {
-        super("chain", new ArrayList<String>());
+        super("chain", new ArrayList<>());
     }
     
     @Override
@@ -138,7 +138,7 @@ public class Chain extends JexlQueryFunction {
             } else {
                 String variableValueString = (String) split2[1];
                 if (variableValueString.startsWith("[") && variableValueString.endsWith("]")) {
-                    List<String> choiceList = new ArrayList<String>();
+                    List<String> choiceList = new ArrayList<>();
                     String[] choices = variableValueString.split("|");
                     for (String c : choices) {
                         choiceList.add(c);
@@ -177,7 +177,7 @@ public class Chain extends JexlQueryFunction {
         Set<String> querySet = new HashSet<>();
         Properties singleProperties = new Properties();
         Properties undefinedProperties = new Properties();
-        Map<String,List<String>> multiValueMap = new LinkedHashMap<String,List<String>>();
+        Map<String,List<String>> multiValueMap = new LinkedHashMap<>();
         
         // cycle through variable to field mapping
         for (Map.Entry<String,Object> entry : fieldMap.entrySet()) {

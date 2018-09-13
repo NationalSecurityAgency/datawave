@@ -44,7 +44,7 @@ public class QueryStatsdDClientTest {
         sleep(1000);
         
         // verify the sent metrics
-        Set<String> messages = new HashSet<String>(server.getMessages());
+        Set<String> messages = new HashSet<>(server.getMessages());
         System.out.println(messages);
         Assert.assertFalse("Did not receive messages", messages.isEmpty());
         Assert.assertEquals("Did not receive 4 messages", 4, messages.size());
@@ -87,7 +87,7 @@ public class QueryStatsdDClientTest {
         sleep(1000);
         
         // verify the sent metrics
-        Set<String> messages = new HashSet<String>(server.getMessages());
+        Set<String> messages = new HashSet<>(server.getMessages());
         System.out.println(messages);
         Assert.assertFalse("Did not receive messages", messages.isEmpty());
         Assert.assertEquals("Did not receive 8 messages", 8, messages.size());
@@ -109,7 +109,7 @@ public class QueryStatsdDClientTest {
     
     public static class SimpleUDPServer implements Runnable {
         
-        private List<String> messages = new ArrayList<String>();
+        private List<String> messages = new ArrayList<>();
         private Thread thread = null;
         private boolean running = false;
         private boolean stop = false;

@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Documented
 @NameBinding
 public @interface EnrichQueryMetrics {
-    public static enum MethodType {
+    enum MethodType {
         NONE, CREATE, NEXT, CREATE_AND_NEXT
     };
     

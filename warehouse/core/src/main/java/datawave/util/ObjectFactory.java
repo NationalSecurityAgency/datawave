@@ -32,7 +32,7 @@ public class ObjectFactory {
         }
         try {
             Class<?> clazz = Class.forName(className);
-            List<Class<?>> types = new ArrayList<Class<?>>();
+            List<Class<?>> types = new ArrayList<>();
             for (Object o : args) {
                 if (o == null) {
                     types.add(null);
@@ -116,7 +116,7 @@ public class ObjectFactory {
         }
     }
     
-    private static Map<Class<?>,Class<?>> PrimClass = new HashMap<Class<?>,Class<?>>();
+    private static Map<Class<?>,Class<?>> PrimClass = new HashMap<>();
     static {
         PrimClass.put(Integer.class, Integer.TYPE);
         PrimClass.put(Boolean.class, Boolean.TYPE);

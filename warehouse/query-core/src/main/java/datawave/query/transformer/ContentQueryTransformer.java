@@ -65,7 +65,7 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
         field.setTimestamp(entry.getKey().getTimestamp());
         field.setValue(ckv.getContents());
         
-        List<DefaultField> fields = new ArrayList<DefaultField>();
+        List<DefaultField> fields = new ArrayList<>();
         fields.add(field);
         e.setFields(fields);
         

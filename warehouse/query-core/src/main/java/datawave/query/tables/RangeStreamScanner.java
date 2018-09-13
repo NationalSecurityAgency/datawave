@@ -240,7 +240,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     }
     
     protected int scannerInvariant(final Iterator<Entry<Key,Value>> iter) {
-        PeekingIterator<Entry<Key,Value>> kvIter = new PeekingIterator<Entry<Key,Value>>(iter);
+        PeekingIterator<Entry<Key,Value>> kvIter = new PeekingIterator<>(iter);
         
         int retrievalCount = 0;
         

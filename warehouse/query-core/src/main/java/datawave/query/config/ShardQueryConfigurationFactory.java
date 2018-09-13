@@ -134,6 +134,7 @@ public class ShardQueryConfigurationFactory {
         
         config.setLimitFields(configuredLogic.getLimitFields());
         config.setGroupFields(configuredLogic.getGroupFields());
+        config.setGroupFieldsBatchSize(configuredLogic.getGroupFieldsBatchSize());
         config.setUniqueFields(configuredLogic.getUniqueFields());
         config.setAccumuloPassword(configuredLogic.getAccumuloPassword());
         

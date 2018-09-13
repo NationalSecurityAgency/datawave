@@ -64,7 +64,7 @@ public interface QueryLock {
         }
         
         public QueryLock build() throws ConfigException, MalformedURLException {
-            List<QueryLock> locks = new ArrayList<QueryLock>();
+            List<QueryLock> locks = new ArrayList<>();
             if (!isEmpty(zookeeperConfig)) {
                 if (queryId == null) {
                     throw new IllegalArgumentException("Cannot create a query lock without a query id");

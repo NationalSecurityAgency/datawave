@@ -32,7 +32,7 @@ public class ChainStart extends JexlQueryFunction {
     private Map<String,Parameter> parameterMap = new HashMap<>();
     
     public ChainStart() {
-        super("chainstart", new ArrayList<String>());
+        super("chainstart", new ArrayList<>());
     }
     
     @Override

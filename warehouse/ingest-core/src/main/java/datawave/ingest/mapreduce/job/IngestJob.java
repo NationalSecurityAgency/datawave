@@ -177,7 +177,7 @@ public class IngestJob implements Tool {
     private String metricsLabelOverride = null;
     protected boolean generateMapFileRowKeys = false;
     protected String compressionType = null;
-    protected final Set<String> compressionTableBlackList = new HashSet<String>();
+    protected final Set<String> compressionTableBlackList = new HashSet<>();
     protected int maxRFileEntries = 0;
     protected long maxRFileSize = 0;
     @SuppressWarnings("rawtypes")
@@ -1648,7 +1648,7 @@ public class IngestJob implements Tool {
      */
     @SuppressWarnings("rawtypes")
     public static Iterable<Value> verboseCounters(TaskInputOutputContext context, String location, BulkIngestKey key, Iterable<Value> values) {
-        List<Value> valueList = new ArrayList<Value>();
+        List<Value> valueList = new ArrayList<>();
         for (Value value : values) {
             valueList.add(value);
             verboseCounters(context, location, key, value);

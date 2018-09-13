@@ -127,7 +127,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             if (null != count) {
                 // Create keys
                 if (count.hasDescendants()) {
-                    final List<Key> countKeys = new LinkedList<Key>();
+                    final List<Key> countKeys = new LinkedList<>();
                     if (this.outputHasChildren && count.hasDescendants()) {
                         final ColumnVisibility visibility = key.getColumnVisibilityParsed();
                         long timestamp = key.getTimestamp();

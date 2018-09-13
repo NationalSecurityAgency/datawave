@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class CommonalityTokenTestDataIngest {
     
-    public static enum WhatKindaRange {
+    public enum WhatKindaRange {
         SHARD, DOCUMENT;
     }
     

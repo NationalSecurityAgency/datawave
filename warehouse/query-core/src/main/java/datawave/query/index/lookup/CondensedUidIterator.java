@@ -1,13 +1,14 @@
 package datawave.query.index.lookup;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import datawave.ingest.protobuf.Uid;
 import datawave.query.Constants;
+import datawave.query.tld.TLD;
+import datawave.query.util.Tuple3;
+import datawave.query.util.Tuples;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -22,16 +23,12 @@ import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-
-import datawave.ingest.protobuf.Uid;
-import datawave.query.tld.TLD;
-import datawave.query.util.Tuple3;
-import datawave.query.util.Tuples;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
     

@@ -50,7 +50,7 @@ public class DatawaveDataDictionaryImplTest {
     @Test
     public void testSetDescription() throws Exception {
         
-        Map<String,String> markings = new HashMap<String,String>();
+        Map<String,String> markings = new HashMap<>();
         markings.put("columnVisibility", "PRIVATE");
         
         DefaultDescription desc = new DefaultDescription();
@@ -65,7 +65,7 @@ public class DatawaveDataDictionaryImplTest {
         dicField.setFieldName("myField");
         dicField.setDescriptions(descs);
         
-        List<DefaultDictionaryField> dicFields = new ArrayList<DefaultDictionaryField>();
+        List<DefaultDictionaryField> dicFields = new ArrayList<>();
         dicFields.add(dicField);
         
         DefaultFields fields = new DefaultFields();

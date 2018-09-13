@@ -161,10 +161,10 @@ public abstract class FunctionalSetTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
         
-        HashSet<String> expectedSet = new HashSet<String>(expected);
+        HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
-        resultSet = new HashSet<String>();
-        Set<Document> docs = new HashSet<Document>();
+        resultSet = new HashSet<>();
+        Set<Document> docs = new HashSet<>();
         for (Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
             

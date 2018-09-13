@@ -5,7 +5,7 @@ import java.util.List;
 
 public class JexlGroupingNode extends JexlNode {
     private JexlGroupingNode() {
-        super(new ArrayList<JexlNode>());
+        super(new ArrayList<>());
     }
     
     public JexlGroupingNode(List<JexlNode> children) {

@@ -9,7 +9,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 
 public class IsNotNull extends JexlQueryFunction {
     public IsNotNull() {
-        super("isnotnull", new ArrayList<String>());
+        super("isnotnull", new ArrayList<>());
     }
     
     @Override

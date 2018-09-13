@@ -124,6 +124,9 @@ function datawaveIngestUninstall() {
 }
 
 function datawaveIngestInstall() {
+
+   export DW_SKIP_INGEST_EXAMPLES=${DW_SKIP_INGEST_EXAMPLES:-false}
+
    "${DW_DATAWAVE_SERVICE_DIR}"/install-ingest.sh
 }
 

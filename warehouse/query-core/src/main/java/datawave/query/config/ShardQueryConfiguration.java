@@ -304,6 +304,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     protected Set<String> groupFields;
     
+    protected int groupFieldsBatchSize;
+    
     protected Set<String> uniqueFields;
     
     private boolean accrueStats = false;
@@ -698,7 +700,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     @SuppressWarnings("unchecked")
     public void setFilterClassNames(List<String> filterClassNames) {
-        this.filterClassNames = new ArrayList<String>((filterClassNames != null ? filterClassNames : Collections.EMPTY_LIST));
+        this.filterClassNames = new ArrayList<>((filterClassNames != null ? filterClassNames : Collections.EMPTY_LIST));
     }
     
     /**
@@ -723,7 +725,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
      */
     @SuppressWarnings("unchecked")
     public void setIndexFilteringClassNames(List<String> classNames) {
-        this.indexFilteringClassNames = new ArrayList<String>((classNames != null ? classNames : Collections.EMPTY_LIST));
+        this.indexFilteringClassNames = new ArrayList<>((classNames != null ? classNames : Collections.EMPTY_LIST));
     }
     
     public String getFilterClassNamesAsString() {
@@ -1167,6 +1169,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     
     public String getGroupFieldsAsString() {
         return org.apache.commons.lang.StringUtils.join(this.getGroupFields(), Constants.PARAM_VALUE_SEP);
+    }
+    
+    public int getGroupFieldsBatchSize() {
+        return groupFieldsBatchSize;
+    }
+    
+    public void setGroupFieldsBatchSize(int groupFieldsBatchSize) {
+        this.groupFieldsBatchSize = groupFieldsBatchSize;
+    }
+    
+    public String getGroupFieldsBatchSizeAsString() {
+        return "" + groupFieldsBatchSize;
     }
     
     public Set<String> getUniqueFields() {
@@ -1640,10 +1654,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
         
         this.setAllowTermFrequencyLookup(copy.isAllowTermFrequencyLookup());
         
-        this.setLimitFields(new HashSet<String>(copy.getLimitFields()));
+        this.setLimitFields(new HashSet<>(copy.getLimitFields()));
         this.setLimitFieldsPreQueryEvaluation(copy.isLimitFieldsPreQueryEvaluation());
         this.setLimitFieldsField(copy.getLimitFieldsField());
         this.setGroupFields(copy.getGroupFields());
+        this.setGroupFieldsBatchSize(copy.getGroupFieldsBatchSize());
         this.setUniqueFields(copy.getUniqueFields());
         this.setQuery(copy.getQuery());
         Set<QueryImpl.Parameter> parameterSet = query.getParameters();

@@ -82,7 +82,7 @@ public class TabletLocationNamePartitioner extends Partitioner<BulkIngestKey,Val
             SortedSet<String> locations = new TreeSet<>();
             locations.addAll(shards.values());
             
-            ArrayList<String> locList = new ArrayList<String>(locations);
+            ArrayList<String> locList = new ArrayList<>(locations);
             HashMap<Text,Integer> localShardLocations = new HashMap<>();
             for (Map.Entry<Text,String> entry : shards.entrySet()) {
                 localShardLocations.put(entry.getKey(), locList.indexOf(entry.getValue()));

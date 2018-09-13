@@ -30,7 +30,7 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
     private static final int UUID_LENGTH = 36;
     
     private ExtendedContentDataTypeHelper helper;
-    private Set<String> zones = new HashSet<String>();
+    private Set<String> zones = new HashSet<>();
     private EventFieldNormalizerHelper eventFieldNormalizerHelper = null;
     
     public ExtendedContentDataTypeHelper getHelper() {

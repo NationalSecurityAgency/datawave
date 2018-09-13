@@ -168,7 +168,7 @@ public class GeoSortedQueryDataTest {
         
         TaskAttemptContext ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         
-        AbstractColumnBasedHandler<Text> dataTypeHandler = new AbstractColumnBasedHandler<Text>();
+        AbstractColumnBasedHandler<Text> dataTypeHandler = new AbstractColumnBasedHandler<>();
         dataTypeHandler.setup(ctx);
         
         TestIngestHelper ingestHelper = (TestIngestHelper) dataTypeHandler.getHelper(registry.get(DATA_TYPE_NAME));

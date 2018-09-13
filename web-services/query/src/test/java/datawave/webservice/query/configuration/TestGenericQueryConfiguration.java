@@ -37,7 +37,7 @@ public class TestGenericQueryConfiguration {
         expect(this.baseQueryLogic.getBaseIteratorPriority()).andReturn(100);
         expect(this.baseQueryLogic.getMaxResults()).andReturn(Long.MAX_VALUE);
         expect(this.baseQueryLogic.getMaxRowsToScan()).andReturn(1000L);
-        expect(this.baseQueryLogic.getUndisplayedVisibilities()).andReturn(new HashSet<String>(0));
+        expect(this.baseQueryLogic.getUndisplayedVisibilities()).andReturn(new HashSet<>(0));
         
         // Run the test
         PowerMock.replayAll();

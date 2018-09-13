@@ -33,7 +33,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
      */
     protected static class ParserState {
         
-        private static enum ParseTokenType {
+        private enum ParseTokenType {
             SEPARATION("[\\s\\n,]+"), STRLITERAL("\"(?:[^\\\"]|\\.)*\""), COLON(":"), NUMBER("[0-9]+"), UNIT(AgeOffTtlUnits.MILLISECONDS + "|"
                             + AgeOffTtlUnits.DAYS + "|" + AgeOffTtlUnits.HOURS + "|" + AgeOffTtlUnits.MINUTES + "|" + AgeOffTtlUnits.SECONDS), ;
             

@@ -42,7 +42,7 @@ public class FieldNameLookup extends IndexLookup {
     protected IndexLookupMap fieldToTerms = null;
     
     public FieldNameLookup(Set<String> fields, Set<String> terms) {
-        this.fields = new HashSet<Text>();
+        this.fields = new HashSet<>();
         
         if (fields != null) {
             for (String field : fields) {
@@ -51,7 +51,7 @@ public class FieldNameLookup extends IndexLookup {
             
         }
         
-        this.terms = new HashSet<String>(terms);
+        this.terms = new HashSet<>(terms);
     }
     
     public void setTypeFilterSet(Set<String> limitSet) {

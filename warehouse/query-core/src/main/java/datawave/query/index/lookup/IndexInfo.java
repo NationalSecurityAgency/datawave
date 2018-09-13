@@ -122,7 +122,7 @@ public class IndexInfo implements Writable, UidIntersector {
     }
     
     public IndexInfo union(IndexInfo o) {
-        return union(o, new ArrayList<JexlNode>());
+        return union(o, new ArrayList<>());
     }
     
     /**
@@ -517,7 +517,7 @@ public class IndexInfo implements Writable, UidIntersector {
     }
     
     public IndexInfo intersect(IndexInfo o) {
-        return intersect(o, new ArrayList<JexlNode>(), this);
+        return intersect(o, new ArrayList<>(), this);
     }
     
     /**

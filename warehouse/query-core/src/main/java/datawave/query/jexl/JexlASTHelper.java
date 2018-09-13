@@ -750,19 +750,19 @@ public class JexlASTHelper {
             LiteralRange<?> range = null;
             List<JexlNode> thisRangesNodes = new ArrayList<>();
             if (literal instanceof String) {
-                range = getStringBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<String>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getStringBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof Integer) {
-                range = getIntegerBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<Integer>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getIntegerBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof Long) {
-                range = getLongBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<Long>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getLongBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof BigInteger) {
-                range = getBigIntegerBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<BigInteger>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getBigIntegerBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof Float) {
-                range = getFloatBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<Float>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getFloatBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof Double) {
-                range = getDoubleBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<Double>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getDoubleBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else if (literal instanceof BigDecimal) {
-                range = getBigDecimalBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<BigDecimal>(fieldName, LiteralRange.NodeOperand.AND));
+                range = getBigDecimalBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));
             } else {
                 QueryException qe = new QueryException(DatawaveErrorCode.NODE_LITERAL_TYPE_ASCERTAIN_ERROR, MessageFormat.format("{0}", literal));
                 throw new DatawaveFatalQueryException(qe);
