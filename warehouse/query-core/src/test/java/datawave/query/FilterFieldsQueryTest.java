@@ -101,13 +101,6 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
-    // <<<<<<< HEAD
-    // public void testConjunctionAnyField() throws Exception {
-    // log.info("------  testConjunctionAnyField  ------");
-    // String noMatchPhrase = EQ_OP + "'no-match-found'";
-    // String nothingPhrase = EQ_OP + "'nothing-here'";
-    // String query = Constants.ANY_FIELD + noMatchPhrase + AND_OP + Constants.ANY_FIELD + nothingPhrase;
-    // =======
     public void testDisjunctionAnyField_withMatch() throws Exception {
         log.info("------  testDisjunctionAnyField with a matching phrase ------");
         String noMatchPhrase = EQ_OP + "'no-match-found'";
@@ -125,7 +118,6 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String noMatchPhrase = EQ_OP + "'no-match-found'";
         String nothingPhrase = EQ_OP + "'nothing-here'";
         String query = Constants.ANY_FIELD + noMatchPhrase + AND_OP + Constants.ANY_FIELD + nothingPhrase;
-        // >>>>>>> master
         String anyNoMatch = this.dataManager.convertAnyField(noMatchPhrase);
         String anyNothing = this.dataManager.convertAnyField(nothingPhrase);
         String expect = anyNoMatch + AND_OP + anyNothing;
