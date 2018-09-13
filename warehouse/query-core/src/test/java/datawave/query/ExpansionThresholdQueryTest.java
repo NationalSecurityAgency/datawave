@@ -1,5 +1,6 @@
 package datawave.query;
 
+import datawave.query.planner.QueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -21,6 +22,10 @@ import java.util.Set;
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 
+/**
+ * These test apply to the threshold marker which is normally injected into the query tree during the processing by the {@link QueryPlanner}. The test cases
+ * here essentially create a query with the threshold marker already inserted.
+ */
 public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
     
     private static final Logger log = Logger.getLogger(ExpansionThresholdQueryTest.class);
@@ -52,11 +57,9 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         log.info("------  testThresholdMaker  ------");
         String state = "'.*ss.*'";
         String country = "'un.*'";
-        String countryQuery = CitiesDataType.CityField.COUNTRY.name() + RE_OP + country + AND_OP + CitiesDataType.CityField.COUNTRY.name() + RE_OP
-                        + country.toUpperCase();
-        String query = "((ExceededValueThresholdMarkerJexlNode = true)" + AND_OP + CitiesDataType.CityField.STATE.name() + RE_OP + state + ") && "
-                        + countryQuery;
-        String expect = "(" + CitiesDataType.CityField.STATE.name() + RE_OP + state + ")" + AND_OP + countryQuery;
+        String countryQuery = CityField.COUNTRY.name() + RE_OP + country + AND_OP + CityField.COUNTRY.name() + RE_OP + country.toUpperCase();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true)" + AND_OP + CityField.STATE.name() + RE_OP + state + ") && " + countryQuery;
+        String expect = "(" + CityField.STATE.name() + RE_OP + state + ")" + AND_OP + countryQuery;
         
         this.logic.setMaxValueExpansionThreshold(6);
         runTest(query, expect);
@@ -82,7 +85,7 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         //
         String anyRegex = RE_OP + "'.*a'";
         String country = RE_OP + "'un.*'";
-        String countryQuery = CitiesDataType.CityField.COUNTRY.name() + country + AND_OP + CitiesDataType.CityField.COUNTRY.name() + country.toUpperCase();
+        String countryQuery = CityField.COUNTRY.name() + country + AND_OP + CityField.COUNTRY.name() + country.toUpperCase();
         String marker = "(ExceededValueThresholdMarkerJexlNode = true)" + AND_OP;
         String query = "(" + marker + Constants.ANY_FIELD + anyRegex + ") && " + countryQuery;
         String anyCity = this.dataManager.convertAnyField(anyRegex);
@@ -107,7 +110,7 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         // currently this will generate an exception that is swallowed
         String state = RE_OP + "'oh.*'";
         String country = RE_OP + "'un.*'";
-        String countryQuery = CitiesDataType.CityField.COUNTRY.name() + country + AND_OP + CitiesDataType.CityField.COUNTRY.name() + country.toUpperCase();
+        String countryQuery = CityField.COUNTRY.name() + country + AND_OP + CityField.COUNTRY.name() + country.toUpperCase();
         String query = "((ExceededValueThresholdMarkerJexlNode = true)" + AND_OP + Constants.ANY_FIELD + state + ") && " + countryQuery;
         String anyCity = this.dataManager.convertAnyField(state);
         String anyCountry = this.dataManager.convertAnyField(country);
@@ -137,6 +140,6 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
     // implemented abstract methods
     protected void testInit() {
         this.auths = CitiesDataType.getTestAuths();
-        this.documentKey = CitiesDataType.CityField.EVENT_ID.name();
+        this.documentKey = CityField.EVENT_ID.name();
     }
 }
