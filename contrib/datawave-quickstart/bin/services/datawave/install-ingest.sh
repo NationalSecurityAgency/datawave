@@ -155,7 +155,7 @@ echo "    Redeploy command: datawaveBuildDeploy"
 echo
 info "See \$DW_CLOUD_HOME/bin/services/datawave/bootstrap-ingest.sh to view/edit commands as needed"
 
-if [ "${DW_REDEPLOY_IN_PROGRESS}" != true ] ; then
+if [ "${DW_REDEPLOY_IN_PROGRESS}" != true ] && [ "${DW_SKIP_INGEST_EXAMPLES}" != true ]; then
    ingestExampleData
 else
    info "After deployment, ingest desired datasets manually as needed"
