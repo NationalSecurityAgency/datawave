@@ -12,7 +12,7 @@
  # Checkout the gh-pages branch
  
  $ cd <DW SOURCE DIR>
- $ git checkout gh-pages (or gh-pages-dev)
+ $ git checkout gh-pages
  
  # Build and run site using the preview server with overridden baseurl (see baseurl configuration
  # notes in _config.yml for more info), and auto-sync site changes via --watch
