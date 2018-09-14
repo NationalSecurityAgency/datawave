@@ -1,7 +1,5 @@
 package datawave.query.tables.edge;
 
-import static junit.framework.Assert.assertEquals;
-
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -58,7 +56,7 @@ public abstract class BaseEdgeQueryTest {
     protected static final String UNEXPECTED_RECORD = "Found an unexpected record.";
     
     private String serializeAuths(Set<Authorizations> sentAuths) {
-        assertEquals(1, sentAuths.size());
+        Assert.assertEquals(1, sentAuths.size());
         return sentAuths.iterator().next().serialize();
     }
     
