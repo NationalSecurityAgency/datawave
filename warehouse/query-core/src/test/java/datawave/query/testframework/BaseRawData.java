@@ -1,6 +1,7 @@
 package datawave.query.testframework;
 
 import datawave.data.normalizer.Normalizer;
+import datawave.data.normalizer.NumberNormalizer;
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.Strings;
 
@@ -20,6 +21,7 @@ public abstract class BaseRawData implements RawData {
     
     // =============================
     // instance members
+    /** mapping of field to data for each entry */
     private final Map<String,Set<String>> entry;
     
     /**
@@ -29,19 +31,28 @@ public abstract class BaseRawData implements RawData {
      * @param fields
      *            raw data fields
      */
-    public BaseRawData(String[] fields) {
+    public BaseRawData(final String[] fields) {
         this.entry = new HashMap<>();
         for (int n = 0; n < getHeaders().size(); n++) {
             String header = getHeaders().get(n);
+            final Normalizer<?> norm = getNormalizer(header);
             final Set<String> values = new HashSet<>();
             // convert multi-value fields into a set of values
             if (isMultiValueField(header)) {
                 String[] multi = Strings.split(fields[n], RawDataManager.MULTIVALUE_SEP_CHAR);
                 for (String s : multi) {
-                    values.add(s.toLowerCase());
+                    if (norm instanceof NumberNormalizer) {
+                        values.add(s);
+                    } else {
+                        values.add(norm.normalize(s));
+                    }
                 }
             } else {
-                values.add(fields[n].toLowerCase());
+                if (norm instanceof NumberNormalizer) {
+                    values.add(fields[n]);
+                } else {
+                    values.add(norm.normalize(fields[n]));
+                }
             }
             this.entry.put(header.toLowerCase(), values);
         }
@@ -99,7 +110,9 @@ public abstract class BaseRawData implements RawData {
     // abstract methods
     abstract protected List<String> getHeaders();
     
-    abstract protected boolean containsField(final String field);
+    abstract protected boolean containsField(String field);
+    
+    abstract protected Normalizer<?> getNormalizer(String field);
     
     // ================================
     // base override methods

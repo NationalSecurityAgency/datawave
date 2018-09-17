@@ -8,9 +8,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Base field configuration settings for the data in the generic-cities CSV file
+ * Base field configuration settings for the data in the generic-cities CSV file. The default settings are:
+ * <ul>
+ * <li>forward index: city, state, continent</li>
+ * <li>indexonly:</li>
+ * <li>reverse:</li>
+ * <li>multivalue fields: city, state</li>
+ * <li>composite index: city|state</li>
+ * <li>virtual fields: city|continent</li>
+ * </ul>
  */
-public class GenericCityFields extends AbstractCityFields {
+public class GenericCityFields extends AbstractFields {
     
     private static final Collection<String> index = Arrays.asList(CityField.CITY.name(), CityField.STATE.name(), CityField.CONTINENT.name());
     private static final Collection<String> indexOnly = new HashSet<>();
@@ -25,8 +33,7 @@ public class GenericCityFields extends AbstractCityFields {
         Set<String> comp = new HashSet<>();
         comp.add(CityField.CITY.name());
         comp.add(CityField.STATE.name());
-        // composite does not work yet
-        // composite.add(comp);
+        composite.add(comp);
         Set<String> virt = new HashSet<>();
         virt.add(CityField.CITY.name());
         virt.add(CityField.CONTINENT.name());

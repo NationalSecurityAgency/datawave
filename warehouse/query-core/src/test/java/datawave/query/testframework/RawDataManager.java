@@ -18,6 +18,15 @@ public interface RawDataManager {
     // and/or logical strings for use by unit tests
     String AND_OP = " and ";
     String OR_OP = " or ";
+    // relationship operators
+    String GTE_OP = " >= ";
+    String LTE_OP = " <= ";
+    String GT_OP = " > ";
+    String LT_OP = " < ";
+    String EQ_OP = " == ";
+    String NE_OP = " != ";
+    String RE_OP = " =~ ";
+    String RN_OP = " !~ ";
     
     // string and char value for multivalue fields
     String MULTIVALUE_SEP = ";";

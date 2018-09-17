@@ -39,11 +39,14 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         paris("input/paris-cities.csv", "paris"),
         london("input/london-cities.csv", "london"),
         rome("input/rome-cities.csv", "rome"),
+        usa("input/usa-cities.csv", "usa"),
+        dup_usa("input/usa-cities-dup.csv", "usa-dup"),
+        italy("input/italy-cities.csv", "italy"),
         generic("input/generic-cities.csv", "generic"),
         multivalue("input/multivalue-cities.csv", "multi");
         
         private final String ingestFile;
-        private final String cityName;
+        private final String cityName; // also serves as datatype
         
         CityEntry(final String file, final String name) {
             this.ingestFile = file;
@@ -63,6 +66,17 @@ public class CitiesDataType extends AbstractDataTypeConfig {
             final CityEntry[] cities = CityEntry.values();
             final int idx = rVal.nextInt(cities.length);
             return cities[idx].cityName;
+        }
+        
+        /**
+         * Returns the datatype for the entry.
+         * 
+         * @param entry
+         *            instance of {@link CityField}
+         * @return datatype for instance
+         */
+        public static String getDataType(final CityEntry entry) {
+            return entry.cityName;
         }
     }
     
@@ -148,6 +162,10 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         
         static Collection<String> cityShards() {
             return Stream.of(CityShardId.values()).map(e -> e.getShardId()).collect(Collectors.toList());
+        }
+        
+        public Date getDate() {
+            return this.date;
         }
     }
     
