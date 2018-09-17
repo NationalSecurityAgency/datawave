@@ -1,5 +1,6 @@
 package datawave.query.util;
 
+import datawave.typemetadata.TypeMetadataWriter;
 import datawave.webservice.common.cache.SharedCacheCoordinator;
 import datawave.webservice.common.cache.SharedTriState;
 import datawave.webservice.common.cache.SharedTriStateListener;

@@ -1,6 +1,9 @@
-package datawave.query.util;
+package datawave.typemetadata;
 
+import datawave.query.util.TypeMetadata;
 import org.apache.log4j.Logger;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.ObjectOutputStream;
@@ -12,9 +15,40 @@ import java.util.Set;
  */
 public class TypeMetadataWriter {
     
+    public static class Builder<B extends Builder<B>> {
+        private TypeMetadataBridge bridge;
+        
+        protected B self() {
+            return (B) this;
+        }
+        
+        public B withBridge(TypeMetadataBridge bridge) {
+            this.bridge = bridge;
+            return self();
+        }
+        
+        public TypeMetadataWriter build() {
+            return new TypeMetadataWriter(this);
+        }
+    }
+    
+    public static Builder<?> builder() {
+        return new Builder();
+    }
+    
     private static final Logger log = Logger.getLogger(TypeMetadataWriter.class);
     
     protected TypeMetadataBridge bridge;
+    
+    private TypeMetadataWriter() {}
+    
+    private TypeMetadataWriter(Builder<?> builder) {
+        this(builder.bridge);
+    }
+    
+    private TypeMetadataWriter(TypeMetadataBridge bridge) {
+        this.bridge = bridge;
+    }
     
     public TypeMetadataBridge getBridge() {
         return bridge;
@@ -61,11 +95,9 @@ public class TypeMetadataWriter {
         public static synchronized TypeMetadataWriter createTypeMetadataWriter() {
             if (typeMetadataWriter != null)
                 return typeMetadataWriter;
-            ClassLoader thisClassLoader = TypeMetadataProvider.Factory.class.getClassLoader();
             
+            ApplicationContext context = new AnnotationConfigApplicationContext("datawave.typemetadata");
             // ignore calls to close as this blows away the cache manager
-            ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:/TypeMetadataBridgeContext.xml",
-                            "classpath:/TypeMetadataWriterContext.xml");
             try {
                 typeMetadataWriter = context.getBean("typeMetadataWriter", TypeMetadataWriter.class);
             } catch (Throwable t) {
@@ -74,7 +106,6 @@ public class TypeMetadataWriter {
                 log.warn("Could not load spring context files. got " + t);
                 t.printStackTrace();
             }
-            
             return typeMetadataWriter;
         }
     }

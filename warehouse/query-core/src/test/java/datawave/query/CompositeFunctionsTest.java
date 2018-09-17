@@ -14,7 +14,7 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataHelper;
-import datawave.query.util.TypeMetadataWriter;
+import datawave.typemetadata.TypeMetadataWriter;
 import datawave.query.util.WiseGuysIngest;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
@@ -40,7 +40,6 @@ import org.junit.runner.RunWith;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -70,8 +69,6 @@ public abstract class CompositeFunctionsTest {
         
         @BeforeClass
         public static void setUp() throws Exception {
-            // this will get property substituted into the TypeMetadataBridgeContext.xml file
-            // for the injection test (when this unit test is first created)
             System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
@@ -112,8 +109,6 @@ public abstract class CompositeFunctionsTest {
         
         @BeforeClass
         public static void setUp() throws Exception {
-            // this will get property substituted into the TypeMetadataBridgeContext.xml file
-            // for the injection test (when this unit test is first created)
             System.setProperty("type.metadata.dir", tempDirForCompositeFunctionsTest);
             
             QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);

@@ -1,8 +1,9 @@
-package datawave.query.util;
+package datawave.typemetadata;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.util.TypeMetadata;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;
@@ -13,6 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -27,7 +29,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration({"classpath:/TypeMetadataBridgeContext.xml", "classpath:/TypeMetadataProviderContext.xml", "classpath:/TypeMetadataWriterContext.xml",})
+@ContextConfiguration(classes = {TypeMetadataBridgeConfig.class, TypeMetadataProviderConfig.class, TypeMetadataWriterConfig.class},
+                loader = AnnotationConfigContextLoader.class)
 public class TypeMetadataProviderLoadingCacheTest {
     
     private static final Logger log = Logger.getLogger(TypeMetadataProviderLoadingCacheTest.class);
@@ -44,8 +47,6 @@ public class TypeMetadataProviderLoadingCacheTest {
     
     @BeforeClass
     public static void beforeClass() {
-        // this will get property substituted into the TypeMetadataBridgeContext.xml file
-        // for the injection test (when this unit test is first created)
         System.setProperty("type.metadata.dir", tempDirForThreadingTest);
     }
     
@@ -145,7 +146,7 @@ public class TypeMetadataProviderLoadingCacheTest {
         
         // immediately let 15 workers read the typemetadata from the singleton. One will refresh the singleton,
         // some will read the previous data (while the refresh is happening) and others will see the new data
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 25; i++) {
             try {
                 Thread.sleep(100);
             } catch (Exception ex) {} // ignore
@@ -166,13 +167,14 @@ public class TypeMetadataProviderLoadingCacheTest {
             log.debug("pass2 typeMetadata:" + future.get());
         }
         
-        Set<String> resultStrings = Sets.newHashSet();
+        List<String> resultStrings = new ArrayList<>();
         for (Future<TypeMetadata> future : futures) {
             resultStrings.add(future.get().toString());
         }
         // some threads should have read the old values, while others should have read the new values
         // test to see that we got at least one of each.
-        Assert.assertTrue(resultStrings.contains("field1:[ingest2:DateType;ingest1:LcType];field2:[ingest2:LcType;ingest1:IntegerType]"));
-        Assert.assertTrue(resultStrings.contains("field2:[ingest2:FooBarType]"));
+        Assert.assertTrue("but results were:" + resultStrings,
+                        resultStrings.contains("field1:[ingest2:DateType;ingest1:LcType];field2:[ingest2:LcType;ingest1:IntegerType]"));
+        Assert.assertTrue("but results were:" + resultStrings, resultStrings.contains("field2:[ingest2:FooBarType]"));
     }
 }

@@ -24,7 +24,7 @@ import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataHelper;
-import datawave.query.util.TypeMetadataWriter;
+import datawave.typemetadata.TypeMetadataWriter;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

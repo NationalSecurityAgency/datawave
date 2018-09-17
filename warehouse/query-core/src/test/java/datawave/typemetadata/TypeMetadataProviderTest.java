@@ -1,9 +1,10 @@
-package datawave.query.util;
+package datawave.typemetadata;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.util.TypeMetadata;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;
@@ -15,6 +16,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -24,7 +26,8 @@ import java.util.Map;
 import java.util.Set;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration({"classpath:/TypeMetadataBridgeContext.xml", "classpath:/TypeMetadataProviderContext.xml", "classpath:/TypeMetadataWriterContext.xml",})
+@ContextConfiguration(classes = {TypeMetadataBridgeConfig.class, TypeMetadataProviderConfig.class, TypeMetadataWriterConfig.class},
+                loader = AnnotationConfigContextLoader.class)
 public class TypeMetadataProviderTest {
     
     private static final Logger log = Logger.getLogger(TypeMetadataProviderTest.class);
@@ -43,8 +46,6 @@ public class TypeMetadataProviderTest {
     
     @BeforeClass
     public static void beforeClass() {
-        // this will get property substituted into the TypeMetadataBridgeContext.xml file
-        // for the injection test (when this unit test is first created)
         System.setProperty("type.metadata.dir", tempDirForInjectionTest);
     }
     

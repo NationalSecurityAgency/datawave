@@ -1,15 +1,16 @@
-package datawave.query.util;
+package datawave.typemetadata;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
+import datawave.query.util.TypeMetadata;
 import org.apache.commons.vfs2.FileChangeEvent;
 import org.apache.commons.vfs2.FileListener;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.impl.DefaultFileMonitor;
 import org.apache.log4j.Logger;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.io.ObjectInputStream;
 import java.util.Map;
@@ -25,11 +26,44 @@ import java.util.regex.Pattern;
  */
 public class TypeMetadataProvider implements FileListener {
     
+    public static class Builder<B extends Builder<B>> {
+        private TypeMetadataBridge bridge;
+        private String[] tableNames;
+        private long delay;
+        
+        protected B self() {
+            return (B) this;
+        }
+        
+        public B withBridge(TypeMetadataBridge bridge) {
+            this.bridge = bridge;
+            return self();
+        }
+        
+        public B withTableNames(String[] tableNames) {
+            this.tableNames = tableNames;
+            return self();
+        }
+        
+        public B withDelay(long delay) {
+            this.delay = delay;
+            return self();
+        }
+        
+        public TypeMetadataProvider build() {
+            return new TypeMetadataProvider(this);
+        }
+    }
+    
+    public static Builder<?> builder() {
+        return new Builder();
+    }
+    
     private static final Logger log = Logger.getLogger(TypeMetadataProvider.class);
     
     private TypeMetadataBridge bridge;
     
-    private String[] metadataTableNames;
+    private String[] tableNames;
     
     private final Pattern metadataTableNamePattern = Pattern.compile(".*/(\\w+)/typeMetadata");
     
@@ -47,6 +81,16 @@ public class TypeMetadataProvider implements FileListener {
     private Map<String,DefaultFileMonitor> monitors = Maps.newHashMap();
     
     private TypeMetadataProvider() {}
+    
+    private TypeMetadataProvider(Builder<?> builder) {
+        this(builder.bridge, builder.tableNames, builder.delay);
+    }
+    
+    private TypeMetadataProvider(TypeMetadataBridge bridge, String[] tableNames, long delay) {
+        this.bridge = bridge;
+        this.tableNames = tableNames;
+        this.delay = delay;
+    }
     
     public synchronized TypeMetadata getTypeMetadata(String metadataTableName, Set<String> authKey) {
         try {
@@ -91,32 +135,33 @@ public class TypeMetadataProvider implements FileListener {
     }
     
     public String[] getMetadataTableNames() {
-        return metadataTableNames;
+        return tableNames;
     }
     
-    public void setMetadataTableNames(String[] metadataTableNames) {
-        this.metadataTableNames = metadataTableNames;
+    public void setMetadataTableNames(String[] tableNames) {
+        this.tableNames = tableNames;
     }
     
     /**
      * set up the monitor so that when the file system data is changed, our singleton will be refreshed
      */
-    public void init() {
-        for (String metadataTableName : this.metadataTableNames) {
+    public TypeMetadataProvider init() {
+        for (String tableName : this.tableNames) {
             DefaultFileMonitor monitor = new DefaultFileMonitor(this);
             try {
                 monitor.setDelay(delay);
                 monitor.setRecursive(false);
-                monitor.addFile(this.bridge.getFileObject(metadataTableName));
-                log.debug("monitoring " + this.bridge.getFileObject(metadataTableName));
+                monitor.addFile(this.bridge.getFileObject(tableName));
+                log.debug("monitoring " + this.bridge.getFileObject(tableName));
                 monitor.start();
-                this.monitors.put(metadataTableName, monitor);
+                this.monitors.put(tableName, monitor);
             } catch (Exception ex) {
                 monitor.stop();
                 throw new RuntimeException("Failed to create TypeMetadataProvider with " + this.bridge.getUri() + this.bridge.getDir() + "/"
                                 + this.bridge.getFileName(), ex);
             }
         }
+        return this;
     }
     
     public void forceUpdate() {
@@ -169,8 +214,8 @@ public class TypeMetadataProvider implements FileListener {
     }
     
     protected synchronized void update() {
-        for (String metadataTableName : this.metadataTableNames) {
-            this.reloadTypeMetadata(metadataTableName);
+        for (String tableName : this.tableNames) {
+            this.reloadTypeMetadata(tableName);
         }
     }
     
@@ -193,7 +238,7 @@ public class TypeMetadataProvider implements FileListener {
             ClassLoader thisClassLoader = TypeMetadataProvider.Factory.class.getClassLoader();
             
             // ignore calls to close as this blows away the cache manager
-            ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext();
+            AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
             try {
                 // To prevent failure when this is run on the tservers:
                 // The VFS ClassLoader has been created and has been made the current thread's context classloader, but its resource paths are empty at this
@@ -204,7 +249,7 @@ public class TypeMetadataProvider implements FileListener {
                 // It is a VFSClassLoader that has the accumulo lib/ext jars set as its resources.
                 // After setting the classloader, then set the config locations and refresh the context.
                 context.setClassLoader(thisClassLoader);
-                context.setConfigLocations("classpath:/TypeMetadataBridgeContext.xml", "classpath:/TypeMetadataProviderContext.xml");
+                context.scan("datawave.typemetadata");
                 context.refresh();
                 typeMetadataProvider = context.getBean("typeMetadataProvider", TypeMetadataProvider.class);
             } catch (Throwable t) {

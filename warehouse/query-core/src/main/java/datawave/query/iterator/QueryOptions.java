@@ -44,7 +44,7 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
 import datawave.query.util.TypeMetadata;
-import datawave.query.util.TypeMetadataProvider;
+import datawave.typemetadata.TypeMetadataProvider;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
