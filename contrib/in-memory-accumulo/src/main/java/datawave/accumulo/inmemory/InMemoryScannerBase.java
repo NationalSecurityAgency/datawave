@@ -130,10 +130,10 @@ public class InMemoryScannerBase extends ScannerOptions {
         byte[] defaultLabels = {};
         inner = new ColumnFamilySkippingIterator(new DeletingIterator(inner, false));
         ColumnQualifierFilter cqf = new ColumnQualifierFilter(inner, new HashSet<>(fetchedColumns));
-        VisibilityFilter vf = new VisibilityFilter(cqf, auths, defaultLabels);
+        SortedKeyValueIterator<Key,Value> wrappedFilter = VisibilityFilter.wrap(cqf, auths, defaultLabels);
         AccumuloConfiguration conf = new InMemoryConfiguration(table.settings);
         InMemoryIteratorEnvironment iterEnv = new InMemoryIteratorEnvironment(auths);
-        SortedKeyValueIterator<Key,Value> result = iterEnv.getTopLevelIterator(IteratorUtil.loadIterators(IteratorScope.scan, vf, null, conf,
+        SortedKeyValueIterator<Key,Value> result = iterEnv.getTopLevelIterator(IteratorUtil.loadIterators(IteratorScope.scan, wrappedFilter, null, conf,
                         serverSideIteratorList, serverSideIteratorOptions, iterEnv, false));
         return result;
     }
