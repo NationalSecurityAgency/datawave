@@ -30,7 +30,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.accumulo>1.8.1</version.accumulo>
+        <version.accumulo>1.9.2</version.accumulo>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.avro>1.7.4</version.avro>
         <version.commons-beanutils>1.7.0</version.commons-beanutils>
@@ -59,7 +59,7 @@
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.5</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>1.8.1</version.in-memory-accumulo>
+        <version.in-memory-accumulo>1.9.2</version.in-memory-accumulo>
         <version.infinispan>8.2.4.Final</version.infinispan>
         <version.jackson>2.7.4</version.jackson>
         <version.javassist>3.20.0-GA</version.javassist>

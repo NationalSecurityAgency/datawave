@@ -9,7 +9,7 @@
     <artifactId>audit-api</artifactId>
     <version>1.4-SNAPSHOT</version>
     <properties>
-        <version.accumulo>1.8.1</version.accumulo>
+        <version.accumulo>1.9.2</version.accumulo>
         <version.guava>25.1-jre</version.guava>
     </properties>
     <dependencyManagement>
