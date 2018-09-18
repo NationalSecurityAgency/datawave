@@ -5,7 +5,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import datawave.data.type.Type;
@@ -32,7 +31,6 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
-import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
@@ -200,8 +198,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         // Set ShardQueryConfiguration variables
         this.config = ShardQueryConfiguration.create(other);
         
-        this.setFilterClassNames(other.getFilterClassNames());
-        
         this.setQuerySyntaxParsers(other.getQuerySyntaxParsers());
         this.setMandatoryQuerySyntax(other.getMandatoryQuerySyntax());
         this.setQueryPlanner(other.getQueryPlanner().clone());
@@ -213,7 +209,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setQueryModel(other.getQueryModel());
         this.setScannerFactory(other.getScannerFactory());
         this.setScheduler(other.getScheduler());
-        this.setContentFieldNames(other.getContentFieldNames());
         this.setEventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer());
         
         log.trace("copy CTOR setting metadataHelperFactory to " + other.getMetadataHelperFactory());
@@ -251,7 +246,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         
         this.config = ShardQueryConfiguration.create(this, settings);
-        this.setSettings(settings);
         if (log.isTraceEnabled())
             log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '('
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
@@ -1253,7 +1247,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public boolean disableIndexOnlyDocuments() {
-        return this.config.disableIndexOnlyDocuments();
+        return this.config.isDisableIndexOnlyDocuments();
     }
     
     public void setDisableIndexOnlyDocuments(boolean disableIndexOnlyDocuments) {
