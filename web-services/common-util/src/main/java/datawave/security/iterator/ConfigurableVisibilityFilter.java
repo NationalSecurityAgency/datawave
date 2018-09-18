@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class ConfigurableVisibilityFilter extends WrappingIterator implements OptionDescriber {
     public static final String AUTHORIZATIONS_OPT = "authorizations";
-    private VisibilityFilter delegate;
+    private SortedKeyValueIterator<Key,Value> delegate;
     
     private static final Logger log = Logger.getLogger(ConfigurableVisibilityFilter.class);
     
@@ -26,7 +26,7 @@ public class ConfigurableVisibilityFilter extends WrappingIterator implements Op
     }
     
     public ConfigurableVisibilityFilter(ConfigurableVisibilityFilter other, IteratorEnvironment env) {
-        this.delegate = (VisibilityFilter) other.delegate.deepCopy(env);
+        this.delegate = other.delegate.deepCopy(env);
         this.setSource(delegate);
     }
     
@@ -37,7 +37,7 @@ public class ConfigurableVisibilityFilter extends WrappingIterator implements Op
             auths = new Authorizations(options.get(AUTHORIZATIONS_OPT).split(","));
         log.debug("Using authorizations: " + auths);
         
-        delegate = new VisibilityFilter(source, auths, new byte[0]);
+        delegate = VisibilityFilter.wrap(source, auths, new byte[0]);
         super.init(delegate, options, env);
     }
     

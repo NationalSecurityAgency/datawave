@@ -385,7 +385,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             ColumnVisibility cv = new ColumnVisibility(acuTableConf.get(Property.TABLE_DEFAULT_SCANTIME_VISIBILITY));
             defaultSecurityLabel = cv.getExpression();
             
-            VisibilityFilter visFilter = new VisibilityFilter(topIter, auths, defaultSecurityLabel);
+            SortedKeyValueIterator<Key,Value> visFilter = VisibilityFilter.wrap(topIter, auths, defaultSecurityLabel);
             
             return IteratorUtil.loadIterators(IteratorScope.scan, visFilter, null, acuTableConf, serverSideIteratorList, serverSideIteratorOptions, iterEnv,
                             false);
