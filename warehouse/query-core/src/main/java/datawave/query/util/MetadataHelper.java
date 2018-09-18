@@ -25,6 +25,7 @@ import datawave.query.iterator.PowerSet;
 import datawave.query.model.QueryModel;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
+import datawave.typemetadata.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.util.time.TraceStopwatch;

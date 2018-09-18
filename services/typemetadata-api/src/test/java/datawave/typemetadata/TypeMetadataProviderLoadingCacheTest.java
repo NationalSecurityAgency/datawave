@@ -2,8 +2,7 @@ package datawave.typemetadata;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import datawave.query.QueryTestTableHelper;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;
@@ -12,11 +11,11 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,10 +34,12 @@ public class TypeMetadataProviderLoadingCacheTest {
     
     private static final Logger log = Logger.getLogger(TypeMetadataProviderLoadingCacheTest.class);
     
-    @Inject
+    private static final String MODEL_TABLE_NAME = "DatawaveMetadata";
+    
+    @Autowired
     private TypeMetadataProvider typeMetadataProvider;
     
-    @Inject
+    @Autowired
     private TypeMetadataWriter typeMetadataWriter;
     
     // the injection test (ONLY!) will use this directory and it needs it in the beforeclass method
@@ -112,7 +113,7 @@ public class TypeMetadataProviderLoadingCacheTest {
     @Test
     public void testWithThreads() throws Exception {
         Map<Set<String>,TypeMetadata> typeMetadataMap = getTypeMetadataMap();
-        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, QueryTestTableHelper.MODEL_TABLE_NAME);
+        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
         
         try {
             Thread.sleep(5000);
@@ -125,9 +126,9 @@ public class TypeMetadataProviderLoadingCacheTest {
             Future<TypeMetadata> result = executor.submit(() -> {
                 Set<String> authSet = Sets.newHashSet("AUTHA", "AUTHB");
                 try {
-                    return typeMetadataProvider.getTypeMetadata(QueryTestTableHelper.MODEL_TABLE_NAME, authSet);
+                    return typeMetadataProvider.getTypeMetadata(MODEL_TABLE_NAME, authSet);
                 } catch (Exception ex) {
-                    log.warn("Could not get Typemetadata for " + QueryTestTableHelper.MODEL_TABLE_NAME + " and " + authSet);
+                    log.warn("Could not get Typemetadata for " + MODEL_TABLE_NAME + " and " + authSet);
                 }
                 return new TypeMetadata();
             });
@@ -141,7 +142,7 @@ public class TypeMetadataProviderLoadingCacheTest {
         
         // create a different TypeMetadataMap and write it to the file
         typeMetadataMap = getChangedTypeMetadataMap();
-        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, QueryTestTableHelper.MODEL_TABLE_NAME);
+        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
         // will fire a TypemetadataProvider::fileChanged event
         
         // immediately let 15 workers read the typemetadata from the singleton. One will refresh the singleton,
@@ -154,9 +155,9 @@ public class TypeMetadataProviderLoadingCacheTest {
             Future<TypeMetadata> result = executor.submit(() -> {
                 Set<String> authSet = Sets.newHashSet("AUTHA", "AUTHB");
                 try {
-                    return typeMetadataProvider.getTypeMetadata(QueryTestTableHelper.MODEL_TABLE_NAME, authSet);
+                    return typeMetadataProvider.getTypeMetadata(MODEL_TABLE_NAME, authSet);
                 } catch (Exception ex) {
-                    log.warn("Could not get Typemetadata for " + QueryTestTableHelper.MODEL_TABLE_NAME + " and " + authSet);
+                    log.warn("Could not get Typemetadata for " + MODEL_TABLE_NAME + " and " + authSet);
                 }
                 return new TypeMetadata();
             });

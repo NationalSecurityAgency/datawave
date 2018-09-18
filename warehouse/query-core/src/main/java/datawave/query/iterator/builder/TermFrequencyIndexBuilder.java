@@ -8,7 +8,7 @@ import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;

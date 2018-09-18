@@ -14,7 +14,7 @@ import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.CompositeTestingIngest;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;

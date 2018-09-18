@@ -9,6 +9,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.model.QueryModel;
+import datawave.typemetadata.TypeMetadata;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;

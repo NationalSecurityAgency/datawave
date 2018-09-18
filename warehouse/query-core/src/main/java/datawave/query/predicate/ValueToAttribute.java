@@ -6,7 +6,7 @@ import java.util.Map.Entry;
 import datawave.query.attributes.Attribute;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.attributes.AttributeFactory;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;

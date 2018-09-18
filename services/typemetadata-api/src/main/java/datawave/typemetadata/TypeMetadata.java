@@ -1,4 +1,4 @@
-package datawave.query.util;
+package datawave.typemetadata;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;

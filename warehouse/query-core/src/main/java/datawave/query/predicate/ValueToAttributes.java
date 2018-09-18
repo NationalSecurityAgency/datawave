@@ -19,7 +19,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.map.LRUMap;

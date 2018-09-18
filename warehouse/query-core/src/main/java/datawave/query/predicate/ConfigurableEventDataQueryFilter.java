@@ -1,7 +1,7 @@
 package datawave.query.predicate;
 
 import datawave.query.attributes.Document;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;

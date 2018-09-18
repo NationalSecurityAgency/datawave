@@ -11,7 +11,7 @@ import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.Tuple3;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;

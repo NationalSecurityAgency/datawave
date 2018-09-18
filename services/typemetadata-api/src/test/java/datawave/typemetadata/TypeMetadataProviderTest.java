@@ -3,8 +3,7 @@ package datawave.typemetadata;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
-import datawave.query.QueryTestTableHelper;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;
@@ -14,11 +13,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -32,10 +31,12 @@ public class TypeMetadataProviderTest {
     
     private static final Logger log = Logger.getLogger(TypeMetadataProviderTest.class);
     
-    @Inject
+    private static final String MODEL_TABLE_NAME = "DatawaveMetadata";
+    
+    @Autowired
     private TypeMetadataProvider typeMetadataProvider;
     
-    @Inject
+    @Autowired
     private TypeMetadataWriter typeMetadataWriter;
     
     private Map<Set<String>,TypeMetadata> typeMetadataMap = Maps.newHashMap();
@@ -95,7 +96,7 @@ public class TypeMetadataProviderTest {
     
     public void testThisThing(TypeMetadataProvider typeMetadataProvider, TypeMetadataWriter typeMetadataWriter) throws Exception {
         
-        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, QueryTestTableHelper.MODEL_TABLE_NAME);
+        typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
         
         log.info("getting typeMetadata from " + this.typeMetadataProvider.getBridge().getUri() + this.typeMetadataProvider.getBridge().getDir() + "/"
                         + this.typeMetadataProvider.getBridge().getFileName());
@@ -104,7 +105,7 @@ public class TypeMetadataProviderTest {
         
         for (int i = 0; i < 10; i++) {
             try {
-                typeMetadata = typeMetadataProvider.getTypeMetadata(QueryTestTableHelper.MODEL_TABLE_NAME, Sets.newHashSet("AUTHA", "AUTHB"));
+                typeMetadata = typeMetadataProvider.getTypeMetadata(MODEL_TABLE_NAME, Sets.newHashSet("AUTHA", "AUTHB"));
                 // stacking the deck for the assertion below
                 if (typeMetadata.equals(this.typeMetadataMap.get(Sets.newHashSet("AUTHA", "AUTHB")))) {
                     break;
@@ -120,7 +121,7 @@ public class TypeMetadataProviderTest {
                 // ignored
             }
         }
-        Assert.assertEquals(typeMetadata, this.typeMetadataMap.get(Sets.newHashSet("AUTHA", "AUTHB")));
+        Assert.assertEquals(this.typeMetadataMap.get(Sets.newHashSet("AUTHA", "AUTHB")), typeMetadata);
     }
     
     @Test

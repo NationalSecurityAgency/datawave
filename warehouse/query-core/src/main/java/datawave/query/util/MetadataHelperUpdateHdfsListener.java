@@ -1,5 +1,6 @@
 package datawave.query.util;
 
+import datawave.typemetadata.TypeMetadata;
 import datawave.typemetadata.TypeMetadataWriter;
 import datawave.webservice.common.cache.SharedCacheCoordinator;
 import datawave.webservice.common.cache.SharedTriState;
@@ -15,6 +16,7 @@ import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
 

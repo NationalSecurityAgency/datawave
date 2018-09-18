@@ -13,7 +13,7 @@ import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;

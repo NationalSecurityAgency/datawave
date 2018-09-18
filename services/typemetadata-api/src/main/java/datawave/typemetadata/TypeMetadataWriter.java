@@ -1,6 +1,5 @@
 package datawave.typemetadata;
 
-import datawave.query.util.TypeMetadata;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;

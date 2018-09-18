@@ -19,7 +19,7 @@ import datawave.query.attributes.Document;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 
 public class TFFactory {
     private static final Logger log = Logger.getLogger(TFFactory.class);

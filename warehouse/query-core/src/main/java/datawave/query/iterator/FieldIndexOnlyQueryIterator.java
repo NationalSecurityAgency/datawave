@@ -29,7 +29,7 @@ import datawave.query.iterator.profile.EvaluationTrackingFunction;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.planner.SeekingQueryPlanner;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.Document;

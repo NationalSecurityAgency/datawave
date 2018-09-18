@@ -1,6 +1,6 @@
 package datawave.query.attributes;
 
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 
 import org.apache.accumulo.core.data.Key;
 

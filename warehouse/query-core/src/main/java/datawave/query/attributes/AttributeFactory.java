@@ -15,7 +15,7 @@ import com.google.common.collect.Lists;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;

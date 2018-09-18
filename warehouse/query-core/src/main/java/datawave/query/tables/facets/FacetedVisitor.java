@@ -20,7 +20,7 @@ import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.predicate.NegationPredicate;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.SortedKeyValueIteratorToIterator;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;

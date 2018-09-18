@@ -4,7 +4,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 import org.apache.commons.vfs2.FileChangeEvent;
 import org.apache.commons.vfs2.FileListener;
 import org.apache.commons.vfs2.FileSystemException;
@@ -67,8 +67,8 @@ public class TypeMetadataProvider implements FileListener {
     
     private final Pattern metadataTableNamePattern = Pattern.compile(".*/(\\w+)/typeMetadata");
     
-    private LoadingCache<String,Map<Set<String>,TypeMetadata>> typeMetadataMap = CacheBuilder.newBuilder().build(
-                    new CacheLoader<String,Map<Set<String>,TypeMetadata>>() {
+    private LoadingCache<String,Map<Set<String>,TypeMetadata>> typeMetadataMap = CacheBuilder.newBuilder()
+                    .build(new CacheLoader<String,Map<Set<String>,TypeMetadata>>() {
                         @Override
                         public Map<Set<String>,TypeMetadata> load(String metadataTableName) {
                             log.debug("loading the cache for " + metadataTableName);
@@ -157,8 +157,9 @@ public class TypeMetadataProvider implements FileListener {
                 this.monitors.put(tableName, monitor);
             } catch (Exception ex) {
                 monitor.stop();
-                throw new RuntimeException("Failed to create TypeMetadataProvider with " + this.bridge.getUri() + this.bridge.getDir() + "/"
-                                + this.bridge.getFileName(), ex);
+                throw new RuntimeException(
+                                "Failed to create TypeMetadataProvider with " + this.bridge.getUri() + this.bridge.getDir() + "/" + this.bridge.getFileName(),
+                                ex);
             }
         }
         return this;

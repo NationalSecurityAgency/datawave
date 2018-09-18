@@ -48,7 +48,7 @@ import datawave.query.jexl.functions.CardinalityAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.tables.facets.FacetedConfiguration;
 import datawave.query.tables.facets.FacetedSearchType;
-import datawave.query.util.TypeMetadata;
+import datawave.typemetadata.TypeMetadata;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**

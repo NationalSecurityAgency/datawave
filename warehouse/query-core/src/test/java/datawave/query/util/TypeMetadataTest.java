@@ -7,6 +7,7 @@ package datawave.query.util;
 
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
+import datawave.typemetadata.TypeMetadata;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;

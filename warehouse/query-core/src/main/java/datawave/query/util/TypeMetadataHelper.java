@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import datawave.data.ColumnFamilyConstants;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
+import datawave.typemetadata.TypeMetadata;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.Scanner;
