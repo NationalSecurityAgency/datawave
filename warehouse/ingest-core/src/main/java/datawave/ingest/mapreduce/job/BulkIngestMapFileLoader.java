@@ -668,7 +668,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         
         Instance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
         TableOperations tops = instance.getConnector(credentials.getPrincipal(), credentials.getToken()).tableOperations();
-        SortedMap<String,String> tableIds = Tables.getNameToIdMap(instance);
+        Map<String,String> tableIds = Tables.getNameToIdMap(instance);
         FileStatus[] tableDirs = fs.globStatus(new Path(mapFilesDir, "*"));
         
         // sort the table dirs in priority order based on the configuration
