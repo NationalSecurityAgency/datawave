@@ -99,10 +99,10 @@ public class EdgeMetadataCQStripperCombinerTest {
     @Test
     public void testReduction() throws Exception {
         
-        IteratorSetting cqStripingSetting = new IteratorSetting(18, EdgeMetadataCQStrippingIterator.class.getName() + "." + 18,
+        IteratorSetting cqStripingSetting = new IteratorSetting(18, EdgeMetadataCQStrippingIterator.class.getSimpleName() + "_" + 18,
                         EdgeMetadataCQStrippingIterator.class);
         
-        IteratorSetting combinerSetting = new IteratorSetting(19, EdgeMetadataCQStripperCombiner.class.getName() + "." + 19,
+        IteratorSetting combinerSetting = new IteratorSetting(19, EdgeMetadataCQStripperCombiner.class.getSimpleName() + "_" + 19,
                         EdgeMetadataCQStripperCombiner.class);
         combinerSetting.addOption("columns", "edge");
         

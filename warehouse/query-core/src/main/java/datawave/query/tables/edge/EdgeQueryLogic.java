@@ -406,10 +406,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             Key endDateKey = new Key(DateHelper.format(endDate) + Constants.MAX_UNICODE_STRING);
             if ((dateFilterType == EdgeQueryConfiguration.dateType.EVENT) || (dateFilterType == EdgeQueryConfiguration.dateType.ACTIVITY)
                             || (dateFilterType == EdgeQueryConfiguration.dateType.ANY)) {
-                setting = new IteratorSetting(priority, ColumnQualifierRangeIterator.class.getName() + "." + priority, ColumnQualifierRangeIterator.class);
+                setting = new IteratorSetting(priority, ColumnQualifierRangeIterator.class.getSimpleName() + "_" + priority, ColumnQualifierRangeIterator.class);
             } else if ((dateFilterType == EdgeQueryConfiguration.dateType.LOAD) || (dateFilterType == EdgeQueryConfiguration.dateType.ACTIVITY_LOAD)
                             || (dateFilterType == EdgeQueryConfiguration.dateType.ANY_LOAD)) {
-                setting = new IteratorSetting(priority, LoadDateFilter.class.getName() + "." + priority, LoadDateFilter.class);
+                setting = new IteratorSetting(priority, LoadDateFilter.class.getSimpleName() + "_" + priority, LoadDateFilter.class);
                 // we also want to set the date range type parameter when using the LoadDateFilter
                 setting.addOption(EdgeQueryConfiguration.DATE_RANGE_TYPE, dateFilterType.name());
             } else {
@@ -440,7 +440,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public static IteratorSetting getDateTypeFilter(int priority, EdgeQueryConfiguration.dateType dateFilterType) {
         IteratorSetting setting = null;
         log.debug("Creating dateType filter=" + dateFilterType.toString());
-        setting = new IteratorSetting(priority, DateTypeFilter.class.getName() + "." + priority, DateTypeFilter.class);
+        setting = new IteratorSetting(priority, DateTypeFilter.class.getSimpleName() + "_" + priority, DateTypeFilter.class);
         setting.addOption(EdgeQueryConfiguration.DATE_RANGE_TYPE, dateFilterType.name());
         
         return setting;
@@ -580,7 +580,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         if (!normalizedQuery.equals("")) {
             log.debug("Query being sent to the filter iterator: " + normalizedQuery);
-            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority, EdgeFilterIterator.class.getName() + "."
+            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority, EdgeFilterIterator.class.getSimpleName() + "_"
                             + currentIteratorPriority, EdgeFilterIterator.class);
             edgeIteratorSetting.addOption(EdgeFilterIterator.JEXL_OPTION, normalizedQuery);
             edgeIteratorSetting.addOption(EdgeFilterIterator.PROTOBUF_OPTION, "TRUE");
