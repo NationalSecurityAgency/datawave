@@ -479,7 +479,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 
                 long length = fs.getFileStatus(path).getLen();
                 
-                closeable.setBlockFile(new Reader(closeable.getInputStream(), length, conf, null, null, acuTableConf));
+                closeable.setBlockFile(new Reader(path.getName(), closeable.getInputStream(), length, conf, null, null, acuTableConf));
                 
                 fileIterator = new RFile.Reader(closeable.getReader());
                 
