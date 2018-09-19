@@ -46,6 +46,7 @@ import datawave.query.tables.async.Scan;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataProvider;
 import datawave.util.StringUtils;
+import datawave.util.UniversalSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -1143,7 +1144,7 @@ public class QueryOptions implements OptionDescriber {
             
             String fieldList = options.get(PROJECTION_FIELDS);
             if (fieldList != null && EVERYTHING.equals(PROJECTION_FIELDS)) {
-                this.whiteListedFields = PowerSet.instance();
+                this.whiteListedFields = UniversalSet.instance();
             } else if (fieldList != null && !fieldList.trim().equals("")) {
                 this.whiteListedFields = new HashSet<>();
                 Collections.addAll(this.whiteListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));

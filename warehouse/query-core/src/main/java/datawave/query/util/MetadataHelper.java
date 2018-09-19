@@ -2,7 +2,6 @@ package datawave.query.util;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.cache.Cache;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
@@ -21,7 +20,7 @@ import datawave.iterators.filter.EdgeMetadataCQStrippingIterator;
 import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeMetadataHelper;
-import datawave.query.iterator.PowerSet;
+import datawave.util.UniversalSet;
 import datawave.query.model.QueryModel;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
@@ -1267,7 +1266,7 @@ public class MetadataHelper implements ApplicationContextAware {
     }
     
     public Long getCountsByFieldForDays(String fieldName, Date begin, Date end) {
-        return getCountsByFieldForDays(fieldName, begin, end, PowerSet.<String> instance());
+        return getCountsByFieldForDays(fieldName, begin, end, UniversalSet.instance());
     }
     
     public Long getCountsByFieldForDays(String fieldName, Date begin, Date end, Set<String> ingestTypeFilter) {
@@ -1311,7 +1310,7 @@ public class MetadataHelper implements ApplicationContextAware {
      * @return
      */
     public Long getCountsByFieldInDay(String fieldName, String date) {
-        return getCountsByFieldInDayWithTypes(fieldName, date, PowerSet.<String> instance());
+        return getCountsByFieldInDayWithTypes(fieldName, date, UniversalSet.instance());
     }
     
     /**

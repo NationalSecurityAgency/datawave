@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.query.iterator.PowerSet;
+import datawave.util.UniversalSet;
 import datawave.query.iterator.SourceManager;
 import datawave.query.iterator.builder.IteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
@@ -56,7 +56,7 @@ public class FacetedVisitor extends BaseVisitor {
     protected SortedKeyValueIterator<Key,Value> limitedSource = null;
     protected Map<Entry<String,String>,Entry<Key,Value>> limitedMap = null;
     protected IteratorEnvironment env;
-    protected Collection<String> includeReferences = PowerSet.instance();
+    protected Collection<String> includeReferences = UniversalSet.instance();
     protected Collection<String> excludeReferences = Collections.emptyList();
     protected Predicate<Key> datatypeFilter;
     protected TimeFilter timeFilter;

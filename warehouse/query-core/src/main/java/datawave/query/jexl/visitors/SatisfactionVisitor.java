@@ -1,7 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Lists;
-import datawave.query.iterator.PowerSet;
+import datawave.util.UniversalSet;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
@@ -25,7 +25,7 @@ public class SatisfactionVisitor extends BaseVisitor {
     protected Set<String> nonEventFields;
     private Collection<String> unindexedFields = Lists.newArrayList();
     protected boolean isQueryFullySatisfied;
-    protected Collection<String> includeReferences = PowerSet.instance();
+    protected Collection<String> includeReferences = UniversalSet.instance();
     protected Collection<String> excludeReferences = Collections.emptyList();
     
     public boolean isQueryFullySatisfied() {

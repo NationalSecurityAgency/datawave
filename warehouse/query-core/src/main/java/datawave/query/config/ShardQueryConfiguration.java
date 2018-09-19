@@ -14,15 +14,14 @@ import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
 import datawave.query.UnindexType;
 import datawave.query.function.DocumentPermutation;
-import datawave.query.iterator.PowerSet;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.model.QueryModel;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
+import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import org.apache.commons.collections4.map.UnmodifiableMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -116,8 +115,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration {
     // Default to having no unevaluatedFields
     private Set<String> unevaluatedFields = Collections.emptySet();
     
-    // Filter results on datatypes
-    private Set<String> datatypeFilter = PowerSet.instance();
+    // Filter results on datatypes. Default to having no filters
+    private Set<String> datatypeFilter = UniversalSet.instance();
     
     // A set of sorted index holes
     private List<IndexHole> indexHoles = new ArrayList<>();
