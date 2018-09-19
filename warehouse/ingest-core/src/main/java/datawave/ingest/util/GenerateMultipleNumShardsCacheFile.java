@@ -12,7 +12,6 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.handler.shard.NumShards;
@@ -55,7 +54,7 @@ public class GenerateMultipleNumShardsCacheFile {
             }
             ConfigurationFileHelper.setConfigurationFromFiles(conf, configDirectory, configSuffix);
             NumShards numShards = new NumShards(conf);
-            numShards.updateCache(FileSystem.get(conf));
+            numShards.updateCache();
         } catch (ParseException ex) {
             log.error(GenerateMultipleNumShardsCacheFile.class.getName(), ex);
         }
