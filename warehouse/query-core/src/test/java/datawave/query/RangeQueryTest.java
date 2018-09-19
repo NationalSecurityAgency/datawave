@@ -1,6 +1,7 @@
 package datawave.query;
 
 import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -139,6 +140,16 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
     
     @Test(expected = FullTableScansDisallowedException.class)
     public void testErrorRangeOpsInDiffSubTree() throws Exception {
+        log.info("------  testErrorRangeOpsInDiffSubTree  ------");
+        String city = TestCities.rome.name();
+        String query = CityField.NUM.name() + LTE_OP + "100" + AND_OP + "(" + CityField.CITY.name() + EQ_OP + "'" + city + "'" + OR_OP + CityField.NUM.name()
+                        + GTE_OP + "100)";
+        ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
+        runTest(query, query);
+    }
+    
+    @Test
+    public void testAvoidErrorRangeOpsInDiffSubTreeWithExpansion() throws Exception {
         log.info("------  testErrorRangeOpsInDiffSubTree  ------");
         String city = TestCities.rome.name();
         String query = CityField.NUM.name() + LTE_OP + "100" + AND_OP + "(" + CityField.CITY.name() + EQ_OP + "'" + city + "'" + OR_OP + CityField.NUM.name()

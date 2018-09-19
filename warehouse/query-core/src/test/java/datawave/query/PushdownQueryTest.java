@@ -1,6 +1,7 @@
 package datawave.query;
 
 import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -117,13 +118,37 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
         log.info("------  testErrorIndexOnly  ------");
         String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name()
                         + LT_OP + "104)";
+        ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
         runTest(query, query);
         Assert.fail("exception condition expected");
+    }
+    
+    @Test
+    public void testErrorIndexOnlyExpansion() throws Exception {
+        log.info("------  testErrorIndexOnly  ------");
+        String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name()
+                        + LT_OP + "104)";
+        runTest(query, query);
     }
     
     @Test(expected = InvalidQueryException.class)
     public void testErrorFilterIncludeRegex() throws Exception {
         log.info("------  testErrorFilterIncludeRegex  ------");
+        String state = "'ohio'";
+        String code = "'itA'";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
+                            + "filter:includeRegex(" + CityField.STATE.name() + "," + state + "))";
+            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
+                            + CityField.STATE.name() + RE_OP + state + ")";
+            ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
+            runTest(query, expectQuery);
+        }
+    }
+    
+    @Test
+    public void testExecutableExpansionRegex() throws Exception {
+        log.info("------  testExecutableExpansionRegex  ------");
         String state = "'ohio'";
         String code = "'itA'";
         for (final TestCities city : TestCities.values()) {
