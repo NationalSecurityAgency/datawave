@@ -102,40 +102,6 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
     }
     
-    @Test
-    public void testErrorThresholdMarkerAnyField() throws Exception {
-        log.info("------  testErrorThresholdMarkerAnyField  ------");
-        // correct when Issue #156 is resolved
-        // the DefaultQueryPlanner should resolve this to a single EQNODE
-        // currently this will generate an exception that is swallowed
-        String state = RE_OP + "'oh.*'";
-        String country = RE_OP + "'un.*'";
-        String countryQuery = CityField.COUNTRY.name() + country + AND_OP + CityField.COUNTRY.name() + country.toUpperCase();
-        String query = "((ExceededValueThresholdMarkerJexlNode = true)" + AND_OP + Constants.ANY_FIELD + state + ") && " + countryQuery;
-        String anyCity = this.dataManager.convertAnyField(state);
-        String anyCountry = this.dataManager.convertAnyField(country);
-        // actual expect jexl
-        // String expect = "(" + anyCity + ")" + AND_OP + anyCountry;
-        // no results expect jexl
-        String expect = "(x == '')";
-        
-        this.logic.setMaxValueExpansionThreshold(10);
-        runTest(query, expect);
-        
-        this.logic.setMaxValueExpansionThreshold(2);
-        // TODO: add when #156 is resolved
-        // try {
-        // runTest(query, expect);
-        // Assert.fail("exception expected");
-        // } catch (DatawaveFatalQueryException e) {
-        // // expected
-        // }
-        
-        ivaratorConfig();
-        
-        runTest(query, expect);
-    }
-    
     // ============================================
     // implemented abstract methods
     protected void testInit() {
