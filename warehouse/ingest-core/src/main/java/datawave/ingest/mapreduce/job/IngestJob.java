@@ -319,7 +319,7 @@ public class IngestJob implements Tool {
         // get the qualified work directory path
         Path unqualifiedWorkPath = Path.getPathWithoutSchemeAndAuthority(new Path(workDir));
         conf.set("ingest.work.dir.unqualified", unqualifiedWorkPath.toString());
-        Path workDirPath = new Path(new Path(writeDirectlyToDest ? destHdfs : srcHdfs), unqualifiedWorkPath);
+        Path workDirPath = getFileSystem(conf, (writeDirectlyToDest ? destHdfs : srcHdfs)).makeQualified(unqualifiedWorkPath);
         conf.set("ingest.work.dir.qualified", workDirPath.toString());
         
         // Create the Job

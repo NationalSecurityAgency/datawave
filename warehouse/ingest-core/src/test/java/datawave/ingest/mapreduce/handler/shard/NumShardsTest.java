@@ -19,6 +19,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
@@ -232,7 +233,7 @@ public class NumShardsTest {
         
         // these should create numshards.txt file based on multiple numshards entries in mock accumulo
         numShards.setaHelper(mockedAccumuloHelper);
-        numShards.updateCache();
+        numShards.updateCache(FileSystem.get(conf));
         
         assertEquals(11, numShards.getNumShards(0));
         
@@ -295,7 +296,7 @@ public class NumShardsTest {
         
         // these should create numshards.txt file based on multiple numshards entries in mock accumulo
         numShards.setaHelper(mockedAccumuloHelper);
-        numShards.updateCache();
+        numShards.updateCache(FileSystem.get(conf));
         
         assertEquals(11, numShards.getNumShards(0));
         assertEquals(11, numShards.getNumShards(Long.MAX_VALUE));
