@@ -32,7 +32,8 @@ public class Projection implements Predicate<String> {
         }
         
         this.useWhitelist = true;
-        this.whitelist = Sets.newHashSet(whiteListFields);
+        // do not make a copy of the incoming whiteListFields. It could be a UniversalSet
+        this.whitelist = whiteListFields;
         this.initialized = true;
     }
     

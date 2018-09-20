@@ -42,7 +42,7 @@ public class UniversalSet<T> extends HashSet<T> {
     
     @Override
     public boolean add(T e) {
-        throw new UnsupportedOperationException();
+        return true;
     }
     
     /**
@@ -57,7 +57,7 @@ public class UniversalSet<T> extends HashSet<T> {
     
     @Override
     public boolean remove(Object o) {
-        throw new UnsupportedOperationException();
+        return false;
     }
     
     @Override
@@ -67,7 +67,7 @@ public class UniversalSet<T> extends HashSet<T> {
     
     @Override
     public boolean removeAll(Collection<?> c) {
-        throw new UnsupportedOperationException();
+        return false;
     }
     
     @Override
@@ -77,16 +77,16 @@ public class UniversalSet<T> extends HashSet<T> {
     
     @Override
     public boolean addAll(Collection<? extends T> c) {
-        throw new UnsupportedOperationException();
+        return true;
     }
     
     @Override
     public boolean retainAll(Collection<?> c) {
-        throw new UnsupportedOperationException();
+        return false;
     }
     
     @Override
     public boolean removeIf(Predicate<? super T> filter) {
-        throw new UnsupportedOperationException();
+        return false;
     }
 }

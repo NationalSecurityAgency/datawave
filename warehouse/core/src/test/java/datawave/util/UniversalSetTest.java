@@ -19,41 +19,23 @@ public class UniversalSetTest {
         
         Assert.assertTrue(universalSet.containsAll(Sets.newHashSet("foo", "bar", "baz")));
         
-        try {
-            universalSet.remove(this);
-            Assert.fail(universalSet + " should not be modifiable");
-        } catch (UnsupportedOperationException ex) {
-            // expected
-        }
-        try {
-            universalSet.removeAll(Sets.newHashSet(this));
-            Assert.fail(universalSet + " should not be modifiable");
-        } catch (UnsupportedOperationException ex) {
-            // expected
-        }
-        try {
-            universalSet.add("trouble-maker");
-            Assert.fail(universalSet + " should not be modifiable");
-        } catch (UnsupportedOperationException ex) {
-            // expected
-        }
-        try {
-            universalSet.addAll(Sets.newHashSet("foo", "bar", "baz"));
-            Assert.fail(universalSet + " should not be modifiable");
-        } catch (UnsupportedOperationException ex) {
-            // expected
-        }
-        try {
-            universalSet.retainAll(Sets.newHashSet("foo", "bar", "baz"));
-            Assert.fail(universalSet + " should not be modifiable");
-        } catch (UnsupportedOperationException ex) {
-            // expected
-        }
-        try {
-            universalSet.removeIf(x -> true);
-            Assert.fail(universalSet + " should not be modifiable");
-        } catch (UnsupportedOperationException ex) {
-            // expected
-        }
+        int originalSize = universalSet.size();
+        universalSet.remove(this);
+        Assert.assertEquals(universalSet.size(), originalSize);
+        
+        universalSet.removeAll(Sets.newHashSet(this));
+        Assert.assertEquals(universalSet.size(), originalSize);
+        
+        universalSet.add("trouble-maker");
+        Assert.assertEquals(universalSet.size(), originalSize);
+        
+        universalSet.addAll(Sets.newHashSet("foo", "bar", "baz"));
+        Assert.assertEquals(universalSet.size(), originalSize);
+        
+        universalSet.retainAll(Sets.newHashSet("foo", "bar", "baz"));
+        Assert.assertEquals(universalSet.size(), originalSize);
+        
+        universalSet.removeIf(x -> true);
+        Assert.assertEquals(universalSet.size(), originalSize);
     }
 }

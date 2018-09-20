@@ -290,7 +290,8 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
         }
-        doIt(WhatKindaRange.SHARD);
+        doIt();
+        doItWithProjection();
     }
     
     @Test
@@ -306,10 +307,11 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
         }
-        doIt(WhatKindaRange.DOCUMENT);
+        doIt();
+        doItWithProjection();
     }
     
-    private void doIt(WhatKindaRange wkrange) throws Exception {
+    private void doIt() throws Exception {
         
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("type.metadata.in.hdfs", "true");
@@ -335,6 +337,56 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                 
                 "NAME == 'Haiqu' && BAR == 'BAR' && filter:occurrence(NAME, '==', 3)",
                 
+                "UUID == 'First' && filter:isNotNull(NAME)"
+        };
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {
+                // just the expected uuids. I should always get both documents, the real test is in the hit terms
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First", "Second"),
+                Arrays.asList("First"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("Second"),
+                Arrays.asList("First")
+        };
+        // @formatter:on
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters,
+                            ArrayListMultimap.create(expectedHitTerms[i]));
+        }
+    }
+    
+    private void doItWithProjection() throws Exception {
+        
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("type.metadata.in.hdfs", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("return.fields", "*");
+        // @formatter:off
+        String[] queryStrings = {
+                // sanity check. I got the 2 documents
+                "UUID == 'First' || UUID == 'Second'",
+                // look for FOO or BAR, expecting the hit_terms to be in the right places
+                "( UUID == 'First' || UUID == 'Second' ) && ( FOO == 'FOO' || BAR == 'BAR' )",
+                // should find NAME0 in different grouping contexts, but the hit terms should be correct
+                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'NAME0'",
+                // this may get initial hits in Second, but will return only First. Makes sure that hits from Second are not included in First
+                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && FOO == 'FOO'",
+                // this may get initial hits in First, but will return only Second. Makes sure that hits from First are not included in Second
+                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && BAR == 'BAR'",
+                // try to pull in hits from Third, should still hit only Second
+                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  NAME == 'Haiqu' && BAR == 'BAR'",
+
+                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  filter:includeRegex(NAME,'Haiqu') && filter:includeRegex(BAR,'BAR')",
+
+                "UUID == 'Second' && BAR == 'BAR'",
+
+                "NAME == 'Haiqu' && BAR == 'BAR' && filter:occurrence(NAME, '==', 3)",
+
                 "UUID == 'First' && filter:isNotNull(NAME)"
         };
         @SuppressWarnings("unchecked")

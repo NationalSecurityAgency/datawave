@@ -1143,7 +1143,7 @@ public class QueryOptions implements OptionDescriber {
             this.useWhiteListedFields = true;
             
             String fieldList = options.get(PROJECTION_FIELDS);
-            if (fieldList != null && EVERYTHING.equals(PROJECTION_FIELDS)) {
+            if (fieldList != null && EVERYTHING.equals(fieldList)) {
                 this.whiteListedFields = UniversalSet.instance();
             } else if (fieldList != null && !fieldList.trim().equals("")) {
                 this.whiteListedFields = new HashSet<>();
