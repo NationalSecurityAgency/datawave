@@ -19,6 +19,7 @@ import datawave.query.tables.stats.StatsListener;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 import datawave.webservice.query.Query;
 
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -120,6 +121,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     
     protected boolean isFair = true;
     
+    protected QueryUncaughtExceptionHandler uncaughtExceptionHandler = null;
+    
     /**
      * Constructor
      * 
@@ -168,6 +171,15 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         
         this.settings = settings;
         
+        if (this.settings != null) {
+            this.uncaughtExceptionHandler = this.settings.getUncaughtExceptionHandler();
+        }
+        
+        // ensure we have an exception handler
+        if (this.uncaughtExceptionHandler == null) {
+            this.uncaughtExceptionHandler = new QueryUncaughtExceptionHandler();
+        }
+        
         delegatedResourceInitializer = RunningResource.class;
         
     }
@@ -186,8 +198,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 Thread result = MoreExecutors.platformThreadFactory().newThread(command);
                 try {
                     result.setName(name);
-                    if (null != settings && null != settings.getUncaughtExceptionHandler())
-                        result.setUncaughtExceptionHandler(settings.getUncaughtExceptionHandler());
+                    result.setUncaughtExceptionHandler(uncaughtExceptionHandler);
                 } catch (SecurityException e) {
                     // OK if we can't set the name in this environment.
                 }
@@ -292,7 +303,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     
                 } catch (InterruptedException e) {
                     log.trace("hasNext" + isRunning() + " interrupted");
-                    log.error(e);
+                    log.error("Interrupted before finding next", e);
                     throw new RuntimeException(e);
                 }
                 // if we pulled no data and we are not running, and there is no data in the queue
@@ -307,8 +318,12 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 try {
                     stats.getTimer(TIMERS.HASNEXT).suspend();
                 } catch (Exception e) {
-                    log.error(e);
+                    log.error("Failed to suspend timer", e);
                 }
+            }
+            if (uncaughtExceptionHandler.getThrowable() != null) {
+                log.error("Exception discovered on hasNext call", uncaughtExceptionHandler.getThrowable());
+                throw new RuntimeException(uncaughtExceptionHandler.getThrowable());
             }
         }
         
@@ -341,9 +356,16 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      */
     @Override
     public Entry<Key,Value> next() {
-        Entry<Key,Value> retVal = currentEntry;
-        currentEntry = null;
-        return retVal;
+        try {
+            Entry<Key,Value> retVal = currentEntry;
+            currentEntry = null;
+            return retVal;
+        } finally {
+            if (uncaughtExceptionHandler.getThrowable() != null) {
+                log.error("Exception discovered on next call", uncaughtExceptionHandler.getThrowable());
+                throw new RuntimeException(uncaughtExceptionHandler.getThrowable());
+            }
+        }
     }
     
     /**
@@ -467,7 +489,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     log.trace("Ignoring exception because we have been closed", e);
                 }
             } else {
-                log.error(e);
+                log.error("Failed to find top", e);
                 throw e;
             }
             
@@ -533,12 +555,19 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      */
     @Override
     protected void run() throws Exception {
-        while (isRunning()) {
+        try {
+            while (isRunning()) {
+                
+                findTop();
+            }
             
-            findTop();
+            flush();
+        } catch (Exception e) {
+            if (uncaughtExceptionHandler != null) {
+                uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
+            }
+            throw new RuntimeException(e);
         }
-        
-        flush();
     }
     
     /**
@@ -640,7 +669,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     sessionDelegator.close(delegatedResource);
                     delegatedResource = null;
                 } catch (Exception e) {
-                    log.error(e);
+                    log.error("Failed to close session", e);
                 }
             }
         }

@@ -2,18 +2,15 @@ package datawave.query.tables;
 
 import java.util.Collection;
 import java.util.Set;
-import java.util.concurrent.Executor;
 
 import datawave.webservice.query.Query;
 
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-
-import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.MoreExecutors;
 
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation
@@ -36,6 +33,9 @@ public class AnyFieldScanner extends ScannerSession {
     public AnyFieldScanner(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, SessionOptions options,
                     Collection<Range> ranges) {
         super(tableName, auths, delegator, maxResults, settings, options, ranges);
+        // ensure that we only use a local uncaught exception handler instead of the one in settings as exceptions may not
+        // be critical to the overall query execution
+        this.uncaughtExceptionHandler = new QueryUncaughtExceptionHandler();
     }
     
     public AnyFieldScanner(ScannerSession other) {
@@ -66,29 +66,6 @@ public class AnyFieldScanner extends ScannerSession {
             log.trace(r);
         return r;
         
-    }
-    
-    /**
-     * Do not set uncaught exception handler
-     * 
-     */
-    @Override
-    protected Executor executor() {
-        return new Executor() {
-            @Override
-            public void execute(Runnable command) {
-                String name = serviceName();
-                Preconditions.checkNotNull(name);
-                Preconditions.checkNotNull(command);
-                Thread result = MoreExecutors.platformThreadFactory().newThread(command);
-                try {
-                    result.setName(name);
-                } catch (SecurityException e) {
-                    // OK if we can't set the name in this environment.
-                }
-                result.start();
-            }
-        };
     }
     
 }
