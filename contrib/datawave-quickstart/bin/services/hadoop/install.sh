@@ -88,8 +88,8 @@ else
    warn "No capacity-scheduler.xml content defined! :("
 fi
 
-# Set JAVA_HOME in $HADOOP_CONF_DIR/hadoop-env.sh
-sed -i "s~export JAVA_HOME=\${JAVA_HOME}~export JAVA_HOME=\"${JAVA_HOME}\"~g" ${HADOOP_CONF_DIR}/hadoop-env.sh
+# Ensure that $JAVA_HOME is observed by all hadoop scripts
+sed -i "s|.*\(export JAVA_HOME=\).*|\1${JAVA_HOME}|g" ${HADOOP_CONF_DIR}/hadoop-env.sh
 
 verifySSHConfig
 

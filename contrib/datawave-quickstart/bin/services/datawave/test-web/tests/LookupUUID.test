@@ -2,12 +2,9 @@
 ################################################################
 # Tests the /Query/lookupUUID/{uidType}/{uid} endpoint
 
-# Here we'll make two REST calls to demonstrate 'lookups' with
-# a couple different '{uidType}/{uid}' pairs.
-
-# Note that the uidTypes, "PAGE_ID" and "PAGE_TITLE", are metadata fields in
-# our Wikipedia records known to uniquely identify articles. They are
-# configured for the lookupUUID service via QueryLogicFactory.xml
+# Note that the uidType values "PAGE_ID" and "PAGE_TITLE" are known fields in
+# our Wikipedia records known to uniquely identify articles. They are configured
+# for the lookupUUID service via QueryLogicFactory.xml
 
 # Moreover, any field in DataWave's data dictionary known to provide a
 # unique-ish key for its related documents may be registered in QLF.xml
@@ -18,14 +15,12 @@
 TEST_UID_TYPE="PAGE_ID"
 TEST_UID="10"
 
-TEST_ID="LookupWikipediaByPageId"
-TEST_DESCRIPTION="Performs lookup based on the PAGE_ID field in our wiki data"
-TEST_URL_OPTS="-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
-
-# Run the test
+configureTest \
+      LookupWikipediaByPageId \
+      "Performs lookup based on the PAGE_ID field in our wiki data" \
+      "-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}" \
+      application/xml \
+      200
 
 runTest
 
@@ -35,12 +30,12 @@ runTest
 TEST_UID_TYPE="PAGE_TITLE"
 TEST_UID="AccessibleComputing"
 
-TEST_ID="LookupWikipediaByPageTitle"
-TEST_DESCRIPTION="Performs lookup based on the PAGE_TITLE field in our wiki data"
-TEST_URL_OPTS="-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureTest \
+     LookupWikipediaByPageTitle \
+     "Performs lookup based on the PAGE_TITLE field in our wiki data" \
+     "-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}" \
+     application/xml \
+     200
 
 runTest
 
@@ -48,14 +43,14 @@ runTest
 # Lookup nonexistent Wikipedia record by PAGE_TITLE
 
 TEST_UID_TYPE="PAGE_TITLE"
-TEST_UID="ThisDoesNotExist"
+TEST_UID="ThisTitleDoesNotExist"
 
-TEST_ID="LookupWikipediaByPageTitleDNE204"
-TEST_DESCRIPTION="Performs wikipedia lookup on nonexistent PAGE_TITLE"
-TEST_URL_OPTS="-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}"
-EXPECTED_RESPONSE_TYPE=""
-EXPECTED_RESPONSE_CODE=204
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureTest \
+     LookupWikipediaByPageTitleDNE204 \
+     "Performs wikipedia lookup on nonexistent PAGE_TITLE" \
+     "-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}" \
+     "" \
+     204
 
 runTest
 
@@ -65,11 +60,12 @@ runTest
 TEST_UID_TYPE="DNE_UID_TYPE"
 TEST_UID="ThisUuidDoesNotExist"
 
-TEST_ID="LookupUnregisteredUidType"
-TEST_DESCRIPTION="Performs lookup on nonexistent uidType and nonexistent uid"
-TEST_URL_OPTS="-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=500
-EXPECTED_RESPONSE_BODY_ASSERTION=true
+configureTest \
+     LookupUnregisteredUidType \
+     "Performs lookup on nonexistent uidType and nonexistent uid" \
+     "-X GET ${URI_ROOT}/Query/lookupUUID/${TEST_UID_TYPE}/${TEST_UID}" \
+     application/xml \
+     500 \
+     true
 
 # This last test is executed by run.sh, as usual
