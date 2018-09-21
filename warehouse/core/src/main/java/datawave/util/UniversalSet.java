@@ -1,7 +1,10 @@
 package datawave.util;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -11,7 +14,7 @@ import java.util.function.Predicate;
  * @param <T>
  */
 @SuppressWarnings("rawtypes")
-public class UniversalSet<T> extends HashSet<T> {
+public class UniversalSet<T> implements Set<T> {
     private static final long serialVersionUID = 1L;
     
     private static UniversalSet inst;
@@ -25,9 +28,7 @@ public class UniversalSet<T> extends HashSet<T> {
         return inst;
     }
     
-    private UniversalSet() {
-        super(0);
-    }
+    private UniversalSet() {}
     
     /**
      * The UniversalSet contains all possible objects
@@ -41,8 +42,28 @@ public class UniversalSet<T> extends HashSet<T> {
     }
     
     @Override
+    public Iterator<T> iterator() {
+        return Collections.emptyIterator();
+    }
+    
+    @Override
+    public Object[] toArray() {
+        return new Object[0];
+    }
+    
+    @Override
+    public <T1> T1[] toArray(T1[] a) {
+        return (T1[]) toArray();
+    }
+    
+    @Override
     public boolean add(T e) {
         return true;
+    }
+    
+    @Override
+    public int size() {
+        return 0;
     }
     
     /**
@@ -68,6 +89,11 @@ public class UniversalSet<T> extends HashSet<T> {
     @Override
     public boolean removeAll(Collection<?> c) {
         return false;
+    }
+    
+    @Override
+    public void clear() {
+        
     }
     
     @Override

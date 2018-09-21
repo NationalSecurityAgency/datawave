@@ -5,6 +5,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
 
 public class UniversalSetTest {
     
@@ -37,5 +39,16 @@ public class UniversalSetTest {
         
         universalSet.removeIf(x -> true);
         Assert.assertEquals(universalSet.size(), originalSize);
+
+        Iterator<String> iterator = universalSet.iterator();
+        Assert.assertFalse(iterator.hasNext());
+
+        Assert.assertArrayEquals(universalSet.toArray(), new String[0]);
+
+        Assert.assertArrayEquals(universalSet.toArray(new String[0]), new String[0]);
+
+        Assert.assertEquals(universalSet.size(), 0);
+
+        Assert.assertTrue(universalSet instanceof Set);
     }
 }
