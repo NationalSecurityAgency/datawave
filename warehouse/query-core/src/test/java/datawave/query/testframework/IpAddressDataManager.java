@@ -44,7 +44,7 @@ public class IpAddressDataManager extends AbstractDataManager {
             int count = 0;
             Set<RawData> ipData = new HashSet<>();
             while (null != (data = csv.readNext())) {
-                final RawData raw = new IpAddrRawData(data);
+                final RawData raw = new IpAddrRawData(datatype, data);
                 ipData.add(raw);
                 count++;
             }
@@ -73,8 +73,8 @@ public class IpAddressDataManager extends AbstractDataManager {
             }
         }
         
-        IpAddrRawData(final String fields[]) {
-            super(fields);
+        IpAddrRawData(final String datatype, final String fields[]) {
+            super(datatype, fields);
             Assert.assertEquals("ingest data field count is invalid", IpAddrField.headers().size(), fields.length);
         }
         

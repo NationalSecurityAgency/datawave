@@ -2,6 +2,7 @@ package datawave.query.testframework;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.type.IpAddressType;
+import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.input.reader.EventRecordReader;
 import org.apache.log4j.Logger;
@@ -172,7 +173,7 @@ public class IpAddressDataType extends AbstractDataTypeConfig {
     }
     
     /**
-     * Creates a cities datatype entry with all of the key/value configuration settings.
+     * Creates an ip address datatype entry with all of the key/value configuration settings.
      *
      * @param addr
      *            entry for ingest containing datatype and ingest file
@@ -188,10 +189,10 @@ public class IpAddressDataType extends AbstractDataTypeConfig {
     }
     
     /**
-     * Constructor for city/ingest files that are not defined in the class {@link CitiesDataType.CityEntry}.
+     * Constructor for ip address ingest files that are not defined in the class {@link IpAddressDataType.IpAddrEntry}.
      *
-     * @param addr
-     *            name of the city datatype
+     * @param datatype
+     *            name of the datatype
      * @param ingestFile
      *            ingest file path
      * @param config
@@ -201,15 +202,15 @@ public class IpAddressDataType extends AbstractDataTypeConfig {
      * @throws URISyntaxException
      *             ingest file name error
      */
-    public IpAddressDataType(final String addr, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
-        super(addr, ingestFile, config, manager);
+    public IpAddressDataType(final String datatype, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
+        super(datatype, ingestFile, config, manager);
         
         // NOTE: see super for default settings
         // set datatype settings
         this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_NAME, IpAddrField.START_DATE.name());
         this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_FORMAT, DATE_FIELD_FORMAT);
         
-        this.hConf.set(this.dataType + ".data.category.id.field", IpAddrField.EVENT_ID.name());
+        this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_ID_FIELD_NAME, IpAddrField.EVENT_ID.name());
         
         // set type for ip address
         this.hConf.set(this.dataType + "." + IpAddrField.PUBLIC_IP.name() + ".data.field.type.class", IpAddressType.class.getName());

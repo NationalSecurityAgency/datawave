@@ -42,4 +42,23 @@ public interface RawData {
      * @return true if multi-value
      */
     boolean isMultiValueField(String field);
+    
+    /**
+     * Indicates that the field should be tokenized. By default all fields are not tokenized. This method should be implemented for any datatype that contains a
+     * tokenized field.
+     * 
+     * @param field
+     *            name of the field
+     * @return true if field is marked for tokenization
+     */
+    boolean isTokenizedField(String field);
+    
+    /**
+     * Sets the key for the query field. The default value is the value of the field. Datatypes that use grouping must override this method.
+     * 
+     * @param field
+     *            field name
+     * @return key value to use for accessing the raw data (should be the query field name)
+     */
+    String getKey(String field);
 }

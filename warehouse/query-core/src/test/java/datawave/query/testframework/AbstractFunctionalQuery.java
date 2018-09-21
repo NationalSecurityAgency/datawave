@@ -9,20 +9,27 @@ import datawave.query.attributes.Document;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.CountingShardQueryLogic;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.content.ContentQueryTable;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
+import datawave.query.transformer.ShardQueryCountTableTransformer;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
+import datawave.webservice.query.runner.RunningQuery;
+import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -103,6 +110,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected Authorizations auths;
     protected String documentKey;
     protected ShardQueryLogic logic;
+    private CountingShardQueryLogic countLogic = new CountingShardQueryLogic();
     private QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
     
@@ -124,7 +132,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         
         this.logic.setFullTableScanEnabled(false);
         this.logic.setIncludeDataTypeAsField(true);
-        this.logic.setIncludeGroupingContext(true);
         
         this.logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         this.logic.setMarkingFunctions(new NoOp());
@@ -132,11 +139,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic.setQueryPlanner(new DefaultQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         
-        CountingShardQueryLogic countLogic = new CountingShardQueryLogic();
-        QueryTestTableHelper.configureLogicToScanTables(countLogic);
-        
+        // count logic
         countLogic.setIncludeDataTypeAsField(true);
-        countLogic.setIncludeGroupingContext(true);
         countLogic.setFullTableScanEnabled(false);
         
         countLogic.setDateIndexHelperFactory(new DateIndexHelperFactory());
@@ -145,12 +149,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         countLogic.setQueryPlanner(new DefaultQueryPlanner());
         countLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         
-        ContentQueryTable contentLogic = new ContentQueryTable();
-        contentLogic.setMaxResults(5000);
-        contentLogic.setMaxRowsToScan(25000);
-        contentLogic.setTableName(QueryTestTableHelper.SHARD_TABLE_NAME);
-        contentLogic.setMarkingFunctions(new NoOp());
-        contentLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        QueryTestTableHelper.configureLogicToScanTables(countLogic);
         
         // init must set auths
         testInit();
@@ -202,6 +201,35 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     // basic test execution methods
     
     /**
+     * Helper method for determining the expected results for a query.
+     * 
+     * @param query
+     *            query for evaluation
+     * @return expected results based upon the defined key for the datatype
+     */
+    protected Collection<String> getExpectedKeyResponse(final String query) {
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        return getExpectedKeyResponse(query, startEndDate[0], startEndDate[1]);
+    }
+    
+    /**
+     * Helper method for determining the expected results for a query.
+     * 
+     * @param query
+     *            query for evaluation
+     * @param start
+     *            start date for evaluation
+     * @param end
+     *            end date for evaluation
+     * @return expected results based upon the defined key for the datatype
+     */
+    protected Collection<String> getExpectedKeyResponse(final String query, final Date start, final Date end) {
+        QueryJexl jexl = new QueryJexl(query, this.dataManager, start, end);
+        final Set<Map<String,String>> allData = jexl.evaluate();
+        return this.dataManager.getKeys(allData);
+    }
+    
+    /**
      * Base test execution. This will use the first and last shard dates for the date range.
      *
      * @param query
@@ -212,34 +240,29 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      *             test error condition
      */
     protected void runTest(final String query, final String expectQuery) throws Exception {
-        runTest(query, expectQuery, Collections.EMPTY_MAP);
+        runTest(query, expectQuery, (Map<String,String>) Collections.EMPTY_MAP);
+    }
+    
+    protected void runTest(final String query, final Collection<String> expectResp) throws Exception {
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        runTestQuery(expectResp, query, startEndDate[0], startEndDate[1]);
     }
     
     protected void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate) throws Exception {
-        QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startDate, endDate);
-        final Set<Map<String,String>> allData = jexl.evaluate();
-        final Set<String> expected = this.dataManager.getKeys(allData);
-        runTestQuery(expected, expectQuery, startDate, endDate);
+        final Collection<String> expected = getExpectedKeyResponse(expectQuery, startDate, endDate);
+        runTestQuery(expected, query, startDate, endDate);
     }
     
     protected void runTest(final String query, final String expectQuery, final Map<String,String> options) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
-        
-        QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startEndDate[0], startEndDate[1]);
-        final Set<Map<String,String>> allData = jexl.evaluate();
-        final Set<String> expected = this.dataManager.getKeys(allData);
-        
+        final Collection<String> expected = getExpectedKeyResponse(expectQuery);
         runTestQuery(expected, query, startEndDate[0], startEndDate[1], options);
     }
     
     protected void runTest(final String query, final String expectQuery, final Map<String,String> options, final List<DocumentChecker> checkers)
                     throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
-        
-        QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startEndDate[0], startEndDate[1]);
-        final Set<Map<String,String>> allData = jexl.evaluate();
-        final Set<String> expected = this.dataManager.getKeys(allData);
-        
+        final Collection<String> expected = getExpectedKeyResponse(expectQuery);
         runTestQuery(expected, query, startEndDate[0], startEndDate[1], options, checkers);
     }
     
@@ -309,6 +332,71 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         GenericQueryConfiguration config = this.logic.initialize(connector, q, this.authSet);
         this.logic.setupQuery(config);
         testHarness.assertLogicResults(this.logic, expected, checkers);
+    }
+    
+    /**
+     * Executes test cases that use {@link CountingShardQueryLogic}.
+     * 
+     * @param query
+     *            query for evaluation
+     * @throws Exception
+     *             error condition during execution of query
+     */
+    protected void runCountTest(String query) throws Exception {
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        log.debug("  count query[" + query + "]  start(" + YMD_DateFormat.format(startEndDate[0]) + ")  end(" + YMD_DateFormat.format(startEndDate[1]) + ")");
+        
+        QueryImpl q = new QueryImpl();
+        q.setBeginDate(startEndDate[0]);
+        q.setEndDate(startEndDate[1]);
+        q.setQuery(query);
+        
+        q.setId(UUID.randomUUID());
+        q.setPagesize(Integer.MAX_VALUE);
+        q.setQueryAuthorizations(auths.toString());
+        
+        RunningQuery runner = new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, this.countLogic, q, "", principal,
+                        new QueryMetricFactoryImpl());
+        TransformIterator it = runner.getTransformIterator();
+        ShardQueryCountTableTransformer ctt = (ShardQueryCountTableTransformer) it.getTransformer();
+        EventQueryResponseBase resp = (EventQueryResponseBase) ctt.createResponse(runner.next());
+        
+        Collection<String> expect = getExpectedKeyResponse(query);
+        
+        List<EventBase> events = resp.getEvents();
+        Assert.assertEquals(1, events.size());
+        EventBase<?,?> event = events.get(0);
+        List<?> fields = event.getFields();
+        Assert.assertEquals(1, fields.size());
+        FieldBase<?> count = (FieldBase) fields.get(0);
+        String val = count.getValueString();
+        log.debug("expected count(" + expect.size() + ") actual count(" + val + ")");
+        Assert.assertEquals("" + expect.size(), val);
+    }
+    
+    /**
+     * Used by test cases that verify the configuration.
+     * 
+     * @param queryStr
+     *            query string for evaluation
+     * @return query configuration
+     * @throws Exception
+     *             error condition from query initialization
+     */
+    protected GenericQueryConfiguration setupConfig(final String queryStr) throws Exception {
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startEndDate[0]) + ")  end(" + YMD_DateFormat.format(startEndDate[1]) + ")");
+        
+        QueryImpl q = new QueryImpl();
+        q.setBeginDate(startEndDate[0]);
+        q.setEndDate(startEndDate[1]);
+        q.setQuery(queryStr);
+        
+        q.setId(UUID.randomUUID());
+        q.setPagesize(Integer.MAX_VALUE);
+        q.setQueryAuthorizations(auths.toString());
+        
+        return this.logic.initialize(connector, q, this.authSet);
     }
     
     /**

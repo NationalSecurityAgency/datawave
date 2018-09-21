@@ -42,7 +42,7 @@ public class CityDataManager extends AbstractDataManager {
             int count = 0;
             Set<RawData> cityData = new HashSet<>();
             while (null != (data = csv.readNext())) {
-                final RawData raw = new CityRawData(data);
+                final RawData raw = new CityRawData(datatype, data);
                 cityData.add(raw);
                 count++;
             }
@@ -86,11 +86,13 @@ public class CityDataManager extends AbstractDataManager {
         static {
             for (final CityField field : CityField.values()) {
                 metadata.put(field.name().toLowerCase(), field.getMetadata());
+                // add event datatype to metadata
+                metadata.put(BaseRawData.EVENT_DATATYPE, BaseRawData.DATATYPE_METADATA);
             }
         }
         
-        CityRawData(final String fields[]) {
-            super(fields);
+        CityRawData(final String datatype, final String fields[]) {
+            super(datatype, fields);
             Assert.assertEquals("city ingest data field count is invalid", CityField.headers().size(), fields.length);
         }
         

@@ -1,6 +1,7 @@
 package datawave.query.testframework;
 
 import datawave.data.normalizer.Normalizer;
+import org.apache.hadoop.conf.Configuration;
 
 import java.io.IOException;
 import java.net.URI;
@@ -14,6 +15,11 @@ import java.util.Set;
  * Defines the methods that are required to dynamically resolve and validate query results.
  */
 public interface RawDataManager {
+    
+    /**
+     * Provide the {@link BaseShardIdRange} values as the default shard date range.
+     */
+    ShardIdValues SHARD_ID_VALUES = new ShardIdValues(BaseShardIdRange.getShardDates());
     
     // and/or logical strings for use by unit tests
     String AND_OP = " and ";

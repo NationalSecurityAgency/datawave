@@ -1,7 +1,9 @@
 package datawave.query.testframework;
 
 import datawave.data.normalizer.Normalizer;
+import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
+import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
@@ -40,9 +42,15 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         london("input/london-cities.csv", "london"),
         rome("input/rome-cities.csv", "rome"),
         usa("input/usa-cities.csv", "usa"),
-        dup_usa("input/usa-cities-dup.csv", "usa-dup"),
+        dup_usa("input/usa-cities-dup.csv", "dup-usa"),
         italy("input/italy-cities.csv", "italy"),
+        // set of generic entries for london, paris, and rome
         generic("input/generic-cities.csv", "generic"),
+        // contains null values for state entries
+        nullState("input/null-city.csv", "null"),
+        // used to create a index hole when used in conjunction with generic
+        hole("input/index-hole.csv", "hole"),
+        // contains multivalue entries for city and state
         multivalue("input/multivalue-cities.csv", "multi");
         
         private final String ingestFile;
@@ -71,12 +79,10 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         /**
          * Returns the datatype for the entry.
          * 
-         * @param entry
-         *            instance of {@link CityField}
          * @return datatype for instance
          */
-        public static String getDataType(final CityEntry entry) {
-            return entry.cityName;
+        public String getDataType() {
+            return this.cityName;
         }
     }
     
@@ -166,6 +172,10 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         
         public Date getDate() {
             return this.date;
+        }
+        
+        public String getDateStr() {
+            return this.dateStr;
         }
     }
     
@@ -281,7 +291,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      *             unable to resolve ingest file
      */
     public CitiesDataType(final CityEntry city, final FieldConfig config) throws IOException, URISyntaxException {
-        this(city.name(), city.getIngestFile(), config);
+        this(city.getDataType(), city.getIngestFile(), config);
     }
     
     /**
@@ -301,14 +311,17 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         
         // NOTE: see super for default settings
         // set datatype settings
-        this.hConf.set(this.dataType + "." + CityField.NUM + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
+        this.hConf.set(this.dataType + "." + CityField.NUM.name() + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
         this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_NAME, CityField.START_DATE.name());
         this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_FORMAT, DATE_FIELD_FORMAT);
         
-        this.hConf.set(this.dataType + ".data.category.id.field", CityField.EVENT_ID.name());
+        this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_ID_FIELD_NAME, CityField.EVENT_ID.name());
         
         // fields
         this.hConf.set(this.dataType + CSVHelper.DATA_HEADER, String.join(",", CityField.headers()));
+        
+        // the CODE field type needs to be set for the index hole tests
+        this.hConf.set(this.dataType + "." + CityField.CODE.name() + BaseIngestHelper.FIELD_TYPE, LcNoDiacriticsType.class.getName());
         
         log.debug(this.toString());
     }

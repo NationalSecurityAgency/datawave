@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Base class for all raw data managers. Each manager is responsible for managing the data for one or more datatype.
+ * Base class for all raw data managers. Each manager is responsible for managing the data for one or more sets of datatype entries.
  */
 public abstract class AbstractDataManager implements RawDataManager {
     
@@ -27,7 +27,7 @@ public abstract class AbstractDataManager implements RawDataManager {
     /**
      * Defines the name of the shard id field.
      */
-    private final String shardId;
+    private final String shardDate;
     /**
      * Mapping of datatype to the raw entries that should match the datatype entries in Accumulo.
      */
@@ -38,21 +38,23 @@ public abstract class AbstractDataManager implements RawDataManager {
     protected final Map<String,Set<String>> rawDataIndex;
     
     /**
-     * Mapping of the field lowercase field name to the metadata associated with a field. Classes should populate the metadata list.
-     */
-    protected Map<String,BaseRawData.RawMetaData> metadata = new HashMap<>();
-    
-    /**
      *
      * @param keyField
      *            key field returned for results validation
+     * @param shardField
+     *            field name containing shard id
      */
     AbstractDataManager(final String keyField, final String shardField) {
         this.rawKeyField = keyField.toLowerCase();
         this.rawData = new HashMap<>();
         this.rawDataIndex = new HashMap<>();
-        this.shardId = shardField.toLowerCase();
+        this.shardDate = shardField.toLowerCase();
     }
+    
+    /**
+     * Mapping of the field lowercase field name to the metadata associated with a field. Classes should populate the metadata list.
+     */
+    protected Map<String,BaseRawData.RawMetaData> metadata = new HashMap<>();
     
     @Override
     public Iterator<Map<String,String>> rangeData(Date start, Date end) {
@@ -60,16 +62,12 @@ public abstract class AbstractDataManager implements RawDataManager {
         final Set<Map<String,String>> raw = new HashSet<>();
         for (final Map.Entry<String,Set<RawData>> entry : this.rawData.entrySet()) {
             for (final RawData rawEntry : entry.getValue()) {
-                String dateStr = rawEntry.getValue(this.shardId);
+                String dateStr = rawEntry.getValue(this.shardDate);
                 try {
                     Date shardDate = DataTypeHadoopConfig.YMD_DateFormat.parse(dateStr);
                     
                     if (0 >= start.compareTo(shardDate) && 0 <= end.compareTo(shardDate)) {
                         final Set<Map<String,String>> matchers = rawEntry.getMapping();
-                        int n = 0;
-                        for (Map<String,String> m : matchers) {
-                            n += m.size();
-                        }
                         raw.addAll(matchers);
                     }
                 } catch (ParseException pe) {
@@ -98,39 +96,39 @@ public abstract class AbstractDataManager implements RawDataManager {
         for (Set<String> val : this.rawDataIndex.values()) {
             fieldIndexes.addAll(val);
         }
-        boolean addOp = false;
+        // opStr will be empty until the first term is added
+        String opStr = "";
+        
         final StringBuilder buf = new StringBuilder("(");
         for (String field : fieldIndexes) {
-            if (addOp) {
-                buf.append(" ").append(op).append(" ");
-            } else {
-                addOp = true;
-            }
-            if (getNormalizer(field) instanceof NumberNormalizer) {
-                // remove quotes from phrase
-                String num = "";
-                String numPhrase = phrase;
-                int start = phrase.indexOf('\'');
-                if (0 <= start) {
-                    num = phrase.substring(start + 1);
-                    if (num.endsWith("'")) {
-                        num = num.substring(0, num.length() - 1);
+            // assume field is added
+            try {
+                if (getNormalizer(field) instanceof NumberNormalizer) {
+                    // remove quotes from phrase
+                    String num = "";
+                    String numPhrase = phrase;
+                    int start = phrase.indexOf('\'');
+                    if (0 <= start) {
+                        num = phrase.substring(start + 1);
+                        if (num.endsWith("'")) {
+                            num = num.substring(0, num.length() - 1);
+                        }
+                        numPhrase = phrase.substring(0, start) + num;
+                    } else {
+                        String[] split = phrase.split(" ");
+                        num = split[split.length - 1];
                     }
-                    numPhrase = phrase.substring(0, start) + num;
-                } else {
-                    String[] split = phrase.split(" ");
-                    num = split[split.length - 1];
-                }
-                try {
+                    
                     // if it can't be parsed as an int then ignore it
                     Integer.parseInt(num);
-                    buf.append(field).append(" ").append(numPhrase);
-                } catch (NumberFormatException nfe) {
-                    // don't add numeric field
-                    addOp = false;
+                    buf.append(opStr).append(field).append(" ").append(numPhrase);
+                } else {
+                    buf.append(opStr).append(field).append(" ").append(phrase);
                 }
-            } else {
-                buf.append(field).append(" ").append(phrase);
+                opStr = " " + op + " ";
+                
+            } catch (NumberFormatException nfe) {
+                // don't add numeric field if it is not a valid numeric
             }
         }
         
