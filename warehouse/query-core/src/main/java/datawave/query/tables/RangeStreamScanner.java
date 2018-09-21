@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.google.common.base.Throwables;
 import datawave.mr.bulk.RfileScanner;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.IndexMatch;
@@ -210,6 +211,10 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                     log.error(e);
                 }
             }
+            if (uncaughtExceptionHandler.getThrowable() != null) {
+                log.error("Exception discovererd on hasNext call", uncaughtExceptionHandler.getThrowable());
+                Throwables.propagate(uncaughtExceptionHandler.getThrowable());
+            }
         }
         
         return (null != currentEntry);
@@ -233,10 +238,14 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
      */
     @Override
     protected void run() throws Exception {
-        
-        findTop();
-        
-        flush();
+        try {
+            findTop();
+            
+            flush();
+        } catch (Exception e) {
+            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
+            Throwables.propagate(e);
+        }
     }
     
     protected int scannerInvariant(final Iterator<Entry<Key,Value>> iter) {

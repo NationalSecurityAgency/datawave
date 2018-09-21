@@ -36,7 +36,9 @@ import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.MoreExecutors;
 
 /**
- * 
+ * This will handles running a scan against a set of ranges. The actual scan is performed in a separate thread which places the results in a result queue. The
+ * result queue is polled in the actual next() and hasNext() calls. Note that the uncaughtExceptionHandler from the Query is used to pass exceptions up which
+ * will also fail the overall query if something happens. If this is not desired then a local handler should be set.
  */
 public class ScannerSession extends AbstractExecutionThreadService implements Iterator<Entry<Key,Value>> {
     
@@ -264,6 +266,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * (non-Javadoc)
      * 
      * @see java.util.Iterator#hasNext()
+     * 
+     * Note that this method needs to check the uncaught exception handler and propogate any set throwables.
      */
     @Override
     public boolean hasNext() {
@@ -353,6 +357,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * (non-Javadoc)
      * 
      * @see java.util.Iterator#next()
+     * 
+     * Note that this method needs to check the uncaught exception handler and propogate any set throwables.
      */
     @Override
     public Entry<Key,Value> next() {
@@ -552,6 +558,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * (non-Javadoc)
      * 
      * @see com.google.common.util.concurrent.AbstractExecutionThreadService#run()
+     * 
+     * Note that this method must set exceptions on the uncaughtExceptionHandler, otherwise any failures will be completed ignored/dropped.
      */
     @Override
     protected void run() throws Exception {
@@ -563,9 +571,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             
             flush();
         } catch (Exception e) {
-            if (uncaughtExceptionHandler != null) {
-                uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
-            }
+            uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), e);
             throw new RuntimeException(e);
         }
     }
