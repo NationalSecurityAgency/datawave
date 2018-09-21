@@ -3,12 +3,7 @@
 
     <property>
         <name>protobufedge.table.name</name>
-        <value>${PROTOBUF_EDGE_TABLE_NAME}</value>
-    </property>
-
-    <property>
-        <name>protobufedge.id.table.name</name>
-        <value>${PROTOBUF_ID_EDGE_TABLE_NAME}</value>
+        <value>${table.name.edge}</value>
     </property>
 
     <property>
@@ -17,13 +12,8 @@
     </property>
 
     <property>
-        <name>protobufedge.table.config.class</name>
+        <name>${table.name.edge}.table.config.class</name>
         <value>datawave.ingest.table.config.ProtobufEdgeTableConfigHelper</value>
-    </property>
-
-    <property>
-        <name>protobufedge.id.table.config.class</name>
-        <value>datawave.ingest.table.config.ProtobufEdgeIdTableConfigHelper</value>
     </property>
 
     <property>

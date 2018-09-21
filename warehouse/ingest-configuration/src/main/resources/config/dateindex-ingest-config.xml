@@ -5,7 +5,7 @@
 
 <property>
   <name>date.index.table.name</name>
-  <value>${DATE_INDEX_TABLE_NAME}</value>
+  <value>${table.name.dateIndex}</value>
 </property>
 
 <property>
@@ -14,7 +14,7 @@
 </property>
 
 <property>
-	<name>${DATE_INDEX_TABLE_NAME}.table.config.class</name>
+	<name>${table.name.dateIndex}.table.config.class</name>
 	<value>datawave.ingest.table.config.DateIndexTableConfigHelper</value>
 </property>
 
@@ -25,17 +25,17 @@
 </property>
 
 <property>
-    <name>partitioner.dedicated.dateIndex</name>
+    <name>partitioner.dedicated.${table.name.dateIndex}</name>
     <value>datawave.ingest.mapreduce.partition.LimitedKeyPartitioner</value>
 </property>
 
 <property>
     <name>date.index.num.shards</name>
-    <value>${NUM_DATE_INDEX_SHARDS}</value>
+    <value>${table.dateIndex.numShardsPerDay}</value>
 </property>
 
 <property>
-    <name>dateIndex.partition.limiter.max</name>
+    <name>${table.name.dateIndex}.partition.limiter.max</name>
     <value>3</value>
 </property>
 

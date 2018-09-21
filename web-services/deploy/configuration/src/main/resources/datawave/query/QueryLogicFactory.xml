@@ -220,7 +220,7 @@
         <!-- the scan time after which the buffer is flushed to a file. -->
         <property name="ivaratorCacheScanTimeoutMinutes" value="${query.max.call.time.minutes}" />
         <property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />
-        <property name="modelTableName" value="DatawaveMetadata" />
+        <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="querySyntaxParsers">
             <map key-type="java.lang.String" value-type="datawave.query.language.parser.QueryParser">
@@ -253,7 +253,7 @@
     <bean id="BaseCountQuery" parent="BaseEventQuery" class="datawave.query.tables.CountingShardQueryLogic" abstract="true" />
 
     <bean id="BaseModelEventQuery" parent="BaseEventQuery" abstract="true">
-        <property name="modelTableName" value="DatawaveMetadata" />
+        <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
     </bean>
 
@@ -303,7 +303,7 @@
         <property name="maxResults" value="-1" />
         <property name="maxRowsToScan" value="-1" />
         <property name="queryThreads" value="${shard.query.threads}" />
-        <property name="modelTableName" value="DatawaveMetadata" />
+        <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="maxUniqueValues" value="20000" />
         <property name="undisplayedVisibilities">
@@ -338,7 +338,7 @@
         <property name="maxResults" value="-1" />
         <property name="maxRowsToScan" value="-1" />
         <property name="queryThreads" value="${shard.query.threads}" />
-        <property name="modelTableName" value="DatawaveMetadata" />
+        <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="maxUniqueValues" value="20000" />
         <property name="undisplayedVisibilities">
@@ -409,14 +409,14 @@
 	<bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.metrics.QueryMetricQueryLogic">
 	    <property name="logicDescription" value="Retrieve query metrics based on the given search term(s)" />
 	    <property name="includeHierarchyFields" value="false" />
-	    <property name="modelTableName" value="${query.metrics.table.basename}_m" />
+	    <property name="modelTableName" value="${querymetrics.metadata.table.name}" />
 	    <property name="modelName" value="NONE" />
-	    <property name="tableName" value="${query.metrics.table.basename}_e" />
-        <property name="dateIndexTableName" value="${query.metrics.table.basename}_di" />
-	    <property name="metadataTableName" value="${query.metrics.table.basename}_m" />
+	    <property name="tableName" value="${querymetrics.shard.table.name}" />
+        <property name="dateIndexTableName" value="${querymetrics.dateindex.table.name}" />
+	    <property name="metadataTableName" value="${querymetrics.metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
-	    <property name="indexTableName" value="${query.metrics.table.basename}_i" />
-	    <property name="reverseIndexTableName" value="${query.metrics.table.basename}_r" />
+	    <property name="indexTableName" value="${querymetrics.index.table.name}" />
+	    <property name="reverseIndexTableName" value="${querymetrics.rindex.table.name}" />
 	    <property name="auditType" value="NONE" />
 	</bean>
 
@@ -435,7 +435,7 @@
         <property name="reverseIndexTableName" value="${rindex.table.name}" />
         <property name="maxResults" value="-1" />
         <property name="maxRowsToScan" value="-1" />
-        <property name="modelTableName" value="DatawaveMetadata" />
+        <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="metadataHelper" ref="metadataHelper" />
         <property name="fullTableScanEnabled" value="false" />
@@ -457,7 +457,7 @@
         <property name="reverseIndexTableName" value="${error.rindex.table.name}" />
         <property name="maxResults" value="-1" />
         <property name="maxRowsToScan" value="-1" />
-        <property name="modelTableName" value="DatawaveMetadata" />
+        <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="metadataHelper" ref="metadataHelper" />
         <property name="fullTableScanEnabled" value="false" />
@@ -576,7 +576,7 @@
         <property name="logicDescription" value="Use results of an EdgeQuery to obtain events/documents that created the given edge" />
         <property name="edgeQueryModel" ref="edgeEventQueryModel" />
         <property name="edgeModelName" value="DATAWAVE_EDGE" />
-        <property name="modelTableName" value="DatawaveMetadata" />
+        <property name="modelTableName" value="${metadata.table.name}" />
     </bean>
 
 </beans>

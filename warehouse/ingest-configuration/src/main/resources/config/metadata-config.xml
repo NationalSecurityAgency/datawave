@@ -18,7 +18,7 @@
 
 <property>
   <name>metadata.table.name</name>
-  <value>${METADATA_TABLE_NAME}</value>
+  <value>${table.name.metadata}</value>
 </property>
 
 <property>
@@ -27,18 +27,18 @@
 </property>
 
 <property>
-  <name>${METADATA_TABLE_NAME}.table.config.class</name>
+  <name>${table.name.metadata}.table.config.class</name>
   <value>datawave.ingest.table.config.MetadataTableConfigHelper</value>
 </property>
 
 <property>
   <name>metadata.loaddates.enabled</name>
-  <value>${LOADDATES_TABLE_ENABLED}</value>
+  <value>${table.loadDates.enabled}</value>
 </property>
 
 <property>
   <name>metadata.loaddates.table.name</name>
-  <value>${LOADDATES_TABLE_NAME}</value>
+  <value>${table.name.loadDates}</value>
 </property>
 
 <property>
@@ -53,7 +53,7 @@
 </property>
 
 <property>
-  <name>LoadDates.table.config.class</name>
+  <name>${table.name.loadDates}.table.config.class</name>
   <value>datawave.ingest.table.config.LoadDateTableConfigHelper</value>
 </property>
 

@@ -10,7 +10,7 @@
 
 <property>
   <name>ingest.tables.timestamp_to_day</name>
-  <value>${SHARD_INDEX_TABLE_NAME},${SHARD_REVERSE_INDEX_TABLE_NAME},${EDGE_TABLE_NAME},protobufedge,shardTermDictionary</value>
+  <value>${table.name.shardIndex},${table.name.shardReverseIndex},${table.name.edge}</value>
 </property>
 
 <property>
@@ -56,7 +56,7 @@
 
 <property>
   <name>ingest.value.dedup.by.timestamp</name>
-  <value>${EDGE_TABLE_NAME}</value>
+  <value>${table.name.edge}</value>
   <description>
      These parameters determine how and if deduping will be done
 
@@ -68,7 +68,7 @@
 
 <property>
   <name>ingest.value.dedup.aggregation</name>
-  <value>${SHARD_TABLE_NAME},${SHARD_INDEX_TABLE_NAME},${SHARD_REVERSE_INDEX_TABLE_NAME},${METADATA_TABLE_NAME},${DATE_INDEX_TABLE_NAME}</value>
+  <value>${table.name.shard},${table.name.shardIndex}},${table.name.shardReverseIndex},${table.name.metadata},${table.name.dateIndex}</value>
   <description>
      These parameters determine how and if deduping will be done
 

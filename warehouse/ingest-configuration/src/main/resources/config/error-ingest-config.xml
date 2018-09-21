@@ -2,18 +2,13 @@
 <configuration>
 
     <property>
-        <name>error.table.name</name>
-        <value>${PROCESSING_ERRORS_TABLE_NAME}</value>
-    </property>
-
-    <property>
         <name>error.table.loader.priority</name>
         <value>30</value>
     </property>
 
     <property>
         <name>error.shard.table.name</name>
-        <value>${ERROR_SHARD_TABLE_NAME}</value>
+        <value>${table.name.errors.shard}</value>
     </property>
 
     <property>
@@ -23,7 +18,7 @@
 
     <property>
         <name>error.shard.global.index.table.name</name>
-        <value>${ERROR_SHARD_INDEX_TABLE_NAME}</value>
+        <value>${table.name.errors.shardIndex}</value>
     </property>
 
     <property>
@@ -33,7 +28,7 @@
 
     <property>
         <name>error.shard.global.rindex.table.name</name>
-        <value>${ERROR_SHARD_REVERSE_INDEX_TABLE_NAME}</value>
+        <value>${table.name.errors.shardReverseIndex}</value>
     </property>
 
     <property>
@@ -55,7 +50,7 @@
 
     <property>
         <name>error.metadata.table.name</name>
-        <value>${ERROR_METADATA_TABLE_NAME}</value>
+        <value>${table.name.errors.metadata}</value>
     </property>
 
     <property>
@@ -69,22 +64,22 @@
     </property>
 
     <property>
-        <name>${ERROR_SHARD_TABLE_NAME}.table.config.class</name>
+        <name>${table.name.errors.shard}.table.config.class</name>
         <value>datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
     </property>
 
     <property>
-        <name>${ERROR_SHARD_INDEX_TABLE_NAME}.table.config.class</name>
+        <name>${table.name.errors.shardIndex}.table.config.class</name>
         <value>datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
     </property>
 
     <property>
-        <name>${ERROR_SHARD_REVERSE_INDEX_TABLE_NAME}.table.config.class</name>
+        <name>${table.name.errors.shardReverseIndex}.table.config.class</name>
         <value>datawave.ingest.table.config.ErrorShardTableConfigHelper</value>
     </property>
 
     <property>
-        <name>${ERROR_METADATA_TABLE_NAME}.table.config.class</name>
+        <name>${table.name.errors.metadata}.table.config.class</name>
         <value>datawave.ingest.table.config.ErrorMetadataTableConfigHelper</value>
     </property>
 
@@ -139,7 +134,7 @@
         <value>true</value>
     </property>
     <property>
-        <name>partitioner.category.member.${ERROR_SHARD_TABLE_NAME}</name>
+        <name>partitioner.category.member.${table.name.errors.shard}</name>
         <value>shardedTables</value>
     </property>
 </configuration>

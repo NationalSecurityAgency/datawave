@@ -5,18 +5,18 @@
 
 <property>
   <name>num.shards</name>
-  <value>${NUM_SHARDS}</value>
+  <value>${table.shard.numShardsPerDay}</value>
 </property>
 
 <property>
   <name>sharded.table.names</name>
-  <value>${SHARD_TABLE_NAME},${KNOWLEDGE_SHARD_TABLE_NAME},${ERROR_SHARD_TABLE_NAME}</value>
+  <value>${table.name.shard},${table.name.errors.shard}</value>
   <description>Comma-separated list of tables that need to pull splits from accumulo</description>
 </property>
 
 <property>
   <name>shard.table.name</name>
-  <value>${SHARD_TABLE_NAME}</value>
+  <value>${table.name.shard}</value>
 </property>
 
 <property>
@@ -25,7 +25,7 @@
 </property>
 
 <property>
-	<name>${SHARD_TABLE_NAME}.table.config.class</name>
+	<name>${table.name.shard}.table.config.class</name>
 	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 </property>
 
@@ -37,7 +37,7 @@
 
 <property>
   <name>shard.global.index.table.name</name>
-  <value>${SHARD_INDEX_TABLE_NAME}</value>
+  <value>${table.name.shardIndex}</value>
 </property>
 
 <property>
@@ -46,18 +46,13 @@
 </property>
 
 <property>
-	<name>${SHARD_INDEX_TABLE_NAME}.table.config.class</name>
-	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
-</property>
-
-<property>
-	<name>${SHARD_INDEX_TABLE_NAME}.table.config.class</name>
+	<name>${table.name.shardIndex}.table.config.class</name>
 	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 </property>
 
 <property>
   <name>shard.global.rindex.table.name</name>
-  <value>${SHARD_REVERSE_INDEX_TABLE_NAME}</value>
+  <value>${table.name.shardReverseIndex}</value>
 </property>
 
 <property>
@@ -66,7 +61,7 @@
 </property>
 
 <property>
-	<name>${SHARD_REVERSE_INDEX_TABLE_NAME}.table.config.class</name>
+	<name>${table.name.shardReverseIndex}.table.config.class</name>
 	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 </property>
 
@@ -91,7 +86,7 @@
     <value>datawave.ingest.mapreduce.partition.BalancedShardPartitioner</value>
 </property>
 <property>
-    <name>partitioner.category.member.${SHARD_TABLE_NAME}</name>
+    <name>partitioner.category.member.${table.name.shard}</name>
     <value>shardedTables</value>
 </property>
 </configuration>

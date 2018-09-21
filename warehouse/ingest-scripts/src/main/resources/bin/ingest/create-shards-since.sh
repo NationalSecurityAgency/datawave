@@ -45,7 +45,7 @@ else
     count=$2
 fi
 
-TABLES="${SHARD_TABLE_NAME},${ERROR_SHARD_TABLE_NAME},${QUERY_METRICS_BASE_NAME}_e"
+TABLES="${SHARD_TABLE_NAME},${ERROR_SHARD_TABLE_NAME},${QUERYMETRICS_SHARD_TABLE_NAME}"
 if [[ -n "$3" ]]; then
     # user-specified set of tables to generate shard splits on
     # must be comma-delimited, no spaces
