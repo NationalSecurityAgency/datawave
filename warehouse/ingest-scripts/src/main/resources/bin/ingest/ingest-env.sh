@@ -10,7 +10,7 @@ fi
 
 . ../system/header.sh
 
-. ./tables-env.sh
+. ../ingest/tables-env.sh
 
 # regex matching changed since bash 3.1....ensure we are forward compatible
 shopt -s compat31 > /dev/null 2>&1
