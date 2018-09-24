@@ -1,5 +1,25 @@
 package datawave.webservice.results.cached;
 
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.AbstractRunningQuery;
+import datawave.webservice.query.cache.QueryMetricFactory;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.cachedresults.CacheableLogic;
+import datawave.webservice.query.cachedresults.CacheableQueryRow;
+import datawave.webservice.query.cachedresults.CacheableQueryRowReader;
+import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import javax.sql.DataSource;
+import javax.sql.rowset.CachedRowSet;
+import javax.sql.rowset.RowSetProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -21,30 +41,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
-
-import javax.sql.DataSource;
-import javax.sql.rowset.CachedRowSet;
-import javax.sql.rowset.RowSetProvider;
-
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.AbstractRunningQuery;
-import datawave.webservice.query.cache.QueryMetricFactory;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.cachedresults.CacheableLogic;
-import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.cachedresults.CacheableQueryRowReader;
-import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 @SuppressWarnings("restriction")
 public class CachedRunningQuery extends AbstractRunningQuery {

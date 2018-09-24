@@ -1,11 +1,10 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
 import org.apache.commons.jexl2.JexlArithmetic;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.Set;
 
 public class MultiMapArithmetic extends JexlArithmetic {
     

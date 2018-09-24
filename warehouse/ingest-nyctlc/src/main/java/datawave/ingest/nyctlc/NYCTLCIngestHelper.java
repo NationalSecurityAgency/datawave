@@ -6,7 +6,6 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -14,9 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
-import static datawave.ingest.data.config.CSVHelper.DATA_HEADER_ENABLED;
-import static datawave.ingest.data.config.CSVHelper.DATA_SEP;
-import static datawave.ingest.data.config.CSVHelper.PROCESS_EXTRA_FIELDS;
+import static datawave.ingest.data.config.CSVHelper.*;
 
 /**
  * This is a specialized version of the CSV Ingest Helper intended to be used with the NYC Taxi &amp; Limousine Commission dataset. This class is responsible

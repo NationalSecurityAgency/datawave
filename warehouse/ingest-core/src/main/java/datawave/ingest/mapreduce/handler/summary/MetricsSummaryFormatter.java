@@ -1,23 +1,19 @@
 package datawave.ingest.mapreduce.handler.summary;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Multimap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
 
 public class MetricsSummaryFormatter {
     

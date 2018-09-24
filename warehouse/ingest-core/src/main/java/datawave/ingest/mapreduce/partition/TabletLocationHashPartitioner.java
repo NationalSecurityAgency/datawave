@@ -3,7 +3,6 @@ package datawave.ingest.mapreduce.partition;
 import java.io.IOException;
 import java.util.*;
 
-import datawave.ingest.mapreduce.handler.shard.*;
 import datawave.ingest.mapreduce.job.*;
 
 import org.apache.accumulo.core.data.*;

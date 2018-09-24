@@ -48,7 +48,7 @@ public class EventMetadataTest {
         helper = new TestBaseIngestHelper(createEventFields()) {
             @Override
             public List<datawave.data.type.Type<?>> getDataTypes(String fieldName) {
-                return Arrays.<datawave.data.type.Type<?>> asList(new IdentityDataType());
+                return Arrays.asList(new IdentityDataType());
             }
         };
     }
