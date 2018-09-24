@@ -29,13 +29,22 @@ public abstract class AbstractDataManager implements RawDataManager {
      */
     private final String shardDate;
     /**
-     * Mapping of datatype to the raw entries that should match the datatype entries in Accumulo.
+     * Mapping of datatype to the raw entries that should match the datatype entries in Accumulo. This data will be used to determine the expected results.
      */
     protected final Map<String,Set<RawData>> rawData;
     /**
      * Mapping of datatype to the indexes for the datatype.
      */
     protected final Map<String,Set<String>> rawDataIndex;
+    /**
+     * Configured shard id values for computing range requests.
+     */
+    protected ShardIdValues shardValues;
+    
+    /**
+     * Mapping of the lowercase field name to the metadata associated with a field. Classes should populate the metadata list.
+     */
+    protected Map<String,RawMetaData> metadata;
     
     /**
      *
@@ -45,16 +54,21 @@ public abstract class AbstractDataManager implements RawDataManager {
      *            field name containing shard id
      */
     AbstractDataManager(final String keyField, final String shardField) {
+        this(keyField, shardField, null, SHARD_ID_VALUES);
+    }
+    
+    AbstractDataManager(final String keyField, final String shardField, final Map<String,RawMetaData> metaDataMap) {
+        this(keyField, shardField, metaDataMap, SHARD_ID_VALUES);
+    }
+    
+    AbstractDataManager(final String keyField, final String shardField, final Map<String,RawMetaData> metaDataMap, final ShardIdValues shardInfo) {
         this.rawKeyField = keyField.toLowerCase();
         this.rawData = new HashMap<>();
         this.rawDataIndex = new HashMap<>();
         this.shardDate = shardField.toLowerCase();
+        this.metadata = metaDataMap;
+        this.shardValues = shardInfo;
     }
-    
-    /**
-     * Mapping of the field lowercase field name to the metadata associated with a field. Classes should populate the metadata list.
-     */
-    protected Map<String,BaseRawData.RawMetaData> metadata = new HashMap<>();
     
     @Override
     public Iterator<Map<String,String>> rangeData(Date start, Date end) {
@@ -81,8 +95,18 @@ public abstract class AbstractDataManager implements RawDataManager {
     }
     
     @Override
+    public Date[] getRandomStartEndDate() {
+        return this.shardValues.getStartEndDates(true);
+    }
+    
+    @Override
+    public Date[] getShardStartEndDate() {
+        return this.shardValues.getStartEndDates(false);
+    }
+    
+    @Override
     public Normalizer getNormalizer(String field) {
-        return metadata.containsKey(field.toLowerCase()) ? metadata.get(field.toLowerCase()).normalizer : null;
+        return this.metadata.containsKey(field.toLowerCase()) ? this.metadata.get(field.toLowerCase()).normalizer : null;
     }
     
     @Override

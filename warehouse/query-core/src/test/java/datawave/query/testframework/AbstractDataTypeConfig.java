@@ -114,6 +114,22 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         this(dt, ingestFile, CSV, config, manager);
     }
     
+    /**
+     * @param dt
+     *            datatype name
+     * @param ingestFile
+     *            ingest file name
+     * @param config
+     *            field config for accumulo
+     * @param format
+     *            file type containing test data
+     * @param manager
+     *            data manager for data
+     * @throws IOException
+     *             unable to load ingest file
+     * @throws URISyntaxException
+     *             ingest file uri conversion error
+     */
     protected AbstractDataTypeConfig(final String dt, final String ingestFile, final FileType format, final FieldConfig config, final RawDataManager manager)
                     throws IOException, URISyntaxException {
         log.info("---------  loading datatype (" + dt + ") ingest file(" + ingestFile + ") ---------");
@@ -190,6 +206,17 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         }
     }
     
+    /**
+     * Returns the default list of shards from the class {@link BaseShardIdRange}. Test data types that use a different set of shard ids should override this
+     * method.
+     * 
+     * @return list of shard id values
+     */
+    @Override
+    public Collection<String> getShardIds() {
+        return BaseShardIdRange.getShardDates();
+    }
+    
     @Override
     public Configuration getHadoopConfiguration() {
         return this.hConf;
@@ -207,6 +234,6 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
     
     @Override
     public String toString() {
-        return "AbstractDataTypeConfig{" + "dataType='" + dataType + '\'' + ", ingestPath=" + ingestPath + ", fieldConfig=" + fieldConfig + '}';
+        return this.getClass().getSimpleName() + "{" + "dataType='" + dataType + '\'' + ", ingestPath=" + ingestPath + ", fieldConfig=" + fieldConfig + '}';
     }
 }
