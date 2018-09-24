@@ -12,7 +12,6 @@ import java.io.Reader;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -52,16 +51,6 @@ public class IpAddressDataManager extends AbstractDataManager {
             this.rawDataIndex.put(datatype, indexes);
             log.info("ip address test data(" + file + ") count(" + count + ")");
         }
-    }
-    
-    @Override
-    public Date[] getRandomStartEndDate() {
-        return IpAddressDataType.IpAddrShardId.getStartEndDates(true);
-    }
-    
-    @Override
-    public Date[] getShardStartEndDate() {
-        return IpAddressDataType.IpAddrShardId.getStartEndDates(false);
     }
     
     static class IpAddrRawData extends BaseRawData {
