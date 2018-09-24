@@ -2,11 +2,9 @@ package datawave.webservice.edgedictionary;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.ResponseInterceptor;
-import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
@@ -24,9 +22,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import java.security.Principal;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 

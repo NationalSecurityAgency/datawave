@@ -20,7 +20,6 @@ import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.ModificationConfigurationResponse;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
@@ -44,11 +43,9 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-
 import java.security.Principal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;

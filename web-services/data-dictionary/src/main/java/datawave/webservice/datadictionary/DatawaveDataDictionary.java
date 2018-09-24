@@ -1,18 +1,16 @@
 package datawave.webservice.datadictionary;
 
+import com.google.common.collect.Multimap;
+import datawave.webservice.query.result.metadata.MetadataFieldBase;
+import datawave.webservice.results.datadictionary.DescriptionBase;
+import datawave.webservice.results.datadictionary.DictionaryFieldBase;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.security.Authorizations;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import datawave.webservice.query.result.metadata.MetadataFieldBase;
-import datawave.webservice.results.datadictionary.DescriptionBase;
-import datawave.webservice.results.datadictionary.DictionaryFieldBase;
-
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.security.Authorizations;
-
-import com.google.common.collect.Multimap;
 
 /**
  * 

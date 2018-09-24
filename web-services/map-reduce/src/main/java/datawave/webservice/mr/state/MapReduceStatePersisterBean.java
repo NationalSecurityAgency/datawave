@@ -1,7 +1,5 @@
 package datawave.webservice.mr.state;
 
-import java.util.LinkedList;
-import java.util.Queue;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
@@ -50,9 +48,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
