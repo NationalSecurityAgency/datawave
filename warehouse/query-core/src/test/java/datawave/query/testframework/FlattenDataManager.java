@@ -67,7 +67,7 @@ public class FlattenDataManager extends AbstractDataManager {
         private final FlattenData flattenData;
         
         FlattenRawData(final String datatype, Map<String,Collection<NormalizedContentInterface>> fields, final FlattenData data) {
-            super();
+            super(datatype);
             Assert.assertEquals("flatten ingest data field count is invalid", data.headers().size(), fields.size());
             this.flattenData = data;
             processNormalizedContent(datatype, fields);

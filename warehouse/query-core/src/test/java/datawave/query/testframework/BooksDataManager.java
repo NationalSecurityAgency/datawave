@@ -18,9 +18,7 @@ import java.io.Reader;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -116,10 +114,10 @@ public class BooksDataManager extends AbstractDataManager {
         this.accumuloConn = conn;
         this.fieldIndex = indexes;
         this.cfgData = data;
-        BaseRawData.RawMetaData shardMetdata = new BaseRawData.RawMetaData(this.cfgData.getDateField(), Normalizer.LC_NO_DIACRITICS_NORMALIZER, false);
+        RawMetaData shardMetdata = new RawMetaData(this.cfgData.getDateField(), Normalizer.LC_NO_DIACRITICS_NORMALIZER, false);
         this.metadata = new HashMap<>();
         this.metadata.put(this.cfgData.getDateField().toLowerCase(), shardMetdata);
-        for (Map.Entry<String,BaseRawData.RawMetaData> field : data.getMetadata().entrySet()) {
+        for (Map.Entry<String,RawMetaData> field : data.getMetadata().entrySet()) {
             this.metadata.put(field.getKey(), field.getValue());
         }
         this.rawDataIndex.put(datatype, indexes.getIndexFields());
@@ -194,20 +192,20 @@ public class BooksDataManager extends AbstractDataManager {
     
     private static class BooksRawData extends BaseRawData {
         
-        private final Map<String,BaseRawData.RawMetaData> metadata;
+        private final Map<String,RawMetaData> metadata;
         private List<String> headers = new ArrayList<>();
         
         // only shard date to be used for test data
         
-        BooksRawData(String datatype, List<String> baseHeaders, Map<String,BaseRawData.RawMetaData> metaDataMap, Map<String,Collection<String>> rawData) {
-            super();
+        BooksRawData(String datatype, List<String> baseHeaders, Map<String,RawMetaData> metaDataMap, Map<String,Collection<String>> rawData) {
+            super(datatype);
             this.metadata = metaDataMap;
             this.headers = baseHeaders;
             processMapFormat(datatype, rawData);
         }
         
-        BooksRawData(String datatype, List<String> baseHeaders, Map<String,BaseRawData.RawMetaData> metaDataMap, String[] fields) {
-            super();
+        BooksRawData(String datatype, List<String> baseHeaders, Map<String,RawMetaData> metaDataMap, String[] fields) {
+            super(datatype);
             this.metadata = metaDataMap;
             this.headers = baseHeaders;
             processFields(datatype, fields);

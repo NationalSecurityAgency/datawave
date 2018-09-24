@@ -11,11 +11,6 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +29,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
     private static final Random rVal = new Random(System.currentTimeMillis());
     
     /**
-     * List of cities that are used for testing. Each enumeration will contain the path of the data ingest file.
+     * Contains predefined names for the cities datatype. Each enumeration will contain the path of the data ingest file.
      */
     public enum CityEntry {
         // default provided cities with datatype name
@@ -66,116 +61,12 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         }
         
         /**
-         * Returns a random city name.
-         *
-         * @return random city name
-         */
-        public static String getRandomCity() {
-            final CityEntry[] cities = CityEntry.values();
-            final int idx = rVal.nextInt(cities.length);
-            return cities[idx].cityName;
-        }
-        
-        /**
          * Returns the datatype for the entry.
          * 
          * @return datatype for instance
          */
         public String getDataType() {
             return this.cityName;
-        }
-    }
-    
-    /**
-     * Defines the valid dates that are used for shard ids. All test data should specify one of the shard id dates.
-     */
-    public enum CityShardId {
-        // list of shards for testing
-        DATE_2015_0404("20150404"),
-        DATE_2015_0505("20150505"),
-        DATE_2015_0606("20150606"),
-        DATE_2015_0707("20150707"),
-        DATE_2015_0808("20150808"),
-        DATE_2015_0909("20150909"),
-        DATE_2015_1010("20151010"),
-        DATE_2015_1111("20151111");
-        
-        static Set<String> getShardRange(final Date start, final Date end) {
-            final Set<String> shards = new HashSet<>();
-            for (final CityShardId id : CityShardId.values()) {
-                if (0 >= start.compareTo(id.date) && 0 <= end.compareTo(id.date)) {
-                    shards.add(id.dateStr);
-                }
-            }
-            
-            return shards;
-        }
-        
-        static final List<Date> sortedDate = new ArrayList<>();
-        
-        static Date[] getStartEndDates(final boolean random) {
-            // use double check locking
-            if (sortedDate.isEmpty()) {
-                synchronized (sortedDate) {
-                    if (sortedDate.isEmpty()) {
-                        final List<Date> dates = new ArrayList<>();
-                        for (final CityShardId id : CityShardId.values()) {
-                            dates.add(id.date);
-                        }
-                        Collections.sort(dates);
-                        sortedDate.addAll(dates);
-                    }
-                }
-            }
-            
-            Date[] startEndDate = new Date[2];
-            if (random) {
-                int s = rVal.nextInt(sortedDate.size());
-                startEndDate[0] = sortedDate.get(s);
-                int remaining = sortedDate.size() - s;
-                startEndDate[1] = startEndDate[0];
-                if (0 < remaining) {
-                    int e = rVal.nextInt(sortedDate.size() - s);
-                    startEndDate[1] = sortedDate.get(s + e);
-                }
-            } else {
-                startEndDate[0] = sortedDate.get(0);
-                startEndDate[1] = sortedDate.get(sortedDate.size() - 1);
-            }
-            return startEndDate;
-        }
-        
-        private final String dateStr;
-        private final Date date;
-        
-        CityShardId(final String str) {
-            this.dateStr = str;
-            try {
-                this.date = YMD_DateFormat.parse(str);
-            } catch (ParseException pe) {
-                throw new AssertionError("invalid date string(" + str + ")");
-            }
-        }
-        
-        /**
-         * Returns the accumulo shard id string representation.
-         *
-         * @return accumulo shard id
-         */
-        String getShardId() {
-            return this.dateStr + "_0";
-        }
-        
-        static Collection<String> cityShards() {
-            return Stream.of(CityShardId.values()).map(e -> e.getShardId()).collect(Collectors.toList());
-        }
-        
-        public Date getDate() {
-            return this.date;
-        }
-        
-        public String getDateStr() {
-            return this.dateStr;
         }
     }
     
@@ -224,7 +115,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         }
         
         /**
-         * Returns a random set of fields, with o without {@link #EVENT_ID}.
+         * Returns a random set of fields, with or without {@link #EVENT_ID}.
          *
          * @param withEventId
          *            when true, include the event id
@@ -248,16 +139,16 @@ public class CitiesDataType extends AbstractDataTypeConfig {
             return fields;
         }
         
-        private static final Map<String,BaseRawData.RawMetaData> metadataMapping = new HashMap<>();
+        private static final Map<String,RawMetaData> metadataMapping = new HashMap<>();
         
-        private BaseRawData.RawMetaData metadata;
+        private RawMetaData metadata;
         
         CityField(final Normalizer<?> normalizer) {
             this(normalizer, false);
         }
         
         CityField(final Normalizer<?> normalizer, final boolean isMulti) {
-            this.metadata = new BaseRawData.RawMetaData(this.name(), normalizer, isMulti);
+            this.metadata = new RawMetaData(this.name(), normalizer, isMulti);
         }
         
         /**
@@ -265,7 +156,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
          *
          * @return metadata
          */
-        public BaseRawData.RawMetaData getMetadata() {
+        public RawMetaData getMetadata() {
             return metadata;
         }
     }
@@ -304,7 +195,9 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      * @param config
      *            hadoop field configuration
      * @throws IOException
+     *             error loading test data
      * @throws URISyntaxException
+     *             invalid test data file
      */
     public CitiesDataType(final String city, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
         super(city, ingestFile, config, cityManager);
@@ -327,12 +220,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
     }
     
     @Override
-    public Collection<String> getShardIds() {
-        return CityShardId.cityShards();
-    }
-    
-    @Override
     public String toString() {
-        return "CitiesDataType{" + super.toString() + "}";
+        return this.getClass().getSimpleName() + "{" + super.toString() + "}";
     }
 }

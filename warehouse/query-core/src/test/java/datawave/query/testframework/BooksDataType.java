@@ -6,12 +6,10 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,10 +26,10 @@ public class BooksDataType extends AbstractDataTypeConfig {
     private static final Logger log = Logger.getLogger(BooksDataType.class);
     
     /**
-     * List of books that are used for testing.
+     * Predefined instances for the books datatype.
      */
     public enum BooksEntry {
-        // default provided books datatypes
+        // default provided books datatypes - use the name() as the datatype
         tech("input/java-books.csv");
         
         private final String ingestFile;
@@ -51,6 +49,57 @@ public class BooksDataType extends AbstractDataTypeConfig {
         
         public String getIngestFile() {
             return this.ingestFile;
+        }
+    }
+    
+    /**
+     * Defines the fields for the books datatype.
+     */
+    public enum BooksField {
+        // field names with normalizer
+        BOOKS_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        TITLE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        AUTHOR(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true),
+        NUM_PAGES(Normalizer.NUMBER_NORMALIZER),
+        SUB_TITLE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        DATE_PUBLISHED(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        LANGUAGE(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true),
+        ISBN_13(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        ISBN_10(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
+        
+        private static final List<String> headers;
+        static {
+            headers = Stream.of(BooksField.values()).map(e -> e.name()).collect(Collectors.toList());
+        }
+        
+        public static List<String> getHeaders() {
+            return headers;
+        }
+        
+        private static final Map<String,RawMetaData> fieldMetadata;
+        static {
+            fieldMetadata = new HashMap<>();
+            for (BooksField field : BooksField.values()) {
+                fieldMetadata.put(field.name().toLowerCase(), field.metadata);
+            }
+        }
+        
+        public static Map<String,RawMetaData> getFieldsMetadata() {
+            return fieldMetadata;
+        }
+        
+        private final RawMetaData metadata;
+        
+        BooksField(Normalizer<?> norm) {
+            this(norm, false);
+        }
+        
+        BooksField(Normalizer<?> norm, boolean multi) {
+            this.metadata = new RawMetaData(this.name(), norm, multi);
+        }
+        
+        public RawMetaData getMetadata() {
+            return this.metadata;
         }
     }
     
@@ -90,58 +139,8 @@ public class BooksDataType extends AbstractDataTypeConfig {
     }
     
     @Override
-    public Collection<String> getShardIds() {
-        return BaseShardIdRange.getShardDates();
-    }
-    
-    @Override
     public String toString() {
-        return "BooksDataType{" + super.toString() + "}";
+        return this.getClass().getSimpleName() + "{" + super.toString() + "}";
     }
     
-    public enum BooksField {
-        // field names with normalizer
-        BOOKS_DATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        TITLE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        AUTHOR(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true),
-        NUM_PAGES(Normalizer.NUMBER_NORMALIZER),
-        SUB_TITLE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        DATE_PUBLISHED(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        LANGUAGE(Normalizer.LC_NO_DIACRITICS_NORMALIZER, true),
-        ISBN_13(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        ISBN_10(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
-        
-        private static final List<String> headers;
-        static {
-            headers = Stream.of(BooksField.values()).map(e -> e.name()).collect(Collectors.toList());
-        }
-        
-        public static List<String> getHeaders() {
-            return headers;
-        }
-        
-        private static final Map<String,BaseRawData.RawMetaData> metadataMapping = new HashMap<>();
-        static {
-            for (BooksField field : BooksField.values()) {
-                BaseRawData.RawMetaData data = new BaseRawData.RawMetaData(field.name(), field.normalizer, field.multiValue);
-                metadataMapping.put(field.name().toLowerCase(), data);
-            }
-        }
-        
-        public static Map<String,BaseRawData.RawMetaData> getMetadata() {
-            return metadataMapping;
-        }
-        
-        private final Normalizer normalizer;
-        private final boolean multiValue;
-        
-        BooksField(Normalizer<?> norm) {
-            this(norm, false);
-        }
-        
-        BooksField(Normalizer<?> norm, boolean isMulti) {
-            this.normalizer = norm;
-            this.multiValue = isMulti;
-        }
-    }
 }

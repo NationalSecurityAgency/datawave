@@ -30,8 +30,7 @@ public class CityDataManager extends AbstractDataManager {
     private static final Logger log = Logger.getLogger(CityDataManager.class);
     
     public CityDataManager() {
-        super(CityField.EVENT_ID.name(), CityField.START_DATE.name());
-        this.metadata = CityRawData.metadata;
+        super(CityField.EVENT_ID.name(), CityField.START_DATE.name(), CityRawData.metadata);
     }
     
     @Override
@@ -57,19 +56,9 @@ public class CityDataManager extends AbstractDataManager {
         return CityField.headers();
     }
     
-    @Override
-    public Date[] getRandomStartEndDate() {
-        return CitiesDataType.CityShardId.getStartEndDates(true);
-    }
-    
-    @Override
-    public Date[] getShardStartEndDate() {
-        return CitiesDataType.CityShardId.getStartEndDates(false);
-    }
-    
     private Set<RawData> getRawData(final Set<RawData> rawData, final Date start, final Date end) {
         final Set<RawData> data = new HashSet<>(this.rawData.size());
-        final Set<String> shards = CitiesDataType.CityShardId.getShardRange(start, end);
+        final Set<String> shards = this.shardValues.getShardRange(start, end);
         for (final RawData raw : rawData) {
             String id = raw.getValue(CityField.START_DATE.name());
             if (shards.contains(id)) {
@@ -86,9 +75,9 @@ public class CityDataManager extends AbstractDataManager {
         static {
             for (final CityField field : CityField.values()) {
                 metadata.put(field.name().toLowerCase(), field.getMetadata());
-                // add event datatype to metadata
-                metadata.put(BaseRawData.EVENT_DATATYPE, BaseRawData.DATATYPE_METADATA);
             }
+            // add event datatype to metadata
+            metadata.put(BaseRawData.EVENT_DATATYPE, BaseRawData.DATATYPE_METADATA);
         }
         
         CityRawData(final String datatype, final String fields[]) {

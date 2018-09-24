@@ -41,7 +41,7 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
             Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
             FieldConfig indexes = new BooksFieldIndex();
             ConfigData cfgData = new ConfigData(BooksField.BOOKS_DATE.name(), BooksField.ISBN_13.name(), BooksField.getHeaders(),
-                            BooksDataType.getVisibility(), BooksField.getMetadata());
+                            BooksDataType.getVisibility(), BooksField.getFieldsMetadata());
             
             DataTypeHadoopConfig books = new BooksDataType(BooksEntry.tech.getDataType(), BooksEntry.tech.getIngestFile(), indexes, cfgData);
             dataTypes.add(books);

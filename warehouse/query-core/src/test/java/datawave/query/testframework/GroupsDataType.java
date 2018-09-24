@@ -14,20 +14,22 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Datatype instance for testing groups. Groups contain entries that define multiple fields with the same prefix.
+ */
 public class GroupsDataType extends AbstractDataTypeConfig {
     
     private static final Logger log = Logger.getLogger(GroupsDataType.class);
     
+    /**
+     * Predefined groups datatype test entries.
+     */
     public enum GroupsEntry {
         // predefined ip address data
         cities("input/city-groups.csv", "groups");
@@ -49,65 +51,8 @@ public class GroupsDataType extends AbstractDataTypeConfig {
         }
     }
     
-    public enum GroupsShardId {
-        // list of shards for testing
-        DATE_2015_0404("20150404"),
-        DATE_2015_0505("20150505"),
-        DATE_2015_0606("20150606"),
-        DATE_2015_0707("20150707"),
-        DATE_2015_0808("20150808"),
-        DATE_2015_0909("20150909"),
-        DATE_2015_1010("20151010"),
-        DATE_2015_1111("20151111");
-        
-        private final String dateStr;
-        private final Date date;
-        
-        static final Object sync = new Object();
-        static ShardInfo shardInfo;
-        
-        static Date[] getStartEndDates(final boolean random) {
-            // use double check locking
-            if (null == shardInfo) {
-                synchronized (sync) {
-                    if (null == shardInfo) {
-                        final List<Date> dates = new ArrayList<>();
-                        for (final GroupsShardId id : GroupsShardId.values()) {
-                            dates.add(id.date);
-                        }
-                        shardInfo = new ShardInfo(dates);
-                    }
-                }
-            }
-            
-            return shardInfo.getStartEndDates(random);
-        }
-        
-        GroupsShardId(final String str) {
-            this.dateStr = str;
-            try {
-                this.date = YMD_DateFormat.parse(str);
-            } catch (ParseException pe) {
-                throw new AssertionError("invalid date string(" + str + ")");
-            }
-        }
-        
-        /**
-         * Returns the accumulo shard id string representation.
-         *
-         * @return accumulo shard id
-         */
-        String getShardId() {
-            return this.dateStr + "_0";
-        }
-        
-        static Collection<String> shards() {
-            return Stream.of(GroupsDataType.GroupsShardId.values()).map(e -> e.getShardId()).collect(Collectors.toList());
-        }
-    }
-    
     /**
-     * Grouping is handled differently as it will consist of a header field and a query field. The event entries in Accumulo are based upon the header value.
+     * Groups are handled differently as it will consist of a header field and a query field. The event entries in Accumulo are based upon the header value.
      * Indexes and queries are based upon the query value.
      */
     public enum GroupField {
@@ -124,7 +69,6 @@ public class GroupsDataType extends AbstractDataTypeConfig {
         TOKENS("TOKENS", Normalizer.LC_NO_DIACRITICS_NORMALIZER);
         
         private static final List<String> headers;
-        
         static {
             headers = Stream.of(GroupField.values()).map(e -> e.hdrField).collect(Collectors.toList());
         }
@@ -133,7 +77,18 @@ public class GroupsDataType extends AbstractDataTypeConfig {
             return headers;
         }
         
-        private static final Map<String,BaseRawData.RawMetaData> metadataMapping = new HashMap<>();
+        private static final Map<String,RawMetaData> metadataMapping = new HashMap<>();
+        static {
+            for (GroupField field : GroupField.values()) {
+                metadataMapping.put(field.getQueryField().toLowerCase(), field.metadata);
+            }
+            // add event datatype to metadata
+            metadataMapping.put(BaseRawData.EVENT_DATATYPE.toLowerCase(), BaseRawData.DATATYPE_METADATA);
+        }
+        
+        public static Map<String,RawMetaData> getMetadata() {
+            return metadataMapping;
+        }
         
         /**
          * Retrieves the query field based upon the header field name.
@@ -163,7 +118,7 @@ public class GroupsDataType extends AbstractDataTypeConfig {
             return TOKENS.getHdrField().equalsIgnoreCase(header);
         }
         
-        private BaseRawData.RawMetaData metadata;
+        private RawMetaData metadata;
         private final String hdrField;
         private final String queryField;
         
@@ -174,7 +129,7 @@ public class GroupsDataType extends AbstractDataTypeConfig {
         GroupField(final String headerField, final String queryField, final Normalizer<?> normalizer) {
             this.hdrField = headerField;
             this.queryField = queryField;
-            this.metadata = new BaseRawData.RawMetaData(this.name().toLowerCase(), normalizer, false);
+            this.metadata = new RawMetaData(this.queryField.toLowerCase(), normalizer, false);
         }
         
         public String getQueryField() {
@@ -183,15 +138,6 @@ public class GroupsDataType extends AbstractDataTypeConfig {
         
         String getHdrField() {
             return this.hdrField;
-        }
-        
-        /**
-         * Returns the metadata for this field.
-         *
-         * @return metadata
-         */
-        public BaseRawData.RawMetaData getMetadata() {
-            return metadata;
         }
     }
     
@@ -260,12 +206,7 @@ public class GroupsDataType extends AbstractDataTypeConfig {
     }
     
     @Override
-    public Collection<String> getShardIds() {
-        return GroupsDataType.GroupsShardId.shards();
-    }
-    
-    @Override
     public String toString() {
-        return "GroupsDataType{" + super.toString() + "}";
+        return this.getClass().getSimpleName() + "{" + super.toString() + "}";
     }
 }

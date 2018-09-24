@@ -11,8 +11,6 @@ import java.io.Reader;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +21,7 @@ public class GroupsDataManager extends AbstractDataManager {
     private static final Logger log = Logger.getLogger(GroupsDataManager.class);
     
     public GroupsDataManager() {
-        super(GroupField.EVENT_ID.name(), GroupField.START_DATE.name());
-        this.metadata = GroupRawData.metadata;
+        super(GroupField.EVENT_ID.name(), GroupField.START_DATE.name(), GroupField.getMetadata());
     }
     
     @Override
@@ -40,7 +37,7 @@ public class GroupsDataManager extends AbstractDataManager {
             int count = 0;
             Set<RawData> entries = new HashSet<>();
             while (null != (data = csv.readNext())) {
-                final RawData raw = new GroupRawData(datatype, data);
+                final RawData raw = new GroupRawData(datatype, data, GroupField.getMetadata());
                 entries.add(raw);
                 count++;
             }
@@ -50,35 +47,17 @@ public class GroupsDataManager extends AbstractDataManager {
         }
     }
     
-    @Override
-    public Date[] getRandomStartEndDate() {
-        return GroupsDataType.GroupsShardId.getStartEndDates(true);
-    }
-    
-    @Override
-    public Date[] getShardStartEndDate() {
-        return GroupsDataType.GroupsShardId.getStartEndDates(false);
-    }
-    
     static class GroupRawData extends BaseRawData {
         
-        private static final Map<String,RawMetaData> metadata = new HashMap<>();
+        // private final Map<String,BaseRawData.RawMetaData> metadata;
         
-        static {
-            log.debug("groups metadata");
-            for (final GroupField field : GroupField.values()) {
-                // NOTE: define the metadata by the query field
-                metadata.put(field.getQueryField().toLowerCase(), field.getMetadata());
-                log.trace("field header(" + field.getQueryField() + " data(" + (field.getMetadata()).toString() + ")");
-            }
-            // add event datatype to metadata
-            metadata.put(BaseRawData.EVENT_DATATYPE.toLowerCase(), BaseRawData.DATATYPE_METADATA);
-            log.trace("field header(" + BaseRawData.EVENT_DATATYPE + " data(" + (BaseRawData.DATATYPE_METADATA).toString() + ")");
-        }
+        private static final Map<String,RawMetaData> metadata = GroupField.getMetadata();
         
-        GroupRawData(final String datatype, final String fields[]) {
+        GroupRawData(final String datatype, final String fields[], Map<String,RawMetaData> metaDataMap) {
             super(datatype, fields);
             Assert.assertEquals("group ingest data field count is invalid", GroupField.headers().size(), fields.length);
+            //TODO fix
+            // this.metadata = metaDataMap;
         }
         
         @Override
