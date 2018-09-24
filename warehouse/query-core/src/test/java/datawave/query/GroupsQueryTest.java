@@ -39,13 +39,8 @@ public class GroupsQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
-    public void test() {
-        log.debug("run test");
-    }
-    
-    @Test
-    public void testSimple() throws Exception {
-        log.debug("------  testSimple  ------");
+    public void testSame() throws Exception {
+        log.debug("------  testSame  ------");
         
         String chico = "'chiCO'";
         String chicoQuery = GroupField.CITY_EAST.getQueryField() + EQ_OP + chico;
@@ -55,7 +50,7 @@ public class GroupsQueryTest extends AbstractFunctionalQuery {
         String doverQuery = GroupField.CITY_EAST.getQueryField() + EQ_OP + dover;
         Collection<String> doverResp = getExpectedKeyResponse(doverQuery);
         
-        // mix/match responses
+        // mix/match responses - should be the same
         runTest(doverQuery, chicoResp);
         runTest(chicoQuery, doverResp);
     }

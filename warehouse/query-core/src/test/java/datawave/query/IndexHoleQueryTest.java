@@ -178,7 +178,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         
         @Override
         public String toString() {
-            return "HoleFields{" + super.toString() + "}";
+            return this.getClass().getSimpleName() + "{" + super.toString() + "}";
         }
     }
 }
