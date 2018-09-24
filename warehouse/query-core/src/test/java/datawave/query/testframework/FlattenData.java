@@ -27,7 +27,7 @@ public class FlattenData extends ConfigData {
      *            mapping of header field to metadata
      */
     public FlattenData(final String dateFieldName, final String eventName, final JsonObjectFlattener.FlattenMode flattenMode, final List<String> headerValues,
-                    final Map<String,BaseRawData.RawMetaData> metadata) {
+                    final Map<String,RawMetaData> metadata) {
         super(dateFieldName, eventName, headerValues, metadata);
         this.mode = flattenMode;
     }

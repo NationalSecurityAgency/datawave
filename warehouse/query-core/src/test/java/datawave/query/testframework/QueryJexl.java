@@ -449,11 +449,11 @@ public class QueryJexl {
     
     static class TestRawData extends BaseRawData {
         
-        static final Map<String,BaseRawData.RawMetaData> metadata = new HashMap<>();
+        static final Map<String,RawMetaData> metadata = new HashMap<>();
         
         static {
             for (final TestHeader field : TestHeader.values()) {
-                final BaseRawData.RawMetaData meta = new BaseRawData.RawMetaData(field.name(), field.getNormalizer(), true);
+                final RawMetaData meta = new RawMetaData(field.name(), field.getNormalizer(), true);
                 metadata.put(field.name(), meta);
             }
         }

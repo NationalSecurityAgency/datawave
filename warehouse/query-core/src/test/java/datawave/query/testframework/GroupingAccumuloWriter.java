@@ -11,7 +11,6 @@ import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
-import datawave.query.testframework.BaseRawData.RawMetaData;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;

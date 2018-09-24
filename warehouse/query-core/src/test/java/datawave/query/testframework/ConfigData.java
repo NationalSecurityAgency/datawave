@@ -14,7 +14,7 @@ public class ConfigData {
     private final String eventField;
     private final List<String> headers;
     private final ColumnVisibility defaultVisibility;
-    private final Map<String,BaseRawData.RawMetaData> metadata;
+    private final Map<String,RawMetaData> metadata;
     
     /**
      * Creates a POJO datatype configuration, without a default column visibility.
@@ -28,7 +28,7 @@ public class ConfigData {
      * @param metadata
      *            mapping of header field to metadata
      */
-    public ConfigData(final String dateFieldName, final String eventName, final List<String> headerValues, final Map<String,BaseRawData.RawMetaData> metadata) {
+    public ConfigData(final String dateFieldName, final String eventName, final List<String> headerValues, final Map<String,RawMetaData> metadata) {
         this(dateFieldName, eventName, headerValues, null, metadata);
     }
     
@@ -47,7 +47,7 @@ public class ConfigData {
      *            mapping of header field to metadata
      */
     public ConfigData(final String dateFieldName, final String eventName, final List<String> headerValues, final ColumnVisibility visibility,
-                    final Map<String,BaseRawData.RawMetaData> metadata) {
+                    final Map<String,RawMetaData> metadata) {
         this.eventField = eventName;
         this.dateField = dateFieldName;
         this.headers = headerValues;
@@ -71,7 +71,7 @@ public class ConfigData {
         return defaultVisibility;
     }
     
-    Map<String,BaseRawData.RawMetaData> getMetadata() {
+    Map<String,RawMetaData> getMetadata() {
         return this.metadata;
     }
 }

@@ -5,7 +5,6 @@ import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
-import datawave.query.testframework.BaseRawData;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileLoaderFactory;
@@ -13,6 +12,7 @@ import datawave.query.testframework.FlattenData;
 import datawave.query.testframework.FlattenDataType;
 import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
 import datawave.query.testframework.RawDataManager;
+import datawave.query.testframework.RawMetaData;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -159,11 +159,11 @@ public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
             headers = Stream.of(GroupedField.values()).map(e -> e.name()).collect(Collectors.toList());
         }
         
-        static final Map<String,BaseRawData.RawMetaData> metadataMapping = new HashMap<>();
+        static final Map<String,RawMetaData> metadataMapping = new HashMap<>();
         
         static {
             for (GroupedField field : GroupedField.values()) {
-                BaseRawData.RawMetaData data = new BaseRawData.RawMetaData(field.name(), field.normalizer, false);
+                RawMetaData data = new RawMetaData(field.name(), field.normalizer, false);
                 metadataMapping.put(field.name().toLowerCase(), data);
             }
         }

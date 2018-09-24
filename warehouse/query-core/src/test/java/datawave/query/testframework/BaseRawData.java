@@ -34,8 +34,19 @@ public abstract class BaseRawData implements RawData {
     /** mapping of field to data for each entry */
     protected final Map<String,Set<String>> entry = new HashMap<>();
     
+    protected final Map<String,RawMetaData> metaDataMap = new HashMap<>();
+    
     // needed for some extending classes
-    public BaseRawData() {}
+    public BaseRawData(final String datatype) {
+        // this.metaDataMap = new HashMap<>();
+        this.metaDataMap.put(EVENT_DATATYPE, DATATYPE_METADATA);
+        
+        // add event datatype entry to event
+        // this will be used when filtering by datatype
+        final Set<String> eventDt = new HashSet<>();
+        eventDt.add(DATATYPE_METADATA.normalizer.normalize(datatype));
+        this.entry.put(EVENT_DATATYPE, eventDt);
+    }
     
     /**
      * Creates a POJO for a raw data entry. The values in the <code>fields</code> must match the corresponding entries specified in the <code>headers</code>.
@@ -45,15 +56,16 @@ public abstract class BaseRawData implements RawData {
      *            raw data fields
      */
     public BaseRawData(final String datatype, final String[] fields) {
+        this(datatype);
         processFields(datatype, fields);
     }
     
     public void processFields(final String datatype, final String[] fields) {
         // add event datatype entry to event
         // this will be used when filtering by datatype
-        final Set<String> eventDt = new HashSet<>();
-        eventDt.add(DATATYPE_METADATA.normalizer.normalize(datatype));
-        this.entry.put(EVENT_DATATYPE, eventDt);
+        // final Set<String> eventDt = new HashSet<>();
+        // eventDt.add(DATATYPE_METADATA.normalizer.normalize(datatype));
+        // this.entry.put(EVENT_DATATYPE, eventDt);
         
         // add each header event
         final List<String> hdrs = getHeaders();
@@ -238,27 +250,4 @@ public abstract class BaseRawData implements RawData {
         return this.entry.hashCode();
     }
     
-    /**
-     * Defines the metadata for an individual field.
-     */
-    public static class RawMetaData {
-        final String name;
-        final Normalizer normalizer;
-        final boolean multiValue;
-        
-        public RawMetaData(final String fieldName, final Normalizer norm, final boolean multi) {
-            this.name = fieldName;
-            this.normalizer = norm;
-            this.multiValue = multi;
-        }
-        
-        @Override
-        public String toString() {
-            StringBuilder buf = new StringBuilder(this.getClass().getSimpleName());
-            buf.append(": name(").append(this.name).append(") normailizer(");
-            buf.append(this.normalizer.getClass().getSimpleName()).append(") multi(");
-            buf.append(this.multiValue).append(")");
-            return buf.toString();
-        }
-    }
 }

@@ -33,4 +33,13 @@ public enum BaseShardIdRange {
     public static List<String> getShardDates() {
         return SHARD_IDS;
     }
+    
+    /**
+     * Returns the shard id date.
+     * 
+     * @return shard date
+     */
+    public String getDateStr() {
+        return this.shardId;
+    }
 }
