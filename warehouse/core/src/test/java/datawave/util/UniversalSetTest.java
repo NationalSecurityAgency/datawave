@@ -22,22 +22,22 @@ public class UniversalSetTest {
         Assert.assertTrue(universalSet.containsAll(Sets.newHashSet("foo", "bar", "baz")));
         
         int originalSize = universalSet.size();
-
+        
         Assert.assertFalse(universalSet.remove(this));
         Assert.assertEquals(universalSet.size(), originalSize);
         
         Assert.assertFalse(universalSet.removeAll(Sets.newHashSet(this)));
         Assert.assertEquals(universalSet.size(), originalSize);
-
+        
         Assert.assertFalse(universalSet.add("trouble-maker"));
         Assert.assertEquals(universalSet.size(), originalSize);
-
+        
         Assert.assertFalse(universalSet.addAll(Sets.newHashSet("foo", "bar", "baz")));
         Assert.assertEquals(universalSet.size(), originalSize);
-
+        
         Assert.assertFalse(universalSet.retainAll(Sets.newHashSet("foo", "bar", "baz")));
         Assert.assertEquals(universalSet.size(), originalSize);
-
+        
         Assert.assertFalse(universalSet.removeIf(x -> true));
         Assert.assertEquals(universalSet.size(), originalSize);
         

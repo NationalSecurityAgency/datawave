@@ -487,9 +487,11 @@ function reloadDataWaveTableCache() {
     # Note that, by design, the reload endpoint invocation below is asynchronous, so there will still be at least a slight
     # delay before the refresh takes effect
 
-    local cachedTableNames=( "DatawaveMetadata QueryMetrics_m errorMetadata" )
+    DW_CACHED_TABLE_NAMES=${DW_CACHED_TABLE_NAMES:-"datawave.metadata datawave.queryMetrics_m datawave.error_m"}
 
-    info "Reloading metadata table cache for the following tables: ${cachedTableNames}"
+    local cachedTableNames=( "${DW_CACHED_TABLE_NAMES}" )
+
+    info "Reloading metadata table cache for the following tables: ${DW_CACHED_TABLE_NAMES}"
 
     configureUserIdentity
 
