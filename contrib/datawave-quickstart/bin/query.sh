@@ -489,7 +489,7 @@ function reloadDataWaveTableCache() {
 
     DW_CACHED_TABLE_NAMES=${DW_CACHED_TABLE_NAMES:-"datawave.metadata datawave.queryMetrics_m datawave.error_m"}
 
-    local cachedTableNames=( "${DW_CACHED_TABLE_NAMES}" )
+    local cachedTableNames=( ${DW_CACHED_TABLE_NAMES} )
 
     info "Reloading metadata table cache for the following tables: ${DW_CACHED_TABLE_NAMES}"
 
