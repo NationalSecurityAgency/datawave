@@ -22,6 +22,21 @@ public class ShardIdValues {
     // list of shards for testing
     private static final Random rVal = new Random(System.currentTimeMillis());
     
+    /**
+     * Converts the shard id date into a {@link Date} object.
+     * 
+     * @param shard
+     *            shard date
+     * @return Date representation of the shard date
+     */
+    public static Date convertShardToDate(final String shard) {
+        try {
+            return AbstractDataTypeConfig.YMD_DateFormat.parse(shard);
+        } catch (ParseException pe) {
+            throw new AssertionError("invalid date string(" + shard + ")");
+        }
+    }
+    
     private final Map<String,Date> shardIds;
     private final List<Date> sortedDate = new ArrayList<>();
     
@@ -34,12 +49,8 @@ public class ShardIdValues {
         Assert.assertFalse("there must be at least one shard id value", shardDate.isEmpty());
         this.shardIds = new HashMap<>();
         for (String shard : shardDate) {
-            try {
-                Date date = AbstractDataTypeConfig.YMD_DateFormat.parse(shard);
-                this.shardIds.put(shard, date);
-            } catch (ParseException pe) {
-                throw new AssertionError("invalid date string(" + shard + ")");
-            }
+            Date date = convertShardToDate(shard);
+            this.shardIds.put(shard, date);
         }
         
         this.sortedDate.addAll(this.shardIds.values());
@@ -91,21 +102,4 @@ public class ShardIdValues {
         }
         return startEndDate;
     }
-    
-    /**
-     * Returns the accumulo shard id string representation.
-     *
-     * @return accumulo shard id
-     */
-    // String getShardId() {
-    // return this.dateStr + "_0";
-    // }
-    //
-    // public Date getDate() {
-    // return this.date;
-    // }
-    //
-    // public String getDateStr() {
-    // return this.dateStr;
-    // }
 }
