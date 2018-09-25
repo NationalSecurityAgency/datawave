@@ -32,6 +32,7 @@ public class GenerateSplitsFile {
             cl = new BasicParser().parse(options, args);
             if (cl.hasOption("cd")) {
                 configDirectory = cl.getOptionValue("cd");
+                log.info("Set configDirectory to " + configDirectory);
             } else {
                 HelpFormatter helpFormatter = new HelpFormatter();
                 helpFormatter.printHelp("Generate Splits", options);
@@ -39,12 +40,15 @@ public class GenerateSplitsFile {
             }
             if (cl.hasOption("sp")) {
                 conf.set(MetadataTableSplits.SPLITS_CACHE_DIR, cl.getOptionValue("sp"));
+                log.info("Set " + MetadataTableSplits.SPLITS_CACHE_DIR + " to " + cl.getOptionValue("sp"));
             }
             if (cl.hasOption("cs")) {
                 configSuffix = cl.getOptionValue("cs");
             } else {
                 configSuffix = "config.xml";
             }
+            log.info("Set configSuffix to " + configSuffix);
+            
             ConfigurationFileHelper.setConfigurationFromFiles(conf, configDirectory, configSuffix);
             MetadataTableSplits splitsFile = new MetadataTableSplits(conf);
             splitsFile.update();

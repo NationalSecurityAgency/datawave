@@ -130,7 +130,10 @@ public class MetadataTableSplits {
         Path tmpSplitsFile = null;
         try {
             do {
-                tmpSplitsFile = new Path(this.splitsPath.getParent(), SPLITS_CACHE_FILE + "." + count);
+                Path parentDirectory = this.splitsPath.getParent();
+                String fileName = SPLITS_CACHE_FILE + "." + count;
+                log.info("Attempting to create " + fileName + " under " + parentDirectory.toString());
+                tmpSplitsFile = new Path(parentDirectory, fileName);
                 count++;
             } while (!fs.createNewFile(tmpSplitsFile));
         } catch (IOException ex) {
@@ -184,6 +187,7 @@ public class MetadataTableSplits {
                 log.info("updating splits file");
                 createCacheFile(fs, tmpSplitsFile);
             } else {
+                log.info("Deleting " + tmpSplitsFile.toString());
                 fs.delete(tmpSplitsFile, false);
             }
         } catch (IOException | AccumuloException | AccumuloSecurityException | TableNotFoundException ex) {
@@ -208,9 +212,11 @@ public class MetadataTableSplits {
                 this.splits = new HashMap<>();
                 // gather the splits and write to PrintStream
                 for (String table : tableNames) {
+                    log.info("Retrieving splits for " + table);
                     List<Text> splits = new ArrayList<>(tops.listSplits(table));
                     this.splits.put(table, splits);
                     splitsPerTable.put(table, splits.size());
+                    log.info("Writing " + splits.size() + " splits.");
                     for (Text split : splits) {
                         out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
                     }
