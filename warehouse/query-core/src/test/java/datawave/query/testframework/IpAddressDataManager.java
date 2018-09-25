@@ -55,13 +55,8 @@ public class IpAddressDataManager extends AbstractDataManager {
     static class IpAddrRawData extends BaseRawData {
         
         IpAddrRawData(final String datatype, final String fields[]) {
-            super(datatype, fields, IpAddrField.getFieldsMetadata());
+            super(datatype, fields, IpAddrField.headers(), IpAddrField.getFieldsMetadata());
             Assert.assertEquals("ingest data field count is invalid", IpAddrField.headers().size(), fields.length);
-        }
-        
-        @Override
-        protected List<String> getHeaders() {
-            return IpAddrField.headers();
         }
     }
 }

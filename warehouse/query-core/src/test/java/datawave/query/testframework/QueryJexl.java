@@ -459,12 +459,7 @@ public class QueryJexl {
         }
         
         TestRawData(final String fields[]) {
-            super(TestManager.dataType, fields, metadata);
-        }
-        
-        @Override
-        protected List<String> getHeaders() {
-            return TestHeader.headers();
+            super(TestManager.dataType, fields, TestHeader.headers(), metadata);
         }
         
         @Override

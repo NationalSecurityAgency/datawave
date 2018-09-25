@@ -77,15 +77,10 @@ public class FlattenDataManager extends AbstractDataManager {
          *            flatten configuration info
          */
         FlattenRawData(final String datatype, Map<String,Collection<NormalizedContentInterface>> fields, final FlattenData data) {
-            super(datatype, data.getMetadata());
+            super(datatype, data.headers(), data.getMetadata());
             Assert.assertEquals("flatten ingest data field count is invalid", data.headers().size(), fields.size());
             this.flattenData = data;
             processNormalizedContent(datatype, fields);
-        }
-        
-        @Override
-        protected List<String> getHeaders() {
-            return this.flattenData.headers();
         }
         
         @Override

@@ -140,8 +140,6 @@ public class BooksDataManager extends AbstractDataManager {
      */
     private static class BooksRawData extends BaseRawData {
         
-        private List<String> headers = new ArrayList<>();
-        
         /**
          * This allows a test to loadstatic test data in the form of a map of field name to values.
          * 
@@ -155,8 +153,7 @@ public class BooksDataManager extends AbstractDataManager {
          *            mapping of field to a collection of values
          */
         BooksRawData(String datatype, List<String> baseHeaders, Map<String,RawMetaData> metaData, Map<String,Collection<String>> rawData) {
-            super(datatype, metaData);
-            this.headers = baseHeaders;
+            super(datatype, baseHeaders, metaData);
             processMapFormat(datatype, rawData);
         }
         
@@ -173,14 +170,8 @@ public class BooksDataManager extends AbstractDataManager {
          *            list of values for fields
          */
         BooksRawData(String datatype, List<String> baseHeaders, Map<String,RawMetaData> metaData, String[] fields) {
-            super(datatype, metaData);
-            this.headers = baseHeaders;
+            super(datatype, baseHeaders, metaData);
             processFields(datatype, fields);
-        }
-        
-        @Override
-        protected List<String> getHeaders() {
-            return this.headers;
         }
         
         /**

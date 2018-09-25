@@ -74,13 +74,8 @@ public class CityDataManager extends AbstractDataManager {
      */
     private static class CityRawData extends BaseRawData {
         CityRawData(final String datatype, final String fields[]) {
-            super(datatype, fields, CityField.getFieldsMetadata());
+            super(datatype, fields, CityField.headers(), CityField.getFieldsMetadata());
             Assert.assertEquals("city ingest data field count is invalid", CityField.headers().size(), fields.length);
-        }
-        
-        @Override
-        protected List<String> getHeaders() {
-            return CityField.headers();
         }
     }
 }

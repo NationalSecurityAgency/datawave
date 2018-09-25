@@ -35,16 +35,20 @@ public abstract class BaseRawData implements RawData {
     protected final Map<String,Set<String>> event = new HashMap<>();
     
     protected final Map<String,RawMetaData> metaDataMap;
+    protected final List<String> headers;
     
     /**
      *
      * @param datatype
      *            name of datatype
+     * @param fieldHeaders
+     *            ordered list of field names
      * @param metadata
      *            field metadata
      */
-    public BaseRawData(final String datatype, final Map<String,RawMetaData> metadata) {
+    public BaseRawData(final String datatype, final List<String> fieldHeaders, final Map<String,RawMetaData> metadata) {
         this.metaDataMap = metadata;
+        this.headers = fieldHeaders;
         // may already have event datatype added
         if (!this.metaDataMap.containsKey(EVENT_DATATYPE)) {
             this.metaDataMap.put(EVENT_DATATYPE, DATATYPE_METADATA);
@@ -63,9 +67,13 @@ public abstract class BaseRawData implements RawData {
      *
      * @param fields
      *            raw data fields
-     */
-    public BaseRawData(final String datatype, final String[] fields, final Map<String,RawMetaData> metadata) {
-        this(datatype, metadata);
+     * @param fieldHeaders
+     *            ordered list of field names
+     * @param metadata
+     *            field metadata
+     * */
+    public BaseRawData(final String datatype, final String[] fields, final List<String> fieldHeaders, final Map<String,RawMetaData> metadata) {
+        this(datatype, fieldHeaders, metadata);
         processFields(datatype, fields);
     }
     
@@ -119,12 +127,12 @@ public abstract class BaseRawData implements RawData {
     }
     
     /**
-     * Converts data into a raw data event.
+     * Converts data from a {@link NormalizedContentInterface} into a raw data entry.
      * 
      * @param datatype
      *            datatype for data
      * @param fields
-     *            mapping of fields to a collection of values
+     *            mapping of fields to a collection of normalized values
      */
     protected void processNormalizedContent(final String datatype, Map<String,Collection<NormalizedContentInterface>> fields) {
         for (Map.Entry<String,Collection<NormalizedContentInterface>> fld : fields.entrySet()) {
@@ -141,6 +149,14 @@ public abstract class BaseRawData implements RawData {
         }
     }
     
+    /**
+     * Converts a map of fields to values to a raw entry.
+     * 
+     * @param datatype
+     *            datatype name
+     * @param data
+     *            map of field to values
+     */
     void processMapFormat(final String datatype, Map<String,Collection<String>> data) {
         for (Map.Entry<String,Collection<String>> entry : data.entrySet()) {
             Normalizer<?> norm = getNormalizer(entry.getKey());
@@ -212,6 +228,11 @@ public abstract class BaseRawData implements RawData {
     }
     
     @Override
+    public List<String> getHeaders() {
+        return this.headers;
+    }
+    
+    @Override
     public boolean containsField(String field) {
         return this.metaDataMap.keySet().contains(field.toLowerCase());
     }
@@ -232,10 +253,6 @@ public abstract class BaseRawData implements RawData {
         Assert.assertTrue(containsField(field));
         return this.metaDataMap.get(field.toLowerCase()).normalizer;
     }
-    
-    // ================================
-    // abstract methods
-    abstract protected List<String> getHeaders();
     
     // ================================
     // base override methods

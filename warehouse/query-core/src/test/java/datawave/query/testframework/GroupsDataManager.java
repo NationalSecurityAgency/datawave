@@ -52,13 +52,8 @@ public class GroupsDataManager extends AbstractDataManager {
         private static final Map<String,RawMetaData> metadata = GroupField.getMetadata();
         
         GroupRawData(final String datatype, final String fields[], Map<String,RawMetaData> metaDataMap) {
-            super(datatype, fields, metadata);
+            super(datatype, fields, GroupField.headers(), metadata);
             Assert.assertEquals("group ingest data field count is invalid", GroupField.headers().size(), fields.length);
-        }
-        
-        @Override
-        protected List<String> getHeaders() {
-            return GroupsDataType.GroupField.headers();
         }
         
         @Override

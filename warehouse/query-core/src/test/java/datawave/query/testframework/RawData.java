@@ -3,6 +3,7 @@ package datawave.query.testframework;
 import datawave.data.normalizer.Normalizer;
 
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,8 +38,15 @@ public interface RawData {
     boolean containsField(String field);
     
     /**
-     * Returns the normalizer for the field.
+     * Returns an ordered list of header fields for the raw data.
      * 
+     * @return list of field names
+     */
+    List<String> getHeaders();
+    
+    /**
+     * Returns the normalizer for the field.
+     *
      * @param field
      *            name of the field
      * @return normalizer object
