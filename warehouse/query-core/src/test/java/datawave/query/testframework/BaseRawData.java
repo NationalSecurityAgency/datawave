@@ -139,7 +139,7 @@ public abstract class BaseRawData implements RawData {
         final Normalizer normalizer;
         final boolean multiValue;
         
-        RawMetaData(final String fieldName, final Normalizer norm, final boolean multi) {
+        public RawMetaData(final String fieldName, final Normalizer norm, final boolean multi) {
             this.name = fieldName;
             this.normalizer = norm;
             this.multiValue = multi;
