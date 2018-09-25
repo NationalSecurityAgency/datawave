@@ -16,16 +16,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Data manager for testing various flatteners for JSON data.
+ */
 public class FlattenDataManager extends AbstractDataManager {
     
     private static final Logger log = Logger.getLogger(FlattenDataManager.class);
     
     private final FlattenData flatData;
     
+    /**
+     *
+     * @param data
+     *            defines the configuration information for the requested flattener
+     */
     public FlattenDataManager(final FlattenData data) {
-        super(FlattenBaseFields.EVENTID.name(), FlattenBaseFields.STARTDATE.name());
+        super(FlattenBaseFields.EVENTID.name(), FlattenBaseFields.STARTDATE.name(), data.getMetadata());
         this.flatData = data;
-        this.metadata = data.getMetadata();
     }
     
     @Override
@@ -45,27 +52,30 @@ public class FlattenDataManager extends AbstractDataManager {
             Map<String,Collection<NormalizedContentInterface>> fields = entry.asMap();
             final RawData raw = new FlattenRawData(datatype, fields, this.flatData);
             entries.add(raw);
-            this.rawData.put(datatype, entries);
-            this.rawDataIndex.put(datatype, indexes);
         }
+        this.rawData.put(datatype, entries);
+        this.rawDataIndex.put(datatype, indexes);
         
-        log.debug("load test data complete (" + rawData.size() + ")");
+        log.debug("load test data complete (" + entries.size() + ")");
     }
     
-    @Override
-    public Date[] getRandomStartEndDate() {
-        return FlattenDataType.FlattenShardId.getStartEndDates(true);
-    }
-    
-    @Override
-    public Date[] getShardStartEndDate() {
-        return FlattenDataType.FlattenShardId.getStartEndDates(false);
-    }
-    
+    /**
+     * Raw data entry for a flatten datatype.
+     */
     static class FlattenRawData extends BaseRawData {
         
         private final FlattenData flattenData;
         
+        /**
+         * Constructor for populating data read from a JSON file.
+         * 
+         * @param datatype
+         *            name of datatype
+         * @param fields
+         *            mapping of fields to values
+         * @param data
+         *            flatten configuration info
+         */
         FlattenRawData(final String datatype, Map<String,Collection<NormalizedContentInterface>> fields, final FlattenData data) {
             super(datatype, data.getMetadata());
             Assert.assertEquals("flatten ingest data field count is invalid", data.headers().size(), fields.size());
@@ -82,22 +92,6 @@ public class FlattenDataManager extends AbstractDataManager {
         public boolean containsField(final String field) {
             List<String> fields = this.flattenData.headers();
             return fields.contains(field.toUpperCase());
-        }
-        
-        @Override
-        public boolean isMultiValueField(String field) {
-            Assert.assertTrue(this.flattenData.headers().contains(field.toUpperCase()));
-            Map<String,RawMetaData> meta = this.flattenData.getMetadata();
-            
-            return meta.get(field.toLowerCase()).multiValue;
-        }
-        
-        @Override
-        public Normalizer<?> getNormalizer(String field) {
-            Assert.assertTrue(this.flattenData.headers().contains(field.toUpperCase()));
-            Map<String,RawMetaData> meta = this.flattenData.getMetadata();
-            
-            return meta.get(field.toLowerCase()).normalizer;
         }
     }
 }

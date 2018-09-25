@@ -54,7 +54,7 @@ public class FlattenDataType extends AbstractDataTypeConfig {
     }
     
     /**
-     * This is the base normailizer for all flatten test classes. These fields must be included in the fields for each different flatten query test class.
+     * This is the base normalizer for all flatten test classes. These fields must be included in the fields for each different flatten query test class.
      */
     public enum FlattenBaseFields {
         // base fields
@@ -69,63 +69,6 @@ public class FlattenDataType extends AbstractDataTypeConfig {
         
         public Normalizer<?> getNormalizer() {
             return this.normalizer;
-        }
-    }
-    
-    public enum FlattenShardId {
-        // list of shards for testing
-        DATE_2015_0404("20150404"),
-        DATE_2015_0505("20150505"),
-        DATE_2015_0606("20150606"),
-        DATE_2015_0707("20150707"),
-        DATE_2015_0808("20150808"),
-        DATE_2015_0909("20150909"),
-        DATE_2015_1010("20151010"),
-        DATE_2015_1111("20151111");
-        
-        private final String dateStr;
-        private final Date date;
-        
-        static final Object sync = new Object();
-        static ShardInfo shardInfo;
-        
-        static Date[] getStartEndDates(final boolean random) {
-            // use double check locking
-            if (null == shardInfo) {
-                synchronized (sync) {
-                    if (null == shardInfo) {
-                        final List<Date> dates = new ArrayList<>();
-                        for (final FlattenShardId id : FlattenShardId.values()) {
-                            dates.add(id.date);
-                        }
-                        shardInfo = new ShardInfo(dates);
-                    }
-                }
-            }
-            
-            return shardInfo.getStartEndDates(random);
-        }
-        
-        FlattenShardId(final String str) {
-            this.dateStr = str;
-            try {
-                this.date = YMD_DateFormat.parse(str);
-            } catch (ParseException pe) {
-                throw new AssertionError("invalid date string(" + str + ")");
-            }
-        }
-        
-        /**
-         * Returns the accumulo shard id string representation.
-         *
-         * @return accumulo shard id
-         */
-        String getShardId() {
-            return this.dateStr + "_0";
-        }
-        
-        static Collection<String> shards() {
-            return Stream.of(FlattenDataType.FlattenShardId.values()).map(e -> e.getShardId()).collect(Collectors.toList());
         }
     }
     
@@ -228,12 +171,7 @@ public class FlattenDataType extends AbstractDataTypeConfig {
     }
     
     @Override
-    public Collection<String> getShardIds() {
-        return FlattenShardId.shards();
-    }
-    
-    @Override
     public String toString() {
-        return "FlattenDataType{" + super.toString() + "}";
+        return this.getClass().getSimpleName() + "{" + super.toString() + "}";
     }
 }

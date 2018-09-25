@@ -471,15 +471,5 @@ public class QueryJexl {
         public boolean containsField(final String field) {
             return (TestHeader.headers()).contains(field);
         }
-        
-        @Override
-        public boolean isMultiValueField(final String field) {
-            return metadata.get(field).multiValue;
-        }
-        
-        @Override
-        public Normalizer<?> getNormalizer(String field) {
-            return metadata.get(field).normalizer;
-        }
     }
 }
