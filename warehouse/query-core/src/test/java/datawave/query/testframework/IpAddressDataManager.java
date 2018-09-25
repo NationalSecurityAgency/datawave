@@ -26,8 +26,7 @@ public class IpAddressDataManager extends AbstractDataManager {
     private static final Logger log = Logger.getLogger(IpAddressDataManager.class);
     
     public IpAddressDataManager() {
-        super(IpAddrField.EVENT_ID.name(), IpAddrField.START_DATE.name());
-        this.metadata = IpAddrRawData.metadata;
+        super(IpAddrField.EVENT_ID.name(), IpAddrField.START_DATE.name(), IpAddrField.getFieldsMetadata());
     }
     
     @Override
@@ -55,36 +54,14 @@ public class IpAddressDataManager extends AbstractDataManager {
     
     static class IpAddrRawData extends BaseRawData {
         
-        private static final Map<String,RawMetaData> metadata = new HashMap<>();
-        static {
-            for (final IpAddrField field : IpAddrField.values()) {
-                metadata.put(field.name().toLowerCase(), field.getMetadata());
-            }
-        }
-        
         IpAddrRawData(final String datatype, final String fields[]) {
-            super(datatype, fields);
+            super(datatype, fields, IpAddrField.getFieldsMetadata());
             Assert.assertEquals("ingest data field count is invalid", IpAddrField.headers().size(), fields.length);
         }
         
         @Override
         protected List<String> getHeaders() {
             return IpAddrField.headers();
-        }
-        
-        @Override
-        protected boolean containsField(final String field) {
-            return IpAddrField.headers().contains(field.toLowerCase());
-        }
-        
-        @Override
-        public boolean isMultiValueField(final String field) {
-            return metadata.get(field.toLowerCase()).multiValue;
-        }
-        
-        @Override
-        protected Normalizer<?> getNormalizer(String field) {
-            return metadata.get(field.toLowerCase()).normalizer;
         }
     }
 }

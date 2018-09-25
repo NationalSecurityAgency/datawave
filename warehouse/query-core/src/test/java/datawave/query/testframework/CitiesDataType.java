@@ -114,6 +114,23 @@ public class CitiesDataType extends AbstractDataTypeConfig {
             return Headers;
         }
         
+        private static final Map<String,RawMetaData> fieldMetadata;
+        static {
+            fieldMetadata = new HashMap<>();
+            for (CityField field : CityField.values()) {
+                fieldMetadata.put(field.name().toLowerCase(), field.metadata);
+            }
+        }
+        
+        /**
+         * Returns mapping of ip address fields to the metadata for the field.
+         * 
+         * @return populate map
+         */
+        public static Map<String,RawMetaData> getFieldsMetadata() {
+            return fieldMetadata;
+        }
+        
         /**
          * Returns a random set of fields, with or without {@link #EVENT_ID}.
          *

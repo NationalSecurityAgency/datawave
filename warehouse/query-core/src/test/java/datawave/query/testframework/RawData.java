@@ -1,5 +1,7 @@
 package datawave.query.testframework;
 
+import datawave.data.normalizer.Normalizer;
+
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +26,24 @@ public interface RawData {
      * @return value of field or null if the field does not exist
      */
     String getValue(String field);
+    
+    /**
+     * Determines if the specified fields is contained within the headers for this datatype.
+     * 
+     * @param field
+     *            name of field
+     * @return true if field is valid for datatype
+     */
+    boolean containsField(String field);
+    
+    /**
+     * Returns the normalizer for the field.
+     * 
+     * @param field
+     *            name of the field
+     * @return normalizer object
+     */
+    Normalizer<?> getNormalizer(String field);
     
     /**
      * Retrieves the set of values for a field.

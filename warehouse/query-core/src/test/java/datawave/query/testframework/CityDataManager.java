@@ -30,7 +30,7 @@ public class CityDataManager extends AbstractDataManager {
     private static final Logger log = Logger.getLogger(CityDataManager.class);
     
     public CityDataManager() {
-        super(CityField.EVENT_ID.name(), CityField.START_DATE.name(), CityRawData.metadata);
+        super(CityField.EVENT_ID.name(), CityField.START_DATE.name(), CityField.getFieldsMetadata());
     }
     
     @Override
@@ -69,40 +69,18 @@ public class CityDataManager extends AbstractDataManager {
         return data;
     }
     
-    static class CityRawData extends BaseRawData {
-        
-        private static final Map<String,RawMetaData> metadata = new HashMap<>();
-        static {
-            for (final CityField field : CityField.values()) {
-                metadata.put(field.name().toLowerCase(), field.getMetadata());
-            }
-            // add event datatype to metadata
-            metadata.put(BaseRawData.EVENT_DATATYPE, BaseRawData.DATATYPE_METADATA);
-        }
-        
+    /**
+     * POJO for a single raw data entry.
+     */
+    private static class CityRawData extends BaseRawData {
         CityRawData(final String datatype, final String fields[]) {
-            super(datatype, fields);
+            super(datatype, fields, CityField.getFieldsMetadata());
             Assert.assertEquals("city ingest data field count is invalid", CityField.headers().size(), fields.length);
         }
         
         @Override
         protected List<String> getHeaders() {
             return CityField.headers();
-        }
-        
-        @Override
-        protected boolean containsField(final String field) {
-            return CityField.headers().contains(field.toLowerCase());
-        }
-        
-        @Override
-        public boolean isMultiValueField(final String field) {
-            return metadata.get(field.toLowerCase()).multiValue;
-        }
-        
-        @Override
-        protected Normalizer<?> getNormalizer(String field) {
-            return metadata.get(field.toLowerCase()).normalizer;
         }
     }
 }

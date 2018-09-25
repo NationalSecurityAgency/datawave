@@ -34,80 +34,22 @@ public class BooksDataManager extends AbstractDataManager {
     
     private static final Logger log = Logger.getLogger(BooksDataManager.class);
     
-    // TODO - this could be read in from a CSV file
-    private static final List<Map.Entry<Multimap<String,String>,UID>> TEST_DATA;
-    static {
-        TEST_DATA = new ArrayList<>();
-        Multimap<String,String> data = HashMultimap.create();
-        data.put(BooksField.BOOKS_DATE.name(), "20150707");
-        data.put(BooksField.TITLE.name(), "Effective Java");
-        data.put(BooksField.AUTHOR.name(), "Joshua Bloch");
-        data.put(BooksField.NUM_PAGES.name(), "373");
-        data.put(BooksField.SUB_TITLE.name(), "3rd Edition");
-        data.put(BooksField.DATE_PUBLISHED.name(), "20171227");
-        data.put(BooksField.LANGUAGE.name(), "ENGLISH");
-        data.put(BooksField.ISBN_13.name(), "978-0134685991");
-        data.put(BooksField.ISBN_10.name(), "0-134-68599-7");
-        UID uid = UID.builder().newId(data.toString().getBytes(), "");
-        TEST_DATA.add(Maps.immutableEntry(data, uid));
-        
-        data = HashMultimap.create();
-        data.put(BooksField.BOOKS_DATE.name(), "20150808");
-        data.put(BooksField.TITLE.name(), "Java Concurrency in Practice");
-        data.put(BooksField.AUTHOR.name(), "Doug Lea");
-        data.put(BooksField.AUTHOR.name(), "Joshua Bloch");
-        data.put(BooksField.AUTHOR.name(), "Brian Goetz");
-        data.put(BooksField.AUTHOR.name(), "Tim Peierls");
-        data.put(BooksField.AUTHOR.name(), "Joesph Bowbeer");
-        data.put(BooksField.AUTHOR.name(), "David Holmes");
-        data.put(BooksField.NUM_PAGES.name(), "232");
-        data.put(BooksField.SUB_TITLE.name(), "1st Edition");
-        data.put(BooksField.DATE_PUBLISHED.name(), "20060509");
-        data.put(BooksField.LANGUAGE.name(), "ENGLISH");
-        data.put(BooksField.LANGUAGE.name(), "SPANISH");
-        data.put(BooksField.ISBN_13.name(), "978-0321349606");
-        data.put(BooksField.ISBN_10.name(), "0-321-34960-1");
-        uid = UID.builder().newId(data.toString().getBytes(), "");
-        TEST_DATA.add(Maps.immutableEntry(data, uid));
-        
-        data = HashMultimap.create();
-        data.put(BooksField.BOOKS_DATE.name(), "20150909");
-        data.put(BooksField.TITLE.name(), "Java Puzzlers");
-        data.put(BooksField.AUTHOR.name(), "Joshua Bloch");
-        data.put(BooksField.AUTHOR.name(), "Neal Gafter");
-        data.put(BooksField.NUM_PAGES.name(), "271");
-        data.put(BooksField.SUB_TITLE.name(), "Traps, Pitfalls, and Corner Cases");
-        data.put(BooksField.DATE_PUBLISHED.name(), "20050624");
-        data.put(BooksField.LANGUAGE.name(), "ENGLISH");
-        data.put(BooksField.LANGUAGE.name(), "FRENCH");
-        data.put(BooksField.ISBN_13.name(), "978-0321336781");
-        data.put(BooksField.ISBN_10.name(), "0-321-33678-X");
-        uid = UID.builder().newId(data.toString().getBytes(), "");
-        TEST_DATA.add(Maps.immutableEntry(data, uid));
-        
-        data = HashMultimap.create();
-        data.put(BooksField.BOOKS_DATE.name(), "20151010");
-        data.put(BooksField.TITLE.name(), "Java Performance Companion");
-        data.put(BooksField.AUTHOR.name(), "Charlie Hunt");
-        data.put(BooksField.AUTHOR.name(), "Monica Beckwith");
-        data.put(BooksField.AUTHOR.name(), "Poonam Parhar");
-        data.put(BooksField.AUTHOR.name(), "Bengt Rutisson");
-        data.put(BooksField.NUM_PAGES.name(), "155");
-        data.put(BooksField.SUB_TITLE.name(), "");
-        data.put(BooksField.DATE_PUBLISHED.name(), "20160507");
-        data.put(BooksField.LANGUAGE.name(), "ENGLISH");
-        data.put(BooksField.LANGUAGE.name(), "GERMAN");
-        data.put(BooksField.ISBN_13.name(), "978-0-13-379682-7");
-        data.put(BooksField.ISBN_10.name(), "0-13-379682-5");
-        uid = UID.builder().newId(data.toString().getBytes(), "");
-        TEST_DATA.add(Maps.immutableEntry(data, uid));
-    }
-    
     private final String datatype;
     private final Connector accumuloConn;
     private final FieldConfig fieldIndex;
     private final ConfigData cfgData;
     
+    /**
+     *
+     * @param datatype
+     *            datatype name
+     * @param conn
+     *            accumulo connection for writing
+     * @param indexes
+     *            indexes for the datatype
+     * @param data
+     *            configuration data
+     */
     public BooksDataManager(final String datatype, final Connector conn, final FieldConfig indexes, final ConfigData data) {
         super(data.getEventId(), data.getDateField());
         this.datatype = datatype;
@@ -128,6 +70,12 @@ public class BooksDataManager extends AbstractDataManager {
         return this.cfgData.headers();
     }
     
+    /**
+     * Loads test data as grouping data from a multimap.
+     * 
+     * @param data
+     *            list of multimap entries of field name to values
+     */
     public void loadTestData(final List<Map.Entry<Multimap<String,String>,UID>> data) {
         try {
             GroupingAccumuloWriter writer = new GroupingAccumuloWriter(this.datatype, this.accumuloConn, this.cfgData.getDateField(), this.fieldIndex,
@@ -146,6 +94,12 @@ public class BooksDataManager extends AbstractDataManager {
         }
     }
     
+    /**
+     * Loads test data from a CSV file.
+     * 
+     * @param file
+     *            uri of CSV file
+     */
     public void loadGroupingData(final URI file) {
         Assert.assertFalse("datatype has already been configured(" + this.datatype + ")", this.rawData.containsKey(this.datatype));
         
@@ -177,36 +131,49 @@ public class BooksDataManager extends AbstractDataManager {
     @Override
     public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {
         // ignore
-        log.debug("noop condition - use loadTestData method");
+        log.error("noop condition - use loadTestData method");
+        Assert.fail("method not supported for books data manager");
     }
     
-    @Override
-    public Date[] getRandomStartEndDate() {
-        return SHARD_ID_VALUES.getStartEndDates(true);
-    }
-    
-    @Override
-    public Date[] getShardStartEndDate() {
-        return SHARD_ID_VALUES.getStartEndDates(false);
-    }
-    
+    /**
+     * POJO for a single raw data entry for the books datatype.
+     */
     private static class BooksRawData extends BaseRawData {
         
-        private final Map<String,RawMetaData> metadata;
         private List<String> headers = new ArrayList<>();
         
-        // only shard date to be used for test data
-        
-        BooksRawData(String datatype, List<String> baseHeaders, Map<String,RawMetaData> metaDataMap, Map<String,Collection<String>> rawData) {
-            super(datatype);
-            this.metadata = metaDataMap;
+        /**
+         * This allows a test to loadstatic test data in the form of a map of field name to values.
+         * 
+         * @param datatype
+         *            datatype name
+         * @param baseHeaders
+         *            fields for books datatype
+         * @param metaData
+         *            mapping of datatype fields to metadata
+         * @param rawData
+         *            mapping of field to a collection of values
+         */
+        BooksRawData(String datatype, List<String> baseHeaders, Map<String,RawMetaData> metaData, Map<String,Collection<String>> rawData) {
+            super(datatype, metaData);
             this.headers = baseHeaders;
             processMapFormat(datatype, rawData);
         }
         
-        BooksRawData(String datatype, List<String> baseHeaders, Map<String,RawMetaData> metaDataMap, String[] fields) {
-            super(datatype);
-            this.metadata = metaDataMap;
+        /**
+         * Loads a CSV entry in the form of a array.
+         * 
+         * @param datatype
+         *            datatype name
+         * @param baseHeaders
+         *            fields for books datatype
+         * @param metaData
+         *            mapping of datatype fields to metadata
+         * @param fields
+         *            list of values for fields
+         */
+        BooksRawData(String datatype, List<String> baseHeaders, Map<String,RawMetaData> metaData, String[] fields) {
+            super(datatype, metaData);
             this.headers = baseHeaders;
             processFields(datatype, fields);
         }
@@ -216,26 +183,14 @@ public class BooksDataManager extends AbstractDataManager {
             return this.headers;
         }
         
-        @Override
-        protected boolean containsField(String field) {
-            return metadata.keySet().contains(field.toLowerCase());
-        }
-        
-        @Override
-        protected Normalizer<?> getNormalizer(String field) {
-            Assert.assertTrue(containsField(field));
-            return metadata.get(field.toLowerCase()).normalizer;
-        }
-        
-        @Override
-        public boolean isMultiValueField(String field) {
-            Assert.assertTrue(containsField(field));
-            return metadata.get(field.toLowerCase()).multiValue;
-        }
-        
+        /**
+         * Converts the entry to a {@link Multimap}.
+         * 
+         * @return populated multimap
+         */
         Multimap<String,String> toMultimap() {
             Multimap<String,String> mm = HashMultimap.create();
-            for (Map.Entry<String,Set<String>> e : this.entry.entrySet()) {
+            for (Map.Entry<String,Set<String>> e : this.event.entrySet()) {
                 for (String val : e.getValue()) {
                     mm.put(e.getKey().toUpperCase(), val);
                 }

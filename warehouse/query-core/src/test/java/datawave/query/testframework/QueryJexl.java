@@ -459,7 +459,7 @@ public class QueryJexl {
         }
         
         TestRawData(final String fields[]) {
-            super(TestManager.dataType, fields);
+            super(TestManager.dataType, fields, metadata);
         }
         
         @Override
@@ -468,7 +468,7 @@ public class QueryJexl {
         }
         
         @Override
-        protected boolean containsField(final String field) {
+        public boolean containsField(final String field) {
             return (TestHeader.headers()).contains(field);
         }
         
@@ -478,7 +478,7 @@ public class QueryJexl {
         }
         
         @Override
-        protected Normalizer<?> getNormalizer(String field) {
+        public Normalizer<?> getNormalizer(String field) {
             return metadata.get(field).normalizer;
         }
     }

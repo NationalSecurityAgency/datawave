@@ -67,7 +67,7 @@ public class FlattenDataManager extends AbstractDataManager {
         private final FlattenData flattenData;
         
         FlattenRawData(final String datatype, Map<String,Collection<NormalizedContentInterface>> fields, final FlattenData data) {
-            super(datatype);
+            super(datatype, data.getMetadata());
             Assert.assertEquals("flatten ingest data field count is invalid", data.headers().size(), fields.size());
             this.flattenData = data;
             processNormalizedContent(datatype, fields);
@@ -79,7 +79,7 @@ public class FlattenDataManager extends AbstractDataManager {
         }
         
         @Override
-        protected boolean containsField(final String field) {
+        public boolean containsField(final String field) {
             List<String> fields = this.flattenData.headers();
             return fields.contains(field.toUpperCase());
         }
@@ -93,7 +93,7 @@ public class FlattenDataManager extends AbstractDataManager {
         }
         
         @Override
-        protected Normalizer<?> getNormalizer(String field) {
+        public Normalizer<?> getNormalizer(String field) {
             Assert.assertTrue(this.flattenData.headers().contains(field.toUpperCase()));
             Map<String,RawMetaData> meta = this.flattenData.getMetadata();
             

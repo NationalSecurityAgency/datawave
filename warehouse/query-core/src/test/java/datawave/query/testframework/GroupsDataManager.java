@@ -49,15 +49,11 @@ public class GroupsDataManager extends AbstractDataManager {
     
     static class GroupRawData extends BaseRawData {
         
-        // private final Map<String,BaseRawData.RawMetaData> metadata;
-        
         private static final Map<String,RawMetaData> metadata = GroupField.getMetadata();
         
         GroupRawData(final String datatype, final String fields[], Map<String,RawMetaData> metaDataMap) {
-            super(datatype, fields);
+            super(datatype, fields, metadata);
             Assert.assertEquals("group ingest data field count is invalid", GroupField.headers().size(), fields.length);
-            //TODO fix
-            // this.metadata = metaDataMap;
         }
         
         @Override
@@ -71,7 +67,7 @@ public class GroupsDataManager extends AbstractDataManager {
         }
         
         @Override
-        protected boolean containsField(final String field) {
+        public boolean containsField(final String field) {
             return GroupField.headers().contains(field.toLowerCase());
         }
         
@@ -87,7 +83,7 @@ public class GroupsDataManager extends AbstractDataManager {
         }
         
         @Override
-        protected Normalizer<?> getNormalizer(String field) {
+        public Normalizer<?> getNormalizer(String field) {
             final String query = GroupField.getQueryField(field);
             return metadata.get(query.toLowerCase()).normalizer;
         }

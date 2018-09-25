@@ -82,8 +82,6 @@ public class GroupsDataType extends AbstractDataTypeConfig {
             for (GroupField field : GroupField.values()) {
                 metadataMapping.put(field.getQueryField().toLowerCase(), field.metadata);
             }
-            // add event datatype to metadata
-            metadataMapping.put(BaseRawData.EVENT_DATATYPE.toLowerCase(), BaseRawData.DATATYPE_METADATA);
         }
         
         public static Map<String,RawMetaData> getMetadata() {

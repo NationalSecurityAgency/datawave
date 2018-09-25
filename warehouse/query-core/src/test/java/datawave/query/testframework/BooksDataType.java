@@ -39,7 +39,7 @@ public class BooksDataType extends AbstractDataTypeConfig {
         }
         
         /**
-         * Returns the datatype for the entry.
+         * Returns the datatype for the event.
          *
          * @return datatype for instance
          */

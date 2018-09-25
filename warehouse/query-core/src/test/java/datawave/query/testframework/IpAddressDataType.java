@@ -88,7 +88,22 @@ public class IpAddressDataType extends AbstractDataTypeConfig {
             return Headers;
         }
         
-        private static final Map<String,RawMetaData> metadataMapping = new HashMap<>();
+        private static final Map<String,RawMetaData> fieldMetadata;
+        static {
+            fieldMetadata = new HashMap<>();
+            for (IpAddrField field : IpAddrField.values()) {
+                fieldMetadata.put(field.name().toLowerCase(), field.metadata);
+            }
+        }
+        
+        /**
+         * Returns mapping of ip address fields to the metadata for the field.
+         * 
+         * @return populate map
+         */
+        public static Map<String,RawMetaData> getFieldsMetadata() {
+            return fieldMetadata;
+        }
         
         private RawMetaData metadata;
         

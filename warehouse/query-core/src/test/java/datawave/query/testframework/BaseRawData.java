@@ -17,56 +17,59 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Represents a single entry of raw data read from an ingest file. This is a generic POJO that can be used for any data entry. This class is immutable.
+ * Represents a single event of raw data read from an ingest file. This is a generic POJO that can be used for any data event. This class is immutable.
  */
 public abstract class BaseRawData implements RawData {
     private static final Logger log = Logger.getLogger(BaseRawData.class);
     
     /**
-     * Field name for the datatype for each entry. This field is added to every event.
+     * Field name for the datatype for each event. This field is added to every event.
      */
     public static final String EVENT_DATATYPE = Normalizer.LC_NO_DIACRITICS_NORMALIZER.normalize("EVENT_DATATYPE");
     
-    protected static final RawMetaData DATATYPE_METADATA = new RawMetaData(EVENT_DATATYPE, Normalizer.LC_NO_DIACRITICS_NORMALIZER, false);
+    private static final RawMetaData DATATYPE_METADATA = new RawMetaData(EVENT_DATATYPE, Normalizer.LC_NO_DIACRITICS_NORMALIZER, false);
     
     // =============================
     // instance members
-    /** mapping of field to data for each entry */
-    protected final Map<String,Set<String>> entry = new HashMap<>();
+    /** mapping of field to data for each event */
+    protected final Map<String,Set<String>> event = new HashMap<>();
     
-    protected final Map<String,RawMetaData> metaDataMap = new HashMap<>();
+    protected final Map<String,RawMetaData> metaDataMap;
     
-    // needed for some extending classes
-    public BaseRawData(final String datatype) {
-        // this.metaDataMap = new HashMap<>();
-        this.metaDataMap.put(EVENT_DATATYPE, DATATYPE_METADATA);
+    /**
+     *
+     * @param datatype
+     *            name of datatype
+     * @param metadata
+     *            field metadata
+     */
+    public BaseRawData(final String datatype, final Map<String,RawMetaData> metadata) {
+        this.metaDataMap = metadata;
+        // may already have event datatype added
+        if (!this.metaDataMap.containsKey(EVENT_DATATYPE)) {
+            this.metaDataMap.put(EVENT_DATATYPE, DATATYPE_METADATA);
+        }
         
-        // add event datatype entry to event
+        // add event datatype to event data
         // this will be used when filtering by datatype
         final Set<String> eventDt = new HashSet<>();
         eventDt.add(DATATYPE_METADATA.normalizer.normalize(datatype));
-        this.entry.put(EVENT_DATATYPE, eventDt);
+        this.event.put(EVENT_DATATYPE, eventDt);
     }
     
     /**
-     * Creates a POJO for a raw data entry. The values in the <code>fields</code> must match the corresponding entries specified in the <code>headers</code>.
+     * Creates a POJO for a raw data event. The values in the <code>fields</code> must match the corresponding entries specified in the <code>headers</code>.
      * The fields and values will be normalized.
      *
      * @param fields
      *            raw data fields
      */
-    public BaseRawData(final String datatype, final String[] fields) {
-        this(datatype);
+    public BaseRawData(final String datatype, final String[] fields, final Map<String,RawMetaData> metadata) {
+        this(datatype, metadata);
         processFields(datatype, fields);
     }
     
     public void processFields(final String datatype, final String[] fields) {
-        // add event datatype entry to event
-        // this will be used when filtering by datatype
-        // final Set<String> eventDt = new HashSet<>();
-        // eventDt.add(DATATYPE_METADATA.normalizer.normalize(datatype));
-        // this.entry.put(EVENT_DATATYPE, eventDt);
-        
         // add each header event
         final List<String> hdrs = getHeaders();
         // ensure headers match field input
@@ -89,7 +92,7 @@ public abstract class BaseRawData implements RawData {
             } else if (isTokenizedField(header)) {
                 // convert field to a list of tokens that include the complete field
                 String[] multi = Strings.split(fields[n], ' ');
-                // add full field as an entry
+                // add full field as an event
                 values.add(fields[n]);
                 for (String s : multi) {
                     if (norm instanceof NumberNormalizer) {
@@ -106,17 +109,17 @@ public abstract class BaseRawData implements RawData {
                 }
             }
             String key = getKey(header).toLowerCase();
-            if (this.entry.containsKey(key)) {
-                Set<String> curr = this.entry.get(key);
+            if (this.event.containsKey(key)) {
+                Set<String> curr = this.event.get(key);
                 curr.addAll(values);
             } else {
-                this.entry.put(key, values);
+                this.event.put(key, values);
             }
         }
     }
     
     /**
-     * Converts data into a raw data entry.
+     * Converts data into a raw data event.
      * 
      * @param datatype
      *            datatype for data
@@ -124,12 +127,6 @@ public abstract class BaseRawData implements RawData {
      *            mapping of fields to a collection of values
      */
     protected void processNormalizedContent(final String datatype, Map<String,Collection<NormalizedContentInterface>> fields) {
-        // add event datatype entry to event
-        // this will be used when filtering by datatype
-        final Set<String> eventDt = new HashSet<>();
-        eventDt.add(DATATYPE_METADATA.normalizer.normalize(datatype));
-        this.entry.put(EVENT_DATATYPE, eventDt);
-        
         for (Map.Entry<String,Collection<NormalizedContentInterface>> fld : fields.entrySet()) {
             final Normalizer<?> norm = getNormalizer(fld.getKey());
             final Set<String> values = new HashSet<>();
@@ -140,17 +137,11 @@ public abstract class BaseRawData implements RawData {
                     values.add(norm.normalize(normValue.getEventFieldValue()));
                 }
             }
-            this.entry.put(fld.getKey().toLowerCase(), values);
+            this.event.put(fld.getKey().toLowerCase(), values);
         }
     }
     
     void processMapFormat(final String datatype, Map<String,Collection<String>> data) {
-        // add event datatype entry to event
-        // this will be used when filtering by datatype
-        final Set<String> eventDt = new HashSet<>();
-        eventDt.add(DATATYPE_METADATA.normalizer.normalize(datatype));
-        this.entry.put(EVENT_DATATYPE, eventDt);
-        
         for (Map.Entry<String,Collection<String>> entry : data.entrySet()) {
             Normalizer<?> norm = getNormalizer(entry.getKey());
             Set<String> fieldVals = new HashSet<>();
@@ -161,7 +152,7 @@ public abstract class BaseRawData implements RawData {
                     fieldVals.add(norm.normalize(val));
                 }
             }
-            this.entry.put(entry.getKey().toLowerCase(), fieldVals);
+            this.event.put(entry.getKey().toLowerCase(), fieldVals);
         }
     }
     
@@ -171,11 +162,11 @@ public abstract class BaseRawData implements RawData {
     @Override
     public Set<Map<String,String>> getMapping() {
         // convert multi-value fields into separate entries
-        // each multi value entry will create N number of additional entries
+        // each multi value event will create N number of additional entries
         final Set<Map<String,String>> expanded = new HashSet<>();
         Map<String,String> current = new HashMap<>();
         expanded.add(current);
-        for (final Map.Entry<String,Set<String>> entry : this.entry.entrySet()) {
+        for (final Map.Entry<String,Set<String>> entry : this.event.entrySet()) {
             final List<String> values = new ArrayList<>(entry.getValue());
             String val = values.get(0);
             // add field to all current entries
@@ -204,34 +195,47 @@ public abstract class BaseRawData implements RawData {
     
     @Override
     public String getValue(final String field) {
-        Set<String> val = this.entry.get(field);
+        Set<String> val = this.event.get(field);
         return (val == null ? null : val.iterator().next());
     }
     
     @Override
     public Set<String> getAllValues(final String field) {
-        return this.entry.get(field);
+        return this.event.get(field);
     }
     
     @Override
     public String getKey(String field) {
         // by default the query field is the same as the header field
+        // some datatypes may alter the query field
         return field;
     }
     
     @Override
+    public boolean containsField(String field) {
+        return this.metaDataMap.keySet().contains(field.toLowerCase());
+    }
+    
+    @Override
     public boolean isTokenizedField(String field) {
-        // by default all fields are not tokenized
+        // by default all fields are not tokenized - see groups data
         return false;
+    }
+    
+    @Override
+    public boolean isMultiValueField(final String field) {
+        return this.metaDataMap.get(field.toLowerCase()).multiValue;
+    }
+    
+    @Override
+    public Normalizer<?> getNormalizer(String field) {
+        Assert.assertTrue(containsField(field));
+        return this.metaDataMap.get(field.toLowerCase()).normalizer;
     }
     
     // ================================
     // abstract methods
     abstract protected List<String> getHeaders();
-    
-    abstract protected boolean containsField(String field);
-    
-    abstract protected Normalizer<?> getNormalizer(String field);
     
     // ================================
     // base override methods
@@ -242,12 +246,12 @@ public abstract class BaseRawData implements RawData {
         if (o == null || getClass() != o.getClass())
             return false;
         BaseRawData data = (BaseRawData) o;
-        return Objects.equals(entry, data.entry);
+        return Objects.equals(event, data.event);
     }
     
     @Override
     public int hashCode() {
-        return this.entry.hashCode();
+        return this.event.hashCode();
     }
     
 }

@@ -22,7 +22,7 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 
 /**
- * Tests for tokenized fields. The {@link GroupField#TOKENS} field was added to the {@link GroupsDataType} data. It is the only tokenized entry.
+ * Tests for tokenized fields. The {@link GroupField#TOKENS} field was added to the {@link GroupsDataType} data. It is the only tokenized event.
  */
 public class TokensQueryTest extends AbstractFunctionalQuery {
     
