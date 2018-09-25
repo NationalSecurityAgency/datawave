@@ -95,8 +95,7 @@ DataWave's features are exposed primarily through configs and functions defined 
 | [bootstrap-ingest.sh][dw_blob_datawave_bootstrap_ingest] | Bootstrap for DataWave Ingest and associated functions |
 | [bootstrap-user.sh][dw_blob_datawave_bootstrap_user] | Configs for defining DataWave Web test user's identity, roles, auths, etc |
 
-A few noteworthy functions and their descriptions are listed by category below (by no means an exhaustive list). Note that the
-[service bootstrap functions](#service-bootstrap-functions) above apply to DataWave Web and DataWave Ingest as well.
+A few noteworthy functions and their descriptions are listed by category below
 
 ### DataWave Web Functions
 
