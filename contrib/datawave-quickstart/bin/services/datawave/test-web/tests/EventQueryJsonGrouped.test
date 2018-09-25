@@ -50,37 +50,31 @@ setCurlData query=$( urlencode "GENRES:comedy AND #MATCHES_IN_GROUP_LEFT(EMBEDDE
 # 20070924_0 json\x00-r5sogy.30uc2y.a9zr4g:EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_2.PERSON_0.NAME_0\x00Johnny Galecki [PRIVATE|(BAR&FOO)]
 # 20070924_0 json\x00-r5sogy.30uc2y.a9zr4g:EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_3.PERSON_0.NAME_0\x00Jim Parsons [PRIVATE|(BAR&FOO)]
 
-TEST_ID="EventQueryGroupedJsonSameGreatgrandparent"
-TEST_DESCRIPTION="Attempt to match specific cousin elements originating from the same JSON 'cast' array"
-TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureTest \
+        GroupedWithSameGreatgrandparent \
+        "Attempt to match specific cousin elements originating from the same JSON 'cast' array" \
+        "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
+        application/xml \
+        200
 
-runTest
+runTest --set-query-id
 
-setQueryIdFromResponseXml "${ACTUAL_RESPONSE_BODY}"
-[ -z "${DW_QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
-
+###################################################################
 # Get 1st page from /Query/${DW_QUERY_ID}/next, in JSON format
 
-TEST_ID="EventQueryGroupedJsonSameGreatgrandparentPage1"
-TEST_DESCRIPTION="Gets the 1st page of results for the EventQueryGroupedJsonSameGreatgrandparent test in JSON format"
-TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next"
-EXPECTED_RESPONSE_TYPE="application/json"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureTest \
+        GroupedWithSameGreatgrandparentPage1 \
+        "Gets the 1st page of results for the GroupedWithSameGreatgrandparent test in JSON format" \
+        "--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
+        application/json \
+        200
 
 runTest
 
+###################################################################
 # Close the query
 
-TEST_ID="EventQueryGroupedJsonSameGreatgrandparentClose"
-TEST_DESCRIPTION="Closes EventQueryGroupedJsonSameGreatgrandparent query as needed"
-TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${DW_QUERY_ID}/close"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureCloseQueryTest ${DW_QUERY_ID}
 
 runTest
 
@@ -103,37 +97,31 @@ setCurlData query=$( urlencode "GENRES:horror AND #MATCHES_IN_GROUP_LEFT(EMBEDDE
 # 20101031_0 json\x00-giuhai.-5lhcm5.fac22f:EMBEDDED_CAST_PERSON_NAME.EMBEDDED_0.CAST_0.PERSON_0.NAME_0\x00Andrew Lincoln [PRIVATE|(BAR&FOO)]
 #
 
-TEST_ID="EventQueryGroupedJsonSameParent"
-TEST_DESCRIPTION="Attempt to match 'ID' and 'NAME' values that are siblings within 'PERSON' parent object"
-TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureTest \
+        GroupedWithSameParent \
+        "Attempt to match 'ID' and 'NAME' values that are siblings within 'PERSON' parent object" \
+        "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
+        application/xml \
+        200
 
-runTest
+runTest --set-query-id
 
-setQueryIdFromResponseXml "${ACTUAL_RESPONSE_BODY}"
-[ -z "${DW_QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
-
+###################################################################
 # Get 1st page from /Query/${DW_QUERY_ID}/next, in JSON format
 
-TEST_ID="EventQueryGroupedJsonSameParentPage1"
-TEST_DESCRIPTION="Gets the 1st page of results for the EventQueryGroupedJsonSameGrandparent test in JSON format"
-TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next"
-EXPECTED_RESPONSE_TYPE="application/json"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureTest \
+        GroupedWithSameParentPage1 \
+        "Gets the 1st page of results for the GroupedWithSameParent test in JSON format" \
+        "--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
+        application/json \
+        200
 
 runTest
 
+###################################################################
 # Close the query
 
-TEST_ID="EventQueryGroupedJsonSameParentClose"
-TEST_DESCRIPTION="Closes EventQueryGroupedJsonSameParent query as needed"
-TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${DW_QUERY_ID}/close"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureCloseQueryTest ${DW_QUERY_ID}
 
 runTest
 
@@ -150,37 +138,31 @@ setCurlData query=$( urlencode "GENRES:comedy AND #MATCHES_IN_GROUP_LEFT(EMBEDDE
         columnVisibility=PRIVATE \
         query.syntax=LUCENE
 
-TEST_ID="EventQueryGroupedJson204AsSiblings"
-TEST_DESCRIPTION="Attempt to find 'NAME' field siblings that are actually cousins. Gets 204 - No results"
-TEST_URL_OPTS="--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureTest \
+        CreateNoMatchForGroupedSiblings \
+        "Attempt to find 'NAME' field siblings that are actually cousins. Gets 204 - No results" \
+        "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
+        application/xml \
+        200
 
-runTest
+runTest --set-query-id
 
-setQueryIdFromResponseXml "${ACTUAL_RESPONSE_BODY}"
-[ -z "${DW_QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
-
+###################################################################
 # Call 'next' and get 204
 
-TEST_ID="EventQueryGroupedJson204AsSiblingsPage1"
-TEST_DESCRIPTION="204 on 'next' call. Zero results for the EventQueryGroupedJson204AsSiblings test"
-TEST_URL_OPTS="--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next"
-EXPECTED_RESPONSE_TYPE=""
-EXPECTED_RESPONSE_CODE=204
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureTest \
+        NoMatchForGroupedSiblings204 \
+        "204 on 'next' for the CreateNoMatchForGroupedSiblings test" \
+        "--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
+        "" \
+        204
 
 runTest
 
+###################################################################
 # Close the query
 
-TEST_ID="EventQueryGroupedJson204AsSiblingsPage1Close"
-TEST_DESCRIPTION="Closes EventQueryGroupedJson204AsSiblings query"
-TEST_URL_OPTS="-X PUT ${URI_ROOT}/Query/${DW_QUERY_ID}/close"
-EXPECTED_RESPONSE_TYPE="application/xml"
-EXPECTED_RESPONSE_CODE=200
-EXPECTED_RESPONSE_BODY_ASSERTION=false
+configureCloseQueryTest ${DW_QUERY_ID}
 
 ###############################################################################################
 ###############################################################################################

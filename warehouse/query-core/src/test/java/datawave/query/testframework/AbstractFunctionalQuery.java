@@ -111,7 +111,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected String documentKey;
     protected ShardQueryLogic logic;
     private CountingShardQueryLogic countLogic = new CountingShardQueryLogic();
-    private QueryLogicTestHarness testHarness;
+    protected QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
     
     @Rule
@@ -202,7 +202,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     /**
      * Helper method for determining the expected results for a query.
-     * 
+     *
      * @param query
      *            query for evaluation
      * @return expected results based upon the defined key for the datatype
@@ -214,7 +214,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     /**
      * Helper method for determining the expected results for a query.
-     * 
+     *
      * @param query
      *            query for evaluation
      * @param start
@@ -336,7 +336,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     /**
      * Executes test cases that use {@link CountingShardQueryLogic}.
-     * 
+     *
      * @param query
      *            query for evaluation
      * @throws Exception
@@ -376,7 +376,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     /**
      * Used by test cases that verify the configuration.
-     * 
+     *
      * @param queryStr
      *            query string for evaluation
      * @return query configuration
@@ -411,7 +411,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     /**
      * Configures an Ivarator FST cache to use for a single HDFS directory.
-     * 
+     *
      * @throws IOException
      *             error creating cache
      */

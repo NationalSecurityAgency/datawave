@@ -177,6 +177,7 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.remoteDatawaveUserService.host:remove
 /system-property=dw.remoteDatawaveUserService.port:remove
 /system-property=zookeeper.sasl.client:remove
+/system-property=dw.cache.tableNames:remove
 
 # Restore default transaction node identifier
 /subsystem=transactions:write-attribute(name=node-identifier,value=1)

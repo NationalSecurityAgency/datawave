@@ -5,6 +5,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
 
 public class UniversalSetTest {
     
@@ -20,22 +22,34 @@ public class UniversalSetTest {
         Assert.assertTrue(universalSet.containsAll(Sets.newHashSet("foo", "bar", "baz")));
         
         int originalSize = universalSet.size();
-        universalSet.remove(this);
+        
+        Assert.assertFalse(universalSet.remove(this));
         Assert.assertEquals(universalSet.size(), originalSize);
         
-        universalSet.removeAll(Sets.newHashSet(this));
+        Assert.assertFalse(universalSet.removeAll(Sets.newHashSet(this)));
         Assert.assertEquals(universalSet.size(), originalSize);
         
-        universalSet.add("trouble-maker");
+        Assert.assertFalse(universalSet.add("trouble-maker"));
         Assert.assertEquals(universalSet.size(), originalSize);
         
-        universalSet.addAll(Sets.newHashSet("foo", "bar", "baz"));
+        Assert.assertFalse(universalSet.addAll(Sets.newHashSet("foo", "bar", "baz")));
         Assert.assertEquals(universalSet.size(), originalSize);
         
-        universalSet.retainAll(Sets.newHashSet("foo", "bar", "baz"));
+        Assert.assertFalse(universalSet.retainAll(Sets.newHashSet("foo", "bar", "baz")));
         Assert.assertEquals(universalSet.size(), originalSize);
         
-        universalSet.removeIf(x -> true);
+        Assert.assertFalse(universalSet.removeIf(x -> true));
         Assert.assertEquals(universalSet.size(), originalSize);
+        
+        Iterator<String> iterator = universalSet.iterator();
+        Assert.assertFalse(iterator.hasNext());
+        
+        Assert.assertArrayEquals(universalSet.toArray(), new String[0]);
+        
+        Assert.assertArrayEquals(universalSet.toArray(new String[0]), new String[0]);
+        
+        Assert.assertEquals(universalSet.size(), 0);
+        
+        Assert.assertTrue(universalSet instanceof Set);
     }
 }

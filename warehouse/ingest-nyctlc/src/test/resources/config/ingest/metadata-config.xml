@@ -18,7 +18,7 @@
 
 <property>
   <name>metadata.table.name</name>
-  <value>${METADATA_TABLE_NAME}</value>
+  <value>${table.name.metadata}</value>
 </property>
 
 <property>
@@ -27,18 +27,18 @@
 </property>
 
 <property>
-  <name>${METADATA_TABLE_NAME}.table.config.class</name>
+  <name>${table.name.metadata}.table.config.class</name>
   <value>datawave.ingest.table.config.MetadataTableConfigHelper</value>
 </property>
 
 <property>
   <name>metadata.loaddates.enabled</name>
-  <value>${LOADDATES_TABLE_ENABLED}</value>
+  <value>${table.loadDates.enabled}</value>
 </property>
 
 <property>
   <name>metadata.loaddates.table.name</name>
-  <value>${LOADDATES_TABLE_NAME}</value>
+  <value>${table.name.loadDates}</value>
 </property>
 
 <property>
@@ -48,12 +48,12 @@
 
 <property>
     <name>metadata.loaddates.table.locality.groups</name>
-    <value>LACS:LAC\u0000shard;LAC\u0000protobufEdge;LAC\u0000knowledgeShard;LAC\u0000errorShard</value>
+    <value></value>
     <description>The list of locality groups.  Groups are comma separated.  Column families are semicolon separated, e.g. groupName1:colFamily1;colFamily2,groupName2:colFamily3</description>
 </property>
 
 <property>
-  <name>LoadDates.table.config.class</name>
+  <name>${table.name.loadDates}.table.config.class</name>
   <value>datawave.ingest.table.config.LoadDateTableConfigHelper</value>
 </property>
 

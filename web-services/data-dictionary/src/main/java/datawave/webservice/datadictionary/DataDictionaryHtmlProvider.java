@@ -1,11 +1,10 @@
 package datawave.webservice.datadictionary;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
-import java.nio.charset.Charset;
-import java.util.List;
+import datawave.webservice.query.result.metadata.MetadataFieldBase;
+import datawave.webservice.results.datadictionary.DataDictionaryBase;
+import datawave.webservice.results.datadictionary.DescriptionBase;
+import datawave.webservice.results.datadictionary.DictionaryFieldBase;
+import datawave.webservice.results.datadictionary.FieldsBase;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
@@ -13,12 +12,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
-
-import datawave.webservice.query.result.metadata.MetadataFieldBase;
-import datawave.webservice.results.datadictionary.DataDictionaryBase;
-import datawave.webservice.results.datadictionary.DescriptionBase;
-import datawave.webservice.results.datadictionary.DictionaryFieldBase;
-import datawave.webservice.results.datadictionary.FieldsBase;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+import java.nio.charset.Charset;
 
 @Provider
 @Produces({"text/html"})

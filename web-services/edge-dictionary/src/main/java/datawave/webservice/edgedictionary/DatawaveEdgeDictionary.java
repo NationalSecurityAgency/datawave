@@ -1,11 +1,10 @@
 package datawave.webservice.edgedictionary;
 
-import java.util.Set;
-
 import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
+
+import java.util.Set;
 
 /**
  * 

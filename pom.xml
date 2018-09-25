@@ -65,7 +65,7 @@
         <version.javassist>3.20.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
         <version.javax-validation>1.1.0.Final</version.javax-validation>
-        <version.jcommander>1.35</version.jcommander>
+        <version.jcommander>1.72</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>3.6.10.Final</version.jgroups>
         <version.jjwt>0.7.0</version.jjwt>

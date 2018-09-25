@@ -21,7 +21,6 @@ source "${THIS_DIR}/../bootstrap.sh"
 function usage() {
     echo
     echo "Usage: \$DW_DATAWAVE_SERVICE_DIR/test-web/$( printGreen "$( basename $0)" )"
-    echo "       Or the $( printGreen "datawaveWebTest" ) shell function may be used as an alias"
     echo
     echo " Optional arguments:"
     echo
@@ -40,31 +39,34 @@ function usage() {
     echo " $( printGreen "-lt" ) | $( printGreen "--list-tests" )"
     echo "  Print a listing of all tests grouped by test file name"
     echo
-    echo " $( printGreen "-wf" ) | $( printGreen "--whitelist-files" ) F1.test,F2.test,..,Fn.test"
-    echo "  Only execute test files having basename of F1.test or F2.test .. or Fn.test"
+    echo " $( printGreen "-wf" ) | $( printGreen "--whitelist-files" ) F1,F2,..,Fn"
+    echo "  Only execute test files having basename (minus .test extension) of F1 or F2 .. or Fn"
     echo "  If more than one, must be comma-delimited with no spaces"
     echo "  If used in conjunction with --blacklist-files, blacklist takes precedence"
     echo
-    echo " $( printGreen "-bf" ) | $( printGreen "--blacklist-files" ) F1.test,F2.test,..,Fn.test"
-    echo "  Exclude test files having basename of F1.test or F2.test .. or Fn.test"
+    echo " $( printGreen "-bf" ) | $( printGreen "--blacklist-files" ) F1,F2,..,Fn"
+    echo "  Exclude test files having basename (minus .test extension) of F1 or F2 .. or Fn"
     echo "  If more than one, must be comma-delimited with no spaces"
     echo "  If used in conjunction with --whitelist-files, blacklist takes precedence"
     echo
     echo " $( printGreen "-wt" ) | $( printGreen "--whitelist-tests" ) T1,T2,..,Tn"
-    echo "  Only execute tests having TEST_ID of T1 or T2 .. or Tn"
+    echo "  Only execute tests having TEST_UID of T1 or T2 .. or Tn"
+    echo "  TEST_UID has the following format: 'basename of test file (minus .test extension)' + '/' + 'TEST_ID' e.g., TestFile/Test001"
     echo "  If more than one, must be comma-delimited with no spaces"
     echo "  If used in conjunction with --blacklist-tests, blacklist takes precedence"
     echo
     echo " $( printGreen "-bt" ) | $( printGreen "--blacklist-tests" ) T1,T2,..,Tn"
-    echo "  Exclude tests having TEST_ID of T1 or T2 .. or Tn"
+    echo "  Exclude tests having TEST_UID of T1 or T2 .. or Tn"
+    echo "  TEST_UID has the following format: 'basename of test file (minus .test extension)' + '/' + 'TEST_ID' e.g., TestFile/Test001"
     echo "  If more than one, must be comma-delimited with no spaces"
     echo "  If used in conjunction with --whitelist-tests, blacklist takes precedence"
     echo
     echo " $( printGreen "-p" ) | $( printGreen "--pretty-print" )"
     echo "  Will format web service responses for readability, when used in conjunction with -v,--verbose"
     echo
-    echo " $( printGreen "-er" ) | $( printGreen "--expected-response" ) TEST_ID"
-    echo "  Print expected response metadata for the given test id, along with pretty-printed example response body"
+    echo " $( printGreen "-er" ) | $( printGreen "--expected-response" ) TEST_UID"
+    echo "  TEST_UID has the following format: 'basename of test file (minus .test extension)' + '/' + 'TEST_ID' e.g., TestFile/Test001"
+    echo "  Print expected response metadata for the given test, along with pretty-printed example response body"
     echo
     echo " $( printGreen "-h" ) | $( printGreen "--help" )"
     echo "  Print this usage information and exit the script"
@@ -173,11 +175,9 @@ function configure() {
 
 function cleanup() {
 
-    [ "$CLEANUP" != true ] && echo && return
+    [ "$CLEANUP" != true ] && return
     info "Cleaning up temporary files"
-    rm -f "${RESP_FILE_DIR}"/*.actual
-
-    echo
+    find "${RESP_FILE_DIR}" -type f -name "*.actual" -exec rm -f {} \;
 }
 
 function assert() {
@@ -194,10 +194,10 @@ function assert() {
     assertBodyResponse
 
     if [ -z "${TEST_STATUS}" ] ; then
-        TEST_STATUS="${LABEL_PASS}" && TESTS_PASSED="${TESTS_PASSED} ${TEST_ID}"
+        TEST_STATUS="${LABEL_PASS}" && TESTS_PASSED="${TESTS_PASSED} ${TEST_UID}"
     else
         # List of failed tests, comma-delimited, and their assertion statuses
-        TEST_FAILURES="${TEST_FAILURES},[${codeAssertionLabel}][${typeAssertionLabel}][${bodyAssertionLabel}] -> ${TEST_ID} ($( basename "${TEST_FILE}" ))"
+        TEST_FAILURES="${TEST_FAILURES},[${codeAssertionLabel}][${typeAssertionLabel}][${bodyAssertionLabel}] -> ${TEST_UID}"
     fi
 }
 
@@ -227,8 +227,14 @@ function assertBodyResponse() {
     # assertions. If needed, you can create new or overwrite existing response files at any time with
     # the --create-expected-responses flag.
 
-    EXPECTED_RESPONSE_FILE="${RESP_FILE_DIR}/${TEST_ID}.expected"
-    ACTUAL_RESPONSE_FILE="${RESP_FILE_DIR}/${TEST_ID}.actual"
+    EXPECTED_RESPONSE_FILE="${RESP_FILE_DIR}/${TEST_FILE_BASENAME}/${TEST_ID}.expected"
+    ACTUAL_RESPONSE_FILE="${RESP_FILE_DIR}/${TEST_FILE_BASENAME}/${TEST_ID}.actual"
+
+    local responseDir="$( dirname "${ACTUAL_RESPONSE_FILE}" )"
+
+    if [[ ! -d "${responseDir}" ]] ; then
+       mkdir -p "${responseDir}" || warn "Failed to create dir: ${responseDir}"
+    fi
 
     # Write actual response to file
 
@@ -262,20 +268,27 @@ function parseCurlResponse() {
 
 function runTest() {
 
-    # Filter the current TEST_ID based on whitelist/blacklist
-    [ -n "$( echo "${TEST_BLACKLIST}" | grep -E "\b${TEST_ID}\b" )" ] && return
-    [ -n "${TEST_WHITELIST}" ] && [ -z "$( echo "${TEST_WHITELIST}" | grep -E "\b${TEST_ID}\b" )" ] && return
+    # Create unique id for the test
+    TEST_UID="${TEST_FILE_BASENAME_NOEXT}/${TEST_ID}"
 
-    TEST_COUNTER=$((TEST_COUNTER+1))
+    # Filter the current TEST_UID based on whitelist/blacklist
+    [ -n "$( echo "${TEST_BLACKLIST}" | grep -E "\b${TEST_UID}\b" )" ] && return
+    [ -n "${TEST_WHITELIST}" ] && [ -z "$( echo "${TEST_WHITELIST}" | grep -E "\b${TEST_UID}\b" )" ] && return
+
+    TEST_COUNTER=$((TEST_COUNTER + 1))
 
     TEST_COMMAND="${CURL} ${CURL_ADDITIONAL_OPTS} --silent \
 --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
 --insecure --cert '${DW_CURL_CERT}' --key '${DW_CURL_KEY_RSA}' --cacert '${DW_CURL_CA}' ${TEST_URL_OPTS}"
 
+    if [ "${LIST_TESTS}" == true ] ; then
+        printCurrentTestInfo
+        return
+    fi
+
     echo
-    echo "Test ID: ${TEST_ID}"
+    echo "Test UID: ${TEST_UID}"
     echo "Test Description: ${TEST_DESCRIPTION}"
-    echo "Test File: $( basename "${TEST_FILE}" )"
     if [ "$VERBOSE" == true ] ; then
         echo
         echo "Test Command:"
@@ -289,7 +302,7 @@ function runTest() {
     if [ "${CURL_EXIT_STATUS}" != "0" ] ; then
         echo
         TEST_STATUS="${LABEL_FAIL} - Curl command exited with non-zero status: ${CURL_EXIT_STATUS}"
-        TEST_FAILURES="${TEST_FAILURES},${TEST_ID} -> CURL_NON_ZERO_EXIT(${CURL_EXIT_STATUS})"
+        TEST_FAILURES="${TEST_FAILURES},${TEST_UID} -> CURL_NON_ZERO_EXIT(${CURL_EXIT_STATUS})"
     else
         parseCurlResponse
         assert
@@ -305,7 +318,7 @@ function runTest() {
             fi
         fi
         echo
-        echo "Test Finished: ${TEST_ID}"
+        [ "$VERBOSE" == true ] && echo "Test Finished: ${TEST_UID}"
         echo "Test Total Time: ${TOTAL_TIME}"
     fi
 
@@ -313,6 +326,10 @@ function runTest() {
 
     echo
     printLine
+
+    if [ "${1}" == "--set-query-id" ] ; then
+       setQueryIdFromResponse
+    fi
 }
 
 function printLine() {
@@ -346,63 +363,38 @@ function prettyPrintTestResponse() {
    fi
 }
 
-function printTestInfo() {
+function printCurrentTestInfo() {
 
-   # This function is dual-purpose...
+   if [ -n "${LIST_ID}" ] ; then
 
-   # 1: Prints list of *all* tests whenever --list-tests,-lt is used by itself
-   # 2: Pretty-prints example data for a unique test id whenever --expected-response,-er is used (i.e. when LIST_ID is not null)
+       # Printing expected response and info for a specific test id...
 
-   [ -z "${LIST_ID}" ] && echo "File: $( printGreen $( basename "${TEST_FILE}" ) )"
+       if [ "${TEST_UID}" != "${LIST_ID}" ] ; then
+           return
+       fi
 
-   local testIds="$( cat "${TEST_FILE}" | grep -E '^TEST_ID=' | cut -d'=' -f2 | sed 's/"//g' )"
-   local testDescriptions="$( cat "${TEST_FILE}" | grep -E '^TEST_DESCRIPTION=' | cut -d'=' -f2 | sed 's/"//g' )"
-   local expectedCodes="$( cat "${TEST_FILE}" | grep -E '^EXPECTED_RESPONSE_CODE=' | cut -d'=' -f2 | sed 's/"//g' )"
-   local expectedTypes="$( cat "${TEST_FILE}" | grep -E '^EXPECTED_RESPONSE_TYPE=' | cut -d'=' -f2 | sed 's/"//g' )"
-   (
-      IFS=$'\n'
-      testIds=(${testIds})
-      testDescriptions=(${testDescriptions})
-      expectedCodes=(${expectedCodes})
-      expectedTypes=(${expectedTypes})
+       ACTUAL_RESPONSE_BODY="$( cat "${RESP_FILE_DIR}/${TEST_FILE_BASENAME}/${TEST_ID}.expected" )"
+       ACTUAL_RESPONSE_TYPE="${EXPECTED_RESPONSE_TYPE}"
 
-      for (( i=0; i<${#testIds[@]}; i++ )) ; do
+       echo "$( printGreen "Example Response Body:" )"
 
-         if [ -n "${LIST_ID}" ] ; then
-            if [ "${testIds[$i]}" != "${LIST_ID}" ] ; then
-               continue
-            fi
-         fi
+       prettyPrintTestResponse
 
-         responseType="${expectedTypes[$i]}"
-         [ -z "${responseType}" ] && responseType="N/A"
+       echo "$( printGreen "Test File:" ) ${TEST_FILE_BASENAME}"
+       echo "$( printGreen "Test ID:" ) ${TEST_ID}"
+       echo "$( printGreen "Expected Type:" ) ${EXPECTED_RESPONSE_TYPE:-N/A}"
+       echo "$( printGreen "Expected Code:" ) ${EXPECTED_RESPONSE_CODE}"
+       echo "$( printGreen "Body Assertion Enabled": ) ${EXPECTED_RESPONSE_BODY_ASSERTION}"
+       echo "$( printGreen "Test Description:" ) ${TEST_DESCRIPTION}"
+       echo "$( printGreen "Test Curl Command:" ) ${TEST_COMMAND}"
 
-         if [ -n "${LIST_ID}" ] ; then
+   else
 
-            # --expected-response was used, so we're printing expected metadata and pretty-printing example body.
-            # Just cue things up for our pretty-print function as needed
+       # Printing info for all tests...
+       echo "    ${TEST_COUNTER}$( printGreen ":" ) ${TEST_ID} | ${EXPECTED_RESPONSE_TYPE:-N/A} | ${EXPECTED_RESPONSE_CODE} | ${TEST_DESCRIPTION}"
 
-            ACTUAL_RESPONSE_BODY="$( cat "${RESP_FILE_DIR}/${testIds[$i]}.expected" )"
-            ACTUAL_RESPONSE_TYPE="${responseType}"
-            ACTUAL_RESPONSE_CODE="${expectedCodes[$i]}"
+   fi
 
-            echo
-            echo "$( printGreen "Expected Type:" ) ${ACTUAL_RESPONSE_TYPE}"
-            echo "$( printGreen "Expected Code:" ) ${ACTUAL_RESPONSE_CODE}"
-            echo "$( printGreen "Test File:" ) $( basename ${TEST_FILE})"
-            echo "$( printGreen "Test ID:" ) ${testIds[$i]}"
-            echo "$( printGreen "Test Description:" ) ${testDescriptions[$i]}"
-            echo
-
-            echo "$( printGreen "Example Response Body:" )"
-            prettyPrintTestResponse
-
-         else
-            # --list-tests was used, so just spit out a line with all the test info
-            echo "   $(($i + 1)): ${testIds[$i]} | ${responseType} | ${expectedCodes[$i]} | ${testDescriptions[$i]}"
-         fi
-      done
-   )
 }
 
 function printTestSummary() {
@@ -446,8 +438,47 @@ function printTestSummary() {
 }
 
 function exitWithTestStatus() {
+
     [ -n "${TEST_FAILURES}" ] && exit 1
     exit 0
+}
+
+function configureTest() {
+
+  TEST_ID="${1}"
+  TEST_DESCRIPTION="${2}"
+  TEST_URL_OPTS="${3}"
+  EXPECTED_RESPONSE_TYPE="${4}"
+  EXPECTED_RESPONSE_CODE="${5}"
+  EXPECTED_RESPONSE_BODY_ASSERTION="${6:-false}"
+}
+
+function configureCloseQueryTest() {
+
+  configureTest \
+    QueryCloseTest \
+    "Closes the test query as necessary" \
+    "-X PUT ${URI_ROOT}/Query/${1}/close" \
+    application/xml \
+    200
+}
+
+function setQueryIdFromResponse() {
+
+   DW_QUERY_ID=""
+
+   case "${ACTUAL_RESPONSE_TYPE}" in
+      application/json)
+         setQueryIdFromResponseJson "${ACTUAL_RESPONSE_BODY}"
+         ;;
+      application/xml)
+         setQueryIdFromResponseXml "${ACTUAL_RESPONSE_BODY}"
+         ;;
+      *)
+         warn "Parsing query id from '${ACTUAL_RESPONSE_TYPE}' is not currently supported"
+   esac
+
+   [ -z "${DW_QUERY_ID}" ] && warn "Failed to parse a query id from \$ACTUAL_RESPONSE_BODY"
 }
 
 function runConfiguredTests() {
@@ -456,7 +487,7 @@ function runConfiguredTests() {
 
     # At minimum, each distinct test within a file is defined by the following required variables:
 
-    # TEST_ID                          - Unique identifier for the test
+    # TEST_ID                          - Identifier for the test. Internally, prefixed with file name to make TEST_UID
     # TEST_DESCRIPTION                 - Short text description of the test
     # TEST_URL_OPTS                    - Test-specific options for curl, e.g., "-X GET ${URI_ROOT}/DataDictionary"
     # EXPECTED_RESPONSE_TYPE           - Expected Content-Type for the response, e.g., "application/xml"
@@ -474,19 +505,22 @@ function runConfiguredTests() {
 
     for TEST_FILE in $( find "${TEST_FILE_DIR}" -type f -name "*.test" | sort ) ; do
 
+        TEST_FILE_BASENAME="$( basename "${TEST_FILE}" )"
+        TEST_FILE_BASENAME_NOEXT="${TEST_FILE_BASENAME::-5}"
+
         # Filter the current *.test file based on whitelist/blacklist
 
-        [ -n "$( echo "${FILE_BLACKLIST}" | grep "$( basename ${TEST_FILE} )" )" ] && continue
+        [ -n "$( echo "${FILE_BLACKLIST}" | grep "\b${TEST_FILE_BASENAME_NOEXT}\b" )" ] && continue
 
-        [ -n "${FILE_WHITELIST}" ] && [ -z "$( echo "${FILE_WHITELIST}" | grep "$( basename ${TEST_FILE} )" )" ] && continue
+        [ -n "${FILE_WHITELIST}" ] && [ -z "$( echo "${FILE_WHITELIST}" | grep "${TEST_FILE_BASENAME_NOEXT}" )" ] && continue
+        [ -n "${TEST_WHITELIST}" ] && [ -z "$( echo "${TEST_WHITELIST}" | grep -E "\b${TEST_FILE_BASENAME_NOEXT}/" )" ] && continue
 
-        if [ "${LIST_TESTS}" == true ] ; then
-            printTestInfo
-            [ -z "${LIST_ID}" ] && echo
-            continue
+        if [ "${LIST_TESTS}" == true ] && [ -z "${LIST_ID}" ] ; then
+            echo "$( printGreen ${TEST_FILE_BASENAME_NOEXT} )"
         fi
 
         source "${TEST_FILE}" && runTest
+
     done
 }
 

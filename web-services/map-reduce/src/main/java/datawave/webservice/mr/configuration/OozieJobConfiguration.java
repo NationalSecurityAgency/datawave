@@ -1,12 +1,5 @@
 package datawave.webservice.mr.configuration;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import javax.ws.rs.core.MultivaluedMap;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.Auditor;
 import org.apache.commons.lang.NotImplementedException;
@@ -14,6 +7,14 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.core.MultivaluedMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 public class OozieJobConfiguration extends MapReduceJobConfiguration {
     

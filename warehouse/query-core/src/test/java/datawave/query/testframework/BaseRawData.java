@@ -128,7 +128,7 @@ public abstract class BaseRawData implements RawData {
     
     /**
      * Converts data from a {@link NormalizedContentInterface} into a raw data entry.
-     * 
+     *
      * @param datatype
      *            datatype for data
      * @param fields
@@ -151,7 +151,7 @@ public abstract class BaseRawData implements RawData {
     
     /**
      * Converts a map of fields to values to a raw entry.
-     * 
+     *
      * @param datatype
      *            datatype name
      * @param data
@@ -270,5 +270,4 @@ public abstract class BaseRawData implements RawData {
     public int hashCode() {
         return this.event.hashCode();
     }
-    
 }

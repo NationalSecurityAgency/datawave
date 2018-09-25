@@ -58,8 +58,9 @@ DW_DATAWAVE_TRUSTSTORE_TYPE="${DW_DATAWAVE_TRUSTSTORE_TYPE:-JKS}"
 # Accumulo shell script for initializing whatever we may need in Accumulo for DataWave
 
 DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT:-
+createnamespace datawave
 config -s table.classpath.context=datawave
-createtable QueryMetrics_m
+createtable datawave.queryMetrics_m
 setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}
 quit
 }"
