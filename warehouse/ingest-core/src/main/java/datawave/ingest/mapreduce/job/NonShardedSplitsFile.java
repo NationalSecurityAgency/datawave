@@ -68,9 +68,12 @@ public class NonShardedSplitsFile {
         public void createFile(boolean isTrimmed) {
             try {
                 MetadataTableSplits splits = new MetadataTableSplits(conf);
-                if (MetadataTableSplits.shouldRefreshSplits(conf) && !MetadataTableSplitsCacheStatus.isCacheValid(conf))
+                boolean isCacheValid = MetadataTableSplitsCacheStatus.isCacheValid(conf);
+                boolean shouldRefreshSplits = MetadataTableSplits.shouldRefreshSplits(conf);
+                if (shouldRefreshSplits && !isCacheValid) {
+                    log.info("Recreating splits");
                     splits.update();
-                else if (!MetadataTableSplits.shouldRefreshSplits(conf) && !MetadataTableSplitsCacheStatus.isCacheValid(conf)) {
+                } else if (!shouldRefreshSplits && !isCacheValid) {
                     throw new Exception("Splits cache is invalid");
                 }
                 writeSplitsToFile(splits);

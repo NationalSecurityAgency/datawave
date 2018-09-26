@@ -24,10 +24,14 @@ public class MetadataTableSplitsCacheStatus {
         try {
             fileStatus = FileSystem.get(conf).getFileStatus(splitsPath);
         } catch (IOException ex) {
-            log.warn("Could not get the FileStatus of the splits file");
+            log.warn("Could not get the FileStatus of the splits file " + splitsPath.toString());
         }
-        return null != fileStatus
-                        && fileStatus.getModificationTime() >= System.currentTimeMillis() - conf.getLong(SPLITS_CACHE_TIMEOUT_MS, DEFAULT_CACHE_TIMEOUT);
+        long expirationTime = System.currentTimeMillis() - conf.getLong(SPLITS_CACHE_TIMEOUT_MS, DEFAULT_CACHE_TIMEOUT);
+        boolean isFileAgeValid = fileStatus.getModificationTime() >= expirationTime;
+        if (!isFileAgeValid) {
+            log.warn("SplitsCache has expired " + splitsPath.toString() + " age: " + fileStatus.getModificationTime() + " expiration: " + expirationTime);
+        }
+        return null != fileStatus && isFileAgeValid;
     }
     
 }
