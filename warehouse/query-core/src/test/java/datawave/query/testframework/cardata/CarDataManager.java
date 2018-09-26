@@ -1,6 +1,9 @@
-package datawave.query.testframework;
+package datawave.query.testframework.cardata;
 
 import au.com.bytecode.opencsv.CSVReader;
+import datawave.query.testframework.AbstractDataManager;
+import datawave.query.testframework.BaseRawData;
+import datawave.query.testframework.RawData;
 import datawave.query.testframework.cardata.CarsDataType.CarField;
 import org.apache.log4j.Logger;
 import org.junit.Assert;

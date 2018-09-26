@@ -53,15 +53,15 @@ public abstract class AbstractDataManager implements RawDataManager {
      * @param shardField
      *            field name containing shard id
      */
-    AbstractDataManager(final String keyField, final String shardField) {
+    protected AbstractDataManager(final String keyField, final String shardField) {
         this(keyField, shardField, null, SHARD_ID_VALUES);
     }
     
-    AbstractDataManager(final String keyField, final String shardField, final Map<String,RawMetaData> metaDataMap) {
+    protected AbstractDataManager(final String keyField, final String shardField, final Map<String,RawMetaData> metaDataMap) {
         this(keyField, shardField, metaDataMap, SHARD_ID_VALUES);
     }
     
-    AbstractDataManager(final String keyField, final String shardField, final Map<String,RawMetaData> metaDataMap, final ShardIdValues shardInfo) {
+    protected AbstractDataManager(final String keyField, final String shardField, final Map<String,RawMetaData> metaDataMap, final ShardIdValues shardInfo) {
         this.rawKeyField = keyField.toLowerCase();
         this.rawData = new HashMap<>();
         this.rawDataIndex = new HashMap<>();

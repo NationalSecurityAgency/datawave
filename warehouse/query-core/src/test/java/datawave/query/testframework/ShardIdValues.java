@@ -45,7 +45,7 @@ public class ShardIdValues {
      * @param shardDate
      *            list of valid shard id date entries
      */
-    ShardIdValues(final List<String> shardDate) {
+    public ShardIdValues(final List<String> shardDate) {
         Assert.assertFalse("there must be at least one shard id value", shardDate.isEmpty());
         this.shardIds = new HashMap<>();
         for (String shard : shardDate) {
@@ -66,7 +66,7 @@ public class ShardIdValues {
      *            end date for inclusion
      * @return set of shard date strings
      */
-    Set<String> getShardRange(final Date start, final Date end) {
+    public Set<String> getShardRange(final Date start, final Date end) {
         final Set<String> shards = new HashSet<>();
         for (final Map.Entry<String,Date> entry : this.shardIds.entrySet()) {
             if (0 >= start.compareTo(entry.getValue()) && 0 <= end.compareTo(entry.getValue())) {
@@ -84,7 +84,7 @@ public class ShardIdValues {
      *            When true, return a random date range that may start/end within the provided values.
      * @return array containing the start and end date objects
      */
-    Date[] getStartEndDates(final boolean random) {
+    public Date[] getStartEndDates(final boolean random) {
         Date[] startEndDate = new Date[2];
         if (random) {
             int s = rVal.nextInt(sortedDate.size());

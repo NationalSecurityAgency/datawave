@@ -33,8 +33,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
     private static final Logger log = Logger.getLogger(IndexQueryLogicTest.class);
     
     public IndexQueryLogicTest() {
-        super(new CarDataManager());
-        
+        super(CarsDataType.getManager());
     }
     
     @BeforeClass
