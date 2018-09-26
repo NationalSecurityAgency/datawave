@@ -264,8 +264,16 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             
         }
         extendedOptions.put(AgeOffConfigParams.IS_MERGE, Boolean.toString(isMerge));
-        return new RuleConfig(filterClassName, index).ttlValue(ttlValue).ttlUnits(ttlUnits).matchPattern(matchPattern).label(label).setIsMerge(isMerge)
-                        .extendedOptions(extendedOptions);
+        
+        // @formatter:off
+        return new RuleConfig(filterClassName, index)
+            .ttlValue(ttlValue)
+            .ttlUnits(ttlUnits)
+            .matchPattern(matchPattern)
+            .label(label)
+            .setIsMerge(isMerge)
+            .extendedOptions(extendedOptions);
+        // @formatter:on
     }
     
     private Collection<? extends RuleConfig> loadParentRuleConfigs(Node parent) throws IOException {

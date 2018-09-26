@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * This class provides a subclass of the {@code org.apache.accumulo.core.iterators.Filter} class and implements the {@code Option Describer} interface. It
  * allows one to configure a {@code Iterator} to apply many filtering rules, each with it own specific "age off" value. Records {@code (Key, Value)} pairs are
  * aged off if their age is older than the "time to live" ("ttl") specified in with the filtering rules or in the default time to live.
- * 
+ *
  * <p>
  * The default time to live and its "units" are specified in the options {@code Map<String, String>} object that is passed to the {@code init} method. The
  * default time to live is stored under the key defined by {@code AgeOffConfigParams.TTL}. The units for the default time to live are stored under the key
@@ -36,13 +36,13 @@ import java.util.concurrent.TimeUnit;
  * {@code AgeOffConfigParams.FILTER_CONFIG} {@code AgeOffConfigParams.TTL_SHORT_CIRCUIT} can be optionally used to short circuit invoking the filters and will
  * allow all records younger thatn that interval to be passed through. The units definition is used for both {@code AgeOffConfigParams.TTL} and
  * {@code AgeOffConfigParams.TTL_SHORT_CIRCUIT}.
- * 
- * 
+ *
+ *
  * <p>
  * The filtering rules are stored in a configuration file, which may be stored in the local file system, or in HDFS. If it is stored in the local filesystem,
  * then it must be available on all of the tablet servers' filesystems. The configuration file should be specified as a full URL such as
  * {@code file:///opt/accumulo/config/configFilter.xml} or {@code hdfs://config/filters/configFilter.xml}.
- * 
+ *
  * <p>
  * The TTL Units may be the following values:
  * <ul>
@@ -52,12 +52,12 @@ import java.util.concurrent.TimeUnit;
  * <li>{@code h} - hours
  * <li>{@code d} - days
  * </ul>
- * 
+ *
  * <p>
  * Sample Configuration File:
- * 
+ *
  * <p>
- * 
+ *
  * <pre>
  * &lt;ageoffConfiguration&gt;
  *  &lt;rules&gt;
@@ -137,7 +137,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
      * This method returns a {@code boolean} value indicating whether or not to allow the {@code (Key, Value)} pair through the filter. A value of {@code true}
      * indicates that he pair should be passed onward through the {@code Iterator} stack, and {@code false} indicates that the {@code (Key, Value)} pair should
      * not be passed on.
-     * 
+     *
      * @param k
      *            {@code Key} object containing the row, column family, and column qualifier.
      * @param v
@@ -188,7 +188,6 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     
     /**
      * initialize the object via some other configurable age off filter.
-     * 
      */
     protected ConfigurableAgeOffFilter initialize(ConfigurableAgeOffFilter other) {
         
@@ -209,7 +208,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     
     /**
      * Initialize this object with a set of string parameters representing the configuration options for this iterator.
-     * 
+     *
      * @param ttl
      * @param ttlUnits
      * @param scanStart
@@ -230,13 +229,8 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         
         /**
          * deal with TTL and TTL Units
-         * 
+         *
          */
-        
-        if (ttl == null) {
-            throw new IllegalArgumentException("ttl must be set for ConfigurableAgeOffFilter");
-        }
-        
         long ttlUnitsFactor = (1000 * 60 * 60 * 24); // (ms per day) default to "days" as the unit.
         
         if (ttlUnits != null) {
@@ -282,7 +276,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     
     /**
      * return true if this is a system initiated majc (a majc that is not a full major compaction)
-     * 
+     *
      * @param env
      */
     private boolean isSystemInitiatedMajC(IteratorEnvironment env) {
@@ -291,7 +285,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     
     /**
      * Used to initialize the default parameters used by this implementation of {@code Filter}, as well as the sub-filters specified in the configuration file.
-     * 
+     *
      * @param options
      *            {@code Map<String, String>} object contain the configuration parameters for this {@code Filter} implementation. The parameters required are
      *            specified in the {@code AgeOffConfigParams.TTL}, {@code AgeOffConfigParams.TTL_UNITS}, and {@code AgeOffConfigParams.FILTER_CONFIG}.
@@ -325,7 +319,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     /**
      * This method instantiates the the necessary implementations of the {@code Filter} interface, as they are defined in the configuration file specified by
      * {@code this.filename}.
-     * 
+     *
      * @throws IllegalArgumentException
      *             if there is an error in the configuration file
      * @throws IOException
@@ -339,6 +333,8 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                     EXPIRATION_INTERVAL_MS = getLongProperty(EXPIRATION_INTERVAL_MS_PROP, DEFAULT_EXPIRATION_INTERVAL_MS); // 1 hour
                     ruleCache = CacheBuilder.newBuilder().refreshAfterWrite(UPDATE_INTERVAL_MS, TimeUnit.MILLISECONDS)
                                     .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new ReloadableCacheBuilder());
+                    // this will schedule a check to see if the update or expiration intervals have changed
+                    // if so the ruleCache will be rebuilt with these new intervals
                     SimpleTimer.getInstance(AccumuloConfiguration.getDefaultConfiguration()).schedule(
                                     () -> {
                                         try {
@@ -397,11 +393,15 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     protected void copyRules(FileRuleWatcher watcherKey) throws IOException {
         filterList = new ArrayList<>();
         try {
-            
+            // rule cache is lazily loaded, so the act of getting the key will populate it with the key
+            // and trigger a bunch of loading logic which will ultimately call
+            // FileRuleWatcher.loadContents() which will return the rules
             Collection<FilterRule> rules = ruleCache.get(watcherKey);
             
             if (rules != null) {
                 for (FilterRule rule : rules) {
+                    // NOTE: this propagates the anchor time (scanStart) to all of the applied rules
+                    // This is used to calculate the AgeOffPeriod for all of the rules
                     filterList.add((AppliedRule) rule.deepCopy(this.scanStart));
                 }
             }
@@ -413,7 +413,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     
     /**
      * This method is used by accumulo and its command line shell to prompt the user for the configuration options for this {@code Filter}.
-     * 
+     *
      * @return {@code IteratorOptions} object listing the option names and "help information" on each of them.
      */
     @Override
@@ -431,11 +431,10 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     
     /**
      * This method is used by accumulo and its command line shell to validate values provided by the user for the configuration options for this {@code Filter}.
-     * 
+     *
      * @param options
      *            {@code Map<String, String>} object contain the configuration parameters for this {@code Filter} implementation. The parameters required are
      *            specified in the {@code AgeOffConfigParams.TTL}, {@code AgeOffConfigParams.TTL_UNITS}, and {@code AgeOffConfigParams.FILTER_CONFIG}.
-     * 
      * @return {@code boolean} value indicating success ({@code true}) or failure ({@code false})
      */
     @Override
@@ -458,10 +457,11 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         }
         
         String ttlUnits = options.get(AgeOffConfigParams.TTL_UNITS);
-        
-        return (ttlUnits != null)
-                        && (ttlUnits.equals(AgeOffTtlUnits.DAYS) || ttlUnits.equals(AgeOffTtlUnits.HOURS) || ttlUnits.equals(AgeOffTtlUnits.MINUTES)
-                                        || ttlUnits.equals(AgeOffTtlUnits.SECONDS) || ttlUnits.equals(AgeOffTtlUnits.MILLISECONDS));
+        // @formatter:off
+        List<String> allUnits = Arrays.asList(
+            AgeOffTtlUnits.DAYS, AgeOffTtlUnits.HOURS, AgeOffTtlUnits.MINUTES, AgeOffTtlUnits.SECONDS, AgeOffTtlUnits.MILLISECONDS);
+        // @formatter:on
+        return (ttlUnits != null) && allUnits.contains(ttlUnits);
     }
     
     /**
