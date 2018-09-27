@@ -3,6 +3,7 @@
         <!-- only rules with same label and filter class can be merged -->
         <rule label="test">
             <filterClass>datawave.ingest.util.cache.watch.TestTrieFilter</filterClass>
+            <ttl units="d">1024</ttl>
             <matchPattern>
                 "baking powder" : 365d
                 "dried beans" : 548d

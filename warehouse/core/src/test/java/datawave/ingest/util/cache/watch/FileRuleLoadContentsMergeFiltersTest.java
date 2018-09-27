@@ -103,17 +103,32 @@ public class FileRuleLoadContentsMergeFiltersTest {
         // should have one extra rule in child
         assertThat(childRules.size(), is(equalTo(parentRules.size() + 1)));
         
-        // verify order of filters
+        // parent classes are
+        // TestTrieFilter
+        // TestFieldFilter
+        // TestFilter
+        // This order should be maintained!!!!!
+        assertThat(simpleName(parentRules, 0), is("TestTrieFilter"));
+        assertThat(simpleName(parentRules, 1), is("TestFieldFilter"));
+        assertThat(simpleName(parentRules, 2), is("TestFilter"));
+        
+        // verify order of filters in child matches parent
         for (int i = 0; i < parentRules.size(); i++) {
             FilterRule parent = parentRules.get(i);
             FilterRule child = childRules.get(i);
-            // parent classes are
-            // TestTrieFilter
-            // TestFieldFilter
-            // TestFilter
-            // This order should be maintained!!!!!
+            
             assertThat(child.getClass().getSimpleName(), is(equalTo(parent.getClass().getSimpleName())));
         }
+        
+        // also verify that child inherited ttl from parent
+        TestTrieFilter mergedParent = (TestTrieFilter) parentRules.get(0);
+        TestTrieFilter mergedChild = (TestTrieFilter) childRules.get(0);
+        assertThat(mergedChild.options.getTTL(), is(equalTo(mergedParent.options.getTTL())));
+        assertThat(mergedChild.options.getTTLUnits(), is(equalTo(mergedParent.options.getTTLUnits())));
+    }
+    
+    private String simpleName(List<FilterRule> parentRules, int i) {
+        return parentRules.get(i).getClass().getSimpleName();
     }
     
     private void verifyParentRule(String data, long offsetInDays) {

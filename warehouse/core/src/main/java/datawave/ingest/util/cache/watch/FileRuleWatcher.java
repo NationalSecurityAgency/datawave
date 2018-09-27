@@ -194,8 +194,12 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     
     void mergeChildIntoParent(RuleConfig child, RuleConfig parent) {
         if (child.isMerge) {
-            parent.ttlValue = child.ttlValue;
-            parent.ttlUnits = child.ttlUnits;
+            if (null != child.ttlValue) {
+                parent.ttlValue = child.ttlValue;
+            }
+            if (null != child.ttlUnits) {
+                parent.ttlUnits = child.ttlUnits;
+            }
             parent.extendedOptions.putAll(child.extendedOptions);
             if (null != child.matchPattern && !child.matchPattern.trim().isEmpty()) {
                 parent.matchPattern += "\n" + child.matchPattern;
