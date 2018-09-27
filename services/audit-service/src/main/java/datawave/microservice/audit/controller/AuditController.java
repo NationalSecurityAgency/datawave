@@ -33,7 +33,9 @@ public class AuditController {
     }
     
     private void sendMessage(AuditParameters parameters) {
-        messageChannel.send(MessageBuilder.withPayload(AuditMessage.fromParams(parameters)).build());
+        if (!messageChannel.send(MessageBuilder.withPayload(AuditMessage.fromParams(parameters)).build())) {
+            throw new RuntimeException("Failed to send audit: " + parameters);
+        }
     }
     
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
