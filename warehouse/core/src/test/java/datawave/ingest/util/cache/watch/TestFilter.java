@@ -6,6 +6,7 @@ import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.iterators.filter.ageoff.FilterRule;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 public class TestFilter extends AppliedRule {
@@ -14,6 +15,11 @@ public class TestFilter extends AppliedRule {
     
     @Override
     public void init(FilterOptions options) {
+        this.options = options;
+    }
+    
+    @Override
+    public void init(FilterOptions options, IteratorEnvironment iterEnv) {
         this.options = options;
     }
     

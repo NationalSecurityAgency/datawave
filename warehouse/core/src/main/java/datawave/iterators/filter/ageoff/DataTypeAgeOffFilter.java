@@ -10,6 +10,7 @@ import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -225,15 +226,26 @@ public class DataTypeAgeOffFilter extends AppliedRule {
      *            {@code Map} object containing the TTL, TTL_UNITS, and MATCHPATTERN for the filter rule.
      * @see datawave.iterators.filter.AgeOffConfigParams
      */
-    
     public void init(FilterOptions options) {
-        String scanStartStr = options.getOption(AgeOffConfigParams.SCAN_START_TIMESTAMP);
-        long scanStart = scanStartStr == null ? System.currentTimeMillis() : Long.parseLong(scanStartStr);
-        this.init(options, scanStart);
+        init(options, null);
     }
     
-    protected void init(FilterOptions options, final long scanStart) {
-        super.init(options);
+    /**
+     * Required by the {@code FilterRule} interface. Used to initialize the the {@code FilterRule} implementation
+     *
+     * @param options
+     *            {@code Map} object containing the TTL, TTL_UNITS, and MATCHPATTERN for the filter rule.
+     * @param iterEnv
+     * @see datawave.iterators.filter.AgeOffConfigParams
+     */
+    public void init(FilterOptions options, IteratorEnvironment iterEnv) {
+        String scanStartStr = options.getOption(AgeOffConfigParams.SCAN_START_TIMESTAMP);
+        long scanStart = scanStartStr == null ? System.currentTimeMillis() : Long.parseLong(scanStartStr);
+        this.init(options, scanStart, iterEnv);
+    }
+    
+    protected void init(FilterOptions options, final long scanStart, IteratorEnvironment iterEnv) {
+        super.init(options, iterEnv);
         if (options == null) {
             throw new IllegalArgumentException("FilterOptions can not be null");
         }
@@ -248,7 +260,14 @@ public class DataTypeAgeOffFilter extends AppliedRule {
                 dataTypes.add(new ArrayByteSequence(dt.trim().getBytes()));
         }
         
-        isIndextable = Boolean.valueOf(options.getOption("isindextable", "false"));
+        isIndextable = false;
+        if (options.getOption("isindextable") == null) {
+            if (iterEnv != null && iterEnv.getConfig() != null) {
+                isIndextable = Boolean.parseBoolean(iterEnv.getConfig().get("isindextable"));
+            }
+        } else { // legacy
+            isIndextable = Boolean.valueOf(options.getOption("isindextable"));
+        }
         
         long ttlUnitsFactor = 1L; // default to "days" as the unit.
         

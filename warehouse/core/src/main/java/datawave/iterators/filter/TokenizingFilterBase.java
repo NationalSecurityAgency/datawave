@@ -8,6 +8,7 @@ import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 /**
  * TokenizingAgeoffFilter cuts a field into tokens (splitting at a specified set of delimiters), and makes ageoff decisions based on whether or not any of the
@@ -73,7 +74,12 @@ public abstract class TokenizingFilterBase extends AppliedRule {
     
     @Override
     public void init(FilterOptions options) {
-        super.init(options);
+        init(options, null);
+    }
+    
+    @Override
+    public void init(FilterOptions options, IteratorEnvironment iterEnv) {
+        super.init(options, iterEnv);
         ruleApplied = false;
         String confPattern = options.getOption(AgeOffConfigParams.MATCHPATTERN);
         MERGE_MODE mode = getMergeMode(options);
