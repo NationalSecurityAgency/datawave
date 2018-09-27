@@ -65,7 +65,7 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
     public void testAcceptKeyValue_OnlyTtlNoInnerFilters() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
         Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
-
+        
         // no file or other delegate filters configured, so only the ttl are used
         filter.init(source, options, env);
         
@@ -80,7 +80,7 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
         options.put(AgeOffConfigParams.FILTER_CONFIG, pathFromClassloader("/test-root-rules.xml"));
         filter.init(source, options, env);
-
+        
         // the file uses TestFilter which always returns false for accept and filter applied
         // so only ttl is uses for acceptance
         assertThat(filter.accept(getKey(daysAgo(15)), VALUE), is(true));

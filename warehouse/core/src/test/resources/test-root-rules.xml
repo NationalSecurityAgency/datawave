@@ -14,7 +14,7 @@
         </rule>
         <!-- These don't have a label so should not be merged -->
         <rule>
-            <filterClass>datawave.ingest.util.cache.watch.TestFilter</filterClass>
+            <filterClass>datawave.ingest.util.cache.watch.TestFieldFilter</filterClass>
             <ttl units="ms">10</ttl>
             <matchPattern>foo</matchPattern>
         </rule>

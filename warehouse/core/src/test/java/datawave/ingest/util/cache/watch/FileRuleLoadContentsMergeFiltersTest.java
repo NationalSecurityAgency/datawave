@@ -1,14 +1,11 @@
 package datawave.ingest.util.cache.watch;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Optional;
-
+import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.iterators.filter.AgeOffTtlUnits;
+import datawave.iterators.filter.ageoff.AgeOffPeriod;
+import datawave.iterators.filter.ageoff.AppliedRule;
+import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.iterators.filter.ageoff.FilterRule;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -17,12 +14,14 @@ import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Test;
 
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.AgeOffTtlUnits;
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
-import datawave.iterators.filter.ageoff.AppliedRule;
-import datawave.iterators.filter.ageoff.FilterOptions;
-import datawave.iterators.filter.ageoff.FilterRule;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
 
 /**
  * Tests to verify capability of merging configs that use filters that inherit from {@code TokenizingFilterBase}
@@ -90,6 +89,31 @@ public class FileRuleLoadContentsMergeFiltersTest {
         verifyChildRule("coffee ground", 30L);
         verifyChildRule("coffee whole bean", 150L);
         verifyChildRule("coffee instant", 1080L);
+    }
+    
+    @Test
+    public void testNewConfigMaintainsOrder() throws Exception {
+        Path rootPath = new Path(this.getClass().getResource(ROOT_FILTER_CONFIGURATION_FILE).toString());
+        Path childPath = new Path(this.getClass().getResource(CHILD_FILTER_CONFIGURATION_FILE).toString());
+        FileSystem fs = childPath.getFileSystem(new Configuration());
+        
+        List<FilterRule> parentRules = (List<FilterRule>) watcher.loadContents(fs.open(rootPath));
+        List<FilterRule> childRules = (List<FilterRule>) watcher.loadContents(fs.open(childPath));
+        
+        // should have one extra rule in child
+        assertThat(childRules.size(), is(equalTo(parentRules.size() + 1)));
+        
+        // verify order of filters
+        for (int i = 0; i < parentRules.size(); i++) {
+            FilterRule parent = parentRules.get(i);
+            FilterRule child = childRules.get(i);
+            // parent classes are
+            // TestTrieFilter
+            // TestFieldFilter
+            // TestFilter
+            // This order should be maintained!!!!!
+            assertThat(child.getClass().getSimpleName(), is(equalTo(parent.getClass().getSimpleName())));
+        }
     }
     
     private void verifyParentRule(String data, long offsetInDays) {
