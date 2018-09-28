@@ -478,7 +478,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         
         ShardQueryConfiguration config = create(shardQueryLogic.getConfig());
         
-        if (-1 == shardQueryLogic.getMaxResults()) {
+        if (shardQueryLogic.getMaxResults() < 0) {
             config.setMaxQueryResults(Long.MAX_VALUE);
         }
         
