@@ -14,8 +14,9 @@ import com.beust.jcommander.Parameter;
  * -t --table
  * </pre>
  * 
- * All arguments are converted with the {@code PasswordConverter} so the env:ENVIRONMENT_VAR format can be used to specify parameters </br> </br> This is
- * especially recommend to be used for password arguments </br> </br> Example usage:
+ * All arguments are converted with the {@code PasswordConverter} so the env:ENVIRONMENT_VAR format can be used to specify parameters <br>
+ * This is especially recommend to be used for password arguments <br>
+ * Example usage:
  * 
  * <pre>
  * AccumuloArgs args = AccumuloArgs.newBuilder()
