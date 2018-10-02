@@ -151,7 +151,7 @@ public class DataDictionaryBean {
             metadataTableName = this.dataDictionaryConfiguration.getMetadataTableName();
         }
         
-        Collection<String> dataTypes = (StringUtils.isBlank(dataTypeFilters) ? Collections.<String> emptyList() : Arrays.asList(dataTypeFilters.split(",")));
+        Collection<String> dataTypes = (StringUtils.isBlank(dataTypeFilters) ? Collections.emptyList() : Arrays.asList(dataTypeFilters.split(",")));
         
         Connector connector = null;
         try {

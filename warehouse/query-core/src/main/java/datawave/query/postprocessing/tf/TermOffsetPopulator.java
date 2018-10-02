@@ -273,7 +273,7 @@ public class TermOffsetPopulator {
         
         Collection<Class<? extends Type<?>>> dataTypesForZone = dataTypes.get(zone);
         if (dataTypesForZone.isEmpty()) {
-            dataTypesForZone = Collections.<Class<? extends Type<?>>> singleton(NoOpType.class);
+            dataTypesForZone = Collections.singleton(NoOpType.class);
         }
         
         // Get the dataType version of the term for each dataType set up on

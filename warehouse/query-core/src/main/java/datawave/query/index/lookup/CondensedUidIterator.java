@@ -300,8 +300,8 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
         final String dataType = parseDataType(k);
         Uid.List docIds = Uid.List.parseFrom(v.get());
         final boolean ignore = docIds.getIGNORE();
-        List<String> uids = ignore || docIds.getUIDList() == null ? Collections.<String> emptyList() : Lists.transform(docIds.getUIDList(), s -> dataType
-                        + "\u0000" + s.trim());
+        List<String> uids = ignore || docIds.getUIDList() == null ? Collections.emptyList() : Lists.transform(docIds.getUIDList(),
+                        s -> dataType + "\u0000" + s.trim());
         return Tuples.tuple(docIds.getCOUNT(), ignore, uids);
     }
     
@@ -340,7 +340,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
      */
     @Override
     public IteratorOptions describeOptions() {
-        return new IteratorOptions("", "", Collections.<String,String> emptyMap(), Collections.<String> emptyList());
+        return new IteratorOptions("", "", Collections.emptyMap(), Collections.emptyList());
     }
     
     /**

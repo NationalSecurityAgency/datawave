@@ -49,7 +49,7 @@ public class ShardLimitingIteratorTest {
         CreateUidsIterator itr = new CreateUidsIterator();
         itr.init(new SortedMapIterator(data), null, null);
         Range range = new Range(new Key("t", "v", "20130325"), true, new Key("t", "v", "20130325_\uffff"), false);
-        itr.seek(range, Collections.<ByteSequence> emptySet(), false);
+        itr.seek(range, Collections.emptySet(), false);
         assertTrue(itr.hasTop());
         
         ShardLimitingIterator iter = new ShardLimitingIterator(new SortedKeyValueIteratorToIterator(itr), 25);
@@ -96,7 +96,7 @@ public class ShardLimitingIteratorTest {
         CreateUidsIterator itr = new CreateUidsIterator();
         itr.init(new SortedMapIterator(data), null, null);
         Range range = new Range(new Key("t", "v", "20130320"), true, new Key("t", "v", "20130330_\uffff"), false);
-        itr.seek(range, Collections.<ByteSequence> emptySet(), false);
+        itr.seek(range, Collections.emptySet(), false);
         
         ShardLimitingIterator iter = new ShardLimitingIterator(new SortedKeyValueIteratorToIterator(itr), 25);
         assertTrue(iter.hasNext());

@@ -49,8 +49,8 @@ public class TermFrequencyIterator extends WrappingIterator {
     
     protected Range initialSeekRange;
     // This iterator can only have a single columnFamily which is tf
-    protected Collection<ByteSequence> seekColumnFamilies = Collections.<ByteSequence> singleton(new ArrayByteSequence(Constants.TERM_FREQUENCY_COLUMN_FAMILY
-                    .getBytes(), 0, Constants.TERM_FREQUENCY_COLUMN_FAMILY.getLength()));
+    protected Collection<ByteSequence> seekColumnFamilies = Collections.singleton(new ArrayByteSequence(Constants.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), 0,
+                    Constants.TERM_FREQUENCY_COLUMN_FAMILY.getLength()));
     protected boolean seekColumnFamiliesInclusive = true;
     
     // Wrapping iterator only accesses its private source in setSource and getSource

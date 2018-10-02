@@ -108,7 +108,7 @@ public class JexlRule extends AppliedRule {
                 if (log.isDebugEnabled())
                     log.debug(topKey);
                 queryIter.seek(new Range(new Key(topKey.getRow(), topKey.getColumnFamily()), true, topKey.followingKey(PartialKey.ROW_COLFAM), false),
-                                Collections.<ByteSequence> emptyList(), false);
+                                Collections.emptyList(), false);
                 
             } catch (IOException e) {
                 log.error(e);

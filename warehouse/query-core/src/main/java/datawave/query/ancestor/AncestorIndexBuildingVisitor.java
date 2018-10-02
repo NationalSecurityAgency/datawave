@@ -73,7 +73,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
             Key startKey = getKey(node);
             Key endKey = getEndKey(node);
             
-            kvIter.seek(new Range(startKey, true, endKey, true), Collections.<ByteSequence> emptyList(), false);
+            kvIter.seek(new Range(startKey, true, endKey, true), Collections.emptyList(), false);
         }
     }
     
@@ -169,7 +169,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         // inclusive to catch the first uid
         Range range = new Range(startKey, true, endKey, false);
         try {
-            iterator.seek(range, Collections.<ByteSequence> emptyList(), false);
+            iterator.seek(range, Collections.emptyList(), false);
             
             while (iterator.hasTop()) {
                 Key nextKey = iterator.getTopKey();
@@ -184,7 +184,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
                 
                 // seek to the next child by shifting the startKey
                 startKey = new Key(row, nextKey.getColumnFamily().toString() + Constants.NULL_BYTE_STRING);
-                iterator.seek(new Range(startKey, true, endKey, true), Collections.<ByteSequence> emptyList(), false);
+                iterator.seek(new Range(startKey, true, endKey, true), Collections.emptyList(), false);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

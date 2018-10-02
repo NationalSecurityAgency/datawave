@@ -8,17 +8,17 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 
 public interface SecurityMarking extends ParameterValidator {
     
-    public ColumnVisibility toColumnVisibility() throws MarkingFunctions.Exception;
+    ColumnVisibility toColumnVisibility() throws MarkingFunctions.Exception;
     
-    public String toColumnVisibilityString();
+    String toColumnVisibilityString();
     
-    public Map<String,String> toMap();
+    Map<String,String> toMap();
     
-    public void fromMap(Map<String,String> map);
+    void fromMap(Map<String,String> map);
     
-    public String mapToString();
+    String mapToString();
     
-    public void fromString(String xmlString);
+    void fromString(String xmlString);
     
-    public void clear();
+    void clear();
 }

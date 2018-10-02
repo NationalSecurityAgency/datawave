@@ -814,7 +814,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         // Figure out if the query contained any term frequency terms so we know
         // if we may use the term frequencies instead of the fields index in some cases
-        Set<String> queryTfFields = Collections.<String> emptySet();
+        Set<String> queryTfFields = Collections.emptySet();
         Set<String> termFrequencyFields;
         try {
             termFrequencyFields = metadataHelper.getTermFrequencyFields(config.getDatatypeFilter());

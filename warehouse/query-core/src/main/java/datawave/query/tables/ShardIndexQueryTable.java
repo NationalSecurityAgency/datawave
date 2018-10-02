@@ -261,7 +261,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             Set<String> expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
             script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, this.metadataHelper, origScript, expansionFields);
         } catch (CannotExpandUnfieldedTermFatalException e) {
-            Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.<String,String> create());
+            Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.create());
             config.setNormalizedTerms(emptyMap);
             config.setNormalizedPatterns(emptyMap);
             return config;
@@ -353,7 +353,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             // scan the table
             BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, "shardIndex",
                             Collections.singleton(config.getRangesForTerms().get(termEntry)), Collections.singleton(termEntry.getValue()),
-                            Collections.<String> emptySet(), config.getTableName().equals(config.getReverseIndexTableName()), false);
+                            Collections.emptySet(), config.getTableName().equals(config.getReverseIndexTableName()), false);
             
             bs.fetchColumnFamily(new Text(termEntry.getKey()));
             
@@ -366,7 +366,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             
             // scan the table
             BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, tName, Collections.singleton(rangeEntry.getKey()),
-                            Collections.<String> emptySet(), Collections.singleton(patternEntry.getValue()), rangeEntry.getValue(), false);
+                            Collections.emptySet(), Collections.singleton(patternEntry.getValue()), rangeEntry.getValue(), false);
             
             bs.fetchColumnFamily(new Text(patternEntry.getKey()));
             

@@ -333,7 +333,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     public void apply_acceptSuperRejectTest() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
         
-        EasyMock.expect(mockAttributeFactory.getTypeMetadata("FOO", "datatype")).andReturn(Collections.<String> emptyList());
+        EasyMock.expect(mockAttributeFactory.getTypeMetadata("FOO", "datatype")).andReturn(Collections.emptyList());
         
         replayAll();
         
@@ -354,7 +354,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     public void apply_acceptSuperRejectChildTest() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
         
-        EasyMock.expect(mockAttributeFactory.getTypeMetadata("FOO", "datatype")).andReturn(Collections.<String> emptyList());
+        EasyMock.expect(mockAttributeFactory.getTypeMetadata("FOO", "datatype")).andReturn(Collections.emptyList());
         
         replayAll();
         

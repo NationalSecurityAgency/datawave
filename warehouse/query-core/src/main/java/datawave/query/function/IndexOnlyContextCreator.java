@@ -101,7 +101,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     
     public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
                     final CompositeMetadata compositeMetadata, final QueryOptions options, JexlContextValueComparator comparatorFactory) {
-        this(source, range, typeMetadata, compositeMetadata, options, Collections.<String> emptySet(), comparatorFactory);
+        this(source, range, typeMetadata, compositeMetadata, options, Collections.emptySet(), comparatorFactory);
     }
     
     @Override

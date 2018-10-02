@@ -138,10 +138,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     protected TypeMetadata typeMetadata;
     protected EventDataQueryFilter attrFilter;
-    protected Set<String> fieldsToAggregate = Collections.<String> emptySet();
-    protected Set<String> termFrequencyFields = Collections.<String> emptySet();
+    protected Set<String> fieldsToAggregate = Collections.emptySet();
+    protected Set<String> termFrequencyFields = Collections.emptySet();
     protected boolean allowTermFrequencyLookup = true;
-    protected Set<String> indexOnlyFields = Collections.<String> emptySet();
+    protected Set<String> indexOnlyFields = Collections.emptySet();
     protected FieldIndexAggregator fiAggregator = new IdentityAggregator(null);
     
     protected CompositeMetadata compositeMetadata;
@@ -713,8 +713,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (source.getSourceSize() > 0)
                 mySource = source.deepCopy(env);
             
-            mySource.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.<ByteSequence> emptyList(),
-                            false);
+            mySource.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.emptyList(), false);
             
             if (mySource.hasTop()) {
                 kv.add(Maps.immutableEntry(mySource.getTopKey(), Constants.NULL_VALUE));
@@ -736,8 +735,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             
             Key newStartKey = getKey(node);
             
-            kvIter.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.<ByteSequence> emptyList(),
-                            false);
+            kvIter.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.emptyList(), false);
             
         }
     }
@@ -1308,7 +1306,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     public IteratorBuildingVisitor setFieldsToAggregate(Set<String> fieldsToAggregate) {
-        this.fieldsToAggregate = (fieldsToAggregate == null ? Collections.<String> emptySet() : fieldsToAggregate);
+        this.fieldsToAggregate = (fieldsToAggregate == null ? Collections.emptySet() : fieldsToAggregate);
         return this;
     }
     
@@ -1472,7 +1470,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     public IteratorBuildingVisitor setTermFrequencyFields(Set<String> termFrequencyFields) {
-        this.termFrequencyFields = (termFrequencyFields == null ? Collections.<String> emptySet() : termFrequencyFields);
+        this.termFrequencyFields = (termFrequencyFields == null ? Collections.emptySet() : termFrequencyFields);
         return this;
     }
     
@@ -1482,7 +1480,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     public IteratorBuildingVisitor setIndexOnlyFields(Set<String> indexOnlyFields) {
-        this.indexOnlyFields = (indexOnlyFields == null ? Collections.<String> emptySet() : indexOnlyFields);
+        this.indexOnlyFields = (indexOnlyFields == null ? Collections.emptySet() : indexOnlyFields);
         return this;
     }
     

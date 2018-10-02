@@ -105,7 +105,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
     }
     
     public void seek(Range range) throws IOException {
-        seek(range, Collections.<ByteSequence> emptyList(), false);
+        seek(range, Collections.emptyList(), false);
     }
     
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {

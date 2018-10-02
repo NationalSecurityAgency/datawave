@@ -77,8 +77,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             
             Key newStartKey = getKey(node);
             
-            kvIter.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.<ByteSequence> emptyList(),
-                            false);
+            kvIter.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.emptyList(), false);
             
         }
     }
@@ -109,8 +108,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             if (source.getSourceSize() > 0)
                 mySource = source.deepCopy(env);
             
-            mySource.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.<ByteSequence> emptyList(),
-                            false);
+            mySource.seek(new Range(newStartKey, true, newStartKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), Collections.emptyList(), false);
             
             if (mySource.hasTop()) {
                 kv.add(Maps.immutableEntry(mySource.getTopKey(), Constants.NULL_VALUE));

@@ -24,12 +24,12 @@ public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<Stri
     protected JexlContextValueComparator factory;
     
     public JexlContextCreator(Collection<String> variables, JexlContextValueComparator factory) {
-        this.variables = variables != null ? variables : Collections.<String> emptySet();
+        this.variables = variables != null ? variables : Collections.emptySet();
         this.factory = factory;
     }
     
     public JexlContextCreator() {
-        this(Collections.<String> emptySet(), null);
+        this(Collections.emptySet(), null);
     }
     
     @Override

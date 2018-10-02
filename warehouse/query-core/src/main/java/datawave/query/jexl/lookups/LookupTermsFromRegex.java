@@ -185,7 +185,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                 try {
                     
                     bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getReverseIndexTableName(), ranges,
-                                    Collections.<String> emptySet(), Collections.singleton(key), true, true);
+                                    Collections.emptySet(), Collections.singleton(key), true, true);
                     
                     bs.setResourceClass(BatchResource.class);
                 } catch (Exception e) {

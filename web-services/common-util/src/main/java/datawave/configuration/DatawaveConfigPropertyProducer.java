@@ -93,7 +93,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public List<String> produceStringListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
         String[] values = StringUtils.split(propertyValue, ",");
-        return values == null ? Collections.<String> emptyList() : Arrays.asList(values);
+        return values == null ? Collections.emptyList() : Arrays.asList(values);
     }
     
     @Produces
@@ -103,7 +103,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public Set<String> produceStringSetConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
         String[] values = StringUtils.split(propertyValue, ",");
-        return values == null ? Collections.<String> emptySet() : new HashSet<>(Arrays.asList(values));
+        return values == null ? Collections.emptySet() : new HashSet<>(Arrays.asList(values));
     }
     
     @Produces

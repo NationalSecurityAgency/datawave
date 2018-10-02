@@ -109,7 +109,7 @@ public class ModelBean {
     @Path("/list")
     @GZIP
     @Interceptors(ResponseInterceptor.class)
-    public ModelList listModelNames(@QueryParam("modelTableName") @DefaultValue("DatawaveMetadata") String modelTableName) {
+    public ModelList listModelNames(@QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
         ModelList response = new ModelList();
         
         // Find out who/what called this method
@@ -181,7 +181,8 @@ public class ModelBean {
     @GZIP
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
-    public VoidResponse importModel(datawave.webservice.model.Model model, @QueryParam("modelTableName") @DefaultValue("DatawaveMetadata") String modelTableName) {
+    public VoidResponse importModel(datawave.webservice.model.Model model,
+                    @QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
         if (log.isDebugEnabled()) {
             log.debug("modelTableName: " + (null == modelTableName ? "" : modelTableName));
         }
@@ -218,7 +219,7 @@ public class ModelBean {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public VoidResponse deleteModel(@Required("name") @PathParam("name") String name,
-                    @QueryParam("modelTableName") @DefaultValue("DatawaveMetadata") String modelTableName) {
+                    @QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
         return deleteModel(name, modelTableName, true);
     }
     
@@ -263,7 +264,7 @@ public class ModelBean {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public VoidResponse cloneModel(@Required("name") @FormParam("name") String name, @Required("newName") @FormParam("newName") String newName,
-                    @FormParam("modelTableName") @DefaultValue("DatawaveMetadata") String modelTableName) {
+                    @FormParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
         VoidResponse response = new VoidResponse();
         datawave.webservice.model.Model model = getModel(name, modelTableName);
         // Set the new name
@@ -293,7 +294,7 @@ public class ModelBean {
     @GZIP
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public datawave.webservice.model.Model getModel(@Required("name") @PathParam("name") String name,
-                    @QueryParam("modelTableName") @DefaultValue("DatawaveMetadata") String modelTableName) {
+                    @QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
         datawave.webservice.model.Model response = new datawave.webservice.model.Model();
         
         // Find out who/what called this method
@@ -367,7 +368,7 @@ public class ModelBean {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
     public VoidResponse insertMapping(datawave.webservice.model.Model model,
-                    @QueryParam("modelTableName") @DefaultValue("DatawaveMetadata") String modelTableName) {
+                    @QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
         VoidResponse response = new VoidResponse();
         
         Connector connector = null;
@@ -432,7 +433,7 @@ public class ModelBean {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
     public VoidResponse deleteMapping(datawave.webservice.model.Model model,
-                    @QueryParam("modelTableName") @DefaultValue("DatawaveMetadata") String modelTableName) {
+                    @QueryParam("modelTableName") @DefaultValue(DEFAULT_MODEL_TABLE_NAME) String modelTableName) {
         return deleteMapping(model, modelTableName, true);
     }
     

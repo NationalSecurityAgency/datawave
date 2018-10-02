@@ -147,8 +147,6 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     protected SortedKeyValueIterator<Key,Value> sourceForDeepCopies;
     protected Map<String,String> documentOptions;
     protected NestedIterator<Key> initKeySource, seekKeySource;
-    // protected AccumuloTreeIterable<Key,DocumentData> initKeySource;
-    // protected AccumuloTreeIterable<Key,DocumentData> seekKeySource;
     protected Iterator<Entry<Key,Value>> serializedDocuments;
     protected boolean fieldIndexSatisfiesQuery = false;
     

@@ -89,7 +89,7 @@ public class SourceManagerTest {
         }
         
         for (SortedKeyValueIterator<Key,Value> kv : kvList) {
-            kv.seek(new Range(), Collections.<ByteSequence> emptyList(), false);
+            kv.seek(new Range(), Collections.emptyList(), false);
             kv.next();
         }
         

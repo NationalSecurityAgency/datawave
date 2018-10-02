@@ -163,7 +163,7 @@ public class FacetedVisitor extends BaseVisitor {
                 Key endKey = new Key(new Text(row), new Text(cf.toString()), new Text(stringLiteral + "\u1111"));
                 try {
                     
-                    source.seek(new Range(startKey, true, endKey, false), Collections.<ByteSequence> emptyList(), false);
+                    source.seek(new Range(startKey, true, endKey, false), Collections.emptyList(), false);
                     kvIterList.add(new SortedKeyValueIteratorToIterator(source));
                     
                 } catch (IOException e) {

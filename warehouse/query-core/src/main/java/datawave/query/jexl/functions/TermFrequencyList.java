@@ -181,7 +181,7 @@ public class TermFrequencyList {
      */
     public Set<String> fields() {
         if (this.offsetsPerField.isEmpty()) {
-            return Collections.<String> emptySet();
+            return Collections.emptySet();
         } else {
             Set<String> fields = new HashSet<>();
             for (Zone zone : this.offsetsPerField.keySet()) {
@@ -196,7 +196,7 @@ public class TermFrequencyList {
      */
     public Set<String> eventIds() {
         if (this.offsetsPerField.isEmpty()) {
-            return Collections.<String> emptySet();
+            return Collections.emptySet();
         } else {
             Set<String> eventIds = new HashSet<>();
             for (Zone zone : this.offsetsPerField.keySet()) {
@@ -210,7 +210,7 @@ public class TermFrequencyList {
      * Let clients ask what zones we are currently tracking.
      */
     public Set<Zone> zones() {
-        return this.offsetsPerField.isEmpty() ? Collections.<Zone> emptySet() : Collections.unmodifiableSet(this.offsetsPerField.keySet());
+        return this.offsetsPerField.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(this.offsetsPerField.keySet());
     }
     
     @Override

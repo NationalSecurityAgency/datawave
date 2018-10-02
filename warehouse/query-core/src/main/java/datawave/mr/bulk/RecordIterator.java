@@ -669,7 +669,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             log.error(e);
         }
         
-        globalIter.seek(currentRange, Collections.<ByteSequence> emptyList(), false);
+        globalIter.seek(currentRange, Collections.emptyList(), false);
     }
     
     /**
@@ -704,7 +704,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 // us back into the previous range.
                 lastSeenKey = null;
                 
-                globalIter.seek(currentRange, Collections.<ByteSequence> emptyList(), false);
+                globalIter.seek(currentRange, Collections.emptyList(), false);
             }
             
         }

@@ -93,11 +93,11 @@ public class FieldNameLookup extends IndexLookup {
                 if (limitToTerms) {
                     log.trace("Creating configureTermMatchOnly");
                     bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
-                                    Collections.singleton(term), Collections.<String> emptySet(), false, true);
+                                    Collections.singleton(term), Collections.emptySet(), false, true);
                 } else {
                     log.trace("Creating configureLimitedDiscovery");
                     bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
-                                    Collections.singleton(term), Collections.<String> emptySet(), false, true);
+                                    Collections.singleton(term), Collections.emptySet(), false, true);
                 }
                 /**
                  * Fetch the limited field names for the given rows
