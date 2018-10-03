@@ -98,7 +98,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private URI destHdfs;
     private String jobtracker;
     private StandaloneStatusReporter reporter = new StandaloneStatusReporter();
-    private boolean running;
+    private volatile boolean running;
     private ExecutorService executor;
     
     public static void main(String[] args) throws AccumuloSecurityException, IOException {
@@ -370,6 +370,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             }
         } catch (IOException e) {
             log.error("Unable to create shutdown listener socket. Exiting.", e);
+            System.exit(-3);
         }
     }
     
