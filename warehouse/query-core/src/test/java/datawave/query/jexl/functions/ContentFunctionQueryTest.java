@@ -25,7 +25,6 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.config.ShardQueryConfigurationFactory;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
@@ -233,6 +232,7 @@ public class ContentFunctionQueryTest {
         
         final List<String> expected = Arrays.asList("dog", "cat");
         final List<DefaultEvent> events = getQueryResults(query, true, true);
+        Assert.assertEquals(1, events.size());
         evaluateEvents(events, expected);
     }
     
@@ -263,7 +263,7 @@ public class ContentFunctionQueryTest {
         
         query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, optionalParams);
         
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(logic, query);
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
         try {
             logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
@@ -279,6 +279,7 @@ public class ContentFunctionQueryTest {
         String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','boy')";
         
         final List<DefaultEvent> events = getQueryResults(query, true, true);
+        Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("dog", "boy");
         evaluateEvents(events, expected);
     }
@@ -288,6 +289,7 @@ public class ContentFunctionQueryTest {
         String query = "ID == 'TEST_ID' && content:phrase(termOffsetMap,'boy','car')";
         
         final List<DefaultEvent> events = getQueryResults(query, true, true);
+        Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("boy", "car");
         evaluateEvents(events, expected);
     }
@@ -297,6 +299,7 @@ public class ContentFunctionQueryTest {
         String query = "ID == 'TEST_ID' && content:phrase(termOffsetMap,'dog','gap')";
         
         final List<DefaultEvent> events = getQueryResults(query, true, true);
+        Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("dog", "gap");
         evaluateEvents(events, expected);
     }
@@ -306,6 +309,7 @@ public class ContentFunctionQueryTest {
         String query = "ID == 'TEST_ID' && content:phrase(-1.5, termOffsetMap,'boy','car')";
         
         final List<DefaultEvent> events = getQueryResults(query, true, true);
+        Assert.assertEquals(1, events.size());
         final List<String> expected = Arrays.asList("boy", "car");
         evaluateEvents(events, expected);
     }
@@ -315,6 +319,7 @@ public class ContentFunctionQueryTest {
         String query = "ID == 'TEST_ID' && content:phrase(-1.4, termOffsetMap,'boy','car')";
         
         final List<DefaultEvent> events = getQueryResults(query, true, true);
+        Assert.assertEquals(0, events.size());
         Assert.assertEquals("Expected no results", 0, events.size());
     }
     
@@ -360,7 +365,7 @@ public class ContentFunctionQueryTest {
         Query query = new QueryImpl();
         query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
         
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(logic, query);
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
         logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
         

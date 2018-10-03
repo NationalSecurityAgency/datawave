@@ -5,10 +5,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
@@ -19,7 +17,6 @@ import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.config.ShardQueryConfigurationFactory;
 import datawave.query.enrich.DataEnricher;
 import datawave.query.enrich.EnrichingMaster;
 import datawave.query.index.lookup.CreateUidsIterator;
@@ -34,7 +31,6 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
-import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
@@ -74,18 +70,8 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -141,14 +127,14 @@ import java.util.concurrent.TimeUnit;
  *  4. We support the ability to define a list of {@link DataEnricher}s to add additional information to returned events. Found events are
  *     passed through the {@link EnrichingMaster} which passes the event through each configured data enricher class. Only the value
  *     can be modified. The key *cannot* be modified through this interface (as it could break the sorted order). Enriching must be enabled
- *     by setting {@link #useEnrichers} to true and providing a list of {@link datawave.query.enrich.DataEnricher} class names in
- *     {@link #enricherClassNames}.
+ *     by setting {@link ShardQueryConfiguration#useEnrichers} to true and providing a list of {@link datawave.query.enrich.DataEnricher} class names in
+ *     {@link ShardQueryConfiguration#enricherClassNames}.
  *  5. A list of {@link datawave.query.index.lookup.DataTypeFilter}s can be specified to remove found Events before they are returned to the user.
  *     These data filters can return a true/false value on whether the Event should be returned to the user or discarded. Additionally,
  *     the filter can return a {@code Map<String, Object>} that can be passed into a JexlContext (provides the necessary information for Jexl to
  *     evaluate an Event based on information not already present in the Event or information that doesn't need to be returned with the Event.
- *     Filtering must be enabled by setting {@link #useFilters} to true and providing a list of {@link datawave.query.index.lookup.DataTypeFilter} class
- *     names in {@link #filterClassNames}.
+ *     Filtering must be enabled by setting {@link ShardQueryConfiguration#useFilters} to true and providing a list of {@link datawave.query.index.lookup.DataTypeFilter} class
+ *     names in {@link ShardQueryConfiguration#filterClassNames}.
  *  6. The query limits the results (default: 5000) using the setMaxResults method. In addition, "max.results.override" can be passed to the
  *     query as part of the Parameters object which allows query specific limits (but will not be more than set default)
  *  7. Projection can be accomplished by setting the {@link QueryParameters RETURN_FIELDS} parameter to a '/'-separated list of field names.
@@ -159,241 +145,37 @@ import java.util.concurrent.TimeUnit;
  */
 public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
-    protected static final Logger log = ThreadConfigurableLogger.getLogger(ShardQueryLogic.class);
-    
     public static final String NULL_BYTE = "\0";
-    
-    private String dateIndexTableName;
-    private String metadataTableName;
-    private String indexTableName;
-    private String reverseIndexTableName;
-    private String tableName;
-    private String modelName;
-    
-    private String defaultDateTypeName = "EVENT";
-    
-    private List<IndexHole> indexHoles = new ArrayList<>();
-    
-    // should we remove the shards and days hint from the queries before sending
-    // to the tservers?
-    private boolean cleanupShardsAndDaysQueryHints = true;
-    
-    private String modelTableName = "DatawaveMetadata";
-    private String indexStatsTableName = "shardIndexStats";
-    
-    private int queryThreads = 8;
-    private int indexLookupThreads = 8;
-    private int dateIndexThreads = 8;
-    private int maxDocScanTimeout = -1;
-    
-    // the percent shards marked when querying the date index after which the
-    // shards are collapsed down to the entire day.
-    private float collapseDatePercentThreshold = 0.99f;
-    
-    private String readAheadQueueSize = "0";
-    private String readAheadTimeOut = "0";
-    
-    private List<String> enricherClassNames = null;
-    private List<String> filterClassNames = null;
-    private List<String> indexFilteringClassNames = null;
-    private Map<String,String> filterOptions = null;
-    
-    private boolean useEnrichers = false;
-    private boolean useFilters = false;
-    
-    private List<String> unevaluatedFields = Collections.emptyList();
-    private Class<? extends Type<?>> defaultType = NoOpType.class;
-    private boolean fullTableScanEnabled = true;
-    private List<String> realmSuffixExclusionPatterns = null;
-    private String nonEventKeyColFams = "d" + Constants.PARAM_VALUE_SEP + "tf";
-    private double minSelectivity = -1.0;
-    // should we filter out masked values when the user can see the unmasked
-    // value
-    private boolean filterMaskedValues = true;
-    
-    private boolean includeRecordId = true;
-    private boolean includeDataTypeAsField = false;
-    private boolean includeHierarchyFields = false;
-    private Map<String,String> hierarchyFieldOptions = Collections.emptyMap();
-    private boolean includeGroupingContext = false;
-    
-    // Used to create arbitrary document permutations prior to evaluation and/or returning documents.
-    private List<String> documentPermutations = Collections.emptyList();
-    
-    private boolean reducedResponse = false;
-    private boolean disableEvaluation = false;
-    protected boolean disableIndexOnlyDocuments = false;
-    private boolean hitList = false;
-    private boolean typeMetadataInHdfs = false;
-    private Set<String> blacklistedFields = new HashSet<>(0);
-    private Set<String> limitFields = new HashSet<>(0);
-    private boolean limitFieldsPreQueryEvaluation = false;
-    private String limitFieldsField = null;
-    private Set<String> groupFields = new HashSet<>(0);
-    private int groupFieldsBatchSize = Integer.MAX_VALUE;
-    private Set<String> uniqueFields = new HashSet<>(0);
-    private boolean compressServerSideResults = false;
-    private boolean indexOnlyFilterFunctionsEnabled = false;
-    /**
-     * By default enable shortcut evaluation
-     */
-    private boolean allowShortcutEvaluation = true;
-    
-    /**
-     * By default enable field index only evaluation (aggregation of document post evaluation)
-     */
-    private boolean allowFieldIndexEvaluation = true;
-    
-    /**
-     * By default enable using term frequency instead of field index when possible for value lookup
-     */
-    private boolean allowTermFrequencyLookup = true;
-    
-    /**
-     * By default don't use speculative scanning.
-     */
-    private boolean speculativeScanning = false;
-    
+    public final static Class<? extends ShardQueryConfiguration> tableConfigurationType = ShardQueryConfiguration.class;
+    protected static final Logger log = ThreadConfigurableLogger.getLogger(ShardQueryLogic.class);
+    static final ListeningExecutorService reloader = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(1));
+    private static Cache<String,QueryModel> queryModelMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
+                    .expireAfterAccess(24, TimeUnit.HOURS).build();
+    protected Class<? extends SortedKeyValueIterator<Key,Value>> createUidsIteratorClass = CreateUidsIterator.class;
+    protected UidIntersector uidIntersector = new IndexInfo();
+    protected CloseableIterable<QueryData> queries = null;
+    protected QueryModel queryModel = null;
+    protected ScannerFactory scannerFactory = null;
+    protected Scheduler scheduler = null;
+    protected EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer = null;
+    protected ShardQueryConfiguration config = ShardQueryConfiguration.create();
+    protected MetadataHelperFactory metadataHelperFactory = null;
+    protected DateIndexHelperFactory dateIndexHelperFactory = null;
+    protected Function<String,String> queryMacroFunction;
+    protected Map<String,Profile> configuredProfiles = Maps.newHashMap();
+    protected Profile selectedProfile = null;
+    protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
     // Map of syntax names to QueryParser classes
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     private Set<String> mandatoryQuerySyntax = null;
-    
     private QueryPlanner planner = null;
-    
-    protected Class<? extends SortedKeyValueIterator<Key,Value>> createUidsIteratorClass = CreateUidsIterator.class;
-    
-    protected UidIntersector uidIntersector = new IndexInfo();
-    
-    protected CloseableIterable<QueryData> queries = null;
-    
-    // Threshold values used in the new RangeCalculator
-    private int eventPerDayThreshold = 10000;
-    private int shardsPerDayThreshold = 10;
-    private int maxTermThreshold = 2500;
-    private int maxDepthThreshold = 2500;
-    private int maxUnfieldedExpansionThreshold = 500;
-    private int maxValueExpansionThreshold = 5000;
-    private int maxOrExpansionThreshold = 500;
-    private int maxOrExpansionFstThreshold = 750;
-    
-    private long yieldThresholdMs = Long.MAX_VALUE;
-    
-    protected int maxScannerBatchSize = 1000;
-    
-    protected int maxIndexBatchSize = 1000;
-    
-    private String hdfsSiteConfigURLs = null;
-    private String hdfsFileCompressionCodec = null;
-    
-    private String zookeeperConfig = null;
-    
-    private List<String> ivaratorCacheBaseURIs = null;
-    private String ivaratorFstHdfsBaseURIs = null;
-    private int ivaratorCacheBufferSize = 10000;
-    private long ivaratorCacheScanPersistThreshold = 100000L;
-    private long ivaratorCacheScanTimeout = 1000L * 60 * 60;
-    
-    private int maxFieldIndexRangeSplit = 11;
-    private int ivaratorMaxOpenFiles = 100;
-    private int maxIvaratorSources = 33;
-    private int maxEvaluationPipelines = 25;
-    private int maxPipelineCachedResults = 25;
-    private boolean expandAllTerms = false;
-    
     private QueryParser parser = null;
-    
-    protected QueryModel queryModel = null;
-    
-    protected String password = "";
-    
-    protected boolean sequentialScheduler = false;
-    
-    protected ScannerFactory scannerFactory = null;
-    
-    protected Scheduler scheduler = null;
-    
-    public final static Class<? extends ShardQueryConfiguration> tableConfigurationType = ShardQueryConfiguration.class;
-    
-    private List<String> contentFieldNames = Collections.emptyList();
-    protected EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer = null;
-    
-    protected ShardQueryConfiguration config = null;
-    private Query settings = null;
-    
-    protected List<PushDownRule> pushDownRules = Collections.emptyList();
-    private boolean shouldLimitTermExpansionToModel = false;
-    
-    /**
-     * when set to true, causes the {@link datawave.query.index.lookup.CondensedUidIterator} to ignore UIDs, forcing a shard specific range
-     */
-    protected boolean collapseUids = false;
-    
-    protected long maxIndexScanTimeMillis = Long.MAX_VALUE;
-    
-    private String dateIndexHelperTableName = null;
-    private Set<Authorizations> dateIndexHelperAuthorizations = Sets.newHashSet();
-    
-    protected MetadataHelperFactory metadataHelperFactory = null;
-    
-    protected DateIndexHelperFactory dateIndexHelperFactory = null;
-    
-    // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
-    private long beginDateCap = -1;
-    
-    private boolean failOutsideValidDateRange = true;
-    
-    protected Function<String,String> queryMacroFunction;
-    
-    static final ListeningExecutorService reloader = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(1));
-    
-    protected boolean limitAnyFieldLookups = false;
-    
-    protected boolean cacheModel = false;
-    
-    private static Cache<String,QueryModel> queryModelMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
-                    .expireAfterAccess(24, TimeUnit.HOURS).build();
-    
-    private boolean accrueStats = false;
-    private boolean collectTimingDetails = false;
-    private boolean logTimingDetails = false;
-    private boolean sendTimingToStatsd = false;
-    private String statsdHost = "localhost";
-    private int statsdPort = 8125;
-    protected int statsdMaxQueueSize = 500;
     
     private CardinalityConfiguration cardinalityConfiguration = null;
     
-    protected Map<String,Profile> configuredProfiles = Maps.newHashMap();
-    
-    protected Profile selectedProfile = null;
-    
-    protected boolean backoffEnabled = false;
-    
-    protected boolean unsortedUIDsEnabled = true;
-    
-    protected boolean debugMultithreadedSources = false;
-    
-    protected boolean dataQueryExpressionFilterEnabled = false;
-    
-    protected boolean sortGeoWaveQueryRanges = false;
-    
-    protected int numRangesToBuffer = 0;
-    
-    protected long rangeBufferTimeoutMillis = 0;
-    
-    protected long rangeBufferPollMillis = 100;
-    
-    protected int geoWaveMaxExpansion = 800;
-    
-    protected int geoWaveMaxEnvelopes = 4;
-    
-    protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
-    
     /**
-     * should the size of the document be tracked
+     * Basic constructor
      */
-    protected boolean trackSizes = true;
-    
     public ShardQueryLogic() {
         super();
         setBaseIteratorPriority(100);
@@ -401,151 +183,72 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             log.trace("Creating ShardQueryLogic: " + System.identityHashCode(this));
     }
     
+    /**
+     * Copy constructor
+     *
+     * @param other
+     *            - another ShardQueryLogic object
+     */
     public ShardQueryLogic(ShardQueryLogic other) {
         super(other);
         
         if (log.isTraceEnabled())
             log.trace("Creating Cloned ShardQueryLogic: " + System.identityHashCode(this) + " from " + System.identityHashCode(other));
         
-        this.setMetadataTableName(other.getMetadataTableName());
-        log.trace("copy CTOR setting metadataHelperFactory to " + other.getMetadataHelperFactory());
-        this.setMetadataHelperFactory(other.getMetadataHelperFactory());
-        this.setDateIndexHelperFactory(other.getDateIndexHelperFactory());
-        this.setDateIndexTableName(other.getDateIndexTableName());
-        this.setDefaultDateTypeName(other.getDefaultDateTypeName());
-        this.setCollapseDatePercentThreshold(other.getCollapseDatePercentThreshold());
-        this.setCleanupShardsAndDaysQueryHints(other.isCleanupShardsAndDaysQueryHints());
-        this.setIndexTableName(other.getIndexTableName());
-        this.setReverseIndexTableName(other.getReverseIndexTableName());
-        this.setModelName(other.getModelName());
-        this.setModelTableName(other.getModelTableName());
-        this.setIndexStatsTableName(other.getIndexStatsTableName());
-        this.setIndexHoles(other.getIndexHoles());
-        this.setQueryThreads(other.getQueryThreads());
-        this.setIndexLookupThreads(other.getIndexLookupThreads());
-        this.setReadAheadQueueSize(other.getReadAheadQueueSize());
-        this.setReadAheadTimeOut(other.getReadAheadTimeOut());
-        this.setEnricherClassNames(other.getEnricherClassNames());
-        this.setFilterClassNames(other.getFilterClassNames());
-        this.setFilterOptions(other.getFilterOptions());
-        this.setUseEnrichers(other.isUseEnrichers());
-        this.setUseFilters(other.isUseFilters());
-        this.setUnevaluatedFields(other.getUnevaluatedFields());
-        this.defaultType = other.getDefaultType();
-        this.setFullTableScanEnabled(other.isFullTableScanEnabled());
-        this.setRealmSuffixExclusionPatterns(other.getRealmSuffixExclusionPatterns());
-        this.setNonEventKeyColFams(other.getNonEventKeyColFams());
-        this.setMinimumSelectivity(other.getMinimumSelectivity());
-        this.setFilterMaskedValues(other.getFilterMaskedValues());
-        this.setIncludeDataTypeAsField(other.getIncludeDataTypeAsField());
-        this.setIncludeRecordId(other.getIncludeRecordId());
-        this.setIncludeHierarchyFields(other.getIncludeHierarchyFields());
-        this.setIncludeGroupingContext(other.getIncludeGroupingContext());
-        this.setDocumentPermutations(other.getDocumentPermutations());
-        this.setReducedResponse(other.isReducedResponse());
-        this.setBeginDateCap(other.getBeginDateCap());
-        this.setFailOutsideValidDateRange(other.isFailOutsideValidDateRange());
-        this.setLimitAnyFieldLookups(other.getLimitAnyFieldLookups());
-        this.setDisableEvaluation(other.isDisableEvaluation());
-        this.setDisableIndexOnlyDocuments(other.disableIndexOnlyDocuments());
-        this.setHitList(other.isHitList());
-        this.setTypeMetadataInHdfs(other.isTypeMetadataInHdfs());
-        this.setBlacklistedFields(other.getBlacklistedFields());
-        this.setCacheModel(other.getCacheModel());
-        this.setLimitFields(other.getLimitFields());
-        this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
-        this.setLimitFieldsField(other.getLimitFieldsField());
-        this.setGroupFields(other.getGroupFields());
-        this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
-        this.setUniqueFields(other.getUniqueFields());
-        this.setCompressServerSideResults(other.isCompressServerSideResults());
+        // Set ShardQueryConfiguration variables
+        this.config = ShardQueryConfiguration.create(other);
+        
         this.setQuerySyntaxParsers(other.getQuerySyntaxParsers());
         this.setMandatoryQuerySyntax(other.getMandatoryQuerySyntax());
         this.setQueryPlanner(other.getQueryPlanner().clone());
         this.setCreateUidsIteratorClass(other.getCreateUidsIteratorClass());
         this.setUidIntersector(other.getUidIntersector());
-        this.setCollapseUids(other.collapseUids);
-        this.queries = other.queries;
-        this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         
-        this.setEventPerDayThreshold(other.getEventPerDayThreshold());
-        this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
-        this.setMaxTermThreshold(other.getMaxTermThreshold());
-        this.setMaxDepthThreshold(other.getMaxDepthThreshold());
-        this.setMaxUnfieldedExpansionThreshold(other.getMaxUnfieldedExpansionThreshold());
-        this.setMaxValueExpansionThreshold(other.getMaxValueExpansionThreshold());
-        this.setMaxOrExpansionThreshold(other.getMaxOrExpansionThreshold());
-        this.setMaxOrExpansionFstThreshold(other.getMaxOrExpansionFstThreshold());
-        this.setMaxScannerBatchSize(other.getMaxScannerBatchSize());
-        this.setMaxIndexBatchSize(other.getMaxIndexBatchSize());
-        
-        this.setYieldThresholdMs(other.getYieldThresholdMs());
-        
-        this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
-        this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
-        this.setZookeeperConfig(other.getZookeeperConfig());
-        
-        this.setIvaratorCacheBaseURIs(other.getIvaratorCacheBaseURIs());
-        this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
-        this.setIvaratorCacheBufferSize(other.getIvaratorCacheBufferSize());
-        this.setIvaratorCacheScanPersistThreshold(other.getIvaratorCacheScanPersistThreshold());
-        this.setIvaratorCacheScanTimeout(other.getIvaratorCacheScanTimeout());
-        
-        this.setMaxFieldIndexRangeSplit(other.getMaxFieldIndexRangeSplit());
-        this.setIvaratorMaxOpenFiles(other.getIvaratorMaxOpenFiles());
-        this.setMaxIvaratorSources(other.getMaxIvaratorSources());
-        this.setMaxEvaluationPipelines(other.getMaxEvaluationPipelines());
-        this.setMaxPipelineCachedResults(other.getMaxPipelineCachedResults());
-        
-        this.setExpandAllTerms(other.isExpandAllTerms());
+        this.setQueries(other.getQueries());
         this.setParser(other.getParser());
         this.setQueryModel(other.getQueryModel());
-        
         this.setScannerFactory(other.getScannerFactory());
         this.setScheduler(other.getScheduler());
-        this.config = other.config;
-        this.settings = other.settings;
-        this.setAccumuloPassword(other.getAccumuloPassword());
-        this.setSequentialScheduler(other.getSequentialScheduler());
-        this.setContentFieldNames(Lists.newArrayList(other.getContentFieldNames()));
-        this.setAccrueStats(other.getAccrueStats());
-        this.setCollectTimingDetails(other.getCollectTimingDetails());
-        this.setLogTimingDetails(other.getLogTimingDetails());
-        this.setSendTimingToStatsd(other.getSendTimingToStatsd());
-        this.setStatsdHost(other.getStatsdHost());
-        this.setStatsdPort(other.getStatsdPort());
-        this.setStatsdMaxQueueSize(other.getStatsdMaxQueueSize());
+        this.setEventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer());
+        
+        log.trace("copy CTOR setting metadataHelperFactory to " + other.getMetadataHelperFactory());
+        this.setMetadataHelperFactory(other.getMetadataHelperFactory());
+        this.setDateIndexHelperFactory(other.getDateIndexHelperFactory());
+        this.setQueryMacroFunction(other.getQueryMacroFunction());
         this.setCardinalityConfiguration(other.getCardinalityConfiguration());
-        this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
-        this.setAllowFieldIndexEvaluation(other.isAllowFieldIndexEvaluation());
-        this.setAllowTermFrequencyLookup(other.isAllowTermFrequencyLookup());
-        this.setSpeculativeScanning(other.speculativeScanning);
-        this.setBackoffEnabled(other.getBackoffEnabled());
-        this.setUnsortedUIDsEnabled(other.getUnsortedUIDsEnabled());
-        this.setDebugMultithreadedSources(other.isDebugMultithreadedSources());
-        this.setDataQueryExpressionFilterEnabled(other.isDataQueryExpressionFilterEnabled());
-        this.setSortGeoWaveQueryRanges(other.isSortGeoWaveQueryRanges());
-        this.setNumRangesToBuffer(other.getNumRangesToBuffer());
-        this.setRangeBufferTimeoutMillis(other.getRangeBufferTimeoutMillis());
-        this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
-        this.setGeoWaveMaxExpansion(other.getGeoWaveMaxExpansion());
-        this.setGeoWaveMaxEnvelopes(other.getGeoWaveMaxEnvelopes());
-        this.setMaxDocScanTimeout(other.maxDocScanTimeout);
-        this.setConfiguredProfiles(other.configuredProfiles);
+        this.setConfiguredProfiles(other.getConfiguredProfiles());
+        this.setSelectedProfile(other.getSelectedProfile());
+        this.setPrimaryToSecondaryFieldMap(other.getPrimaryToSecondaryFieldMap());
+        
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.eventQueryDataDecoratorTransformer = new EventQueryDataDecoratorTransformer(other.eventQueryDataDecoratorTransformer);
         }
-        this.setTrackSizes(other.isTrackSizes());
+    }
+    
+    public static BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
+        final BatchScanner bs = scannerFactory.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(),
+                        config.getQuery());
+        
+        if (log.isTraceEnabled()) {
+            log.trace("Running with " + config.getAuthorizations() + " and " + config.getNumQueryThreads() + " threads: " + qd);
+        }
+        
+        bs.setRanges(qd.getRanges());
+        
+        for (IteratorSetting cfg : qd.getSettings()) {
+            bs.addScanIterator(cfg);
+        }
+        
+        return bs;
     }
     
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(this, settings);
         
-        this.config = config;
-        this.settings = settings;
+        this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
-            log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '(' + (this.settings == null ? "empty" : this.settings.getId()) + ')');
+            log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '('
+                            + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         initialize(config, connection, settings, auths);
         return config;
     }
@@ -684,12 +387,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (this.queryModel == null)
             loadQueryModel(metadataHelper, config);
         
-        getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
-        getQueryPlanner().setUidIntersector(uidIntersector);
-        
         validateConfiguration(config);
         
-        if (cardinalityConfiguration != null && (config.getBlacklistedFields().size() > 0 || config.getProjectFields().size() > 0)) {
+        if (getCardinalityConfiguration() != null && (config.getBlacklistedFields().size() > 0 || config.getProjectFields().size() > 0)) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
             // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
             // Not advisable to create a copy of the config object due to the embedded timers.
@@ -699,18 +399,18 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             // either projectFields or blacklistedFields can be used, but not both
             // this will be caught when loadQueryParameters is called
             if (config.getBlacklistedFields().size() > 0) {
-                config.setBlacklistedFields(cardinalityConfiguration.getRevisedBlacklistFields(queryModel, originalBlacklistedFields));
+                config.setBlacklistedFields(getCardinalityConfiguration().getRevisedBlacklistFields(queryModel, originalBlacklistedFields));
             }
             if (config.getProjectFields().size() > 0) {
-                config.setProjectFields(cardinalityConfiguration.getRevisedProjectFields(queryModel, originalProjectFields));
+                config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
             }
             
-            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.scannerFactory);
+            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
             
             config.setBlacklistedFields(originalBlacklistedFields);
             config.setProjectFields(originalProjectFields);
         } else {
-            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.scannerFactory);
+            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
         }
         
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
@@ -724,7 +424,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     /**
      * Validate that the configuration is in a consistent state
-     * 
+     *
      * @throws IllegalArgumentException
      *             when config constraints are violated
      */
@@ -778,7 +478,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     private DateIndexHelper prepareDateIndexHelper(Connector connection, String dateIndexTableName, Set<Authorizations> auths) {
         DateIndexHelper dateIndexHelper = this.dateIndexHelperFactory.createDateIndexHelper();
-        return dateIndexHelper.initialize(connection, dateIndexTableName, auths, dateIndexThreads, collapseDatePercentThreshold);
+        return dateIndexHelper.initialize(connection, dateIndexTableName, auths, getDateIndexThreads(), getCollapseDatePercentThreshold());
     }
     
     @Override
@@ -863,8 +563,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         boolean reduced = (this.isReducedResponse() || reducedInSettings);
         DocumentTransformer transformer = new DocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
-        transformer.setContentFieldNames(contentFieldNames);
-        transformer.setLogTimingDetails(this.logTimingDetails);
+        transformer.setContentFieldNames(config.getContentFieldNames());
+        transformer.setLogTimingDetails(this.getLogTimingDetails());
         transformer.setCardinalityConfiguration(cardinalityConfiguration);
         transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
         transformer.setQm(queryModel);
@@ -1133,8 +833,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setHierarchyFieldOptions(options);
         }
         
-        // Get the query profile to allow us to select the tune profile of the
-        // query
+        // Get the query profile to allow us to select the tune profile of the query
         String queryProfile = settings.findParameter(QueryParameters.QUERY_PROFILE).getParameterValue().trim();
         if ((org.apache.commons.lang.StringUtils.isNotBlank(queryProfile))) {
             
@@ -1153,21 +852,18 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setIncludeGroupingContext(true);
         }
         
-        // Check if the default modelName and modelTableNames have been
-        // overriden by custom parameters.
+        // Check if the default modelName and modelTableNames have been overridden by custom parameters.
         String parameterModelName = settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(parameterModelName)) {
-            this.modelName = parameterModelName;
+            this.setModelName(parameterModelName);
         }
         
-        config.setModelName(this.modelName);
+        config.setModelName(this.getModelName());
         
         String parameterModelTableName = settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(parameterModelTableName)) {
-            this.modelTableName = parameterModelTableName;
+            this.setModelTableName(parameterModelTableName);
         }
-        
-        config.setModelTableName(this.modelTableName);
         
         if (null != config.getModelName() && null == config.getModelTableName()) {
             throw new IllegalArgumentException(QueryParameters.PARAMETER_MODEL_NAME + " has been specified but " + QueryParameters.PARAMETER_MODEL_TABLE_NAME
@@ -1202,7 +898,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
             config.setFilterClassNames(filterClasses);
             
-            final Map<String,String> options = this.filterOptions;
+            final Map<String,String> options = this.getFilterOptions();
             if (null != options) {
                 config.putFilterOptions(options);
             }
@@ -1225,8 +921,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setCompressServerSideResults(compress);
         }
         
-        // Configure index-only filter functions to be enabled if not already
-        // set to such a state
+        // Configure index-only filter functions to be enabled if not already set to such a state
         config.setIndexOnlyFilterFunctionsEnabled(this.isIndexOnlyFilterFunctionsEnabled());
         
         // Set the ReturnType for Documents coming out of the iterator stack
@@ -1236,28 +931,23 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (transformer instanceof WritesQueryMetrics) {
             String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
             if (org.apache.commons.lang.StringUtils.isNotBlank(logTimingDetailsStr)) {
-                this.logTimingDetails = Boolean.valueOf(logTimingDetailsStr);
+                setLogTimingDetails(Boolean.valueOf(logTimingDetailsStr));
             }
-            if (this.logTimingDetails == true) {
-                // we have to collect the timing details on the iterator stack
-                // in order to log them
-                this.collectTimingDetails = true;
+            if (getLogTimingDetails()) {
+                // we have to collect the timing details on the iterator stack in order to log them
+                setCollectTimingDetails(true);
             } else {
                 
                 String collectTimingDetailsStr = settings.findParameter(QueryOptions.COLLECT_TIMING_DETAILS).getParameterValue().trim();
                 if (org.apache.commons.lang.StringUtils.isNotBlank(collectTimingDetailsStr)) {
-                    this.collectTimingDetails = Boolean.valueOf(collectTimingDetailsStr);
+                    setCollectTimingDetails(Boolean.valueOf(collectTimingDetailsStr));
                 }
             }
         } else {
-            // if the transformer can not process the timing metrics, then turn
-            // them off
-            this.logTimingDetails = false;
-            this.collectTimingDetails = false;
+            // if the transformer can not process the timing metrics, then turn them off
+            setLogTimingDetails(false);
+            setCollectTimingDetails(false);
         }
-        
-        config.setLogTimingDetails(this.logTimingDetails);
-        config.setCollectTimingDetails(this.collectTimingDetails);
         
         stopwatch.stop();
         
@@ -1274,15 +964,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             final String disabledIndexOnlyDocumentStr = disabledIndexOnlyDocument.getParameterValue().trim();
             if (org.apache.commons.lang.StringUtils.isNotBlank(disabledIndexOnlyDocumentStr)) {
                 Boolean disabledIndexOnlyDocuments = Boolean.parseBoolean(disabledIndexOnlyDocumentStr);
-                this.setDisableIndexOnlyDocuments(disabledIndexOnlyDocuments);
-                config.setDisableIndexOnlyDocuments(disableIndexOnlyDocuments);
+                setDisableIndexOnlyDocuments(disabledIndexOnlyDocuments);
             }
         }
     }
     
     /**
      * Loads a query Model
-     * 
+     *
      * @param helper
      * @param config
      * @throws InstantiationException
@@ -1296,14 +985,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         int cacheKeyCode = new HashCodeBuilder().append(config.getDatatypeFilter()).append(config.getModelName()).hashCode();
         
-        if (cacheModel) {
+        if (config.getCacheModel()) {
             queryModel = queryModelMap.getIfPresent(String.valueOf(cacheKeyCode));
         }
         if (null == queryModel && (null != config.getModelName() && null != config.getModelTableName())) {
             
             queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName(), helper.getIndexOnlyFields(config.getDatatypeFilter()));
             
-            if (cacheModel) {
+            if (config.getCacheModel()) {
                 
                 queryModelMap.put(String.valueOf(cacheKeyCode), queryModel);
             }
@@ -1377,9 +1066,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         if (null != this.planner) {
             try {
-                log.debug("Closing ShardQueryLogic planner: " + System.identityHashCode(this) + '(' + (this.settings == null ? "empty" : this.settings.getId())
-                                + ')');
-                this.planner.close(this.config, this.settings);
+                log.debug("Closing ShardQueryLogic planner: " + System.identityHashCode(this) + '('
+                                + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
+                this.planner.close(this.config, this.getSettings());
             } catch (Exception e) {
                 log.error("Caught exception trying to close QueryPlanner", e);
             }
@@ -1412,29 +1101,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
     }
     
-    public static BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        final BatchScanner bs = scannerFactory.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(),
-                        config.getQuery());
-        
-        if (log.isTraceEnabled()) {
-            log.trace("Running with " + config.getAuthorizations() + " and " + config.getNumQueryThreads() + " threads: " + qd);
-        }
-        
-        bs.setRanges(qd.getRanges());
-        
-        for (IteratorSetting cfg : qd.getSettings()) {
-            bs.addScanIterator(cfg);
-        }
-        
-        return bs;
+    public ShardQueryConfiguration getConfig() {
+        return this.config;
     }
     
-    public String getNonEventKeyColFams() {
-        return nonEventKeyColFams;
-    }
-    
-    public void setNonEventKeyColFams(String nonEventKeyColFams) {
-        this.nonEventKeyColFams = nonEventKeyColFams;
+    public void setConfig(ShardQueryConfiguration config) {
+        this.config = config;
     }
     
     @Override
@@ -1443,363 +1115,369 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public boolean getFilterMaskedValues() {
-        return filterMaskedValues;
+        return this.config.getFilterMaskedValues();
     }
     
     public void setFilterMaskedValues(boolean filterMaskedValues) {
-        this.filterMaskedValues = filterMaskedValues;
+        this.config.setFilterMaskedValues(filterMaskedValues);
     }
     
     public boolean getIncludeDataTypeAsField() {
-        return includeDataTypeAsField;
+        return this.config.getIncludeDataTypeAsField();
     }
     
     public void setIncludeDataTypeAsField(boolean includeDataTypeAsField) {
-        this.includeDataTypeAsField = includeDataTypeAsField;
+        this.config.setIncludeDataTypeAsField(includeDataTypeAsField);
     }
     
     public boolean getIncludeRecordId() {
-        return includeRecordId;
+        return this.config.getIncludeRecordId();
     }
     
     public void setIncludeRecordId(boolean includeRecordId) {
-        this.includeRecordId = includeRecordId;
+        this.config.setIncludeRecordId(includeRecordId);
     }
     
     public boolean getIncludeHierarchyFields() {
-        return includeHierarchyFields;
+        return this.config.getIncludeHierarchyFields();
     }
     
     public void setIncludeHierarchyFields(boolean includeHierarchyFields) {
-        this.includeHierarchyFields = includeHierarchyFields;
+        this.config.setIncludeHierarchyFields(includeHierarchyFields);
     }
     
     public List<String> getDocumentPermutations() {
-        return documentPermutations;
+        return this.config.getDocumentPermutations();
     }
     
     public void setDocumentPermutations(List<String> documentPermutations) {
-        this.documentPermutations = documentPermutations;
+        this.config.setDocumentPermutations(documentPermutations);
     }
     
     public Map<String,String> getHierarchyFieldOptions() {
-        return this.hierarchyFieldOptions;
+        return this.config.getHierarchyFieldOptions();
     }
     
     public void setHierarchyFieldOptions(final Map<String,String> options) {
-        final Map<String,String> emptyOptions = Collections.emptyMap();
-        this.hierarchyFieldOptions = (null != options) ? options : emptyOptions;
-    }
-    
-    public void setBlacklistedFields(Set<String> blacklistedFields) {
-        this.blacklistedFields = new HashSet<>(blacklistedFields);
+        this.config.setHierarchyFieldOptions(options);
     }
     
     public Set<String> getBlacklistedFields() {
-        return this.blacklistedFields;
+        return this.config.getBlacklistedFields();
     }
     
-    public void setLimitFields(Set<String> limitFields) {
-        this.limitFields = new HashSet<>(limitFields);
+    public void setBlacklistedFields(Set<String> blacklistedFields) {
+        this.config.setBlacklistedFields(blacklistedFields);
     }
     
     public Set<String> getLimitFields() {
-        return this.limitFields;
+        return this.config.getLimitFields();
     }
     
-    public void setLimitFieldsPreQueryEvaluation(boolean limitFieldsPreQueryEvaluation) {
-        this.limitFieldsPreQueryEvaluation = limitFieldsPreQueryEvaluation;
+    public void setLimitFields(Set<String> limitFields) {
+        this.config.setLimitFields(limitFields);
     }
     
     public boolean isLimitFieldsPreQueryEvaluation() {
-        return limitFieldsPreQueryEvaluation;
+        return this.config.isLimitFieldsPreQueryEvaluation();
     }
     
-    public void setLimitFieldsField(String limitFieldsField) {
-        this.limitFieldsField = limitFieldsField;
+    public void setLimitFieldsPreQueryEvaluation(boolean limitFieldsPreQueryEvaluation) {
+        this.config.setLimitFieldsPreQueryEvaluation(limitFieldsPreQueryEvaluation);
     }
     
     public String getLimitFieldsField() {
-        return limitFieldsField;
+        return this.config.getLimitFieldsField();
     }
     
-    public void setGroupFields(Set<String> groupFields) {
-        this.groupFields = new HashSet<>(groupFields);
+    public void setLimitFieldsField(String limitFieldsField) {
+        this.config.setLimitFieldsField(limitFieldsField);
     }
     
     public Set<String> getGroupFields() {
-        return this.groupFields;
+        return this.config.getGroupFields();
+    }
+    
+    public void setGroupFields(Set<String> groupFields) {
+        this.config.setGroupFields(groupFields);
     }
     
     public void setGroupFieldsBatchSize(int groupFieldsBatchSize) {
-        this.groupFieldsBatchSize = groupFieldsBatchSize;
+        this.config.setGroupFieldsBatchSize(groupFieldsBatchSize);
     }
     
     public int getGroupFieldsBatchSize() {
-        return this.groupFieldsBatchSize;
+        return this.config.getGroupFieldsBatchSize();
     }
     
     public Set<String> getUniqueFields() {
-        return uniqueFields;
+        return this.config.getUniqueFields();
     }
     
     public void setUniqueFields(Set<String> uniqueFields) {
-        this.uniqueFields = uniqueFields;
+        this.config.setUniqueFields(uniqueFields);
     }
     
     public String getBlacklistedFieldsString() {
-        return org.apache.commons.lang.StringUtils.join(this.blacklistedFields, '/');
+        return this.config.getBlacklistedFieldsAsString();
     }
     
     public boolean getIncludeGroupingContext() {
-        return this.includeGroupingContext;
+        return this.config.getIncludeGroupingContext();
     }
     
     public void setIncludeGroupingContext(boolean opt) {
-        this.includeGroupingContext = opt;
+        this.config.setIncludeGroupingContext(opt);
     }
     
     public boolean isReducedResponse() {
-        return reducedResponse;
+        return this.config.isReducedResponse();
     }
     
     public void setReducedResponse(boolean reducedResponse) {
-        this.reducedResponse = reducedResponse;
+        this.config.setReducedResponse(reducedResponse);
     }
     
     public boolean isDisableEvaluation() {
-        return disableEvaluation;
+        return this.config.isDisableEvaluation();
     }
     
     public void setDisableEvaluation(boolean disableEvaluation) {
-        this.disableEvaluation = disableEvaluation;
+        this.config.setDisableEvaluation(disableEvaluation);
     }
     
     public boolean disableIndexOnlyDocuments() {
-        return disableIndexOnlyDocuments;
+        return this.config.isDisableIndexOnlyDocuments();
     }
     
     public void setDisableIndexOnlyDocuments(boolean disableIndexOnlyDocuments) {
-        this.disableIndexOnlyDocuments = disableIndexOnlyDocuments;
+        this.config.setDisableIndexOnlyDocuments(disableIndexOnlyDocuments);
     }
     
     public boolean isHitList() {
-        return this.hitList;
+        return this.config.isHitList();
     }
     
     public void setHitList(boolean hitList) {
-        this.hitList = hitList;
+        this.config.setHitList(hitList);
     }
     
     public boolean isTypeMetadataInHdfs() {
-        return typeMetadataInHdfs;
+        return this.config.isTypeMetadataInHdfs();
     }
     
     public void setTypeMetadataInHdfs(boolean typeMetadataInHdfs) {
-        this.typeMetadataInHdfs = typeMetadataInHdfs;
+        this.config.setTypeMetadataInHdfs(typeMetadataInHdfs);
     }
     
     public int getEventPerDayThreshold() {
-        return eventPerDayThreshold;
-    }
-    
-    public int getShardsPerDayThreshold() {
-        return shardsPerDayThreshold;
-    }
-    
-    public int getMaxTermThreshold() {
-        return maxTermThreshold;
-    }
-    
-    public int getMaxDepthThreshold() {
-        return maxDepthThreshold;
-    }
-    
-    public int getMaxUnfieldedExpansionThreshold() {
-        return maxUnfieldedExpansionThreshold;
-    }
-    
-    public int getMaxValueExpansionThreshold() {
-        return maxValueExpansionThreshold;
-    }
-    
-    public int getMaxOrExpansionThreshold() {
-        return maxOrExpansionThreshold;
-    }
-    
-    public void setMaxOrExpansionThreshold(int maxOrExpansionThreshold) {
-        this.maxOrExpansionThreshold = maxOrExpansionThreshold;
-    }
-    
-    public int getMaxOrExpansionFstThreshold() {
-        return maxOrExpansionFstThreshold;
-    }
-    
-    public void setMaxOrExpansionFstThreshold(int maxOrExpansionFstThreshold) {
-        this.maxOrExpansionFstThreshold = maxOrExpansionFstThreshold;
+        return this.config.getEventPerDayThreshold();
     }
     
     public void setEventPerDayThreshold(int eventPerDayThreshold) {
-        this.eventPerDayThreshold = eventPerDayThreshold;
+        this.config.setEventPerDayThreshold(eventPerDayThreshold);
+    }
+    
+    public int getShardsPerDayThreshold() {
+        return this.config.getShardsPerDayThreshold();
     }
     
     public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
-        this.shardsPerDayThreshold = shardsPerDayThreshold;
+        this.config.setShardsPerDayThreshold(shardsPerDayThreshold);
+    }
+    
+    public int getMaxTermThreshold() {
+        return this.config.getMaxTermThreshold();
     }
     
     public void setMaxTermThreshold(int maxTermThreshold) {
-        this.maxTermThreshold = maxTermThreshold;
+        this.config.setMaxTermThreshold(maxTermThreshold);
+    }
+    
+    public int getMaxDepthThreshold() {
+        return this.config.getMaxDepthThreshold();
     }
     
     public void setMaxDepthThreshold(int maxDepthThreshold) {
-        this.maxDepthThreshold = maxDepthThreshold;
+        this.config.setMaxDepthThreshold(maxDepthThreshold);
+    }
+    
+    public int getMaxUnfieldedExpansionThreshold() {
+        return this.config.getMaxUnfieldedExpansionThreshold();
     }
     
     public void setMaxUnfieldedExpansionThreshold(int maxUnfieldedExpansionThreshold) {
-        this.maxUnfieldedExpansionThreshold = maxUnfieldedExpansionThreshold;
+        this.config.setMaxUnfieldedExpansionThreshold(maxUnfieldedExpansionThreshold);
+    }
+    
+    public int getMaxValueExpansionThreshold() {
+        return this.config.getMaxValueExpansionThreshold();
     }
     
     public void setMaxValueExpansionThreshold(int maxValueExpansionThreshold) {
-        this.maxValueExpansionThreshold = maxValueExpansionThreshold;
+        this.config.setMaxValueExpansionThreshold(maxValueExpansionThreshold);
+    }
+    
+    public int getMaxOrExpansionThreshold() {
+        return this.config.getMaxOrExpansionThreshold();
+    }
+    
+    public void setMaxOrExpansionThreshold(int maxOrExpansionThreshold) {
+        this.config.setMaxOrExpansionThreshold(maxOrExpansionThreshold);
+    }
+    
+    public int getMaxOrExpansionFstThreshold() {
+        return this.config.getMaxOrExpansionFstThreshold();
+    }
+    
+    public void setMaxOrExpansionFstThreshold(int maxOrExpansionFstThreshold) {
+        this.config.setMaxOrExpansionFstThreshold(maxOrExpansionFstThreshold);
+    }
+    
+    public long getYieldThresholdMs() {
+        return this.config.getYieldThresholdMs();
+    }
+    
+    public void setYieldThresholdMs(long yieldThresholdMs) {
+        this.config.setYieldThresholdMs(yieldThresholdMs);
     }
     
     public boolean isCleanupShardsAndDaysQueryHints() {
-        return cleanupShardsAndDaysQueryHints;
+        return this.config.isCleanupShardsAndDaysQueryHints();
     }
     
     public void setCleanupShardsAndDaysQueryHints(boolean cleanupShardsAndDaysQueryHints) {
-        this.cleanupShardsAndDaysQueryHints = cleanupShardsAndDaysQueryHints;
+        this.config.setCleanupShardsAndDaysQueryHints(cleanupShardsAndDaysQueryHints);
     }
     
     public String getDateIndexTableName() {
-        return dateIndexTableName;
+        return this.config.getDateIndexTableName();
+    }
+    
+    public void setDateIndexTableName(String dateIndexTableName) {
+        this.config.setDateIndexTableName(dateIndexTableName);
     }
     
     public String getDefaultDateTypeName() {
-        return defaultDateTypeName;
+        return this.config.getDefaultDateTypeName();
+    }
+    
+    public void setDefaultDateTypeName(String defaultDateTypeName) {
+        this.config.setDefaultDateTypeName(defaultDateTypeName);
     }
     
     public String getMetadataTableName() {
-        return metadataTableName;
+        return this.config.getMetadataTableName();
+    }
+    
+    public void setMetadataTableName(String metadataTableName) {
+        this.config.setMetadataTableName(metadataTableName);
     }
     
     public String getIndexTableName() {
-        return indexTableName;
+        return this.config.getIndexTableName();
+    }
+    
+    public void setIndexTableName(String indexTableName) {
+        this.config.setIndexTableName(indexTableName);
+    }
+    
+    public String getIndexStatsTableName() {
+        return this.config.getIndexStatsTableName();
+    }
+    
+    public void setIndexStatsTableName(String indexStatsTableName) {
+        this.config.setIndexStatsTableName(indexStatsTableName);
     }
     
     @Override
     public String getTableName() {
-        return tableName;
-    }
-    
-    public void setDateIndexTableName(String dateIndexTableName) {
-        this.dateIndexTableName = dateIndexTableName;
-    }
-    
-    public void setDefaultDateTypeName(String defaultDateTypeName) {
-        this.defaultDateTypeName = defaultDateTypeName;
-    }
-    
-    public void setMetadataTableName(String metadataTableName) {
-        this.metadataTableName = metadataTableName;
-    }
-    
-    public void setIndexTableName(String indexTableName) {
-        this.indexTableName = indexTableName;
+        if (null == getConfig()) {
+            return this.tableName;
+        }
+        return this.config.getTableName();
     }
     
     @Override
     public void setTableName(String tableName) {
         this.tableName = tableName;
-        super.setTableName(tableName);
+        // Null check required due to a super constructor call that attempts to set
+        // the tableName prior to ShardQueryConfig initialization
+        if (null != getConfig()) {
+            this.config.setTableName(tableName);
+        }
     }
     
     public String getModelTableName() {
-        return modelTableName;
+        return this.config.getModelTableName();
     }
     
     public void setModelTableName(String modelTableName) {
-        this.modelTableName = modelTableName;
+        this.config.setModelTableName(modelTableName);
     }
     
     public String getModelName() {
-        return modelName;
+        return this.config.getModelName();
     }
     
     public void setModelName(String modelName) {
-        this.modelName = modelName;
+        this.config.setModelName(modelName);
     }
     
     public int getQueryThreads() {
-        return queryThreads;
+        return this.config.getNumQueryThreads();
     }
     
     public void setQueryThreads(int queryThreads) {
-        this.queryThreads = queryThreads;
+        this.config.setNumQueryThreads(queryThreads);
     }
     
     public int getIndexLookupThreads() {
-        return indexLookupThreads;
+        return this.config.getNumIndexLookupThreads();
     }
     
     public void setIndexLookupThreads(int indexLookupThreads) {
-        this.indexLookupThreads = indexLookupThreads;
-    }
-    
-    public void setDateIndexThreads(int indexThreads) {
-        this.dateIndexThreads = indexThreads;
+        this.config.setNumIndexLookupThreads(indexLookupThreads);
     }
     
     public int getDateIndexThreads() {
-        return dateIndexThreads;
+        return this.config.getNumDateIndexThreads();
     }
     
-    public void setMaxDocScanTimeout(int maxDocScanTimeout) {
-        this.maxDocScanTimeout = maxDocScanTimeout;
+    public void setDateIndexThreads(int indexThreads) {
+        this.config.setNumDateIndexThreads(indexThreads);
     }
     
     public int getMaxDocScanTimeout() {
-        return maxDocScanTimeout;
+        return this.config.getMaxDocScanTimeout();
+    }
+    
+    public void setMaxDocScanTimeout(int maxDocScanTimeout) {
+        this.config.setMaxDocScanTimeout(maxDocScanTimeout);
     }
     
     public float getCollapseDatePercentThreshold() {
-        return collapseDatePercentThreshold;
+        return this.config.getCollapseDatePercentThreshold();
     }
     
     public void setCollapseDatePercentThreshold(float collapseDatePercentThreshold) {
-        this.collapseDatePercentThreshold = collapseDatePercentThreshold;
-    }
-    
-    public String getReadAheadQueueSize() {
-        return readAheadQueueSize;
-    }
-    
-    public String getReadAheadTimeOut() {
-        return readAheadTimeOut;
-    }
-    
-    public void setReadAheadQueueSize(String readAheadQueueSize) {
-        this.readAheadQueueSize = readAheadQueueSize;
-    }
-    
-    public void setReadAheadTimeOut(String readAheadTimeOut) {
-        this.readAheadTimeOut = readAheadTimeOut;
+        this.config.setCollapseDatePercentThreshold(collapseDatePercentThreshold);
     }
     
     public List<String> getEnricherClassNames() {
-        return this.enricherClassNames;
+        return this.config.getEnricherClassNames();
     }
     
     public void setEnricherClassNames(List<String> enricherClassNames) {
-        this.enricherClassNames = enricherClassNames;
+        this.config.setEnricherClassNames(enricherClassNames);
     }
     
     public boolean isUseEnrichers() {
-        return this.useEnrichers;
+        return this.config.getUseEnrichers();
     }
     
     public void setUseEnrichers(boolean useEnrichers) {
-        this.useEnrichers = useEnrichers;
+        this.config.setUseEnrichers(useEnrichers);
     }
     
     public boolean isTldQuery() {
@@ -1807,232 +1485,204 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public boolean isExpandAllTerms() {
-        return expandAllTerms;
+        return this.config.isExpandAllTerms();
     }
     
     public void setExpandAllTerms(boolean expandAllTerms) {
-        this.expandAllTerms = expandAllTerms;
+        this.config.setExpandAllTerms(expandAllTerms);
     }
     
     public List<String> getFilterClassNames() {
-        return filterClassNames;
-    }
-    
-    public List<String> getIndexFilteringClassNames() {
-        return indexFilteringClassNames;
-    }
-    
-    public Map<String,String> getFilterOptions() {
-        return filterOptions;
+        return this.config.getFilterClassNames();
     }
     
     public void setFilterClassNames(List<String> filterClassNames) {
-        this.filterClassNames = filterClassNames;
+        this.config.setFilterClassNames(filterClassNames);
+    }
+    
+    public List<String> getIndexFilteringClassNames() {
+        return this.config.getIndexFilteringClassNames();
     }
     
     public void setIndexFilteringClassNames(List<String> classNames) {
-        this.indexFilteringClassNames = classNames;
+        this.config.setIndexFilteringClassNames(classNames);
+    }
+    
+    public Map<String,String> getFilterOptions() {
+        return this.config.getFilterOptions();
     }
     
     public void setFilterOptions(final Map<String,String> options) {
-        if (null != options) {
-            filterOptions = new HashMap<>(options);
-        } else {
-            filterOptions = null;
-        }
+        this.config.putFilterOptions(options);
     }
     
     public boolean isUseFilters() {
-        return this.useFilters;
+        return this.config.getUseFilters();
     }
     
     public void setUseFilters(boolean useFilters) {
-        this.useFilters = useFilters;
+        this.config.getUseFilters();
     }
     
     public String getReverseIndexTableName() {
-        return reverseIndexTableName;
+        return this.config.getReverseIndexTableName();
     }
     
     public void setReverseIndexTableName(String reverseIndexTableName) {
-        this.reverseIndexTableName = reverseIndexTableName;
+        this.config.setReverseIndexTableName(reverseIndexTableName);
     }
     
-    public List<String> getUnevaluatedFields() {
-        return unevaluatedFields;
-    }
-    
-    public void setUnevaluatedFields(List<String> unevaluatedFields) {
-        this.unevaluatedFields = unevaluatedFields;
+    public Set<String> getUnevaluatedFields() {
+        return this.config.getUnevaluatedFields();
     }
     
     public void setUnevaluatedFields(String unevaluatedFieldList) {
-        this.unevaluatedFields = Arrays.asList(unevaluatedFieldList.split(ShardQueryConfiguration.PARAM_VALUE_SEP_STR));
+        this.config.setUnevaluatedFields(unevaluatedFieldList);
+    }
+    
+    public void setUnevaluatedFields(Collection<String> unevaluatedFields) {
+        this.config.setUnevaluatedFields(unevaluatedFields);
     }
     
     public Class<? extends Type<?>> getDefaultType() {
-        return defaultType;
+        return this.config.getDefaultType();
+    }
+    
+    public void setDefaultType(Class<? extends Type<?>> defaultType) {
+        this.config.setDefaultType(defaultType);
     }
     
     @SuppressWarnings("unchecked")
     public void setDefaultType(String className) {
-        try {
-            defaultType = (Class<? extends Type<?>>) Class.forName(className);
-        } catch (ClassNotFoundException ex) {
-            log.warn("Class name: " + className + " not found, defaulting to NoOpNormalizer.class");
-            defaultType = NoOpType.class;
-        }
+        this.config.setDefaultType(className);
     }
     
     public boolean isFullTableScanEnabled() {
-        return fullTableScanEnabled;
+        return this.config.getFullTableScanEnabled();
     }
     
     public void setFullTableScanEnabled(boolean fullTableScanEnabled) {
-        this.fullTableScanEnabled = fullTableScanEnabled;
+        this.config.setFullTableScanEnabled(fullTableScanEnabled);
     }
     
     public List<String> getIvaratorCacheBaseURIsAsList() {
-        return ivaratorCacheBaseURIs;
+        return this.config.getIvaratorCacheBaseURIsAsList();
     }
     
     public String getIvaratorCacheBaseURIs() {
-        if (ivaratorCacheBaseURIs == null) {
-            return null;
-        } else {
-            StringBuilder builder = new StringBuilder();
-            for (String hdfsCacheBaseURI : ivaratorCacheBaseURIs) {
-                if (builder.length() > 0) {
-                    builder.append(',');
-                }
-                builder.append(hdfsCacheBaseURI);
-            }
-            return builder.toString();
-        }
+        return this.config.getIvaratorCacheBaseURIs();
     }
     
     public void setIvaratorCacheBaseURIs(String ivaratorCacheBaseURIs) {
-        if (ivaratorCacheBaseURIs == null || ivaratorCacheBaseURIs.isEmpty()) {
-            this.ivaratorCacheBaseURIs = null;
-        } else {
-            this.ivaratorCacheBaseURIs = Arrays.asList(StringUtils.split(ivaratorCacheBaseURIs, ','));
-        }
+        this.config.setIvaratorCacheBaseURIs(ivaratorCacheBaseURIs);
     }
     
     public String getIvaratorFstHdfsBaseURIs() {
-        return ivaratorFstHdfsBaseURIs;
+        return this.config.getIvaratorFstHdfsBaseURIs();
     }
     
     public void setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
-        this.ivaratorFstHdfsBaseURIs = ivaratorFstHdfsBaseURIs;
+        this.config.setIvaratorFstHdfsBaseURIs(ivaratorFstHdfsBaseURIs);
     }
     
     public int getIvaratorCacheBufferSize() {
-        return ivaratorCacheBufferSize;
+        return this.config.getIvaratorCacheBufferSize();
     }
     
     public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
-        this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
+        this.config.setIvaratorCacheBufferSize(ivaratorCacheBufferSize);
     }
     
     public long getIvaratorCacheScanPersistThreshold() {
-        return ivaratorCacheScanPersistThreshold;
+        return this.config.getIvaratorCacheScanPersistThreshold();
     }
     
     public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
-        this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
+        this.config.setIvaratorCacheScanPersistThreshold(ivaratorCacheScanPersistThreshold);
     }
     
     public long getIvaratorCacheScanTimeout() {
-        return ivaratorCacheScanTimeout;
+        return this.config.getIvaratorCacheScanTimeout();
     }
     
     public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
-        this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
+        this.config.setIvaratorCacheScanTimeout(ivaratorCacheScanTimeout);
     }
     
     public void setIvaratorCacheScanTimeoutMinutes(long hdfsCacheScanTimeoutMinutes) {
-        this.ivaratorCacheScanTimeout = hdfsCacheScanTimeoutMinutes * 1000 * 60;
+        this.config.setIvaratorCacheScanTimeout(hdfsCacheScanTimeoutMinutes * 1000 * 60);
     }
     
     public String getHdfsSiteConfigURLs() {
-        return hdfsSiteConfigURLs;
+        return this.config.getHdfsSiteConfigURLs();
     }
     
     public void setHdfsSiteConfigURLs(String hadoopConfigURLs) {
-        this.hdfsSiteConfigURLs = hadoopConfigURLs;
+        this.config.setHdfsSiteConfigURLs(hadoopConfigURLs);
     }
     
     public String getHdfsFileCompressionCodec() {
-        return hdfsFileCompressionCodec;
+        return this.config.getHdfsFileCompressionCodec();
     }
     
     public void setHdfsFileCompressionCodec(String hdfsFileCompressionCodec) {
-        this.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
+        this.config.setHdfsFileCompressionCodec(hdfsFileCompressionCodec);
     }
     
     public String getZookeeperConfig() {
-        return zookeeperConfig;
+        return this.config.getZookeeperConfig();
     }
     
     public void setZookeeperConfig(String zookeeperConfig) {
-        this.zookeeperConfig = zookeeperConfig;
+        this.config.setZookeeperConfig(zookeeperConfig);
     }
     
     public int getMaxFieldIndexRangeSplit() {
-        return maxFieldIndexRangeSplit;
+        return this.config.getMaxFieldIndexRangeSplit();
     }
     
     public void setMaxFieldIndexRangeSplit(int maxFieldIndexRangeSplit) {
-        this.maxFieldIndexRangeSplit = maxFieldIndexRangeSplit;
+        this.config.setMaxFieldIndexRangeSplit(maxFieldIndexRangeSplit);
     }
     
     public int getIvaratorMaxOpenFiles() {
-        return ivaratorMaxOpenFiles;
+        return this.config.getIvaratorMaxOpenFiles();
     }
     
     public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
-        this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
+        this.config.setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
     }
     
     public int getMaxIvaratorSources() {
-        return maxIvaratorSources;
+        return this.config.getMaxIvaratorSources();
     }
     
     public void setMaxIvaratorSources(int maxIvaratorSources) {
-        this.maxIvaratorSources = maxIvaratorSources;
+        this.config.setMaxIvaratorSources(maxIvaratorSources);
     }
     
     public int getMaxEvaluationPipelines() {
-        return maxEvaluationPipelines;
+        return this.config.getMaxEvaluationPipelines();
     }
     
     public void setMaxEvaluationPipelines(int maxEvaluationPipelines) {
-        this.maxEvaluationPipelines = maxEvaluationPipelines;
+        this.config.setMaxEvaluationPipelines(maxEvaluationPipelines);
     }
     
     public int getMaxPipelineCachedResults() {
-        return maxPipelineCachedResults;
+        return this.config.getMaxPipelineCachedResults();
     }
     
     public void setMaxPipelineCachedResults(int maxCachedResults) {
-        this.maxPipelineCachedResults = maxCachedResults;
+        this.config.setMaxPipelineCachedResults(maxCachedResults);
     }
     
     public double getMinimumSelectivity() {
-        return this.minSelectivity;
+        return this.config.getMinSelectivity();
     }
     
     public void setMinimumSelectivity(double d) {
-        this.minSelectivity = d;
-    }
-    
-    public String getIndexStatsTableName() {
-        return this.indexStatsTableName;
-    }
-    
-    public void setIndexStatsTableName(String t) {
-        this.indexStatsTableName = t;
+        this.config.setMinSelectivity(d);
     }
     
     public Map<String,QueryParser> getQuerySyntaxParsers() {
@@ -2080,15 +1730,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public List<String> getContentFieldNames() {
-        return contentFieldNames;
+        return this.config.getContentFieldNames();
     }
     
     public void setContentFieldNames(List<String> contentFieldNames) {
-        this.contentFieldNames = contentFieldNames;
+        this.config.setContentFieldNames(contentFieldNames);
     }
     
     public CloseableIterable<QueryData> getQueries() {
         return queries;
+    }
+    
+    public void setQueries(CloseableIterable<QueryData> queries) {
+        this.queries = queries;
     }
     
     public QueryModel getQueryModel() {
@@ -2118,32 +1772,32 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.scheduler = scheduler;
     }
     
-    public void setMaxScannerBatchSize(final int size) {
-        this.maxScannerBatchSize = size;
-    }
-    
     public int getMaxScannerBatchSize() {
-        return this.maxScannerBatchSize;
+        return this.config.getMaxScannerBatchSize();
     }
     
-    public void setMaxIndexBatchSize(final int size) {
-        this.maxIndexBatchSize = size;
+    public void setMaxScannerBatchSize(final int size) {
+        this.config.setMaxScannerBatchSize(size);
     }
     
     public int getMaxIndexBatchSize() {
-        return this.maxIndexBatchSize;
+        return this.config.getMaxIndexBatchSize();
+    }
+    
+    public void setMaxIndexBatchSize(final int size) {
+        this.config.setMaxIndexBatchSize(size);
     }
     
     public boolean getCompressServerSideResults() {
-        return compressServerSideResults;
+        return this.config.isCompressServerSideResults();
     }
     
     public boolean isCompressServerSideResults() {
-        return compressServerSideResults;
+        return this.config.isCompressServerSideResults();
     }
     
     public void setCompressServerSideResults(boolean compressServerSideResults) {
-        this.compressServerSideResults = compressServerSideResults;
+        this.config.setCompressServerSideResults(compressServerSideResults);
     }
     
     /**
@@ -2153,7 +1807,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @return true, if index-only filter functions should be enabled.
      */
     public boolean isIndexOnlyFilterFunctionsEnabled() {
-        return this.indexOnlyFilterFunctionsEnabled;
+        return this.config.isIndexOnlyFilterFunctionsEnabled();
     }
     
     /**
@@ -2164,7 +1818,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      *            indicates whether index-only filter functions (e.g., <i>filter:includeRegex()</i> and <i>not(filter:includeRegex())</i>) should be enabled
      */
     public void setIndexOnlyFilterFunctionsEnabled(boolean enabled) {
-        this.indexOnlyFilterFunctionsEnabled = enabled;
+        this.config.setIndexOnlyFilterFunctionsEnabled(enabled);
     }
     
     @Override
@@ -2216,54 +1870,54 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public List<String> getRealmSuffixExclusionPatterns() {
-        return realmSuffixExclusionPatterns;
+        return this.config.getRealmSuffixExclusionPatterns();
     }
     
     public void setRealmSuffixExclusionPatterns(List<String> realmSuffixExclusionPatterns) {
-        this.realmSuffixExclusionPatterns = realmSuffixExclusionPatterns;
-    }
-    
-    public void setAccumuloPassword(String password) {
-        this.password = password;
+        this.config.setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
     }
     
     /**
      * @return
      */
     public String getAccumuloPassword() {
-        return new String(password);
+        return this.config.getAccumuloPassword();
     }
     
-    public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
-        this.shouldLimitTermExpansionToModel = shouldLimitTermExpansionToModel;
+    public void setAccumuloPassword(String password) {
+        this.config.setAccumuloPassword(password);
     }
     
     public boolean isExpansionLimitedToModelContents() {
-        return shouldLimitTermExpansionToModel;
+        return this.config.isExpansionLimitedToModelContents();
+    }
+    
+    public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
+        this.config.setLimitTermExpansionToModel(shouldLimitTermExpansionToModel);
     }
     
     public boolean getSequentialScheduler() {
-        return sequentialScheduler;
+        return this.config.getSequentialScheduler();
     }
     
     public void setSequentialScheduler(boolean sequentialScheduler) {
-        this.sequentialScheduler = sequentialScheduler;
+        this.config.setSequentialScheduler(sequentialScheduler);
     }
     
     public boolean getCollapseUids() {
-        return collapseUids;
+        return this.config.getCollapseUids();
     }
     
     public void setCollapseUids(boolean collapseUids) {
-        this.collapseUids = collapseUids;
-    }
-    
-    public void setMaxIndexScanTimeMillis(long maxTime) {
-        this.maxIndexScanTimeMillis = maxTime;
+        this.config.setCollapseUids(collapseUids);
     }
     
     public long getMaxIndexScanTimeMillis() {
-        return maxIndexScanTimeMillis;
+        return this.config.getMaxIndexScanTimeMillis();
+    }
+    
+    public void setMaxIndexScanTimeMillis(long maxTime) {
+        this.config.setMaxIndexScanTimeMillis(maxTime);
     }
     
     public Function getQueryMacroFunction() {
@@ -2275,116 +1929,115 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public boolean getLimitAnyFieldLookups() {
-        return limitAnyFieldLookups;
+        return this.config.getLimitAnyFieldLookups();
     }
     
     public void setLimitAnyFieldLookups(boolean limitAnyFieldLookups) {
-        this.limitAnyFieldLookups = limitAnyFieldLookups;
+        this.config.setLimitAnyFieldLookups(limitAnyFieldLookups);
     }
     
     public boolean getSpeculativeScanning() {
-        return speculativeScanning;
+        return this.config.getSpeculativeScanning();
     }
     
     public void setSpeculativeScanning(boolean speculativeScanning) {
-        this.speculativeScanning = speculativeScanning;
+        this.config.setSpeculativeScanning(speculativeScanning);
     }
     
     public boolean getAllowShortcutEvaluation() {
-        return allowShortcutEvaluation;
+        return this.config.getAllowShortcutEvaluation();
     }
     
     public void setAllowShortcutEvaluation(boolean allowShortcutEvaluation) {
-        this.allowShortcutEvaluation = allowShortcutEvaluation;
+        this.config.setAllowShortcutEvaluation(allowShortcutEvaluation);
     }
     
     public boolean isAllowFieldIndexEvaluation() {
-        return allowFieldIndexEvaluation;
+        return this.config.isAllowFieldIndexEvaluation();
     }
     
     public void setAllowFieldIndexEvaluation(boolean allowFieldIndexEvaluation) {
-        this.allowFieldIndexEvaluation = allowFieldIndexEvaluation;
+        this.config.setAllowFieldIndexEvaluation(allowFieldIndexEvaluation);
     }
     
     public boolean isAllowTermFrequencyLookup() {
-        return allowTermFrequencyLookup;
+        return this.config.isAllowTermFrequencyLookup();
     }
     
     public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
-        this.allowTermFrequencyLookup = allowTermFrequencyLookup;
+        this.config.setAllowTermFrequencyLookup(allowTermFrequencyLookup);
     }
     
     public boolean getAccrueStats() {
-        return accrueStats;
+        return this.config.getAccrueStats();
     }
     
     public void setAccrueStats(final boolean accrueStats) {
-        this.accrueStats = accrueStats;
-    }
-    
-    public void setCollectTimingDetails(Boolean collectTimingDetails) {
-        this.collectTimingDetails = collectTimingDetails;
-        
+        this.config.setAccrueStats(accrueStats);
     }
     
     public Boolean getCollectTimingDetails() {
-        return collectTimingDetails;
+        return this.config.getCollectTimingDetails();
+    }
+    
+    public void setCollectTimingDetails(Boolean collectTimingDetails) {
+        this.config.setCollectTimingDetails(collectTimingDetails);
     }
     
     public Boolean getLogTimingDetails() {
-        return logTimingDetails;
+        return this.config.getLogTimingDetails();
     }
     
     public void setLogTimingDetails(Boolean logTimingDetails) {
-        this.logTimingDetails = logTimingDetails;
+        this.config.setLogTimingDetails(logTimingDetails);
     }
     
     public String getStatsdHost() {
-        return statsdHost;
+        return this.config.getStatsdHost();
     }
     
     public void setStatsdHost(String statsdHost) {
-        this.statsdHost = statsdHost;
+        this.config.setStatsdHost(statsdHost);
     }
     
     public int getStatsdPort() {
-        return statsdPort;
+        return this.config.getStatsdPort();
     }
     
     public void setStatsdPort(int statsdPort) {
-        this.statsdPort = statsdPort;
+        this.config.setStatsdPort(statsdPort);
     }
     
     public int getStatsdMaxQueueSize() {
-        return statsdMaxQueueSize;
+        return this.config.getStatsdMaxQueueSize();
     }
     
     public void setStatsdMaxQueueSize(int statsdMaxQueueSize) {
-        this.statsdMaxQueueSize = statsdMaxQueueSize;
+        this.config.setStatsdMaxQueueSize(statsdMaxQueueSize);
     }
     
     public boolean getSendTimingToStatsd() {
-        return sendTimingToStatsd;
+        return this.config.getSendTimingToStatsd();
     }
     
     public void setSendTimingToStatsd(boolean sendTimingToStatsd) {
-        this.sendTimingToStatsd = sendTimingToStatsd;
-    }
-    
-    public void setCacheModel(boolean cacheModel) {
-        this.cacheModel = cacheModel;
+        this.config.setSendTimingToStatsd(sendTimingToStatsd);
     }
     
     public boolean getCacheModel() {
-        return this.cacheModel;
+        return this.config.getCacheModel();
+    }
+    
+    public void setCacheModel(boolean cacheModel) {
+        this.config.setCacheModel(cacheModel);
     }
     
     public List<IndexHole> getIndexHoles() {
-        return indexHoles;
+        return this.config.getIndexHoles();
     }
     
     public void setIndexHoles(List<IndexHole> indexHoles) {
-        this.indexHoles = indexHoles;
+        this.config.setIndexHoles(indexHoles);
     }
     
     public CardinalityConfiguration getCardinalityConfiguration() {
@@ -2395,131 +2048,139 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.cardinalityConfiguration = cardinalityConfiguration;
     }
     
+    public Map<String,Profile> getConfiguredProfiles() {
+        return this.configuredProfiles;
+    }
+    
     public void setConfiguredProfiles(Map<String,Profile> configuredProfiles) {
         this.configuredProfiles.putAll(configuredProfiles);
     }
     
-    public void setBackoffEnabled(boolean backoffEnabled) {
-        this.backoffEnabled = backoffEnabled;
+    public boolean getBackoffEnabled() {
+        return this.config.getBackoffEnabled();
     }
     
-    public boolean getBackoffEnabled() {
-        return backoffEnabled;
+    public void setBackoffEnabled(boolean backoffEnabled) {
+        this.config.setBackoffEnabled(backoffEnabled);
     }
     
     public boolean getUnsortedUIDsEnabled() {
-        return unsortedUIDsEnabled;
+        return this.config.getUnsortedUIDsEnabled();
     }
     
     public void setUnsortedUIDsEnabled(boolean unsortedUIDsEnabled) {
-        this.unsortedUIDsEnabled = unsortedUIDsEnabled;
+        this.config.setUnsortedUIDsEnabled(unsortedUIDsEnabled);
     }
     
     public boolean isDebugMultithreadedSources() {
-        return debugMultithreadedSources;
+        return this.config.isDebugMultithreadedSources();
     }
     
     public void setDebugMultithreadedSources(boolean debugMultithreadedSources) {
-        this.debugMultithreadedSources = debugMultithreadedSources;
+        this.config.setDebugMultithreadedSources(debugMultithreadedSources);
     }
     
     public boolean isDataQueryExpressionFilterEnabled() {
-        return dataQueryExpressionFilterEnabled;
+        return this.config.isDataQueryExpressionFilterEnabled();
     }
     
     public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
-        this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
+        this.config.setDataQueryExpressionFilterEnabled(dataQueryExpressionFilterEnabled);
     }
     
     public boolean isSortGeoWaveQueryRanges() {
-        return sortGeoWaveQueryRanges;
+        return this.config.isSortGeoWaveQueryRanges();
     }
     
     public void setSortGeoWaveQueryRanges(boolean sortGeoWaveQueryRanges) {
-        this.sortGeoWaveQueryRanges = sortGeoWaveQueryRanges;
+        this.config.setSortGeoWaveQueryRanges(sortGeoWaveQueryRanges);
     }
     
     public int getNumRangesToBuffer() {
-        return numRangesToBuffer;
+        return this.config.getNumRangesToBuffer();
     }
     
     public void setNumRangesToBuffer(int numRangesToBuffer) {
-        this.numRangesToBuffer = numRangesToBuffer;
+        this.config.setNumRangesToBuffer(numRangesToBuffer);
     }
     
     public long getRangeBufferTimeoutMillis() {
-        return rangeBufferTimeoutMillis;
+        return this.config.getRangeBufferTimeoutMillis();
     }
     
     public void setRangeBufferTimeoutMillis(long rangeBufferTimeoutMillis) {
-        this.rangeBufferTimeoutMillis = rangeBufferTimeoutMillis;
+        this.config.setRangeBufferTimeoutMillis(rangeBufferTimeoutMillis);
     }
     
     public long getRangeBufferPollMillis() {
-        return rangeBufferPollMillis;
+        return this.config.getRangeBufferPollMillis();
     }
     
     public void setRangeBufferPollMillis(long rangeBufferPollMillis) {
-        this.rangeBufferPollMillis = rangeBufferPollMillis;
+        this.config.setRangeBufferPollMillis(rangeBufferPollMillis);
     }
     
     public int getGeoWaveMaxExpansion() {
-        return geoWaveMaxExpansion;
+        return this.config.getGeoWaveMaxExpansion();
     }
     
     public void setGeoWaveMaxExpansion(int geoWaveMaxExpansion) {
-        this.geoWaveMaxExpansion = geoWaveMaxExpansion;
+        this.config.setGeoWaveMaxEnvelopes(geoWaveMaxExpansion);
     }
     
     public int getGeoWaveMaxEnvelopes() {
-        return geoWaveMaxEnvelopes;
+        return this.config.getGeoWaveMaxEnvelopes();
     }
     
     public void setGeoWaveMaxEnvelopes(int geoWaveMaxEnvelopes) {
-        this.geoWaveMaxEnvelopes = geoWaveMaxEnvelopes;
+        this.config.setGeoWaveMaxEnvelopes(geoWaveMaxEnvelopes);
     }
     
     public long getBeginDateCap() {
-        return beginDateCap;
+        return this.config.getBeginDateCap();
     }
     
     public void setBeginDateCap(long beginDateCap) {
-        this.beginDateCap = beginDateCap;
+        this.config.setBeginDateCap(beginDateCap);
     }
     
     public boolean isFailOutsideValidDateRange() {
-        return failOutsideValidDateRange;
+        return this.config.isFailOutsideValidDateRange();
     }
     
     public void setFailOutsideValidDateRange(boolean failOutsideValidDateRange) {
-        this.failOutsideValidDateRange = failOutsideValidDateRange;
-    }
-    
-    public long getYieldThresholdMs() {
-        return yieldThresholdMs;
-    }
-    
-    public void setYieldThresholdMs(long yieldThresholdMs) {
-        this.yieldThresholdMs = yieldThresholdMs;
-    }
-    
-    public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
-        this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;
+        this.config.setFailOutsideValidDateRange(failOutsideValidDateRange);
     }
     
     public Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
         return primaryToSecondaryFieldMap;
     }
     
+    public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
+        this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;
+    }
+    
     public boolean isTrackSizes() {
-        return trackSizes;
+        return this.config.isTrackSizes();
     }
     
     public void setTrackSizes(boolean trackSizes) {
-        this.trackSizes = trackSizes;
+        this.config.setTrackSizes(trackSizes);
+    }
+    
+    public Profile getSelectedProfile() {
+        return this.selectedProfile;
     }
     
     public void setSelectedProfile(Profile profile) {
         this.selectedProfile = profile;
+    }
+    
+    public Query getSettings() {
+        return this.config.getQuery();
+    }
+    
+    public void setSettings(Query settings) {
+        this.config.setQuery(settings);
     }
 }

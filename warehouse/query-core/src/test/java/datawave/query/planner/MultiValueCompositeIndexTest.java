@@ -23,7 +23,6 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.config.ShardQueryConfigurationFactory;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
@@ -308,6 +307,7 @@ public class MultiValueCompositeIndexTest {
         Assert.assertEquals(3, queries.size());
         
         List<DefaultEvent> events = getQueryResults(query, false);
+        Assert.assertEquals(3, events.size());
         
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -337,6 +337,7 @@ public class MultiValueCompositeIndexTest {
         Assert.assertEquals(732, queries.size());
         
         List<DefaultEvent> events = getQueryResults(query, true);
+        Assert.assertEquals(3, events.size());
         
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -395,7 +396,7 @@ public class MultiValueCompositeIndexTest {
         Query query = new QueryImpl();
         query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
         
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(logic, query);
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
         logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
         
@@ -423,7 +424,7 @@ public class MultiValueCompositeIndexTest {
         Query query = new QueryImpl();
         query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
         
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(logic, query);
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
         logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
         
