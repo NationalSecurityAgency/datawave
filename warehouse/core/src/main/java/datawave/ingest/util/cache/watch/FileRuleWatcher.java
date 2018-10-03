@@ -1,19 +1,8 @@
 package datawave.ingest.util.cache.watch;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
+import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.iterators.filter.ageoff.FilterRule;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -25,9 +14,18 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.ageoff.FilterOptions;
-import datawave.iterators.filter.ageoff.FilterRule;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * 
@@ -64,8 +62,8 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     protected Collection<FilterRule> loadContents(InputStream in) throws IOException {
         
         try {
-            Collection<RuleConfig> mergedRuleConfigs = loadRuleConfigs(in);
-            Collection<FilterRule> filterRules = new ArrayList<>();
+            List<RuleConfig> mergedRuleConfigs = loadRuleConfigs(in);
+            List<FilterRule> filterRules = new ArrayList<>();
             /**
              * This has been changed to support extended options.
              */
@@ -114,9 +112,9 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         
     }
     
-    protected Collection<RuleConfig> loadRuleConfigs(InputStream in) throws IOException {
+    protected List<RuleConfig> loadRuleConfigs(InputStream in) throws IOException {
         
-        Collection<RuleConfig> ruleConfigs = new ArrayList<>();
+        List<RuleConfig> ruleConfigs = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder;
         
@@ -142,69 +140,70 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             NodeList rules = docElement.getElementsByTagName("rule");
             // parse each node in rules and create a rule config
             // @formatter:off
-            ruleConfigs.addAll(IntStream.range(0, rules.getLength())
+            List<RuleConfig> childRules = IntStream.range(0, rules.getLength())
                 .mapToObj(i -> getRuleConfigForNode(rules, i))
-                .collect(Collectors.toList()));
-            
-            // are there any configs with matching labels?
-            boolean shouldMerge = ruleConfigs.stream()
-                .collect(Collectors.groupingBy(RuleConfig::getLabel))
-                .size() > 0;
-            if (shouldMerge) {
-                // split into labeled and unlabled configs
-                Collection<RuleConfig> labledConfigs = ruleConfigs.stream()
-                    .filter(r -> !r.getLabel().isEmpty())
-                    .collect(Collectors.toList());
-                Collection<RuleConfig> unlabledConfigs = ruleConfigs.stream()
-                    .filter(r -> r.getLabel().isEmpty())
-                    .collect(Collectors.toList());
-                // merge configs that map to the same label
-                Collection<RuleConfig> merged = labledConfigs.stream()
-                    .collect(Collectors.toMap(
-                        RuleConfig::getLabel, Function.identity(),
-                        (rule1, rule2) -> mergeRules(rule1, rule2)))
-                    .values();
-                // @formatter:on
-                // return combined list of merged and unlabled
-                unlabledConfigs.addAll(merged);
-                return unlabledConfigs;
-            } else {
-                return ruleConfigs;
+                .collect(Collectors.toList());
+            // first check if there are any parent rules to merge with
+            // no use trying to merge if no parent rules exist
+            if (ruleConfigs.isEmpty()) {
+                return childRules;
             }
+            // Example merge process:
+            // | parent | child | result |
+            // |--------|-------|--------|
+            // | A - 1  | A - 1 | A - 1m | <= type A with label 1 merged with child
+            // | B      |       | B      | <= type B from parent maintains order
+            // | C - 2  | C - 2 | C - 2m | <= type C with label 2 merged with child
+            // |        | D - 3 | D - 3  | <= type D with label 3 not merged, nothing to merge with
+            // |        | E     | E      | <= type E with no label maintains order in child
+            //
+            // iterate through child rules and try to merge them into the parent if possible
+            List<RuleConfig> mergedRules = childRules.stream()
+                .filter(r -> !r.getLabel().isEmpty())
+                .filter(r -> mergeIfPossible(r, ruleConfigs))
+                .collect(Collectors.toList());
+
+            childRules.removeAll(mergedRules);
+            // what ever is left add to the end of the list
+            ruleConfigs.addAll(childRules);
+
+            // @formatter:on
         } catch (Exception ex) {
             log.error("uh oh: " + ex);
             throw new IOException(ex);
         } finally {
             IOUtils.closeStream(in);
         }
+        return ruleConfigs;
     }
     
-    RuleConfig mergeRules(RuleConfig rule1, RuleConfig rule2) {
-        // the rule that is a merge should have its values override the original rule
-        if (rule1.isMerge) {
-            rule2.ttlValue = rule1.ttlValue;
-            rule2.ttlUnits = rule1.ttlUnits;
-            rule2.extendedOptions.putAll(rule1.extendedOptions);
-            // only append rules if there is something there to append
-            if (null != rule1.matchPattern && !rule1.matchPattern.isEmpty()) {
-                rule2.matchPattern += "\n" + rule1.matchPattern;
-            }
-            return rule2;
-        } else if (rule2.isMerge) {
-            rule1.ttlValue = rule2.ttlValue;
-            rule1.ttlUnits = rule2.ttlUnits;
-            rule1.extendedOptions.putAll(rule2.extendedOptions);
-            // only append rules if there is something there to append
-            if (null != rule2.matchPattern && !rule2.matchPattern.isEmpty()) {
-                rule1.matchPattern += "\n" + rule2.matchPattern;
-            }
-            return rule1;
+    boolean mergeIfPossible(RuleConfig child, List<RuleConfig> parents) {
+        // @formatter:off
+        // find parent with matching label and filter class
+        List<RuleConfig> candidates = parents.stream()
+            .filter(r -> r.getLabel().equals(child.label) && r.filterClassName.equals(child.filterClassName))
+            .collect(Collectors.toList());
+        // should we be able to have more than one matching parent?
+        for (RuleConfig parent : candidates) {
+            mergeChildIntoParent(child, parent);
         }
-        // neither is a merge rule, so just pick highest priority?
-        if (rule1.priority > rule2.priority) {
-            return rule1;
-        } else {
-            return rule2;
+        // might be the case that there are no matching labels
+        return candidates.size() > 0;
+        // @formatter:on
+    }
+    
+    void mergeChildIntoParent(RuleConfig child, RuleConfig parent) {
+        if (child.isMerge) {
+            if (null != child.ttlValue) {
+                parent.ttlValue = child.ttlValue;
+            }
+            if (null != child.ttlUnits) {
+                parent.ttlUnits = child.ttlUnits;
+            }
+            parent.extendedOptions.putAll(child.extendedOptions);
+            if (null != child.matchPattern && !child.matchPattern.trim().isEmpty()) {
+                parent.matchPattern += "\n" + child.matchPattern;
+            }
         }
     }
     
@@ -264,8 +263,16 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             
         }
         extendedOptions.put(AgeOffConfigParams.IS_MERGE, Boolean.toString(isMerge));
-        return new RuleConfig(filterClassName, index).ttlValue(ttlValue).ttlUnits(ttlUnits).matchPattern(matchPattern).label(label).setIsMerge(isMerge)
-                        .extendedOptions(extendedOptions);
+        
+        // @formatter:off
+        return new RuleConfig(filterClassName, index)
+            .ttlValue(ttlValue)
+            .ttlUnits(ttlUnits)
+            .matchPattern(matchPattern)
+            .label(label)
+            .setIsMerge(isMerge)
+            .extendedOptions(extendedOptions);
+        // @formatter:on
     }
     
     private Collection<? extends RuleConfig> loadParentRuleConfigs(Node parent) throws IOException {

@@ -3,6 +3,7 @@
         <!-- only rules with same label and filter class can be merged -->
         <rule label="test">
             <filterClass>datawave.ingest.util.cache.watch.TestTrieFilter</filterClass>
+            <ttl units="d">1024</ttl>
             <matchPattern>
                 "baking powder" : 365d
                 "dried beans" : 548d
@@ -14,7 +15,7 @@
         </rule>
         <!-- These don't have a label so should not be merged -->
         <rule>
-            <filterClass>datawave.ingest.util.cache.watch.TestFilter</filterClass>
+            <filterClass>datawave.ingest.util.cache.watch.TestFieldFilter</filterClass>
             <ttl units="ms">10</ttl>
             <matchPattern>foo</matchPattern>
         </rule>
