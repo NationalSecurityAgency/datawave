@@ -162,14 +162,14 @@ public class SourcePoolTest {
                     Assert.assertNotEquals(factory.source, source);
                 } catch (Throwable e) {
                     synchronized (failed) {
-                        e.printStackTrace();
+                        log.error(e);
                         failed.add(e);
                     }
                 }
             });
             thread.setUncaughtExceptionHandler((t, e) -> {
                 synchronized (failed) {
-                    e.printStackTrace();
+                    log.error(e);
                     failed.add(e);
                 }
             });
@@ -204,14 +204,14 @@ public class SourcePoolTest {
                     pool.checkIn(threadSource);
                 } catch (Throwable e) {
                     synchronized (failed) {
-                        e.printStackTrace();
+                        log.error(e);
                         failed.add(e);
                     }
                 }
             });
             thread.setUncaughtExceptionHandler((t, e) -> {
                 synchronized (failed) {
-                    e.printStackTrace();
+                    log.error(e);
                     failed.add(e);
                 }
             });
@@ -266,14 +266,14 @@ public class SourcePoolTest {
                 Assert.assertNotEquals(factory.source, source);
             } catch (Throwable e) {
                 synchronized (failed) {
-                    e.printStackTrace();
+                    log.error(e);
                     failed.add(e);
                 }
             }
         });
         thread.setUncaughtExceptionHandler((t, e) -> {
             synchronized (failed) {
-                e.printStackTrace();
+                log.error(e);
                 failed.add(e);
             }
         });

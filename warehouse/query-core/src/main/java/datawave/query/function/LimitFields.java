@@ -164,10 +164,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 } else {
                     mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
                 }
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
+            } catch (InstantiationException | IllegalAccessException e) {
+                log.error(e);
             }
         } else if (!hitTermMap.isEmpty() && limitFieldsMap.containsKey(keyNoGrouping)) {
             

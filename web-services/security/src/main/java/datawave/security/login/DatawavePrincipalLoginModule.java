@@ -93,7 +93,6 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                     datawaveVerifier = true;
                 }
             } catch (Throwable e) {
-                e.printStackTrace();
                 if (trace)
                     log.trace("Failed to create X509CertificateVerifier", e);
                 throw new IllegalArgumentException("Invalid verifier: " + option, e);

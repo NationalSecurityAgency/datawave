@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Callable;
 
 import com.google.common.util.concurrent.*;
 import org.apache.log4j.Logger;
@@ -157,7 +156,6 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
                 log.debug("Loading cache asynchronously");
             build(null);
         } catch (Throwable e) {
-            e.printStackTrace();
             log.error(e);
         }
         

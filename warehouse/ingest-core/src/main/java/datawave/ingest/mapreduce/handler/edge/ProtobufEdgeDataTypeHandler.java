@@ -230,7 +230,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             
             log.info("Got config on first try!");
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Problem getting config for ProtobufEdgeDataTypeHandler: {}", e);
             throw e;
         }
         

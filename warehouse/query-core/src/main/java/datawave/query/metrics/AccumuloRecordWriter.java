@@ -127,7 +127,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
             try {
                 addTable(table);
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e);
                 throw new IOException(e);
             }
         

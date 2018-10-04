@@ -928,7 +928,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 e = (DefaultEvent) eResponse.getEvents().get(0);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex);
         } finally {
             if (id != null) {
                 queryService.close(id);

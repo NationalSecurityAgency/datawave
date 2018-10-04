@@ -222,7 +222,7 @@ public class CardinalityRecord implements Serializable {
             ois = new ObjectInputStream(fis);
             cardinalityRecord = (CardinalityRecord) ois.readObject();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e);
         } finally {
             IOUtils.closeQuietly(ois);
         }
