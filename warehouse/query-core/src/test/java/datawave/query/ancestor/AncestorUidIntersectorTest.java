@@ -188,9 +188,7 @@ public class AncestorUidIntersectorTest {
         Assert.assertNotNull(result);
         Assert.assertTrue("expected size 2, got " + result.size(), result.size() == 2);
         List<IndexMatch> resultList = new ArrayList<>();
-        for (IndexMatch match : result) {
-            resultList.add(match);
-        }
+        resultList.addAll(result);
         List<IndexMatch> expected = new ArrayList<>();
         expected.add(new IndexMatch("a.b.c.1", null));
         expected.add(new IndexMatch("a.b.c.2.1", null));

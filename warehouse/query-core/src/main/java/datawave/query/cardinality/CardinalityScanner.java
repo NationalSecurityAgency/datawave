@@ -190,9 +190,7 @@ public class CardinalityScanner {
         List<String> fields = new ArrayList<>();
         String[] fieldArray = cl.getOptionValues(F_OPT);
         if (fieldArray != null) {
-            for (String f : fieldArray) {
-                fields.add(f);
-            }
+            Collections.addAll(fields, fieldArray);
         }
         config.setFields(fields);
         return config;

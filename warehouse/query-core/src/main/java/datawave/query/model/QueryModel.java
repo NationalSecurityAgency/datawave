@@ -105,9 +105,7 @@ public class QueryModel {
         for (String field : projectFields) {
             field = field.toUpperCase();
             if (model.containsKey(field)) {
-                for (String projection : model.get(field)) {
-                    newMappings.add(projection);
-                }
+                newMappings.addAll(model.get(field));
             }
         }
         

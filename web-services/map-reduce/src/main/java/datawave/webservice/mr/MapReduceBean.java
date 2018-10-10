@@ -93,6 +93,7 @@ import java.security.Principal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -843,9 +844,7 @@ public class MapReduceBean {
                     resultFiles.add(currentFileStatus);
                 } else {
                     FileStatus[] dirList = fs.listStatus(currentFileStatus.getPath());
-                    for (FileStatus fileStatus : dirList) {
-                        fileQueue.add(fileStatus);
-                    }
+                    Collections.addAll(fileQueue, dirList);
                 }
             }
         } catch (IOException e) {

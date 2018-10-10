@@ -281,9 +281,7 @@ public class HudQuerySummary {
      */
     public void setPageMetrics(List<PageMetric> otherPageMetrics) {
         this.pageMetrics = new ArrayList<>(otherPageMetrics.size());
-        for (PageMetric metric : otherPageMetrics) {
-            this.pageMetrics.add(metric);
-        }
+        this.pageMetrics.addAll(otherPageMetrics);
         
     }
     

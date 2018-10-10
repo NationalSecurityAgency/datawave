@@ -201,9 +201,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                         
                     }
                     
-                    for (String uid : v.getQUARANTINEUIDList()) {
-                        quarantinedIds.add(uid);
-                    }
+                    quarantinedIds.addAll(v.getQUARANTINEUIDList());
                     
                     /**
                      * This is added for backwards compatability. The removal list was added to ensure that removals are propogated across compactions. In the

@@ -2,6 +2,7 @@ package datawave.query.language.functions.jexl;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -140,9 +141,7 @@ public class Chain extends JexlQueryFunction {
                 if (variableValueString.startsWith("[") && variableValueString.endsWith("]")) {
                     List<String> choiceList = new ArrayList<>();
                     String[] choices = variableValueString.split("|");
-                    for (String c : choices) {
-                        choiceList.add(c);
-                    }
+                    Collections.addAll(choiceList, choices);
                     variableValue = choiceList;
                 } else {
                     variableValue = variableValueString;
