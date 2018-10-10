@@ -260,11 +260,21 @@ public class IngestJob implements Tool {
         log.setLevel(Level.INFO);
         
         // Initialize the markings file helper so we get the right markings file
+        long start = System.currentTimeMillis();
         MarkingFunctions.Factory.createMarkingFunctions();
+        long stop = System.currentTimeMillis();
+        log.trace("Time to initialize MarkingsFunctions=" + (stop - start));
+        
+        start = System.currentTimeMillis();
         TypeRegistry.reset();
+        stop = System.currentTimeMillis();
+        log.trace("Time for TypeRegistry=" + (stop - start));
         
         // Parse the job arguments
+        start = System.currentTimeMillis();
         Configuration conf = parseArguments(args, this.getConf());
+        stop = System.currentTimeMillis();
+        log.trace("Time for parseArguments=" + (stop - start));
         
         if (conf == null) {
             printUsage();
@@ -275,6 +285,7 @@ public class IngestJob implements Tool {
         AccumuloHelper cbHelper = new AccumuloHelper();
         cbHelper.setup(conf);
         
+        start = System.currentTimeMillis();
         TypeRegistry.getInstance(conf);
         
         log.error(conf.toString());
@@ -289,11 +300,17 @@ public class IngestJob implements Tool {
             log.error("No data types were configured");
             return -1;
         }
+        stop = System.currentTimeMillis();
+        log.trace("Time for TypeRegistry.getInstance=" + (stop - start));
         
+        start = System.currentTimeMillis();
         if (!registerTableNames(conf)) {
             return -1;
         }
+        stop = System.currentTimeMillis();
+        log.trace("Time for !registerTableNames=" + (stop - start));
         
+        start = System.currentTimeMillis();
         boolean wasConfigureTablesSuccessful = configureTables(cbHelper, conf);
         if (!wasConfigureTablesSuccessful) {
             return -1;
@@ -302,7 +319,10 @@ public class IngestJob implements Tool {
             log.info("Created tables: " + getTables(conf) + " successfully!");
             return 0;
         }
+        stop = System.currentTimeMillis();
+        log.trace("Time for result of ConfigureTablesSuccessful=" + (stop - start));
         
+        start = System.currentTimeMillis();
         try {
             serializeAggregatorConfiguration(cbHelper, conf, log);
         } catch (TableNotFoundException tnf) {
@@ -310,24 +330,37 @@ public class IngestJob implements Tool {
                             tnf);
             return -1;
         }
+        stop = System.currentTimeMillis();
+        log.trace("Time to serializeAggregatorConfiguration=" + (stop - start));
         
         // get the source and output hadoop file systems
+        start = System.currentTimeMillis();
         FileSystem inputFs = getFileSystem(conf, srcHdfs);
         FileSystem outputFs = (writeDirectlyToDest ? getFileSystem(conf, destHdfs) : inputFs);
         conf.set("output.fs.uri", outputFs.getUri().toString());
+        stop = System.currentTimeMillis();
+        log.trace("Time to get the source and output hadoop file systems=" + (stop - start));
         
         // get the qualified work directory path
+        start = System.currentTimeMillis();
         Path unqualifiedWorkPath = Path.getPathWithoutSchemeAndAuthority(new Path(workDir));
         conf.set("ingest.work.dir.unqualified", unqualifiedWorkPath.toString());
         Path workDirPath = new Path(new Path(writeDirectlyToDest ? destHdfs : srcHdfs), unqualifiedWorkPath);
         conf.set("ingest.work.dir.qualified", workDirPath.toString());
+        stop = System.currentTimeMillis();
+        log.trace("Time to get the qualified work directory path=" + (stop - start));
         
         // Create the Job
+        start = System.currentTimeMillis();
         Job job = Job.getInstance(conf);
         // Job copies the configuration, so any changes made after this point don't get captured in the job.
         // Use the job's configuration from this point.
         conf = job.getConfiguration();
+        stop = System.currentTimeMillis();
+        log.trace("Time for create job and job configurations=" + (stop - start));
+        
         if (!useMapOnly || !outputMutations) {
+        start = System.currentTimeMillis();    
             // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing only a map phase and outputting mutations
             // if not outputting mutations and only doing a map phase, we still need to go through this logic as the MultiRFileOutputFormatter
             // depends on this.
@@ -337,8 +370,11 @@ public class IngestJob implements Tool {
                 log.error(e);
                 return -1;
             }
+        stop = System.currentTimeMillis();
+        log.trace("Time for configureBulkPartitioner=" + (stop - start));   
         }
         
+        start = System.currentTimeMillis();
         job.setJarByClass(this.getClass());
         for (Path inputPath : getFilesToProcess(inputFs, inputFileLists, inputFileListMarker, inputPaths)) {
             FileInputFormat.addInputPath(job, inputPath);
@@ -347,7 +383,11 @@ public class IngestJob implements Tool {
             job.addFileToClassPath(dependency);
         
         configureInputFormat(job, cbHelper, conf);
+        stop = System.currentTimeMillis();
+        log.trace("Time for setJarByClass=" + (stop - start));
         
+           
+        start = System.currentTimeMillis();
         configureJob(job, conf, workDirPath, outputFs);
         
         // Log configuration
@@ -357,13 +397,15 @@ public class IngestJob implements Tool {
         log.info("Mapper: " + job.getMapperClass().getName());
         log.info("Reduce tasks: " + (useMapOnly ? 0 : reduceTasks));
         log.info("Split File: " + workDirPath + "/splits.txt");
+        stop = System.currentTimeMillis();
+        log.trace("Time for Configuring Logs=" + (stop - start));
         
         // Note that if we run any other jobs in the same vm (such as a sampler), then we may
         // need to catch and throw away an exception here
         URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory(conf));
         
         startDaemonProcesses(conf);
-        long start = System.currentTimeMillis();
+        start = System.currentTimeMillis();
         job.submit();
         JobID jobID = job.getJobID();
         log.info("JOB ID: " + jobID);
