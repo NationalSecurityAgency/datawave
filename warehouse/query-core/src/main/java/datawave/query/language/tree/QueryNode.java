@@ -68,9 +68,7 @@ public abstract class QueryNode implements Cloneable {
     
     public void setOptimizations(List<Optimization> optimizations) {
         this.optimizations.clear();
-        for (Optimization o : optimizations) {
-            this.optimizations.add(o);
-        }
+        this.optimizations.addAll(optimizations);
     }
     
     /**

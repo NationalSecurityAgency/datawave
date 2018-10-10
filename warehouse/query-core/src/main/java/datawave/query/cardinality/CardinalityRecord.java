@@ -102,9 +102,7 @@ public class CardinalityRecord implements Serializable {
         }
         
         if (numSplits == 1) {
-            for (String s : valueLists.get(0)) {
-                values.add(s);
-            }
+            values.addAll(valueLists.get(0));
         } else {
             List<List<String>> cartesianProduct = cartesianProduct(valueLists);
             for (List<String> l : cartesianProduct) {

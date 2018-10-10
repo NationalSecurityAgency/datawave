@@ -253,8 +253,7 @@ public class AuthorizationsUtil {
             // can return a smaller set of auths.
             if (!set && authorizations.size() > allAuths.size()) {
                 ArrayList<TreeSet<String>> newAuths = new ArrayList<>(allAuths.size());
-                for (TreeSet<String> a : allAuths)
-                    newAuths.add(a);
+                newAuths.addAll(allAuths);
                 authorizations = newAuths;
             }
         }

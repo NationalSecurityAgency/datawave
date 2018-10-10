@@ -486,9 +486,7 @@ public class MapReduceStatePersisterBean {
                         stats.add(currentFileStatus);
                     } else {
                         FileStatus[] dirList = fs.listStatus(currentFileStatus.getPath());
-                        for (FileStatus fileStatus : dirList) {
-                            fileQueue.add(fileStatus);
-                        }
+                        Collections.addAll(fileQueue, dirList);
                     }
                 }
                 

@@ -3,6 +3,7 @@ package datawave.mr.bulk.split;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 
 import org.apache.hadoop.io.Text;
@@ -101,9 +102,7 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
         for (InputSplit s : splits) {
             String[] hints = s.getLocations();
             if (hints != null && hints.length > 0) {
-                for (String host : hints) {
-                    hosts.add(host);
-                }
+                Collections.addAll(hosts, hints);
             }
         }
         return hosts.toArray(new String[hosts.size()]);

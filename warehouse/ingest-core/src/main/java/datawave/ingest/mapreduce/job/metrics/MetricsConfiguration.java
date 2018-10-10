@@ -7,6 +7,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.TreeSet;
@@ -83,9 +84,7 @@ public class MetricsConfiguration {
         String fieldsStr = conf.get(FIELDS_CONFIG);
         
         if (StringUtils.isNotBlank(fieldsStr)) {
-            for (String f : fieldsStr.split(LIST_SEP)) {
-                fields.add(f);
-            }
+            Collections.addAll(fields, fieldsStr.split(LIST_SEP));
         }
         
         return fields;

@@ -202,14 +202,12 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                 int originalDataListSize = dataList.size();
                 if (newAttributeCount > 0) {
                     if (dataList.size() == 0) {
-                        for (String value : attributeValues(attrs))
-                            dataList.add(value);
+                        dataList.addAll(attributeValues(attrs));
                     } else {
                         for (int i = 0; i < originalDataListSize; i++) {
                             String base = dataList.remove(0);
                             if (base == null) {
-                                for (String value : attributeValues(attrs))
-                                    dataList.add(value);
+                                dataList.addAll(attributeValues(attrs));
                             } else if (base.length() > 0) {
                                 for (String value : attributeValues(attrs))
                                     dataList.add(base + CompositeUtils.SEPARATOR + value);
@@ -227,8 +225,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                     log.trace("Join for data list size: " + dataList.size());
                 }
                 if (dataList.size() == 0) {
-                    for (String value : attributeValues(attr))
-                        dataList.add(value);
+                    dataList.addAll(attributeValues(attr));
                 } else {
                     int originalDataListSize = dataList.size();
                     for (int i = 0; i < originalDataListSize; i++) { // append to everything in the list
