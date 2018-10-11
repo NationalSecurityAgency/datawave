@@ -416,6 +416,7 @@ public class IngestJob implements Tool {
         // kick off the next job of this type.
         boolean done = false;
         while (generateMarkerFile && !done && !job.isComplete()) {
+            start = System.currentTimeMillis();
             if (job.reduceProgress() > markerFileReducePercentage) {
                 File flagDir = new File(flagFileDir);
                 if (flagDir.isDirectory()) {
@@ -457,10 +458,12 @@ public class IngestJob implements Tool {
                     // do nothing
                 }
             }
+            stop = System.currentTimeMillis();
+            log.trace("Time for generateMarkerFile=" + (stop - start));
         }
         
         job.waitForCompletion(true);
-        long stop = System.currentTimeMillis();
+        stop = System.currentTimeMillis();
         
         // output the counters to the log
         Counters counters = job.getCounters();
@@ -536,11 +539,14 @@ public class IngestJob implements Tool {
         // this should result in administrators getting an email, but the job will be considered successful
         
         if (metricsOutputEnabled) {
+            start = System.currentTimeMillis();
             log.info("Writing Stats");
             Path statsDir = new Path(unqualifiedWorkPath.getParent(), "IngestMetrics");
             if (!writeStats(log, job, jobID, counters, start, stop, outputMutations, inputFs, statsDir, this.metricsLabelOverride)) {
                 log.warn("Failed to output statistics for the job");
                 return -5;
+            stop = System.currentTimeMillis();
+            log.trace("Time for metricsOutputEnabled=" + (stop - start));     
             }
         } else {
             log.info("Ingest stats output disabled via 'ingestMetricsDisabled' flag");
@@ -550,7 +556,7 @@ public class IngestJob implements Tool {
             log.warn("Job had processing errors.  See counters for more information");
             return -5;
         }
-        
+            
         return 0;
     }
     
