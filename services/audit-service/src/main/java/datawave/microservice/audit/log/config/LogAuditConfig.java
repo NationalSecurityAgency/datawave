@@ -15,6 +15,10 @@ import org.springframework.messaging.SubscribableChannel;
 
 import javax.annotation.Resource;
 
+/**
+ * Configures the LogAuditor to process messages received by the audit service. This configuration is activated via the 'audit.log.enabled' property. When
+ * enabled, this configuration will also enable the appropriate Spring Cloud Stream configuration for the log audit binding, as specified in the audit config.
+ */
 @Configuration
 @EnableBinding(LogAuditConfig.LogAuditBinding.class)
 @ConditionalOnProperty(name = "audit.log.enabled", havingValue = "true")

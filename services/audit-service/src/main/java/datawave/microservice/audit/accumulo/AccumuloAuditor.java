@@ -17,6 +17,9 @@ import org.slf4j.LoggerFactory;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * An implementation for {@link Auditor}, which writes audit messages to Accumulo.
+ */
 public class AccumuloAuditor implements Auditor {
     
     private static Logger log = LoggerFactory.getLogger(AccumuloAuditor.class);
