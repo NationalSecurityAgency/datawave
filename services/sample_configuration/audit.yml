@@ -3,9 +3,6 @@ spring:
     stream:
       rabbit:
         bindings:
-          auditSource:
-            producer:
-              republishToDlq: true
           logAuditSink:
             consumer:
               autoBindDlq: true
@@ -15,6 +12,8 @@ spring:
       bindings:
         auditSource:
           destination: 'audit'
+          producer:
+            errorChannelEnabled: true
         logAuditSink:
           destination: 'audit'
           group: 'log'
