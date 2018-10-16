@@ -11,6 +11,9 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.context.annotation.RequestScope;
 
+/**
+ * Launcher for the audit service
+ */
 @EnableDiscoveryClient
 @SpringBootApplication(scanBasePackages = "datawave.microservice")
 @EnableAutoConfiguration(exclude = {ErrorMvcAutoConfiguration.class})
