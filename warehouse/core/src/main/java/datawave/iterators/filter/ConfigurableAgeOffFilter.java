@@ -372,7 +372,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                 log.trace("Reusing file system reference.");
             }
         }
-        FileRuleWatcher watcherKey = new FileRuleWatcher(fs, filePath, 1);
+        FileRuleWatcher watcherKey = new FileRuleWatcher(fs, filePath, 1, myEnv);
         
         copyRules(watcherKey);
         

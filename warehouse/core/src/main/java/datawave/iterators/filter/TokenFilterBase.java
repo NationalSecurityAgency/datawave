@@ -6,7 +6,7 @@ import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.log4j.Logger;
 
 import java.util.Date;
@@ -107,7 +107,20 @@ public abstract class TokenFilterBase extends AppliedRule {
      */
     @Override
     public void init(FilterOptions options) {
-        super.init(options);
+        init(options, null);
+    }
+    
+    /**
+     * Required by the {@code FilterRule} interface. Used to initialize the the {@code FilterRule} implementation
+     *
+     * @param options
+     *            {@code Map} object containing the TTL, TTL_UNITS, and MATCHPATTERN for the filter rule.
+     * @param iterEnv
+     * @see datawave.iterators.filter.AgeOffConfigParams
+     */
+    @Override
+    public void init(FilterOptions options, IteratorEnvironment iterEnv) {
+        super.init(options, iterEnv);
         if (options == null) {
             throw new IllegalArgumentException("options must be set for FilterRule implementation");
         }
