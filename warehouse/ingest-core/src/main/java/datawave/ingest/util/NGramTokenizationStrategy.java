@@ -131,10 +131,11 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
                     }
                     
                     // Create the tokenizer and tokenizing stream
-                    tokenizer = new NGramTokenizer(Version.LUCENE_46, reader, 2, maxNGramLength);
+                    tokenizer = new NGramTokenizer(2, maxNGramLength);
+                    tokenizer.setReader(reader);
                     tokenizer.reset();
-                    tokenStream = new StandardFilter(Version.LUCENE_46, tokenizer);
-                    tokenStream = new LowerCaseFilter(Version.LUCENE_46, tokenStream);
+                    tokenStream = new StandardFilter(tokenizer);
+                    tokenStream = new LowerCaseFilter(tokenStream);
                     tokenStream.addAttribute(CharTermAttribute.class);
                     
                     // Reset the n-gram count

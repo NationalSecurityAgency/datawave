@@ -4,13 +4,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 
 import datawave.util.ObjectFactory;
 
-import org.apache.lucene.analysis.util.CharArraySet;
-import org.apache.lucene.analysis.util.WordlistLoader;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.WordlistLoader;
 import org.apache.lucene.util.IOUtils;
 import org.apache.lucene.util.Version;
 import org.slf4j.Logger;
@@ -182,7 +183,7 @@ public interface TokenSearch {
         public static CharArraySet loadStopWords(String filename) throws IOException {
             Closer closer = Closer.create();
             try {
-                CharArraySet stopSet = new CharArraySet(Version.LUCENE_47, 16, true /* ignore case */);
+                CharArraySet stopSet = new CharArraySet(16, true /* ignore case */);
                 String pkg = Factory.class.getPackage().getName().replace('.', '/');
                 String resource = filename.indexOf("/") > -1 ? filename : (pkg + "/" + filename);
                 InputStream resourceStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resource);
@@ -190,7 +191,7 @@ public interface TokenSearch {
                 if (resourceStream == null) {
                     throw new FileNotFoundException("Unable to load stopword file as resource " + filename);
                 }
-                Reader reader = IOUtils.getDecodingReader(resourceStream, IOUtils.CHARSET_UTF_8);
+                Reader reader = IOUtils.getDecodingReader(resourceStream, StandardCharsets.UTF_8);
                 closer.register(reader);
                 CharArraySet set = WordlistLoader.getWordSet(reader, "#", stopSet);
                 logger.info("Loaded " + set.size() + " stopwords from " + filename + " (" + resource + ")");

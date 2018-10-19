@@ -1,6 +1,5 @@
 package datawave.ingest.data.tokenize;
 
-import java.io.IOException;
 import java.io.Reader;
 
 import org.apache.lucene.analysis.TokenStream;
@@ -8,9 +7,8 @@ import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.standard.StandardFilter;
-import org.apache.lucene.analysis.util.CharArraySet;
-import org.apache.lucene.analysis.util.StopwordAnalyzerBase;
-import org.apache.lucene.util.Version;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.StopwordAnalyzerBase;
 
 /**
  * Filters {@link StandardTokenizer} with {@link StandardFilter}, {@link LowerCaseFilter} and {@link StopFilter}, using a list of English stop words (unless
@@ -30,6 +28,8 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     
     protected boolean applyAccentFilter = false;
     protected TokenSearch searchUtil;
+    
+    private Reader tokenizerReader;
     
     /**
      * An unmodifiable set containing some common English words that are usually not useful for searching.
@@ -55,11 +55,13 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
      * @param stopWords
      */
     public StandardAnalyzer(CharArraySet stopWords) {
-        super(Version.LUCENE_47, stopWords);
+        super(stopWords);
+        // setVersion(Version.XXXXXX); No Version.LUCENE_47 in 7.5.x. Stick with default, or set specific version here for consistency?
     }
     
     public StandardAnalyzer(TokenSearch searchUtil) {
-        super(Version.LUCENE_47, searchUtil.getInstanceStopwords());
+        super(searchUtil.getInstanceStopwords());
+        // setVersion(Version.XXXXXX); No Version.LUCENE_47 in 7.5.x. Stick with default, or set specific version here for consistency?
     }
     
     /**
@@ -72,7 +74,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     
     /**
      * Set the length beyond which tokens will be truncated. Tokens longer than this length will be truncated to this length.
-     * 
+     *
      * @param length
      */
     public void setTokenTruncateLength(int length) {
@@ -86,9 +88,30 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
         return maxTokenLength;
     }
     
-    @Override
-    protected TokenStreamComponents createComponents(final String fieldName, final Reader reader) {
-        final StandardTokenizer src = new StandardTokenizer(reader);
+    /**
+     * Would've preferred to grab the reader in a tokenStream override. E.g.,...
+     *
+     * <pre>
+     *   &#64;Override
+     *   public TokenStream tokenStream(final String fieldName, final Reader reader) {
+     *      tokenizerReader = reader;
+     *      return super.tokenStream(fieldName, reader);
+     *   }
+     * </pre>
+     * ...but method is 'final' in Analyzer base.
+     * Perhaps there's a better way to refactor that I haven't yet considered
+     */
+    public void setTokenizerReader(final Reader reader) {
+        tokenizerReader = reader;
+    }
+    
+    protected StandardTokenizer createTokenizer() {
+        
+        if (null == tokenizerReader) {
+            throw new IllegalStateException("Tokenizer reader cannot be null");
+        }
+        
+        StandardTokenizer src = new StandardTokenizer(tokenizerReader);
         
         if (maxTokenLength > 0) {
             src.setMaxTokenLength(maxTokenLength);
@@ -98,15 +121,21 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
             src.setTokenTruncateLength(tokenTruncateLength);
         }
         
-        // Retain Standard Filter's old APOSTROPHE and ACRONYM handling
-        // from Lucene 3.0
-        @SuppressWarnings("deprecation")
-        TokenStream tok = new StandardFilter(Version.LUCENE_30, src);
+        return src;
+    }
+    
+    @Override
+    protected TokenStreamComponents createComponents(final String fieldName) {
         
-        tok = new LowerCaseFilter(matchVersion, tok);
+        StandardTokenizer src = createTokenizer();
+
+        @SuppressWarnings("deprecation")
+        TokenStream tok = new StandardFilter(src);
+        
+        tok = new LowerCaseFilter(tok);
         
         if (stopwords != null) {
-            tok = new StopFilter(matchVersion, tok, stopwords);
+            tok = new StopFilter(tok, stopwords);
         }
         
         if (searchUtil != null) {
@@ -119,7 +148,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
         
         return new TokenStreamComponents(src, tok) {
             @Override
-            protected void setReader(final Reader reader) throws IOException {
+            protected void setReader(final Reader reader) {
                 src.setMaxTokenLength(StandardAnalyzer.this.maxTokenLength);
                 super.setReader(reader);
             }

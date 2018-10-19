@@ -24,6 +24,7 @@ import java.util.Map;
 
 import datawave.util.ObjectFactory;
 
+import org.apache.lucene.util.AttributeFactory;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
@@ -93,20 +94,23 @@ public class StandardTokenizer extends Tokenizer {
      *            See http://issues.apache.org/jira/browse/LUCENE-1068
      */
     public StandardTokenizer(Reader input) {
-        super(input);
+        super();
+        setReader(input);
         this.scanner = new StandardLexer(input);
         init();
     }
     
     public StandardTokenizer(Reader input, Class<? extends Lexer> implClass) {
-        super(input);
+        super();
+        setReader(input);
         Object[] args = {input};
         this.scanner = (Lexer) ObjectFactory.create(implClass.getName(), args);
         init();
     }
     
     public StandardTokenizer(AttributeFactory factory, Reader input, Class<? extends Lexer> implClass) {
-        super(factory, input);
+        super(factory);
+        setReader(input);
         Object[] args = {input};
         this.scanner = (Lexer) ObjectFactory.create(implClass.getName(), args);
         init();
@@ -116,7 +120,8 @@ public class StandardTokenizer extends Tokenizer {
      * Creates a new StandardTokenizer with a given {@link org.apache.lucene.util.AttributeSource.AttributeFactory}
      */
     public StandardTokenizer(AttributeFactory factory, Reader input) {
-        super(factory, input);
+        super(factory);
+        setReader(input);
         this.scanner = new StandardLexer(input);
         init();
     }

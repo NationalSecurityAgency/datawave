@@ -14,6 +14,7 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.ingest.data.tokenize.DefaultTokenSearch;
+import datawave.ingest.data.tokenize.StandardAnalyzer;
 import datawave.ingest.data.tokenize.TokenSearch;
 import datawave.ingest.data.tokenize.TokenizationHelper;
 import datawave.ingest.data.tokenize.TokenizationHelper.HeartBeatThread;
@@ -330,7 +331,11 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         String modifiedFieldName = indexedFieldName + tokenFieldNameSuffix;
         String content = nci.getIndexedFieldValue();
         
-        TokenStream tokenizer = a.tokenStream(indexedFieldName, new StringReader(content));
+        StringReader reader = new StringReader(content);
+        if (a instanceof StandardAnalyzer) {
+            ((StandardAnalyzer) a).setTokenizerReader(reader);
+        }
+        TokenStream tokenizer = a.tokenStream(indexedFieldName, reader);
         tokenizer.reset();
         
         try {

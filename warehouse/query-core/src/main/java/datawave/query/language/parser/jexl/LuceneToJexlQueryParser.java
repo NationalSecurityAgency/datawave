@@ -38,7 +38,7 @@ public class LuceneToJexlQueryParser implements QueryParser {
     private Set<String> allowedFields = null;
     private Boolean allowAnyFieldQueries = true;
     private List<JexlQueryFunction> allowedFunctions = JexlTreeBuilder.DEFAULT_ALLOWED_FUNCTION_LIST;
-    private Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
+    private Analyzer analyzer = new StandardAnalyzer();
     
     public LuceneToJexlQueryParser() {
         Collections.addAll(tokenizedFields, DEFAULT_TOKENIZED_FIELDS);
