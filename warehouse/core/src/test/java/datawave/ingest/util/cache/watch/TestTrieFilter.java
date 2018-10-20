@@ -5,6 +5,7 @@ import org.apache.accumulo.core.data.Value;
 
 import datawave.iterators.filter.TokenizingFilterBase;
 import datawave.iterators.filter.ageoff.FilterOptions;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 /**
  * Class to assist in the testing of TokeninzingFilters
@@ -18,6 +19,12 @@ public class TestTrieFilter extends TokenizingFilterBase {
     @Override
     public void init(FilterOptions options) {
         super.init(options);
+        this.options = options;
+    }
+    
+    @Override
+    public void init(FilterOptions options, IteratorEnvironment iterEnv) {
+        super.init(options, iterEnv);
         this.options = options;
     }
     
