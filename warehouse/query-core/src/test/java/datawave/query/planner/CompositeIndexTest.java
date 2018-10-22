@@ -386,7 +386,7 @@ public class CompositeIndexTest {
         Assert.assertEquals(732, queries.size());
         
         List<DefaultEvent> events = getQueryResults(query, true);
-        Assert.assertEquals(9, events.size()); // TODO -- returning 0
+        Assert.assertEquals(9, events.size());
         
         List<String> wktList = new ArrayList<>();
         wktList.addAll(Arrays.asList(wktLegacyData));

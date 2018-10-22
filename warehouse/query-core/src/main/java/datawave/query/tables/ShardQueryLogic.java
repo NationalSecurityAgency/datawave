@@ -387,6 +387,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (this.queryModel == null)
             loadQueryModel(metadataHelper, config);
         
+        getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
+        getQueryPlanner().setUidIntersector(uidIntersector);
+        
         validateConfiguration(config);
         
         if (getCardinalityConfiguration() != null && (config.getBlacklistedFields().size() > 0 || config.getProjectFields().size() > 0)) {
@@ -1521,7 +1524,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public void setUseFilters(boolean useFilters) {
-        this.config.getUseFilters();
+        this.config.setUseFilters(useFilters);
     }
     
     public String getReverseIndexTableName() {
