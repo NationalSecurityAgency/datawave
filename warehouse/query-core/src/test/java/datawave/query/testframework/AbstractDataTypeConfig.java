@@ -11,10 +11,14 @@ import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.ingest.data.config.ingest.VirtualIngest;
+import datawave.ingest.json.config.helper.JsonIngestHelper;
+import datawave.ingest.json.mr.input.JsonRecordReader;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.policy.IngestPolicyEnforcer;
+import datawave.query.testframework.FileLoaderFactory.FileType;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -29,6 +33,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static datawave.query.testframework.FileLoaderFactory.FileType.CSV;
 
 /**
  * Abstract base class that contains the configuration settings for test data types.
@@ -51,6 +57,15 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
      */
     public static Authorizations getTestAuths() {
         return TEST_AUTHS;
+    }
+    
+    /**
+     * Returns the default visibility applied to all datatypes.
+     * 
+     * @return default column visibility
+     */
+    public static ColumnVisibility getVisibility() {
+        return new ColumnVisibility(AUTH_VALUES);
     }
     
     private static List<String> mappingToNames(final Collection<Set<String>> mapping) {
@@ -96,6 +111,27 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
      */
     protected AbstractDataTypeConfig(final String dt, final String ingestFile, final FieldConfig config, final RawDataManager manager) throws IOException,
                     URISyntaxException {
+        this(dt, ingestFile, CSV, config, manager);
+    }
+    
+    /**
+     * @param dt
+     *            datatype name
+     * @param ingestFile
+     *            ingest file name
+     * @param config
+     *            field config for accumulo
+     * @param format
+     *            file type containing test data
+     * @param manager
+     *            data manager for data
+     * @throws IOException
+     *             unable to load ingest file
+     * @throws URISyntaxException
+     *             ingest file uri conversion error
+     */
+    protected AbstractDataTypeConfig(final String dt, final String ingestFile, final FileType format, final FieldConfig config, final RawDataManager manager)
+                    throws IOException, URISyntaxException {
         log.info("---------  loading datatype (" + dt + ") ingest file(" + ingestFile + ") ---------");
         
         // RawDataManager manager = mgr;
@@ -105,22 +141,36 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         this.dataType = dt;
         this.fieldConfig = config;
         
-        // load raw data into POJO
-        Set<String> anyFieldIndexes = new HashSet<>(this.fieldConfig.getIndexFields());
-        anyFieldIndexes.addAll(this.fieldConfig.getReverseIndexFields());
-        manager.addTestData(this.ingestPath, this.dataType, anyFieldIndexes);
-        
         // default Hadoop settings - override if needed
         this.hConf.set(DataTypeHelper.Properties.DATA_NAME, this.dataType);
         
-        this.hConf.set(this.dataType + TypeRegistry.INGEST_HELPER, ExtendedCSVIngestHelper.class.getName());
-        this.hConf.set(this.dataType + TypeRegistry.RAW_READER, CSVRecordReader.class.getName());
+        switch (format) {
+            case CSV:
+                // load raw data into POJO for CSV
+                Set<String> anyFieldIndexes = new HashSet<>(this.fieldConfig.getIndexFields());
+                anyFieldIndexes.addAll(this.fieldConfig.getReverseIndexFields());
+                manager.addTestData(this.ingestPath, this.dataType, anyFieldIndexes);
+                this.hConf.set(this.dataType + TypeRegistry.INGEST_HELPER, ExtendedCSVIngestHelper.class.getName());
+                this.hConf.set(this.dataType + TypeRegistry.RAW_READER, CSVRecordReader.class.getName());
+                break;
+            case JSON:
+                // loading of raw data for JSON is postponed until the Accumulo configuration is complete
+                this.hConf.set(this.dataType + TypeRegistry.INGEST_HELPER, JsonIngestHelper.class.getName());
+                this.hConf.set(this.dataType + TypeRegistry.RAW_READER, JsonRecordReader.class.getName());
+                break;
+            case GROUPING:
+                // nothing to do here
+                break;
+            default:
+                throw new AssertionError("unhandled format type: " + format.name());
+        }
+        
         this.hConf.set(this.dataType + TypeRegistry.HANDLER_CLASSES, AbstractColumnBasedHandler.class.getName());
         this.hConf.set(this.dataType + BaseIngestHelper.DEFAULT_TYPE, LcNoDiacriticsType.class.getName());
         this.hConf.set(this.dataType + CSVHelper.DATA_SEP, ",");
         this.hConf.set(this.dataType + CSVHelper.MULTI_VALUED_SEPARATOR, RawDataManager.MULTIVALUE_SEP);
         
-        this.hConf.set(this.dataType + ".ingest.policy.enforcer.class", IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        this.hConf.set(this.dataType + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         
         this.hConf.set(this.dataType + ".data.auth.id.mode", "NEVER");
         this.hConf.set(ShardedDataTypeHandler.METADATA_TERM_FREQUENCY, "true");
@@ -149,9 +199,22 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_NAMES, String.join(",", mappingToNames(this.fieldConfig.getVirtualFields())));
         this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_MEMBERS, String.join(",", mappingToFields(this.fieldConfig.getVirtualFields())));
         
-        // multivalue fields
-        this.hConf.set(this.dataType + CSVHelper.MULTI_VALUED_FIELDS, String.join(",", this.fieldConfig.getMultiValueFields()));
-        
+        // multivalue fields - only set if there are values
+        Set<String> multi = this.fieldConfig.getMultiValueFields();
+        if (!multi.isEmpty()) {
+            this.hConf.set(this.dataType + CSVHelper.MULTI_VALUED_FIELDS, String.join(",", multi));
+        }
+    }
+    
+    /**
+     * Returns the default list of shards from the class {@link BaseShardIdRange}. Test data types that use a different set of shard ids should override this
+     * method.
+     * 
+     * @return list of shard id values
+     */
+    @Override
+    public Collection<String> getShardIds() {
+        return BaseShardIdRange.getShardDates();
     }
     
     @Override
@@ -171,6 +234,6 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
     
     @Override
     public String toString() {
-        return "AbstractDataTypeConfig{" + "dataType='" + dataType + '\'' + ", ingestPath=" + ingestPath + ", fieldConfig=" + fieldConfig + '}';
+        return this.getClass().getSimpleName() + "{" + "dataType='" + dataType + '\'' + ", ingestPath=" + ingestPath + ", fieldConfig=" + fieldConfig + '}';
     }
 }

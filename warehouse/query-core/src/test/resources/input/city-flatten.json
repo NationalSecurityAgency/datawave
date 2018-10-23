@@ -1,0 +1,63 @@
+{
+  "STARTDATE" : "20150606",
+  "EVENTID": "flat-or-6",
+  "STATE" : "OreGOn",
+  "CAPITAL":
+  {
+    "CITY": "saLEm",
+    "FOUNDED" : 1842,
+    "COUNTIES": [ "marion", "polk" ]
+  },
+  "LARGE": {
+    "CITY" : "porTLand",
+    "FOUNDED" : 1845,
+    "COUNTIES": ["multnomah", "washington", "clackamas" ]
+  },
+  "small": {
+    "CITY" : "Austin",
+    "FOUNDED" : 1888,
+    "COUNTIES": "Grant"
+  }
+}
+
+{
+  "STARTDATE": "20150707",
+  "EVENTID" : "flat-tx-7",
+  "STATE" : "Texas",
+  "CAPITAL": {
+    "CITY" : "Austin",
+    "FOUNDED" : 1835,
+    "COUNTIES" : ["Hays", "travis", "williamson"]
+  },
+  "large": {
+    "CITY": "Dallas",
+    "FOUNDED" : 1856,
+    "COUNTIES": ["dallas", "collin", "denton", "rockwall", "kaufman"]
+  },
+  "small": {
+    "CITY": "Portland",
+    "FOUNDED" : 1950,
+    "COUNTIES": ["nueces", "san patricio"]
+  }
+}
+
+{
+  "STARTDATE": "20150808",
+  "EVENTID" : "flat-ka-8",
+  "STATE" : "kansas",
+  "CAPITAL": {
+    "CITY" : "topeka",
+    "FOUNDED" : 1854,
+    "COUNTIES": "shawnee"
+  },
+  "large": {
+    "CITY": "kansas city",
+    "FOUNDED" : 1872,
+    "COUNTIES": "wyandotte"
+  },
+  "small": {
+    "CITY": "portland",
+    "FOUNDED" : 1886,
+    "COUNTIES": "sumner"
+    }
+}

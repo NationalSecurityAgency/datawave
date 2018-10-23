@@ -10,11 +10,6 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -65,91 +60,6 @@ public class CarsDataType extends AbstractDataTypeConfig {
     }
     
     /**
-     * Defines the valid dates that are used for shard ids. All test data should specify one of the shard id dates.
-     */
-    public enum CarShardId {
-        // list of shards for testing
-        DATE_2017_0404("20170404"),
-        DATE_2017_0505("20170505"),
-        DATE_2017_0606("20170606"),
-        DATE_2017_0707("20170707"),
-        DATE_2017_0808("20170808"),
-        DATE_2017_0909("20170909"),
-        DATE_2017_1010("20171010"),
-        DATE_2017_1111("20171111");
-        
-        public static Set<String> getShardRange(final Date start, final Date end) {
-            final Set<String> shards = new HashSet<>();
-            for (final CarShardId id : CarShardId.values()) {
-                if (0 >= start.compareTo(id.date) && 0 <= end.compareTo(id.date)) {
-                    shards.add(id.dateStr);
-                }
-            }
-            
-            return shards;
-        }
-        
-        static final List<Date> sortedDate = new ArrayList<>();
-        
-        public static Date[] getStartEndDates(final boolean random) {
-            // use double check locking
-            if (sortedDate.isEmpty()) {
-                synchronized (sortedDate) {
-                    if (sortedDate.isEmpty()) {
-                        final List<Date> dates = new ArrayList<>();
-                        for (final CarShardId id : CarShardId.values()) {
-                            dates.add(id.date);
-                        }
-                        Collections.sort(dates);
-                        sortedDate.addAll(dates);
-                    }
-                }
-            }
-            
-            Date[] startEndDate = new Date[2];
-            if (random) {
-                int s = rVal.nextInt(sortedDate.size());
-                startEndDate[0] = sortedDate.get(s);
-                int remaining = sortedDate.size() - s;
-                startEndDate[1] = startEndDate[0];
-                if (0 < remaining) {
-                    int e = rVal.nextInt(sortedDate.size() - s);
-                    startEndDate[1] = sortedDate.get(s + e);
-                }
-            } else {
-                startEndDate[0] = sortedDate.get(0);
-                startEndDate[1] = sortedDate.get(sortedDate.size() - 1);
-            }
-            return startEndDate;
-        }
-        
-        private final String dateStr;
-        private final Date date;
-        
-        CarShardId(final String str) {
-            this.dateStr = str;
-            try {
-                this.date = YMD_DateFormat.parse(str);
-            } catch (ParseException pe) {
-                throw new AssertionError("invalid date string(" + str + ")");
-            }
-        }
-        
-        /**
-         * Returns the accumulo shard id string representation.
-         *
-         * @return accumulo shard id
-         */
-        String getShardId() {
-            return this.dateStr + "_0";
-        }
-        
-        static Collection<String> carShads() {
-            return Stream.of(CarShardId.values()).map(e -> e.getShardId()).collect(Collectors.toList());
-        }
-    }
-    
-    /**
      * Defines the data fields for car datatype.
      */
     public enum CarField {
@@ -167,6 +77,23 @@ public class CarsDataType extends AbstractDataTypeConfig {
         
         static {
             Headers = Stream.of(CarField.values()).map(e -> e.name()).collect(Collectors.toList());
+        }
+        
+        private static final Map<String,RawMetaData> fieldMetadata;
+        static {
+            fieldMetadata = new HashMap<>();
+            for (CarField field : CarField.values()) {
+                fieldMetadata.put(field.name().toLowerCase(), field.metadata);
+            }
+        }
+        
+        /**
+         * Returns mapping of ip address fields to the metadata for the field.
+         *
+         * @return populate map
+         */
+        public static Map<String,RawMetaData> getFieldsMetadata() {
+            return fieldMetadata;
         }
         
         /**
@@ -217,16 +144,16 @@ public class CarsDataType extends AbstractDataTypeConfig {
             return fields;
         }
         
-        private static final Map<String,BaseRawData.RawMetaData> metadataMapping = new HashMap<>();
+        private static final Map<String,RawMetaData> metadataMapping = new HashMap<>();
         
-        private BaseRawData.RawMetaData metadata;
+        private RawMetaData metadata;
         
         CarField(final Normalizer<?> normalizer) {
             this(normalizer, false);
         }
         
         CarField(final Normalizer<?> normalizer, final boolean isMulti) {
-            this.metadata = new BaseRawData.RawMetaData(this.name(), normalizer, isMulti);
+            this.metadata = new RawMetaData(this.name(), normalizer, isMulti);
         }
         
         /**
@@ -234,7 +161,7 @@ public class CarsDataType extends AbstractDataTypeConfig {
          *
          * @return metadata
          */
-        public BaseRawData.RawMetaData getMetadata() {
+        public RawMetaData getMetadata() {
             return metadata;
         }
     }
@@ -294,12 +221,7 @@ public class CarsDataType extends AbstractDataTypeConfig {
     }
     
     @Override
-    public Collection<String> getShardIds() {
-        return CarShardId.carShads();
-    }
-    
-    @Override
     public String toString() {
-        return "CarsDataType{" + super.toString() + "}";
+        return this.getClass().getSimpleName() + "{" + super.toString() + "}";
     }
 }

@@ -12,7 +12,6 @@ import java.io.Reader;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,8 +26,7 @@ public class IpAddressDataManager extends AbstractDataManager {
     private static final Logger log = Logger.getLogger(IpAddressDataManager.class);
     
     public IpAddressDataManager() {
-        super(IpAddrField.EVENT_ID.name(), IpAddrField.START_DATE.name());
-        this.metadata = IpAddrRawData.metadata;
+        super(IpAddrField.EVENT_ID.name(), IpAddrField.START_DATE.name(), IpAddrField.getFieldsMetadata());
     }
     
     @Override
@@ -44,7 +42,7 @@ public class IpAddressDataManager extends AbstractDataManager {
             int count = 0;
             Set<RawData> ipData = new HashSet<>();
             while (null != (data = csv.readNext())) {
-                final RawData raw = new IpAddrRawData(data);
+                final RawData raw = new IpAddrRawData(datatype, data);
                 ipData.add(raw);
                 count++;
             }
@@ -54,48 +52,11 @@ public class IpAddressDataManager extends AbstractDataManager {
         }
     }
     
-    @Override
-    public Date[] getRandomStartEndDate() {
-        return IpAddressDataType.IpAddrShardId.getStartEndDates(true);
-    }
-    
-    @Override
-    public Date[] getShardStartEndDate() {
-        return IpAddressDataType.IpAddrShardId.getStartEndDates(false);
-    }
-    
     static class IpAddrRawData extends BaseRawData {
         
-        private static final Map<String,RawMetaData> metadata = new HashMap<>();
-        static {
-            for (final IpAddrField field : IpAddrField.values()) {
-                metadata.put(field.name().toLowerCase(), field.getMetadata());
-            }
-        }
-        
-        IpAddrRawData(final String fields[]) {
-            super(fields);
+        IpAddrRawData(final String datatype, final String fields[]) {
+            super(datatype, fields, IpAddrField.headers(), IpAddrField.getFieldsMetadata());
             Assert.assertEquals("ingest data field count is invalid", IpAddrField.headers().size(), fields.length);
-        }
-        
-        @Override
-        protected List<String> getHeaders() {
-            return IpAddrField.headers();
-        }
-        
-        @Override
-        protected boolean containsField(final String field) {
-            return IpAddrField.headers().contains(field.toLowerCase());
-        }
-        
-        @Override
-        public boolean isMultiValueField(final String field) {
-            return metadata.get(field.toLowerCase()).multiValue;
-        }
-        
-        @Override
-        protected Normalizer<?> getNormalizer(String field) {
-            return metadata.get(field.toLowerCase()).normalizer;
         }
     }
 }
