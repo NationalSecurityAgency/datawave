@@ -442,112 +442,109 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.unindexed(node);
         }
         
-        if (isIndexed(fieldName, config.getIndexedFields())) {
-            
-            log.debug("\"" + fieldName + "\" is indexed. for " + literal);
-            
-            try {
-                
-                // two scenarios
-                Iterator<Tuple2<String,IndexInfo>> itr = null;
-                int stackStart = config.getBaseIteratorPriority();
-                
-                if (limitScanners) {
-                    RangeStreamScanner scanSession = null;
-                    
-                    // configuration class
-                    Class<? extends SortedKeyValueIterator<Key,Value>> iterClazz = createUidsIteratorClass;
-                    
-                    boolean condensedTld = false;
-                    if (setCondenseUids) {
-                        iterClazz = createCondensedUidIteratorClass;
-                        if (createUidsIteratorClass == CreateTLDUidsIterator.class) {
-                            condensedTld = true;
-                        }
-                        scanSession = scanners.newCondensedRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                        config.getShardsPerDayThreshold());
-                        
-                    } else {
-                        scanSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                                        config.getShardsPerDayThreshold());
-                    }
-                    
-                    scanSession.setMaxResults(config.getMaxIndexBatchSize());
-                    
-                    scanSession.setExecutor(streamExecutor);
-                    
-                    if (log.isTraceEnabled()) {
-                        log.trace("Provided new object " + scanSession.hashCode());
-                    }
-                    SessionOptions options = new SessionOptions();
-                    options.fetchColumnFamily(new Text(fieldName));
-                    options.addScanIterator(makeDataTypeFilter(config, stackStart++));
-                    
-                    final IteratorSetting uidSetting = new IteratorSetting(stackStart++, iterClazz);
-                    
-                    if (setCondenseUids) {
-                        uidSetting.addOption(CondensedUidIterator.SHARDS_TO_EVALUATE, Integer.valueOf(config.getShardsPerDayThreshold()).toString());
-                        uidSetting.addOption(CondensedUidIterator.MAX_IDS, Integer.valueOf(MAX_MEDIAN).toString());
-                        uidSetting.addOption(CondensedUidIterator.COMPRESS_MAPPING, Boolean.valueOf(compressUidsInRangeStream).toString());
-                        
-                        if (condensedTld) {
-                            uidSetting.addOption(CondensedUidIterator.IS_TLD, Boolean.valueOf(condensedTld).toString());
-                        }
-                    }
-                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(config.getCollapseUids()).toString());
-                    
-                    options.addScanIterator(uidSetting);
-                    StringBuilder queryString = new StringBuilder(fieldName);
-                    queryString.append("=='").append(literal).append("'");
-                    options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString.toString()));
-                    
-                    scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
-                    
-                    itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
-                    
-                } else {
-                    
-                    BatchScanner scanner = scanners.newScanner(config.getIndexTableName(), config.getAuthorizations(), 1, config.getQuery());
-                    
-                    scanner.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config)));
-                    scanner.fetchColumnFamily(new Text(fieldName));
-                    scanner.addScanIterator(makeDataTypeFilter(config, stackStart++));
-                    
-                    final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
-                    uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(config.getCollapseUids()).toString());
-                    scanner.addScanIterator(uidSetting);
-                    
-                    itr = Iterators.transform(scanner.iterator(), new EntryParser(node, fieldName, literal, indexOnlyFields));
-                }
-                
-                /**
-                 * Create a scanner in the initialized state so that we can
-                 */
-                if (log.isTraceEnabled()) {
-                    log.trace("Building delayed scanner for " + fieldName + ", literal= " + literal);
-                }
-                return ScannerStream.initialized(itr, node);
-                
-            } catch (Exception e) {
-                log.error(e);
-                throw new RuntimeException(e);
-            }
-        } else
-        
-        {
+        // Check if field is not indexed
+        if (!isIndexed(fieldName, config.getIndexedFields())) {
             try {
                 if (this.getAllFieldsFromHelper().contains(fieldName)) {
-                    log.debug("{\"" + fieldName + "\": \"" + literal.toString() + "\"} is not indexed.");
+                    log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not indexed.");
                     return ScannerStream.unindexed(node);
                 }
             } catch (TableNotFoundException e) {
                 log.error(e);
                 throw new RuntimeException(e);
             }
-            log.debug("{\"" + fieldName + "\": \"" + literal.toString() + "\"} is not an observed field.");
+            log.debug("{\"" + fieldName + "\": \"" + literal + "\"} is not an observed field.");
             return ScannerStream.unknownField(node);
         }
         
+        // Final case, field is indexed
+        log.debug("\"" + fieldName + "\" is indexed. for " + literal);
+        try {
+            
+            // two scenarios
+            Iterator<Tuple2<String,IndexInfo>> itr = null;
+            int stackStart = config.getBaseIteratorPriority();
+            
+            if (limitScanners) {
+                RangeStreamScanner scanSession = null;
+                
+                // configuration class
+                Class<? extends SortedKeyValueIterator<Key,Value>> iterClazz = createUidsIteratorClass;
+                
+                boolean condensedTld = false;
+                if (setCondenseUids) {
+                    iterClazz = createCondensedUidIteratorClass;
+                    if (createUidsIteratorClass == CreateTLDUidsIterator.class) {
+                        condensedTld = true;
+                    }
+                    scanSession = scanners.newCondensedRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
+                                    config.getShardsPerDayThreshold());
+                    
+                } else {
+                    scanSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
+                                    config.getShardsPerDayThreshold());
+                }
+                
+                scanSession.setMaxResults(config.getMaxIndexBatchSize());
+                
+                scanSession.setExecutor(streamExecutor);
+                
+                if (log.isTraceEnabled()) {
+                    log.trace("Provided new object " + scanSession.hashCode());
+                }
+                SessionOptions options = new SessionOptions();
+                options.fetchColumnFamily(new Text(fieldName));
+                options.addScanIterator(makeDataTypeFilter(config, stackStart++));
+                
+                final IteratorSetting uidSetting = new IteratorSetting(stackStart++, iterClazz);
+                
+                if (setCondenseUids) {
+                    uidSetting.addOption(CondensedUidIterator.SHARDS_TO_EVALUATE, Integer.valueOf(config.getShardsPerDayThreshold()).toString());
+                    uidSetting.addOption(CondensedUidIterator.MAX_IDS, Integer.valueOf(MAX_MEDIAN).toString());
+                    uidSetting.addOption(CondensedUidIterator.COMPRESS_MAPPING, Boolean.valueOf(compressUidsInRangeStream).toString());
+                    
+                    if (condensedTld) {
+                        uidSetting.addOption(CondensedUidIterator.IS_TLD, Boolean.valueOf(condensedTld).toString());
+                    }
+                }
+                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(config.getCollapseUids()).toString());
+                
+                options.addScanIterator(uidSetting);
+                StringBuilder queryString = new StringBuilder(fieldName);
+                queryString.append("=='").append(literal).append("'");
+                options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString.toString()));
+                
+                scanSession.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config))).setOptions(options);
+                
+                itr = Iterators.transform(scanSession, new EntryParser(node, fieldName, literal, indexOnlyFields));
+                
+            } else {
+                
+                BatchScanner scanner = scanners.newScanner(config.getIndexTableName(), config.getAuthorizations(), 1, config.getQuery());
+                
+                scanner.setRanges(Collections.singleton(rangeForTerm(literal, fieldName, config)));
+                scanner.fetchColumnFamily(new Text(fieldName));
+                scanner.addScanIterator(makeDataTypeFilter(config, stackStart++));
+                
+                final IteratorSetting uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
+                uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(config.getCollapseUids()).toString());
+                scanner.addScanIterator(uidSetting);
+                
+                itr = Iterators.transform(scanner.iterator(), new EntryParser(node, fieldName, literal, indexOnlyFields));
+            }
+            
+            /**
+             * Create a scanner in the initialized state so that we can
+             */
+            if (log.isTraceEnabled()) {
+                log.trace("Building delayed scanner for " + fieldName + ", literal= " + literal);
+            }
+            return ScannerStream.initialized(itr, node);
+            
+        } catch (Exception e) {
+            log.error(e);
+            throw new RuntimeException(e);
+        }
     }
     
     /*
