@@ -397,6 +397,12 @@ public class QueryExecutorBean implements QueryExecutor {
      * This method will provide some initial query validation for the define and create query calls.
      */
     private QueryData validateQuery(String queryLogicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
+        
+        // Parameter 'logicName' is required and passed in prior to this call. Add to the queryParameters now.
+        if (!queryParameters.containsKey(QueryParameters.QUERY_LOGIC_NAME)) {
+            queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        }
+        
         QueryData qd = new QueryData();
         
         log.debug(queryParameters);
@@ -418,6 +424,7 @@ public class QueryExecutorBean implements QueryExecutor {
         queryParameters.remove(AuditParameters.USER_DN);
         queryParameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
         
+        // Ensure that all required parameters exist prior to validating the values.
         qp.validate(queryParameters);
         
         // The pagesize and expirationDate checks will always be false when called from the RemoteQueryExecutor.

@@ -76,6 +76,7 @@ import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.webservice.query.QueryParameters.QUERY_END;
 import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
@@ -378,6 +379,7 @@ public class MultiValueCompositeIndexTest {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
         params.putSingle(QUERY_STRING, queryString);
         params.putSingle(QUERY_NAME, "geoQuery");
+        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
         params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
         params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
         params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
@@ -406,6 +408,7 @@ public class MultiValueCompositeIndexTest {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
         params.putSingle(QUERY_STRING, queryString);
         params.putSingle(QUERY_NAME, "geoQuery");
+        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
         params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
         params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
         params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");

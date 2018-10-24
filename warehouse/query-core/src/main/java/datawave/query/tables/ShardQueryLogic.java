@@ -1813,36 +1813,41 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public Set<String> getOptionalQueryParameters() {
-        Set<String> params = new TreeSet<>();
-        params.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
-        params.add(datawave.webservice.query.QueryParameters.QUERY_END);
-        params.add(QueryParameters.QUERY_SYNTAX);
-        params.add(QueryParameters.PARAMETER_MODEL_NAME);
-        params.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
-        params.add(QueryParameters.DATATYPE_FILTER_SET);
-        params.add(QueryParameters.RETURN_FIELDS);
-        params.add(QueryParameters.BLACKLISTED_FIELDS);
-        params.add(QueryParameters.FILTER_MASKED_VALUES);
-        params.add(QueryParameters.INCLUDE_DATATYPE_AS_FIELD);
-        params.add(QueryParameters.INCLUDE_GROUPING_CONTEXT);
-        params.add(QueryParameters.RAW_DATA_ONLY);
-        params.add(QueryParameters.TRANFORM_CONTENT_TO_UID);
-        params.add(QueryOptions.REDUCED_RESPONSE);
-        params.add(QueryOptions.POSTPROCESSING_CLASSES);
-        params.add(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS);
-        params.add(QueryOptions.HIT_LIST);
-        params.add(QueryOptions.TYPE_METADATA_IN_HDFS);
-        params.add(QueryOptions.DATE_INDEX_TIME_TRAVEL);
-        params.add(QueryParameters.LIMIT_FIELDS);
-        params.add(QueryParameters.GROUP_FIELDS);
-        params.add(QueryParameters.UNIQUE_FIELDS);
-        params.add(QueryOptions.LOG_TIMING_DETAILS);
-        return params;
+        Set<String> optionalParams = new TreeSet<>();
+        optionalParams.add(QueryParameters.QUERY_SYNTAX);
+        optionalParams.add(QueryParameters.PARAMETER_MODEL_NAME);
+        optionalParams.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
+        optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
+        optionalParams.add(QueryParameters.RETURN_FIELDS);
+        optionalParams.add(QueryParameters.BLACKLISTED_FIELDS);
+        optionalParams.add(QueryParameters.FILTER_MASKED_VALUES);
+        optionalParams.add(QueryParameters.INCLUDE_DATATYPE_AS_FIELD);
+        optionalParams.add(QueryParameters.INCLUDE_GROUPING_CONTEXT);
+        optionalParams.add(QueryParameters.RAW_DATA_ONLY);
+        optionalParams.add(QueryParameters.TRANFORM_CONTENT_TO_UID);
+        optionalParams.add(QueryOptions.REDUCED_RESPONSE);
+        optionalParams.add(QueryOptions.POSTPROCESSING_CLASSES);
+        optionalParams.add(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS);
+        optionalParams.add(QueryOptions.HIT_LIST);
+        optionalParams.add(QueryOptions.TYPE_METADATA_IN_HDFS);
+        optionalParams.add(QueryOptions.DATE_INDEX_TIME_TRAVEL);
+        optionalParams.add(QueryParameters.LIMIT_FIELDS);
+        optionalParams.add(QueryParameters.GROUP_FIELDS);
+        optionalParams.add(QueryParameters.UNIQUE_FIELDS);
+        optionalParams.add(QueryOptions.LOG_TIMING_DETAILS);
+        return optionalParams;
     }
     
     @Override
     public Set<String> getRequiredQueryParameters() {
-        return Collections.emptySet();
+        Set<String> requiredParams = new TreeSet<>();
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_STRING);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_NAME);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
+        requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_END);
+        return requiredParams;
     }
     
     @Override

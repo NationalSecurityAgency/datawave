@@ -82,6 +82,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
 import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.webservice.query.QueryParameters.QUERY_END;
@@ -89,7 +90,7 @@ import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
 import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
-import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
+import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 
 @RunWith(Arquillian.class)
 public class ContentFunctionQueryTest {
@@ -243,6 +244,7 @@ public class ContentFunctionQueryTest {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
         params.putSingle(QUERY_STRING, queryStr);
         params.putSingle(QUERY_NAME, "contentQuery");
+        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
         params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
         params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
         params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
@@ -349,6 +351,7 @@ public class ContentFunctionQueryTest {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
         params.putSingle(QUERY_STRING, queryString);
         params.putSingle(QUERY_NAME, "contentQuery");
+        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
         params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
         params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
         params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
