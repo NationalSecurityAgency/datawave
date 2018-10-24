@@ -46,7 +46,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     @SuppressWarnings("unused")
     private static final long serialVersionUID = -4354990715046146110L;
     private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
-    // is this a tld query
+    // is this a tld query, explicitly default to false
     private boolean tldQuery = false;
     private Map<String,String> filterOptions = new HashMap<>();
     private boolean disableIndexOnlyDocuments = false;

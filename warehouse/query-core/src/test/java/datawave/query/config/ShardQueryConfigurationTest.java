@@ -392,6 +392,14 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expected, config.getNormalizedFieldNormalizersAsString());
     }
     
+    @Test
+    public void testIsTldQuery() {
+        Assert.assertFalse(config.isTldQuery());
+        
+        config.setTldQuery(true);
+        Assert.assertTrue(config.isTldQuery());
+    }
+    
     /**
      * This test will fail if a new variable is added improperly to the ShardQueryConfiguration
      *

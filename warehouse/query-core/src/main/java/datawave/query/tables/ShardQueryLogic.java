@@ -1484,7 +1484,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public boolean isTldQuery() {
-        return false;
+        return config.isTldQuery();
+    }
+    
+    public void setIsTldQuery(boolean isTldQuery) {
+        config.setTldQuery(isTldQuery);
     }
     
     public boolean isExpandAllTerms() {
