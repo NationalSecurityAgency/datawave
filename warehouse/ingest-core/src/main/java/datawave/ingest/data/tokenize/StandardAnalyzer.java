@@ -6,15 +6,15 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.core.StopFilter;
-import org.apache.lucene.analysis.standard.StandardFilter;
+import org.apache.lucene.analysis.standard.ClassicFilter;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.StopwordAnalyzerBase;
 
 /**
- * Filters {@link StandardTokenizer} with {@link StandardFilter} and {@link StopFilter}, using a list of English stop words (unless otherwise specified).
+ * Filters {@link StandardTokenizer} with {@link LowerCaseFilter} {@link ClassicFilter} and {@link StopFilter}, using a list of English stop words (unless
+ * otherwise specified).
  * <p>
  * This analyzer does NOT provide the ability to apply BASIS RLP processing
- * 
  */
 public class StandardAnalyzer extends StopwordAnalyzerBase {
     
@@ -117,8 +117,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
         
         StandardTokenizer src = createTokenizer();
         
-        @SuppressWarnings("deprecation")
-        TokenStream tok = new StandardFilter(src);
+        TokenStream tok = new ClassicFilter(src);
         
         tok = new LowerCaseFilter(tok);
         
