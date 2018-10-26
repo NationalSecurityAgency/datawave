@@ -11,8 +11,7 @@ import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.StopwordAnalyzerBase;
 
 /**
- * Filters {@link StandardTokenizer} with {@link StandardFilter}, {@link LowerCaseFilter} and {@link StopFilter}, using a list of English stop words (unless
- * otherwise specified).
+ * Filters {@link StandardTokenizer} with {@link StandardFilter} and {@link StopFilter}, using a list of English stop words (unless otherwise specified).
  * <p>
  * This analyzer does NOT provide the ability to apply BASIS RLP processing
  * 
@@ -88,21 +87,10 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
         return maxTokenLength;
     }
     
-    /**
-     * Would've preferred to grab the reader in a tokenStream override. E.g.,...
-     *
-     * <pre>
-     *   &#64;Override
-     *   public TokenStream tokenStream(final String fieldName, final Reader reader) {
-     *      tokenizerReader = reader;
-     *      return super.tokenStream(fieldName, reader);
-     *   }
-     * </pre>
-     * ...but method is 'final' in Analyzer base.
-     * Perhaps there's a better way to refactor that I haven't yet considered
-     */
-    public void setTokenizerReader(final Reader reader) {
-        tokenizerReader = reader;
+    @Override
+    protected Reader initReader(String fieldName, Reader reader) {
+        this.tokenizerReader = reader;
+        return reader;
     }
     
     protected StandardTokenizer createTokenizer() {
@@ -128,7 +116,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     protected TokenStreamComponents createComponents(final String fieldName) {
         
         StandardTokenizer src = createTokenizer();
-
+        
         @SuppressWarnings("deprecation")
         TokenStream tok = new StandardFilter(src);
         
