@@ -42,7 +42,7 @@ import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
  * truncation length will occur. By default the truncation for FILE, URL or HTTP_REQUEST tokens is 1024 characters, while the default truncation length for all
  * other types is 50.
  * <p>
- * This Tokenizer will can be condfigured to take special action when the string {@code METABREAK} is encoutnered as a token. If enabled via
+ * This Tokenizer will can be configured to take special action when the string {@code METABREAK} is encountered as a token. If enabled via
  * {@link #setMetaBreakEnabled(boolean)}, an increment of {@link #metaBreakIncrement} will be added for the next token, and the {@code METABREAK} token will be
  * dropped. This is in place to allow KEY/VALUE pairs to be indexed as adjacent strings, but provide an effective method for separating multiple KEY/VALUE pairs
  * contained with a text stream to prevent mismatches due to overlap.
@@ -117,7 +117,7 @@ public class StandardTokenizer extends Tokenizer {
     }
     
     /**
-     * Creates a new StandardTokenizer with a given {@link org.apache.lucene.util.AttributeSource.AttributeFactory}
+     * Creates a new StandardTokenizer with a given {@link AttributeFactory}
      */
     public StandardTokenizer(AttributeFactory factory, Reader input) {
         super(factory);
