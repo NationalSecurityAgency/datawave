@@ -136,6 +136,11 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
             }
         }
         
+        if (failure != null) {
+            log.error("Exception in speculative scan detected", failure);
+            throw new RuntimeException(failure);
+        }
+        
         return this;
     }
     
@@ -218,11 +223,9 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
         // if all failed, then return failure
         if (failureCount.incrementAndGet() >= scans.size()) {
             close();
+            failure = t;
             throw new RuntimeException(t);
-            
         }
-        
-        failure = t;
         
     }
     
@@ -245,6 +248,10 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
     
     @Override
     public void uncaughtException(Thread t, Throwable e) {
+        if (failure == null) {
+            failure = e;
+        }
+        
         close();
     }
     
