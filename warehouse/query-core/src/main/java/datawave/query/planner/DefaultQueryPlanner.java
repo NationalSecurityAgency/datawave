@@ -916,7 +916,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 log.trace("metadataHelper " + metadataHelper.toString());
                 
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FIELDS_NOT_IN_DATA_DICTIONARY, MessageFormat.format(
-                                "Datatype: {0}, datatype.filter.set: {1}, Auths: {2}", nonexistentFields, datatypeFilterSet, config.getAuthorizations()));
+                                "Datatype Filter: {0}, Missing Fields: {1}, Auths: {2}", datatypeFilterSet, nonexistentFields, config.getAuthorizations()));
                 log.error(qe);
                 throw new InvalidQueryException(qe);
             }

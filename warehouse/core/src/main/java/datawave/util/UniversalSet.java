@@ -182,4 +182,9 @@ public class UniversalSet<T> implements Set<T>, Serializable {
     public boolean removeIf(Predicate<? super T> filter) {
         return false;
     }
+    
+    @Override
+    public String toString() {
+        return "UniversalSet{}";
+    }
 }
