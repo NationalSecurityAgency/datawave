@@ -145,7 +145,12 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                     for (Pattern fieldPattern : fieldPatterns.keySet()) {
                         try {
                             String normalizedPattern = type.normalizeRegex(fieldPattern.toString());
-                            normalizedPatternMatchers.add(Pattern.compile(normalizedPattern).matcher(EMPTY_STRING));
+                            if (normalizedPattern != null) {
+                                normalizedPatternMatchers.add(Pattern.compile(normalizedPattern).matcher(EMPTY_STRING));
+                            } else {
+                                // can't normalize so add the original matcher
+                                normalizedPatternMatchers.add(fieldPatterns.get(fieldPattern));
+                            }
                         } catch (Exception e) {
                             // can't normalize this pattern, add the original matcher
                             normalizedPatternMatchers.add(fieldPatterns.get(fieldPattern));
@@ -156,7 +161,12 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                     for (String fieldValue : fieldValues) {
                         try {
                             String normalizedValue = type.normalize(fieldValue);
-                            normalizedFieldValues.add(normalizedValue);
+                            if (normalizedValue != null) {
+                                normalizedFieldValues.add(normalizedValue);
+                            } else {
+                                // can't normalize this value, add the original
+                                normalizedFieldValues.add(fieldValue);
+                            }
                         } catch (Exception e) {
                             // can't normalize this value, add the original
                             normalizedFieldValues.add(fieldValue);
@@ -168,10 +178,18 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                         try {
                             LiteralRange normalizedRange = new LiteralRange(range.getFieldName(), range.getNodeOperand());
                             
-                            normalizedRange.updateLower(type.normalize(range.getLower().toString()), range.isLowerInclusive());
-                            normalizedRange.updateUpper(type.normalize(range.getUpper().toString()), range.isUpperInclusive());
+                            String normalizedLower = type.normalize(range.getLower().toString());
+                            String normalizedUpper = type.normalize(range.getUpper().toString());
                             
-                            normalizedRanges.add(normalizedRange);
+                            if (normalizedLower != null && normalizedUpper != null) {
+                                normalizedRange.updateLower(normalizedLower, range.isLowerInclusive());
+                                normalizedRange.updateUpper(normalizedUpper, range.isUpperInclusive());
+                                
+                                normalizedRanges.add(normalizedRange);
+                            } else {
+                                // can't normalize the range values, add the original
+                                normalizedRanges.add(range);
+                            }
                         } catch (Exception e) {
                             // can't normalize the range values, add the original
                             normalizedRanges.add(range);
