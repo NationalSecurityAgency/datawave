@@ -178,7 +178,7 @@ done
 Next, build the DATAWAVE microservices.
 
 ```bash
-cd /path/to/datawave/services
+cd /path/to/datawave/services/build-parent
 mvn -Pexec clean install
 # You can add -DskipTests to skip running unit tests
 # You can add -Pdocker to build Docker images
