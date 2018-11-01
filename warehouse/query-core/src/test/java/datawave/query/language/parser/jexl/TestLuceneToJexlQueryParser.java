@@ -298,7 +298,6 @@ public class TestLuceneToJexlQueryParser {
     }
     
     @Test
-    @Ignore
     public void testMiscEscapeTokenization() throws ParseException {
         // apostrophe escapes
         Assert.assertEquals("(TOKFIELD == 'johnny\\'s' || TOKFIELD == 'johnny')", parseQuery("TOKFIELD:johnny's"));
