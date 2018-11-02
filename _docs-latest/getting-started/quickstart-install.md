@@ -3,7 +3,7 @@ title: "Quickstart Installation"
 tags: [getting_started]
 toc: false
 summary: |
-  <p>This quickstart provides a standalone DataWave instance that you may use to follow along with the
+  <p>This quickstart provides a single-node standalone DataWave instance that you may use to follow along with the
   <a href="../tour/getting-started">guided tour</a>. It is also generally useful as a development tool, as it provides a
   consistent, repeatable process for deploying and testing your local DataWave build.</p>
   <p>The quickstart provides setup and tear-down automation for DataWave, Hadoop, Accumulo, ZooKeeper, and Wildfly,
