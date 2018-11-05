@@ -11,7 +11,7 @@
      
     <cache:annotation-driven cache-manager="markings-cache-manager"/>
 
-    <bean id="markings-cache-manager" class="org.springframework.cache.guava.GuavaCacheManager" />
+    <bean id="markings-cache-manager" class="org.springframework.cache.caffeine.CaffeineCacheManager" />
 
     <bean id="markingFunctions" class="datawave.marking.MarkingFunctions.NoOp" />
 

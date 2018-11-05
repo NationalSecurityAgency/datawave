@@ -33,6 +33,7 @@
         <version.accumulo>1.9.2</version.accumulo>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.avro>1.7.4</version.avro>
+        <version.caffeine>2.6.2</version.caffeine>
         <version.commons-beanutils>1.7.0</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-codec>1.10</version.commons-codec>
@@ -89,7 +90,7 @@
         <version.protostuff>1.5.5</version.protostuff>
         <version.slf4j>1.7.5</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
-        <version.spring>4.3.20.RELEASE</version.spring>
+        <version.spring>5.1.0.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.7.0</version.stream>
         <version.surefire.plugin>2.20</version.surefire.plugin>

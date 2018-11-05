@@ -14,7 +14,7 @@
      <!-- bean id="markings-cache-manager" class="org.infinispan.spring.provider.SpringEmbeddedCacheManagerFactoryBean" /> -->
      <!--    p:configuration-file-location="classpath:/markings-infinispanConfig.xml"/> -->
     
-    <bean id="cacheManager" class="org.springframework.cache.guava.GuavaCacheManager" />
+    <bean id="cacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager" />
 
 	<!-- only properties that you want re-mapped or excluded need to be included in the map -->
 	<!-- mapping to empty string will exclude that property from the markingFunctions results -->
