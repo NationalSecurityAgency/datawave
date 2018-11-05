@@ -560,7 +560,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setShardTableName(String shardTableName) {
-        this.shardTableName = shardTableName;
+        setTableName(shardTableName);
+    }
+    
+    @Override
+    public void setTableName(String tableName) {
+        super.setTableName(tableName);
+        this.shardTableName = tableName;
     }
     
     public String getMetadataTableName() {
