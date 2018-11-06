@@ -6,6 +6,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.core.StopFilter;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.ClassicFilter;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.StopwordAnalyzerBase;
@@ -20,7 +21,9 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     
     /** Default maximum allowed token length */
     public static final int DEFAULT_MAX_TOKEN_LENGTH = 255;
-    public static final int DEFAULT_TRUNCATE_TOKEN_LENGTH = 1024;
+    
+    /** Default token truncation length */
+    public static final int DEFAULT_TRUNCATE_TOKEN_LENGTH = 50;
     
     private int maxTokenLength = DEFAULT_MAX_TOKEN_LENGTH;
     private int tokenTruncateLength = DEFAULT_MAX_TOKEN_LENGTH;
@@ -28,21 +31,14 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     protected boolean applyAccentFilter = false;
     protected TokenSearch searchUtil;
     
-    private Reader tokenizerReader;
-    
     /**
-     * An unmodifiable set containing some common English words that are usually not useful for searching.
-     */
-    public static final CharArraySet STOP_WORDS_SET = StopAnalyzer.ENGLISH_STOP_WORDS_SET;
-    
-    /**
-     * Build an analyzer with the default stop words: ({@link #STOP_WORDS_SET}).
+     * Build an analyzer with the default stop words: ({@link EnglishAnalyzer#ENGLISH_STOP_WORDS_SET).
      * <p>
      * This hides the matchVersion parameter we don't always want consumers to have to be concerned with it. Generally matchVersion will be set to the current
      * Lucene version.
      */
     public StandardAnalyzer() {
-        this(STOP_WORDS_SET);
+        this(EnglishAnalyzer.ENGLISH_STOP_WORDS_SET);
     }
     
     /**
@@ -55,12 +51,18 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
      */
     public StandardAnalyzer(CharArraySet stopWords) {
         super(stopWords);
-        // setVersion(Version.XXXXXX); No Version.LUCENE_47 in 7.5.x. Stick with default, or set specific version here for consistency?
     }
     
     public StandardAnalyzer(TokenSearch searchUtil) {
         super(searchUtil.getInstanceStopwords());
-        // setVersion(Version.XXXXXX); No Version.LUCENE_47 in 7.5.x. Stick with default, or set specific version here for consistency?
+        this.searchUtil = searchUtil;
+    }
+    
+    /**
+     * @see #setMaxTokenLength
+     */
+    public int getMaxTokenLength() {
+        return maxTokenLength;
     }
     
     /**
@@ -75,70 +77,49 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
      * Set the length beyond which tokens will be truncated. Tokens longer than this length will be truncated to this length.
      *
      * @param length
+     *            the default token truncate length
      */
     public void setTokenTruncateLength(int length) {
         tokenTruncateLength = length;
     }
     
-    /**
-     * @see #setMaxTokenLength
-     */
-    public int getMaxTokenLength() {
-        return maxTokenLength;
-    }
-    
     @Override
-    protected Reader initReader(String fieldName, Reader reader) {
-        this.tokenizerReader = reader;
-        return reader;
-    }
-    
-    protected StandardTokenizer createTokenizer() {
-        
-        if (null == tokenizerReader) {
-            throw new IllegalStateException("Tokenizer reader cannot be null");
-        }
-        
-        StandardTokenizer src = new StandardTokenizer(tokenizerReader);
-        
+    protected TokenStreamComponents createComponents(final String fieldName) {
+        final StandardTokenizer src = new StandardTokenizer();
         if (maxTokenLength > 0) {
             src.setMaxTokenLength(maxTokenLength);
         }
-        
         if (tokenTruncateLength > 0) {
             src.setTokenTruncateLength(tokenTruncateLength);
         }
         
-        return src;
+        TokenStream tok = new ClassicFilter(src);
+        if (stopwords != null) {
+            // stopwords are not case-sensitive, so we need to lower case tokens
+            // before checking them in the stop filter.
+            tok = new LowerCaseFilter(tok);
+            tok = new StopFilter(tok, stopwords);
+        }
+        if (searchUtil != null) {
+            // generate synonyms is a search filter is provided.
+            tok = new TokenSearchSynonymFilter(tok, searchUtil);
+        }
+        if (applyAccentFilter) {
+            // NOTE: datawave normalization should take care of removing accents
+            // from words, so this can likely be removed
+            tok = new AccentFilter(tok);
+        }
+        return new TokenStreamComponents(src, tok);
     }
     
     @Override
-    protected TokenStreamComponents createComponents(final String fieldName) {
+    protected TokenStream normalize(String fieldName, TokenStream in) {
+        /*
+         * NOTE: normalize used for query processing and there are things that we do not rely on this Analyzer to do in that case, including: down-casing query
+         * terms, removing stopwords, generating synonyms, removing accents. In some cases the Analyzer may do these things at indexing time as a part of
+         * createComponents
+         */
+        return new ClassicFilter(in);
         
-        StandardTokenizer src = createTokenizer();
-        
-        TokenStream tok = new ClassicFilter(src);
-        
-        tok = new LowerCaseFilter(tok);
-        
-        if (stopwords != null) {
-            tok = new StopFilter(tok, stopwords);
-        }
-        
-        if (searchUtil != null) {
-            tok = new TokenSearchSynonymFilter(tok, searchUtil);
-        }
-        
-        if (applyAccentFilter) {
-            tok = new AccentFilter(tok);
-        }
-        
-        return new TokenStreamComponents(src, tok) {
-            @Override
-            protected void setReader(final Reader reader) {
-                src.setMaxTokenLength(StandardAnalyzer.this.maxTokenLength);
-                super.setReader(reader);
-            }
-        };
     }
 }

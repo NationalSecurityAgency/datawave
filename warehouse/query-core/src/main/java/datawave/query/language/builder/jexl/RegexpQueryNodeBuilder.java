@@ -42,9 +42,6 @@ public class RegexpQueryNodeBuilder implements QueryBuilder {
         
         if (queryNode instanceof RegexpQueryNode) {
             RegexpQueryNode regexpQueryNode = (RegexpQueryNode) queryNode;
-            
-            System.out.println(regexpQueryNode.getClass().getCanonicalName());
-            
             String field = regexpQueryNode.getFieldAsString();
             UnescapedCharSequence ecs = (UnescapedCharSequence) regexpQueryNode.getText();
             

@@ -18,7 +18,6 @@ package datawave.ingest.data.tokenize;
  */
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,15 +49,17 @@ import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 
 public class StandardTokenizer extends Tokenizer {
     /** A private instance of the JFlex-constructed scanner */
-    private final Lexer scanner;
+    private Lexer scanner;
+    private Class<? extends Lexer> scannerClazz = StandardLexer.class;
     
-    private static final int DEFAULT_MAX_TOKEN_LENGTH = 8 * 1024;
-    private int maxTokenLength = DEFAULT_MAX_TOKEN_LENGTH;
+    /** Absolute maximum sized token */
+    private static final int MAX_TOKEN_LENGTH_LIMIT = 8 * 1024;
     
-    private static final int DEFAULT_TRUNCATE_TOKEN_LENGTH = 50;
-    private int defaultTokenTruncateLength = DEFAULT_TRUNCATE_TOKEN_LENGTH;
+    private int maxTokenLength = StandardAnalyzer.DEFAULT_MAX_TOKEN_LENGTH;
     
-    public static final String META_BREAK = "METABREAK";
+    private int defaultTokenTruncateLength = StandardAnalyzer.DEFAULT_TRUNCATE_TOKEN_LENGTH;
+    
+    private static final String META_BREAK = "METABREAK";
     private static final char[] META_BREAK_CHARS = META_BREAK.toCharArray();
     
     private static final int DEFAULT_META_BREAK_INCREMENT = 10;
@@ -66,9 +67,9 @@ public class StandardTokenizer extends Tokenizer {
     
     private static final Map<String,Integer> DEFAULT_TYPED_TOKEN_LENGTHS = new HashMap<>();
     {
-        DEFAULT_TYPED_TOKEN_LENGTHS.put("<FILE>", Integer.valueOf(1024));
-        DEFAULT_TYPED_TOKEN_LENGTHS.put("<URL>", Integer.valueOf(1024));
-        DEFAULT_TYPED_TOKEN_LENGTHS.put("<HTTP_REQUEST>", Integer.valueOf(1024));
+        DEFAULT_TYPED_TOKEN_LENGTHS.put("<FILE>", 1024);
+        DEFAULT_TYPED_TOKEN_LENGTHS.put("<URL>", 1024);
+        DEFAULT_TYPED_TOKEN_LENGTHS.put("<HTTP_REQUEST>", 1024);
     }
     
     /** Token typed truncation rules. */
@@ -76,65 +77,45 @@ public class StandardTokenizer extends Tokenizer {
     
     // this tokenizer generates three attributes:
     // offset, positionIncrement and type
-    private CharTermAttribute termAtt;
-    private OffsetAttribute offsetAtt;
-    private PositionIncrementAttribute posIncrAtt;
-    private TypeAttribute typeAtt;
-    private TruncateAttribute truncAtt;
+    private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
+    private final OffsetAttribute offsetAtt = addAttribute(OffsetAttribute.class);
+    private final PositionIncrementAttribute posIncrAtt = addAttribute(PositionIncrementAttribute.class);
+    private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);
+    private final TruncateAttribute truncAtt = addAttribute(TruncateAttribute.class);
+    
+    private int skippedPositions;
     
     private boolean metaBreakEnabled = false;
     
-    /**
-     * Creates a new instance of the {@link org.apache.lucene.analysis.standard.StandardTokenizer}. Attaches the {@code input} to the newly created JFlex
-     * scanner.
-     *
-     * @param input
-     *            The input reader
-     *
-     *            See http://issues.apache.org/jira/browse/LUCENE-1068
-     */
-    public StandardTokenizer(Reader input) {
-        super();
-        setReader(input);
-        this.scanner = new StandardLexer(input);
+    public StandardTokenizer() {
         init();
     }
     
-    public StandardTokenizer(Reader input, Class<? extends Lexer> implClass) {
-        super();
-        setReader(input);
-        Object[] args = {input};
-        this.scanner = (Lexer) ObjectFactory.create(implClass.getName(), args);
-        init();
+    public StandardTokenizer(Class<? extends Lexer> implClass) {
+        init(implClass);
     }
     
-    public StandardTokenizer(AttributeFactory factory, Reader input, Class<? extends Lexer> implClass) {
+    public StandardTokenizer(AttributeFactory factory) {
         super(factory);
-        setReader(input);
-        Object[] args = {input};
-        this.scanner = (Lexer) ObjectFactory.create(implClass.getName(), args);
         init();
     }
     
-    /**
-     * Creates a new StandardTokenizer with a given {@link AttributeFactory}
-     */
-    public StandardTokenizer(AttributeFactory factory, Reader input) {
+    public StandardTokenizer(AttributeFactory factory, Class<? extends Lexer> implClass) {
         super(factory);
-        setReader(input);
-        this.scanner = new StandardLexer(input);
+        init(implClass);
+    }
+    
+    private void init(Class<? extends Lexer> implClass) {
+        this.scannerClazz = implClass;
         init();
     }
     
     private void init() {
-        termAtt = addAttribute(CharTermAttribute.class);
-        offsetAtt = addAttribute(OffsetAttribute.class);
-        posIncrAtt = addAttribute(PositionIncrementAttribute.class);
-        typeAtt = addAttribute(TypeAttribute.class);
-        truncAtt = addAttribute(TruncateAttribute.class);
+        final Object[] args = {input};
+        this.scanner = (Lexer) ObjectFactory.create(scannerClazz.getName(), args);
         if (scanner instanceof StandardLexer) {
             StandardLexer i = (StandardLexer) scanner;
-            i.setBufferSize(DEFAULT_MAX_TOKEN_LENGTH);
+            i.setBufferSize(StandardAnalyzer.DEFAULT_MAX_TOKEN_LENGTH);
         }
     }
     
@@ -178,7 +159,9 @@ public class StandardTokenizer extends Tokenizer {
      * Set the token truncation length for a given token type
      * 
      * @param type
+     *            set the truncation length for this token type
      * @param length
+     *            the truncation length for the specified type
      */
     public void setTokenTruncateLength(String type, int length) {
         if (length < 0) {
@@ -191,6 +174,7 @@ public class StandardTokenizer extends Tokenizer {
      * Return the type-specifc truncation length, or -1 if no truncation length has been set for the specified type.
      * 
      * @param type
+     *            get the truncation length for this token type
      * @return integer value of truncation for the specified type or -1 if there is none
      */
     public int getTokenTruncateLength(String type) {
@@ -202,18 +186,32 @@ public class StandardTokenizer extends Tokenizer {
         }
     }
     
+    /**
+     * @return true if metatata breaking is enabled
+     */
     public boolean isMetaBreakEnabled() {
         return metaBreakEnabled;
     }
     
+    /**
+     * @param metaBreakEnabled
+     *            enable / disable metadata breaking
+     */
     public void setMetaBreakEnabled(boolean metaBreakEnabled) {
         this.metaBreakEnabled = metaBreakEnabled;
     }
     
+    /**
+     * @return the position increment to use when inserting a metadata break
+     */
     public int getMetaBreakIncrement() {
         return this.metaBreakIncrement;
     }
     
+    /**
+     * @param increment
+     *            the position increment to use when inserting a metadata break
+     */
     public void setMetaBreakIncrement(int increment) {
         this.metaBreakIncrement = increment;
     }
@@ -221,7 +219,7 @@ public class StandardTokenizer extends Tokenizer {
     @Override
     public final boolean incrementToken() throws IOException {
         clearAttributes();
-        int posIncr = 1;
+        skippedPositions = 0;
         
         while (true) {
             int tokenType = scanner.getNextToken();
@@ -229,9 +227,9 @@ public class StandardTokenizer extends Tokenizer {
             if (tokenType == StandardLexer.YYEOF) {
                 return false;
             } else if (metaBreakEnabled && isMetaBreak(scanner)) {
-                posIncr += metaBreakIncrement;
+                skippedPositions += metaBreakIncrement;
             } else if (scanner.yylength() <= maxTokenLength) {
-                posIncrAtt.setPositionIncrement(posIncr);
+                posIncrAtt.setPositionIncrement(skippedPositions + 1);
                 typeAtt.setType(Lexer.TOKEN_TYPES[tokenType]);
                 int truncateLength = getTokenTruncateLength(typeAtt.type());
                 if (truncateLength < 0) {
@@ -245,7 +243,7 @@ public class StandardTokenizer extends Tokenizer {
                 return true;
             } else {
                 // When we skip term that's too long, we still increment the position
-                posIncr++;
+                skippedPositions++;
             }
         }
     }
@@ -270,10 +268,11 @@ public class StandardTokenizer extends Tokenizer {
     @Override
     public final void end() throws IOException {
         super.end();
-        
         // set final offset
         int finalOffset = correctOffset(scanner.yychar() + scanner.yylength());
         offsetAtt.setOffset(finalOffset, finalOffset);
+        // adjust any skipped tokens
+        posIncrAtt.setPositionIncrement(posIncrAtt.getPositionIncrement() + skippedPositions);
     }
     
     @Override
@@ -286,5 +285,6 @@ public class StandardTokenizer extends Tokenizer {
     public void reset() throws IOException {
         super.reset();
         scanner.yyreset(input);
+        skippedPositions = 0;
     }
 }
