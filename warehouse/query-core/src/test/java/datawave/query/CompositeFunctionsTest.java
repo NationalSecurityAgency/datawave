@@ -40,7 +40,6 @@ import org.junit.runner.RunWith;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;

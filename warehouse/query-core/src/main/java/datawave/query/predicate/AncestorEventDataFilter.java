@@ -3,10 +3,8 @@ package datawave.query.predicate;
 import java.util.Map.Entry;
 
 import datawave.query.Constants;
-import datawave.query.attributes.Document;
 import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
-import datawave.query.predicate.ConfigurableEventDataQueryFilter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 

@@ -49,7 +49,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.METADATA_TABLE_NAME;
 import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
 import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
 import static datawave.query.tables.edge.BaseEdgeQueryTest.MODEL_TABLE_NAME;

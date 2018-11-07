@@ -2,8 +2,7 @@ package datawave.query.util;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import datawave.data.ColumnFamilyConstants;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.Minimizer;
 import datawave.security.util.ScannerHelper;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Instance;
@@ -38,8 +37,8 @@ public class TypeMetadataHelper {
     private static final Logger log = Logger.getLogger(TypeMetadataHelper.class);
     
     public static final String NULL_BYTE = "\0";
-    
-    protected final List<Text> metadataTypeColfs = Arrays.asList(ColumnFamilyConstants.COLF_T);
+    private static final Text COLF_T = new Text("t");
+    protected final List<Text> metadataTypeColfs = Arrays.asList(COLF_T);
     
     protected Connector connector;
     protected Instance instance;
@@ -147,14 +146,31 @@ public class TypeMetadataHelper {
         return map;
     }
     
+    private static Collection<String> getAuthsAsStringCollection(Authorizations in) {
+        Collection<String> allAuths = Sets.newHashSet();
+        for (byte[] b : in) {
+            allAuths.add(new String(b));
+        }
+        return allAuths;
+    }
+    
+    private static Collection<String> getAuthsAsStringCollection(Collection<Authorizations> in) {
+        Collection<String> allAuths = Sets.newHashSet();
+        for (Authorizations a : in) {
+            for (byte[] b : a) {
+                allAuths.add(new String(b));
+            }
+        }
+        return allAuths;
+    }
+    
     private Set<Set<String>> getAllMetadataAuthsPowerSet(Collection<Authorizations> allMetadataAuthsCollection) {
         
-        // first, minimize the usersAuths:
-        Collection<Authorizations> minimizedCollection = AuthorizationsUtil.minimize(allMetadataAuthsCollection);
+        Collection<Authorizations> minimizedCollection = Minimizer.minimize(allMetadataAuthsCollection);
         // now, the first entry in the minimized auths should have everything common to every Authorizations in the set
         // make sure that the first entry contains all the Authorizations in the allMetadataAuths
         Authorizations minimized = minimizedCollection.iterator().next(); // get the first one, which has all auths common to all in the original collection
-        Set<String> minimizedUserAuths = Sets.newHashSet(MetadataHelper.getAuthsAsStringCollection(minimized));
+        Set<String> minimizedUserAuths = Sets.newHashSet(getAuthsAsStringCollection(minimized));
         if (log.isTraceEnabled())
             log.trace("minimizedUserAuths:" + minimizedUserAuths + " with size " + minimizedUserAuths.size());
         Set<Set<String>> powerset = Sets.powerSet(minimizedUserAuths);
@@ -178,7 +194,7 @@ public class TypeMetadataHelper {
         // Scanner to the provided metadata table
         if (log.isTraceEnabled()) {
             log.trace("connector:" + connector + ", metadataTableName:" + metadataTableName + ", auths:" + auths);
-            Collection<Authorizations> got = AuthorizationsUtil.minimize(auths);
+            Collection<Authorizations> got = Minimizer.minimize(auths);
             log.trace("got:" + got + " and it is a " + (got == null ? null : got.getClass()));
         }
         

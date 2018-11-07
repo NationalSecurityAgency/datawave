@@ -51,7 +51,6 @@ import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;

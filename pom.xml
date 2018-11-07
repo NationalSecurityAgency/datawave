@@ -80,6 +80,7 @@
         <version.microservice.audit-api>1.3</version.microservice.audit-api>
         <version.microservice.authorization-api>1.3</version.microservice.authorization-api>
         <version.microservice.metrics-reporter>1.2</version.microservice.metrics-reporter>
+        <version.microservice.scanner-api>1.0-SNAPSHOT</version.microservice.scanner-api>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>5.1.35</version.mysql-connector>
         <version.netty>4.0.15.Final</version.netty>
@@ -294,6 +295,11 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metrics-reporter</artifactId>
                 <version>${version.microservice.metrics-reporter}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>scanner-api</artifactId>
+                <version>${version.microservice.scanner-api}</version>
             </dependency>
             <dependency>
                 <groupId>io.astefanutti.metrics.cdi</groupId>

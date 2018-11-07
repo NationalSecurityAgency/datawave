@@ -2,7 +2,6 @@ package datawave.query.util;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.collect.*;
 import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.LcNoDiacriticsType;

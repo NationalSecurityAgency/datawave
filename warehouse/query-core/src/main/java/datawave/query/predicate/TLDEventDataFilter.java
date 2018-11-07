@@ -19,7 +19,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 
 import datawave.query.Constants;
-import datawave.query.jexl.JexlASTHelper;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields
