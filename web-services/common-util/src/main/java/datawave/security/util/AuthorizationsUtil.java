@@ -8,7 +8,6 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.*;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
-import datawave.security.util.Minimizer;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 
@@ -207,7 +206,7 @@ public class AuthorizationsUtil {
     }
     
     public static Collection<Authorizations> minimize(Collection<Authorizations> authorizations) {
-        return Minimizer.minimize(authorizations);
+        return Mini.mize(authorizations);
     }
     
     public static Collection<? extends Collection<String>> prepareAuthsForMerge(Authorizations authorizations) {

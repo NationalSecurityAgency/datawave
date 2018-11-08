@@ -26,7 +26,7 @@ public class ScannerHelper {
         if (authorizations == null || authorizations.isEmpty())
             throw new IllegalArgumentException("Authorizations must not be empty.");
         
-        Iterator<Authorizations> iter = Minimizer.minimize(authorizations).iterator();
+        Iterator<Authorizations> iter = Mini.mize(authorizations).iterator();
         Scanner scanner = connector.createScanner(tableName, iter.next());
         addVisibilityFilters(iter, scanner);
         return scanner;
@@ -37,7 +37,7 @@ public class ScannerHelper {
         if (authorizations == null || authorizations.isEmpty())
             throw new IllegalArgumentException("Authorizations must not be empty.");
         
-        Iterator<Authorizations> iter = Minimizer.minimize(authorizations).iterator();
+        Iterator<Authorizations> iter = Mini.mize(authorizations).iterator();
         BatchScanner batchScanner = connector.createBatchScanner(tableName, iter.next(), numQueryThreads);
         addVisibilityFilters(iter, batchScanner);
         return batchScanner;
@@ -48,7 +48,7 @@ public class ScannerHelper {
         if (authorizations == null || authorizations.isEmpty())
             throw new IllegalArgumentException("Authorizations must not be empty.");
         
-        Iterator<Authorizations> iter = Minimizer.minimize(authorizations).iterator();
+        Iterator<Authorizations> iter = Mini.mize(authorizations).iterator();
         BatchWriterConfig bwCfg = new BatchWriterConfig().setMaxLatency(maxLatency, TimeUnit.MILLISECONDS).setMaxMemory(maxMemory)
                         .setMaxWriteThreads(maxWriteThreads);
         BatchDeleter batchDeleter = connector.createBatchDeleter(tableName, iter.next(), numQueryThreads, bwCfg);

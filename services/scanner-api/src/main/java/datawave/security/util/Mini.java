@@ -8,9 +8,9 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.TreeSet;
 
-public class Minimizer {
+public class Mini {
     
-    public static Collection<Authorizations> minimize(Collection<Authorizations> authorizations) {
+    public static Collection<Authorizations> mize(Collection<Authorizations> authorizations) {
         if (authorizations.size() > 1) {
             // check if all auth sets are subsets of a minimum set, and use just the minimum if so
             // minimize the sets to put all the common auths in the first one, and just the disjoint auths in the remainder.

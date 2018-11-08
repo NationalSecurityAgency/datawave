@@ -20,11 +20,11 @@ import datawave.iterators.filter.EdgeMetadataCQStrippingIterator;
 import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeMetadataHelper;
-import datawave.util.UniversalSet;
 import datawave.query.model.QueryModel;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
 import datawave.util.StringUtils;
+import datawave.util.UniversalSet;
 import datawave.util.time.DateHelper;
 import datawave.util.time.TraceStopwatch;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -76,6 +76,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * <p>
@@ -253,7 +255,9 @@ public class MetadataHelper implements ApplicationContextAware {
         // make sure that the first entry contains all the Authorizations in the allMetadataAuths
         Authorizations allMetadataAuths = allMetadataAuthsCollection.iterator().next(); // get the first (and only) one
         Authorizations minimized = minimizedCollection.iterator().next(); // get the first one, which has all auths common to all in the original collection
-        return MetadataHelper.getAuthsAsStringCollection(minimized).containsAll(MetadataHelper.getAuthsAsStringCollection(allMetadataAuths));
+        
+        return StreamSupport.stream(minimized.spliterator(), false).map(String::new).collect(Collectors.toSet())
+                        .containsAll(StreamSupport.stream(allMetadataAuths.spliterator(), false).map(String::new).collect(Collectors.toSet()));
     }
     
     /**
@@ -284,8 +288,11 @@ public class MetadataHelper implements ApplicationContextAware {
         if (log.isTraceEnabled()) {
             log.trace("first of users auths minimized:" + minimized);
         }
-        Collection<String> minimizedUserAuths = MetadataHelper.getAuthsAsStringCollection(minimized);
-        Collection<String> minimizedAllMetadataAuths = MetadataHelper.getAuthsAsStringCollection(allMetadataAuths);
+        Set<String> minimizedUserAuths = StreamSupport.stream(minimized.spliterator(), false).map(String::new).collect(Collectors.toSet());
+        
+        Collection<String> minimizedAllMetadataAuths = StreamSupport.stream(minimizedUserAuths.spliterator(), false).map(String::new)
+                        .collect(Collectors.toSet());
+        
         minimizedAllMetadataAuths.retainAll(minimizedUserAuths);
         if (log.isTraceEnabled()) {
             log.trace("minimized to:" + minimizedAllMetadataAuths);
@@ -300,7 +307,8 @@ public class MetadataHelper implements ApplicationContextAware {
         // now, the first entry in the minimized auths should have everything common to every Authorizations in the set
         // make sure that the first entry contains all the Authorizations in the allMetadataAuths
         Authorizations minimized = minimizedCollection.iterator().next(); // get the first one, which has all auths common to all in the original collection
-        Set<String> minimizedUserAuths = Sets.newHashSet(MetadataHelper.getAuthsAsStringCollection(minimized));
+        Set<String> minimizedUserAuths = StreamSupport.stream(minimized.spliterator(), false).map(String::new).collect(Collectors.toSet());
+        
         if (log.isDebugEnabled()) {
             log.debug("minimizedUserAuths:" + minimizedUserAuths + " with size " + minimizedUserAuths.size());
         }
@@ -347,24 +355,6 @@ public class MetadataHelper implements ApplicationContextAware {
             }
         }
         return buf.toString();
-    }
-    
-    public static Collection<String> getAuthsAsStringCollection(Authorizations in) {
-        Collection<String> allAuths = Sets.newHashSet();
-        for (byte[] b : in) {
-            allAuths.add(new String(b));
-        }
-        return allAuths;
-    }
-    
-    public static Collection<String> getAuthsAsStringCollection(Collection<Authorizations> in) {
-        Collection<String> allAuths = Sets.newHashSet();
-        for (Authorizations a : in) {
-            for (byte[] b : a) {
-                allAuths.add(new String(b));
-            }
-        }
-        return allAuths;
     }
     
     public Collection<Authorizations> getAllMetadataAuths() {
