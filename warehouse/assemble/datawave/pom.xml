@@ -127,6 +127,12 @@
             <artifactId>jgroups</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${version.caffeine}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>org.hornetq</groupId>
             <artifactId>hornetq-commons</artifactId>
             <scope>runtime</scope>
