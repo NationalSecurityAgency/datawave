@@ -6,6 +6,7 @@ import java.util.Map;
 
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
+import datawave.query.iterator.YieldCallbackWrapper;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -40,9 +41,10 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
     private boolean isCompressResults = false;
     private QuerySpanCollector querySpanCollector = null;
     private QuerySpan querySpan = null;
+    private YieldCallbackWrapper yield = null;
     
     public FinalDocumentTrackingIterator(QuerySpanCollector querySpanCollector, QuerySpan querySpan, Range seekRange, Iterator<Map.Entry<Key,Value>> itr,
-                    DocumentSerialization.ReturnType returnType, boolean isReducedResponse, boolean isCompressResults) {
+                    DocumentSerialization.ReturnType returnType, boolean isReducedResponse, boolean isCompressResults, YieldCallbackWrapper<Key> yield) {
         this.itr = itr;
         this.seekRange = seekRange;
         this.returnType = returnType;
@@ -50,9 +52,10 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
         this.isCompressResults = isCompressResults;
         this.querySpanCollector = querySpanCollector;
         this.querySpan = querySpan;
+        this.yield = yield;
         
         // check for the special case where we were torn down just after returning the final document
-        this.statsEntryReturned = isStatsEntryReturned(seekRange);
+        this.itrIsDone = this.statsEntryReturned = isStatsEntryReturned(seekRange);
     }
     
     private boolean isStatsEntryReturned(Range r) {
@@ -110,7 +113,9 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
     
     @Override
     public boolean hasNext() {
-        if (!itrIsDone && itr.hasNext()) {
+        if (yield != null && yield.hasYielded()) {
+            return false;
+        } else if (!itrIsDone && itr.hasNext()) {
             return true;
         } else {
             itrIsDone = true;
@@ -131,15 +136,17 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
     public Map.Entry<Key,Value> next() {
         
         Map.Entry<Key,Value> nextEntry = null;
-        if (itrIsDone) {
-            if (!statsEntryReturned) {
-                nextEntry = getStatsEntry(this.lastKey);
-                statsEntryReturned = true;
-            }
-        } else {
-            nextEntry = this.itr.next();
-            if (nextEntry != null) {
-                this.lastKey = nextEntry.getKey();
+        if (yield == null || !yield.hasYielded()) {
+            if (itrIsDone) {
+                if (!statsEntryReturned) {
+                    nextEntry = getStatsEntry(this.lastKey);
+                    statsEntryReturned = true;
+                }
+            } else {
+                nextEntry = this.itr.next();
+                if (nextEntry != null) {
+                    this.lastKey = nextEntry.getKey();
+                }
             }
         }
         return nextEntry;
