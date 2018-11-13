@@ -442,7 +442,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 // if there is no document to return, then add an empty document
                 // to store the timing metadata
                 this.serializedDocuments = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, r, this.serializedDocuments,
-                                this.getReturnType(), this.isReducedResponse(), this.isCompressResults());
+                                this.getReturnType(), this.isReducedResponse(), this.isCompressResults(), this.yield);
             }
             if (log.isTraceEnabled()) {
                 KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
