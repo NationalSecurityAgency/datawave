@@ -7,7 +7,6 @@ import java.util.SortedSet;
 
 import datawave.query.attributes.Document;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 
 import com.google.common.collect.Sets;
 

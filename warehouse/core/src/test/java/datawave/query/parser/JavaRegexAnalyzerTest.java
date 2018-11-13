@@ -10,10 +10,16 @@ import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.*;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 /**

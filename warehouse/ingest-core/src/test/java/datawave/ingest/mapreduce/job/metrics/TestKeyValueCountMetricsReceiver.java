@@ -2,9 +2,7 @@ package datawave.ingest.mapreduce.job.metrics;
 
 import com.google.common.collect.Multimap;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;

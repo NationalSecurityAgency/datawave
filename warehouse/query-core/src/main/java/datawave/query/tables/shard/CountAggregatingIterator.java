@@ -7,7 +7,6 @@ import java.util.Set;
 
 import datawave.core.iterators.ResultCountingIterator;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;

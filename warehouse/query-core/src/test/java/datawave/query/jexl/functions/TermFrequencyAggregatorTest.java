@@ -13,8 +13,9 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 
 public class TermFrequencyAggregatorTest {
     private TermFrequencyAggregator aggregator;
@@ -39,7 +40,7 @@ public class TermFrequencyAggregatorTest {
         Key result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertFalse(itr.hasTop());
-        assertTrue(result.equals(result2));
+        assertEquals(result, result2);
     }
     
     @Test
@@ -56,14 +57,14 @@ public class TermFrequencyAggregatorTest {
         Key result = aggregator.apply(itr);
         
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getRow().toString().equals("1234"));
+        assertEquals("1234", itr.getTopKey().getRow().toString());
         
         itr.seek(new Range(), null, true);
         Key result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getRow().toString().equals("1234"));
-        assertTrue(result.equals(result2));
+        assertEquals("1234", itr.getTopKey().getRow().toString());
+        assertEquals(result, result2);
         
         // test a change to the datatype
         treeMap = Maps.newTreeMap();
@@ -76,8 +77,8 @@ public class TermFrequencyAggregatorTest {
         result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getTimestamp() == 7);
-        assertTrue(result.equals(result2));
+        assertEquals(7, itr.getTopKey().getTimestamp());
+        assertEquals(result, result2);
         
         // test a change to the uid
         treeMap = Maps.newTreeMap();
@@ -90,8 +91,8 @@ public class TermFrequencyAggregatorTest {
         result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getTimestamp() == 7);
-        assertTrue(result.equals(result2));
+        assertEquals(7, itr.getTopKey().getTimestamp());
+        assertEquals(result, result2);
         
         treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
@@ -100,7 +101,7 @@ public class TermFrequencyAggregatorTest {
         result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertFalse(itr.hasTop());
-        assertTrue(result.equals(result2));
+        assertEquals(result, result2);
     }
     
     private Key getTF(String row, String field, String value, String dataType, String uid, long timestamp) {

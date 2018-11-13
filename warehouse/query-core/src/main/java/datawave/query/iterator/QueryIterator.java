@@ -424,7 +424,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 this.serializedDocuments = new ResultCountingIterator(serializedDocuments, resultCount, yield);
             } else if (this.sortedUIDs) {
                 // we have sorted UIDs, so we can mask out the cq
-                this.serializedDocuments = new KeyAdjudicator<Value>(serializedDocuments, yield);
+                this.serializedDocuments = new KeyAdjudicator<>(serializedDocuments, yield);
             }
             
             // only add the final document tracking iterator which sends stats back to the client if collectTimingDetails is true
@@ -812,9 +812,9 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         // now filter the attributes to those with the keep flag set true
         if (gatherTimingDetails()) {
             documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.AttributeKeepFilter, trackingSpan,
-                            new AttributeKeepFilter<Key>()));
+                            new AttributeKeepFilter<>()));
         } else {
-            documents = Iterators.transform(documents, new AttributeKeepFilter<Key>());
+            documents = Iterators.transform(documents, new AttributeKeepFilter<>());
         }
         
         // Project fields using a whitelist or a blacklist before serialization
@@ -903,7 +903,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
-                itrWithContext = Iterators.transform(tupleItr, new EmptyContext<Key,Document,String,Object>());
+                itrWithContext = Iterators.transform(tupleItr, new EmptyContext<>());
             }
             
             final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource), typeMetadataForEval,
@@ -914,7 +914,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             if (log.isTraceEnabled()) {
                 log.trace("arithmetic:" + arithmetic + " range:" + getDocumentRange(documentSource) + ", thread:" + Thread.currentThread());
             }
-            return Iterators.transform(matchedDocuments, new TupleToEntry<Key,Document>());
+            return Iterators.transform(matchedDocuments, new TupleToEntry<>());
         } else if (log.isTraceEnabled()) {
             log.trace("Evaluation is disabled, not instantiating Jexl evaluation logic");
         }

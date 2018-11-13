@@ -5,7 +5,11 @@ import org.junit.Test;
 import org.springframework.cache.interceptor.SimpleKey;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Test the CollectionSafeKeyGenerator class
@@ -17,7 +21,7 @@ public class CollectionSafeKeyGeneratorTest {
         ArrayList<Object> list = new ArrayList<>();
         list.add(new Object());
         Object copy = CollectionSafeKeyGenerator.copyIfCollectionParam(list);
-        Assert.assertFalse(copy == list);
+        Assert.assertNotSame(copy, list);
         Assert.assertEquals(copy, list);
     }
     
@@ -26,7 +30,7 @@ public class CollectionSafeKeyGeneratorTest {
         HashSet<Object> set = new HashSet<>();
         set.add(new Object());
         Object copy = CollectionSafeKeyGenerator.copyIfCollectionParam(set);
-        Assert.assertFalse(copy == set);
+        Assert.assertNotSame(copy, set);
         Assert.assertEquals(copy, set);
     }
     
@@ -35,7 +39,7 @@ public class CollectionSafeKeyGeneratorTest {
         TreeSet<String> set = new TreeSet<>();
         set.add("Hello World");
         Object copy = CollectionSafeKeyGenerator.copyIfCollectionParam(set);
-        Assert.assertFalse(copy == set);
+        Assert.assertNotSame(copy, set);
         Assert.assertEquals(copy, set);
     }
     
@@ -44,7 +48,7 @@ public class CollectionSafeKeyGeneratorTest {
         HashMap<Object,Object> map = new HashMap<>();
         map.put(new Object(), new Object());
         Object copy = CollectionSafeKeyGenerator.copyIfCollectionParam(map);
-        Assert.assertFalse(copy == map);
+        Assert.assertNotSame(copy, map);
         Assert.assertEquals(copy, map);
     }
     
@@ -53,21 +57,21 @@ public class CollectionSafeKeyGeneratorTest {
         TreeMap<String,Object> map = new TreeMap<>();
         map.put("Hello World", new Object());
         Object copy = CollectionSafeKeyGenerator.copyIfCollectionParam(map);
-        Assert.assertFalse(copy == map);
+        Assert.assertNotSame(copy, map);
         Assert.assertEquals(copy, map);
     }
     
     @Test
     public void testEmptyKey() {
         Object key = CollectionSafeKeyGenerator.generateKey();
-        Assert.assertTrue(key == SimpleKey.EMPTY);
+        Assert.assertSame(key, SimpleKey.EMPTY);
     }
     
     @Test
     public void testNonCollectionSingleParam() {
         Object obj1 = new Object();
         Object key = CollectionSafeKeyGenerator.generateKey(obj1);
-        Assert.assertTrue(key == obj1);
+        Assert.assertSame(key, obj1);
     }
     
     @Test
@@ -84,7 +88,7 @@ public class CollectionSafeKeyGeneratorTest {
         ArrayList<Object> list = new ArrayList<>();
         list.add(new Object());
         Object key = CollectionSafeKeyGenerator.generateKey(list);
-        Assert.assertFalse(key == list);
+        Assert.assertNotSame(key, list);
         Assert.assertEquals(key, list);
     }
     
@@ -102,9 +106,9 @@ public class CollectionSafeKeyGeneratorTest {
         field.setAccessible(true);
         Object[] params = (Object[]) field.get(key);
         Assert.assertEquals(2, params.length);
-        Assert.assertFalse(params[0] == list);
+        Assert.assertNotSame(params[0], list);
         Assert.assertEquals(params[0], list);
-        Assert.assertFalse(params[1] == set);
+        Assert.assertNotSame(params[1], set);
         Assert.assertEquals(params[1], set);
     }
     
@@ -124,12 +128,12 @@ public class CollectionSafeKeyGeneratorTest {
         field.setAccessible(true);
         Object[] params = (Object[]) field.get(key);
         Assert.assertEquals(4, params.length);
-        Assert.assertFalse(params[0] == list);
+        Assert.assertNotSame(params[0], list);
         Assert.assertEquals(params[0], list);
-        Assert.assertTrue(params[1] == obj1);
-        Assert.assertFalse(params[2] == set);
+        Assert.assertSame(params[1], obj1);
+        Assert.assertNotSame(params[2], set);
         Assert.assertEquals(params[2], set);
-        Assert.assertTrue(params[3] == obj2);
+        Assert.assertSame(params[3], obj2);
     }
     
 }

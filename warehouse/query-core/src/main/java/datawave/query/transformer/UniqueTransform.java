@@ -54,7 +54,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         this.fields = fields;
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (DEBUG) {
-            this.seen = new HashSet<ByteSequence>();
+            this.seen = new HashSet<>();
         }
         if (log.isTraceEnabled())
             log.trace("unique fields: " + this.fields);

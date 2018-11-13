@@ -9,7 +9,10 @@ import org.junit.Test;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 
 /**
  * 
@@ -168,8 +171,8 @@ public class StringUtilsTest {
         strings = StringUtils.deDupStringArray(strings);
         Set<String> stringsSet = new HashSet<>(Arrays.asList(strings));
         Set<String> stringsNoSupSet = new HashSet<>(Arrays.asList(stringsNoDups));
-        assertTrue("String array was not deduped. Expected: " + Arrays.asList(stringsNoDups) + " But have: " + Arrays.asList(strings) + ".",
-                        stringsSet.equals(stringsNoSupSet));
+        assertEquals("String array was not deduped. Expected: " + Arrays.asList(stringsNoDups) + " But have: " + Arrays.asList(strings) + ".", stringsSet,
+                        stringsNoSupSet);
         
         // Check null array
         strings = null;

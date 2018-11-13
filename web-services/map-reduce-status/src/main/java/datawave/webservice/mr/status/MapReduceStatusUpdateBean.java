@@ -2,9 +2,7 @@ package datawave.webservice.mr.status;
 
 import static datawave.webservice.mr.state.MapReduceStatePersisterBean.MapReduceState;
 
-import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
 import javax.ejb.LocalBean;
 import javax.ejb.Stateless;

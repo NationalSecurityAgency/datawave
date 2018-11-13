@@ -7,12 +7,16 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.Writable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * A POJO implementation of the {@link datawave.ingest.data.RawRecordContainer}.

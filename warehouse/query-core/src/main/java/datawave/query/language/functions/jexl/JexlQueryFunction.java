@@ -4,7 +4,6 @@ import java.util.List;
 
 import datawave.query.language.functions.QueryFunction;
 
-import org.apache.commons.jexl2.parser.StringParser;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 public abstract class JexlQueryFunction implements QueryFunction {

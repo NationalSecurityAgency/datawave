@@ -20,8 +20,8 @@ public class NormalizationExceptionTest {
     public void testEmptyConstructor() {
         ne = new NormalizationException();
         
-        Assert.assertEquals(null, ne.getMessage());
-        Assert.assertEquals(null, ne.getLocalizedMessage());
+        Assert.assertNull(ne.getMessage());
+        Assert.assertNull(ne.getLocalizedMessage());
     }
     
     @Test

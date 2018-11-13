@@ -26,7 +26,6 @@ import datawave.query.language.tree.NotNode;
 import datawave.query.language.tree.OrNode;
 import datawave.query.language.tree.SoftAndNode;
 
-import org.apache.lucene.queryparser.flexible.core.nodes.NotBooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;

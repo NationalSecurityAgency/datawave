@@ -4,7 +4,6 @@ import java.util.List;
 
 import datawave.query.language.functions.lucene.LuceneQueryFunction;
 
-import org.apache.lucene.queryparser.flexible.core.nodes.FunctionQueryNode;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
 import org.apache.lucene.queryparser.flexible.core.nodes.BooleanQueryNode;

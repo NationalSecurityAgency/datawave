@@ -21,14 +21,11 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
-
-import com.google.common.collect.Maps;
 
 @SuppressWarnings("deprecation")
 public class AbstractTableConfigHelperTest {

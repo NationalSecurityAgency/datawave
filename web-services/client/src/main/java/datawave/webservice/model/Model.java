@@ -1,8 +1,6 @@
 package datawave.webservice.model;
 
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.TreeSet;
 
 import javax.xml.bind.annotation.XmlAccessType;

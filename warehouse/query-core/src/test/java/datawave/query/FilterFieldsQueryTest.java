@@ -1,7 +1,6 @@
 package datawave.query;
 
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.language.parser.lucene.LuceneQueryParser;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -15,7 +14,6 @@ import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.ResponseFieldChecker;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;

@@ -10,8 +10,7 @@ import com.timgroup.statsd.StatsDClientException;
 import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.log4j.Logger;
 
 import java.util.Map;

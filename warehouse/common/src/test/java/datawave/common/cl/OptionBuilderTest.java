@@ -4,7 +4,9 @@ import org.apache.commons.cli.Option;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
 
 public class OptionBuilderTest {
     
@@ -20,10 +22,10 @@ public class OptionBuilderTest {
     public void testCreate() throws Exception {
         Option option = this.optionBuilder.create("opt", "desc");
         assertEquals(option.getArgs(), 0);
-        assertEquals(option.getType(), null);
+        assertNull(option.getType());
         assertEquals(option.getOpt(), "opt");
         assertEquals(option.getDescription(), "desc");
-        assertEquals(option.getLongOpt(), null);
+        assertNull(option.getLongOpt());
         assertFalse(option.isRequired());
         assertEquals(option.getValueSeparator(), 0);
     }

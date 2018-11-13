@@ -1,7 +1,6 @@
 package datawave.webservice.query.exception;
 
 import datawave.webservice.ProtobufSerializationTestBase;
-import datawave.webservice.query.exception.QueryExceptionType;
 
 import org.junit.Test;
 

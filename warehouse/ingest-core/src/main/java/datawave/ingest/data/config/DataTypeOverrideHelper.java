@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.ImmutableList;
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDBuilder;
 import datawave.data.hash.UIDConstants;

@@ -1,13 +1,17 @@
 package datawave.common.io;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.mock;
+import static org.easymock.EasyMock.replay;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 
 public class FilesTest {
     
@@ -34,7 +38,7 @@ public class FilesTest {
     @Test
     public void testCheckDirString() throws Exception {
         String ret = Files.checkDir("file");
-        assertEquals(ret, null);
+        assertNull(ret);
     }
     
     @Test
@@ -228,7 +232,7 @@ public class FilesTest {
         replay(dest);
         
         String ret = Files.mv(src, dest, true);
-        assertEquals(ret, null);
+        assertNull(ret);
     }
     
     @Test
@@ -289,7 +293,7 @@ public class FilesTest {
         replay(dest);
         
         String ret = Files.mv(src, dest, true);
-        assertEquals(ret, null);
+        assertNull(ret);
     }
     
     @Test

@@ -89,10 +89,10 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
             config.setBypassExecutabilityCheck();
             FacetQueryPlanVisitor visitor = new FacetQueryPlanVisitor(config, metadataHelper, facetedConfig.getFacetedFields());
             queryTree.jjtAccept(visitor, null);
-            return new Tuple2<CloseableIterable<QueryPlan>,Boolean>(visitor, false);
+            return new Tuple2<>(visitor, false);
             
         } else {
-            return new Tuple2<CloseableIterable<QueryPlan>,Boolean>(this.getFullScanRange(config, queryTree), false);
+            return new Tuple2<>(this.getFullScanRange(config, queryTree), false);
         }
         
     }

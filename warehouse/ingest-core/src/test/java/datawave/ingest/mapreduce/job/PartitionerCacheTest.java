@@ -1,14 +1,16 @@
 package datawave.ingest.mapreduce.job;
 
-import java.util.Arrays;
-import datawave.ingest.mapreduce.partition.*;
+import datawave.ingest.mapreduce.partition.DelegatePartitioner;
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.hadoop.conf.*;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
-import org.junit.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 public class PartitionerCacheTest {
     
@@ -84,13 +86,13 @@ public class PartitionerCacheTest {
     @Test
     public void testGetCategoryForNonMember() throws Exception {
         PartitionerCache partitionerCache = new PartitionerCache(conf);
-        Assert.assertEquals(null, PartitionerCache.getCategory(conf, new Text("table1")));
+        Assert.assertNull(PartitionerCache.getCategory(conf, new Text("table1")));
     }
     
     @Test
     public void testGetCategoryForMember() throws Exception {
         PartitionerCache partitionerCache = new PartitionerCache(conf);
-        Assert.assertEquals(null, PartitionerCache.getCategory(conf, new Text("table1")));
+        Assert.assertNull(PartitionerCache.getCategory(conf, new Text("table1")));
     }
     
     @Test
@@ -104,7 +106,7 @@ public class PartitionerCacheTest {
         Assert.assertEquals(new Text("myCategory"), PartitionerCache.getCategory(conf, new Text("table1")));
         Assert.assertEquals(new Text("anotherCategory"), PartitionerCache.getCategory(conf, new Text("table2")));
         Assert.assertEquals(new Text("anotherCategory"), PartitionerCache.getCategory(conf, new Text("table3")));
-        Assert.assertEquals(null, PartitionerCache.getCategory(conf, new Text("table4")));
+        Assert.assertNull(PartitionerCache.getCategory(conf, new Text("table4")));
     }
     
     public class PartitionerThatMustNotBeCreated implements DelegatePartitioner {

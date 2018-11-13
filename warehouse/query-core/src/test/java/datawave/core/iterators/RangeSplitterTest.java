@@ -41,8 +41,8 @@ public class RangeSplitterTest {
         int count = 0;
         for (Range range : splitter) {
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -69,8 +69,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -97,8 +97,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -125,8 +125,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -153,8 +153,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -181,8 +181,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -209,8 +209,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -237,8 +237,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -265,8 +265,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -293,8 +293,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -321,8 +321,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -349,8 +349,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {
@@ -377,8 +377,8 @@ public class RangeSplitterTest {
         for (Range range : splitter) {
             log.trace(range);
             count++;
-            Assert.assertEquals(true, range.isStartKeyInclusive());
-            Assert.assertEquals(false, range.isEndKeyInclusive());
+            Assert.assertTrue(range.isStartKeyInclusive());
+            Assert.assertFalse(range.isEndKeyInclusive());
             if (lastRange != null) {
                 Assert.assertEquals(lastRange.getEndKey(), range.getStartKey());
             } else {

@@ -1,6 +1,6 @@
 package datawave.webservice.query.result.util.protostuff;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 

@@ -2,7 +2,6 @@ package datawave.query.language.functions.jexl;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +9,6 @@ import java.util.Map;
 import datawave.query.language.functions.QueryFunction;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.resteasy.util.DateFormatter;
 import datawave.webservice.query.QueryImpl.Parameter;
 
 import datawave.webservice.query.exception.BadRequestQueryException;

@@ -26,10 +26,15 @@ import java.util.TreeSet;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Boolean.FALSE;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 
 public class EventDataQueryExpressionVisitorTest {
     

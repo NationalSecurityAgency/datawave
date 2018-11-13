@@ -1,12 +1,13 @@
 package datawave.webservice.query.iterator;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
-
-import datawave.webservice.query.iterator.KeyAggregatingTransformIterator;
 
 import org.apache.commons.collections4.functors.NOPTransformer;
 import org.junit.Before;
