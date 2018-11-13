@@ -132,7 +132,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         // add faceted fields to the index only field list, then remove the key list of
         // indexed fields from the faceted field list.
-        if (facetedFields.size() > 0)
+        if (!facetedFields.isEmpty())
             configuration.setHasFieldLimits(true);
         
         configuration.setFacetedFields(facetedFields);
@@ -166,7 +166,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         Iterator<Entry<Key,Document>> documents = null;
         
-        if (configuration.getFacetedFields().size() > 0) {
+        if (!configuration.getFacetedFields().isEmpty()) {
             projection = new EventDataQueryFieldFilter();
             projection.initializeWhitelist(configuration.getFacetedFields());
         }

@@ -28,13 +28,6 @@ public abstract class RegexFilterBase extends AppliedRule {
     private boolean ruleApplied;
     
     /**
-     * Default Constructor.
-     */
-    public RegexFilterBase() {
-        super();
-    }
-    
-    /**
      * This method is to be implemented by sub-classes of this class. It should return the String that needs to be tested against the REGEX for the instance of
      * this class.
      * 

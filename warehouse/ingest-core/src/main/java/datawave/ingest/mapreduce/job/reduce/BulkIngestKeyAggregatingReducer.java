@@ -120,7 +120,7 @@ public class BulkIngestKeyAggregatingReducer<K2,V2> extends AggregatingReducer<B
             
             List<Combiner> aggList = getAggregators(key.getTableName(), key.getKey());
             
-            if (aggList.size() == 0) {
+            if (aggList.isEmpty()) {
                 boolean firstValue = true;
                 boolean foundDuplicate = false;
                 for (Value value : values) {

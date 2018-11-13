@@ -973,9 +973,7 @@ public class EdgeKey {
         Text colf = new Text(EDGE_METADATA_COLUMN);
         Text colq = new Text(this.getAttribute1());
         
-        Key mKey = new Key(row, colf, colq, new Text(""), this.getTimestamp());
-        
-        return mKey;
+        return new Key(row, colf, colq, new Text(""), this.getTimestamp());
     }
     
     /**

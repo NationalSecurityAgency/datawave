@@ -9,7 +9,6 @@ public class MacAddressNormalizer extends AbstractNormalizer<String> {
     
     public String normalize(String fieldValue) {
         
-        String value = fieldValue;
         String mac = "";
         
         String parts[] = Iterables.toArray(Splitter.on(':').split(fieldValue), String.class);
@@ -30,7 +29,7 @@ public class MacAddressNormalizer extends AbstractNormalizer<String> {
         // 6 bytes for a macaddr
         
         try {
-            long lData = Long.parseLong(value, 16);
+            long lData = Long.parseLong(fieldValue, 16);
             
             if (!isMac(lData)) {
                 throw new IllegalArgumentException("Failed to normalize " + fieldValue + " as a MAC");

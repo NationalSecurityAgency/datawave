@@ -92,7 +92,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private volatile boolean running = true;
     private FlagSocket flagSocket;
     private final DecimalFormat df = new DecimalFormat("#0.00");
-    private final static byte ONE = '1';
+    private static final byte ONE = '1';
     private final ReentrantLock lock = new ReentrantLock();
     private DateUtils util = new DateUtils();
     private StandaloneTaskAttemptContext<?,?,?,?> ctx;

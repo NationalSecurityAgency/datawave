@@ -124,8 +124,7 @@ public class QueryException extends Exception {
     public List<QueryException> getQueryExceptionsInStack() {
         List<Throwable> throwables = ExceptionUtils.getThrowableList(this);
         Iterable<QueryException> queryExceptions = Iterables.filter(throwables, QueryException.class);
-        List<QueryException> queryExceptionList = Lists.newArrayList(queryExceptions);
-        return queryExceptionList;
+        return Lists.newArrayList(queryExceptions);
     }
     
     /**

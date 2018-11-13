@@ -34,8 +34,7 @@ public class SortedUIDsRequiredVisitor extends BaseVisitor {
     private boolean acknowledgeDelayedPredicates = false;
     
     public boolean areSortedUIDsRequired() {
-        boolean sortedUIDs = (ivarators != 1 || indexedFieldCount > 1 || negatedIndexedFieldCount > 0);
-        return sortedUIDs;
+        return (ivarators != 1 || indexedFieldCount > 1 || negatedIndexedFieldCount > 0);
     }
     
     public SortedUIDsRequiredVisitor(Set<String> indexedFields, boolean acknowledgeDelayedPredicates) {

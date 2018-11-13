@@ -34,10 +34,6 @@ import org.apache.lucene.search.Query;
  */
 public class SlopQueryNodeBuilder implements QueryBuilder {
     
-    public SlopQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         datawave.query.language.tree.QueryNode returnNode = null;
         

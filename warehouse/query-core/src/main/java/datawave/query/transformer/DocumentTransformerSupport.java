@@ -145,7 +145,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     // When a single Ivarator is used during a query on the teserver, we save time by not sorting the UIDs (not necessary for further comparisons).
     // To ensure that returned keys appear to be in sorted order on the way back we prpend a one-up number to the colFam.
     // In this edge case, the prepended number needs to be removed.
-    static protected Key correctKey(Key origKey) {
+    protected static Key correctKey(Key origKey) {
         Key key = origKey;
         if (key != null) {
             String colFam = key.getColumnFamily().toString();
@@ -173,9 +173,9 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         // If neither a projection nor a blacklist was used then the suppressFields set should remain empty
         Set<String> suppressFields = Collections.emptySet();
         if (cardinalityConfiguration != null) {
-            if (projectFields.size() > 0) {
+            if (!projectFields.isEmpty()) {
                 suppressFields = cardinalityConfiguration.getStoredProjectFieldsToAdd(getQm(), projectFields);
-            } else if (blacklistedFields.size() > 0) {
+            } else if (!blacklistedFields.isEmpty()) {
                 suppressFields = cardinalityConfiguration.getStoredBlacklistedFieldsToRemove(getQm(), blacklistedFields);
             }
         }

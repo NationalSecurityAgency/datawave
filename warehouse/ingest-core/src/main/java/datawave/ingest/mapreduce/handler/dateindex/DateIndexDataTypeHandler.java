@@ -224,7 +224,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      * @param index
      */
     private void getBulkIngestKeys(RawRecordContainer event, Multimap<String,NormalizedContentInterface> eventFields, Multimap<BulkIngestKey,Value> index) {
-        if (dataTypeToTypeToFields.containsKey(event.getDataType().typeName()) && null != eventFields && eventFields.size() != 0) {
+        if (dataTypeToTypeToFields.containsKey(event.getDataType().typeName()) && null != eventFields && !eventFields.isEmpty()) {
             // date index Table Structure
             // Row: date
             // Colf: type
@@ -293,7 +293,6 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         String row = rowDate + '_' + getDateIndexShardPartition(rowDate, type, shardDate, dataType, dateField, new String(biased.getExpression()));
         
         // the colf is the type (e.g. LOAD or ACTIVITY)
-        String colf = type;
         
         // the colq is the event date yyyyMMdd \0 the datatype \0 the field name
         String colq = shardDate + '\0' + dataType + '\0' + dateField;
@@ -302,7 +301,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         Value shardList = createDateIndexValue(ShardIdFactory.getShard(shardId));
         
         // create the key
-        Key key = new Key(row, colf, colq, biased, date.getTime());
+        Key key = new Key(row, type, colq, biased, date.getTime());
         
         if (log.isTraceEnabled()) {
             log.trace("Dateate index key: " + key + " for shardId " + shardId);
@@ -332,8 +331,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         for (String value : values) {
             hashCode += value.hashCode();
         }
-        int partition = (int) ((Integer.MAX_VALUE & hashCode) % this.dateIndexNumShards);
-        return partition;
+        return (int) ((Integer.MAX_VALUE & hashCode) % this.dateIndexNumShards);
     }
     
     /**

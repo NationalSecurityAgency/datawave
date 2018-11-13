@@ -66,7 +66,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
                     if (log.isTraceEnabled())
                         log.trace("Attributes for " + attr.getKey() + " " + attributes.iterator().hasNext());
                     
-                    if (attributes.size() > 0) {
+                    if (!attributes.isEmpty()) {
                         boolean foundAmongOthers = false;
                         for (Attribute<?> thoseAttributes : attributes) {
                             if (myAttribute instanceof Cardinality) {
@@ -148,15 +148,14 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
         
         Document currentDoc = new Document();
         
-        Entry<Key,Document> doc = input;
-        Key topKey = doc.getKey();
+        Key topKey = input.getKey();
         
         // reduce the key to the document key pieces only
         topKey = new Key(topKey.getRow(), topKey.getColumnFamily());
         
         DatawaveKey parser = new DatawaveKey(topKey);
         
-        currentDoc = doc.getValue();
+        currentDoc = input.getValue();
         
         Map<?,?> currentAttr = currentDoc.getDictionary();
         
@@ -175,7 +174,7 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
                         if (log.isTraceEnabled())
                             log.trace("Attributes for " + attr.getKey() + " " + attributes.iterator().hasNext());
                         
-                        if (attributes.size() > 0) {
+                        if (!attributes.isEmpty()) {
                             boolean foundAmongOthers = false;
                             for (Attribute<?> thoseAttributes : attributes) {
                                 if (myAttribute instanceof Cardinality) {

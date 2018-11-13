@@ -557,7 +557,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @return
      */
     public boolean canHandleExceededValueThreshold() {
-        return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheBaseURIs && this.ivaratorCacheBaseURIs.size() > 0);
+        return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheBaseURIs && !this.ivaratorCacheBaseURIs.isEmpty());
     }
     
     /**

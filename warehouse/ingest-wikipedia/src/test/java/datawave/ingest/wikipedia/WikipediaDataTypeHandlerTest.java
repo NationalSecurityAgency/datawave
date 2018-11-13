@@ -72,8 +72,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         
         Multimap<String,NormalizedContentInterface> eventFields = helper.getEventFields(e);
         
-        VirtualIngest vHelper = (VirtualIngest) helper;
-        Multimap<String,NormalizedContentInterface> virtualFields = vHelper.getVirtualFields(eventFields);
+        Multimap<String,NormalizedContentInterface> virtualFields = ((VirtualIngest) helper).getVirtualFields(eventFields);
         for (Entry<String,NormalizedContentInterface> v : virtualFields.entries()) {
             eventFields.put(v.getKey(), v.getValue());
         }
@@ -117,7 +116,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         e = reader.getEvent();
         
         eventFields = helper.getEventFields(e);
-        virtualFields = vHelper.getVirtualFields(eventFields);
+        virtualFields = ((VirtualIngest) helper).getVirtualFields(eventFields);
         for (Entry<String,NormalizedContentInterface> v : virtualFields.entries()) {
             eventFields.put(v.getKey(), v.getValue());
         }

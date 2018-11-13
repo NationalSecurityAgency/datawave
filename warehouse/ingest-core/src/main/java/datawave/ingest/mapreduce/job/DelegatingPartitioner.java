@@ -62,7 +62,7 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
      */
     private static void validateAndRegisterPartitioners(Job job, Configuration conf, String[] tableNames, PartitionerCache partitionerCache) {
         String commaSeparatedTableNames = StringUtils.join(",", partitionerCache.validatePartitioners(tableNames, job));
-        if (commaSeparatedTableNames.length() > 0) {
+        if (!commaSeparatedTableNames.isEmpty()) {
             conf.set(TABLE_NAMES_WITH_CUSTOM_PARTITIONERS, commaSeparatedTableNames);
         }
     }

@@ -26,10 +26,10 @@ import org.apache.log4j.Logger;
 public abstract class AbstractTableConfigHelper implements TableConfigHelper {
     
     @Override
-    abstract public void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException;
+    public abstract void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException;
     
     @Override
-    abstract public void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException;
+    public abstract void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException;
     
     /**
      * Sets {@code propertyName} to {@code propertyValue} on table {@code tableName}, unless the property is already set to {@code propertyValue}.
@@ -238,7 +238,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
         Map<String,String> props = new TreeMap<>();
         
         for (IteratorScope iterScope : IteratorScope.values()) {
-            if (aggregators.size() > 0) {
+            if (!aggregators.isEmpty()) {
                 props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".agg", "10," + PropogatingIterator.class.getName());
             }
         }

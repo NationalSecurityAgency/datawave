@@ -25,7 +25,7 @@ import java.util.TreeMap;
  * <p>
  * Each field's name/value will be appended with a delimiter (null character) and placed in the column qualifier.
  */
-abstract public class BaseMetricsReceiver<OK,OV> implements MetricsReceiver<OK,OV> {
+public abstract class BaseMetricsReceiver<OK,OV> implements MetricsReceiver<OK,OV> {
     
     public static final String QUAL_DELIM = "\u0000";
     

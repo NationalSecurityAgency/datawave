@@ -422,7 +422,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         
         byte[] shardId = shardIdFactory.getShardIdBytes(event);
         
-        if (null != fields && fields.size() != 0 && null != shardTableName) {
+        if (null != fields && !fields.isEmpty() && null != shardTableName) {
             // Shard Event Table Structure
             // Row: shard id
             // Colf: DataType : UID
@@ -683,30 +683,26 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
             
-            Value val = indexValue;
-            
             // Dont create index entries for empty values
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
                 // Create a key for the masked field value with the masked visibility
                 Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
                 
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-                values.put(bkey, val);
+                values.put(bkey, indexValue);
             }
             
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Now create a key for the unmasked value with the original visibility
                 Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getDate(), deleteMode);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-                values.put(bkey, val);
+                values.put(bkey, indexValue);
             }
         } else if (!StringUtils.isEmpty(fieldValue)) {
             // This field is not masked. Add a key with the original field value and masked visibility
             Text colf = new Text(column);
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
-            
-            Value val = indexValue;
             
             /**
              * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
@@ -720,7 +716,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             
             Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, event.getDate(), deleteMode);
             BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-            values.put(bkey, val);
+            values.put(bkey, indexValue);
             
         }
         

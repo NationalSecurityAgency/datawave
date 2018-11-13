@@ -116,8 +116,6 @@ public class LookupBean {
     @SpringBean(refreshable = true)
     private MarkingFunctions markingFunctions;
     
-    public LookupBean() {}
-    
     /**
      * Look up one or more entries in Accumulo by table, row, and optionally colFam and colQual
      * 
@@ -298,7 +296,7 @@ public class LookupBean {
         }
         
         List<?> exceptionList = response.getExceptions();
-        if (exceptionList != null && exceptionList.size() > 0) {
+        if (exceptionList != null && !exceptionList.isEmpty()) {
             throw new BadRequestException(null, response);
         }
         

@@ -50,8 +50,6 @@ public class FlagMakerTest {
     static final int COUNTER_LIMIT = 102;
     private FlagMakerConfig fmc;
     
-    public FlagMakerTest() {}
-    
     @Before
     public void setUp() throws Exception {
         fmc = ConfigUtil.getXmlObject(FlagMakerConfig.class, TEST_CONFIG);

@@ -59,7 +59,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
      */
     public static class QueryMetricsMapper extends Mapper<Key,Value,Key,Value> {
         
-        final private HashSet<String> uniqueUsers = new HashSet<>();
+        private final HashSet<String> uniqueUsers = new HashSet<>();
         
         private boolean useHourlyPrecision = false;
         

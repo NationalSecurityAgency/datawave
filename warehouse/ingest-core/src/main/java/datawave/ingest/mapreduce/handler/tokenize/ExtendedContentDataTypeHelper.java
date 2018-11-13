@@ -288,7 +288,7 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
             if (index >= 0) {
                 field = field.substring(0, index);
             }
-            if (field.length() == 0) {
+            if (field.isEmpty()) {
                 throw new IllegalArgumentException("Field metadata parser key is invalid: missing fieldname: " + field);
             }
             metadataParserMap.put(field, MetadataIdParser.createParser(entry.getValue()));

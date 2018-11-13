@@ -1095,7 +1095,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
         try {
             log.info("Marking " + renameCallables.size() + " sequence files from flagged to loaded");
             
-            if (renameCallables.size() > 0) {
+            if (!renameCallables.isEmpty()) {
                 List<Future<Boolean>> execResults = executor.invokeAll(renameCallables);
                 
                 for (Future<Boolean> future : execResults) {

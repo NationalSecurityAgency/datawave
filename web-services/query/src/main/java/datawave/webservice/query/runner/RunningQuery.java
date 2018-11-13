@@ -296,7 +296,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             long now = System.currentTimeMillis();
             this.getMetric().addPageTime(currentPageCount, now - pageStartTime, pageStartTime, now);
             this.lastPageNumber++;
-            if (resultList.size() > 0) {
+            if (!resultList.isEmpty()) {
                 this.getMetric().setLifecycle(QueryMetric.Lifecycle.RESULTS);
             }
         } catch (Exception e) {

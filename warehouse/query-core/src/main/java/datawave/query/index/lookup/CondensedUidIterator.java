@@ -327,8 +327,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
      * @return
      */
     public static Key makeRootKey(Key k, String day) {
-        ByteSequence cq = k.getColumnQualifierData();
-        ByteSequence strippedCq = cq;
+        ByteSequence strippedCq = k.getColumnQualifierData();
         strippedCq = new ArrayByteSequence(day);
         final ByteSequence row = k.getRowData(), cf = k.getColumnFamilyData(), cv = k.getColumnVisibilityData();
         return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), strippedCq.getBackingArray(),

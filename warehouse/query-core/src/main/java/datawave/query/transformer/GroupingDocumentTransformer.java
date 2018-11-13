@@ -61,7 +61,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
         QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
         for (String groupField : groupFieldsSet) {
             String f = model.getReverseAliasForField(groupField);
-            if (f != null && f.length() > 0) {
+            if (f != null && !f.isEmpty()) {
                 this.groupFieldsList.add(f);
             }
         }

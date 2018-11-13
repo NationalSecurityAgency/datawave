@@ -127,7 +127,7 @@ public class FieldNameLookup extends IndexLookup {
                     
                     entry.getKey().getColumnQualifier(holder);
                     
-                    if (typeFilterSet.size() > 0) {
+                    if (!typeFilterSet.isEmpty()) {
                         try {
                             String dataType = holder.toString().split(Constants.NULL)[1];
                             if (!typeFilterSet.contains(dataType))

@@ -587,10 +587,6 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
         NONE, DEFINED, INITIALIZED, RESULTS, CLOSED, CANCELLED, MAXRESULTS, NEXTTIMEOUT, TIMEOUT, SHUTDOWN
     }
     
-    public BaseQueryMetric() {
-        super();
-    }
-    
     public String getQueryType() {
         return queryType;
     }

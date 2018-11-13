@@ -145,11 +145,11 @@ public class VertexValue {
     }
     
     public String getCollectionType() {
-        return collectionType != null ? collectionType : null;
+        return collectionType;
     }
     
     public String getRelationshipType() {
-        return relationshipType != null ? relationshipType : null;
+        return relationshipType;
     }
     
     public void setCollectionType(String collectionType) {

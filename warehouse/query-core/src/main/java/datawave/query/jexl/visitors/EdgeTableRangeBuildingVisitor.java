@@ -436,7 +436,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                         continue;
                     }
                 }
-                if (contexts.size() == 0) {
+                if (contexts.isEmpty()) {
                     log.error("Couldn't normalize users regex: " + literal);
                     throw new RuntimeException("Can't build query invalid regex: " + literal);
                 }
@@ -464,9 +464,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             log.error("Reference node (identity) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
             throw new IllegalArgumentException("Problem parsing query");
         }
-        String identity = referenceNode.jjtGetChild(0).image.toUpperCase();
         
-        return identity;
+        return referenceNode.jjtGetChild(0).image.toUpperCase();
     }
     
     /**

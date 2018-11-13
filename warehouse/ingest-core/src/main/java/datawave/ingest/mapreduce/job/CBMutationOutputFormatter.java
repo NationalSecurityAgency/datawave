@@ -18,10 +18,6 @@ public class CBMutationOutputFormatter extends AccumuloOutputFormat {
     
     private static final Logger log = Logger.getLogger(CBMutationOutputFormatter.class);
     
-    public CBMutationOutputFormatter() {
-        super();
-    }
-    
     public static void setOutputInfo(Job job, String user, byte[] passwd, boolean createTables, String defaultTable) throws AccumuloSecurityException {
         AccumuloOutputFormat.setConnectorInfo(job, user, new PasswordToken(passwd));
         AccumuloOutputFormat.setCreateTables(job, createTables);

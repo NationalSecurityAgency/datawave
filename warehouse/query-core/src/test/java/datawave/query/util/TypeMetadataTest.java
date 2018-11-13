@@ -27,8 +27,6 @@ public class TypeMetadataTest {
     
     private static final Logger log = Logger.getLogger(TypeMetadataTest.class);
     
-    public TypeMetadataTest() {}
-    
     /**
      * Test of getDataType method, of class DatawaveShardedTableFieldIndexKeyParser.
      */

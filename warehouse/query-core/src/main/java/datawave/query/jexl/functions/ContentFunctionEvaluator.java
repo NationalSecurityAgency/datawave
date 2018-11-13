@@ -21,12 +21,12 @@ public abstract class ContentFunctionEvaluator {
     private static final Logger log = Logger.getLogger(ContentFunctionEvaluator.class);
     protected static final int DEFAULT_MAX_SCORE = TermWeightPosition.positionScoreToTermWeightScore(Float.NEGATIVE_INFINITY);
     
-    final protected Set<String> fields;
-    final protected int distance;
-    final protected String[] terms;
-    final protected Map<String,TermFrequencyList> termOffsetMap;
-    final protected boolean canProcess;
-    final protected int maxScore;
+    protected final Set<String> fields;
+    protected final int distance;
+    protected final String[] terms;
+    protected final Map<String,TermFrequencyList> termOffsetMap;
+    protected final boolean canProcess;
+    protected final int maxScore;
     protected Set<String> eventIds;
     
     public ContentFunctionEvaluator(Set<String> fields, int distance, float maxScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
@@ -116,7 +116,7 @@ public abstract class ContentFunctionEvaluator {
                 
                 return false;
             }
-            if (tfList.fetchOffsets().size() == 0) {
+            if (tfList.fetchOffsets().isEmpty()) {
                 if (log.isTraceEnabled()) {
                     log.trace("Failing process() because of an empty offset list for " + term);
                 }

@@ -260,8 +260,7 @@ public class EdgeKeyUtil {
     }
     
     public static String getEdgeRow(String source, String sink) {
-        String str = source + "\000" + sink;
-        return str;
+        return source + "\000" + sink;
     }
     
     public static String decodeDate(Text date) throws CharacterCodingException {
@@ -270,8 +269,7 @@ public class EdgeKeyUtil {
     
     // stuff for iterators
     public static Key getSeekToFutureKey(Key topKey, String startDate) {
-        Key newKey = new Key(topKey.getRow(), topKey.getColumnFamily(), new Text(startDate));
-        return newKey;
+        return new Key(topKey.getRow(), topKey.getColumnFamily(), new Text(startDate));
     }
     
     // Assuming we're not on the correct date yet.
@@ -281,7 +279,6 @@ public class EdgeKeyUtil {
     
     // date is after start date so we are no longer looking at dates...?
     public static PartialKey getSeekToNextKey() {
-        PartialKey part = PartialKey.ROW_COLFAM;
-        return part;
+        return PartialKey.ROW_COLFAM;
     }
 }

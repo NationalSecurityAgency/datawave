@@ -102,8 +102,7 @@ public class GeoWaveFunctionsDescriptorTest {
         JexlArgumentDescriptor desc = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(func);
         
         JexlNode indexQuery = desc.getIndexQuery(config, null, null, null);
-        String retVal = JexlStringBuildingVisitor.buildQuery(indexQuery);
-        return retVal;
+        return JexlStringBuildingVisitor.buildQuery(indexQuery);
     }
     
     /**

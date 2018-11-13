@@ -27,7 +27,7 @@ public final class MetricRuleUtil {
     }
     
     public static String normalizeMetricRules(Collection<NormalizedContentInterface> fieldValues) {
-        if (fieldValues == null || fieldValues.size() == 0) {
+        if (fieldValues == null || fieldValues.isEmpty()) {
             return MISSING;
         }
         SortedSet<String> sortedUniqueRules = new TreeSet<>();
@@ -42,7 +42,7 @@ public final class MetricRuleUtil {
                 sortedUniqueRules.add(eventFieldValue);
             }
         }
-        if (sortedUniqueRules.size() == 0) {
+        if (sortedUniqueRules.isEmpty()) {
             return MISSING;
         }
         return StringUtils.join(sortedUniqueRules, ",");

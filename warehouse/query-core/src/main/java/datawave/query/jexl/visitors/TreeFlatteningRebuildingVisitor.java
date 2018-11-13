@@ -69,8 +69,7 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
         ASTOrNode orNode = JexlNodes.newInstanceOfType(node);
         orNode.image = node.image;
         
-        JexlNode newNode = flattenTree(node, orNode, data);
-        return newNode;
+        return flattenTree(node, orNode, data);
     }
     
     private boolean isBoundedRange(ASTAndNode node) {
@@ -91,8 +90,7 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
             ASTAndNode andNode = JexlNodes.newInstanceOfType(node);
             andNode.image = node.image;
             
-            JexlNode newNode = flattenTree(node, andNode, data);
-            return newNode;
+            return flattenTree(node, andNode, data);
         }
         
     }

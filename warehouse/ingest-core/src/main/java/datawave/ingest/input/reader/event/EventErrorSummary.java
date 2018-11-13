@@ -276,7 +276,7 @@ public class EventErrorSummary implements Cloneable, JexlContext {
             } else if (o != null && Collection.class.isAssignableFrom(o.getClass())) {
                 // if the function returns a collection of matches, return true/false
                 // based on the number of matches
-                matches = (((Collection<?>) o).size() > 0);
+                matches = (!((Collection<?>) o).isEmpty());
             } else {
                 matches = false;
             }

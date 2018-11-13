@@ -338,7 +338,7 @@ public class ModelBean {
         }
         
         // return 404 if model not found
-        if (response.getFields().size() == 0) {
+        if (response.getFields().isEmpty()) {
             throw new NotFoundException(null, response);
         }
         

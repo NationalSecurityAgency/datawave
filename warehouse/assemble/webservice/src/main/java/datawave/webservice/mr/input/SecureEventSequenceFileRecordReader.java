@@ -30,7 +30,7 @@ public class SecureEventSequenceFileRecordReader<K> extends EventSequenceFileRec
         super.initialize(split, context);
         String auths = context.getConfiguration().get(AUTHS);
         // Ensure that the authorizations were put into the configuration
-        if (null == auths || auths.length() == 0)
+        if (null == auths || auths.isEmpty())
             throw new IOException("Authorizations not specified, expected configuration property to be set: " + AUTHS);
         // Create the VisibilityFilter with no default visibility. We expect that all Events will have a column visibility set
         Authorizations a = new Authorizations(auths.split(SPLIT));

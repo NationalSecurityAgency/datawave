@@ -103,9 +103,8 @@ public class HudBean {
             
             querySummaryList.add(summary);
         }
-        String queryListJson = gson.toJson(querySummaryList);
         
-        return queryListJson;
+        return gson.toJson(querySummaryList);
     }
     
     private DatawavePrincipal getPrincipal() {
@@ -133,8 +132,7 @@ public class HudBean {
         metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(12L, hour12));
         metricSummaryList.add(metricSummaryBuilder.buildMetricsSummary(24L, day1));
         
-        String metricSummaryJson = gson.toJson(metricSummaryList);
-        return metricSummaryJson;
+        return gson.toJson(metricSummaryList);
     }
     
     @Path("/activeusers")

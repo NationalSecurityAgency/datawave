@@ -34,16 +34,16 @@ import datawave.query.util.Tuple2;
 public class PipelineIterator implements Iterator<Entry<Key,Document>> {
     
     private static final Logger log = Logger.getLogger(PipelineIterator.class);
-    final protected YieldCallbackWrapper<Key> yield;
-    final protected long yieldThresholdMs;
-    final protected NestedIterator<Key> docSource;
-    final protected PipelinePool pipelines;
-    final protected Queue<Tuple2<Future<?>,Pipeline>> evaluationQueue;
+    protected final YieldCallbackWrapper<Key> yield;
+    protected final long yieldThresholdMs;
+    protected final NestedIterator<Key> docSource;
+    protected final PipelinePool pipelines;
+    protected final Queue<Tuple2<Future<?>,Pipeline>> evaluationQueue;
     protected Key lastKeyEvaluated = null;
-    final protected Queue<Entry<Key,Document>> results;
-    final protected int maxResults;
-    final protected QuerySpanCollector querySpanCollector;
-    final protected QuerySpan querySpan;
+    protected final Queue<Entry<Key,Document>> results;
+    protected final int maxResults;
+    protected final QuerySpanCollector querySpanCollector;
+    protected final QuerySpan querySpan;
     protected boolean collectTimingDetails = false;
     protected IteratorEnvironment env;
     

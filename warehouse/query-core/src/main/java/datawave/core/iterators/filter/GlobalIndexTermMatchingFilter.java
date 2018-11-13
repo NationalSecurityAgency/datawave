@@ -79,7 +79,7 @@ public class GlobalIndexTermMatchingFilter extends Filter {
             Uid.List protobuf = Uid.List.parseFrom(v.get());
             
             // the protobuf list should be aggregated already
-            return protobuf.getIGNORE() || protobuf.getUIDList().size() > 0;
+            return protobuf.getIGNORE() || !protobuf.getUIDList().isEmpty();
         } catch (InvalidProtocolBufferException e) {
             // if we cannot parse the protocol buffer, then we
             // won't be able to use it for evaluation anyway

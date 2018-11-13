@@ -47,10 +47,6 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
     
     protected Map<String,Collection<String>> authMapping;
     
-    public AuthorizationsListBase() {
-        super();
-    }
-    
     public abstract String getMainContent();
     
     @XmlElement(name = "entityAuths")
@@ -190,7 +186,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
         }
     }
     
-    protected static abstract class AuthListSchema<T extends AuthorizationsListBase<?>> implements Schema<T> {
+    protected abstract static class AuthListSchema<T extends AuthorizationsListBase<?>> implements Schema<T> {
         
         @Override
         public boolean isInitialized(T message) {

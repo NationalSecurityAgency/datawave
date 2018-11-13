@@ -731,7 +731,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 }
             } else {
                 // Nothing already in the context, just add the result from the visit() as a functional set
-                if (visitObject.size() > 0) {
+                if (!visitObject.isEmpty()) {
                     Set<ValueTuple> newSet = new FunctionalSet<>();
                     newSet.addAll(visitObject);
                     // Add the final set

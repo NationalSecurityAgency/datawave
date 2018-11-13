@@ -237,7 +237,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
     @Override
     public boolean toBoolean(Object val) {
         if (val instanceof Collection) {
-            return ((Collection) val).size() > 0;
+            return !((Collection) val).isEmpty();
         }
         return super.toBoolean(val);
     }

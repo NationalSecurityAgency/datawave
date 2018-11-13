@@ -36,8 +36,6 @@ public class WikipediaIngestHelper extends BaseIngestHelper implements TermFrequ
     
     public static final Map<String,String> fieldNameReplacements = ImmutableMap.<String,String> builder().put("PAGE_NS", "PAGE_NAMESPACE").build();
     
-    public WikipediaIngestHelper() {}
-    
     public WikipediaHelper getHelper() {
         return this.helper;
     }

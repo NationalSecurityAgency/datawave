@@ -13,10 +13,10 @@ public class DateFormatUtil {
     
     private String defaultTime = "000000";
     private String defaultMillisec = "000";
-    static private String formatPattern = "yyyyMMdd HHmmss.SSS";
-    static private SimpleDateFormat dateFormat = null;
+    private static String formatPattern = "yyyyMMdd HHmmss.SSS";
+    private static SimpleDateFormat dateFormat = null;
     
-    static private Logger log = Logger.getLogger(DateFormatUtil.class);
+    private static Logger log = Logger.getLogger(DateFormatUtil.class);
     
     static {
         dateFormat = new SimpleDateFormat(formatPattern);

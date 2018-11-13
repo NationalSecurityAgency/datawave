@@ -521,9 +521,7 @@ public class IngestJob implements Tool {
         
         log.info("Replacing ${DATAWAVE_INGEST_HOME} with " + ingestHomeValue);
         
-        Configuration oldConfig = conf;
-        
-        return ConfigurationHelper.interpolate(oldConfig, "\\$\\{DATAWAVE_INGEST_HOME\\}", ingestHomeValue);
+        return ConfigurationHelper.interpolate(conf, "\\$\\{DATAWAVE_INGEST_HOME\\}", ingestHomeValue);
         
     }
     

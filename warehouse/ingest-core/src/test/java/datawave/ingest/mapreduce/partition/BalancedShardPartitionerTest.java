@@ -72,7 +72,7 @@ public class BalancedShardPartitionerTest {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
         new TestShardGenerator(conf, NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard", "errorShard");
         partitioner.setConf(conf);
-        assertEquals(new HashSet<>(Arrays.asList(new String[] {"shard", "errorShard"})),
+        assertEquals(new HashSet<>(Arrays.asList("shard", "errorShard")),
                         new HashSet<>(conf.getStringCollection(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES)));
         
         // For a shard from today, we can assume that they're well balanced.

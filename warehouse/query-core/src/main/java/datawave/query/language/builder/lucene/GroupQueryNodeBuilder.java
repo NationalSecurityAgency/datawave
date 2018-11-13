@@ -30,10 +30,6 @@ import org.apache.lucene.search.Query;
  */
 public class GroupQueryNodeBuilder implements QueryBuilder {
     
-    public GroupQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         GroupQueryNode groupNode = (GroupQueryNode) queryNode;
         

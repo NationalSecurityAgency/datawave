@@ -586,7 +586,7 @@ public class MetadataHelper implements ApplicationContextAware {
         unevalFields.addAll(indexOnlyFields);
         queryModel.setUnevaluatedFields(unevalFields);
         
-        if (queryModel.getReverseQueryMapping().size() == 0) {
+        if (queryModel.getReverseQueryMapping().isEmpty()) {
             if (log.isTraceEnabled()) {
                 log.trace("empty query model for " + this.toString());
             }
@@ -1550,8 +1550,6 @@ public class MetadataHelper implements ApplicationContextAware {
         
         static final String PROPS_RESOURCE = "metadata.properties";
         static final Properties defaultProps = new Properties();
-        
-        private MetadataDefaultsFactory() {}
         
         static {
             InputStream in = null;

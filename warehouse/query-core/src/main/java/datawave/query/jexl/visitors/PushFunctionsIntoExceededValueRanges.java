@@ -54,9 +54,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
     public static <T extends JexlNode> T pushFunctions(T script, MetadataHelper helper, Set<String> datatypeFilter) {
         PushFunctionsIntoExceededValueRanges visitor = new PushFunctionsIntoExceededValueRanges(helper, datatypeFilter);
         
-        T node = (T) (script.jjtAccept(visitor, null));
-        
-        return node;
+        return (T) (script.jjtAccept(visitor, null));
     }
     
     @Override

@@ -55,7 +55,7 @@ public class QuerySpanCollector {
     }
     
     public boolean hasEntries() {
-        if (this.seekCount.intValue() > 0 || this.nextCount.intValue() > 0 || this.sourceCount.intValue() > 0 || this.stageTimers.size() > 0) {
+        if (this.seekCount.intValue() > 0 || this.nextCount.intValue() > 0 || this.sourceCount.intValue() > 0 || !this.stageTimers.isEmpty()) {
             return true;
         } else {
             return false;

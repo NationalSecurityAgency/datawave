@@ -218,7 +218,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             
             // If we have passed the day boundary and we have ranges to pass back, then lets break out
             // of this loop.
-            if (!startDate.equals(parseDateFromColQual(currentKey)) && ranges.size() > 0) {
+            if (!startDate.equals(parseDateFromColQual(currentKey)) && !ranges.isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("Not on the desired startDate and have found ranges to return");
                 }
@@ -263,7 +263,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             shardsSeen.add(shardId);
             
             // If the types have been set, then determine if we need to skip or continue
-            if (types.size() > 0 && !types.contains(datatype)) {
+            if (!types.isEmpty() && !types.contains(datatype)) {
                 this.iterator.next();
                 continue;
             }
@@ -381,7 +381,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             
         } while (!done);
         
-        if (this.ranges.size() > 0) {
+        if (!this.ranges.isEmpty()) {
             // Set the returnKey with the following structure
             // row = original row
             // colf = original colf

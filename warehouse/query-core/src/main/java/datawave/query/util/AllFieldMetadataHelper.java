@@ -317,7 +317,7 @@ public class AllFieldMetadataHelper {
                 
                 // If types are specified and this type is not in the list,
                 // skip it.
-                if (null != ingestTypeFilter && ingestTypeFilter.size() > 0 && !ingestTypeFilter.contains(type)) {
+                if (null != ingestTypeFilter && !ingestTypeFilter.isEmpty() && !ingestTypeFilter.contains(type)) {
                     continue;
                 }
                 
@@ -372,7 +372,7 @@ public class AllFieldMetadataHelper {
                 
                 // If types are specified and this type is not in the list,
                 // skip it.
-                if (null != ingestTypeFilter && ingestTypeFilter.size() > 0 && !ingestTypeFilter.contains(type)) {
+                if (null != ingestTypeFilter && !ingestTypeFilter.isEmpty() && !ingestTypeFilter.contains(type)) {
                     continue;
                 }
                 

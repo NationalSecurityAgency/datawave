@@ -54,10 +54,6 @@ public abstract class TokenizingFilterBase extends AppliedRule {
     private TokenTtlTrie scanTrie = null;
     private boolean ruleApplied;
     
-    public TokenizingFilterBase() {
-        super();
-    }
-    
     public abstract byte[] getKeyField(Key k, Value V);
     
     /**

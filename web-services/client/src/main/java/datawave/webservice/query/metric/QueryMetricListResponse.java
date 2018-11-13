@@ -25,10 +25,6 @@ public class QueryMetricListResponse extends BaseQueryMetricListResponse<QueryMe
     
     private static final long serialVersionUID = 1L;
     
-    public QueryMetricListResponse() {
-        super();
-    }
-    
     public static Schema<QueryMetricListResponse> getSchema() {
         return SCHEMA;
     }

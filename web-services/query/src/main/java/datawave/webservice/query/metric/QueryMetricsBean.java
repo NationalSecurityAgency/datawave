@@ -65,8 +65,6 @@ public class QueryMetricsBean {
     @Inject
     private QueryMetricHandler<? extends BaseQueryMetric> queryHandler;
     
-    public QueryMetricsBean() {}
-    
     /*
      * @PermitAll is necessary because this method is called indirectly from the @PreDestroy method of the QueryExpirationBean and the QueryExpirationBean's
      * 

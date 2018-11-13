@@ -395,7 +395,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         query.setColumnVisibility(this.getColumnVisibility());
         query.setBeginDate(this.getBeginDate());
         query.setEndDate(this.getEndDate());
-        if (null != this.parameters && this.parameters.size() > 0)
+        if (null != this.parameters && !this.parameters.isEmpty())
             query.setParameters(new HashSet<Parameter>(this.parameters));
         query.setDnList(this.dnList);
         return query;

@@ -37,8 +37,7 @@ public abstract class CoreSummaryDataTypeHandler<KEYIN> implements DataTypeHandl
     public Multimap<BulkIngestKey,Value> processBulk(KEYIN key, RawRecordContainer record, Multimap<String,NormalizedContentInterface> fields,
                     StatusReporter reporter) {
         IngestHelperInterface iHelper = this.getHelper(record.getDataType());
-        Multimap<BulkIngestKey,Value> values = createEntries(record, fields, getVisibility(), System.currentTimeMillis(), iHelper);
-        return values;
+        return createEntries(record, fields, getVisibility(), System.currentTimeMillis(), iHelper);
     }
     
     // Since this is a summary use null column visibility

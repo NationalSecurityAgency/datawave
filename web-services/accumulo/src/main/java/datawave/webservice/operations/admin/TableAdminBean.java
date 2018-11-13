@@ -43,8 +43,6 @@ public class TableAdminBean {
     @EJB
     private AccumuloConnectionFactory connectionFactory;
     
-    public TableAdminBean() {}
-    
     /**
      * <strong>Administrator credentials required.</strong> Create a Accumulo table
      * 

@@ -32,10 +32,6 @@ public class Connection implements Serializable, Comparable<Connection> {
     @XmlElement(name = "Property")
     private Set<ConnectionProperty> connectionProperty = new TreeSet<>();
     
-    public Connection() {
-        
-    }
-    
     public String getState() {
         return state;
     }

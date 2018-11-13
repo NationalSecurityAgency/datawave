@@ -838,7 +838,7 @@ public class LookupUUIDUtil {
         
         List<String> paramList = criteria.getQueryParameters().remove(QueryParameters.QUERY_PARAMS);
         String params = null;
-        if (paramList != null && paramList.size() > 0) {
+        if (paramList != null && !paramList.isEmpty()) {
             params = paramList.get(0);
         }
         // Add Lucene syntax to the parameters, except during a call for next content

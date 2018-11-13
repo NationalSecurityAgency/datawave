@@ -124,7 +124,7 @@ public interface MarkingFunctions {
     }
     
     public static class Encoding {
-        static private Logger log = LoggerFactory.getLogger(Encoding.class);
+        private static Logger log = LoggerFactory.getLogger(Encoding.class);
         
         /**
          * Turn a set of markings into a serializable string

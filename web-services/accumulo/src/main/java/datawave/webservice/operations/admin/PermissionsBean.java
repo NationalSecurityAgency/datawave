@@ -42,8 +42,6 @@ public class PermissionsBean {
     @EJB
     private AccumuloConnectionFactory connectionFactory;
     
-    public PermissionsBean() {}
-    
     /**
      * <strong>Administrator credentials required.</strong> Grant a system permission to an Accumulo user
      * 

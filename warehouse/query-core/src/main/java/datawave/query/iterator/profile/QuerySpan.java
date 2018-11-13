@@ -112,7 +112,7 @@ public class QuerySpan {
         log.trace(sb.toString());
     }
     
-    synchronized public void next() {
+    public synchronized void next() {
         next++;
         if (client != null) {
             client.next();
@@ -122,7 +122,7 @@ public class QuerySpan {
         }
     }
     
-    synchronized public void seek() {
+    public synchronized void seek() {
         seek++;
         if (client != null) {
             client.seek();
@@ -152,7 +152,7 @@ public class QuerySpan {
     }
     
     public boolean hasEntries() {
-        if (this.getSeekCount() > 0 || this.getNextCount() > 0 || this.getSourceCount() > 0 || this.stageTimers.size() > 0) {
+        if (this.getSeekCount() > 0 || this.getNextCount() > 0 || this.getSourceCount() > 0 || !this.stageTimers.isEmpty()) {
             return true;
         } else {
             return false;

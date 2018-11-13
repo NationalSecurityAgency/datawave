@@ -82,10 +82,8 @@ public class DateIndexHelperTest {
     public static KeyValue getDateIndexEntry(String shardDate, int[] shardIndicies, String dataType, String type, String dateField, String dateValue,
                     ColumnVisibility visibility) throws ParseException {
         // The row is the date to index yyyyMMdd
-        String row = dateValue;
         
         // the colf is the type (e.g. LOAD or ACTIVITY)
-        String colf = type;
         
         // the colq is the event date yyyyMMdd \0 the datatype \0 the field name
         String colq = shardDate + '\0' + dataType + '\0' + dateField;
@@ -98,7 +96,7 @@ public class DateIndexHelperTest {
         Value shardList = new Value(bits.toByteArray());
         
         // create the key
-        Key key = new Key(row, colf, colq, visibility, DateIndexUtil.getBeginDate(dateValue).getTime());
+        Key key = new Key(dateValue, type, colq, visibility, DateIndexUtil.getBeginDate(dateValue).getTime());
         
         return new KeyValue(key, shardList);
     }

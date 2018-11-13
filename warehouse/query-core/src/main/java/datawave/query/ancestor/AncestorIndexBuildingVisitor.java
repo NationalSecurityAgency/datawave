@@ -224,9 +224,8 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
             String cf = startColfam.toString();
             int index = cf.indexOf('\0');
             if (index >= 0) {
-                String uid = cf.substring(index + 1);
                 
-                return uid;
+                return cf.substring(index + 1);
             }
         }
         
@@ -265,7 +264,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         String startCf = (start == null || start.getColumnFamily() == null ? "" : start.getColumnFamily().toString());
         
         // if the end key inclusively includes a datatype\0UID or has datatype\0UID\0, then move the key past the children
-        if (endCf.length() > 0 && (r.isEndKeyInclusive() || endCf.charAt(endCf.length() - 1) == '\0')) {
+        if (!endCf.isEmpty() && (r.isEndKeyInclusive() || endCf.charAt(endCf.length() - 1) == '\0')) {
             String row = end.getRow().toString().intern();
             if (endCf.charAt(endCf.length() - 1) == '\0') {
                 endCf = endCf.substring(0, endCf.length() - 1);
@@ -275,7 +274,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
         }
         
         // if the start key is not inclusive, and we have a datatype\0UID, then move the start past the children thereof
-        if (!r.isStartKeyInclusive() && startCf.length() > 0) {
+        if (!r.isStartKeyInclusive() && !startCf.isEmpty()) {
             // we need to bump append 0xff to that byte array because we want to skip the children
             String row = start.getRow().toString().intern();
             

@@ -310,7 +310,7 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
                 }
             }
         }
-        return groups.size() > 0 ? groups.iterator().next() : null;
+        return !groups.isEmpty() ? groups.iterator().next() : null;
     }
     
     public Object getGroupsForValue(int value) {

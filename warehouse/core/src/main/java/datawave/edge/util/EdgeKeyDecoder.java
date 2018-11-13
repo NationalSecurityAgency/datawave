@@ -50,7 +50,7 @@ public class EdgeKeyDecoder {
         
         // the previous code threw an exception when there was no row key, so
         // we should maintain that same
-        if (row.length() == 0)
+        if (row.isEmpty())
             throw new IllegalStateException("Invalid row identifier");
         
         int nullPos = row.indexOf('\0');

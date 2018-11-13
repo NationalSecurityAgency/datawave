@@ -34,8 +34,6 @@ public abstract class BaseResponse implements Serializable {
     @XmlElement(name = "Exception")
     private LinkedList<QueryExceptionType> exceptions = null;
     
-    public BaseResponse() {}
-    
     public long getOperationTimeMS() {
         return operationTimeMS;
     }

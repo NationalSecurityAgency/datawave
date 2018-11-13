@@ -125,7 +125,7 @@ public class CardinalityScanner {
         }
     }
     
-    static public Options getConfigurationOptions() {
+    public static Options getConfigurationOptions() {
         
         final OptionBuilder builder = new OptionBuilder();
         final Options opt = new Options();
@@ -158,7 +158,7 @@ public class CardinalityScanner {
         return opt;
     }
     
-    static public CardinalityScannerConfiguration getConfiguration(CommandLine cl) throws Exception {
+    public static CardinalityScannerConfiguration getConfiguration(CommandLine cl) throws Exception {
         
         CardinalityScannerConfiguration config = new CardinalityScannerConfiguration();
         config.setZookeepers(cl.getOptionValue(ZOOKEEPERS));
@@ -172,9 +172,9 @@ public class CardinalityScanner {
         } catch (Exception e) {
             // do nothing
         }
-        config.setMaintainDatatypes(cl.hasOption(DATATYPES) ? true : false);
-        config.setIntersect(cl.hasOption(INTERSECT) ? true : false);
-        config.setSortByCardinality(cl.hasOption(SORTBYCARDINALITY) ? true : false);
+        config.setMaintainDatatypes(cl.hasOption(DATATYPES));
+        config.setIntersect(cl.hasOption(INTERSECT));
+        config.setSortByCardinality(cl.hasOption(SORTBYCARDINALITY));
         
         String dateOpt = cl.getOptionValue(D_OPT);
         if (dateOpt != null) {

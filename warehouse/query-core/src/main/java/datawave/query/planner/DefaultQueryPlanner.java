@@ -898,7 +898,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (log.isDebugEnabled()) {
                 log.debug("Testing for non-existent fields, found: " + nonexistentFields.size());
             }
-            if (nonexistentFields.size() > 0) {
+            if (!nonexistentFields.isEmpty()) {
                 String datatypeFilterSet = (null == config.getDatatypeFilter()) ? "none" : config.getDatatypeFilter().toString();
                 if (log.isTraceEnabled()) {
                     try {

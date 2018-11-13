@@ -56,7 +56,7 @@ import java.util.function.Supplier;
 /**
  * A base class for services that need to use HTTPClient to make remote calls to a microservice.
  */
-abstract public class RemoteHttpService {
+public abstract class RemoteHttpService {
     protected final Logger log = LoggerFactory.getLogger(getClass());
     
     protected JWTTokenHandler jwtTokenHandler;
@@ -169,23 +169,23 @@ abstract public class RemoteHttpService {
         });
     }
     
-    abstract protected boolean useSrvDns();
+    protected abstract boolean useSrvDns();
     
-    abstract protected List<String> srvDnsServers();
+    protected abstract List<String> srvDnsServers();
     
-    abstract protected int srvDnsPort();
+    protected abstract int srvDnsPort();
     
-    abstract protected String serviceScheme();
+    protected abstract String serviceScheme();
     
-    abstract protected int maxConnections();
+    protected abstract int maxConnections();
     
-    abstract protected int retryCount();
+    protected abstract int retryCount();
     
-    abstract protected int unavailableRetryCount();
+    protected abstract int unavailableRetryCount();
     
-    abstract protected int unavailableRetryDelay();
+    protected abstract int unavailableRetryDelay();
     
-    abstract protected Counter retryCounter();
+    protected abstract Counter retryCounter();
     
     private static class DatawaveRetryHandler extends DefaultHttpRequestRetryHandler {
         private final int unavailableRetryCount;

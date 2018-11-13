@@ -28,8 +28,6 @@ import org.apache.log4j.Logger;
 public class TermCountingVisitor extends BaseVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(TermCountingVisitor.class);
     
-    public TermCountingVisitor() {}
-    
     public static int countTerms(JexlNode script) {
         TermCountingVisitor visitor = new TermCountingVisitor();
         

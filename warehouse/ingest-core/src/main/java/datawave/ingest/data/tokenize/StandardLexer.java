@@ -2712,10 +2712,7 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
         int zzMarkedPosL;
         int zzEndReadL = zzEndRead;
         char[] zzBufferL = zzBuffer;
-        char[] zzCMapL = ZZ_CMAP;
         
-        int[] zzTransL = ZZ_TRANS;
-        int[] zzRowMapL = ZZ_ROWMAP;
         int[] zzAttrL = ZZ_ATTRIBUTE;
         
         while (true) {
@@ -2762,7 +2759,7 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
                             zzCurrentPosL += Character.charCount(zzInput);
                         }
                     }
-                    int zzNext = zzTransL[zzRowMapL[zzState] + zzCMapL[zzInput]];
+                    int zzNext = ZZ_TRANS[ZZ_ROWMAP[zzState] + ZZ_CMAP[zzInput]];
                     if (zzNext == -1)
                         break zzForAction;
                     zzState = zzNext;

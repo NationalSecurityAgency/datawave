@@ -72,7 +72,7 @@ public class StatsDEnabledClassesTest {
         helper.getCounter(context, "CounterGroup2", "Counter2").increment(11);
         helper.getCounter(context, "CounterGroup3", "Counter2").increment(12);
         
-        Assert.assertEquals(new ArrayList(Arrays.asList(new String[] {"count(TestGroup_COUNTER1,10)", "time(MyGroup3_MyCounter2,12)"})), client.messages);
+        Assert.assertEquals(new ArrayList(Arrays.asList("count(TestGroup_COUNTER1,10)", "time(MyGroup3_MyCounter2,12)")), client.messages);
         client.messages.clear();
         
         helper.close();

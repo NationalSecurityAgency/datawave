@@ -29,8 +29,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
     
     private static final ThreadLocal<Map<String,SimpleDateFormat>> formatList = new ThreadLocal<Map<String,SimpleDateFormat>>() {
         protected Map<String,SimpleDateFormat> initialValue() {
-            Map<String,SimpleDateFormat> map = Maps.newHashMap();
-            return map;
+            return Maps.newHashMap();
         }
     };
     
@@ -148,7 +147,7 @@ public class DateNormalizer extends AbstractNormalizer<Date> {
         for (String format : FORMAT_STRINGS) {
             DateFormat fs = getParser(format);
             String formatted = fs.format(date);
-            if (formatted != null && formatted.length() > 0) {
+            if (formatted != null && !formatted.isEmpty()) {
                 list.add(formatted);
             }
         }

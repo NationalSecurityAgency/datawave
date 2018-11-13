@@ -128,7 +128,7 @@ public class EdgeKeyVersioningCache {
         scanner.close();
         
         // If Datawave Metadatatable does not have any key versions automatically populate it with one
-        if (versionDates.size() == 0) {
+        if (versionDates.isEmpty()) {
             /*
              * If no key versions were found, then we're most likely initializing a new system. Therefore seeding with epoch date, which should prevent the
              * "old" edge key from being created...that is, with EdgeKey.DATE_TYPE.OLD_EVENT (See ProtobufEdgeDataTypeHandler.writeEdges)

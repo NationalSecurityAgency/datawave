@@ -352,7 +352,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
         }
         
         // If any errors occurred, return them in the response to the user
-        if (exceptions.size() > 0) {
+        if (!exceptions.isEmpty()) {
             for (Exception e : exceptions) {
                 QueryException qe = new QueryException(DatawaveErrorCode.MODIFICATION_ERROR, e);
                 response.addException(qe.getBottomQueryException());

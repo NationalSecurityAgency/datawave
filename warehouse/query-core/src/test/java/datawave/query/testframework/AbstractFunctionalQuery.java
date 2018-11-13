@@ -174,7 +174,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     /**
      * Performs any instance initialization required for the specific test case.
      */
-    abstract protected void testInit();
+    protected abstract void testInit();
     
     // ============================================
     // implementation interface methods

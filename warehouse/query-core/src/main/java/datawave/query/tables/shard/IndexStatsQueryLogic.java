@@ -91,7 +91,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
         String typeList = query.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue();
         HashSet<String> typeFilter = null;
         
-        if (null != typeList && 0 != typeList.length()) {
+        if (null != typeList && !typeList.isEmpty()) {
             typeFilter = new HashSet<>();
             typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
             

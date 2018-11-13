@@ -297,7 +297,6 @@ public class QueryExecutorBeanTest {
         String queryName = "Something";
         String query = "FOO == BAR";
         Date beginDate = new Date();
-        Date endDate = beginDate;
         Date expirationDate = DateUtils.addDays(new Date(), 1);
         int pagesize = 10;
         QueryPersistence persist = QueryPersistence.TRANSIENT;
@@ -311,7 +310,7 @@ public class QueryExecutorBeanTest {
         auths[1] = "PUBLIC";
         QueryImpl q = new QueryImpl();
         q.setBeginDate(beginDate);
-        q.setEndDate(endDate);
+        q.setEndDate(beginDate);
         q.setExpirationDate(expirationDate);
         q.setPagesize(pagesize);
         q.setParameters(parameters);
@@ -326,7 +325,7 @@ public class QueryExecutorBeanTest {
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
         p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, "");
         p.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        p.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+        p.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(beginDate));
         p.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
         p.putSingle(QueryParameters.QUERY_NAME, queryName);
         p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));

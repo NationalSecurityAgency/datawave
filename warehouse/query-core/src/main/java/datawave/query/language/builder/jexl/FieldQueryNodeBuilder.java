@@ -45,10 +45,6 @@ public class FieldQueryNodeBuilder implements QueryBuilder {
     private static final String WHITE_SPACE_ESCAPE_STRING = "~~";
     public static final String SPACE = " ";
     
-    public FieldQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         JexlNode returnNode = null;
         

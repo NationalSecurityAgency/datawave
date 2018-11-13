@@ -18,10 +18,10 @@ import org.apache.log4j.Logger;
 
 public class ColumnVisibilityHelper {
     
-    static protected final Charset charset = Charset.forName("UTF-8");
-    static private Logger log = Logger.getLogger(ColumnVisibilityHelper.class);
+    protected static final Charset charset = Charset.forName("UTF-8");
+    private static Logger log = Logger.getLogger(ColumnVisibilityHelper.class);
     
-    static public ColumnVisibility simplifyColumnVisibilityForAuthorizations(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations)
+    public static ColumnVisibility simplifyColumnVisibilityForAuthorizations(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations)
                     throws MarkingFunctions.Exception {
         
         ColumnVisibility simplifiedCV = columnVisibility;
@@ -47,10 +47,10 @@ public class ColumnVisibilityHelper {
         return simplifiedCV;
     }
     
-    static public ColumnVisibility removeUndisplayedVisibilities(ColumnVisibility columnVisibility, Set<String> undisplayedVisibilities)
+    public static ColumnVisibility removeUndisplayedVisibilities(ColumnVisibility columnVisibility, Set<String> undisplayedVisibilities)
                     throws MarkingFunctions.Exception {
         ColumnVisibility newColumnVisibility = columnVisibility;
-        if (undisplayedVisibilities != null && undisplayedVisibilities.size() > 0) {
+        if (undisplayedVisibilities != null && !undisplayedVisibilities.isEmpty()) {
             byte[] expression = columnVisibility.getExpression();
             Node node = columnVisibility.getParseTree();
             removeUndisplayedVisibilities(node, expression, undisplayedVisibilities);
@@ -59,7 +59,7 @@ public class ColumnVisibilityHelper {
         return newColumnVisibility;
     }
     
-    static private void removeUnsatisfiedTopLevelOrNodes(Set<VisibilityEvaluator> ve, byte[] expression, Node node) throws Exception {
+    private static void removeUnsatisfiedTopLevelOrNodes(Set<VisibilityEvaluator> ve, byte[] expression, Node node) throws Exception {
         if (node.getType() == NodeType.OR) {
             List<Node> children = node.getChildren();
             int lastNode = children.size() - 1;
@@ -73,7 +73,7 @@ public class ColumnVisibilityHelper {
         }
     }
     
-    static private boolean isUnsatisfied(int position, Set<VisibilityEvaluator> ve, Node currNode, byte[] expression) throws Exception {
+    private static boolean isUnsatisfied(int position, Set<VisibilityEvaluator> ve, Node currNode, byte[] expression) throws Exception {
         boolean unsatisfied = false;
         try {
             ColumnVisibility currVis = ColumnVisibilityHelper.flatten(currNode, expression);
@@ -87,7 +87,7 @@ public class ColumnVisibilityHelper {
         return unsatisfied;
     }
     
-    static private String termNodeToString(Node termNode, byte[] expression) throws Exception {
+    private static String termNodeToString(Node termNode, byte[] expression) throws Exception {
         int start = termNode.getTermStart();
         int end = termNode.getTermEnd();
         
@@ -101,7 +101,7 @@ public class ColumnVisibilityHelper {
         return str;
     }
     
-    static private ColumnVisibility flatten(Node node, byte[] expression) {
+    private static ColumnVisibility flatten(Node node, byte[] expression) {
         
         Node newNode = ColumnVisibility.normalize(node, expression);
         StringBuilder sb = new StringBuilder();
@@ -109,7 +109,7 @@ public class ColumnVisibilityHelper {
         return new ColumnVisibility(sb.toString());
     }
     
-    static private void removeUndisplayedVisibilities(Node node, byte[] expression, Set<String> undisplayedVisibilities) throws MarkingFunctions.Exception {
+    private static void removeUndisplayedVisibilities(Node node, byte[] expression, Set<String> undisplayedVisibilities) throws MarkingFunctions.Exception {
         List<Node> children = node.getChildren();
         // walk backwards so we don't change the index that we need to remove
         int lastNode = children.size() - 1;
@@ -123,7 +123,7 @@ public class ColumnVisibilityHelper {
             } else {
                 removeUndisplayedVisibilities(currNode, expression, undisplayedVisibilities);
                 // if all children of this NodeType.AND or NodeType.OR node have been removed, remove the node itself.
-                if (currNode.getChildren().size() == 0) {
+                if (currNode.getChildren().isEmpty()) {
                     children.remove(x);
                 }
             }

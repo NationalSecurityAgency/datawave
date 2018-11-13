@@ -4,7 +4,7 @@ import org.apache.log4j.Logger;
 
 public class SoftAndNode extends HardAndNode {
     
-    private final static Logger log = Logger.getLogger(SoftAndNode.class.getName());
+    private static final Logger log = Logger.getLogger(SoftAndNode.class.getName());
     
     public SoftAndNode(QueryNode... children) {
         super(children);

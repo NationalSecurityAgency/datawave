@@ -12,7 +12,6 @@ import org.apache.accumulo.core.data.Value;
  * 
  */
 public class DateIndexDateAggregator extends PropogatingCombiner {
-    public DateIndexDateAggregator() {}
     
     @Override
     public Value reduce(Key key, Iterator<Value> iter) {

@@ -70,8 +70,7 @@ public class AncestorEventDataFilter extends ConfigurableEventDataQueryFilter {
      */
     @Override
     public Key getStartKey(Key from) {
-        Key startKey = new Key(from.getRow().toString(), TLD.parseRootPointerFromId(from.getColumnFamily().toString()));
-        return startKey;
+        return new Key(from.getRow().toString(), TLD.parseRootPointerFromId(from.getColumnFamily().toString()));
     }
     
     protected String getUid(Key k) {

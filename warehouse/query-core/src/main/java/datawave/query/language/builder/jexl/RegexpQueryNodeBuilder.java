@@ -33,10 +33,6 @@ import org.apache.lucene.search.TermQuery;
  */
 public class RegexpQueryNodeBuilder implements QueryBuilder {
     
-    public RegexpQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         JexlNode returnNode = null;
         

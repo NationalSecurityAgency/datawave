@@ -27,8 +27,6 @@ public class Visibility {
     @XmlAttribute(name = "visibility")
     private String visibility;
     
-    public Visibility() {}
-    
     public Boolean getValid() {
         return valid;
     }

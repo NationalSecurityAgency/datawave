@@ -238,7 +238,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
                         // contains the datatype and normalizer class
                         
                         if (null != topKey.getColumnQualifier()) {
-                            if (null != myDatatypeFilter && myDatatypeFilter.size() > 0) {
+                            if (null != myDatatypeFilter && !myDatatypeFilter.isEmpty()) {
                                 
                                 String colq = topKey.getColumnQualifier().toString();
                                 int idx = colq.indexOf(Constants.NULL);

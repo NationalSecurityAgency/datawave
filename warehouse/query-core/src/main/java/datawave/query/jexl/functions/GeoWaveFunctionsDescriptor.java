@@ -85,7 +85,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                         list.add(getIndexNode(kid.image, env, maxExpansion));
                     }
                 }
-                if (list.size() > 0) {
+                if (!list.isEmpty()) {
                     return JexlNodeFactory.createOrNode(list);
                 }
             } else if (node.image != null) {
@@ -103,7 +103,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                         list.add(getIndexNode(kid.image, envs, maxExpansion));
                     }
                 }
-                if (list.size() > 0) {
+                if (!list.isEmpty()) {
                     return JexlNodeFactory.createOrNode(list);
                 }
             } else if (node.image != null) {
@@ -237,7 +237,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName,
                                 GeometryNormalizer.getEncodedStringFromIndexBytes(input.getEnd()));
                 // now link em up
-                return JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geNode, leNode}));
+                return JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
             }
         }
         

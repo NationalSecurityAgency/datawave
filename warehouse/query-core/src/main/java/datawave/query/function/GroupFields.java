@@ -19,7 +19,7 @@ public class GroupFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     
     private static final Logger log = Logger.getLogger(GroupFields.class);
     
-    public final static String ORIGINAL_COUNT_SUFFIX = "ORIGINAL_COUNT";
+    public static final String ORIGINAL_COUNT_SUFFIX = "ORIGINAL_COUNT";
     
     private Map<String,Integer> groupFieldsMap = Maps.newConcurrentMap();
     
@@ -77,7 +77,7 @@ public class GroupFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * @param groupFieldsMap
      */
     private void applyCounts(Document doc, Map<String,Integer> groupFieldsMap) {
-        if (groupFieldsMap.entrySet().size() > 0) {
+        if (!groupFieldsMap.entrySet().isEmpty()) {
             for (Entry<String,Integer> groupFieldCountEntry : groupFieldsMap.entrySet()) {
                 Attribute<?> removedAttr = doc.remove(groupFieldCountEntry.getKey());
                 log.debug("removed from document:" + groupFieldCountEntry.getKey());

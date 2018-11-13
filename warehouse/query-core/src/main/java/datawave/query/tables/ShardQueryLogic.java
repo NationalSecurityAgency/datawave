@@ -157,7 +157,7 @@ import java.util.concurrent.TimeUnit;
 public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public static final String NULL_BYTE = "\0";
-    public final static Class<? extends ShardQueryConfiguration> tableConfigurationType = ShardQueryConfiguration.class;
+    public static final Class<? extends ShardQueryConfiguration> tableConfigurationType = ShardQueryConfiguration.class;
     protected static final Logger log = ThreadConfigurableLogger.getLogger(ShardQueryLogic.class);
     static final ListeningExecutorService reloader = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(1));
     private static Cache<String,QueryModel> queryModelMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
@@ -403,7 +403,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         validateConfiguration(config);
         
-        if (getCardinalityConfiguration() != null && (config.getBlacklistedFields().size() > 0 || config.getProjectFields().size() > 0)) {
+        if (getCardinalityConfiguration() != null && (!config.getBlacklistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
             // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
             // Not advisable to create a copy of the config object due to the embedded timers.
@@ -412,10 +412,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             
             // either projectFields or blacklistedFields can be used, but not both
             // this will be caught when loadQueryParameters is called
-            if (config.getBlacklistedFields().size() > 0) {
+            if (!config.getBlacklistedFields().isEmpty()) {
                 config.setBlacklistedFields(getCardinalityConfiguration().getRevisedBlacklistFields(queryModel, originalBlacklistedFields));
             }
-            if (config.getProjectFields().size() > 0) {
+            if (!config.getProjectFields().isEmpty()) {
                 config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
             }
             

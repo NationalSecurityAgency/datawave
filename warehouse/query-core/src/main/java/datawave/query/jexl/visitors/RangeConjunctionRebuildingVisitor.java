@@ -99,9 +99,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         
-        T node = (T) (script.jjtAccept(visitor, null));
-        
-        return node;
+        return (T) (script.jjtAccept(visitor, null));
     }
     
     @Override

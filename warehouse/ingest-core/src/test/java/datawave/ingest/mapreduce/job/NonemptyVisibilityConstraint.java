@@ -25,7 +25,7 @@ public class NonemptyVisibilityConstraint implements VisibilityConstraint {
         public void addConstraints(Configuration conf, Multimap<Text,VisibilityConstraint> constraintsMap) {
             String table = conf.get(TABLE_CONFIG);
             
-            if (table == null || table.trim().length() == 0) {
+            if (table == null || table.trim().isEmpty()) {
                 throw new IllegalArgumentException(this.getClass() + " requires the config: " + TABLE_CONFIG);
             }
             

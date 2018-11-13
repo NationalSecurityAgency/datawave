@@ -56,8 +56,8 @@ public class RunningQueryTest {
     }
     
     // variables common to all current tests
-    final private QueryImpl settings = new QueryImpl();
-    final private AccumuloConnectionFactory.Priority connectionPriority = AccumuloConnectionFactory.Priority.NORMAL;
+    private final QueryImpl settings = new QueryImpl();
+    private final AccumuloConnectionFactory.Priority connectionPriority = AccumuloConnectionFactory.Priority.NORMAL;
     private String methodAuths = "";
     private SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDn", "issuerDn");
     private final QueryLogic<?> logic = createMock(BaseQueryLogic.class);

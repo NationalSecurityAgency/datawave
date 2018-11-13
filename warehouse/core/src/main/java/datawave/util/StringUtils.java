@@ -410,7 +410,7 @@ public class StringUtils {
         List<String> newValues = null;
         for (int i = 0; i < values.length; i++) {
             String value = values[i].trim();
-            if (value.length() == 0) {
+            if (value.isEmpty()) {
                 if (newValues == null) {
                     newValues = new ArrayList<>();
                     newValues.addAll(Arrays.asList(values).subList(0, i));

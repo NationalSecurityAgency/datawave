@@ -478,7 +478,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     protected boolean flushNeeded() {
         readLock.lock();
         try {
-            return currentQueue.size() > 0;
+            return !currentQueue.isEmpty();
         } finally {
             readLock.unlock();
         }

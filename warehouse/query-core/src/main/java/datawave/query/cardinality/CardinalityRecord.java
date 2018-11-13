@@ -27,7 +27,7 @@ public class CardinalityRecord implements Serializable {
     private static final long serialVersionUID = 1L;
     private Set<String> resultCardinalityValueFields = null;
     private HashMultimap<Integer,DateFieldValueCardinalityRecord> cardinalityMap = HashMultimap.create();
-    static private Logger log = Logger.getLogger(CardinalityRecord.class);
+    private static Logger log = Logger.getLogger(CardinalityRecord.class);
     
     public enum DateType {
         DOCUMENT, CURRENT
@@ -119,7 +119,7 @@ public class CardinalityRecord implements Serializable {
     
     protected <T> List<List<T>> cartesianProduct(List<List<T>> lists) {
         List<List<T>> resultLists = new ArrayList<>();
-        if (lists.size() == 0) {
+        if (lists.isEmpty()) {
             resultLists.add(new ArrayList<>());
             return resultLists;
         } else {
@@ -218,7 +218,7 @@ public class CardinalityRecord implements Serializable {
         CardinalityRecord.writeToDisk(newResulsCardinalityRecord, file);
     }
     
-    static public CardinalityRecord readFromDisk(File file) {
+    public static CardinalityRecord readFromDisk(File file) {
         
         CardinalityRecord cardinalityRecord = null;
         ObjectInputStream ois = null;
@@ -234,9 +234,9 @@ public class CardinalityRecord implements Serializable {
         return cardinalityRecord;
     }
     
-    static public void writeToDisk(final CardinalityRecord cardinalityRecord, final File file) {
+    public static void writeToDisk(final CardinalityRecord cardinalityRecord, final File file) {
         
-        if (cardinalityRecord.getCardinalityMap().size() > 0) {
+        if (!cardinalityRecord.getCardinalityMap().isEmpty()) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(() -> {
                 synchronized (file) {

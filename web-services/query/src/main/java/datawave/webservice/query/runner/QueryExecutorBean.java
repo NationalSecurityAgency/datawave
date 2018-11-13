@@ -884,13 +884,12 @@ public class QueryExecutorBean implements QueryExecutor {
     
     private RunningQuery getQueryById(String id, Principal principal) throws Exception {
         // Find out who/what called this method
-        Principal p = principal;
-        String userid = p.getName();
-        if (p instanceof DatawavePrincipal) {
-            DatawavePrincipal dp = (DatawavePrincipal) p;
+        String userid = principal.getName();
+        if (principal instanceof DatawavePrincipal) {
+            DatawavePrincipal dp = (DatawavePrincipal) principal;
             userid = dp.getShortName();
         }
-        log.trace(userid + " has authorizations " + ((p instanceof DatawavePrincipal) ? ((DatawavePrincipal) p).getAuthorizations() : ""));
+        log.trace(userid + " has authorizations " + ((principal instanceof DatawavePrincipal) ? ((DatawavePrincipal) principal).getAuthorizations() : ""));
         
         RunningQuery query = queryCache.get(id);
         if (null == query) {
@@ -904,10 +903,10 @@ public class QueryExecutorBean implements QueryExecutor {
                 Query q = queries.get(0);
                 
                 // will throw IllegalArgumentException if not defined
-                QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), p);
+                QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), principal);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
-                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(queryExpirationConf,
-                                qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
+                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), principal, new RunningQueryTimingImpl(
+                                queryExpirationConf, qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 queryCache.put(q.getId().toString(), query);
             }
@@ -1192,7 +1191,7 @@ public class QueryExecutorBean implements QueryExecutor {
         long pageNum = query.getLastPageNumber();
         
         BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultList);
-        if (resultList.getResults().size() > 0) {
+        if (!resultList.getResults().isEmpty()) {
             response.setHasResults(true);
         } else {
             response.setHasResults(false);
@@ -1209,7 +1208,7 @@ public class QueryExecutorBean implements QueryExecutor {
         
         testForUncaughtException(query.getSettings(), resultList);
         
-        if (resultList.getResults().size() == 0) {
+        if (resultList.getResults().isEmpty()) {
             NoResultsQueryException qe = new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
             response.addException(qe);
             throw new NoResultsException(qe);
@@ -3033,9 +3032,7 @@ public class QueryExecutorBean implements QueryExecutor {
         final SerializationType serializationType = s;
         final Class<?> queryResponseClass = responseClass;
         
-        ExecuteStreamingOutputResponse streamingResponse = new ExecuteStreamingOutputResponse(queryId, queryResponseClass, response, rq, serializationType,
-                        proxies);
-        return streamingResponse;
+        return new ExecuteStreamingOutputResponse(queryId, queryResponseClass, response, rq, serializationType, proxies);
     }
     
     /**
@@ -3316,7 +3313,7 @@ public class QueryExecutorBean implements QueryExecutor {
         QueryUncaughtExceptionHandler handler = settings.getUncaughtExceptionHandler();
         if (handler != null) {
             if (handler.getThrowable() != null) {
-                if (resultList.getResults() != null && resultList.getResults().size() > 0) {
+                if (resultList.getResults() != null && !resultList.getResults().isEmpty()) {
                     log.warn("Exception with Partial Results: resultList.getResults().size() is " + resultList.getResults().size()
                                     + ", and there was an UncaughtException:" + handler.getThrowable() + " in thread " + handler.getThread());
                 } else {
