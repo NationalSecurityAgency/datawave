@@ -18,8 +18,8 @@ public class TestLuceneToJexlQueryParser {
     @Before
     public void setUp() {
         parser = new LuceneToJexlQueryParser();
-        parser.setSkipTokenizeUnfieldedFields(Sets.newHashSet("NOTOKEN"));
-        parser.setTokenizedFields(Sets.newHashSet("TOKFIELD"));
+        parser.setSkipTokenizeUnfieldedFields(Sets.newHashSet("noToken"));
+        parser.setTokenizedFields(Sets.newHashSet("tokField"));
     }
     
     private static final String anyField = Constants.ANY_FIELD;

@@ -96,12 +96,12 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
         }
         
         if (getQueryConfigHandler().has(LuceneToJexlQueryParser.TOKENIZED_FIELDS)) {
-            tokenizedFields.addAll(getQueryConfigHandler().get(LuceneToJexlQueryParser.TOKENIZED_FIELDS));
+            getQueryConfigHandler().get(LuceneToJexlQueryParser.TOKENIZED_FIELDS).stream().forEach(s -> tokenizedFields.add(s.toUpperCase()));
         }
         
         if (getQueryConfigHandler().has(LuceneToJexlQueryParser.SKIP_TOKENIZE_UNFIELDED_FIELDS)) {
             skipTokenizeUnfieldedFields.clear();
-            skipTokenizeUnfieldedFields.addAll(getQueryConfigHandler().get(LuceneToJexlQueryParser.SKIP_TOKENIZE_UNFIELDED_FIELDS));
+            getQueryConfigHandler().get(LuceneToJexlQueryParser.SKIP_TOKENIZE_UNFIELDED_FIELDS).stream().forEach(s -> skipTokenizeUnfieldedFields.add(s.toUpperCase()));
         }
         
         if (getQueryConfigHandler().has(LuceneToJexlQueryParser.TOKENIZE_UNFIELDED_QUERIES)) {
