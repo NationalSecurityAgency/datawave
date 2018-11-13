@@ -18,6 +18,7 @@ public class TestLuceneToJexlQueryParser {
     @Before
     public void setUp() {
         parser = new LuceneToJexlQueryParser();
+        parser.setSkipTokenizeUnfieldedFields(Sets.newHashSet("NOTOKEN"));
         parser.setTokenizedFields(Sets.newHashSet("TOKFIELD"));
     }
     
@@ -212,6 +213,8 @@ public class TestLuceneToJexlQueryParser {
     public void testSkipTokenizedFields() throws ParseException {
         parser.setTokenizeUnfieldedQueries(false);
         Assert.assertEquals(Constants.ANY_FIELD + " == '5678 1234 to bird'", parseQuery("NOTOKEN:5678\\ 1234\\ to\\ bird"));
+        // test for case independence of field name
+        Assert.assertEquals(Constants.ANY_FIELD + " == '5678 1234 to bird'", parseQuery("notoken:5678\\ 1234\\ to\\ bird"));
     }
     
     @Test
