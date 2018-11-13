@@ -820,6 +820,14 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     }
     
     @Override
+    public Map<String,String> getCardinalityFields() {
+        Map<String,String> cardinalityFields = new HashMap<String,String>();
+        cardinalityFields.put("QUERY_USER", getOwner());
+        cardinalityFields.put("QUERY_LOGIC_NAME", getQueryLogicName());
+        return cardinalityFields;
+    }
+    
+    @Override
     public Schema<QueryImpl> cachedSchema() {
         return SCHEMA;
     }

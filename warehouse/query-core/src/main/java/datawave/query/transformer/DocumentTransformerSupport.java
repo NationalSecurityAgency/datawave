@@ -128,9 +128,10 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     
     protected Map<String,String> getAdditionalCardinalityValues(Key documentKey, Document document) {
         Map<String,String> additionalValues = new HashMap<>();
-        additionalValues.put("QUERY_USER", this.settings.getOwner());
-        
-        additionalValues.put("QUERY_LOGIC_NAME", this.settings.getQueryLogicName());
+        Map<String,String> queryFields = this.settings.getCardinalityFields();
+        if (queryFields != null) {
+            additionalValues.putAll(queryFields);
+        }
         
         long documentDate = document.getTimestamp();
         additionalValues.put("RESULT_DATA_AGE", Long.toString((logicCreated - documentDate) / 86400000));
