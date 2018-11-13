@@ -1,5 +1,6 @@
 package datawave.query.language.parser.jexl;
 
+import com.google.common.collect.Sets;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
@@ -17,6 +18,7 @@ public class TestLuceneToJexlQueryParser {
     @Before
     public void setUp() {
         parser = new LuceneToJexlQueryParser();
+        parser.setTokenizedFields(Sets.newHashSet("TOKFIELD"));
     }
     
     private static final String anyField = Constants.ANY_FIELD;
@@ -248,8 +250,12 @@ public class TestLuceneToJexlQueryParser {
     @Test
     public void testPhrases() throws ParseException {
         Assert.assertEquals("content:phrase(termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("\"quick brown fox\""));
-        Assert.assertEquals("content:phrase(FIELD, termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("FIELD:\"quick brown fox\""));
-        Assert.assertEquals("FIELD == 'value' && content:phrase(termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("FIELD:value AND \"quick brown fox\""));
+        Assert.assertEquals("content:within(TOKFIELD, 3, termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("TOKFIELD:\"quick brown fox\""));
+
+        // testing case independence of "TOKFIELD"  This would return content:phrase if it were not case independent
+        Assert.assertEquals("content:within(tokfield, 3, termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("tokfield:\"quick brown fox\""));
+
+        Assert.assertEquals("TOKFIELD == 'value' && content:phrase(termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("TOKFIELD:value AND \"quick brown fox\""));
         Assert.assertEquals(anyField + " == 'quick'", parseQuery("\"quick\""));
         Assert.assertEquals("content:phrase(termOffsetMap, 'qui.ck', 'brown', 'fox')", parseQuery("\"qui\\.ck brown fox\""));
         
@@ -513,4 +519,6 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("FOO == 'bar' && BAZ =~ 'Foo/Foo\\ Foo.*'", parser.parse("FOO:bar BAZ:/Foo\\/Foo\\ Foo.*/").getOriginalQuery());
         Assert.assertEquals("FOO == 'bar' && BAZ =~ 'Foo/Foo Foo.*?'", parser.parse("FOO:bar BAZ:/Foo\\/Foo Foo.*?/").getOriginalQuery());
     }
+
+
 }

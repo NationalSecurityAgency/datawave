@@ -148,7 +148,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             String field = fieldNode.getFieldAsString();
             
             // treat these fields as unfielded and skip tokenization if enabled.
-            if (skipTokenizeUnfieldedFields.contains(field)) {
+            if (skipTokenizeUnfieldedFields.contains(field.toUpperCase())) {
                 fieldNode.setField("");
                 
                 if (logger.isDebugEnabled()) {
@@ -158,7 +158,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                 return fieldNode;
             }
             
-            if ((tokenizedFields.contains(field) || (unfieldedTokenized && field.isEmpty()))) {
+            if ((tokenizedFields.contains(field.toUpperCase()) || (unfieldedTokenized && field.isEmpty()))) {
                 node = tokenizeNode(node, text, field);
             }
             
