@@ -77,8 +77,8 @@ public class DefaultDatawaveEdgeDictionaryImplTest {
         Assert.assertEquals("data to be inserted contains as many rows as keys", edgeMetadataRows.keySet().size(), EDGE_KEYS.size());
         DefaultEdgeDictionary dictionary = (DefaultEdgeDictionary) transformResultsMethod.invoke(impl, edgeMetadataRows);
         Assert.assertEquals("Dictionary should now have some entries", dictionary.getTotalResults(), EDGE_KEYS.size());
-        Assert.assertTrue("METADATA not in list.  returned list: " + dictionary.getMetadataList().toString() + " expected: " + METADATA, dictionary
-                        .getMetadataList().containsAll(METADATA));
+        Assert.assertTrue("METADATA not in list.  returned list: " + dictionary.getMetadataList() + " expected: " + METADATA, dictionary.getMetadataList()
+                        .containsAll(METADATA));
     }
     
     @Test

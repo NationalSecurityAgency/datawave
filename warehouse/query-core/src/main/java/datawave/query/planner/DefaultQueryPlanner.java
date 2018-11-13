@@ -903,15 +903,15 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 if (log.isTraceEnabled()) {
                     try {
                         log.trace("current size of fields" + metadataHelper.getAllFields(config.getDatatypeFilter()));
-                        log.trace("all fields: " + metadataHelper.getAllFields(config.getDatatypeFilter()).toString());
+                        log.trace("all fields: " + metadataHelper.getAllFields(config.getDatatypeFilter()));
                     } catch (TableNotFoundException e) {
                         log.error("table not found when reading metadata", e);
                     }
                     log.trace("QueryModel:" + (null == queryModel ? "null" : queryModel));
-                    log.trace("metadataHelper " + metadataHelper.toString());
+                    log.trace("metadataHelper " + metadataHelper);
                 }
                 log.trace("QueryModel:" + (null == queryModel ? "null" : queryModel));
-                log.trace("metadataHelper " + metadataHelper.toString());
+                log.trace("metadataHelper " + metadataHelper);
                 
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FIELDS_NOT_IN_DATA_DICTIONARY, MessageFormat.format(
                                 "Datatype Filter: {0}, Missing Fields: {1}, Auths: {2}", datatypeFilterSet, nonexistentFields, config.getAuthorizations()));
@@ -1257,7 +1257,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     }
                     builder.append(dataType);
                 }
-                log.trace("Datatypes: " + builder.toString());
+                log.trace("Datatypes: " + builder);
                 builder.delete(0, builder.length());
                 
                 for (String field : allFields) {
@@ -1266,7 +1266,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     }
                     builder.append(field);
                 }
-                log.trace("allFields: " + builder.toString());
+                log.trace("allFields: " + builder);
             }
         } catch (TableNotFoundException e) {
             stopwatch.stop();

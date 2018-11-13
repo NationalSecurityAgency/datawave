@@ -4,6 +4,6 @@ import datawave.webservice.query.factory.Persister;
 
 public interface NeedQueryPersister {
     
-    public void setPersister(Persister persister);
+    void setPersister(Persister persister);
     
 }

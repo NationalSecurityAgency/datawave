@@ -93,7 +93,7 @@ public class QueryStopwatch {
             final String paddedCount = new StringBuilder(INDENT).append(StringUtils.leftPad(countStr, length, "0")).append(") ").toString();
             
             // Stopwatch.toString() will give us appropriate units for the timing
-            sb.append(paddedCount).append(description).append(": ").append(sw.toString());
+            sb.append(paddedCount).append(description).append(": ").append(sw);
             lines.add(sb.toString());
             
             totalDurationMillis += sw.elapsed(TimeUnit.MILLISECONDS);

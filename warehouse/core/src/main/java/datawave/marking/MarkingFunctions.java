@@ -123,7 +123,7 @@ public interface MarkingFunctions {
         }
     }
     
-    public static class Encoding {
+    class Encoding {
         static private Logger log = LoggerFactory.getLogger(Encoding.class);
         
         /**

@@ -106,7 +106,7 @@ public class AtomKeyValueParser {
             long time = (Long.MAX_VALUE - diff);
             atom.setUpdated(new Date(time));
         } else {
-            throw new IllegalArgumentException("Atom entry is missing row parts: " + key.toString());
+            throw new IllegalArgumentException("Atom entry is missing row parts: " + key);
         }
         atom.setId(AtomKeyValueParser.encodeId(key.getColumnFamily().toString()));
         String colf = key.getColumnFamily().toString();
@@ -115,7 +115,7 @@ public class AtomKeyValueParser {
             atom.setValue(colf.substring(0, splitPoint));
             atom.setUuid(colf.substring(splitPoint + 1));
         } else {
-            throw new IllegalArgumentException("Atom entry is missing column qualifier parts: " + key.toString());
+            throw new IllegalArgumentException("Atom entry is missing column qualifier parts: " + key);
         }
         atom.setColumnVisibility(key.getColumnQualifier().toString());
         

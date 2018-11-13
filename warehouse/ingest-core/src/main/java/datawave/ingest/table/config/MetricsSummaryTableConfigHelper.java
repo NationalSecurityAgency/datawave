@@ -46,9 +46,9 @@ public class MetricsSummaryTableConfigHelper extends AbstractTableConfigHelper {
             final StringBuilder propName = new StringBuilder(String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scope.name(), "sum"));
             setPropertyIfNecessary(mTableName, propName.toString(), "19,org.apache.accumulo.core.iterators.user.SummingCombiner", tops, mLog);
             propName.append(".opt.");
-            setPropertyIfNecessary(mTableName, propName.toString() + "all", "true", tops, mLog);
-            setPropertyIfNecessary(mTableName, propName.toString() + "lossy", "FALSE", tops, mLog);
-            setPropertyIfNecessary(mTableName, propName.toString() + "type", "STRING", tops, mLog);
+            setPropertyIfNecessary(mTableName, propName + "all", "true", tops, mLog);
+            setPropertyIfNecessary(mTableName, propName + "lossy", "FALSE", tops, mLog);
+            setPropertyIfNecessary(mTableName, propName + "type", "STRING", tops, mLog);
         }
         
         // enable bloom filters if necessary.

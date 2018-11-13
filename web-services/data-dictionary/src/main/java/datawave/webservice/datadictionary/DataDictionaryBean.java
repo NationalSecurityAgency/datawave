@@ -111,7 +111,7 @@ public class DataDictionaryBean {
             sid = cp.getShortName();
             cbAuths.addAll(cp.getAuthorizations());
         }
-        log.trace(sid + " has authorizations " + cbAuths.toString());
+        log.trace(sid + " has authorizations " + cbAuths);
         
         return AuthorizationsUtil.buildAuthorizations(cbAuths);
     }

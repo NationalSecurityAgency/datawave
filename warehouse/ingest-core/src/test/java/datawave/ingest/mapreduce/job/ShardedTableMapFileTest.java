@@ -67,7 +67,7 @@ public class ShardedTableMapFileTest {
         splits.put(new Text("zEndRow"), "location2_1234");
         
         Path file = createSplitsFile(splits, conf, 1);
-        conf.set(ShardedTableMapFile.SHARDED_MAP_FILE_PATHS_RAW, TABLE_NAME + "=" + file.toString());
+        conf.set(ShardedTableMapFile.SHARDED_MAP_FILE_PATHS_RAW, TABLE_NAME + "=" + file);
         ShardedTableMapFile.setupFile(conf);
         TreeMap<Text,String> result = ShardedTableMapFile.getShardIdToLocations(conf, TABLE_NAME);
         Assert.assertEquals("location2_1234", result.get(new Text("zEndRow")).toString());

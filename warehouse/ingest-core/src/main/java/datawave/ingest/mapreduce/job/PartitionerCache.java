@@ -210,7 +210,7 @@ public class PartitionerCache {
     }
     
     private void addToCache(Text identifier, Partitioner<BulkIngestKey,Value> partitioner) {
-        log.info("Partitioner registered for " + identifier.toString() + " : " + partitioner.getClass().getName());
+        log.info("Partitioner registered for " + identifier + " : " + partitioner.getClass().getName());
         configuredPartitionerCache.put(new Text(identifier), partitioner);
     }
     

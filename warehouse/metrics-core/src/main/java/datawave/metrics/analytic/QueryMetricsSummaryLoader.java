@@ -206,7 +206,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
                     }
                     
                 } else {
-                    log.error("Invalid key/value pair in column qualifier. " + cq.toString());
+                    log.error("Invalid key/value pair in column qualifier. " + cq);
                     return;
                 }
             }

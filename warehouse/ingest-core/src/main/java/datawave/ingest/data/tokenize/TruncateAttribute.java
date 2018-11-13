@@ -3,11 +3,11 @@ package datawave.ingest.data.tokenize;
 import org.apache.lucene.util.Attribute;
 
 public interface TruncateAttribute extends Attribute {
-    public boolean isTruncated();
+    boolean isTruncated();
     
-    public int getOriginalLength();
+    int getOriginalLength();
     
-    public void setTruncated(boolean truncated);
+    void setTruncated(boolean truncated);
     
-    public void setOriginalLength(int length);
+    void setOriginalLength(int length);
 }

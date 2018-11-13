@@ -18,28 +18,28 @@ public interface ContextWriter<OK,OV> {
      * 
      * @param conf
      */
-    public void setup(Configuration conf, boolean outputTableCounters) throws IOException, InterruptedException;
+    void setup(Configuration conf, boolean outputTableCounters) throws IOException, InterruptedException;
     
     /**
      * Write the key, value to the cache.
      */
-    public void write(BulkIngestKey key, Value value, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException;
+    void write(BulkIngestKey key, Value value, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException;
     
     /**
      * Write the keys, values to the cache.
      */
-    public void write(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException;
+    void write(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException;
     
     /**
      * Flush the cache from the current thread to the context. This method is expected to be called periodically. If a thread has used the write methods, then
      * this method must be called before the thread terminates.
      */
-    public void commit(TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException;
+    void commit(TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException;
     
     /**
      * Rollback the context. This method will rollback to the last time this context was flushed in this thread.
      */
-    public void rollback() throws IOException, InterruptedException;
+    void rollback() throws IOException, InterruptedException;
     
     /**
      * Clean up the context writer. Default implementation executes the flush method.
@@ -48,5 +48,5 @@ public interface ContextWriter<OK,OV> {
      * @throws IOException
      * @throws InterruptedException
      */
-    public void cleanup(TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException;
+    void cleanup(TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException;
 }

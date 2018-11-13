@@ -99,7 +99,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
                 config.setDatatypeFilter(typeFilter);
                 
                 if (log.isDebugEnabled()) {
-                    log.debug("Type Filter: " + typeFilter.toString());
+                    log.debug("Type Filter: " + typeFilter);
                 }
             }
         }

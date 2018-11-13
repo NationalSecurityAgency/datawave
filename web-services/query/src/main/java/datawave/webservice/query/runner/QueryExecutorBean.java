@@ -518,7 +518,7 @@ public class QueryExecutorBean implements QueryExecutor {
             TInfo traceInfo = null;
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, false);
             if (shouldTraceQuery) {
-                Span span = Trace.on("query:" + q.getId().toString());
+                Span span = Trace.on("query:" + q.getId());
                 log.debug("Tracing query " + q.getId() + " [" + qp.getQuery() + "] on trace ID " + Long.toHexString(span.traceId()));
                 for (Entry<String,List<String>> param : queryParameters.entrySet()) {
                     span.data(param.getKey(), param.getValue().get(0));
@@ -656,7 +656,7 @@ public class QueryExecutorBean implements QueryExecutor {
             TInfo traceInfo = null;
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, qp.isTrace());
             if (shouldTraceQuery) {
-                Span span = Trace.on("query:" + q.getId().toString());
+                Span span = Trace.on("query:" + q.getId());
                 log.debug("Tracing query " + q.getId() + " [" + qp.getQuery() + "] on trace ID " + Long.toHexString(span.traceId()));
                 for (Entry<String,List<String>> param : queryParameters.entrySet()) {
                     span.data(param.getKey(), param.getValue().get(0));
@@ -727,7 +727,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 if (rq != null) {
                     rq.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
                 }
-                log.info("Query " + q.getId().toString() + " canceled on request");
+                log.info("Query " + q.getId() + " canceled on request");
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_CANCELED, t);
                 response.addException(qe.getBottomQueryException());
                 int statusCode = qe.getBottomQueryException().getStatusCode();
@@ -2567,7 +2567,7 @@ public class QueryExecutorBean implements QueryExecutor {
             userid = dp.getShortName();
             cbAuths.addAll(dp.getAuthorizations());
         }
-        log.trace(userid + " has authorizations " + cbAuths.toString());
+        log.trace(userid + " has authorizations " + cbAuths);
         
         Query q = runningQuery.getSettings();
         

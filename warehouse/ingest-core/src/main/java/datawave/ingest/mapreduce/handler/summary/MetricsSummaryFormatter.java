@@ -87,9 +87,9 @@ public class MetricsSummaryFormatter {
             for (StringBuilder currRow : builders) {
                 
                 if (log.isTraceEnabled()) {
-                    log.trace("Adding value: [" + fieldValue + "] to [" + currRow.toString() + "]");
+                    log.trace("Adding value: [" + fieldValue + "] to [" + currRow + "]");
                 }
-                newValues.add(new StringBuilder(DEFAULT_CAPACITY).append(currRow.toString()).append(!isFirstToken ? SEPARATOR : "")
+                newValues.add(new StringBuilder(DEFAULT_CAPACITY).append(currRow).append(!isFirstToken ? SEPARATOR : "")
                                 .append(fieldValue.replaceAll("\0", "_")));
             }
         }
@@ -102,7 +102,7 @@ public class MetricsSummaryFormatter {
         if (fieldValues.length != 0) {
             String fieldValue = ((NormalizedContentInterface) fieldValues[0]).getEventFieldValue();
             if (log.isTraceEnabled()) {
-                log.trace("Adding formattedValue: [" + fieldValue + "] to [" + formattedValue.toString() + "]");
+                log.trace("Adding formattedValue: [" + fieldValue + "] to [" + formattedValue + "]");
             }
             formattedValue.append(fieldValue.replaceAll("\0", "_"));
         }

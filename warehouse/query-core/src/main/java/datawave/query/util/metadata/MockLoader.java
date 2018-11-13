@@ -78,7 +78,7 @@ public class MockLoader extends CacheLoader<LoaderKey,InMemoryInstance> {
         @Override
         public InMemoryInstance call() throws Exception {
             
-            InMemoryInstance instance = new InMemoryInstance(UUID.randomUUID().toString() + key.table);
+            InMemoryInstance instance = new InMemoryInstance(UUID.randomUUID() + key.table);
             Authorizations auths = key.connector.securityOperations().getUserAuthorizations(key.user);
             
             if (log.isTraceEnabled()) {

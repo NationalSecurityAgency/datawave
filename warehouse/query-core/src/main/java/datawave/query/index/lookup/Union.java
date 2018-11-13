@@ -57,7 +57,7 @@ public class Union implements IndexStream {
             childrenCount++;
             if (log.isTraceEnabled()) {
                 log.trace("Union of " + stream.currentNode() + " " + stream.hasNext() + " " + JexlStringBuildingVisitor.buildQuery(stream.currentNode()));
-                log.trace("Union of " + stream.toString() + " " + stream.context());
+                log.trace("Union of " + stream + " " + stream.context());
             }
             
             if (StreamContext.NO_OP == stream.context())

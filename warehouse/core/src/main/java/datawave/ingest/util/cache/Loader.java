@@ -97,7 +97,7 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
             }
         } else {
             if (log.isTraceEnabled())
-                log.trace("Cache already contains " + child.toString());
+                log.trace("Cache already contains " + child);
         }
         return this;
     }

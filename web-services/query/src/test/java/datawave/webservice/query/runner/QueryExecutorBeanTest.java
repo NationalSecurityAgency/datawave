@@ -657,7 +657,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expectLastCall();
         metric.setQueryType(RunningQuery.class.getSimpleName());
         metric.setLifecycle(Lifecycle.DEFINED);
-        System.out.println(metric.toString());
+        System.out.println(metric);
         
         Set<Prediction> predictions = new HashSet<>();
         predictions.add(new Prediction("source", 1));

@@ -196,7 +196,7 @@ public class ModificationBean {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             con = connectionFactory.getConnection(modificationConfiguration.getPoolName(), priority, trackingMap);
             service.setQueryService(queryService);
-            log.info("Processing modification request from user=" + user + ": \n" + request.toString());
+            log.info("Processing modification request from user=" + user + ": \n" + request);
             service.process(con, request, cache.getCachedMutableFieldList(), cbAuths, user);
             return response;
         } catch (DatawaveWebApplicationException e) {

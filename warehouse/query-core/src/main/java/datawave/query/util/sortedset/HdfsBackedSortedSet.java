@@ -89,7 +89,7 @@ public class HdfsBackedSortedSet<E extends Serializable> extends BufferedFileBac
         
         @Override
         public String toString() {
-            return uniqueDir.toString() + " (fileCount=" + fileCount + ')';
+            return uniqueDir + " (fileCount=" + fileCount + ')';
         }
         
     }

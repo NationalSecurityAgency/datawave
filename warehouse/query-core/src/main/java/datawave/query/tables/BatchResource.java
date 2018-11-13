@@ -78,7 +78,7 @@ public class BatchResource extends RunningResource {
         
         if (null != baseScanner) {
             if (log.isDebugEnabled()) {
-                log.debug("Closing " + toString());
+                log.debug("Closing " + this);
                 
             }
             baseScanner.close();

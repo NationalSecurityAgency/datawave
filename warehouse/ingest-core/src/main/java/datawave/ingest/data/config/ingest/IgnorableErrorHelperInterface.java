@@ -10,7 +10,7 @@ import org.apache.hadoop.conf.Configuration;
  * 
  */
 public interface IgnorableErrorHelperInterface {
-    public void setup(Configuration conf);
+    void setup(Configuration conf);
     
-    public boolean isIgnorableFatalError(RawRecordContainer e, String err);
+    boolean isIgnorableFatalError(RawRecordContainer e, String err);
 }

@@ -17,5 +17,5 @@ public interface SourceFactory<K extends WritableComparable<?>,V extends Writabl
      * 
      * @return the deep copy
      */
-    public SortedKeyValueIterator<K,V> getSourceDeepCopy();
+    SortedKeyValueIterator<K,V> getSourceDeepCopy();
 }

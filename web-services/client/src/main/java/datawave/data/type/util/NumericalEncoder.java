@@ -70,7 +70,7 @@ public class NumericalEncoder {
             
             return encodedExponent + "E" + mantissa;
         } catch (Exception ex) {
-            throw new NumberFormatException("Error formatting input: " + input + " . Error: " + ex.toString());
+            throw new NumberFormatException("Error formatting input: " + input + " . Error: " + ex);
         }
     }
     
@@ -109,7 +109,7 @@ public class NumericalEncoder {
                 }
                 
             } catch (Exception ex) {
-                throw new NumberFormatException("Error decoding output: " + input + " . Error: " + ex.toString());
+                throw new NumberFormatException("Error decoding output: " + input + " . Error: " + ex);
             }
         }
         return output;

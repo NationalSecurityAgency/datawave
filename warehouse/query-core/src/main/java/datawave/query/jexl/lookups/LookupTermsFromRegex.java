@@ -242,7 +242,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                     Key topKey = entry.getKey();
                     
                     if (log.isTraceEnabled()) {
-                        log.trace("Foward Index entry: " + entry.getKey().toString());
+                        log.trace("Foward Index entry: " + entry.getKey());
                     }
                     
                     // Get the column qualifier from the key. It contains the datatype and normalizer class
