@@ -1,5 +1,6 @@
 package datawave.microservice.cached;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,8 @@ import org.springframework.boot.autoconfigure.cache.CacheType;
 import org.springframework.boot.test.autoconfigure.core.AutoConfigureCache;
 import org.springframework.boot.test.context.SpringBootTestContextBootstrapper;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
@@ -36,6 +39,13 @@ public class CachingConfigurerTest {
     @Autowired
     private TestCache testCache;
     
+    @Before
+    public void setup() {
+        TestCache.putError = false;
+        TestCache.evictError = false;
+        TestCache.clearError = false;
+    }
+    
     @Test
     public void testCacheGetError() {
         // Cache some stuff...
@@ -50,6 +60,42 @@ public class CachingConfigurerTest {
             assertEquals("Simulated error for testing.", e.getMessage());
         }
         assertTrue("Cache should have been cleared after a get error, but it wasn't.", testCache.getNativeCache().isEmpty());
+    }
+    
+    @Test
+    public void testCachePutError() {
+        TestCache.putError = true;
+        
+        Object response = testService.get("putFailed");
+        assertEquals("putFailed", response);
+        
+        assertNull("Object should not have been cached", testCache.get("putFailed"));
+    }
+    
+    @Test
+    public void testCacheEvictError() {
+        TestCache.evictError = true;
+        
+        testService.get("foo");
+        assertEquals("foo", testCache.get("foo").get());
+        
+        testService.evict("foo");
+        
+        // Make sure it is still cached, but we got here if the evict call didn't fully fail
+        assertEquals("foo", testCache.get("foo").get());
+    }
+    
+    @Test
+    public void testCacheClearError() {
+        TestCache.clearError = true;
+        
+        testService.get("foo");
+        assertEquals("foo", testCache.get("foo").get());
+        
+        testService.clear();
+        
+        // Make sure it is still cached, but we got here if the evict call didn't fully fail
+        assertEquals("foo", testCache.get("foo").get());
     }
     
     @EnableCaching
@@ -73,17 +119,32 @@ public class CachingConfigurerTest {
         }
     }
     
+    @CacheConfig(cacheNames = "testCache")
     public static class TestService {
-        @Cacheable("testCache")
+        @Cacheable
         public Object get(Object key) {
             if (key == ERROR_KEY) {
                 throw new RuntimeException("Simulated error for testing.");
             }
             return String.valueOf(key);
         }
+        
+        @CacheEvict
+        public void evict(Object key) {
+            // do nothing
+        }
+        
+        @CacheEvict(allEntries = true)
+        public void clear() {
+            // do nothing
+        }
     }
     
     public static class TestCache extends ConcurrentMapCache {
+        public static boolean putError;
+        public static boolean evictError;
+        public static boolean clearError;
+        
         public TestCache(String name) {
             super(name);
         }
@@ -94,6 +155,34 @@ public class CachingConfigurerTest {
                 throw new RuntimeException("This should cause the cache to be cleared!");
             }
             return super.get(key);
+        }
+        
+        @Override
+        public void put(Object key, Object value) {
+            if (putError)
+                throw new RuntimeException("Configured error for put on " + key + " -> " + value);
+            super.put(key, value);
+        }
+        
+        @Override
+        public ValueWrapper putIfAbsent(Object key, Object value) {
+            if (putError)
+                throw new RuntimeException("Configured error for put on " + key + " -> " + value);
+            return super.putIfAbsent(key, value);
+        }
+        
+        @Override
+        public void evict(Object key) {
+            if (evictError)
+                throw new RuntimeException("Configured error for evict on " + key);
+            super.evict(key);
+        }
+        
+        @Override
+        public void clear() {
+            if (clearError)
+                throw new RuntimeException("Configured error for clear");
+            super.clear();
         }
     }
 }

@@ -8,7 +8,7 @@
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>hazelcast-common</artifactId>
-    <version>1.3-SNAPSHOT</version>
+    <version>1.3</version>
     <dependencies>
         <dependency>
             <groupId>com.hazelcast</groupId>
