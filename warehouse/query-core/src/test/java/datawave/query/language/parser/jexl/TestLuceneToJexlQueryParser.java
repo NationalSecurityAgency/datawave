@@ -195,6 +195,42 @@ public class TestLuceneToJexlQueryParser {
     }
     
     @Test
+    public void testTokenizedUnfieldedTerm() throws ParseException {
+        parser.setTokenizeUnfieldedQueries(true);
+        // verify that new slop is calculated properly.
+        parser.setUseSlopForTokenizedTerms(false);
+        Assert.assertEquals("(_ANYFIELD_ == 'wi-fi' || content:phrase(termOffsetMap, 'wi', 'fi'))", parseQuery("wi-fi"));
+        parser.setUseSlopForTokenizedTerms(true);
+        Assert.assertEquals("(_ANYFIELD_ == 'wi-fi' || content:within(2, termOffsetMap, 'wi', 'fi'))", parseQuery("wi-fi"));
+    }
+    
+    @Test
+    public void testTokenizedUnfieldedSlopPhrase() throws ParseException {
+        parser.setTokenizeUnfieldedQueries(true);
+        // verify that new slop is calculated properly.
+        Assert.assertEquals("content:within(3, termOffsetMap, 'portable', 'document')", parseQuery("\"portable document\"~3"));
+        Assert.assertEquals(
+                        "(content:within(5, termOffsetMap, 'portable', 'wi-fi', 'access-point') || content:within(7, termOffsetMap, 'portable', 'wi', 'fi', 'access', 'point'))",
+                        parseQuery("\"portable wi-fi access-point\"~5"));
+    }
+    
+    @Test
+    public void testTokenizedUnfieldedPhrase() throws ParseException {
+        parser.setTokenizeUnfieldedQueries(true);
+        // verifies that the slop setting has no impact on things that come in as phrases without slop.
+        parser.setUseSlopForTokenizedTerms(false);
+        Assert.assertEquals("content:phrase(termOffsetMap, 'portable', 'document')", parseQuery("\"portable document\""));
+        Assert.assertEquals(
+                        "(content:phrase(termOffsetMap, 'portable', 'wi-fi', 'access-point') || content:phrase(termOffsetMap, 'portable', 'wi', 'fi', 'access', 'point'))",
+                        parseQuery("\"portable wi-fi access-point\""));
+        parser.setUseSlopForTokenizedTerms(true);
+        Assert.assertEquals("content:phrase(termOffsetMap, 'portable', 'document')", parseQuery("\"portable document\""));
+        Assert.assertEquals(
+                        "(content:phrase(termOffsetMap, 'portable', 'wi-fi', 'access-point') || content:phrase(termOffsetMap, 'portable', 'wi', 'fi', 'access', 'point'))",
+                        parseQuery("\"portable wi-fi access-point\""));
+    }
+    
+    @Test
     public void testTokenizedFieldUnfieldedEnabledNoAnalyzer() throws ParseException {
         parser.setTokenizeUnfieldedQueries(true);
         parser.setAnalyzer(null);
@@ -225,7 +261,7 @@ public class TestLuceneToJexlQueryParser {
     
     @Test
     public void testTokenizedPhraseFail() throws ParseException {
-        Assert.assertEquals("(TOKFIELD == 'joh.nny chicken' || content:within(TOKFIELD, 2, termOffsetMap, 'joh.nny', 'chicken'))",
+        Assert.assertEquals("(TOKFIELD == 'joh.nny chicken' || content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chicken'))",
                         parseQuery("TOKFIELD:\"joh.nny\\ chicken\""));
     }
     
@@ -253,10 +289,10 @@ public class TestLuceneToJexlQueryParser {
     @Test
     public void testPhrases() throws ParseException {
         Assert.assertEquals("content:phrase(termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("\"quick brown fox\""));
-        Assert.assertEquals("content:within(TOKFIELD, 3, termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("TOKFIELD:\"quick brown fox\""));
+        Assert.assertEquals("content:phrase(TOKFIELD, termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("TOKFIELD:\"quick brown fox\""));
         
         // testing case independence of "TOKFIELD" This would return content:phrase if it were not case independent
-        Assert.assertEquals("content:within(tokfield, 3, termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("tokfield:\"quick brown fox\""));
+        Assert.assertEquals("content:phrase(tokfield, termOffsetMap, 'quick', 'brown', 'fox')", parseQuery("tokfield:\"quick brown fox\""));
         
         Assert.assertEquals("TOKFIELD == 'value' && content:phrase(termOffsetMap, 'quick', 'brown', 'fox')",
                         parseQuery("TOKFIELD:value AND \"quick brown fox\""));
