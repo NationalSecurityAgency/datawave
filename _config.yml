@@ -12,10 +12,10 @@ baseurl: /datawave
 default_branch: master
 
 # latest minor release
-latest_minor_release: 2.2
+latest_minor_release: 2.3
 
 # latest release
-latest_release: 2.2.12
+latest_release: 2.3.3
 
 # max news posts to display on the home page
 num_home_posts: 8
@@ -57,20 +57,31 @@ kramdown:
 ##########################################################
 # Docs collection definitions...
 
-# The "docs-latest" collection renders _docs-latest folder contents to the configured permalink path (e.g., _site/docs/2.2/*).
+# The "docs-latest" collection renders _docs-latest folder contents to the configured permalink path
 
-# As for how we manage doc updates for a new release, the most straightforward approach is probably just to copy the
-# existing _docs-latest to a backup folder, e.g., _docs-2-1, make any necessary updates to _docs-latest content for
-# the new release, and then reconfigure below as needed.
+# As for how we manage doc updates for a new release, the most straightforward approach is...
+
+# (1) Copy the existing _docs-latest to a backup folder for the previous version, e.g., cp -a _docs-latest _docs-2-1
+# (2) Delete the old "/docs/latest/" redirects, e.g., cd _docs-2-1/ && rm -f index.md data-model.md quickstart.md
+# (3) Update any redirect files from #2 in _docs-latest for new version
+# (4) Make any necessary updates to _docs-latest files
+# (5) Copy/create new _data/sidebars/docs-*-sidebar.yml for the new version
+# (6) Update _data/topnav.yml for the new version
+# (7) Update "collections" yaml below as necessary
+# (8) Update "defaults" yaml below as necessary
 
 collections:
   docs-2-1:
     output: true
     permalink: "/docs/2.1/:path"
 
-  docs-latest:
+  docs-2-2:
     output: true
     permalink: "/docs/2.2/:path"
+
+  docs-latest:
+    output: true
+    permalink: "/docs/2.3/:path"
 
 ##########################################################
 # Frontmatter defaults
@@ -138,11 +149,23 @@ defaults:
   -
     scope:
       path: ""
+      type: "docs-2-2"
+    values:
+      layout: "docs"
+      title_prefix: "DataWave 2.2 Docs - "
+      sidebar: docs-2-2-sidebar
+      show_summary: true
+      skip_title_for_h1: false
+      toc: true
+      topnav: topnav
+  -
+    scope:
+      path: ""
       type: "docs-latest"
     values:
       layout: "docs"
       title_prefix: "DataWave Docs - "
-      sidebar: docs-2-2-sidebar
+      sidebar: docs-2-3-sidebar
       show_summary: true
       skip_title_for_h1: false
       toc: true
