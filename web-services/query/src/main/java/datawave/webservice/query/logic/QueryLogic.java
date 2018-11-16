@@ -1,6 +1,7 @@
 package datawave.webservice.query.logic;
 
 import java.security.Principal;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -10,9 +11,14 @@ import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
+import datawave.webservice.result.BaseResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -64,6 +70,16 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @return Transformer that will convert Key,Value to a Result object
      */
     public QueryLogicTransformer getTransformer(Query settings);
+    
+    default String getResponseClass(Query query) throws QueryException {
+        try {
+            QueryLogicTransformer t = this.getTransformer(query);
+            BaseResponse refResponse = t.createResponse(new ResultsPage());
+            return refResponse.getClass().getCanonicalName();
+        } catch (RuntimeException e) {
+            throw new QueryException(DatawaveErrorCode.QUERY_TRANSFORM_ERROR);
+        }
+    }
     
     /**
      * Allows for the customization of handling query results, e.g. allows for aggregation of query results before returning to the client.

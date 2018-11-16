@@ -327,15 +327,12 @@ public class QueryExecutorBean implements QueryExecutor {
                     requiredRolesList.addAll(l.getRoleManager().getRequiredRoles());
                     d.setRequiredRoles(requiredRolesList);
                 }
-                q.setQueryLogicName(l.getLogicName());
+                
                 try {
-                    QueryLogicTransformer t = l.getTransformer(q);
-                    BaseResponse refResponse = t.createResponse(emptyList);
-                    d.setResponseClass(refResponse.getClass().getCanonicalName());
-                } catch (RuntimeException e) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.QUERY_TRANSFORM_ERROR, e);
-                    log.error(qe);
-                    response.addException(qe);
+                    d.setResponseClass(l.getResponseClass(q));
+                } catch (QueryException e) {
+                    log.error(e);
+                    response.addException(e);
                     d.setResponseClass("unknown");
                 }
                 
