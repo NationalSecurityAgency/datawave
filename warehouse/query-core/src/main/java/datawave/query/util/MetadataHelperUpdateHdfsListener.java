@@ -15,7 +15,7 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
 
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Uses the SharedCacheCoordinator to register listeners so that when an event is fired (for example, when a new model is loaded) the TypeMetadata map will be

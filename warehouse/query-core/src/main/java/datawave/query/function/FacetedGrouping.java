@@ -1,7 +1,11 @@
 package datawave.query.function;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Cardinality;

@@ -2,15 +2,19 @@ package datawave.metrics.util;
 
 import datawave.ingest.table.config.AbstractTableConfigHelper;
 import datawave.metrics.config.MetricsConfig;
-import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.ClientConfiguration;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
-import org.apache.accumulo.core.iterators.*;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.LinkedList;
 
 public class Connections {
     private static final Logger log = Logger.getLogger(Connections.class);

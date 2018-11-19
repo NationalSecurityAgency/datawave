@@ -1,7 +1,14 @@
 package datawave.metrics.analytic;
 
-import java.io.*;
-import java.util.*;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.VLongWritable;

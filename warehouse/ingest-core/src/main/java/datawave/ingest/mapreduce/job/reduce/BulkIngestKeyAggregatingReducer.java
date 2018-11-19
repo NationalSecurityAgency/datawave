@@ -20,9 +20,10 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.hadoop.mapreduce.*;
 
 import com.google.common.collect.Iterators;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.log4j.Logger;
 
 @SuppressWarnings("deprecation")
