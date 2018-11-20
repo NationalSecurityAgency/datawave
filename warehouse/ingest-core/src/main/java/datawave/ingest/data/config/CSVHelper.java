@@ -2,7 +2,11 @@ package datawave.ingest.data.config;
 
 import org.apache.hadoop.conf.Configuration;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Helper for CSV data

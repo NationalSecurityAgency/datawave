@@ -2,7 +2,8 @@ package datawave.query.tld;
 
 import com.google.common.base.Predicate;
 import datawave.query.iterator.EventDataScanNestedIterator;
-import org.apache.accumulo.core.data.*;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 /**

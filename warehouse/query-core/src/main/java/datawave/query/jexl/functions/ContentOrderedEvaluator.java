@@ -3,7 +3,12 @@ package datawave.query.jexl.functions;
 import datawave.ingest.protobuf.TermWeightPosition;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * <p>

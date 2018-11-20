@@ -6,7 +6,8 @@ import org.springframework.cache.interceptor.SimpleKey;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * This is a key generator that can be used with a Cacheable spring annotation to create a key out of a methods parameters. This implementation will copy all

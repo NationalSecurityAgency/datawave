@@ -1,6 +1,6 @@
 package datawave.data.type.util;
 
-import com.google.common.base.*;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import org.apache.commons.lang.StringUtils;
 

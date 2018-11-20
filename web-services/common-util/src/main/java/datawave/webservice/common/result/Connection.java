@@ -12,7 +12,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import com.google.common.base.Objects;
-import org.apache.commons.lang.builder.*;
+import org.apache.commons.lang.builder.CompareToBuilder;
 
 @XmlRootElement(name = "Connection")
 @XmlAccessorType(XmlAccessType.NONE)

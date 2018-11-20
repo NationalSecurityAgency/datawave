@@ -1,6 +1,10 @@
 package datawave.core.iterators.filter;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -11,8 +15,6 @@ import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
-
-import java.util.*;
 
 /**
  * The iterator skips entries in the global index for entries not matching one of a set of matching patterns

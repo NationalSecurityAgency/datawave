@@ -2,13 +2,14 @@ package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.util.StringUtils;
-import org.apache.accumulo.core.data.*;
+import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  * Directs each locality group to its own partition. Puts anything else in another bin (assumes that every column family is named and evenly distributed)

@@ -1,7 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
-import org.apache.hadoop.conf.*;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.mapreduce.Job;
 
 // See DelegatingPartitioner
 // There could be multiple instances of a partitioner, for different tables.

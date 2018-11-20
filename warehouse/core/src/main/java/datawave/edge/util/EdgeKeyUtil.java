@@ -11,7 +11,11 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.hadoop.io.Text;
 
 import java.nio.charset.CharacterCodingException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Utility class for generating regular expressions to scan various formats of the edge table.

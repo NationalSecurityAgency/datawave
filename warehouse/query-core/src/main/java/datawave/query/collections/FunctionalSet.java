@@ -6,7 +6,14 @@ import datawave.query.attributes.ValueTuple;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.TreeSet;
 
 import com.google.common.base.CharMatcher;
 import datawave.data.type.Type;

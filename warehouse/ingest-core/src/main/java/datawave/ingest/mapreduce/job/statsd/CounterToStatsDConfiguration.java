@@ -3,7 +3,8 @@ package datawave.ingest.mapreduce.job.statsd;
 import com.google.common.base.Joiner;
 import datawave.util.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.log4j.Logger;
 
 import java.util.Arrays;

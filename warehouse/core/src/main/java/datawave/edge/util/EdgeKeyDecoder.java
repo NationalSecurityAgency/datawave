@@ -8,7 +8,14 @@ import org.apache.log4j.Logger;
 
 import java.nio.charset.CharacterCodingException;
 
-import static datawave.edge.util.EdgeKey.*;
+import static datawave.edge.util.EdgeKey.DATE_TYPE;
+import static datawave.edge.util.EdgeKey.EdgeColumnParts;
+import static datawave.edge.util.EdgeKey.EDGE_FORMAT;
+import static datawave.edge.util.EdgeKey.EDGE_VERSION;
+import static datawave.edge.util.EdgeKey.STATS_TYPE;
+import static datawave.edge.util.EdgeKey.COL_SEPARATOR_BYTE;
+import static datawave.edge.util.EdgeKey.COL_SUB_SEPARATOR;
+import static datawave.edge.util.EdgeKey.STATS_BYTES;
 
 /**
  * Extracted from datawave.edge.util.EdgeKey

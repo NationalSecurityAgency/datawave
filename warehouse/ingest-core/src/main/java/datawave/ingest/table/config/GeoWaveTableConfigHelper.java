@@ -8,7 +8,6 @@ import mil.nga.giat.geowave.datastore.accumulo.MergingCombiner;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.mapreduce.handler.geowave.GeoWaveDataTypeHandler;
 import datawave.ingest.metadata.GeoWaveMetadata;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -22,7 +21,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class GeoWaveTableConfigHelper implements TableConfigHelper {
     
