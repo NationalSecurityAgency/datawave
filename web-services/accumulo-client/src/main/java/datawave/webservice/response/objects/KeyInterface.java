@@ -7,12 +7,12 @@ import datawave.webservice.query.result.event.HasMarkings;
  */
 public interface KeyInterface extends HasMarkings {
     
-    public String getRow();
+    String getRow();
     
-    public String getColFam();
+    String getColFam();
     
-    public String getColQual();
+    String getColQual();
     
-    public Long getTimestamp();
+    Long getTimestamp();
     
 }

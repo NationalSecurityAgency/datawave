@@ -24,7 +24,7 @@ import com.google.common.collect.Multimap;
  */
 public interface DataTypeHandler<KEYIN> {
     
-    public static final Value NULL_VALUE = new Value(new byte[0]);
+    Value NULL_VALUE = new Value(new byte[0]);
     
     void setup(TaskAttemptContext context);
     
@@ -51,8 +51,7 @@ public interface DataTypeHandler<KEYIN> {
      * @param reporter
      * @return Map of Key,Value pairs or null if error.
      */
-    public Multimap<BulkIngestKey,Value> processBulk(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
-                    StatusReporter reporter);
+    Multimap<BulkIngestKey,Value> processBulk(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, StatusReporter reporter);
     
     /**
      * DataType specific helper object
@@ -62,15 +61,15 @@ public interface DataTypeHandler<KEYIN> {
      *            otherwise may be ignored.
      * @return helper object used in the subclass
      */
-    public IngestHelperInterface getHelper(Type datatype);
+    IngestHelperInterface getHelper(Type datatype);
     
-    public void close(TaskAttemptContext context);
+    void close(TaskAttemptContext context);
     
     /**
      * Get the metadata producer if any
      * 
      * @return The EventMetadata object
      */
-    public RawRecordMetadata getMetadata();
+    RawRecordMetadata getMetadata();
     
 }

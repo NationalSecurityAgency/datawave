@@ -57,7 +57,7 @@ public class QueryMetricHolder implements Serializable {
         if (this.queryMetric == null || this.principal == null) {
             return null;
         } else {
-            return this.principal + ":" + this.queryMetric.toString();
+            return this.principal + ":" + this.queryMetric;
         }
     }
     

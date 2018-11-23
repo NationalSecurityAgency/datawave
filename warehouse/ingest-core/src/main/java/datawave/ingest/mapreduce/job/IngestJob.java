@@ -1525,7 +1525,7 @@ public class IngestJob implements Tool {
         options.setBlocking(true);
         
         DistCp cp = new DistCp(distcpConfig, options);
-        log.info("Starting distcp from " + srcPath + " to " + destPath + " with configuration: " + options.toString());
+        log.info("Starting distcp from " + srcPath + " to " + destPath + " with configuration: " + options);
         try {
             cp.execute();
         } catch (Exception e) {
@@ -1590,7 +1590,7 @@ public class IngestJob implements Tool {
             if (!fs.exists(statsDir))
                 fs.mkdirs(statsDir);
             Path dst = new Path(statsDir, src.getName());
-            log.info("Copying file " + src.toString() + " to " + dst.toString());
+            log.info("Copying file " + src + " to " + dst);
             fs.copyFromLocalFile(false, true, src, dst);
             // If this worked, then remove the local file
             rawFS.delete(src, false);

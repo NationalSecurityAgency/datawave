@@ -138,7 +138,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                         String identifier = JexlASTHelper.getIdentifier(pos);
                         Object literal = JexlASTHelper.getLiteralValue(pos);
                         if (identifier != null && literal != null) {
-                            fields.put("POSITIVE_SELECTORS", identifier + ":" + literal.toString());
+                            fields.put("POSITIVE_SELECTORS", identifier + ":" + literal);
                         }
                     }
                     List<ASTEQNode> negativeEQNodes = JexlASTHelper.getNegativeEQNodes(jexlScript);
@@ -146,7 +146,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                         String identifier = JexlASTHelper.getIdentifier(neg);
                         Object literal = JexlASTHelper.getLiteralValue(neg);
                         if (identifier != null && literal != null) {
-                            fields.put("NEGATIVE_SELECTORS", identifier + ":" + literal.toString());
+                            fields.put("NEGATIVE_SELECTORS", identifier + ":" + literal);
                         }
                     }
                 }

@@ -60,8 +60,8 @@ public class AuthorizationsUtil {
         }
         
         if (!missingAuths.isEmpty()) {
-            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
-                            + requested + ", User: " + userAuths.toString());
+            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
+                            + ", User: " + userAuths);
         }
         return mergedAuths;
     }
@@ -121,8 +121,8 @@ public class AuthorizationsUtil {
             // @formatter:on
             
             if (!missingAuths.isEmpty()) {
-                throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
-                                + requested + ", User: " + userAuths);
+                throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
+                                + ", User: " + userAuths);
             }
         }
         return mergedAuths;
@@ -169,8 +169,8 @@ public class AuthorizationsUtil {
             String finalAuths = AuthorizationsUtil.buildAuthorizationString(Collections.singletonList(finalAuthsList));
             return finalAuths;
         } else {// missing auths.size() > 0; user requested auths they don't have
-            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
-                            + requested + ", User: " + userAuths);
+            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
+                            + ", User: " + userAuths);
         }
     }
     

@@ -116,7 +116,7 @@ public class FieldNameLookup extends IndexLookup {
                 while (iter.hasNext()) {
                     Entry<Key,Value> entry = iter.next();
                     if (log.isTraceEnabled()) {
-                        log.trace("Index entry: " + entry.getKey().toString());
+                        log.trace("Index entry: " + entry.getKey());
                     }
                     
                     entry.getKey().getRow(holder);

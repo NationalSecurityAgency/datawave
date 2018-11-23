@@ -19,7 +19,7 @@ public interface MaskedValueFilterInterface extends DocumentPermutation {
     /**
      * No-op implementation that has no effect on the targeted {@code Entry<Key,Document>} instance
      */
-    public static class NoOp implements MaskedValueFilterInterface {
+    class NoOp implements MaskedValueFilterInterface {
         
         private boolean includeGroupingContext = false;
         private boolean reducedResponse = false;

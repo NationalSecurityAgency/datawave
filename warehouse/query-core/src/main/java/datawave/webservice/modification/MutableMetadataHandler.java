@@ -755,13 +755,13 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     String oldColViz = new String(oldColumnVisibility.flatten(), "UTF-8");
                     String thisVis = new String(thisViz.flatten(), "UTF-8");
                     if (!oldColViz.equals(thisVis)) {
-                        log.trace("Skipping key that does not match with column visibility: " + e.getKey().toString());
+                        log.trace("Skipping key that does not match with column visibility: " + e.getKey());
                         continue;
                     }
                 } else {
                     Map<String,String> markings = markingFunctions.translateFromColumnVisibilityForAuths(e.getKey().getColumnVisibilityParsed(), userAuths);
                     if (null != oldFieldMarkings && !oldFieldMarkings.equals(markings)) {
-                        log.trace("Skipping key that does not match with markings: " + e.getKey().toString());
+                        log.trace("Skipping key that does not match with markings: " + e.getKey());
                         continue;
                     }
                 }

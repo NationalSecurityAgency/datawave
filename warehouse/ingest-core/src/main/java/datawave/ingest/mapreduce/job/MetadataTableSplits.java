@@ -132,7 +132,7 @@ public class MetadataTableSplits {
             do {
                 Path parentDirectory = this.splitsPath.getParent();
                 String fileName = SPLITS_CACHE_FILE + "." + count;
-                log.info("Attempting to create " + fileName + " under " + parentDirectory.toString());
+                log.info("Attempting to create " + fileName + " under " + parentDirectory);
                 tmpSplitsFile = new Path(parentDirectory, fileName);
                 count++;
             } while (!fs.createNewFile(tmpSplitsFile));
@@ -187,7 +187,7 @@ public class MetadataTableSplits {
                 log.info("updating splits file");
                 createCacheFile(fs, tmpSplitsFile);
             } else {
-                log.info("Deleting " + tmpSplitsFile.toString());
+                log.info("Deleting " + tmpSplitsFile);
                 fs.delete(tmpSplitsFile, false);
             }
         } catch (IOException | AccumuloException | AccumuloSecurityException | TableNotFoundException ex) {

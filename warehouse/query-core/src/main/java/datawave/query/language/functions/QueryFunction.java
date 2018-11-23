@@ -6,17 +6,17 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 public interface QueryFunction {
     
-    public void validate() throws IllegalArgumentException;
+    void validate() throws IllegalArgumentException;
     
-    public void initialize(List<String> parameterList, int depth, QueryNode parent) throws IllegalArgumentException;
+    void initialize(List<String> parameterList, int depth, QueryNode parent) throws IllegalArgumentException;
     
-    public String getName();
+    String getName();
     
-    public void setName(String name);
+    void setName(String name);
     
-    public List<String> getParameterList();
+    List<String> getParameterList();
     
-    public void setParameterList(List<String> parameterList);
+    void setParameterList(List<String> parameterList);
     
-    public QueryFunction duplicate();
+    QueryFunction duplicate();
 }

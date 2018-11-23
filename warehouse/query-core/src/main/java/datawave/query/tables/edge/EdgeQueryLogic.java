@@ -359,7 +359,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     protected void addIterators(QueryData qData, List<IteratorSetting> iters) {
         for (IteratorSetting iter : iters) {
-            log.debug("Adding iterator: " + iter.toString());
+            log.debug("Adding iterator: " + iter);
             addIterator(qData, iter);
         }
     }
@@ -447,7 +447,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      */
     public static IteratorSetting getDateTypeFilter(int priority, EdgeQueryConfiguration.dateType dateFilterType) {
         IteratorSetting setting = null;
-        log.debug("Creating dateType filter=" + dateFilterType.toString());
+        log.debug("Creating dateType filter=" + dateFilterType);
         setting = new IteratorSetting(priority, DateTypeFilter.class.getSimpleName() + "_" + priority, DateTypeFilter.class);
         setting.addOption(EdgeQueryConfiguration.DATE_RANGE_TYPE, dateFilterType.name());
         

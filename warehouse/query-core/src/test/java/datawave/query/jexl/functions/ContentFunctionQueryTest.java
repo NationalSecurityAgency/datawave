@@ -332,7 +332,7 @@ public class ContentFunctionQueryTest {
             List<String> fields = event.getFields().stream().filter((DefaultField field) -> expected.contains(field.getValueString()))
                             .map(DefaultField::getValueString).distinct().collect(Collectors.toList());
             
-            Assert.assertTrue("Missing values {" + expected.toString() + "} != {" + fields.toString() + "}", fields.containsAll(expected));
+            Assert.assertTrue("Missing values {" + expected + "} != {" + fields + "}", fields.containsAll(expected));
         }
     }
     

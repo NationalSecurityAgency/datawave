@@ -157,7 +157,7 @@ public class MapReduceStatePersisterTest {
                 assertTrue(nameKey.equals(entry.getKey(), PartialKey.ROW_COLFAM_COLQUAL));
                 assertTrue(nameVal.equals(entry.getValue()));
             } else {
-                fail("Unknown column, key: " + entry.getKey().toString());
+                fail("Unknown column, key: " + entry.getKey());
             }
         }
         if (!dir || !hdfs || !jt || !output || !params || !state)
@@ -388,11 +388,11 @@ public class MapReduceStatePersisterTest {
     private void dump() throws Exception {
         Scanner s = connection.createScanner(TABLE_NAME, new Authorizations(auths));
         for (Entry<Key,Value> entry : s) {
-            System.out.println(entry.getKey().toString() + " -> " + entry.getValue().toString());
+            System.out.println(entry.getKey() + " -> " + entry.getValue());
         }
         s = connection.createScanner(INDEX_TABLE_NAME, new Authorizations(auths));
         for (Entry<Key,Value> entry : s) {
-            System.out.println(entry.getKey().toString() + " -> " + entry.getValue().toString());
+            System.out.println(entry.getKey() + " -> " + entry.getValue());
         }
         
     }

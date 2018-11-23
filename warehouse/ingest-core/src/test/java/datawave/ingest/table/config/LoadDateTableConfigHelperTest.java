@@ -27,7 +27,7 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
         
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
         
-        Assert.assertEquals("Incorrect number of keys (expected 1) in " + actual.toString(), actual.size(), 1);
+        Assert.assertEquals("Incorrect number of keys (expected 1) in " + actual, actual.size(), 1);
     }
     
     @Test
@@ -39,7 +39,7 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
         
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
         
-        Assert.assertEquals("Incorrect number of keys (expected 2) in " + actual.toString(), actual.size(), 2);
+        Assert.assertEquals("Incorrect number of keys (expected 2) in " + actual, actual.size(), 2);
         
         assertKeyAndColFamilies(actual, "JAM", Sets.newHashSet(new Text("band"), new Text("es"), new Text("mies")));
     }
@@ -54,7 +54,7 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
         
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
         
-        Assert.assertEquals("Incorrect number of keys (expected 1) in " + actual.toString(), actual.size(), 1);
+        Assert.assertEquals("Incorrect number of keys (expected 1) in " + actual, actual.size(), 1);
     }
     
     @Test
@@ -75,9 +75,9 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
     }
     
     public void assertKeyAndColFamilies(Map<String,Set<Text>> actual, final String expectedKey, HashSet<Text> expectedColFamilies) {
-        Assert.assertTrue("missing expected key '" + expectedKey + "' in " + actual.toString(), actual.containsKey(expectedKey));
+        Assert.assertTrue("missing expected key '" + expectedKey + "' in " + actual, actual.containsKey(expectedKey));
         
-        Assert.assertTrue("Somethin isn't right with the " + expectedKey + ": " + actual.get(expectedKey).toString(),
+        Assert.assertTrue("Somethin isn't right with the " + expectedKey + ": " + actual.get(expectedKey),
                         actual.get(expectedKey).containsAll(expectedColFamilies));
     }
     

@@ -170,7 +170,7 @@ public class GenerateShardSplits {
         } else {
             if (addSplits) {
                 for (Text t : splits) {
-                    System.out.println(t.toString());
+                    System.out.println(t);
                 }
             }
             for (Mutation m : mutations) {

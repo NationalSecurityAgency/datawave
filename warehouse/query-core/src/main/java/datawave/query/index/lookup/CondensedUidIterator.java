@@ -148,7 +148,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
                             uids = Sets.newHashSet();
                             for (String uid : uidInfo.third()) {
                                 if (log.isTraceEnabled())
-                                    log.trace("Adding uid " + uid.split("\u0000")[1] + " " + uid.toString() + " " + TLD.parseRootPointerFromId(uid) + " "
+                                    log.trace("Adding uid " + uid.split("\u0000")[1] + " " + uid + " " + TLD.parseRootPointerFromId(uid) + " "
                                                     + TLD.parseRootPointerFromId(uid.toString()));
                                 if (isTld) {
                                     uids.add(TLD.parseRootPointerFromId(uid));

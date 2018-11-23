@@ -183,7 +183,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
                 }
                 
                 // seek to the next child by shifting the startKey
-                startKey = new Key(row, nextKey.getColumnFamily().toString() + Constants.NULL_BYTE_STRING);
+                startKey = new Key(row, nextKey.getColumnFamily() + Constants.NULL_BYTE_STRING);
                 iterator.seek(new Range(startKey, true, endKey, true), Collections.emptyList(), false);
             }
         } catch (IOException e) {

@@ -293,7 +293,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             fs = FileSystem.get(conf);
             String workingDirectory = conf.get(WORKING_DIRECTORY, fs.getWorkingDirectory().toString());
             Path work = new Path(workingDirectory);
-            Path tempPath = new Path(work, UUID.randomUUID().toString() + ".cache");
+            Path tempPath = new Path(work, UUID.randomUUID() + ".cache");
             FSDataOutputStream outStream = fs.create(tempPath);
             try {
                 
@@ -436,7 +436,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             iterators = new AccumuloIterator(cfg.getPriority(), cfg.getIteratorClass(), cfg.getName()).toString();
         } else {
             // append the next iterator & reset
-            iterators = iterators.concat(ITERATORS_DELIM + new AccumuloIterator(cfg.getPriority(), cfg.getIteratorClass(), cfg.getName()).toString());
+            iterators = iterators.concat(ITERATORS_DELIM + new AccumuloIterator(cfg.getPriority(), cfg.getIteratorClass(), cfg.getName()));
         }
         // Store the iterators w/ the job
         conf.set(ITERATORS, iterators);

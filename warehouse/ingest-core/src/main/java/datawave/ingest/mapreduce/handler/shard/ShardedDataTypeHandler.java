@@ -296,10 +296,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 this.requestedFieldsForReindex = Arrays.asList(commaSeparatedFieldNames.split(","));
             }
             if (null == this.requestedFieldsForReindex || this.requestedFieldsForReindex.isEmpty()) {
-                throw new RuntimeException("Missing or empty " + FIELDS_TO_REINDEX + " from configuration: " + conf.toString());
+                throw new RuntimeException("Missing or empty " + FIELDS_TO_REINDEX + " from configuration: " + conf);
             }
             if (log.isDebugEnabled()) {
-                log.debug("list of fields to reindex: " + requestedFieldsForReindex.toString());
+                log.debug("list of fields to reindex: " + requestedFieldsForReindex);
             }
         }
     }

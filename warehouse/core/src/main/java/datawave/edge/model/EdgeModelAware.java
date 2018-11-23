@@ -71,9 +71,9 @@ public interface EdgeModelAware {
     /** Internal field name denoting an edge id */
     String UUID = Fields.getInstance().getUuidFieldName();
     /** Internal field name denoting and edge activity date */
-    public static final String ACTIVITY_DATE = Fields.getInstance().getActivityDateFieldName();
+    String ACTIVITY_DATE = Fields.getInstance().getActivityDateFieldName();
     /** Internal field name denoting if the edge activity date was good or bad */
-    public static final String BAD_ACTIVITY_DATE = Fields.getInstance().getBadActivityDateFieldName();
+    String BAD_ACTIVITY_DATE = Fields.getInstance().getBadActivityDateFieldName();
     
     /**
      * On-demand singleton for loading the internal model.<br>

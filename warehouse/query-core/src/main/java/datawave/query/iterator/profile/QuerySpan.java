@@ -104,10 +104,10 @@ public class QuerySpan {
     public void logStack(String prefix) {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         StringBuilder sb = new StringBuilder();
-        sb.append(prefix).append(toString()).append("\n");
+        sb.append(prefix).append(this).append("\n");
         for (int x = 1; x < (stack.length - 1); x++) {
             StackTraceElement element = stack[x];
-            sb.append(element.toString()).append("\n");
+            sb.append(element).append("\n");
         }
         log.trace(sb.toString());
     }

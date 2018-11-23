@@ -89,7 +89,7 @@ public class PrintUtility {
         
         sb.append("--End entire ").append(tableName).append(" table--").append("\n");
         
-        out.println(sb.toString());
+        out.println(sb);
     }
     
     /**

@@ -216,10 +216,10 @@ public class TypeMetadataHelper {
                     }
                     
                 } else {
-                    log.warn("EventMetadata entry did not contain a null byte in the column qualifier: " + entry.getKey().toString());
+                    log.warn("EventMetadata entry did not contain a null byte in the column qualifier: " + entry.getKey());
                 }
             } else {
-                log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey().toString());
+                log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey());
             }
         }
         

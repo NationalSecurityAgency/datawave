@@ -107,7 +107,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
         rangeConsumer = new RangeConsumer(builder.getRanges());
         rangeConsumerThread = new Thread(rangeConsumer);
         if (settings.getId() != null)
-            rangeConsumerThread.setName("RangeBundlerIterator for " + settings.getId().toString());
+            rangeConsumerThread.setName("RangeBundlerIterator for " + settings.getId());
         else
             rangeConsumerThread.setName("RangeBundlerIterator for ");
         rangeConsumerThread.setUncaughtExceptionHandler(settings.getUncaughtExceptionHandler());

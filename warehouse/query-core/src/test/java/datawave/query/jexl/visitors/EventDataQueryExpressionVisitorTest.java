@@ -74,14 +74,14 @@ public class EventDataQueryExpressionVisitorTest {
             
             StringBuilder b = new StringBuilder();
             if (!output.isEmpty()) {
-                b.append(" Unexpected entries found: " + output.toString());
+                b.append(" Unexpected entries found: " + output);
             }
             if (!missing.isEmpty()) {
-                b.append(" Expected entries that were not found: " + output.toString());
+                b.append(" Expected entries that were not found: " + output);
             }
             
             if (b.length() > 0) {
-                fail("Output did not match expected output for '" + input[0] + ":" + input[1] + "';" + b.toString());
+                fail("Output did not match expected output for '" + input[0] + ":" + input[1] + "';" + b);
             }
         }
     }

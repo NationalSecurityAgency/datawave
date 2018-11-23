@@ -131,7 +131,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         try {
             this.shardTimestamp = DateHelper.parseWithGMT(docKey.getRow().toString()).getTime();
         } catch (IllegalArgumentException e) {
-            log.warn("Unable to parse document key row as a shard id of the form yyyyMMdd...: " + docKey.getRow().toString(), e);
+            log.warn("Unable to parse document key row as a shard id of the form yyyyMMdd...: " + docKey.getRow(), e);
             // leave the shardTimestamp empty
             this.shardTimestamp = Long.MAX_VALUE;
         }

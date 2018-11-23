@@ -1146,7 +1146,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 if (!fs.exists(mDir))
                     fs.mkdirs(mDir);
                 Path dst = new Path(mDir, src.getName());
-                log.info("Copying file " + src.toString() + " to " + dst.toString());
+                log.info("Copying file " + src + " to " + dst);
                 fs.copyFromLocalFile(false, true, src, dst);
                 // If this worked, then remove the local file
                 rawFS.delete(src, false);

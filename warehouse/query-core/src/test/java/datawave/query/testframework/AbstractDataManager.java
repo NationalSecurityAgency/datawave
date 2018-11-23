@@ -72,7 +72,7 @@ public abstract class AbstractDataManager implements RawDataManager {
     
     @Override
     public Iterator<Map<String,String>> rangeData(Date start, Date end) {
-        log.debug("start(" + start.toString() + ") end(" + end.toString() + ")");
+        log.debug("start(" + start + ") end(" + end + ")");
         final Set<Map<String,String>> raw = new HashSet<>();
         for (final Map.Entry<String,Set<RawData>> entry : this.rawData.entrySet()) {
             for (final RawData rawEntry : entry.getValue()) {

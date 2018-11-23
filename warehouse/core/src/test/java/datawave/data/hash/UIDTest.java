@@ -373,21 +373,21 @@ public class UIDTest {
         UID result5 = builder.newId(template, "1");
         assertTrue(result5 != template);
         assertNotEquals(result5, template);
-        assertEquals(result5.toString(), template.toString() + ".1");
+        assertEquals(result5.toString(), template + ".1");
         
         // Test creation of child from byte and date-specified HashUID that already has extras
         template = builder.newId("test".getBytes(), new Date(), "1", "2");
         UID result6 = builder.newId(template, "3");
         assertTrue(result6 != template);
         assertNotEquals(result6, template);
-        assertEquals(result6.toString(), template.toString() + ".3");
+        assertEquals(result6.toString(), template + ".3");
         
         // Test creation of child from custom HashUID that already has extras
         template = CustomHashUID.parse(template.toString());
         UID result7 = builder.newId(template, "3");
         assertTrue(result7 != template);
         assertNotEquals(result7, template);
-        assertEquals(result7.toString(), template.toString() + ".3");
+        assertEquals(result7.toString(), template + ".3");
         
         // Test creation of child from previous custom HashUID using a SnowflakeUID builder
         Configuration configuration = new Configuration();
@@ -397,7 +397,7 @@ public class UIDTest {
         UID result8 = builder.newId(template, "3");
         assertTrue(result8 != template);
         assertNotEquals(result8, template);
-        assertEquals(result8.toString(), template.toString() + ".3");
+        assertEquals(result8.toString(), template + ".3");
         
         // Test cloning of simple SnowflakeUID
         template = builder.newId();
@@ -428,21 +428,21 @@ public class UIDTest {
         UID result13 = builder.newId(template, "1");
         assertTrue(result13 != template);
         assertNotEquals(result13, template);
-        assertEquals(result13.toString(), template.toString() + ".1");
+        assertEquals(result13.toString(), template + ".1");
         
         // Test creation of child from byte and date-specified SnowflakeUID that already has extras
         template = builder.newId("test".getBytes(), new Date(), "1", "2");
         UID result14 = builder.newId(template, "3");
         assertTrue(result14 != template);
         assertNotEquals(result14, template);
-        assertEquals(result14.toString(), template.toString() + ".3");
+        assertEquals(result14.toString(), template + ".3");
         
         // Test creation of child from custom HashUID that already has extras
         template = CustomSnowflakeUID.parse(template.toString());
         UID result15 = builder.newId(template, "3");
         assertTrue(result15 != template);
         assertNotEquals(result15, template);
-        assertEquals(result15.toString(), template.toString() + ".3");
+        assertEquals(result15.toString(), template + ".3");
         
         // Test cloning of null template
         UID result16 = builder.newId((UID) null);

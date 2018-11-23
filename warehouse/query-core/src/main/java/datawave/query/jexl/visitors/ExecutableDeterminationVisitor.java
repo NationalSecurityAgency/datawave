@@ -97,7 +97,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(ExecutableDeterminationVisitor.class);
     
     private interface Output {
-        public void writeLine(String line);
+        void writeLine(String line);
     }
     
     private static class StringListOutput implements Output {

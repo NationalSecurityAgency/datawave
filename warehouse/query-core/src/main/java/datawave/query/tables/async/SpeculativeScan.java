@@ -74,7 +74,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
         
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);
-            thread.setName("Speculative Scan " + threadIdentifier.toString() + " -" + threadNum++);
+            thread.setName("Speculative Scan " + threadIdentifier + " -" + threadNum++);
             thread.setDaemon(true);
             thread.setUncaughtExceptionHandler(handler);
             return thread;

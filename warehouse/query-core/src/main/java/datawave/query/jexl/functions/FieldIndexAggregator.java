@@ -16,7 +16,7 @@ public interface FieldIndexAggregator {
     /**
      * Applies the aggregation function to the keys returned by the iterator.
      */
-    public Key apply(SortedKeyValueIterator<Key,Value> itr) throws IOException;
+    Key apply(SortedKeyValueIterator<Key,Value> itr) throws IOException;
     
     /**
      * Applies the aggregation function to the keys returned by the iterator, may seek the underlying source
@@ -39,5 +39,5 @@ public interface FieldIndexAggregator {
      * @param attrs
      * @return
      */
-    public Key apply(SortedKeyValueIterator<Key,Value> itr, Document doc, AttributeFactory attrs) throws IOException;
+    Key apply(SortedKeyValueIterator<Key,Value> itr, Document doc, AttributeFactory attrs) throws IOException;
 }

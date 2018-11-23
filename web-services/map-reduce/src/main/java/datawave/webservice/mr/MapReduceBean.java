@@ -252,7 +252,7 @@ public class MapReduceBean {
             }
         }
         
-        String id = sid + "_" + UUID.randomUUID().toString();
+        String id = sid + "_" + UUID.randomUUID();
         OozieClient oozieClient = null;
         Properties oozieConf = null;
         
@@ -479,7 +479,7 @@ public class MapReduceBean {
             }
             if (!this.mapReduceConfiguration.getValidInputFormats().contains(ifClass)) {
                 IllegalArgumentException e = new IllegalArgumentException("Invalid input format class specified. Must use one of "
-                                + this.mapReduceConfiguration.getValidInputFormats().toString());
+                                + this.mapReduceConfiguration.getValidInputFormats());
                 QueryException qe = new QueryException(DatawaveErrorCode.INVALID_FORMAT, e);
                 log.error(qe);
                 response.addException(qe.getBottomQueryException());
@@ -779,7 +779,7 @@ public class MapReduceBean {
                         if (null != fiz)
                             fiz.close();
                     } catch (IOException e) {
-                        log.error("Error closing FSDataInputStream for file: " + resultFile.toString(), e);
+                        log.error("Error closing FSDataInputStream for file: " + resultFile, e);
                     }
                     try {
                         if (null != fs)

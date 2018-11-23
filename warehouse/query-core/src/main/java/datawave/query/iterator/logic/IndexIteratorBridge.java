@@ -153,7 +153,7 @@ public class IndexIteratorBridge implements NestedIterator<Key>, SeekableIterato
     
     @Override
     public String toString() {
-        return "Bridge: " + delegate.toString();
+        return "Bridge: " + delegate;
     }
     
     @Override

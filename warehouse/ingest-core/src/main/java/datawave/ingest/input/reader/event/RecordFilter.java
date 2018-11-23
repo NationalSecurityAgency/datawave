@@ -8,9 +8,9 @@ import datawave.ingest.data.RawRecordContainer;
  * event filters should implement this
  */
 public interface RecordFilter {
-    public void initialize(Configuration conf);
+    void initialize(Configuration conf);
     
-    public boolean accept(RawRecordContainer e);
+    boolean accept(RawRecordContainer e);
     
-    public void close();
+    void close();
 }

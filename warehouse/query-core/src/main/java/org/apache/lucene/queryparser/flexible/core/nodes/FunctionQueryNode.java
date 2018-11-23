@@ -97,8 +97,8 @@ public class FunctionQueryNode extends QueryNodeImpl {
                 // anything else should cause a parse error
                 if (beginQuote == null && endQuote != null) {
                     if (Character.isWhitespace(c) == false && c != ')' && c != ',') {
-                        throw new RuntimeException("Unexpected characters '" + chars.subSequence(x, closeParen).toString()
-                                        + "' following quoted parameter in [" + text + "], expecting ',' or ')'");
+                        throw new RuntimeException("Unexpected characters '" + chars.subSequence(x, closeParen) + "' following quoted parameter in [" + text
+                                        + "], expecting ',' or ')'");
                     }
                 }
                 

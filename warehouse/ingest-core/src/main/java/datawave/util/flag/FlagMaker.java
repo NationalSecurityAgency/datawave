@@ -475,7 +475,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             if (f.renameTo(f2)) {
                 flagFile = f2;
             } else {
-                throw new IOException("Failed to rename" + f.toString() + " to " + f2);
+                throw new IOException("Failed to rename" + f + " to " + f2);
             }
             
             try {
@@ -517,9 +517,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         } catch (IOException ex) {
             StringBuilder sb = new StringBuilder();
             for (Map.Entry<InputFile,Path> orphan : moved.entrySet()) {
-                sb.append("\n").append(orphan.getValue().toString());
+                sb.append("\n").append(orphan.getValue());
             }
-            log.error("An error occurred while attempting to move files. The following files were orphaned:" + sb.toString());
+            log.error("An error occurred while attempting to move files. The following files were orphaned:" + sb);
         }
     }
     
