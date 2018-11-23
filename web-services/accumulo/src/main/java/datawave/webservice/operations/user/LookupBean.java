@@ -315,7 +315,7 @@ public class LookupBean {
             userAuths = cp.getPrimaryUser().getAuths();
         }
         
-        log.trace(sid + " has authorizations " + cbAuths.toString());
+        log.trace(sid + " has authorizations " + cbAuths);
         
         queryParameters.add(QueryParameters.QUERY_STRING, sb.toString());
         queryParameters.add(QueryParameters.QUERY_AUTHORIZATIONS, userAuths.toString());
@@ -329,10 +329,10 @@ public class LookupBean {
         if (auditor == null) {
             throw new BadRequestException(new IllegalArgumentException("Auditor is null, can not process request"), response);
         } else if (!auditType.equals(AuditType.NONE)) {
-            log.info("Auditing Lookup for " + sb.toString() + " at AuditType " + auditType.toString());
+            log.info("Auditing Lookup for " + sb + " at AuditType " + auditType);
             
             if (log.isTraceEnabled()) {
-                log.trace("Auditing Lookup for " + sb.toString() + " at AuditType " + auditType.toString());
+                log.trace("Auditing Lookup for " + sb + " at AuditType " + auditType);
             }
             
             try {

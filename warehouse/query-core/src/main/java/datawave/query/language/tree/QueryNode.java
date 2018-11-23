@@ -113,7 +113,7 @@ public abstract class QueryNode implements Cloneable {
      */
     public String getContents() {
         StringBuilder s = new StringBuilder("[");
-        s.append(toString());
+        s.append(this);
         for (QueryNode child : children) {
             s.append(",");
             s.append(child.getContents());
@@ -126,7 +126,7 @@ public abstract class QueryNode implements Cloneable {
                 if (!firstPos) {
                     s.append(",");
                 }
-                s.append(ft.toString());
+                s.append(ft);
                 firstPos = false;
             }
             

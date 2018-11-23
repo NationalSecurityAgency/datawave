@@ -70,7 +70,7 @@ public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<Stri
     /**
      * An interface used to create a comparator for ordering lists of values within the jexl context.
      */
-    public static interface JexlContextValueComparator {
+    public interface JexlContextValueComparator {
         /**
          * Create a comparator for jexl context value lists. The values are expected to be ValueTuple objects however a jexl context does not enforce this, so
          * {@code Comparator<Object>} is required
@@ -78,7 +78,7 @@ public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<Stri
          * @param from
          * @return an object comparator
          */
-        public Comparator<Object> getValueComparator(final Tuple3<Key,Document,Map<String,Object>> from);
+        Comparator<Object> getValueComparator(final Tuple3<Key,Document,Map<String,Object>> from);
     }
     
 }

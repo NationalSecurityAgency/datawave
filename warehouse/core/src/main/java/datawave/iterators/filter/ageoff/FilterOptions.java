@@ -134,6 +134,6 @@ public class FilterOptions {
     
     @Override
     public String toString() {
-        return "ttl: " + ttl + " ttlUnits: " + ttlUnits + " baseTime: " + baseTime + " options: " + options.toString();
+        return "ttl: " + ttl + " ttlUnits: " + ttlUnits + " baseTime: " + baseTime + " options: " + options;
     }
 }

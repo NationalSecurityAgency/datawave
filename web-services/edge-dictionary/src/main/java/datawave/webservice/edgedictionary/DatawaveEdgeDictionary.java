@@ -10,5 +10,5 @@ import java.util.Set;
  * 
  */
 public interface DatawaveEdgeDictionary {
-    public EdgeDictionaryBase getEdgeDictionary(String metadataTableName, Connector connector, Set<Authorizations> auths, int numThreads) throws Exception;
+    EdgeDictionaryBase getEdgeDictionary(String metadataTableName, Connector connector, Set<Authorizations> auths, int numThreads) throws Exception;
 }

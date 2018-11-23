@@ -34,6 +34,6 @@ public class Tuple2<A,B> extends Tuple1<A> {
     
     @Override
     public String toString() {
-        return "[" + first().toString() + "," + second.toString() + "]";
+        return "[" + first() + "," + second + "]";
     }
 }

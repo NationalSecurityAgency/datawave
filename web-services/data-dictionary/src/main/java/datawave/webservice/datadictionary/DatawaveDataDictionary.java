@@ -16,31 +16,31 @@ import java.util.Set;
  * 
  */
 public interface DatawaveDataDictionary {
-    public Collection<MetadataFieldBase> getFields(String modelName, String modelTableName, String metadataTableName, Collection<String> dataTypeFilters,
+    Collection<MetadataFieldBase> getFields(String modelName, String modelTableName, String metadataTableName, Collection<String> dataTypeFilters,
                     Connector connector, Set<Authorizations> auths, int numThreads) throws Exception;
     
-    public Map<String,String> getNormalizerMapping();
+    Map<String,String> getNormalizerMapping();
     
-    public void setNormalizerMapping(Map<String,String> normalizerMapping);
+    void setNormalizerMapping(Map<String,String> normalizerMapping);
     
-    public void setDescription(Connector connector, String metadataTableName, Set<Authorizations> auths, String modelName, String modelTableName,
+    void setDescription(Connector connector, String metadataTableName, Set<Authorizations> auths, String modelName, String modelTableName,
                     DictionaryFieldBase description) throws Exception;
     
-    public void setDescription(Connector connector, String metadataTableName, Set<Authorizations> auths, String modelName, String modelTableName,
-                    String fieldName, String datatype, DescriptionBase description) throws Exception;
+    void setDescription(Connector connector, String metadataTableName, Set<Authorizations> auths, String modelName, String modelTableName, String fieldName,
+                    String datatype, DescriptionBase description) throws Exception;
     
-    public void setDescription(Connector connector, String metadataTableName, Set<Authorizations> auths, String modelName, String modelTableName,
-                    String fieldName, String datatype, Set<DescriptionBase> descriptions) throws Exception;
+    void setDescription(Connector connector, String metadataTableName, Set<Authorizations> auths, String modelName, String modelTableName, String fieldName,
+                    String datatype, Set<DescriptionBase> descriptions) throws Exception;
     
-    public Multimap<Entry<String,String>,? extends DescriptionBase> getDescriptions(Connector connector, String metadataTableName, Set<Authorizations> auths,
+    Multimap<Entry<String,String>,? extends DescriptionBase> getDescriptions(Connector connector, String metadataTableName, Set<Authorizations> auths,
                     String modelName, String modelTableName) throws Exception;
     
-    public Multimap<Entry<String,String>,? extends DescriptionBase> getDescriptions(Connector connector, String metadataTableName, Set<Authorizations> auths,
+    Multimap<Entry<String,String>,? extends DescriptionBase> getDescriptions(Connector connector, String metadataTableName, Set<Authorizations> auths,
                     String modelName, String modelTableName, String datatype) throws Exception;
     
-    public Set<? extends DescriptionBase> getDescriptions(Connector connector, String metadataTableName, Set<Authorizations> auths, String modelName,
+    Set<? extends DescriptionBase> getDescriptions(Connector connector, String metadataTableName, Set<Authorizations> auths, String modelName,
                     String modelTableName, String fieldName, String datatype) throws Exception;
     
-    public void deleteDescription(Connector connector, String metadataTableName, Set<Authorizations> auths, String modelName, String modelTableName,
-                    String fieldName, String datatype, DescriptionBase description) throws Exception;
+    void deleteDescription(Connector connector, String metadataTableName, Set<Authorizations> auths, String modelName, String modelTableName, String fieldName,
+                    String datatype, DescriptionBase description) throws Exception;
 }

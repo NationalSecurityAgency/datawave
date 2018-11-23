@@ -38,7 +38,7 @@ public class WildcardFieldedFilter extends FieldedTerm {
         sb.append("filter(");
         sb.append(includeIfMatch);
         sb.append(", ");
-        sb.append(type.toString());
+        sb.append(type);
         sb.append(", ");
         for (int x = 0; x < fieldList.size(); x++) {
             if (x > 0) {

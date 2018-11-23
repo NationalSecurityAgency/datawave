@@ -52,7 +52,7 @@ public class SecureEventSequenceFileRecordReader<K> extends EventSequenceFileRec
                     try {
                         result = filter.evaluate(colviz);
                     } catch (VisibilityParseException e1) {
-                        throw new IOException("Error evaluating column visibility: " + colviz.toString(), e1);
+                        throw new IOException("Error evaluating column visibility: " + colviz, e1);
                     }
                 } else {
                     // Event has no column visibility, should not return it.

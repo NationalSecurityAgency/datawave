@@ -40,7 +40,7 @@ public class JobSetupUtil {
             log.error("No configuration file specified nor runtime args supplied- exiting.");
             System.exit(1);
         } else {
-            log.info("Using conf file located at " + cpConfig.toString());
+            log.info("Using conf file located at " + cpConfig);
             conf.addResource(cpConfig);
         }
         
@@ -92,7 +92,7 @@ public class JobSetupUtil {
             }
             cmd.append("hadoop job -set-priority ").append(job.getJobID()).append(" VERY_HIGH");
             
-            log.info("Executing: " + cmd.toString());
+            log.info("Executing: " + cmd);
             Process pr = Runtime.getRuntime().exec(cmd.toString());
             
             if (log.isInfoEnabled()) {

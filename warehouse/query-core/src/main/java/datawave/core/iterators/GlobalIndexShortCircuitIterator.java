@@ -338,7 +338,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                     // Add a Range for the entire shard and datatype.
                     Text cf = new Text(datatype);
                     Key startKey = new Key(shard, cf);
-                    Key endKey = new Key(shard, new Text(cf.toString() + Constants.MAX_UNICODE_STRING + Constants.NULL_BYTE_STRING));
+                    Key endKey = new Key(shard, new Text(cf + Constants.MAX_UNICODE_STRING + Constants.NULL_BYTE_STRING));
                     Range shardDatatypeRange = new Range(startKey, true, endKey, false);
                     
                     // Remove all event-specific ranges for this shard/datatype
@@ -369,7 +369,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                             Text cf = new Text(datatype);
                             TextUtil.textAppend(cf, uuid);
                             Key startKey = new Key(shard, cf);
-                            Key endKey = new Key(shard, new Text(cf.toString() + Constants.NULL_BYTE_STRING));
+                            Key endKey = new Key(shard, new Text(cf + Constants.NULL_BYTE_STRING));
                             Range eventRange = new Range(startKey, true, endKey, false);
                             this.ranges.add(eventRange);
                         }
@@ -400,7 +400,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
         try {
             return DateHelper.parse(Text.decode(k.getColumnQualifierData().getBackingArray(), 0, 8));
         } catch (Exception e) {
-            throw new IOException("Index entry column qualifier is not correct format: " + k.toString());
+            throw new IOException("Index entry column qualifier is not correct format: " + k);
         }
     }
     

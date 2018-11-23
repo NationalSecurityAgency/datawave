@@ -10,8 +10,8 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 
 public interface TableConfigHelper {
     
-    public static final String TABLE_CONFIG_CLASS_SUFFIX = ".table.config.class";
-    public static final String TABLE_CONFIG_PREFIX = ".table.config.prefix";
+    String TABLE_CONFIG_CLASS_SUFFIX = ".table.config.class";
+    String TABLE_CONFIG_PREFIX = ".table.config.prefix";
     
     /**
      * Performs property validation and setup
@@ -19,7 +19,7 @@ public interface TableConfigHelper {
      * @param config
      * @throws IllegalArgumentException
      */
-    public void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException;
+    void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException;
     
     /**
      * Configures table
@@ -32,6 +32,6 @@ public interface TableConfigHelper {
      * @throws TableNotFoundException
      * 
      */
-    public void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException;
+    void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException;
     
 }

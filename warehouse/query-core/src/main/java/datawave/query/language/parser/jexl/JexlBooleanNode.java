@@ -49,10 +49,10 @@ public class JexlBooleanNode extends JexlNode {
             
             if (x > 0 && type == Type.NOT) {
                 sb.append("!(");
-                sb.append(n.toString());
+                sb.append(n);
                 sb.append(")");
             } else {
-                sb.append(n.toString());
+                sb.append(n);
             }
             
             if (x < c.size() - 1) {

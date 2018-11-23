@@ -169,7 +169,7 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
     public String toString() {
         StringBuilder builder = new StringBuilder("{ ");
         for (InputSplit split : splits) {
-            builder.append("[").append(split.toString()).append("] ");
+            builder.append("[").append(split).append("] ");
         }
         builder.append(" }");
         return builder.toString();

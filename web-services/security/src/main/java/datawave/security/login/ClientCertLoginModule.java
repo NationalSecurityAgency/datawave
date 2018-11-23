@@ -69,7 +69,7 @@ public class ClientCertLoginModule implements LoginModule {
             le.initCause(e);
             throw le;
         } catch (UnsupportedCallbackException e) {
-            LoginException le = new LoginException("Error: " + e.getCallback().toString() + ", not available to use this callback.");
+            LoginException le = new LoginException("Error: " + e.getCallback() + ", not available to use this callback.");
             le.initCause(e);
             throw le;
         }

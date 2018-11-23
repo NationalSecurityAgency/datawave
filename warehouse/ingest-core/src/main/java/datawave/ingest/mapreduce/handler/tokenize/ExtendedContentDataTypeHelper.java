@@ -26,99 +26,99 @@ import com.google.common.collect.Multimap;
 
 public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
     
-    public static interface Properties {
-        public static final String REVERSE_INDEXING = ".reverse.indexing";
+    public interface Properties {
+        String REVERSE_INDEXING = ".reverse.indexing";
         
-        public static final String KEY_METADATA_PARSERS = ".id.metadata";
+        String KEY_METADATA_PARSERS = ".id.metadata";
         
-        public static final String FIELD_METADATA_PARSERS = ".field.metadata";
+        String FIELD_METADATA_PARSERS = ".field.metadata";
         
-        public static final String FIELD_UUID_METADATA_PARSERS = ".field.metadata.uuid";
+        String FIELD_UUID_METADATA_PARSERS = ".field.metadata.uuid";
         
-        public static final String UUID_METADATA = ".uuids";
+        String UUID_METADATA = ".uuids";
         
-        public static final String EXPECT_UUID = ".expect.uuid";
+        String EXPECT_UUID = ".expect.uuid";
         
-        public static final String IGNORED_FIELDS = ".data.field.drop";
+        String IGNORED_FIELDS = ".data.field.drop";
         
-        public static final String INCLUDE_CONTENT = ".include.full.content";
+        String INCLUDE_CONTENT = ".include.full.content";
         
-        public static final String VALID_METADATA_KEY_REGEX = ".valid.metadata.key.regex";
-        public static final String DEFAULT_KEY_REGEX = "[A-Za-z0-9_-]{2,50}+";
+        String VALID_METADATA_KEY_REGEX = ".valid.metadata.key.regex";
+        String DEFAULT_KEY_REGEX = "[A-Za-z0-9_-]{2,50}+";
         
-        public static final String METADATA_TOKENIZE_SKIP = ".tokenizer.skip.metadata.fields";
+        String METADATA_TOKENIZE_SKIP = ".tokenizer.skip.metadata.fields";
         
-        public static final String INHERITED_PAYLOAD_FIELDS = ".inherited.payload.fields";
+        String INHERITED_PAYLOAD_FIELDS = ".inherited.payload.fields";
         
-        public static final String USE_TOKEN_OFFSET_CACHE = ".use.token.offset.cache";
+        String USE_TOKEN_OFFSET_CACHE = ".use.token.offset.cache";
         /**
          * Comma-delimited list of fields in the header to use as security markings. This parameter supports multiple datatypes, for example
          * mydatatype.data.category.security.field.names. Field name N within this list must be paired with corresponding "domain" entry N within
          * {@link EVENT_SECURITY_MARKING_FIELD_DOMAINS}
          */
-        public static final String EVENT_SECURITY_MARKING_FIELD_NAMES = ".data.category.security.field.names";
+        String EVENT_SECURITY_MARKING_FIELD_NAMES = ".data.category.security.field.names";
         /**
          * Comma-delimited list of names to use as security marking domains. This parameter supports multiple datatypes, for example
          * mydatatype.data.category.security.field.domains. Domain N within this list must be paired with a corresponding field name entry N within
          * {@link EVENT_SECURITY_MARKING_FIELD_NAMES}
          */
-        public static final String EVENT_SECURITY_MARKING_FIELD_DOMAINS = ".data.category.security.field.domains";
+        String EVENT_SECURITY_MARKING_FIELD_DOMAINS = ".data.category.security.field.domains";
         
-        public static final String EVENT_VALIDATORS = ".event.validators";
+        String EVENT_VALIDATORS = ".event.validators";
         
-        public static final String SESSION_METADATA_PROPAGATION_ENABLED = ".session.metadata.propagation.enabled";
+        String SESSION_METADATA_PROPAGATION_ENABLED = ".session.metadata.propagation.enabled";
         
-        public static final String SESSION_METADATA_PROPAGATION_BLACKLIST = ".session.metadata.propagation.blacklist";
+        String SESSION_METADATA_PROPAGATION_BLACKLIST = ".session.metadata.propagation.blacklist";
         
-        public static final String SESSION_METADATA_PROPAGATION_WHITELIST = ".session.metadata.propagation.whitelist";
+        String SESSION_METADATA_PROPAGATION_WHITELIST = ".session.metadata.propagation.whitelist";
         /**
          * Parameter to specify the fields that are multivalued
          */
-        public static final String MULTI_VALUED_FIELDS = CSVHelper.MULTI_VALUED_FIELDS;
+        String MULTI_VALUED_FIELDS = CSVHelper.MULTI_VALUED_FIELDS;
         /**
          * Parameter to specify the separator for multivalued fields (detault is ';');
          */
-        public static final String MULTI_VALUED_SEPARATOR = CSVHelper.MULTI_VALUED_SEPARATOR;
+        String MULTI_VALUED_SEPARATOR = CSVHelper.MULTI_VALUED_SEPARATOR;
         /**
          * Parameter to specify the a threshold on the number of fields in a multi-valued field
          */
-        public static final String MULTI_VALUED_THRESHOLD = CSVHelper.MULTI_VALUED_THRESHOLD;
+        String MULTI_VALUED_THRESHOLD = CSVHelper.MULTI_VALUED_THRESHOLD;
         /**
          * Parameter to specify what to do when a field size or multi-valued field threshold is reached
          */
-        public static final String MULTI_VALUED_THRESHOLD_ACTION = CSVHelper.MULTI_VALUED_THRESHOLD_ACTION;
+        String MULTI_VALUED_THRESHOLD_ACTION = CSVHelper.MULTI_VALUED_THRESHOLD_ACTION;
         /**
          * Parameter to specify the threshold field replacement when the threshold action is to replace
          */
-        public static final String MULTI_VALUED_THRESHOLD_FIELD_REPLACEMENT = CSVHelper.MULTI_VALUED_THRESHOLD_FIELD_REPLACEMENT;
+        String MULTI_VALUED_THRESHOLD_FIELD_REPLACEMENT = CSVHelper.MULTI_VALUED_THRESHOLD_FIELD_REPLACEMENT;
         /**
          * Parameter to specify the threshold on the size of a field processed.
          */
-        public static final String FIELD_SIZE_THRESHOLD = CSVHelper.FIELD_SIZE_THRESHOLD;
+        String FIELD_SIZE_THRESHOLD = CSVHelper.FIELD_SIZE_THRESHOLD;
         /**
          * Parameter to specify what to do when a field size or multi-valued field threshold is reached
          */
-        public static final String THRESHOLD_ACTION = CSVHelper.THRESHOLD_ACTION;
+        String THRESHOLD_ACTION = CSVHelper.THRESHOLD_ACTION;
         /**
          * Parameter to specify the threshold field replacement when the threshold action is to replace
          */
-        public static final String THRESHOLD_FIELD_REPLACEMENT = CSVHelper.THRESHOLD_FIELD_REPLACEMENT;
+        String THRESHOLD_FIELD_REPLACEMENT = CSVHelper.THRESHOLD_FIELD_REPLACEMENT;
         /**
          * Parameter to specify the field to add to an event to denote fields that were truncated
          */
-        public static final String TRUNCATE_FIELD = CSVHelper.TRUNCATE_FIELD;
+        String TRUNCATE_FIELD = CSVHelper.TRUNCATE_FIELD;
         /**
          * Parameter to specify the field to add to an event to denote fields that were dropped
          */
-        public static final String DROP_FIELD = CSVHelper.DROP_FIELD;
+        String DROP_FIELD = CSVHelper.DROP_FIELD;
         /**
          * Parameter to specify the field to add to an event to denote fields that were truncated
          */
-        public static final String MULTI_VALUED_TRUNCATE_FIELD = CSVHelper.MULTI_VALUED_TRUNCATE_FIELD;
+        String MULTI_VALUED_TRUNCATE_FIELD = CSVHelper.MULTI_VALUED_TRUNCATE_FIELD;
         /**
          * Parameter to specify the field to add to an event to denote fields that were dropped
          */
-        public static final String MULTI_VALUED_DROP_FIELD = CSVHelper.MULTI_VALUED_DROP_FIELD;
+        String MULTI_VALUED_DROP_FIELD = CSVHelper.MULTI_VALUED_DROP_FIELD;
         
     }
     

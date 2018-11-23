@@ -29,7 +29,7 @@ public class ColumnVisibilityHelper {
         Node node = columnVisibility.getParseTree();
         if (node.getType() == NodeType.OR) {
             if (log.isTraceEnabled()) {
-                log.trace("Top level OR Node, removing unsatisfied branches from: " + columnVisibility.toString());
+                log.trace("Top level OR Node, removing unsatisfied branches from: " + columnVisibility);
             }
             byte[] expression = columnVisibility.getExpression();
             if (authorizations != null) {
@@ -41,7 +41,7 @@ public class ColumnVisibilityHelper {
             
             simplifiedCV = ColumnVisibilityHelper.flatten(node, expression);
             if (log.isTraceEnabled()) {
-                log.trace("removed unsatisfied branches, visibility now: " + simplifiedCV.toString());
+                log.trace("removed unsatisfied branches, visibility now: " + simplifiedCV);
             }
         }
         return simplifiedCV;

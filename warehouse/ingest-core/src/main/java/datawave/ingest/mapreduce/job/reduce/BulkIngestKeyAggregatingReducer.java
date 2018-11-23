@@ -112,8 +112,8 @@ public class BulkIngestKeyAggregatingReducer<K2,V2> extends AggregatingReducer<B
             int reducerId = ctx.getTaskAttemptID().getTaskID().getId();
             // increment one per key
             if (reducerId < 50) {
-                ctx.getCounter("REDUCER " + Integer.toString(reducerId), "TABLE " + key.getTableName().toString()).increment(1);
-                ctx.getCounter("TABLE " + key.getTableName().toString(), "REDUCER " + Integer.toString(reducerId)).increment(1);
+                ctx.getCounter("REDUCER " + Integer.toString(reducerId), "TABLE " + key.getTableName()).increment(1);
+                ctx.getCounter("TABLE " + key.getTableName(), "REDUCER " + Integer.toString(reducerId)).increment(1);
             }
         }
         if (useAggregators(key.getTableName())) {

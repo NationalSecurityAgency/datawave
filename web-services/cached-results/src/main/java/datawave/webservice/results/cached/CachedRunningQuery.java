@@ -483,7 +483,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             buf.append(" ORDER BY ").append(order);
         
         if (log.isTraceEnabled()) {
-            log.trace("sqlQuery: " + buf.toString());
+            log.trace("sqlQuery: " + buf);
         }
         
         if (CachedRunningQuery.isSqlSafe(buf.toString()) == false) {
@@ -582,7 +582,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             
             if (log.isTraceEnabled()) {
                 String host = System.getProperty("jboss.host.name");
-                log.trace("activating CRS on host:" + host + ", " + this.toString());
+                log.trace("activating CRS on host:" + host + ", " + this);
             }
             
             this.statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -659,7 +659,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         int pagesize = (rowEnd - rowBegin) + 1;
         
         try (PreparedStatement ps = connection.prepareStatement(query.toString()); CachedRowSet crs = RowSetProvider.newFactory().createCachedRowSet()) {
-            log.debug("Get Rows query: " + query.toString());
+            log.debug("Get Rows query: " + query);
             
             ps.setFetchSize(pagesize);
             crs.setPageSize(pagesize);

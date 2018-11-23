@@ -882,7 +882,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                     b.append(f).append(" ");
                 }
                 
-                log.debug("Iter configured with FieldNames: " + b.toString());
+                log.debug("Iter configured with FieldNames: " + b);
             }
         }
         

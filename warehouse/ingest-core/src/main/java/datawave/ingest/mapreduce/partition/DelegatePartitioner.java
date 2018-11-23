@@ -14,7 +14,7 @@ public interface DelegatePartitioner extends Configurable {
      * @param prefix
      *            a prefix to add for the property names that the partitioner needs
      */
-    public void configureWithPrefix(String prefix);
+    void configureWithPrefix(String prefix);
     
     /**
      * Delegates can use a smaller number of partitions to avoid creating too many small rfiles If there are multiple partitioners like this, it is best to
@@ -22,7 +22,7 @@ public interface DelegatePartitioner extends Configurable {
      * 
      * @return max num partitions this partitioner will return, Integer.MAX_VALUE if it doesn't limit it
      */
-    public int getNumPartitions();
+    int getNumPartitions();
     
     /**
      * Will likely do nothing for most partitioners. This should only be used for operations that are done during job initialization. e.g., a relatively
@@ -32,5 +32,5 @@ public interface DelegatePartitioner extends Configurable {
      * @param job
      *            job to be configured
      */
-    public void initializeJob(Job job);
+    void initializeJob(Job job);
 }

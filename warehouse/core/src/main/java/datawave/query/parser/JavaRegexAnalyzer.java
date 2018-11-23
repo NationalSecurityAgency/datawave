@@ -500,7 +500,7 @@ public class JavaRegexAnalyzer {
             // if ending a capturing group, then pop the literal builders, appending as appropriate
             else if (part.regex.equals(")")) {
                 if (atLeastOnce(i)) {
-                    literalBuilders.getLast().append(literalBuilder.toString());
+                    literalBuilders.getLast().append(literalBuilder);
                 }
                 literalBuilder = literalBuilders.removeLast();
             } else {
@@ -586,7 +586,7 @@ public class JavaRegexAnalyzer {
             // if ending a capturing group, then pop the literal builders, appending as appropriate
             else if (part.regex.equals("(")) {
                 if (atLeastOnce) {
-                    literalBuilders.getLast().insert(0, literalBuilder.toString());
+                    literalBuilders.getLast().insert(0, literalBuilder);
                 }
                 literalBuilder = literalBuilders.removeLast();
                 atLeastOnce = atLeastOnceFlags.removeLast();

@@ -18,6 +18,6 @@ public interface UidIntersector {
      *            list of delayed nodes which is merged in with the node list maintained in the IndexMatches
      * @return A intersected IndexInfo
      */
-    public Set<IndexMatch> intersect(Set<IndexMatch> uids1, Set<IndexMatch> uids2, List<JexlNode> delayedNodes);
+    Set<IndexMatch> intersect(Set<IndexMatch> uids1, Set<IndexMatch> uids2, List<JexlNode> delayedNodes);
     
 }

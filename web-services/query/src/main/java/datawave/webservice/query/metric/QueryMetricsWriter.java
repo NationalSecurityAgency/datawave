@@ -130,7 +130,7 @@ public class QueryMetricsWriter {
                     } catch (Throwable t) {
                         log.error(failedMetrics.size() + " metric updates failed a second time, removing");
                         for (QueryMetricHolder h : failedMetrics) {
-                            log.error("Failed write : " + h.getQueryMetric().toString());
+                            log.error("Failed write : " + h.getQueryMetric());
                         }
                     } finally {
                         metricQueue.clear();
@@ -235,10 +235,9 @@ public class QueryMetricsWriter {
                                 callTime = pm.getReturnTime();
                             }
                             if (pm.getPagesize() > 0) {
-                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltime " + requestTime + " " + callTime + " " + tagSb.toString());
+                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltime " + requestTime + " " + callTime + " " + tagSb);
                                 String callTimePerRecord = df.format((double) callTime / pm.getPagesize());
-                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltimeperrecord " + requestTime + " " + callTimePerRecord + " "
-                                                + tagSb.toString());
+                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltimeperrecord " + requestTime + " " + callTimePerRecord + " " + tagSb);
                             }
                             lastPageMetricMap.put(queryId, pm.getPageNumber());
                             
@@ -248,10 +247,10 @@ public class QueryMetricsWriter {
                 
                 if (lifecycle.equals(Lifecycle.CLOSED) || lifecycle.equals(Lifecycle.CANCELLED)) {
                     // write ELAPSED_TIME
-                    timelyClient.write("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " " + tagSb.toString());
+                    timelyClient.write("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " " + tagSb);
                     
                     // write NUM_RESULTS
-                    timelyClient.write("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " " + tagSb.toString());
+                    timelyClient.write("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " " + tagSb);
                     
                     // clean up last page map
                     lastPageMetricMap.remove(queryId);
@@ -263,10 +262,10 @@ public class QueryMetricsWriter {
                     if (createTime == -1) {
                         createTime = queryMetric.getSetupTime();
                     }
-                    timelyClient.write("put dw.query.metrics.CREATE_TIME " + createDate + " " + createTime + " " + tagSb.toString());
+                    timelyClient.write("put dw.query.metrics.CREATE_TIME " + createDate + " " + createTime + " " + tagSb);
                     
                     // write a COUNT value of 1 so that we can count total queries
-                    timelyClient.write("put dw.query.metrics.COUNT " + createDate + " 1 " + tagSb.toString());
+                    timelyClient.write("put dw.query.metrics.COUNT " + createDate + " 1 " + tagSb);
                 }
                 
             } catch (Exception e) {

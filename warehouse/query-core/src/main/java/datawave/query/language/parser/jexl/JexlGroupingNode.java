@@ -21,7 +21,7 @@ public class JexlGroupingNode extends JexlNode {
         sb.append("(");
         for (int x = 0; x < c.size(); x++) {
             JexlNode n = c.get(x);
-            sb.append(n.toString());
+            sb.append(n);
         }
         sb.append(")");
         

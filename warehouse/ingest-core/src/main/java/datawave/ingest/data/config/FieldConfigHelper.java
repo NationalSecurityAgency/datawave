@@ -106,7 +106,7 @@ public final class FieldConfigHelper {
         SAXParser parser = parserFactory.newSAXParser();
         parser.parse(in, handler);
         
-        log.info("Loaded FieldConfigHelper: " + toString());
+        log.info("Loaded FieldConfigHelper: " + this);
     }
     
     public boolean addKnownField(String fieldName) {
@@ -358,7 +358,7 @@ public final class FieldConfigHelper {
             }
             
             if (!seenAttr.isEmpty()) {
-                throw new IllegalArgumentException("default tag incomplete, '" + seenAttr.toString() + "' attributes were missing");
+                throw new IllegalArgumentException("default tag incomplete, '" + seenAttr + "' attributes were missing");
             } else {
                 defaultsComplete = true;
             }
@@ -400,7 +400,7 @@ public final class FieldConfigHelper {
             }
             
             if (!seenAttr.isEmpty()) {
-                throw new IllegalArgumentException("nomatch tag incomplete, '" + seenAttr.toString() + "' attributes were missing");
+                throw new IllegalArgumentException("nomatch tag incomplete, '" + seenAttr + "' attributes were missing");
             }
         }
         

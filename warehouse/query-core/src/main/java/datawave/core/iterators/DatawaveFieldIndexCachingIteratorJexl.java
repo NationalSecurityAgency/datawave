@@ -331,7 +331,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             this.fiName = fieldName;
         } else {
             this.fieldName = fieldName;
-            this.fiName = new Text("fi" + NULL_BYTE + fieldName.toString());
+            this.fiName = new Text("fi" + NULL_BYTE + fieldName);
         }
         log.trace("fName : " + fiName.toString().replaceAll(NULL_BYTE, "%00"));
         this.fieldValue = fieldValue;
@@ -969,7 +969,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
         };
         
-        return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this.toString() + " in " + boundingFiRange.toString());
+        return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange);
         
     }
     

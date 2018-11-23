@@ -243,7 +243,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                 columnVisibilities.add(attr.getColumnVisibility());
             }
         }
-        log.debug("dataList is " + dataList.toString());
+        log.debug("dataList is " + dataList);
         ColumnVisibility combinedColumnVisibility = this.markingFunctions.combine(columnVisibilities);
         metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), new Text(), combinedColumnVisibility, timestamp);
         if (dataList.size() == 1) {

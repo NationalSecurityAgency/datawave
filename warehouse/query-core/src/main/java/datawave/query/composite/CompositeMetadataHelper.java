@@ -120,10 +120,10 @@ public class CompositeMetadataHelper {
                                 log.trace("Unable to parse composite field transition date", e);
                             }
                         } else {
-                            log.warn("EventMetadata entry did not contain a null byte in the column qualifier: " + entry.getKey().toString());
+                            log.warn("EventMetadata entry did not contain a null byte in the column qualifier: " + entry.getKey());
                         }
                     } else {
-                        log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey().toString());
+                        log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey());
                     }
                 } else if (colFam.equals(ColumnFamilyConstants.COLF_CI)) {
                     // Get the column qualifier from the key. It contains the datatype
@@ -133,10 +133,10 @@ public class CompositeMetadataHelper {
                             String[] componentFields = colq.substring(idx + 1).split(",");
                             compositeMetadata.setCompositeFieldMappingByType(type, fieldName, Arrays.asList(componentFields));
                         } else {
-                            log.warn("EventMetadata entry did not contain a null byte in the column qualifier: " + entry.getKey().toString());
+                            log.warn("EventMetadata entry did not contain a null byte in the column qualifier: " + entry.getKey());
                         }
                     } else {
-                        log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey().toString());
+                        log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey());
                     }
                 }
             }

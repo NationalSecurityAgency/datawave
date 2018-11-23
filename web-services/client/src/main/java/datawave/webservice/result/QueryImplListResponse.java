@@ -224,7 +224,7 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
     public String toString() {
         StringBuilder buf = new StringBuilder();
         buf.append("numResults: ").append(numResults);
-        buf.append(", queries: ").append(query.toString());
+        buf.append(", queries: ").append(query);
         return buf.toString();
     }
 }

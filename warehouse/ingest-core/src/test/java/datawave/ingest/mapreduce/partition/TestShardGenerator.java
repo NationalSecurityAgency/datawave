@@ -29,7 +29,7 @@ public class TestShardGenerator {
     private Random randomishGenerator = new Random(System.currentTimeMillis());
     ArrayList<String> availableTServers;
     
-    private static final String TMPDIR = Files.createTempDir().toString() + "/";
+    private static final String TMPDIR = Files.createTempDir() + "/";
     private static final String BALANCEDISH_SHARDS_LST = "balancedish_shards.lst";
     
     public TestShardGenerator(Configuration conf, int numDays, int shardsPerDay, int totalTservers, String... tableNames) throws IOException {

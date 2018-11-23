@@ -644,7 +644,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
             
             if (log.isDebugEnabled()) {
-                log.debug("Type Filter: " + typeFilter.toString());
+                log.debug("Type Filter: " + typeFilter);
             }
             
             config.setDatatypeFilter(typeFilter);

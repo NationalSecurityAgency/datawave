@@ -191,7 +191,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
         }
         
         if (log.isDebugEnabled()) {
-            log.debug("Found " + fieldToUniqueTerms.size() + " matching terms for range: " + fieldToUniqueTerms.toString());
+            log.debug("Found " + fieldToUniqueTerms.size() + " matching terms for range: " + fieldToUniqueTerms);
         }
         
         return fieldToUniqueTerms;
@@ -217,7 +217,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
                     Key k = entry.getKey();
                     
                     if (log.isTraceEnabled()) {
-                        log.trace("Foward Index entry: " + entry.getKey().toString());
+                        log.trace("Foward Index entry: " + entry.getKey());
                     }
                     
                     k.getRow(holder);

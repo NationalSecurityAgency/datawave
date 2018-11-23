@@ -9,5 +9,5 @@ public interface LookupLocal {
     /**
      * Look up one or more entries in Accumulo by table, row, and optionally colFam and colQual
      */
-    public LookupResponse lookup(String table, String row, MultivaluedMap<String,String> queryParameters);
+    LookupResponse lookup(String table, String row, MultivaluedMap<String,String> queryParameters);
 }

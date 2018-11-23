@@ -262,7 +262,7 @@ public class Chain extends JexlQueryFunction {
     
     private static void fixQuery(JexlNode node) throws ParseException {
         
-        System.out.println(node.toString() + " -- " + node.getClass().getName() + " -- " + node.getChildren().size());
+        System.out.println(node + " -- " + node.getClass().getName() + " -- " + node.getChildren().size());
         for (JexlNode n : node.getChildren()) {
             fixQuery(n);
         }

@@ -163,7 +163,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         s.setRange(r);
         for (Entry<Key,Value> entry : s) {
             if (log.isDebugEnabled()) {
-                log.debug(entry.getKey().toString() + " " + entry.getValue().toString());
+                log.debug(entry.getKey() + " " + entry.getValue());
             }
         }
     }

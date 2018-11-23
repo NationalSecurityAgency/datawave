@@ -11,46 +11,46 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 
 public interface TableCache extends Callable<Boolean>, Serializable {
     
-    public String getTableName();
+    String getTableName();
     
-    public String getConnectionPoolName();
+    String getConnectionPoolName();
     
-    public String getAuths();
+    String getAuths();
     
-    public long getReloadInterval();
+    long getReloadInterval();
     
-    public Date getLastRefresh();
+    Date getLastRefresh();
     
-    public AccumuloConnectionFactory getConnectionFactory();
+    AccumuloConnectionFactory getConnectionFactory();
     
-    public InMemoryInstance getInstance();
+    InMemoryInstance getInstance();
     
-    public SharedCacheCoordinator getWatcher();
+    SharedCacheCoordinator getWatcher();
     
-    public Future<Boolean> getReference();
+    Future<Boolean> getReference();
     
-    public long getMaxRows();
+    long getMaxRows();
     
-    public void setTableName(String tableName);
+    void setTableName(String tableName);
     
-    public void setConnectionPoolName(String connectionPoolName);
+    void setConnectionPoolName(String connectionPoolName);
     
-    public void setAuths(String auths);
+    void setAuths(String auths);
     
-    public void setReloadInterval(long reloadInterval);
+    void setReloadInterval(long reloadInterval);
     
-    public void setLastRefresh(Date lastRefresh);
+    void setLastRefresh(Date lastRefresh);
     
-    public void setConnectionFactory(AccumuloConnectionFactory connectionFactory);
+    void setConnectionFactory(AccumuloConnectionFactory connectionFactory);
     
-    public void setInstance(InMemoryInstance instance);
+    void setInstance(InMemoryInstance instance);
     
-    public void setWatcher(SharedCacheCoordinator watcher);
+    void setWatcher(SharedCacheCoordinator watcher);
     
-    public void setReference(Future<Boolean> reference);
+    void setReference(Future<Boolean> reference);
     
-    public void setMaxRows(long maxRows);
+    void setMaxRows(long maxRows);
     
-    public Boolean call() throws Exception;
+    Boolean call() throws Exception;
     
 }

@@ -133,7 +133,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);
-            thread.setName("Datawave BatchScanner Session " + threadIdentifier.toString() + " -" + threadNum++);
+            thread.setName("Datawave BatchScanner Session " + threadIdentifier + " -" + threadNum++);
             thread.setDaemon(true);
             return thread;
         }

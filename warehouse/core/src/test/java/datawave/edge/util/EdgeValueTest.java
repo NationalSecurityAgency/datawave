@@ -112,14 +112,14 @@ public class EdgeValueTest {
     public void testEqualAfterReencodingWithValidUuid() throws InvalidProtocolBufferException {
         EdgeValue originalEdgeValue = createEdgeValueWithUuid("11111111-1111-1111-1111-111111111111");
         EdgeValue decodedEdgeValue = EdgeValue.decode(createEdgeValueWithUuid("11111111-1111-1111-1111-111111111111").encode());
-        assertEquals(originalEdgeValue.toString() + "\n" + decodedEdgeValue.toString(), originalEdgeValue, decodedEdgeValue);
+        assertEquals(originalEdgeValue + "\n" + decodedEdgeValue, originalEdgeValue, decodedEdgeValue);
     }
     
     @Test
     public void testEqualAfterReencodingWithInvalidUuid() throws InvalidProtocolBufferException {
         EdgeValue originalEdgeValue = createEdgeValueWithUuid("1234");
         EdgeValue decodedEdgeValue = EdgeValue.decode(createEdgeValueWithUuid("1234").encode());
-        assertEquals(originalEdgeValue.toString() + "\n" + decodedEdgeValue.toString(), originalEdgeValue, decodedEdgeValue);
+        assertEquals(originalEdgeValue + "\n" + decodedEdgeValue, originalEdgeValue, decodedEdgeValue);
     }
     
     @Test
@@ -133,14 +133,14 @@ public class EdgeValueTest {
     public void testHashcodeAfterReencodingWithValidUuid() throws InvalidProtocolBufferException {
         EdgeValue originalEdgeValue = createEdgeValueWithUuid("11111111-1111-1111-1111-111111111111");
         EdgeValue decodedEdgeValue = EdgeValue.decode(createEdgeValueWithUuid("11111111-1111-1111-1111-111111111111").encode());
-        assertEquals(originalEdgeValue.toString() + "\n" + decodedEdgeValue.toString(), originalEdgeValue.hashCode(), decodedEdgeValue.hashCode());
+        assertEquals(originalEdgeValue + "\n" + decodedEdgeValue, originalEdgeValue.hashCode(), decodedEdgeValue.hashCode());
     }
     
     @Test
     public void testHashcodeAfterReencodingWithInvalidUuid() throws InvalidProtocolBufferException {
         EdgeValue originalEdgeValue = createEdgeValueWithUuid("1234");
         EdgeValue decodedEdgeValue = EdgeValue.decode(createEdgeValueWithUuid("1234").encode());
-        assertEquals(originalEdgeValue.toString() + "\n" + decodedEdgeValue.toString(), originalEdgeValue.hashCode(), decodedEdgeValue.hashCode());
+        assertEquals(originalEdgeValue + "\n" + decodedEdgeValue, originalEdgeValue.hashCode(), decodedEdgeValue.hashCode());
     }
     
     @Test

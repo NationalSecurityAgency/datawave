@@ -305,7 +305,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                         }
                         
                         if (log != null)
-                            log.trace("modificationRequests= " + modificationRequests.toString());
+                            log.trace("modificationRequests= " + modificationRequests);
                         for (DefaultModificationRequest modReq : modificationRequests) {
                             try {
                                 if (fieldCount > 1 && (oldFieldValue == null && modReq.getMode() != MODE.INSERT) && !mode.equals(OPERATIONMODE.REPLACE)) {
@@ -319,7 +319,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                 {
                                     log.info("eventUser = " + eventUser + ", event.getUser() = " + event.getUser());
                                     if (log != null)
-                                        log.trace("Submitting request to MutableMetadataHandler from MutableMetadataUUIDHandler: " + modReq.toString());
+                                        log.trace("Submitting request to MutableMetadataHandler from MutableMetadataUUIDHandler: " + modReq);
                                     
                                     // make sure user isn't null or empty
                                     if (eventUser == null || eventUser.equals("")) {
@@ -335,7 +335,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                             catch (Exception e) {
                                 if (log != null)
                                     log.error("Modification error", e);
-                                exceptions.add(new Exception(event.getId() + ": " + e.getMessage() + "\n" + modReq.toString()));
+                                exceptions.add(new Exception(event.getId() + ": " + e.getMessage() + "\n" + modReq));
                             }
                         }
                         modificationRequests.clear();
@@ -372,7 +372,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
         ei.setEventUid(idEvent.getMetadata().getInternalId());
         List<EventIdentifier> thisEvent = Collections.singletonList(ei);
         if (log != null)
-            log.trace("operation=" + operation.toString());
+            log.trace("operation=" + operation);
         
         // set values for modification request
         DefaultModificationRequest modReq = new DefaultModificationRequest();
@@ -414,7 +414,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
         }
         
         if (log != null)
-            log.trace("Returning modReq=" + modReq.toString());
+            log.trace("Returning modReq=" + modReq);
         return modReq;
     }
     

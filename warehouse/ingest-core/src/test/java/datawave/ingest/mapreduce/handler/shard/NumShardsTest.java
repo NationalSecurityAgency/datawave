@@ -209,7 +209,7 @@ public class NumShardsTest {
         
         // invalid entry and should be ignored
         m = new Mutation(NumShards.NUM_SHARDS);
-        m.put(NumShards.NUM_SHARDS_CF.toString() + "blah", "20171102_19", "");
+        m.put(NumShards.NUM_SHARDS_CF + "blah", "20171102_19", "");
         
         recordWriter.addMutation(m);
         
@@ -272,7 +272,7 @@ public class NumShardsTest {
         
         // write a couiple of entries for multiple numshards
         Mutation m = new Mutation(NumShards.NUM_SHARDS);
-        m.put(NumShards.NUM_SHARDS_CF.toString() + "blah", "20171102_19", "");
+        m.put(NumShards.NUM_SHARDS_CF + "blah", "20171102_19", "");
         
         recordWriter.addMutation(m);
         

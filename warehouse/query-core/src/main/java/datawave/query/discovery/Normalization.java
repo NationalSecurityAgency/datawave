@@ -10,5 +10,5 @@ import datawave.data.normalizer.NormalizationException;
  * See {@link PatternNormalization} and {@link LiteralNormalization}.
  */
 public interface Normalization {
-    public String normalize(Type<?> normalizer, String field, String value) throws NormalizationException;
+    String normalize(Type<?> normalizer, String field, String value) throws NormalizationException;
 }

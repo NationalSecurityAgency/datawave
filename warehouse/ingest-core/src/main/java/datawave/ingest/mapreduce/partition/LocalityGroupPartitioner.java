@@ -31,7 +31,7 @@ public class LocalityGroupPartitioner extends Partitioner<BulkIngestKey,Value> i
         int index = colFams.indexOf(columnFamily);
         if (index == -1) {
             if (!hasSeenUnknownColFams) {
-                log.warn("Unexpected column family: " + columnFamily.toString());
+                log.warn("Unexpected column family: " + columnFamily);
                 hasSeenUnknownColFams = true;
             }
             return colFams.size() % reducers; // spill over unrecognized partition

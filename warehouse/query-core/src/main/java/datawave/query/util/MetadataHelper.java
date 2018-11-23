@@ -542,8 +542,8 @@ public class MetadataHelper implements ApplicationContextAware {
         
         Set<String> unevalFields = null;
         if (log.isTraceEnabled())
-            log.trace("using connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths.toString() + " and model table name: "
-                            + modelTableName + " looking at model " + modelName + " unevaluatedFields " + unevaluatedFields);
+            log.trace("using connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths + " and model table name: " + modelTableName
+                            + " looking at model " + modelName + " unevaluatedFields " + unevaluatedFields);
         
         Scanner scan = ScannerHelper.createScanner(connector, modelTableName, auths);
         scan.setRange(new Range());
@@ -588,7 +588,7 @@ public class MetadataHelper implements ApplicationContextAware {
         
         if (queryModel.getReverseQueryMapping().isEmpty()) {
             if (log.isTraceEnabled()) {
-                log.trace("empty query model for " + this.toString());
+                log.trace("empty query model for " + this);
             }
             if ("DatawaveMetadata".equals(modelTableName)) {
                 log.error("Query Model should not be empty...");
@@ -615,8 +615,7 @@ public class MetadataHelper implements ApplicationContextAware {
         TraceStopwatch stopWatch = timers.newStartedStopwatch("MetadataHelper -- Getting query model names");
         
         if (log.isTraceEnabled())
-            log.trace("using connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths.toString() + " and model table name: "
-                            + modelTableName);
+            log.trace("using connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths + " and model table name: " + modelTableName);
         
         Scanner scan = ScannerHelper.createScanner(connector, modelTableName, auths);
         scan.setRange(new Range());

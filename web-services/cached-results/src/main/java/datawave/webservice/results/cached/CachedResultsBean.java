@@ -598,8 +598,8 @@ public class CachedResultsBean {
                         
                         if (dataWritten == false) {
                             String message = (loadBatchException == null) ? "unknown" : loadBatchException.getMessage();
-                            log.error("Batch write FAILED - last exception = " + message + "record = "
-                                            + ((CacheableQueryRow) cacheableQueryObject).getColumnValues().entrySet().toString(), loadBatchException);
+
+                            log.error("Batch write FAILED - last exception = " + message + "record = " + cqo.getColumnValues().entrySet(), loadBatchException);
                         } else if (rowsWritten >= rowsPerBatch) {
                             persistBatch(ps);
                             ps.clearBatch();
@@ -2157,7 +2157,7 @@ public class CachedResultsBean {
         }
         
         if (log.isTraceEnabled()) {
-            log.trace(owner + " has authorizations " + cbAuths.toString());
+            log.trace(owner + " has authorizations " + cbAuths);
         }
         
         RunningQuery query = runningQueryCache.get(id);
@@ -2279,7 +2279,7 @@ public class CachedResultsBean {
     public void persist(CachedRunningQuery crq, String owner) {
         
         synchronized (this) {
-            log.debug("persisting cachedRunningQuery " + crq.getQueryId() + " to cache with status " + crq.getStatus().toString());
+            log.debug("persisting cachedRunningQuery " + crq.getQueryId() + " to cache with status " + crq.getStatus());
             this.cachedRunningQueryCache.remove(owner + "-" + crq.getQueryId());
             this.cachedRunningQueryCache.remove(owner + "-" + crq.getAlias());
             this.cachedRunningQueryCache.remove(owner + "-" + crq.getView());
@@ -2287,7 +2287,7 @@ public class CachedResultsBean {
             this.cachedRunningQueryCache.put(owner + "-" + crq.getQueryId(), crq);
             this.cachedRunningQueryCache.put(owner + "-" + crq.getAlias(), crq);
             this.cachedRunningQueryCache.put(owner + "-" + crq.getView(), crq);
-            log.debug("persisting cachedRunningQuery " + crq.getQueryId() + " to database with status " + crq.getStatus().toString());
+            log.debug("persisting cachedRunningQuery " + crq.getQueryId() + " to database with status " + crq.getStatus());
             crq.saveToDatabase(ctx.getCallerPrincipal(), metricFactory);
         }
         
@@ -2302,7 +2302,7 @@ public class CachedResultsBean {
                 log.debug("retrieving cachedRunningQuery " + id + " from cache");
                 crq = this.cachedRunningQueryCache.get(owner + "-" + id);
                 if (crq != null) {
-                    log.debug("retrieved cachedRunningQuery " + id + " from cache with status " + crq.getStatus().toString());
+                    log.debug("retrieved cachedRunningQuery " + id + " from cache with status " + crq.getStatus());
                 }
             } catch (Exception e) {
                 log.error("Caught attempting to retrieve cached results from infinispan cache: " + e.getMessage(), e);
@@ -2316,7 +2316,7 @@ public class CachedResultsBean {
                     log.debug("retrieving cachedRunningQuery " + id + " from database");
                     crq = CachedRunningQuery.retrieveFromDatabase(id, ctx.getCallerPrincipal(), metricFactory);
                     if (crq != null) {
-                        log.debug("retrieved cachedRunningQuery " + id + " from database with status " + crq.getStatus().toString());
+                        log.debug("retrieved cachedRunningQuery " + id + " from database with status " + crq.getStatus());
                         this.cachedRunningQueryCache.put(owner + "-" + id, crq);
                     }
                 } catch (Exception e) {
@@ -2341,7 +2341,7 @@ public class CachedResultsBean {
                     Path crPath = new Path(hdfsDir);
                     Path userPath = new Path(crPath, owner);
                     if (log.isDebugEnabled())
-                        log.debug("Looking for exported cached for " + id + " results in: " + userPath.toString());
+                        log.debug("Looking for exported cached for " + id + " results in: " + userPath);
                     if (fs.exists(userPath)) {
                         // Find any directory that contains the id as a .alias, .view, or .queryId file
                         ArrayList<FileStatus> list = new ArrayList<>();
@@ -2385,11 +2385,10 @@ public class CachedResultsBean {
                                     outReadThread.start();
                                     errReadThread.setName(id + "-StdErrReadThread");
                                     errReadThread.start();
-                                    log.info("Importing cached results from: " + tableDirectory.toString());
+                                    log.info("Importing cached results from: " + tableDirectory);
                                     int exitVal = process.waitFor();
                                     if (0 != exitVal) {
-                                        throw new IOException("Error importing cached results data from: " + tableDirectory.toString() + ". Exit value: "
-                                                        + exitVal);
+                                        throw new IOException("Error importing cached results data from: " + tableDirectory + ". Exit value: " + exitVal);
                                     }
                                     outReadThread.join();
                                     errReadThread.join();
@@ -2454,7 +2453,7 @@ public class CachedResultsBean {
         CachedRunningQuery crq = null;
         
         synchronized (CachedResultsBean.class) {
-            log.debug("persisting cachedRunningQuery " + queryId + " to cache with status " + status.toString());
+            log.debug("persisting cachedRunningQuery " + queryId + " to cache with status " + status);
             if (useCache) {
                 crq = retrieve(queryId, owner);
             }
@@ -2472,7 +2471,7 @@ public class CachedResultsBean {
                 this.cachedRunningQueryCache.put(owner + "-" + crq.getView(), crq);
             }
             
-            log.debug("persisting cachedRunningQuery " + queryId + " to database with status " + status.toString());
+            log.debug("persisting cachedRunningQuery " + queryId + " to database with status " + status);
             CachedRunningQuery.saveToDatabaseByQueryId(queryId, alias, owner, status, statusMessage);
         }
     }
@@ -2506,8 +2505,8 @@ public class CachedResultsBean {
         StringBuilder view = new StringBuilder();
         try {
             view.append("CREATE VIEW ").append(viewName).append("(");
-            view.append(viewCols.toString());
-            view.append(") AS SELECT ").append(tableCols.toString());
+            view.append(viewCols);
+            view.append(") AS SELECT ").append(tableCols);
             view.append(" FROM ").append(tableName);
             if (log.isTraceEnabled()) {
                 log.trace("Creating view using sql: " + view);
@@ -2517,7 +2516,7 @@ public class CachedResultsBean {
             viewStmt.close();
             viewCreated = true;
         } catch (SQLException e) {
-            log.error("Error creating view with sql: " + view.toString(), e);
+            log.error("Error creating view with sql: " + view, e);
             throw e;
         }
         return viewCreated;

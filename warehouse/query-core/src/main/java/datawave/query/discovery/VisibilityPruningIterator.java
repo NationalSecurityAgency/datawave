@@ -109,7 +109,7 @@ public class VisibilityPruningIterator extends WrappingIterator implements Optio
         
         if (node.getType() == NodeType.OR) {
             if (log.isTraceEnabled()) {
-                log.trace("Top level OR Node, removing unsatisfied branches from: " + visibility.toString());
+                log.trace("Top level OR Node, removing unsatisfied branches from: " + visibility);
             }
             byte[] expression = visibility.getExpression();
             if (authorizations != null) {
@@ -121,7 +121,7 @@ public class VisibilityPruningIterator extends WrappingIterator implements Optio
             // re-assigning visibility and modifiableNode with changes
             visibility = VisibilityFlattener.flatten(node, expression, false);
             if (log.isTraceEnabled()) {
-                log.trace("removed unsatisfied branches, visibility now: " + visibility.toString());
+                log.trace("removed unsatisfied branches, visibility now: " + visibility);
             }
             node = visibility.getParseTree();
         }
@@ -130,12 +130,12 @@ public class VisibilityPruningIterator extends WrappingIterator implements Optio
         
         if (!blacklist.isEmpty()) {
             if (log.isTraceEnabled()) {
-                log.trace("removing undisplayedVisibilities: " + blacklist.toString() + " from " + visibility.toString());
+                log.trace("removing undisplayedVisibilities: " + blacklist + " from " + visibility);
             }
             removeUndisplayedVisibilities(blacklist, expression, node);
             visibility = VisibilityFlattener.flatten(node, expression, false);
             if (log.isTraceEnabled()) {
-                log.trace("removed undisplayedVisibilities: " + blacklist.toString() + ", visibility now " + visibility.toString());
+                log.trace("removed undisplayedVisibilities: " + blacklist + ", visibility now " + visibility);
             }
         }
         

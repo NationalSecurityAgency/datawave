@@ -29,7 +29,7 @@ public class QueryFunctions {
         Object value = ValueTuple.getStringValue(valueTuple);
         Object fieldName = ValueTuple.getFieldName(valueTuple);
         if (value != null && fieldName != null) {
-            return fieldName.toString() + ":" + value.toString();
+            return fieldName + ":" + value;
         } else {
             return "";
         }

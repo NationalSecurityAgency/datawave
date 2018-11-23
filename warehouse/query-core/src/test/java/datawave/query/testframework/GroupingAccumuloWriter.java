@@ -147,7 +147,7 @@ class GroupingAccumuloWriter {
                         for (String val : rawData.get(column)) {
                             if (this.fieldConfig.getIndexFields().contains(column)) {
                                 Normalizer<?> norm = meta.get(column.toLowerCase()).normalizer;
-                                mut.put(FIELD_INDEX + column, norm.normalize(val) + NULL_SEP + this.dataType + NULL_SEP + uid.toString(),
+                                mut.put(FIELD_INDEX + column, norm.normalize(val) + NULL_SEP + this.dataType + NULL_SEP + uid,
                                                 this.cfgData.getDefaultVisibility(), timestamp, EMPTY_VALUE);
                             }
                             mut.put(this.dataType + NULL_SEP + uid, column + "." + count + NULL_SEP + val, this.cfgData.getDefaultVisibility(), timestamp,

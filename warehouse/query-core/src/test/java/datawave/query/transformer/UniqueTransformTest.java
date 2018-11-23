@@ -169,12 +169,9 @@ public class UniqueTransformTest {
             expected = countUniqueness(input, fields);
         }
         
-        Transformer docToEntry = new Transformer() {
-            @Override
-            public Object transform(Object input) {
-                Document d = (Document) input;
-                return Maps.immutableEntry(d.getMetadata(), d);
-            }
+        Transformer docToEntry = input1 -> {
+            Document d = (Document) input1;
+            return Maps.immutableEntry(d.getMetadata(), d);
         };
         TransformIterator inputIterator = new TransformIterator(input.iterator(), docToEntry);
         UniqueTransform transform = new UniqueTransform(fields);

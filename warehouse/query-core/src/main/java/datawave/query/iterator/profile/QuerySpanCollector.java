@@ -32,7 +32,7 @@ public class QuerySpanCollector {
                 }
             }
             if (log.isTraceEnabled()) {
-                log.trace("thread:" + Thread.currentThread().getId() + " collector: " + toString() + " added querySpan: " + querySpan.toString());
+                log.trace("thread:" + Thread.currentThread().getId() + " collector: " + this + " added querySpan: " + querySpan);
             }
             querySpan.reset();
         }
@@ -86,10 +86,10 @@ public class QuerySpanCollector {
     private void logStack() {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         StringBuilder sb = new StringBuilder();
-        sb.append("thread:").append(Thread.currentThread().getId()).append(" ").append(this).append(" ").append(toString()).append("\n");
+        sb.append("thread:").append(Thread.currentThread().getId()).append(" ").append(this).append(" ").append(this).append("\n");
         for (int x = 1; x < (stack.length - 1); x++) {
             StackTraceElement element = stack[x];
-            sb.append(element.toString()).append("\n");
+            sb.append(element).append("\n");
         }
         if (log.isTraceEnabled()) {
             log.trace(sb.toString());

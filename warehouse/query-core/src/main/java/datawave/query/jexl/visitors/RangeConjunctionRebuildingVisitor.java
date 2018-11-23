@@ -267,7 +267,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
                     // only want to fetch the range selectivity once
                     rangeSelectivity = JexlASTHelper.getNodeSelectivity(Sets.newHashSet(range.getFieldName()), config, stats);
                     if (log.isDebugEnabled())
-                        log.debug("Range selectivity:" + rangeSelectivity.toString());
+                        log.debug("Range selectivity:" + rangeSelectivity);
                 }
                 for (JexlNode child : JexlASTHelper.getEQNodes(node)) {
                     // Try to get selectivity for each child

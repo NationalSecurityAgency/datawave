@@ -60,7 +60,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         
         public QueryLogicHolder(String logicName) {
             this.setDaemon(true);
-            this.setName(Thread.currentThread().getName() + "-CompositeQueryLogic-" + logicName + "-" + UUID.randomUUID().toString());
+            this.setName(Thread.currentThread().getName() + "-CompositeQueryLogic-" + logicName + "-" + UUID.randomUUID());
         }
         
         public GenericQueryConfiguration getConfig() {

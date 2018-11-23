@@ -365,7 +365,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 config.setDatatypeFilter(typeFilter);
                 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Type Filter: " + typeFilter.toString());
+                    logger.debug("Type Filter: " + typeFilter);
                 }
             }
         }
@@ -447,7 +447,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 }
                 
                 mapKeyBuilder.append(Constants.NULL_BYTE_STRING);
-                mapKeyBuilder.append(key.getColumnQualifier().toString());
+                mapKeyBuilder.append(key.getColumnQualifier());
                 mapKey = mapKeyBuilder.toString();
                 
                 // if we are over our threshold for unique values skip it.

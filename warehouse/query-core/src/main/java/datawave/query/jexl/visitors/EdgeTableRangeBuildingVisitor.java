@@ -138,7 +138,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             return computeVisitaionContext((List<QueryContext>) context);
             // return context;
         } else {
-            log.error("JexlScript node recieved unexpected return type: " + context.toString());
+            log.error("JexlScript node recieved unexpected return type: " + context);
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR);
             throw new RuntimeException(qe);
         }

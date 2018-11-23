@@ -4,11 +4,11 @@ package datawave.webservice;
  * 
  */
 public interface HtmlProvider {
-    public String getTitle();
+    String getTitle();
     
-    public String getHeadContent();
+    String getHeadContent();
     
-    public String getPageHeader();
+    String getPageHeader();
     
-    public String getMainContent();
+    String getMainContent();
 }

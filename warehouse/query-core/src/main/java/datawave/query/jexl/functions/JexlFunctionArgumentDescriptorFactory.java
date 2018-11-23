@@ -24,12 +24,12 @@ public interface JexlFunctionArgumentDescriptorFactory {
      *            A node that must be for a JEXL function in the implementing class.
      * @return The argument descriptor.
      */
-    public JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node);
+    JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node);
     
-    public static final JexlNode TRUE_NODE = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
+    JexlNode TRUE_NODE = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
     
     /** An encapsulation of methods that can be used with this interface */
-    public static class F {
+    class F {
         /**
          * A convenience method to get the argument descriptor from a node
          */

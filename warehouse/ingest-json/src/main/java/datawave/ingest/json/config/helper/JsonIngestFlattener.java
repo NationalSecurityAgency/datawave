@@ -306,7 +306,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
                     if (args[i].equals("-f") || args[i].equals("--file")) {
                         
                         Path p = Paths.get(args[++i]);
-                        Preconditions.checkState(Files.exists(p), "Json input file does not exist: " + p.toString());
+                        Preconditions.checkState(Files.exists(p), "Json input file does not exist: " + p);
                         jsonInputFile = p.toFile();
                         
                     } else if (args[i].equals("-c") || args[i].equals("--config")) {
@@ -315,7 +315,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
                         jsonIngestConfig = new Configuration();
                         for (String configFile : configs) {
                             Path p = Paths.get(configFile.trim());
-                            Preconditions.checkState(Files.exists(p), "Config file does not exist: " + p.toString());
+                            Preconditions.checkState(Files.exists(p), "Config file does not exist: " + p);
                             jsonIngestConfig.addResource(p.toUri().toURL());
                         }
                         

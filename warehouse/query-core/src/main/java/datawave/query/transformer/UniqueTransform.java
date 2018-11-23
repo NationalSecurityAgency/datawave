@@ -84,12 +84,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * @return A unique transform predicate
      */
     public Predicate<Entry<Key,Document>> getUniquePredicate() {
-        return new Predicate<Entry<Key,Document>>() {
-            @Override
-            public boolean apply(@Nullable Entry<Key,Document> input) {
-                return UniqueTransform.this.apply(input) != null;
-            }
-        };
+        return input -> UniqueTransform.this.apply(input) != null;
     }
     
     /**

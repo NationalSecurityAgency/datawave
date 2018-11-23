@@ -230,7 +230,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             if (logTimingDetails || log.isTraceEnabled()) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("retrieved document from host:").append(host).append(" at key:").append(documentKey.toStringNoTime()).append(" stageTimers:")
-                                .append(stageTimers.toString());
+                                .append(stageTimers);
                 sb.append(" sourceCount:").append(currentSourceCount).append(" nextCount:").append(currentNextCount).append(" seekCount:")
                                 .append(currentSeekCount);
                 if (log.isTraceEnabled()) {
@@ -317,8 +317,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             String row = documentKey.getRow().toString();
             dataDate = DateHelper.parseWithGMT(row);
             if (log.isTraceEnabled()) {
-                log.trace("Document.getTimestamp() returned Log.MAX_VALUE - " + documentKey.toString() + " - computed dataDate from row: "
-                                + dataDate.toString());
+                log.trace("Document.getTimestamp() returned Log.MAX_VALUE - " + documentKey + " - computed dataDate from row: " + dataDate);
             }
         } else {
             dataDate = new Date(timestamp);
