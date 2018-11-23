@@ -422,7 +422,7 @@ public class AccumuloIndexAgeDisplay {
             log.error("Accumulo Exception!");
         } catch (AccumuloSecurityException ase) {
             log.error("Accumulo Security Exception");
-            ase.printStackTrace();
+            ase.printStackTrace(); // Called from main()
         }
     }
 }

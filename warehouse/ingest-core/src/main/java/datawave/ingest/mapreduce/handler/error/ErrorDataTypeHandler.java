@@ -265,7 +265,7 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
     
     public static void getStackTrace(DataOutputBuffer buffer, Throwable e) {
         PrintStream stream = new PrintStream(buffer);
-        e.printStackTrace(stream);
+        e.printStackTrace(stream); // Prints to DataOutputBuffer
         stream.flush();
     }
     

@@ -8,6 +8,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,6 +39,8 @@ public class QueryParametersTest {
     
     private String headerName = "Header-name1";
     private String headerValue = "headervalue1";
+    
+    private static final Logger log = Logger.getLogger(QueryParametersTest.class);
     
     @Before
     public void beforeTests() {
@@ -102,7 +105,7 @@ public class QueryParametersTest {
             Assert.assertEquals(formatDateCheck, QueryParametersImpl.formatDate(beginDate));
             Assert.assertEquals(parseDateCheck, QueryParametersImpl.parseStartDate(QueryParametersImpl.formatDate(beginDate)));
         } catch (ParseException e) {
-            e.printStackTrace();
+            log.error(e);
         }
         
         // Test the QueryParametersImpl.validate(QueryParametersImpl params) method
@@ -122,7 +125,7 @@ public class QueryParametersTest {
             params.add(QueryParameters.QUERY_PARAMS, "params");
             params.add(QueryParameters.QUERY_LOGIC_NAME, "logicName");
         } catch (ParseException e) {
-            e.printStackTrace();
+            log.error(e);
         }
         
         // Add an unknown parameter

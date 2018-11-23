@@ -198,7 +198,7 @@ public class HealthBean {
             ObjectName objectName = new ObjectName("jboss.as:management-root=server");
             mBeanServer.invoke(objectName, "shutdown", new Object[] {false, 0}, new String[] {boolean.class.getName(), int.class.getName()});
         } catch (MalformedObjectNameException | ReflectionException | InstanceNotFoundException | MBeanException e) {
-            e.printStackTrace();
+            LOG.warn("Error shutting down: {}", e);
         }
         
         return Response.ok().entity(response).build();

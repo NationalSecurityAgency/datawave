@@ -271,8 +271,7 @@ public class MetricsIngester extends Configured implements Tool {
                                 new Text("IngestJob_" + outFormat.format(dateObjNext)))));
                 
             } catch (IllegalArgumentException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.error(e);
             }
             
         }

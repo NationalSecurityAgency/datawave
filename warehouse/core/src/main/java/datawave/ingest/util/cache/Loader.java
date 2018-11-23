@@ -160,7 +160,6 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
                 log.debug("Loading cache asynchronously");
             build(null);
         } catch (Throwable e) {
-            e.printStackTrace();
             log.error(e);
         }
         

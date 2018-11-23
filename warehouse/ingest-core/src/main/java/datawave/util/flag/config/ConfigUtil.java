@@ -67,7 +67,7 @@ public class ConfigUtil {
             return um.unmarshal(xmlSource, claz).getValue();
             
         } catch (SAXException | ParserConfigurationException e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Called from main()
             throw new RuntimeException(e);
         } finally {
             if (xmlSource != null)

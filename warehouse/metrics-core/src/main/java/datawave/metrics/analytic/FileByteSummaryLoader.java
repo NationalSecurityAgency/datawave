@@ -129,7 +129,7 @@ public class FileByteSummaryLoader extends Configured implements Tool {
         try {
             ToolRunner.run(new FileByteSummaryLoader(), args);
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Called from main()
         }
     }
     

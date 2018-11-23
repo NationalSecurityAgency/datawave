@@ -229,7 +229,7 @@ public class CardinalityScanner {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e);
         } finally {
             if (scanner != null) {
                 scanner.close();

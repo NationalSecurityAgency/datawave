@@ -123,7 +123,7 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
                 job.addCacheFile(splitsFileUri);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e);
             throw new RuntimeException("Failed to initialize partitioner for job", e);
         }
     }

@@ -119,7 +119,7 @@ public class MetadataHelperUpdateHdfsListener {
             }
             
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e);
         }
     }
     

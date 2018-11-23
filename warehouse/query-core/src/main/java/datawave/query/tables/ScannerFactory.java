@@ -250,7 +250,7 @@ public class ScannerFactory {
             bs.close();
         } catch (Exception e) {
             // ANY EXCEPTION HERE CAN SAFELY BE IGNORED
-            e.printStackTrace();
+            log.trace("Exception closing ScannerSession, can be safely ignored: {}", e);
         }
     }
     

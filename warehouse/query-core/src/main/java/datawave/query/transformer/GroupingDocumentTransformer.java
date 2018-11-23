@@ -130,7 +130,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
                     created = this.makeField(shortName, this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(field.getColumnVisibility())),
                                     field.getColumnVisibility(), 0L, field.getValueOfTypedValue());
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    log.error(ex);
                 }
                 if (created != null) {
                     if (fieldMap.containsKey(fieldName)) {

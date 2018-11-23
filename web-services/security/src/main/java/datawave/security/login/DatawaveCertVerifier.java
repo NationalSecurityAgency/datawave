@@ -23,7 +23,6 @@ public class DatawaveCertVerifier implements X509CertificateVerifier {
             cert.checkValidity();
             validity = checkOCSP(cert, alias, truststore);
         } catch (Exception e) {
-            e.printStackTrace();
             if (trace)
                 log.trace("Validity exception", e);
         }

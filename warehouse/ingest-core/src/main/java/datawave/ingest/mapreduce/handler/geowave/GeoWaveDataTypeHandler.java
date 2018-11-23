@@ -278,7 +278,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
         try {
             features = createSimpleFeatures(helper, event, fields);
         } catch (ParseException e) {
-            e.printStackTrace();
+            log.error(e);
         }
         
         // Entry Key/Value Pairs
