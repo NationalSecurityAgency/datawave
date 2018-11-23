@@ -580,7 +580,7 @@ public class CachedResultsBean {
                         SQLException loadBatchException = null; // exception;
                         while (dataWritten == false && attempt < 10) {
                             try {
-                                loadBatch(ps, owner, queryId, logic.getLogicName(), fieldMap, (CacheableQueryRow) cacheableQueryObject, maxLength);
+                                loadBatch(ps, owner, queryId, logic.getLogicName(), fieldMap, cacheableQueryObject, maxLength);
                                 dataWritten = true;
                                 rowsWritten++;
                             } catch (SQLException e) {
@@ -598,8 +598,9 @@ public class CachedResultsBean {
                         
                         if (dataWritten == false) {
                             String message = (loadBatchException == null) ? "unknown" : loadBatchException.getMessage();
-
-                            log.error("Batch write FAILED - last exception = " + message + "record = " + cqo.getColumnValues().entrySet(), loadBatchException);
+                            
+                            log.error("Batch write FAILED - last exception = " + message + "record = " + cacheableQueryObject.getColumnValues().entrySet(),
+                                            loadBatchException);
                         } else if (rowsWritten >= rowsPerBatch) {
                             persistBatch(ps);
                             ps.clearBatch();
