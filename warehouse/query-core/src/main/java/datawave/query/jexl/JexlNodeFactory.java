@@ -1224,13 +1224,13 @@ public class JexlNodeFactory {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode kid = node.jjtGetChild(i);
             Set<String> identifiers = JexlASTHelper.getIdentifierNames(kid);
-            if (identifiers.size() > 0) {
+            if (!identifiers.isEmpty()) {
                 JexlNode newNode = JexlNodeFactory.shallowCopy(original);
                 JexlNode n = buildUntypedNewNode(newNode, buildIdentifier(identifiers.iterator().next()), fieldValue);
                 list.add(n);
             }
         }
-        if (list.size() > 0) {
+        if (!list.isEmpty()) {
             return createOrNode(list);
         } else {
             JexlNode newNode = JexlNodeFactory.shallowCopy(original);
@@ -1256,7 +1256,7 @@ public class JexlNodeFactory {
             JexlNode kid = node.jjtGetChild(i);
             list.add(buildUntypedNewNode(newNode, (ASTIdentifier) JexlNodeFactory.shallowCopy(kid), fieldValue));
         }
-        if (list.size() > 0) {
+        if (!list.isEmpty()) {
             return createOrNode(list);
         }
         return null;
@@ -1280,7 +1280,7 @@ public class JexlNodeFactory {
             JexlNode kid = node.jjtGetChild(i);
             list.add(buildUntypedNewNode(newNode, (ASTIdentifier) JexlNodeFactory.shallowCopy(kid), fieldValue));
         }
-        if (list.size() > 0) {
+        if (!list.isEmpty()) {
             return createOrNode(list);
         } else {
             return buildUntypedNewNode(newNode, buildIdentifier(node.image), fieldValue);

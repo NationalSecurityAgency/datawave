@@ -20,10 +20,6 @@ public class ValidateVisibilityResponse extends BaseResponse {
     
     private static final long serialVersionUID = 1L;
     
-    public ValidateVisibilityResponse() {
-        super();
-    }
-    
     @XmlElementWrapper(name = "Visibilities")
     @XmlElement(name = "Visibility")
     List<Visibility> visibilityList = null;

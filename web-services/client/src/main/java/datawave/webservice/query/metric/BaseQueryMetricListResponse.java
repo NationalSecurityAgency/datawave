@@ -165,8 +165,4 @@ public abstract class BaseQueryMetricListResponse<T extends BaseQueryMetric> ext
         return builder.toString();
     }
     
-    public BaseQueryMetricListResponse() {
-        super();
-    }
-    
 }

@@ -305,7 +305,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         
         DefaultModificationRequest mr = DefaultModificationRequest.class.cast(request);
         
-        if (null == mr.getEvents() || mr.getEvents().size() == 0) {
+        if (null == mr.getEvents() || mr.getEvents().isEmpty()) {
             throw new IllegalArgumentException("No events specified for modification");
         }
         
@@ -339,7 +339,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 boolean isContent = (contentFields != null && contentFields.contains(fieldName));
                 Set<Type<?>> dataTypes = helper.getDatatypesForField(fieldName, Collections.singleton(datatype));
                 
-                if ((isIndexed || isReverseIndexed || isIndexOnly) && (null == dataTypes || dataTypes.size() == 0))
+                if ((isIndexed || isReverseIndexed || isIndexOnly) && (null == dataTypes || dataTypes.isEmpty()))
                     throw new IllegalStateException("Field " + fieldName + " is marked index only but has no dataTypes");
                 
                 long origTimestamp = getOriginalEventTimestamp(con, userAuths, shardId, datatype, eventUid);
@@ -377,7 +377,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     
                     // find the current values
                     currentEntryList = getField(con, userAuths, shardId, datatype, eventUid, fieldName, oldFieldValue, oldFieldMarkings, oldViz);
-                    if (oldFieldValue != null && currentEntryList.size() == 0) {
+                    if (oldFieldValue != null && currentEntryList.isEmpty()) {
                         throw new IllegalArgumentException("Modification request rejected. Current value of " + fieldName + " does not match submitted value.");
                     }
                 } else {
@@ -812,7 +812,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
             }
             
             // Determine the most common timestamp
-            if (timestampCounts.size() == 0) {
+            if (timestampCounts.isEmpty()) {
                 // if no fields exist, then use the shard date at 00:00:00
                 highestOccurrenceTimestamp = DateHelper.parse(shardId.substring(0, 8)).getTime();
             } else {
@@ -921,7 +921,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 if (eResponse.getEvents().size() > 1) {
                     throw new IllegalStateException("More than one event matched " + uuid + " (" + eResponse.getEvents().size() + " matched)");
                 }
-                if (eResponse.getEvents().size() == 0) {
+                if (eResponse.getEvents().isEmpty()) {
                     throw new IllegalStateException("No event matched " + uuid);
                 }
                 

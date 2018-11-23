@@ -141,7 +141,7 @@ public class AtomServiceBean {
                 result.addCategory(collectionName);
             }
             
-            if (result.getCategories().size() == 0)
+            if (result.getCategories().isEmpty())
                 throw new NoResultsException(null);
             else
                 return result;

@@ -107,8 +107,6 @@ class DedupingIterator implements Iterator<Entry<Key,Value>> {
         
         private static final long serialVersionUID = -2126172579955897986L;
         
-        public ByteFunnel() {}
-        
         @Override
         public void funnel(byte[] from, PrimitiveSink into) {
             into.putBytes(from);

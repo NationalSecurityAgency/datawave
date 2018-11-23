@@ -166,8 +166,7 @@ public class AuthorizationsUtil {
         }
         // All auths requested are auths the user has, return downgraded string for auths
         if (missingAuths.isEmpty()) {
-            String finalAuths = AuthorizationsUtil.buildAuthorizationString(Collections.singletonList(finalAuthsList));
-            return finalAuths;
+            return AuthorizationsUtil.buildAuthorizationString(Collections.singletonList(finalAuthsList));
         } else {// missing auths.size() > 0; user requested auths they don't have
             throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
                             + ", User: " + userAuths);

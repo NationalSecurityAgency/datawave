@@ -63,7 +63,6 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
     public static class NullObject implements Serializable {
         private static final long serialVersionUID = -5528112099317370355L;
         
-        public NullObject() {}
     }
     
     /**
@@ -614,8 +613,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
                 ObjectInputStream stream = getInputStream();
                 try {
                     for (int i = 0; i < size; i++) {
-                        E obj = readObject(stream);
-                        last = obj;
+                        last = readObject(stream);
                         gotLast = true;
                     }
                 } finally {

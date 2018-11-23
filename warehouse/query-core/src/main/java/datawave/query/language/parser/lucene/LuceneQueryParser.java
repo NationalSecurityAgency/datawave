@@ -35,10 +35,6 @@ public class LuceneQueryParser implements QueryParser {
     private Map<String,String> filters = new HashMap<>();
     private List<LuceneQueryFunction> allowedFunctions = null;
     
-    public LuceneQueryParser() {
-        
-    }
-    
     @Override
     public datawave.query.language.tree.QueryNode parse(String query) throws ParseException {
         query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147
@@ -106,7 +102,7 @@ public class LuceneQueryParser implements QueryParser {
             evaluateNodes.addAll(node.getChildren());
             Set<FieldedTerm> possibleFilters = extractFilters(evaluateNodes);
             
-            if (evaluateNodes.size() > 0) {
+            if (!evaluateNodes.isEmpty()) {
                 filters.addAll(possibleFilters);
                 
                 for (datawave.query.language.tree.QueryNode n : evaluateNodes) {
@@ -127,7 +123,7 @@ public class LuceneQueryParser implements QueryParser {
     private Set<FieldedTerm> extractAlwaysFilterNodes(Set<FieldedTerm> possibleFilters, List<datawave.query.language.tree.QueryNode> nodes) {
         ListIterator<datawave.query.language.tree.QueryNode> itr = nodes.listIterator(nodes.size());
         
-        while (itr.hasPrevious() && nodes.size() > 0) {
+        while (itr.hasPrevious() && !nodes.isEmpty()) {
             datawave.query.language.tree.QueryNode n = itr.previous();
             if (n instanceof FunctionNode) {
                 FunctionNode fNode = (FunctionNode) n;
@@ -135,13 +131,13 @@ public class LuceneQueryParser implements QueryParser {
                 itr.remove();
             } else {
                 List<datawave.query.language.tree.QueryNode> children = n.getChildren();
-                if (children.size() > 0) {
+                if (!children.isEmpty()) {
                     extractAlwaysFilterNodes(possibleFilters, children);
                     n.setChildren(children);
                 }
             }
         }
-        if (nodes.size() == 0) {
+        if (nodes.isEmpty()) {
             throw new IllegalArgumentException("Insufficient terms to evaluate");
         }
         return possibleFilters;

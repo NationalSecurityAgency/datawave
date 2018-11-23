@@ -249,8 +249,6 @@ public class DateIndexDataTypeHandlerTest {
     public static class TestBaseIngestHelper extends BaseIngestHelper {
         private DateNormalizer dateNormalizer = new DateNormalizer();
         
-        public TestBaseIngestHelper() {}
-        
         @Override
         public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
             Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();

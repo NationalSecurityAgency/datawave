@@ -154,7 +154,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         this.tableName = tableName;
         this.auths = auths;
         
-        if (null != ranges && ranges.size() > 0) {
+        if (null != ranges && !ranges.isEmpty()) {
             List<Range> rangeList = Lists.newArrayList(ranges);
             Collections.sort(rangeList);
             

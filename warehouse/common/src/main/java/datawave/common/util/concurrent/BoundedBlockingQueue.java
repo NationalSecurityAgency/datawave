@@ -90,7 +90,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (queue.size() == 0)
+            if (queue.isEmpty())
                 return null;
             else {
                 E e = queue.poll();
@@ -118,7 +118,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (queue.size() == 0)
+            while (queue.isEmpty())
                 notEmpty.await();
             E e = queue.poll();
             notFull.signal();
@@ -134,7 +134,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (queue.size() == 0) {
+            while (queue.isEmpty()) {
                 if (nanos <= 0)
                     return null;
                 nanos = notEmpty.awaitNanos(nanos);
@@ -181,7 +181,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (queue.size() > 0) {
+            if (!queue.isEmpty()) {
                 boolean ret = queue.remove(o);
                 notFull.signal();
                 return ret;
@@ -199,7 +199,7 @@ public class BoundedBlockingQueue<E> extends AbstractQueue<E> implements Blockin
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (queue.size() > 0) {
+            if (!queue.isEmpty()) {
                 return queue.contains(o);
             }
             return false;

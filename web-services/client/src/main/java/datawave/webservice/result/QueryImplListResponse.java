@@ -33,10 +33,6 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
     @XmlElement
     private int numResults = 0;
     
-    public QueryImplListResponse() {
-        super();
-    }
-    
     public List<Query> getQuery() {
         return query;
     }

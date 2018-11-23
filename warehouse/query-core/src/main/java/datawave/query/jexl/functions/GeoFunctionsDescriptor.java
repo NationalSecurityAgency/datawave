@@ -75,7 +75,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                                         + splitChar + "180");
                         
                         // now link em up
-                        JexlNode andNode1 = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geNode1, leNode1}));
+                        JexlNode andNode1 = JexlNodeFactory.createAndNode(Arrays.asList(geNode1, leNode1));
                         
                         JexlNode geNode2 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), Double.toString(ll[0])
                                         + splitChar + "-180");
@@ -83,11 +83,10 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                                         + splitChar + Double.toString(ur[1]));
                         
                         // now link em up
-                        JexlNode andNode2 = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geNode2, leNode2}));
+                        JexlNode andNode2 = JexlNodeFactory.createAndNode(Arrays.asList(geNode2, leNode2));
                         
                         // link em all up
-                        JexlNode andNode = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {andNode1, andNode2}));
-                        returnNode = andNode;
+                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(andNode1, andNode2));
                         
                     } else {
                         
@@ -95,8 +94,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), args.get(2).image);
                         
                         // now link em up
-                        JexlNode andNode = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geNode, leNode}));
-                        returnNode = andNode;
+                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
                     }
                 } else {
                     
@@ -121,9 +119,8 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         JexlNode leLatNode1 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(1), Double.toString(maxLat));
                         
                         // now link em up
-                        JexlNode andNode1 = JexlNodeFactory.createAndNode(Arrays.asList(
-                                        JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geLonNode1, leLonNode1})),
-                                        JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geLatNode1, leLatNode1}))));
+                        JexlNode andNode1 = JexlNodeFactory.createAndNode(Arrays.asList(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode1, leLonNode1)),
+                                        JexlNodeFactory.createAndNode(Arrays.asList(geLatNode1, leLatNode1))));
                         
                         JexlNode geLonNode2 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), "-180");
                         JexlNode leLonNode2 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), Double.toString(maxLon));
@@ -132,13 +129,11 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         JexlNode leLatNode2 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(1), Double.toString(maxLat));
                         
                         // now link em up
-                        JexlNode andNode2 = JexlNodeFactory.createAndNode(Arrays.asList(
-                                        JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geLonNode2, leLonNode2})),
-                                        JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geLatNode2, leLatNode2}))));
+                        JexlNode andNode2 = JexlNodeFactory.createAndNode(Arrays.asList(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode2, leLonNode2)),
+                                        JexlNodeFactory.createAndNode(Arrays.asList(geLatNode2, leLatNode2))));
                         
                         // link em up
-                        JexlNode andNode = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {andNode1, andNode2}));
-                        returnNode = andNode;
+                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(andNode1, andNode2));
                     } else {
                         JexlNode geLonNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), Double.toString(minLon));
                         JexlNode leLonNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), Double.toString(maxLon));
@@ -147,11 +142,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         JexlNode leLatNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(1), Double.toString(maxLat));
                         
                         // now link em up
-                        JexlNode andNode = JexlNodeFactory.createAndNode(Arrays.asList(
-                                        JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geLonNode, leLonNode})),
-                                        JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geLatNode, leLatNode}))));
                         
-                        returnNode = andNode;
+                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode, leLonNode)),
+                                        JexlNodeFactory.createAndNode(Arrays.asList(geLatNode, leLatNode))));
                     }
                 }
             } else if (name.equals("within_circle")) {
@@ -191,9 +184,8 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                                 + String.valueOf(lon - radius));
                 
                 // now link em up
-                JexlNode andNode = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {geNode, leNode}));
                 
-                returnNode = andNode;
+                returnNode = JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
             }
             return returnNode;
         }

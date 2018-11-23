@@ -42,7 +42,7 @@ public class BatchResource extends RunningResource {
     @Override
     protected void init(final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
         Preconditions.checkNotNull(tableName);
-        Preconditions.checkArgument(null != currentRange && currentRange.size() > 0);
+        Preconditions.checkArgument(null != currentRange && !currentRange.isEmpty());
         
         // copy the appropriate variables.
         ranges = Lists.newArrayList(currentRange);

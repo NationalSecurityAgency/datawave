@@ -197,7 +197,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
      * @return the UID for the event
      */
     protected UID uidOverride(final RawRecordContainer event) {
-        if (this.uidOverrideFields.size() == 0) {
+        if (this.uidOverrideFields.isEmpty()) {
             return null;
         }
         

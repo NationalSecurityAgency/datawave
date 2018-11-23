@@ -166,7 +166,7 @@ public class GeoWaveTableConfigHelper implements TableConfigHelper {
                                 }
                             }
                         }
-                        if (existingScopes.size() > 0) {
+                        if (!existingScopes.isEmpty()) {
                             // see if the options are the same, if they are not
                             // the same, apply a merge with the existing options
                             // and the configured options

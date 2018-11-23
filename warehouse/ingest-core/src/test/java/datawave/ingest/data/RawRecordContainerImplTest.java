@@ -75,14 +75,14 @@ public class RawRecordContainerImplTest {
         event.setRawData(csv.getBytes());
         event.generateId(null);
         event.validate();
-        assertTrue(event.getErrors().size() == 0);
+        assertTrue(event.getErrors().isEmpty());
         
         event = create();
         event.setVisibility("TESTVIS1&TESTVIS2");
         event.setRawData(csv.getBytes());
         event.generateId(null);
         event.validate();
-        assertTrue(event.getErrors().size() == 0);
+        assertTrue(event.getErrors().isEmpty());
     }
     
     @Test
@@ -369,7 +369,7 @@ public class RawRecordContainerImplTest {
         }
         
         public void validate() {
-            if (getAltIds() == null || getAltIds().size() == 0) {
+            if (getAltIds() == null || getAltIds().isEmpty()) {
                 addError(RawDataErrorNames.UUID_MISSING);
             }
             if (0 == getDate()) {

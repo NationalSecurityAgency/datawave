@@ -88,10 +88,10 @@ public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
             synchronized (threadToTrackingMapMap) {
                 // synchronize this last to prevent race condition for this lock underlying super type
                 synchronized (this) {
-                    if (threadToTrackingMapMap.size() > 0) {
+                    if (!threadToTrackingMapMap.isEmpty()) {
                         t.addAll(Collections.unmodifiableCollection(threadToTrackingMapMap.values()));
                     }
-                    if (connectorToTrackingMapMap.size() > 0) {
+                    if (!connectorToTrackingMapMap.isEmpty()) {
                         t.addAll(Collections.unmodifiableCollection(connectorToTrackingMapMap.values()));
                     }
                     maxTotal.setValue(getMaxTotal());

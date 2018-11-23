@@ -181,7 +181,7 @@ public class EvaluationPhaseFilterFunctions {
     // this functionality
     // we do not want to return positive matches in the hit list, so return a boolean here
     public static boolean excludeRegex(Object fieldValue, String regex) {
-        return includeRegex(fieldValue, regex).size() == 0;
+        return includeRegex(fieldValue, regex).isEmpty();
     }
     
     // Evaluation does not perform any goofy rewriting of the JEXL query string into
@@ -189,7 +189,7 @@ public class EvaluationPhaseFilterFunctions {
     // this functionality
     // we do not want to return positive matches in the hit list, so return a boolean here
     public static boolean excludeRegex(Iterable<?> values, String regex) {
-        return includeRegex(values, regex).size() == 0;
+        return includeRegex(values, regex).isEmpty();
     }
     
     public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object... args) {
@@ -1476,16 +1476,14 @@ public class EvaluationPhaseFilterFunctions {
         int[] indices = indicesOf(input, '.');
         if (indices.length < pos + 1)
             throw new RuntimeException("Input" + input + " does not have a '.' at position " + pos + " from the left.");
-        String match = input.substring(0, indices[indices.length - pos - 1]);
-        return match;
+        return input.substring(0, indices[indices.length - pos - 1]);
     }
     
     public static String getMatchToRightOfPeriod(String input, int pos) {
         int[] indices = indicesOf(input, '.');
         if (indices.length < pos + 1)
             throw new RuntimeException("Input" + input + " does not have a '.' at position " + pos + " from the right.");
-        String match = input.substring(indices[indices.length - pos - 1] + 1);
-        return match;
+        return input.substring(indices[indices.length - pos - 1] + 1);
     }
     
     private static int[] indicesOf(String input, char c) {

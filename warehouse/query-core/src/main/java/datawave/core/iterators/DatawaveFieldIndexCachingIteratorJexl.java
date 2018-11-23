@@ -60,7 +60,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator implements CompositePredicateFilterer {
     
-    public static abstract class Builder<B extends Builder<B>> {
+    public abstract static class Builder<B extends Builder<B>> {
         private Text fieldName;
         protected Text fieldValue;
         private Predicate<Key> datatypeFilter;
@@ -740,8 +740,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             if (log.isTraceEnabled()) {
                 log.trace("range -> " + range);
             }
-            final Range boundingFiRange = range;
-            futures.add(fillSet(boundingFiRange));
+            futures.add(fillSet(range));
         }
         
         boolean failed = false;
@@ -1183,8 +1182,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         private volatile boolean cancelled = false;
         
         private final int bufferSize = 128;
-        
-        public HdfsBackedControl() {}
         
         protected Path getOwnershipFile(String row) {
             return new Path(getRowDir(row), OWNERSHIP_FILE);

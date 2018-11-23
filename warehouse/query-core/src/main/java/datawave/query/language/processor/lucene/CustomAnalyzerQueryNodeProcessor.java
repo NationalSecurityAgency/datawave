@@ -66,7 +66,7 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
  */
 public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     
-    private final static Logger logger = Logger.getLogger(CustomAnalyzerQueryNodeProcessor.class);
+    private static final Logger logger = Logger.getLogger(CustomAnalyzerQueryNodeProcessor.class);
     
     private Analyzer analyzer;
     
@@ -76,8 +76,6 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     private Set<String> tokenizedFields = new HashSet<>();
     private Set<String> skipTokenizeUnfieldedFields = new HashSet<>();
     private boolean tokensAsPhrase = false;
-    
-    public CustomAnalyzerQueryNodeProcessor() {}
     
     @Override
     public QueryNode process(QueryNode queryTree) throws QueryNodeException {

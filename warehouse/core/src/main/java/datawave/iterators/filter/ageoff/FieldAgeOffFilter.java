@@ -94,13 +94,6 @@ public class FieldAgeOffFilter extends AppliedRule {
     protected Map<ByteSequence,Long> fieldTimes = null;
     
     /**
-     * Default Constructor.
-     */
-    public FieldAgeOffFilter() {
-        super();
-    }
-    
-    /**
      * Required by the {@code FilterRule} interface. This method returns a {@code boolean} value indicating whether or not to allow the {@code (Key, Value)}
      * pair through the rule. A value of {@code true} indicates that he pair should be passed onward through the {@code Iterator} stack, and {@code false}
      * indicates that the {@code (Key, Value)} pair should not be passed on.

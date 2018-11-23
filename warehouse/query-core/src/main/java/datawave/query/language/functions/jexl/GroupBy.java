@@ -21,7 +21,7 @@ public class GroupBy extends JexlQueryFunction {
      */
     @Override
     public void validate() throws IllegalArgumentException {
-        if (this.parameterList.size() == 0) {
+        if (this.parameterList.isEmpty()) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
             throw new IllegalArgumentException(qe);
         }

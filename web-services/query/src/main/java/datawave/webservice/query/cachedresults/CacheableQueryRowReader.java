@@ -16,9 +16,9 @@ import org.apache.log4j.Logger;
 
 public class CacheableQueryRowReader {
     
-    static private Logger log = Logger.getLogger(CacheableQueryRowReader.class);
+    private static Logger log = Logger.getLogger(CacheableQueryRowReader.class);
     
-    static public CacheableQueryRow createRow(CachedRowSet cachedRowSet, Set<String> fixedFieldsInEvent) {
+    public static CacheableQueryRow createRow(CachedRowSet cachedRowSet, Set<String> fixedFieldsInEvent) {
         
         CacheableQueryRowImpl cqfc = new CacheableQueryRowImpl();
         
@@ -116,7 +116,7 @@ public class CacheableQueryRowReader {
         return cqfc;
     }
     
-    static private Map<String,String> parseColumnMarkings(String s, Map<String,Integer> columnToIndexMap) {
+    private static Map<String,String> parseColumnMarkings(String s, Map<String,Integer> columnToIndexMap) {
         
         Map<Integer,String> indexToColumnMap = new HashMap<>();
         for (Map.Entry<String,Integer> entry : columnToIndexMap.entrySet()) {
@@ -143,7 +143,7 @@ public class CacheableQueryRowReader {
         return colToMarkingMap;
     }
     
-    static private Map<String,Long> parseColumnTimestamps(String s, Map<String,Integer> columnToIndexMap) {
+    private static Map<String,Long> parseColumnTimestamps(String s, Map<String,Integer> columnToIndexMap) {
         
         Map<Integer,String> indexToColumnMap = new HashMap<>();
         for (Map.Entry<String,Integer> entry : columnToIndexMap.entrySet()) {

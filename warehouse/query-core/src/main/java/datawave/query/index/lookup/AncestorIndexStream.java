@@ -83,7 +83,7 @@ public class AncestorIndexStream implements IndexStream {
         Set<IndexMatch> matches = info.uids();
         
         // test if there are no specific uids for this tuple, if there are no uids, don't attempt to reduce it
-        if (matches.size() == 0) {
+        if (matches.isEmpty()) {
             return info;
         }
         

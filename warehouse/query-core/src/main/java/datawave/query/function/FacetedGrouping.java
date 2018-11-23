@@ -56,10 +56,9 @@ public class FacetedGrouping implements Function<Entry<Key,Document>,Entry<Key,D
         TreeMultimap<String,Attribute<?>> newDocumentAttributes = TreeMultimap.create();
         Key topKey = null;
         
-        Entry<Key,Document> doc = input;
         if (topKey == null)
-            topKey = doc.getKey();
-        currentDoc = doc.getValue();
+            topKey = input.getKey();
+        currentDoc = input.getValue();
         
         Map<?,?> currentAttr = currentDoc.getDictionary();
         

@@ -24,10 +24,6 @@ public class TablePropertiesResponse extends BaseResponse {
     @XmlElement(name = "Property")
     private List<TableProperty> properties = null;
     
-    public TablePropertiesResponse() {
-        super();
-    }
-    
     public List<TableProperty> getProperties() {
         return properties;
     }

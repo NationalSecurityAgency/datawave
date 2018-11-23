@@ -47,7 +47,7 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
     }
     
     public void addField(Multimap<String,NormalizedContentInterface> fields, String name, String value) {
-        if (value != null && value.length() > 0) {
+        if (value != null && !value.isEmpty()) {
             NormalizedFieldAndValue n = new NormalizedFieldAndValue(name, value);
             fields.put(name, n);
         }

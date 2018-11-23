@@ -82,7 +82,7 @@ public class FieldMissingFromSchemaVisitor extends BaseVisitor {
             return nonExistentFieldNames;
         }
         
-        if (identifiers.size() == 0) {
+        if (identifiers.isEmpty()) {
             // Catch cases where we have two literals
             // essentially everything but identifier op literal
             return nonExistentFieldNames;

@@ -21,7 +21,7 @@ public class QueryModel {
     private static final String EMPTY_STR = "";
     public static final char PARAM_VALUE_SEP = ',';
     public static final String PARAM_VALUE_SEP_STR = new String(new char[] {PARAM_VALUE_SEP});
-    public final static String LIMIT_FIELDS_ORIGINAL_COUNT_SUFFIX = "ORIGINAL_COUNT";
+    public static final String LIMIT_FIELDS_ORIGINAL_COUNT_SUFFIX = "ORIGINAL_COUNT";
     
     protected final Multimap<String,String> forwardQueryMapping;
     protected final Map<String,String> reverseQueryMapping;

@@ -555,11 +555,10 @@ public class SharedCacheCoordinator implements Serializable {
             log.trace("table:" + triStateName + " got " + sharedTriState + " from " + sharedTriStates);
         }
         
-        SharedTriState.STATE newTriState = state;
         if (log.isTraceEnabled()) {
             log.trace("table:" + triStateName + " put(" + triStateName + ", " + state + ")" + "into localTriStates:" + localTriStates);
         }
-        sharedTriState.setState(newTriState);
+        sharedTriState.setState(state);
         localTriStates.put(triStateName, state);
         if (log.isTraceEnabled()) {
             log.trace("table:" + triStateName + " sharedTriState now:" + sharedTriState);

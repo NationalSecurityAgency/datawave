@@ -662,8 +662,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         
         try {
             if (lastSeenKey != null) {
-                Range newRange = new Range(lastSeenKey, false, currentRange.getEndKey(), currentRange.isEndKeyInclusive());
-                currentRange = newRange;
+                currentRange = new Range(lastSeenKey, false, currentRange.getEndKey(), currentRange.isEndKeyInclusive());
             }
         } catch (Exception e) {
             log.error(e);

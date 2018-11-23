@@ -63,7 +63,7 @@ public class JexlRangeNode extends JexlNode {
         return sb.toString();
     }
     
-    static public String convertToRegex(String s) {
+    public static String convertToRegex(String s) {
         StringBuilder sb = new StringBuilder();
         char[] chars = s.toCharArray();
         

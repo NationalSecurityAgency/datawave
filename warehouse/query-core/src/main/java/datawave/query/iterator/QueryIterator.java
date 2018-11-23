@@ -841,7 +841,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             documents = Iterators.transform(documents, new DocumentMetadata());
         }
         
-        if (this.limitFieldsMap.size() > 0) {
+        if (!this.limitFieldsMap.isEmpty()) {
             if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents,
                                 new EvaluationTrackingFunction<>(QuerySpan.Stage.LimitFields, trackingSpan, new LimitFields(this.getLimitFieldsMap())));
@@ -1186,7 +1186,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         // query)
         if (!this.isFullTableScanOnly()) {
             
-            boolean isQueryFullySatisfiedInitialState = batchedQueries <= 0 ? true : false;
+            boolean isQueryFullySatisfiedInitialState = batchedQueries <= 0;
             String hitListOptionString = documentOptions.get(QueryOptions.HIT_LIST);
             
             if (hitListOptionString != null) {
@@ -1316,9 +1316,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         Set<String> indexedFields = new HashSet<>(this.getTypeMetadata().keySet());
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
-        SatisfactionVisitor satisfactionVisitor = new SatisfactionVisitor(getNonEventFields(), indexedFields, Collections.emptySet(),
-                        isQueryFullySatisfiedInitialState);
-        return satisfactionVisitor;
+        return new SatisfactionVisitor(getNonEventFields(), indexedFields, Collections.emptySet(), isQueryFullySatisfiedInitialState);
     }
     
     public void setQuery(String query) {

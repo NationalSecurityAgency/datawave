@@ -18,7 +18,7 @@ public abstract class AbstractQueryCache<T extends AbstractRunningQuery> impleme
         cache = buildCache();
     }
     
-    abstract protected Cache<String,T> buildCache();
+    protected abstract Cache<String,T> buildCache();
     
     /**
      * Indicates whether or not this cache contains a {@link AbstractRunningQuery} associated with the query {@code id}.

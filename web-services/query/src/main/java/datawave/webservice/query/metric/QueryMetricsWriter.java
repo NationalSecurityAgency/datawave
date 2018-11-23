@@ -81,7 +81,7 @@ public class QueryMetricsWriter {
     private List<QueryMetricHolder> metricQueue;
     private DecimalFormat df = new DecimalFormat("0.00");
     
-    volatile static private AtomicBoolean receivingMetrics = new AtomicBoolean(false);
+    private static volatile AtomicBoolean receivingMetrics = new AtomicBoolean(false);
     
     private UdpClient createUdpClient() {
         if (config != null && StringUtils.isNotBlank(config.getTimelyHost())) {
@@ -115,7 +115,7 @@ public class QueryMetricsWriter {
             long start = System.currentTimeMillis();
             List<QueryMetricHolder> failedMetrics = new ArrayList<>();
             try {
-                if (metricQueue.size() > 0) {
+                if (!metricQueue.isEmpty()) {
                     try {
                         // write previously failed metrics
                         failedMetrics = writeMetrics(queryMetricHandler, metricQueue);
@@ -124,7 +124,7 @@ public class QueryMetricsWriter {
                             // logged at ERROR to record successful write of previously failed writes
                             log.error("Wrote " + successful + " previously failed query metric updates");
                         }
-                        if (failedMetrics.size() > 0) {
+                        if (!failedMetrics.isEmpty()) {
                             throw new IllegalStateException(failedMetrics.size() + " metrics failed write");
                         }
                     } catch (Throwable t) {
@@ -172,7 +172,7 @@ public class QueryMetricsWriter {
                     log.trace("Wrote " + (metricQueue.size() - failedMetrics.size()) + " query metric updates");
                 }
                 metricQueue.clear();
-                if (failedMetrics.size() > 0) {
+                if (!failedMetrics.isEmpty()) {
                     metricQueue.addAll(failedMetrics);
                     throw new IllegalStateException(metricQueue.size() + " metrics failed write");
                 }
@@ -193,7 +193,7 @@ public class QueryMetricsWriter {
         }
     }
     
-    synchronized private void sendMetricsToTimely(BaseQueryMetric queryMetric) {
+    private synchronized void sendMetricsToTimely(BaseQueryMetric queryMetric) {
         
         if (timelyClient != null && queryMetric.getQueryType().equalsIgnoreCase("RunningQuery")) {
             try {
@@ -278,7 +278,7 @@ public class QueryMetricsWriter {
         
         List<QueryMetricHolder> failedMetrics = new ArrayList<>();
         
-        if (metricQueue.size() > 0) {
+        if (!metricQueue.isEmpty()) {
             log.debug("writing " + metricQueue.size() + " query metric updates");
             for (QueryMetricHolder queryMetricHolder : metricQueue) {
                 try {

@@ -339,7 +339,7 @@ public class MapReduceStatePersisterBean {
             String previousRow = sid;
             Map<Key,Value> batch = new HashMap<>();
             for (Entry<Key,Value> entry : scanner) {
-                if (!previousRow.equals(entry.getKey().getRow().toString()) && batch.size() > 0) {
+                if (!previousRow.equals(entry.getKey().getRow().toString()) && !batch.isEmpty()) {
                     MapReduceInfoResponse response = populateResponse(batch.entrySet());
                     if (null != response)
                         result.getResults().add(response);
@@ -349,7 +349,7 @@ public class MapReduceStatePersisterBean {
                 }
                 previousRow = entry.getKey().getRow().toString();
             }
-            if (batch.size() > 0) {
+            if (!batch.isEmpty()) {
                 MapReduceInfoResponse response = populateResponse(batch.entrySet());
                 if (null != response)
                     result.getResults().add(response);
@@ -466,7 +466,7 @@ public class MapReduceStatePersisterBean {
         if (null != jobs)
             result.setJobExecutions(new ArrayList<>(jobs));
         try {
-            if (null != hdfs && hdfs.length() > 0 && null != result.getResultsDirectory()) {
+            if (null != hdfs && !hdfs.isEmpty() && null != result.getResultsDirectory()) {
                 Configuration conf = new Configuration();
                 conf.set("fs.defaultFS", hdfs);
                 // If we can't talk to HDFS then I want to fail fast, default is to retry 10 times.

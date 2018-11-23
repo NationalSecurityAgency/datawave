@@ -28,13 +28,6 @@ public abstract class TokenFilterBase extends AppliedRule {
     private static final byte[] DELIMITERS = "|&()".getBytes();
     
     /**
-     * Default Constructor.
-     */
-    public TokenFilterBase() {
-        super();
-    }
-    
-    /**
      * This method is to be implemented by sub-classes of this class. It should return the tokens that needs to be tested against a test token for the instance
      * of this class.
      * 

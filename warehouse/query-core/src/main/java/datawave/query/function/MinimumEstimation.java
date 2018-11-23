@@ -42,10 +42,9 @@ public class MinimumEstimation implements Function<Entry<Key,Document>,Entry<Key
         TreeMultimap<String,Attribute<? extends Comparable<?>>> newDocumentAttributes = TreeMultimap.create();
         Key topKey = null;
         
-        Entry<Key,Document> doc = input;
         if (topKey == null)
-            topKey = doc.getKey();
-        currentDoc = doc.getValue();
+            topKey = input.getKey();
+        currentDoc = input.getValue();
         
         Map<?,?> currentAttr = currentDoc.getDictionary();
         

@@ -129,7 +129,7 @@ public class IpV4Address extends IpAddress {
                         wc_octet = i;
                     } else {
                         int value = 0;
-                        if (parts[i].length() > 0) {
+                        if (!parts[i].isEmpty()) {
                             value = (radix == 0 ? Integer.decode(parts[i]) : Integer.parseInt(parts[i], radix));
                         }
                         if ((value >>> 8) != 0) {
@@ -147,7 +147,7 @@ public class IpV4Address extends IpAddress {
                         throw new IllegalArgumentException("Part " + parts[i] + " of " + address + " is has too many digits for radix " + radix);
                     }
                     int value = 0;
-                    if (parts[i].length() > 0) {
+                    if (!parts[i].isEmpty()) {
                         value = (radix == 0 ? Integer.decode(parts[i]) : Integer.parseInt(parts[i], radix));
                     }
                     if ((value >>> 8) != 0) {

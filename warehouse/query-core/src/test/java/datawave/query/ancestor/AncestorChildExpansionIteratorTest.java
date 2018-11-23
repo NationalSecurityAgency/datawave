@@ -15,8 +15,8 @@ import java.io.IOException;
 import java.util.*;
 
 public class AncestorChildExpansionIteratorTest {
-    private List<String> children = Arrays.asList(new String[] {"a", "a.1", "a.1.1", "a.1.2", "a.1.2.1", "a.10", "a.2", "a.3", "a.4", "a.4.1", "a.4.1.1",
-            "a.4.1.2", "a.4.2", "a.5", "a.6", "a.7", "a.8", "a.9"});
+    private List<String> children = Arrays.asList("a", "a.1", "a.1.1", "a.1.2", "a.1.2.1", "a.10", "a.2", "a.3", "a.4", "a.4.1", "a.4.1.1", "a.4.1.2", "a.4.2",
+                    "a.5", "a.6", "a.7", "a.8", "a.9");
     
     private List<Map.Entry<Key,Value>> baseValues;
     private AncestorChildExpansionIterator iterator;

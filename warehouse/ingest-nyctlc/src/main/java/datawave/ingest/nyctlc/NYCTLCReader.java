@@ -82,8 +82,7 @@ public class NYCTLCReader extends CSVReaderBase {
     
     @Override
     public RawRecordContainer getEvent() {
-        RawRecordContainer e = super.getEvent();
-        return e;
+        return super.getEvent();
     }
     
     /** Creates a NYCTLCHelper for the RecordReader. */

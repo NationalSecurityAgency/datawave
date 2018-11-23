@@ -210,9 +210,9 @@ public abstract class GroupingTest {
             
             log.debug("mapping is " + genderKey + "-" + ageKey + " count:" + value);
             String key;
-            if (genderKey.length() > 0 && ageKey.length() > 0) {
+            if (!genderKey.isEmpty() && !ageKey.isEmpty()) {
                 key = genderKey + "-" + ageKey;
-            } else if (genderKey.length() > 0) {
+            } else if (!genderKey.isEmpty()) {
                 key = genderKey;
             } else {
                 key = ageKey;

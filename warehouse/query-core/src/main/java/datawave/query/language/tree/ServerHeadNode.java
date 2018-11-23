@@ -4,7 +4,7 @@ import org.apache.log4j.Logger;
 
 public class ServerHeadNode extends QueryNode {
     
-    private final static Logger log = Logger.getLogger(ServerHeadNode.class.getName());
+    private static final Logger log = Logger.getLogger(ServerHeadNode.class.getName());
     
     public ServerHeadNode(QueryNode... children) {
         super(children);

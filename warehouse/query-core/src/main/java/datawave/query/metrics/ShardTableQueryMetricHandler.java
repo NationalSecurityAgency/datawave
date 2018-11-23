@@ -420,7 +420,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 queryMetrics = Collections.singletonList(cachedQueryMetric);
             }
             
-            if (queryMetrics.size() > 0) {
+            if (!queryMetrics.isEmpty()) {
                 writeMetrics(updatedQueryMetric, queryMetrics, lastUpdated, true);
             }
             
@@ -467,7 +467,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             while (!done) {
                 ResultsPage resultsPage = runningQuery.next();
                 
-                if (resultsPage.getResults().size() > 0) {
+                if (!resultsPage.getResults().isEmpty()) {
                     objectList.addAll(resultsPage.getResults());
                 } else {
                     done = true;
@@ -477,7 +477,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             BaseQueryResponse queryResponse = queryLogic.getTransformer(query).createResponse(new ResultsPage(objectList));
             List<QueryExceptionType> exceptions = queryResponse.getExceptions();
             
-            if (queryResponse.getExceptions() != null && queryResponse.getExceptions().size() > 0) {
+            if (queryResponse.getExceptions() != null && !queryResponse.getExceptions().isEmpty()) {
                 if (response != null) {
                     response.setExceptions(new LinkedList<>(exceptions));
                     response.setHasResults(false);

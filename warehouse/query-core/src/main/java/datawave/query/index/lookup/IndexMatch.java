@@ -76,7 +76,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
     public JexlNode getNode() {
         if (myNodes.size() == 1) {
             return myNodes.iterator().next();
-        } else if (myNodes.size() == 0)
+        } else if (myNodes.isEmpty())
             return null;
         
         switch (type) {

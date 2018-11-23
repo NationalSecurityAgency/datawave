@@ -214,7 +214,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             mergeChildIntoParent(child, parent);
         }
         // might be the case that there are no matching labels
-        return candidates.size() > 0;
+        return !candidates.isEmpty();
         // @formatter:on
     }
     

@@ -16,7 +16,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class Counts<K> {
     
-    private final static Logger logger = Logger.getLogger(Counts.class);
+    private static final Logger logger = Logger.getLogger(Counts.class);
     
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final Lock updateLock = rwLock.readLock();

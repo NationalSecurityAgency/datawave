@@ -23,10 +23,6 @@ public class ListTablesResponse extends BaseResponse {
     @XmlElement(name = "Table")
     private List<String> tables = null;
     
-    public ListTablesResponse() {
-        super();
-    }
-    
     public List<String> getTables() {
         return tables;
     }

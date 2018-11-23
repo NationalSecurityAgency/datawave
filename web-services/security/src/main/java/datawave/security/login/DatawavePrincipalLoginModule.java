@@ -158,7 +158,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                 }
             }
             StringBuilder buf = new StringBuilder("[" + roles.size() + "] Groups for " + targetUser + " {");
-            if (roles.size() > 0) {
+            if (!roles.isEmpty()) {
                 Group group = new SimpleGroup("Roles");
                 boolean first = true;
                 for (String r : roles)

@@ -16,10 +16,6 @@ public class LuceneUUIDQueryParser extends LuceneQueryParser {
     private static Logger log = Logger.getLogger(LuceneUUIDQueryParser.class.getName());
     private List<UUIDType> uuidTypes = new ArrayList<>();
     
-    public LuceneUUIDQueryParser() {
-        
-    }
-    
     @Override
     public datawave.query.language.tree.QueryNode parse(String query) throws ParseException {
         query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147

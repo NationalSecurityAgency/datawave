@@ -45,7 +45,7 @@ public class JexlNodes {
     public static <T extends JexlNode> T newInstanceOfType(T node) {
         try {
             @SuppressWarnings("rawtypes")
-            Constructor constructor = node.getClass().getConstructor(new Class[] {Integer.TYPE});
+            Constructor constructor = node.getClass().getConstructor(Integer.TYPE);
             return (T) constructor.newInstance(node.id);
         } catch (Exception e) {
             throw new IllegalArgumentException(e);

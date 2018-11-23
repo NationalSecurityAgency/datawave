@@ -80,8 +80,6 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
         private KeyValueReader nextKeyValueReader;
         private ValueReader currentValueReader;
         
-        public ReaderDelegate() {}
-        
         public void setPositionAwareLineReader(PositionAwareLineReader positionAwareLineReader) {
             this.positionAwareLineReader = positionAwareLineReader;
         }

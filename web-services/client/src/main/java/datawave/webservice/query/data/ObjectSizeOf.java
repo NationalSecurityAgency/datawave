@@ -94,8 +94,7 @@ public interface ObjectSizeOf {
          * @return an approximation of the object size
          */
         public static long getObjectSize(Object o) {
-            long estSize = getObjectSize(o, new HashSet<ObjectInstance>(), new Stack<ObjectInstance>(), true);
-            return estSize;
+            return getObjectSize(o, new HashSet<ObjectInstance>(), new Stack<ObjectInstance>(), true);
         }
         
         public static long getObjectSize(Object o, Set<ObjectInstance> visited, Stack<ObjectInstance> stack, boolean useSizeInBytesMethod) {

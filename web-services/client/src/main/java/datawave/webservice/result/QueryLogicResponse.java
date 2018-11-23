@@ -25,10 +25,6 @@ public class QueryLogicResponse extends BaseResponse implements HtmlProvider {
     @XmlElement(name = "QueryLogic")
     private List<QueryLogicDescription> queryLogicList = null;
     
-    public QueryLogicResponse() {
-        super();
-    }
-    
     public List<QueryLogicDescription> getQueryLogicList() {
         return queryLogicList;
     }

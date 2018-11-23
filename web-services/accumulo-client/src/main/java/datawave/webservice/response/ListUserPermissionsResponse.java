@@ -20,10 +20,6 @@ public class ListUserPermissionsResponse extends BaseResponse {
     @XmlElement(name = "Permissions")
     private UserPermissions userPermissions = null;
     
-    public ListUserPermissionsResponse() {
-        super();
-    }
-    
     public UserPermissions getUserPermissions() {
         return userPermissions;
     }

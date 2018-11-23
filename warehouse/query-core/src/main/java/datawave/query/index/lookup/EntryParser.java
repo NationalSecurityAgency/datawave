@@ -73,7 +73,7 @@ public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,Inde
             }
         }
         
-        if (!skipNodeDelay && Union.isDay(date) && !Union.isShard(date) && info.uids().size() == 0) {
+        if (!skipNodeDelay && Union.isDay(date) && !Union.isShard(date) && info.uids().isEmpty()) {
             
             if (isDelayedPredicate(currNode)) {
                 if (log.isTraceEnabled()) {

@@ -165,8 +165,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         @Override
         public Set<String> fieldsForNormalization(MetadataHelper helper, Set<String> datatypeFilter, int arg) {
             // we do not want to normalize any of the regex arguments, nor any of the date arguments.
-            Set<String> fields = Collections.emptySet();
-            return fields;
+            return Collections.emptySet();
         }
         
         @Override

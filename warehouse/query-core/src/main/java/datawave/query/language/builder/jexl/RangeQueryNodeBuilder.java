@@ -34,10 +34,6 @@ import org.apache.lucene.search.TermRangeQuery;
  */
 public class RangeQueryNodeBuilder implements QueryBuilder {
     
-    public RangeQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         TermRangeQueryNode rangeNode = (TermRangeQueryNode) queryNode;
         FieldQueryNode lower = rangeNode.getLowerBound();

@@ -65,8 +65,6 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
     @XmlAttribute(required = false)
     private String lastUpdated;
     
-    public DefaultMetadataField() {}
-    
     public String getFieldName() {
         return fieldName;
     }

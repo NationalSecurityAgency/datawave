@@ -65,8 +65,7 @@ public class GlobalIndexDateRangeFilter extends Filter {
     
     @Override
     public boolean accept(Key k, Value v) {
-        boolean result = range.containsLong(k.getTimestamp());
-        return result;
+        return range.containsLong(k.getTimestamp());
         
     }
     

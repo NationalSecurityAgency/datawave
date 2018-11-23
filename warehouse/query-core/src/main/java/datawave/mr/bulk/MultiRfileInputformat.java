@@ -266,7 +266,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
             for (Range range : binnedRanges.keySet()) {
                 Collection<RfileSplit> rangeSplits = binnedRanges.get(range);
                 
-                if (0 == rangeSplits.size())
+                if (rangeSplits.isEmpty())
                     continue;
                 TabletSplitSplit compositeInputSplit = new TabletSplitSplit(rangeSplits.size());
                 compositeInputSplit.setTable(tableName);

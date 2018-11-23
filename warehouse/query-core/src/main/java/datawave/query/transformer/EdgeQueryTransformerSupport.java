@@ -155,7 +155,7 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
             cqo.addColumn(EDGE_ATTRIBUTE3, edge.getEdgeAttribute3(), edge.getMarkings(), "", 0l);
         }
         List<Long> counts = edge.getCounts();
-        if (counts != null && counts.size() > 0) {
+        if (counts != null && !counts.isEmpty()) {
             cqo.addColumn(COUNTS, StringUtils.join(counts, '\0'), edge.getMarkings(), "", 0l);
         }
         if (edge.getLoadDate() != null) {

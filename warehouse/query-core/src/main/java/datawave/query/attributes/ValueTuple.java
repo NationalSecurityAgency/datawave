@@ -24,7 +24,7 @@ public class ValueTuple extends Tuple3<String,Object,Object> implements Comparab
     }
     
     public ValueTuple(Collection<String> fieldnames, Object value, Object normalizedValue, Attribute<?> source) {
-        this((fieldnames != null && fieldnames.size() > 0) ? fieldnames.iterator().next() : "", value, normalizedValue, source);
+        this((fieldnames != null && !fieldnames.isEmpty()) ? fieldnames.iterator().next() : "", value, normalizedValue, source);
     }
     
     public String getFieldName() {

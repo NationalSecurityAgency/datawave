@@ -36,7 +36,7 @@ public class JexlSelectorNode extends JexlNode {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         
-        if (field != null && field.length() > 0) {
+        if (field != null && !field.isEmpty()) {
             sb.append(field);
         } else {
             // Apply a special field name for "unfielded" queries
@@ -81,7 +81,7 @@ public class JexlSelectorNode extends JexlNode {
         return sb.toString();
     }
     
-    static public String convertToRegex(String s) {
+    public static String convertToRegex(String s) {
         StringBuilder sb = new StringBuilder();
         char[] chars = s.toCharArray();
         

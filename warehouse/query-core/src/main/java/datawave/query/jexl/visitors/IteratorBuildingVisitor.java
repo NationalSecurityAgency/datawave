@@ -338,13 +338,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // If there is no parent
             if (data == null) {
                 // Make this AndIterator the root node
-                if (andItr.includes().size() != 0) {
+                if (!andItr.includes().isEmpty()) {
                     root = andItr.build();
                 }
             } else {
                 // Otherwise, add this AndIterator to its parent
                 AbstractIteratorBuilder parent = (AbstractIteratorBuilder) data;
-                if (andItr.includes().size() != 0) {
+                if (!andItr.includes().isEmpty()) {
                     parent.addInclude(andItr.build());
                 }
             }
@@ -459,13 +459,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // If there is no parent
             if (data == null) {
                 // Make this OrIterator the root node
-                if (orItr.includes().size() != 0) {
+                if (!orItr.includes().isEmpty()) {
                     root = orItr.build();
                 }
             } else {
                 // Otherwise, add this OrIterator to its parent
                 AbstractIteratorBuilder parent = (AbstractIteratorBuilder) data;
-                if (orItr.includes().size() != 0) {
+                if (!orItr.includes().isEmpty()) {
                     parent.addInclude(orItr.build());
                 }
                 if (log.isTraceEnabled()) {
@@ -721,8 +721,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             }
         }
         
-        SortedKeyValueIterator<Key,Value> kvIter = new IteratorToSortedKeyValueIterator(kv.iterator());
-        return kvIter;
+        return new IteratorToSortedKeyValueIterator(kv.iterator());
     }
     
     /**
@@ -1194,14 +1193,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             
             // Jexl might return us a null depending on the AST
             if (o != null && Boolean.class.isAssignableFrom(o.getClass())) {
-                Boolean result = (Boolean) o;
-                matched = result;
+                matched = (Boolean) o;
             } else if (o != null && Collection.class.isAssignableFrom(o.getClass())) {
                 // if the function returns a collection of matches, return
                 // true/false
                 // based on the number of matches
                 Collection<?> matches = (Collection<?>) o;
-                matched = (matches.size() > 0);
+                matched = (!matches.isEmpty());
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Unable to process non-Boolean result from JEXL evaluation '" + o + "' for function query");

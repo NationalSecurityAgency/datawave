@@ -17,7 +17,7 @@ import datawave.query.search.Term;
 import org.apache.log4j.Logger;
 
 public class FunctionNode extends QueryNode {
-    private final static Logger log = Logger.getLogger(FunctionNode.class.getName());
+    private static final Logger log = Logger.getLogger(FunctionNode.class.getName());
     
     private Term query;
     private LuceneQueryFunction function = null;

@@ -12,7 +12,7 @@ import org.apache.hadoop.io.Text;
  * Created on 9/6/16.
  */
 public class ResultCountingIterator implements Iterator<Entry<Key,Value>> {
-    volatile private long resultCount = 0;
+    private volatile long resultCount = 0;
     private Iterator<Entry<Key,Value>> serializedDocuments = null;
     private YieldCallbackWrapper<Key> yield;
     

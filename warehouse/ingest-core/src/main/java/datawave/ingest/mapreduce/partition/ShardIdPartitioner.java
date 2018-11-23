@@ -82,9 +82,8 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
         int shard = Integer.valueOf(shardId.substring(SHARD_ID_SPLIT + 1));
         
         // now turn the shard id into a number that is sequential (without gaps) with all other shard ids
-        long shardIndex = (daysFromBaseTime * shardIdFactory.getNumShards(date.getTime())) + shard;
         
-        return shardIndex;
+        return (daysFromBaseTime * shardIdFactory.getNumShards(date.getTime())) + shard;
     }
     
     private long getBaseTime() throws IllegalArgumentException {

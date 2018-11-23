@@ -100,8 +100,8 @@ public class QueryExpirationBean {
         int count = 0;
         
         for (RunningQuery query : cache) {
-            boolean idleTooLong = !clearAll && !query.hasActiveCall() && isIdleTooLong(query, now) ? true : false;
-            boolean nextTooLong = !clearAll && query.hasActiveCall() && isNextTooLong(query, now) ? true : false;
+            boolean idleTooLong = !clearAll && !query.hasActiveCall() && isIdleTooLong(query, now);
+            boolean nextTooLong = !clearAll && query.hasActiveCall() && isNextTooLong(query, now);
             if (clearAll || idleTooLong || nextTooLong) {
                 if (query.getSettings().getUncaughtExceptionHandler() == null) {
                     query.getSettings().setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());

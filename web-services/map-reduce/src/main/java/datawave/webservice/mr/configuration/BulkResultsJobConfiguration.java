@@ -247,7 +247,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             ranges.addAll(queryData.getRanges());
         }
         
-        if (ranges.size() == 0) {
+        if (ranges.isEmpty()) {
             throw new NoResultsException(new QueryException("No scan ranges produced for query."));
         }
         
@@ -339,7 +339,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             return runningQuery.getSettings();
         } else {
             List<Query> queries = persister.findById(id);
-            if (null == queries || queries.size() == 0)
+            if (null == queries || queries.isEmpty())
                 throw new QueryException("No query object matches this id", Response.Status.NOT_FOUND);
             if (queries.size() > 1)
                 throw new QueryException("More than one query object matches the id", Response.Status.NOT_FOUND);

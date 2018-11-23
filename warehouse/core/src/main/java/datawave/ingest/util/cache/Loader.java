@@ -131,7 +131,7 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
     @Override
     public V load(K key) throws Exception {
         
-        if (entryCache.size() == 0) {
+        if (entryCache.isEmpty()) {
             if (log.isTraceEnabled())
                 log.trace("Building initial cache");
             

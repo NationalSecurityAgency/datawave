@@ -21,7 +21,7 @@ public abstract class QueryNode implements Cloneable {
     protected List<QueryNode> children;
     protected int numSelectors = 1;
     
-    private final static Logger log = Logger.getLogger(QueryNode.class.getName());
+    private static final Logger log = Logger.getLogger(QueryNode.class.getName());
     protected String originalQuery = null;
     protected Set<FieldedTerm> positiveFilters = new HashSet<>();
     protected Set<FieldedTerm> negativeFilters = new HashSet<>();
@@ -119,7 +119,7 @@ public abstract class QueryNode implements Cloneable {
             s.append(child.getContents());
         }
         s.append("]");
-        if (positiveFilters.size() > 0) {
+        if (!positiveFilters.isEmpty()) {
             s.append("[posFilter: ");
             boolean firstPos = true;
             for (FieldedTerm ft : positiveFilters) {
@@ -132,7 +132,7 @@ public abstract class QueryNode implements Cloneable {
             
             s.append("]");
         }
-        if (negativeFilters.size() > 0) {
+        if (!negativeFilters.isEmpty()) {
             s.append("[negFilter: ");
             boolean firstNeg = true;
             for (FieldedTerm ft : negativeFilters) {

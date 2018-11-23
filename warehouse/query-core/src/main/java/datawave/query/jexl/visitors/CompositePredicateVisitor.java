@@ -64,7 +64,7 @@ public class CompositePredicateVisitor extends BaseVisitor {
             Set<String> foundIdentifiers = new HashSet<>();
             node.childrenAccept(this, foundIdentifiers);
             
-            if (compFields.size() == 0 || (foundIdentifiers.size() == compFields.size() && foundIdentifiers.containsAll(compFields)))
+            if (compFields.isEmpty() || (foundIdentifiers.size() == compFields.size() && foundIdentifiers.containsAll(compFields)))
                 compositePredicates.add(node);
             return null;
         }
@@ -77,7 +77,7 @@ public class CompositePredicateVisitor extends BaseVisitor {
             Set<String> foundIdentifiers = new HashSet<>();
             node.childrenAccept(this, foundIdentifiers);
             
-            if (compFields.size() == 0 || (foundIdentifiers.size() == compFields.size() && foundIdentifiers.containsAll(compFields)))
+            if (compFields.isEmpty() || (foundIdentifiers.size() == compFields.size() && foundIdentifiers.containsAll(compFields)))
                 compositePredicates.add(node);
             return null;
         }

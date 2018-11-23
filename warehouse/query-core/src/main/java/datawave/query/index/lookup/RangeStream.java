@@ -275,7 +275,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         
         public boolean apply(QueryPlan plan) {
             if (log.isTraceEnabled()) {
-                if (null != plan.getQueryTree() || (null == plan.getQueryString() || plan.getQueryString().length() == 0)) {
+                if (null != plan.getQueryTree() || (null == plan.getQueryString() || plan.getQueryString().isEmpty())) {
                     log.trace("Plan is " + JexlStringBuildingVisitor.buildQuery(plan.getQueryTree()) + " " + plan.getRanges() + " "
                                     + plan.getRanges().iterator().hasNext());
                 } else {
@@ -936,7 +936,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     }
     
     protected Set<String> getAllFieldsFromHelper() throws TableNotFoundException {
-        if (this.helperAllFieldsCache.size() == 0) {
+        if (this.helperAllFieldsCache.isEmpty()) {
             this.helperAllFieldsCache = this.metadataHelper.getAllFields(this.config.getDatatypeFilter());
         }
         return this.helperAllFieldsCache;

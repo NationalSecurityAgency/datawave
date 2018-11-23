@@ -60,7 +60,7 @@ public class CondensedIndexInfo implements Writable {
     }
     
     public boolean isDay() {
-        return indexInfos.size() == 0;
+        return indexInfos.isEmpty();
     }
     
     public String getDay() {

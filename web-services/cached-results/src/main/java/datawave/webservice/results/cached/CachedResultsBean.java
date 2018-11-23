@@ -172,7 +172,7 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 @TransactionManagement(TransactionManagementType.BEAN)
 public class CachedResultsBean {
     
-    static private Logger log = Logger.getLogger(CachedResultsBean.class);
+    private static Logger log = Logger.getLogger(CachedResultsBean.class);
     
     @Resource
     private EJBContext ctx;
@@ -548,7 +548,7 @@ public class CachedResultsBean {
                     if (nextSpan != null)
                         nextSpan.stop();
                 }
-                if (results.getResults().size() == 0) {
+                if (results.getResults().isEmpty()) {
                     go = false;
                     break;
                 }
@@ -560,8 +560,7 @@ public class CachedResultsBean {
                     
                     for (CacheableQueryRow cacheableQueryObject : cacheableQueryRowList) {
                         
-                        CacheableQueryRow cqo = (CacheableQueryRow) cacheableQueryObject;
-                        Collection<String> values = cqo.getColumnValues().values();
+                        Collection<String> values = ((CacheableQueryRow) cacheableQueryObject).getColumnValues().values();
                         int maxValueLength = 0;
                         for (String s : values) {
                             if (s.length() > maxValueLength) {
@@ -581,7 +580,7 @@ public class CachedResultsBean {
                         SQLException loadBatchException = null; // exception;
                         while (dataWritten == false && attempt < 10) {
                             try {
-                                loadBatch(ps, owner, queryId, logic.getLogicName(), fieldMap, cqo, maxLength);
+                                loadBatch(ps, owner, queryId, logic.getLogicName(), fieldMap, (CacheableQueryRow) cacheableQueryObject, maxLength);
                                 dataWritten = true;
                                 rowsWritten++;
                             } catch (SQLException e) {
@@ -599,6 +598,7 @@ public class CachedResultsBean {
                         
                         if (dataWritten == false) {
                             String message = (loadBatchException == null) ? "unknown" : loadBatchException.getMessage();
+
                             log.error("Batch write FAILED - last exception = " + message + "record = " + cqo.getColumnValues().entrySet(), loadBatchException);
                         } else if (rowsWritten >= rowsPerBatch) {
                             persistBatch(ps);
@@ -638,7 +638,7 @@ public class CachedResultsBean {
             crq.getMetric().setLifecycle(QueryMetric.Lifecycle.INITIALIZED);
             
             response.setResult(viewName);
-            if (fieldMap.size() == 0) {
+            if (fieldMap.isEmpty()) {
                 throw new NoResultsQueryException("Field map is empty.", "204-4");
             } else {
                 return response;
@@ -1562,7 +1562,7 @@ public class CachedResultsBean {
                         long pageNum = crq.getLastPageNumber();
                         response = crq.getTransformer().createResponse(resultList);
                         Status status = null;
-                        if (resultList.getResults().size() > 0) {
+                        if (!resultList.getResults().isEmpty()) {
                             response.setHasResults(true);
                             status = Status.OK;
                         } else {
@@ -1773,7 +1773,7 @@ public class CachedResultsBean {
                         long pageNum = crq.getLastPageNumber();
                         response = crq.getTransformer().createResponse(resultList);
                         Status status = null;
-                        if (resultList.getResults().size() > 0) {
+                        if (!resultList.getResults().isEmpty()) {
                             response.setHasResults(true);
                             status = Status.OK;
                         } else {
@@ -1912,7 +1912,7 @@ public class CachedResultsBean {
                         ResultsPage resultList = crq.getRows(rowBegin, rowEnd, cachedResultsConfiguration.getPageByteTrigger());
                         response = crq.getTransformer().createResponse(resultList);
                         Status status;
-                        if (resultList.getResults().size() > 0) {
+                        if (!resultList.getResults().isEmpty()) {
                             response.setHasResults(true);
                             status = Status.OK;
                         } else {
@@ -2346,7 +2346,7 @@ public class CachedResultsBean {
                         // Find any directory that contains the id as a .alias, .view, or .queryId file
                         ArrayList<FileStatus> list = new ArrayList<>();
                         recursiveList(fs, userPath, id, list);
-                        if (null != list && list.size() > 0) {
+                        if (null != list && !list.isEmpty()) {
                             for (FileStatus f : list) {
                                 // Get the parent of the matching file, this will be the directory that contains
                                 // the table dump

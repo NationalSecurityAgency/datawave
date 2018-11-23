@@ -156,7 +156,7 @@ public class VisibilityPruningIterator extends WrappingIterator implements Optio
             } else {
                 removeUndisplayedVisibilities(blacklist, expression, currNode);
                 // if all children of this NodeType.AND or NodeType.OR node have been removed, remove the node itself.
-                if (currNode.getChildren().size() == 0) {
+                if (currNode.getChildren().isEmpty()) {
                     children.remove(x);
                 }
             }

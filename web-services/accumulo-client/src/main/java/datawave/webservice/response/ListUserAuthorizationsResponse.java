@@ -23,10 +23,6 @@ public class ListUserAuthorizationsResponse extends BaseResponse {
     @XmlElement(name = "UserAuthorization")
     private List<String> userAuthorizations = null;
     
-    public ListUserAuthorizationsResponse() {
-        super();
-    }
-    
     public List<String> getUserAuthorizations() {
         return userAuthorizations;
     }

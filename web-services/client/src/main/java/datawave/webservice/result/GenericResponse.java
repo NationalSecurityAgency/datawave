@@ -30,10 +30,6 @@ public class GenericResponse<T> extends BaseResponse implements Message<GenericR
     @XmlElement(name = "Result")
     private T result = null;
     
-    public GenericResponse() {
-        super();
-    }
-    
     public T getResult() {
         return result;
     }

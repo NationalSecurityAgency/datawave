@@ -60,8 +60,7 @@ public class ReferencedValue {
         try {
             byte[] incoming = value.getBytes("UTF-8");
             if (this.base64Encoded != null && this.base64Encoded.equals(Boolean.TRUE)) {
-                byte[] decoded = Base64.decodeBase64(incoming);
-                return decoded;
+                return Base64.decodeBase64(incoming);
             } else {
                 return incoming;
             }

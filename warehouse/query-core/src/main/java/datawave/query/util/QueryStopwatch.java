@@ -30,8 +30,6 @@ public class QueryStopwatch {
     public static final String NEWLINE = "\n", INDENT = "    ";
     protected ArrayDeque<Entry<String,TraceStopwatch>> watches = Queues.newArrayDeque();
     
-    public QueryStopwatch() {}
-    
     /**
      * Creates a new Stopwatch for use but does not start it
      * 

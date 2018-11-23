@@ -29,9 +29,8 @@ public class QueryScannerHelper {
     
     public static Scanner createScannerWithoutInfo(Connector connector, String tableName, Collection<Authorizations> authorizations, Query query)
                     throws TableNotFoundException {
-        Scanner scanner = ScannerHelper.createScanner(connector, tableName, authorizations);
         
-        return scanner;
+        return ScannerHelper.createScanner(connector, tableName, authorizations);
     }
     
     public static BatchScanner createBatchScanner(Connector connector, String tableName, Collection<Authorizations> authorizations, int numQueryThreads,

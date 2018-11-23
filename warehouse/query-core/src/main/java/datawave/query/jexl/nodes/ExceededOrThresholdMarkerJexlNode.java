@@ -51,7 +51,7 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
         JexlNode fstAssignment = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(FST_URI_PROP, fstPath.toString()));
         
         // wrap the assignments in an AND node
-        JexlNode andNode = JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(new JexlNode[] {fieldAssignment, fstAssignment}));
+        JexlNode andNode = JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(fieldAssignment, fstAssignment));
         
         // now set the source
         setupSource(andNode);
@@ -66,7 +66,7 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
                         StringUtils.join(StringUtils.COMMA_STR, new EscapedCollection(values))));
         
         // wrap the assignments in an AND node
-        JexlNode andNode = JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(new JexlNode[] {fieldAssignment, valuesAssignment}));
+        JexlNode andNode = JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(fieldAssignment, valuesAssignment));
         
         // now set the source
         setupSource(andNode);

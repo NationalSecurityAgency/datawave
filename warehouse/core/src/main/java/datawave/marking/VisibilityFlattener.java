@@ -9,19 +9,19 @@ import org.apache.accumulo.core.security.ColumnVisibility.NodeType;
 import org.apache.hadoop.io.Text;
 
 public class VisibilityFlattener {
-    static public ColumnVisibility flatten(Node root, byte[] expression, boolean sort) {
+    public static ColumnVisibility flatten(Node root, byte[] expression, boolean sort) {
         StringBuilder out = new StringBuilder();
         flatten(root, expression, out, sort);
         return new ColumnVisibility(out.toString());
     }
     
-    static public Text flattenToText(Node root, byte[] expression, boolean sort) {
+    public static Text flattenToText(Node root, byte[] expression, boolean sort) {
         StringBuilder out = new StringBuilder();
         flatten(root, expression, out, sort);
         return new Text(out.toString());
     }
     
-    static private void flatten(Node root, byte[] expression, StringBuilder out, boolean sort) {
+    private static void flatten(Node root, byte[] expression, StringBuilder out, boolean sort) {
         if (root.getType() == NodeType.TERM)
             out.append(new String(expression, root.getTermStart(), root.getTermEnd() - root.getTermStart()));
         else {
