@@ -33,7 +33,5 @@
         <module>../hazelcast-service</module>
         <module>../authorization-service</module>
         <module>../audit-service</module>
-        <module>../scanner-api</module>
-        <module>../typemetadata-api</module>
     </modules>
 </project>

@@ -7,6 +7,43 @@
         <version>2.4.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-type-metadata-hdfs</artifactId>
+    <properties>
+        <version.accumulo>1.9.2</version.accumulo>
+        <version.springframework>5.1.0.RELEASE</version.springframework>
+    </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>gov.nsa.datawave</groupId>
+                <artifactId>scanner</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-core</artifactId>
+                <version>${version.accumulo}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context-support</artifactId>
+                <version>${version.springframework}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>scanner</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+        </dependency>
+    </dependencies>
     <build>
         <resources>
             <resource>
