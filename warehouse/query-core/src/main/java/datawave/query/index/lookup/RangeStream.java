@@ -51,6 +51,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -774,7 +775,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 }
             }
             return ScannerStream.exceededValueThreshold(createFullFieldIndexScanList(config, node).iterator(), node);
-        } else if (ASTDelayedPredicate.instanceOf(node)) {
+        } else if (ASTDelayedPredicate.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
             return ScannerStream.ignored(node);
         } else if (IndexHoleMarkerJexlNode.instanceOf(node)) {
             return ScannerStream.ignored(node);

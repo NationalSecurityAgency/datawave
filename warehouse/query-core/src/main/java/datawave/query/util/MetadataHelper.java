@@ -903,17 +903,17 @@ public class MetadataHelper implements ApplicationContextAware {
     }
     
     /**
-     * A set of fixed length composite fields.
+     * A map of composite name to field separator.
      *
-     * @return An unmodifiable Set
+     * @return An unmodifiable Map
      * @throws TableNotFoundException
      */
-    public Set<String> getFixedLengthCompositeFields() throws TableNotFoundException {
-        return this.allFieldMetadataHelper.getFixedLengthCompositeFields();
+    public Map<String,String> getCompositeFieldSeparatorMap() throws TableNotFoundException {
+        return this.allFieldMetadataHelper.getCompositeFieldSeparatorMap();
     }
     
-    public Set<String> getFixedLengthCompositeFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
-        return this.allFieldMetadataHelper.getFixedLengthCompositeFields(ingestTypeFilter);
+    public Map<String,String> getCompositeFieldSeparatorMap(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        return this.allFieldMetadataHelper.getCompositeFieldSeparatorMap(ingestTypeFilter);
     }
     
     /**

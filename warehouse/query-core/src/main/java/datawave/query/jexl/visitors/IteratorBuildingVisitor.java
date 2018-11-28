@@ -51,7 +51,6 @@ import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -65,6 +64,7 @@ import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -145,6 +145,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected FieldIndexAggregator fiAggregator = new IdentityAggregator(null);
     
     protected CompositeMetadata compositeMetadata;
+    protected int compositeSeekThreshold = 10;
     
     protected Range rangeLimiter;
     
@@ -531,7 +532,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
         builder.setSource(source.deepCopy(env));
         builder.setTypeMetadata(typeMetadata);
-        builder.setCompositeMetadata(compositeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setTimeFilter(timeFilter);
         builder.setDatatypeFilter(datatypeFilter);
@@ -604,7 +604,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setCompositeMetadata(compositeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -800,19 +799,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTReference node, Object o) {
-        // Recurse only if not delayed
-        if (!ASTDelayedPredicate.instanceOf(node)) {
+        // Recurse only if not delayed or evaluation only
+        if (!ASTDelayedPredicate.instanceOf(node) && !ASTEvaluationOnly.instanceOf(node)) {
             super.visit(node, o);
-        } else {
+        } else if (ASTDelayedPredicate.instanceOf(node)) {
             JexlNode subNode = ASTDelayedPredicate.getQueryPropertySource(node, ASTDelayedPredicate.class);
             if (subNode instanceof ASTEQNode) {
                 delayedEqNodes.add(subNode);
-            } else {
-                Set<JexlNode> compositeNodes = CompositePredicateVisitor.findCompositePredicates(subNode);
-                if (!compositeNodes.isEmpty() && o instanceof AndIteratorBuilder) {
-                    AndIteratorBuilder aib = (AndIteratorBuilder) o;
-                    aib.addCompositePredicate(subNode);
-                }
             }
             if (isQueryFullySatisfied == true) {
                 log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
@@ -845,7 +838,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setField(identifier);
         builder.setTimeFilter(TimeFilter.alwaysTrue());
         builder.setTypeMetadata(typeMetadata);
-        builder.setCompositeMetadata(compositeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -878,7 +870,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setCompositeMetadata(compositeMetadata);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -1221,6 +1212,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setTimeFilter(timeFilter);
         builder.setTypeMetadata(typeMetadata);
         builder.setCompositeMetadata(compositeMetadata);
+        builder.setCompositeSeekThreshold(compositeSeekThreshold);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setKeyTransform(fiAggregator);
@@ -1388,6 +1380,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     public IteratorBuildingVisitor setCompositeMetadata(CompositeMetadata compositeMetadata) {
         this.compositeMetadata = compositeMetadata;
+        return this;
+    }
+    
+    public IteratorBuildingVisitor setCompositeSeekThreshold(int compositeSeekThreshold) {
+        this.compositeSeekThreshold = compositeSeekThreshold;
         return this;
     }
     

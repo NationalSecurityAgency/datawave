@@ -170,7 +170,7 @@ public abstract class ValueToAttributesTest {
         logic.setupQuery(config);
         
         String plannedScript = logic.getQueryPlanner().getPlannedScript();
-        Assert.assertTrue("Composite was not substituted into query:" + plannedScript, plannedScript.contains("MAKE_COLOR"));
+        Assert.assertTrue("CompositeTerm was not substituted into query:" + plannedScript, plannedScript.contains("MAKE_COLOR"));
         
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;

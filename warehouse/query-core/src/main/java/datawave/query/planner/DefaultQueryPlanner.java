@@ -17,6 +17,7 @@ import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -196,6 +197,12 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * Boolean it identify if we wish to condense
      */
     protected boolean compressUidsInRangeStream = true;
+    
+    /**
+     * Query string length threshold, used to determine whether we should use simple or detailed debug logging. If the length of the query string exceeds this
+     * value, then we will just print the query string instead of using the verbose PrintingVisitor
+     */
+    private static long logQueryPrintMaxLength = 1000000;
     
     private final long maxRangesPerQueryPiece;
     
@@ -576,22 +583,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
         final QueryStopwatch timers = config.getTimers();
         
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - get composites");
-        if (!disableCompositeFields) {
-            
-            try {
-                config.setCompositeToFieldMap(metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()));
-                config.setCompositeTransitionDates(metadataHelper.getCompositeTransitionDateMap(config.getDatatypeFilter()));
-                config.setFixedLengthFields(metadataHelper.getFixedLengthCompositeFields(config.getDatatypeFilter()));
-            } catch (TableNotFoundException ex) {
-                QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITES_RETRIEVAL_ERROR, ex);
-                log.warn(qe);
-                throw new DatawaveQueryException(qe);
-            }
-            
-        }
-        stopwatch.stop();
-        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Parse query");
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Parse query");
         
         ASTJexlScript queryTree = parseQueryAndValidatePattern(query, stopwatch);
         
@@ -1079,6 +1071,17 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         if (!disableCompositeFields) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand composite terms");
+            
+            try {
+                config.setCompositeToFieldMap(metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()));
+                config.setCompositeTransitionDates(metadataHelper.getCompositeTransitionDateMap(config.getDatatypeFilter()));
+                config.setCompositeFieldSeparators(metadataHelper.getCompositeFieldSeparatorMap(config.getDatatypeFilter()));
+                config.setFieldToDiscreteIndexTypes(CompositeUtils.getFieldToDiscreteIndexTypeMap(config.getQueryFieldsDatatypes()));
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+                throw new DatawaveFatalQueryException(qe);
+            }
+            
             queryTree = ExpandCompositeTerms.expandTerms(config, metadataHelper, queryTree);
             stopwatch.stop();
         }
@@ -1350,7 +1353,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
     }
     
     public static void logQuery(ASTJexlScript queryTree, String message) {
-        logDebug(PrintingVisitor.formattedQueryStringList(queryTree), message);
+        String queryString = JexlStringBuildingVisitor.buildQuery(queryTree);
+        // avoid printing large query trees the verbose way
+        // this is a common issue with geo queries
+        if (queryString.length() > logQueryPrintMaxLength)
+            logDebug(Collections.singletonList(queryString), message);
+        else
+            logDebug(PrintingVisitor.formattedQueryStringList(queryTree), message);
     }
     
     /**
@@ -2246,6 +2255,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     public void setExecutableExpansion(boolean executableExpansion) {
         this.executableExpansion = executableExpansion;
+    }
+    
+    public static long getLogQueryPrintMaxLength() {
+        return logQueryPrintMaxLength;
+    }
+    
+    public static void setLogQueryPrintMaxLength(long logQueryPrintMaxLength) {
+        DefaultQueryPlanner.logQueryPrintMaxLength = logQueryPrintMaxLength;
     }
     
     /**

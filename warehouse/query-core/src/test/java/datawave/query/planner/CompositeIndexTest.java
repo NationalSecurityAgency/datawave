@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
+import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.GeometryType;
 import datawave.data.type.NumberType;
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -23,6 +24,8 @@ import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
@@ -38,6 +41,7 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -260,6 +264,11 @@ public class CompositeIndexTest {
         }
         keyValues.putAll(dataTypeHandler.getMetadata().getBulkMetadata());
         
+        // Write the composite transition date manually
+        Key tdKey = new Key(new Text(GEO_FIELD), new Text(ColumnFamilyConstants.COLF_CITD), new Text(DATA_TYPE_NAME + "\0" + COMPOSITE_BEGIN_DATE), new Text(),
+                        new SimpleDateFormat(CompositeMetadataHelper.transitionDateFormat).parse(COMPOSITE_BEGIN_DATE).getTime());
+        keyValues.put(new BulkIngestKey(new Text(METADATA_TABLE_NAME), tdKey), new Value());
+        
         // write these values to their respective tables
         instance = new InMemoryInstance();
         Connector connector = instance.getConnector("root", PASSWORD);
@@ -270,11 +279,8 @@ public class CompositeIndexTest {
     
     public static void setupConfiguration(Configuration conf) {
         String compositeFieldName = GEO_FIELD;
-        conf.set(DATA_TYPE_NAME + BaseIngestHelper.COMPOSITE_FIELD_NAMES, compositeFieldName);
-        conf.set(DATA_TYPE_NAME + BaseIngestHelper.COMPOSITE_FIELD_MEMBERS, GEO_FIELD + "." + WKT_BYTE_LENGTH_FIELD);
-        conf.set(DATA_TYPE_NAME + BaseIngestHelper.COMPOSITE_FIELDS_FIXED_LENGTH, compositeFieldName);
-        conf.set(DATA_TYPE_NAME + BaseIngestHelper.COMPOSITE_FIELDS_TRANSITION_DATES, compositeFieldName + "|" + COMPOSITE_BEGIN_DATE);
-        
+        conf.set(DATA_TYPE_NAME + "." + compositeFieldName + BaseIngestHelper.COMPOSITE_FIELD_MAP, GEO_FIELD + "," + WKT_BYTE_LENGTH_FIELD);
+        conf.set(DATA_TYPE_NAME + "." + compositeFieldName + BaseIngestHelper.COMPOSITE_FIELD_SEPARATOR, " ");
         conf.set(DATA_TYPE_NAME + BaseIngestHelper.INDEX_FIELDS, GEO_FIELD + ((!compositeFieldName.equals(GEO_FIELD)) ? "," + compositeFieldName : ""));
         conf.set(DATA_TYPE_NAME + "." + GEO_FIELD + BaseIngestHelper.FIELD_TYPE, GeometryType.class.getName());
         conf.set(DATA_TYPE_NAME + "." + WKT_BYTE_LENGTH_FIELD + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
@@ -333,7 +339,7 @@ public class CompositeIndexTest {
         // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, false);
-        Assert.assertEquals(11, queries.size());
+        Assert.assertEquals(12, queries.size());
         
         List<DefaultEvent> events = getQueryResults(query, false);
         Assert.assertEquals(9, events.size());

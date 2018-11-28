@@ -31,6 +31,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -187,12 +188,11 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         this.hConf.set(this.dataType + BaseIngestHelper.INDEX_FIELDS, String.join(",", indexEntries));
         this.hConf.set(this.dataType + BaseIngestHelper.INDEX_ONLY_FIELDS, String.join(",", this.fieldConfig.getIndexOnlyFields()));
         this.hConf.set(this.dataType + BaseIngestHelper.REVERSE_INDEX_FIELDS, String.join(",", this.fieldConfig.getReverseIndexFields()));
-        this.hConf.set(this.dataType + CompositeIngest.COMPOSITE_FIELD_NAMES, String.join(",", mappingToNames(this.fieldConfig.getCompositeFields())));
-        this.hConf.set(this.dataType + CompositeIngest.COMPOSITE_FIELD_MEMBERS, String.join(",", mappingToFields(this.fieldConfig.getCompositeFields())));
         
-        // type for composite fields
+        // setup composite field mappings
+        Iterator<Set<String>> componentFieldsIter = this.fieldConfig.getCompositeFields().iterator();
         for (final String composite : compositeNames) {
-            this.hConf.set(this.dataType + "." + composite, NoOpType.class.getName());
+            this.hConf.set(this.dataType + "." + composite + CompositeIngest.COMPOSITE_FIELD_MAP, String.join(",", componentFieldsIter.next()));
         }
         
         // virtual fields

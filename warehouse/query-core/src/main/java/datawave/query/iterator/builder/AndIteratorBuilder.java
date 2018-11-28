@@ -1,7 +1,6 @@
 package datawave.query.iterator.builder;
 
 import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.filter.composite.CompositePredicateFilterer;
 import datawave.query.iterator.logic.AndIterator;
 import org.apache.commons.jexl2.parser.JexlNode;
 
@@ -28,11 +27,6 @@ public class AndIteratorBuilder extends AbstractIteratorBuilder {
     public <T> NestedIterator<T> build() {
         if (includes.isEmpty()) {
             throw new IllegalStateException("AndIterator has no inclusive sources!");
-        }
-        if (!compositePredicates.isEmpty()) {
-            for (NestedIterator include : includes)
-                if (include instanceof CompositePredicateFilterer)
-                    ((CompositePredicateFilterer) include).addCompositePredicates(compositePredicates);
         }
         return new AndIterator(includes, excludes);
     }

@@ -17,7 +17,6 @@ import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.composite.CompositeMetadata;
-import datawave.query.composite.CompositeUtils;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
@@ -48,6 +47,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     private AttributeFactory attrFactory;
     
     private Map<String,Multimap<String,String>> compositeToFieldMap;
+    private Map<String,Map<String,String>> compositeFieldSeparatorsByType;
     private MarkingFunctions markingFunctions;
     private Multimap<String,Attribute<?>> componentFieldToValues = ArrayListMultimap.create();
     
@@ -58,8 +58,11 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter, MarkingFunctions markingFunctions) {
         this.attrFactory = new AttributeFactory(typeMetadata);
         this.markingFunctions = markingFunctions;
-        this.compositeToFieldMap = compositeMetadata.getCompositeFieldMapByType();
         this.attrFilter = attrFilter;
+        if (compositeMetadata != null) {
+            this.compositeToFieldMap = compositeMetadata.getCompositeFieldMapByType();
+            this.compositeFieldSeparatorsByType = compositeMetadata.getCompositeFieldSeparatorsByType();
+        }
     }
     
     @Override
@@ -76,7 +79,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         
         // check to see if we can create any composite attributes using this entry
         String ingestDatatype = this.getDatatypeFromKey(key);
-        Multimap<String,String> compToFieldMap = this.compositeToFieldMap.get(ingestDatatype);
+        Multimap<String,String> compToFieldMap = (this.compositeToFieldMap != null) ? this.compositeToFieldMap.get(ingestDatatype) : null;
         if (compToFieldMap != null && !compToFieldMap.isEmpty()) {
             Multimap<String,String> inverted = Multimaps.invertFrom(compToFieldMap, ArrayListMultimap.create());
             // check to see if this entry can be used to create a composite
@@ -108,7 +111,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                     if (componentAttributes.size() == components.size()) {
                         list.addAll(buildCompositesFromComponents(
                                         CompositeIngest.isOverloadedCompositeField(this.compositeToFieldMap.get(ingestDatatype), composite), composite,
-                                        componentAttributes));
+                                        componentAttributes, this.compositeFieldSeparatorsByType.get(ingestDatatype).get(composite)));
                     }
                 }
             }
@@ -117,17 +120,17 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     }
     
     private List<Entry<String,Attribute<? extends Comparable<?>>>> buildCompositesFromComponents(boolean isOverloadedComposite, String compositeField,
-                    List<Collection<Attribute<?>>> componentAttributes) {
-        return buildCompositesFromComponents(isOverloadedComposite, compositeField, null, componentAttributes);
+                    List<Collection<Attribute<?>>> componentAttributes, String separator) {
+        return buildCompositesFromComponents(isOverloadedComposite, compositeField, null, componentAttributes, separator);
     }
     
     private List<Entry<String,Attribute<? extends Comparable<?>>>> buildCompositesFromComponents(boolean isOverloadedComposite, String compositeField,
-                    Collection<Attribute<?>> currentAttributes, List<Collection<Attribute<?>>> componentAttributes) {
+                    Collection<Attribute<?>> currentAttributes, List<Collection<Attribute<?>>> componentAttributes, String separator) {
         if (componentAttributes == null) {
             // finally create the composite from what we have
             try {
                 return Arrays.asList(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(compositeField,
-                                joinAttributes(compositeField, currentAttributes, isOverloadedComposite)));
+                                joinAttributes(compositeField, currentAttributes, isOverloadedComposite, separator)));
             } catch (Exception e) {
                 log.debug("could not join attributes:", e);
             }
@@ -138,7 +141,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                 List<Attribute<?>> attrs = (currentAttributes != null) ? new ArrayList<>(currentAttributes) : new ArrayList<>();
                 attrs.add(compAttr);
                 compositeAttributes.addAll(buildCompositesFromComponents(isOverloadedComposite, compositeField, attrs,
-                                (componentAttributes.size() > 1) ? componentAttributes.subList(1, componentAttributes.size()) : null));
+                                (componentAttributes.size() > 1) ? componentAttributes.subList(1, componentAttributes.size()) : null, separator));
             }
             return compositeAttributes;
         }
@@ -180,7 +183,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         }
     }
     
-    public Attribute<?> joinAttributes(String compositeName, Collection<Attribute<?>> in, boolean isOverloadedComposite) throws Exception {
+    public Attribute<?> joinAttributes(String compositeName, Collection<Attribute<?>> in, boolean isOverloadedComposite, String separator) throws Exception {
         Collection<ColumnVisibility> columnVisibilities = Sets.newHashSet();
         List<String> dataList = new ArrayList<>();
         long timestamp = 0;
@@ -210,7 +213,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                                 dataList.addAll(attributeValues(attrs));
                             } else if (!base.isEmpty()) {
                                 for (String value : attributeValues(attrs))
-                                    dataList.add(base + CompositeUtils.SEPARATOR + value);
+                                    dataList.add(base + separator + value);
                             } else {
                                 for (String value : attributeValues(attrs))
                                     dataList.add(base + value);
@@ -232,7 +235,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                         String base = dataList.remove(0);
                         if (!base.isEmpty()) {
                             for (String value : attributeValues(attr))
-                                dataList.add(base + CompositeUtils.SEPARATOR + value);
+                                dataList.add(base + separator + value);
                         } else {
                             for (String value : attributeValues(attr))
                                 dataList.add(base + value);

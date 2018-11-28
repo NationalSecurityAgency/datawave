@@ -1,7 +1,6 @@
 package datawave.query.composite;
 
 import datawave.data.ColumnFamilyConstants;
-import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.security.util.ScannerHelper;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Instance;
@@ -20,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -34,9 +34,11 @@ import java.util.Set;
 public class CompositeMetadataHelper {
     private static final Logger log = Logger.getLogger(CompositeMetadataHelper.class);
     
+    public static final String transitionDateFormat = "yyyyMMdd HHmmss.SSS";
     public static final String NULL_BYTE = "\0";
     
-    protected final List<Text> metadataCompositeColfs = Arrays.asList(ColumnFamilyConstants.COLF_CI, ColumnFamilyConstants.COLF_CITD);
+    protected final List<Text> metadataCompositeColfs = Arrays.asList(ColumnFamilyConstants.COLF_CI, ColumnFamilyConstants.COLF_CITD,
+                    ColumnFamilyConstants.COLF_CISEP);
     
     protected Connector connector;
     protected Instance instance;
@@ -90,6 +92,8 @@ public class CompositeMetadataHelper {
         log.debug("cache fault for getCompositeMetadata(" + this.auths + "," + this.metadataTableName + "," + datatypeFilter + ")");
         CompositeMetadata compositeMetadata = new CompositeMetadata();
         
+        SimpleDateFormat dateFormat = new SimpleDateFormat(transitionDateFormat);
+        
         // Scanner to the provided metadata table
         Scanner bs = ScannerHelper.createScanner(connector, metadataTableName, auths);
         
@@ -114,7 +118,7 @@ public class CompositeMetadataHelper {
                     if (null != entry.getKey().getColumnQualifier()) {
                         if (idx != -1) {
                             try {
-                                Date transitionDate = CompositeIngest.CompositeFieldNormalizer.formatter.parse(colq.substring(idx + 1));
+                                Date transitionDate = dateFormat.parse(colq.substring(idx + 1));
                                 compositeMetadata.addCompositeTransitionDateByType(type, fieldName, transitionDate);
                             } catch (ParseException e) {
                                 log.trace("Unable to parse composite field transition date", e);
@@ -137,6 +141,17 @@ public class CompositeMetadataHelper {
                         }
                     } else {
                         log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey());
+                    }
+                } else if (colFam.equals(ColumnFamilyConstants.COLF_CISEP)) {
+                    if (null != entry.getKey().getColumnQualifier()) {
+                        if (idx != -1) {
+                            String separator = colq.substring(idx + 1);
+                            compositeMetadata.addCompositeFieldSeparatorByType(type, fieldName, separator);
+                        } else {
+                            log.warn("EventMetadata entry did not contain a null byte in the column qualifier: " + entry.getKey().toString());
+                        }
+                    } else {
+                        log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey().toString());
                     }
                 }
             }

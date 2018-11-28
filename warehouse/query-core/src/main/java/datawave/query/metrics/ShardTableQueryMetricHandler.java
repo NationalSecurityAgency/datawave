@@ -547,6 +547,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setExpirationDate(DateUtils.addDays(new Date(), 1));
             query.setPagesize(1000);
             query.setUserDN(datawavePrincipal.getShortName());
+            query.setOwner(datawavePrincipal.getShortName());
             query.setId(UUID.randomUUID());
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
@@ -704,7 +705,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         
                         String[] parts = StringUtils.split(fieldValue, "/");
                         PageMetric pageMetric = null;
-                        if (parts.length == 7) {
+                        if (parts.length == 8) {
+                            pageMetric = new PageMetric(Long.valueOf(parts[0]), Long.valueOf(parts[1]), Long.valueOf(parts[2]), Long.valueOf(parts[3]),
+                                            Long.valueOf(parts[4]), Long.valueOf(parts[5]), Long.valueOf(parts[6]), Long.valueOf(parts[7]));
+                        } else if (parts.length == 7) {
                             pageMetric = new PageMetric(Long.valueOf(parts[0]), Long.valueOf(parts[1]), Long.valueOf(parts[2]), Long.valueOf(parts[3]),
                                             Long.valueOf(parts[4]), Long.valueOf(parts[5]), Long.valueOf(parts[6]));
                         } else if (parts.length == 5) {
@@ -713,7 +717,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         } else if (parts.length == 2) {
                             pageMetric = new PageMetric(Long.valueOf(parts[0]), Long.valueOf(parts[1]), 0l, 0l);
                         }
-                        pageMetrics.put(repetition, pageMetric);
+                        
+                        if (pageMetric != null)
+                            pageMetrics.put(repetition, pageMetric);
                     }
                 } else if (fieldName.equals("POSITIVE_SELECTORS")) {
                     List<String> positiveSelectors = m.getPositiveSelectors();

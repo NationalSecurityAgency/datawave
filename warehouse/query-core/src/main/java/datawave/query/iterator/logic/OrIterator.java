@@ -4,9 +4,6 @@ import com.google.common.collect.TreeMultimap;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.Util;
-import datawave.query.iterator.filter.composite.CompositePredicateFilter;
-import datawave.query.iterator.filter.composite.CompositePredicateFilterer;
-import org.apache.commons.jexl2.parser.JexlNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,7 +23,7 @@ import java.util.Set;
  * 
  * @param <T>
  */
-public class OrIterator<T extends Comparable<T>> implements NestedIterator<T>, CompositePredicateFilterer {
+public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     // temporary stores of uninitialized streams of iterators
     private List<NestedIterator<T>> includes, excludes;
     
@@ -256,12 +253,5 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T>, C
         sb.append(excludes);
         
         return sb.toString();
-    }
-    
-    @Override
-    public void addCompositePredicates(Set<JexlNode> compositePredicates) {
-        for (NestedIterator include : includes)
-            if (include instanceof CompositePredicateFilter)
-                ((CompositePredicateFilter) include).addCompositePredicates(compositePredicates);
     }
 }

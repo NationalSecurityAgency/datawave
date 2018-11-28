@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.*;
 import datawave.data.type.DateType;
+import datawave.data.type.DiscreteIndexType;
+import datawave.data.type.GeometryType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.StringType;
 import datawave.data.type.Type;
@@ -102,7 +104,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(HashMultimap.create(), config.getQueryFieldsDatatypes());
         Assert.assertEquals(HashMultimap.create(), config.getNormalizedFieldsDatatypes());
         Assert.assertEquals(ArrayListMultimap.create(), config.getCompositeToFieldMap());
-        Assert.assertEquals(Sets.newHashSet(), config.getFixedLengthFields());
+        Assert.assertEquals(Maps.newHashMap(), config.getFieldToDiscreteIndexTypes());
         Assert.assertEquals(Maps.newHashMap(), config.getCompositeTransitionDates());
         Assert.assertTrue(config.isSortedUIDs());
         Assert.assertEquals(Sets.newHashSet(), config.getQueryTermFrequencyFields());
@@ -206,10 +208,13 @@ public class ShardQueryConfigurationTest {
         normalizedFieldsDatatypes.put("K003", new NoOpType("V"));
         Multimap<String,String> compositeToFieldMap = HashMultimap.create();
         compositeToFieldMap.put("K004", "V");
-        Set<String> fixedLengthFields = Sets.newHashSet("fixedLengthFieldA");
+        Map<String,DiscreteIndexType<?>> fieldToDiscreteIndexType = Maps.newHashMap();
+        fieldToDiscreteIndexType.put("GEO", new GeometryType());
         Map<String,Date> compositeTransitionDates = Maps.newHashMap();
         Date transitionDate = new Date();
         compositeTransitionDates.put("K005", transitionDate);
+        Map<String,String> compositeFieldSeparators = Maps.newHashMap();
+        compositeFieldSeparators.put("GEO", " ");
         Set<String> queryTermFrequencyFields = Sets.newHashSet("fieldA");
         Set<String> limitFields = Sets.newHashSet("limitFieldA");
         Map<String,String> hierarchyFieldOptions = Maps.newHashMap();
@@ -239,8 +244,9 @@ public class ShardQueryConfigurationTest {
         other.setQueryFieldsDatatypes(queryFieldsDatatypes);
         other.setNormalizedFieldsDatatypes(normalizedFieldsDatatypes);
         other.setCompositeToFieldMap(compositeToFieldMap);
-        other.setFixedLengthFields(fixedLengthFields);
+        other.setFieldToDiscreteIndexTypes(fieldToDiscreteIndexType);
         other.setCompositeTransitionDates(compositeTransitionDates);
+        other.setCompositeFieldSeparators(compositeFieldSeparators);
         other.setQueryTermFrequencyFields(queryTermFrequencyFields);
         other.setLimitFields(limitFields);
         other.setHierarchyFieldOptions(hierarchyFieldOptions);
@@ -312,10 +318,15 @@ public class ShardQueryConfigurationTest {
         Multimap<String,String> expectedCompositeToFieldMap = ArrayListMultimap.create();
         expectedCompositeToFieldMap.put("K004", "V");
         Assert.assertEquals(expectedCompositeToFieldMap, config.getCompositeToFieldMap());
-        Assert.assertEquals(Sets.newHashSet("fixedLengthFieldA"), config.getFixedLengthFields());
+        Map<String,DiscreteIndexType<?>> expectedFieldToDiscreteIndexType = Maps.newHashMap();
+        expectedFieldToDiscreteIndexType.put("GEO", new GeometryType());
+        Assert.assertEquals(expectedFieldToDiscreteIndexType, config.getFieldToDiscreteIndexTypes());
         Map<String,Date> expectedCompositeTransitionDates = Maps.newHashMap();
         expectedCompositeTransitionDates.put("K005", transitionDate);
         Assert.assertEquals(expectedCompositeTransitionDates, config.getCompositeTransitionDates());
+        Map<String,String> expectedCompositeFieldSeparators = Maps.newHashMap();
+        expectedCompositeFieldSeparators.put("GEO", " ");
+        Assert.assertEquals(expectedCompositeFieldSeparators, config.getCompositeFieldSeparators());
         Assert.assertEquals(Sets.newHashSet("fieldA"), config.getQueryTermFrequencyFields());
         Assert.assertEquals(Sets.newHashSet("limitFieldA"), config.getLimitFields());
         Map<String,String> expectedHierarchyFieldOptions = Maps.newHashMap();
@@ -407,7 +418,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 159;
+        int expectedObjectCount = 160;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
