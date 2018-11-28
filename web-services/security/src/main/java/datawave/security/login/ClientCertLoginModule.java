@@ -13,6 +13,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
 
+import datawave.security.auth.DatawaveCredential;
 import org.jboss.logging.Logger;
 import org.jboss.security.ClientLoginModule;
 import org.jboss.security.SimplePrincipal;
@@ -59,10 +60,17 @@ public class ClientCertLoginModule implements LoginModule {
             callbackHandler.handle(callbacks);
             
             Principal loginPrincipal = new SimplePrincipal(nc.getName());
-            Object loginCredential = oc.getCredential();
+            Object credential = oc.getCredential();
+            X509Certificate loginCredential;
+            if (credential instanceof X509Certificate) {
+                loginCredential = (X509Certificate) oc.getCredential();
+            } else {
+                String clazz = (credential == null) ? "null" : credential.getClass().getName();
+                throw new LoginException("Supplied credential is a " + clazz + " but needs to be an " + X509Certificate.class.getName());
+            }
             
             sharedState.put("javax.security.auth.login.name", loginPrincipal);
-            sharedState.put("javax.security.auth.login.password", loginCredential);
+            sharedState.put("javax.security.auth.login.password", new DatawaveCredential(loginCredential, null, null));
             
         } catch (IOException e) {
             LoginException le = new LoginException(e.toString());

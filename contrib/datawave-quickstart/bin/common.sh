@@ -290,7 +290,8 @@ function assertCreateDir() {
 
 function sshIsInstalled() {
    [ -z "$( which ssh )" ] && return 1
-   [ -z "$( which sshd )" ] && return 1
+   # Check "/usr/sbin/sshd" directly since on some systems, /usr/sbin isn't in the user's path so which won't find it.
+   [ -z "$( which sshd )" ] && [ ! -x "/usr/sbin/sshd" ] && return 1
    return 0
 }
 
