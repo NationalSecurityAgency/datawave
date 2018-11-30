@@ -8,11 +8,11 @@
         <relativePath>../service-parent</relativePath>
     </parent>
     <artifactId>audit-service</artifactId>
-    <version>1.5-SNAPSHOT</version>
+    <version>1.5</version>
     <description>DATAWAVE Auditing Microservice</description>
     <properties>
         <version.in-memory-accumulo>1.9.2</version.in-memory-accumulo>
-        <version.microservice.audit-api>1.4-SNAPSHOT</version.microservice.audit-api>
+        <version.microservice.audit-api>1.4</version.microservice.audit-api>
         <version.microservice.starter>1.2</version.microservice.starter>
     </properties>
     <dependencyManagement>
