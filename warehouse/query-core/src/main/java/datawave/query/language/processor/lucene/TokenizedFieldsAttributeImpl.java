@@ -58,8 +58,7 @@ public class TokenizedFieldsAttributeImpl extends AttributeImpl implements Token
     
     @Override
     public String toString() {
-        return "<tokenizedFieldsAttribute tokenizedFields='" + tokenizedFields.toString() + "' tokenizeUnfieldedQueryes='" + tokenizeUnfieldedQueriesEnabled
-                        + "'/>";
+        return "<tokenizedFieldsAttribute tokenizedFields='" + tokenizedFields + "' tokenizeUnfieldedQueryes='" + tokenizeUnfieldedQueriesEnabled + "'/>";
     }
     
     @Override

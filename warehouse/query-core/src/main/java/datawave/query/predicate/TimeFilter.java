@@ -36,9 +36,7 @@ public class TimeFilter {
         public boolean apply(Key input) {
             final long timestamp = input.getTimestamp();
             
-            boolean ret = acceptedRange.containsLong(timestamp);
-            
-            return ret;
+            return acceptedRange.containsLong(timestamp);
         }
     }
     

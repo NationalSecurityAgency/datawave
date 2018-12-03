@@ -412,9 +412,8 @@ public class NGramTokenizationStrategyTest {
          * revision here will make debugging this issue easier in the future.
          */
         final int result2LowerBound = expectedNGramCount - 5;
-        final int result2UpperBound = idealFilterSize;
         assertTrue("result2 (" + result2 + ") should have been greater than " + result2LowerBound, result2 > result2LowerBound);
-        assertTrue("result2 (" + result2 + ") should have been less than " + result2UpperBound, result2 < result2UpperBound);
+        assertTrue("result2 (" + result2 + ") should have been less than " + idealFilterSize, result2 < idealFilterSize);
         
         String fieldName = ncis.lastElement().getIndexedFieldName();
         int expectedCount = BloomFilterUtil.predictNGramCount(ncis.lastElement().getIndexedFieldValue());

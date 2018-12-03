@@ -121,7 +121,7 @@ public class DateIndexDataTypeHandlerTest {
                 Assert.assertEquals("20130430\0testdatatype\0LOAD_DATE", key.getColumnQualifier().toString());
                 Assert.assertEquals(dateNormalizer.denormalize("2014-01-01T00:00:00Z").getTime(), key.getTimestamp());
             } else {
-                Assert.fail("Unexpected colf: " + key.getColumnFamily().toString());
+                Assert.fail("Unexpected colf: " + key.getColumnFamily());
             }
         }
         
@@ -182,7 +182,7 @@ public class DateIndexDataTypeHandlerTest {
                 Assert.assertEquals("20130430\0testdatatype\0LOAD_DATE", key.getColumnQualifier().toString());
                 Assert.assertEquals(dateNormalizer.denormalize("2014-01-01T00:00:00Z").getTime(), key.getTimestamp());
             } else {
-                Assert.fail("Unexpected colf: " + key.getColumnFamily().toString());
+                Assert.fail("Unexpected colf: " + key.getColumnFamily());
             }
         }
         
@@ -248,8 +248,6 @@ public class DateIndexDataTypeHandlerTest {
     
     public static class TestBaseIngestHelper extends BaseIngestHelper {
         private DateNormalizer dateNormalizer = new DateNormalizer();
-        
-        public TestBaseIngestHelper() {}
         
         @Override
         public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {

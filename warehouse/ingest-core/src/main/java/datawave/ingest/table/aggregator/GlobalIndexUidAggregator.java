@@ -98,7 +98,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             uids.removeAll(uidsToRemove);
             uids.removeAll(quarantinedIds);
             
-            if (releasedUids.size() > 0) {
+            if (!releasedUids.isEmpty()) {
                 if (log.isDebugEnabled())
                     log.debug("Adding released UIDS");
                 uids.addAll(releasedUids);
@@ -201,9 +201,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                         
                     }
                     
-                    for (String uid : v.getQUARANTINEUIDList()) {
-                        quarantinedIds.add(uid);
-                    }
+                    quarantinedIds.addAll(v.getQUARANTINEUIDList());
                     
                     /**
                      * This is added for backwards compatability. The removal list was added to ensure that removals are propogated across compactions. In the
@@ -253,18 +251,18 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
         /**
          * Changed logic so that if seenIgnore is true and count > MAX, we keep propogate the key
          */
-        if ((seenIgnore && count > maxUids) || quarantinedIds.size() > 0)
+        if ((seenIgnore && count > maxUids) || !quarantinedIds.isEmpty())
             return true;
         
         HashSet<String> uidsCopy = new HashSet<>(uids);
         uidsCopy.removeAll(uidsToRemove);
         
         if (log.isDebugEnabled()) {
-            log.debug(count + " " + uids.size() + " " + uidsToRemove.size() + " " + uidsCopy.size() + " removing " + (count == 0 && uidsCopy.size() == 0));
+            log.debug(count + " " + uids.size() + " " + uidsToRemove.size() + " " + uidsCopy.size() + " removing " + (count == 0 && uidsCopy.isEmpty()));
         }
         
         // if <= 0 and uids is empty, we can safely remove
-        if (count <= 0 && uidsCopy.size() == 0)
+        if (count <= 0 && uidsCopy.isEmpty())
             return false;
         else
             return true;

@@ -2,6 +2,7 @@ package datawave.query.language.functions.jexl;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -140,9 +141,7 @@ public class Chain extends JexlQueryFunction {
                 if (variableValueString.startsWith("[") && variableValueString.endsWith("]")) {
                     List<String> choiceList = new ArrayList<>();
                     String[] choices = variableValueString.split("|");
-                    for (String c : choices) {
-                        choiceList.add(c);
-                    }
+                    Collections.addAll(choiceList, choices);
                     variableValue = choiceList;
                 } else {
                     variableValue = variableValueString;
@@ -201,7 +200,7 @@ public class Chain extends JexlQueryFunction {
             
             if (fieldName != null) {
                 List<String> fieldValues = getValueFromDocument(d, fieldName);
-                if (fieldValues.size() == 0) {
+                if (fieldValues.isEmpty()) {
                     undefinedProperties.setProperty(k, "__UNDEFINED__");
                 } else if (fieldValues.size() == 1) {
                     singleProperties.setProperty(k, fieldValues.get(0));
@@ -243,7 +242,7 @@ public class Chain extends JexlQueryFunction {
         return querySet;
     }
     
-    static private String fixQuery(String query) {
+    private static String fixQuery(String query) {
         
         JexlNode node = null;
         try {
@@ -261,9 +260,9 @@ public class Chain extends JexlQueryFunction {
         }
     }
     
-    static private void fixQuery(JexlNode node) throws ParseException {
+    private static void fixQuery(JexlNode node) throws ParseException {
         
-        System.out.println(node.toString() + " -- " + node.getClass().getName() + " -- " + node.getChildren().size());
+        System.out.println(node + " -- " + node.getClass().getName() + " -- " + node.getChildren().size());
         for (JexlNode n : node.getChildren()) {
             fixQuery(n);
         }
@@ -282,14 +281,14 @@ public class Chain extends JexlQueryFunction {
                         }
                     }
                 }
-                if (jbn.getChildren().size() == 0) {
+                if (jbn.getChildren().isEmpty()) {
                     throw new ParseException("Too many undefined terms");
                 }
             }
         }
     }
     
-    static private boolean incrementIndexes(Map<String,Integer> index, Map<String,Integer> sizes) {
+    private static boolean incrementIndexes(Map<String,Integer> index, Map<String,Integer> sizes) {
         
         int position = 0;
         for (String k : index.keySet()) {

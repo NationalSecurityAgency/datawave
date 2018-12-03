@@ -171,7 +171,7 @@ public class QueryMetricsDetailListResponse extends QueryMetricListResponse {
         builder.append("</table>\n<br/>\n");
         pageTimesBuilder.append("</table>\n");
         
-        builder.append(pageTimesBuilder.toString());
+        builder.append(pageTimesBuilder);
         
         return builder.toString();
     }

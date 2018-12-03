@@ -7,7 +7,13 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 
 /**
- * Defines the methods for retrieval of Hadoop configuration information for a data type.
+ * Defines the methods for retrieval of Hadoop configuration information for a data type. This is one of the major components that is required for building a
+ * query test framework. It should define the following:
+ * <ul>
+ * <li>Define the fields for the datatype.</li>
+ * <li>Define all pre-allocated datatype entries.</li>
+ * <li>Set all default Hadoop/Accumulo configuration parameters.</li>
+ * </ul>
  *
  * @see org.apache.hadoop.conf.Configuration
  */

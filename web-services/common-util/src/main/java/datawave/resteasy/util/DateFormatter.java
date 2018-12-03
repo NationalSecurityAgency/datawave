@@ -21,8 +21,8 @@ public class DateFormatter implements ParamConverter<Date> {
     
     private String defaultTime = "000000";
     private String defaultMillisec = "000";
-    static private String formatPattern = "yyyyMMdd HHmmss.SSS";
-    static private final SimpleDateFormat dateFormat = new SimpleDateFormat(formatPattern);
+    private static String formatPattern = "yyyyMMdd HHmmss.SSS";
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat(formatPattern);
     
     static {
         dateFormat.setLenient(false);

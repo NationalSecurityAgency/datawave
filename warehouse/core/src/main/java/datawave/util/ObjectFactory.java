@@ -2,7 +2,11 @@ package datawave.util;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -10,7 +14,7 @@ import org.apache.log4j.Logger;
  * Simply factory using reflection (i.e. Class.forname() and Constructor.newInstance) to create the specified object.
  */
 public class ObjectFactory {
-    private final static Logger logger = Logger.getLogger(ObjectFactory.class);
+    private static final Logger logger = Logger.getLogger(ObjectFactory.class);
     
     /**
      * Take away the public constructor
@@ -165,7 +169,6 @@ public class ObjectFactory {
         if (logger.isDebugEnabled()) {
             logger.debug("ObjectFactory.create(" + className + "," + Arrays.toString(args) + "," + location + ")");
         }
-        Object o = create(className, args);
-        return o;
+        return create(className, args);
     }
 }

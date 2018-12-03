@@ -30,8 +30,7 @@ public class CityDataManager extends AbstractDataManager {
     private static final Logger log = Logger.getLogger(CityDataManager.class);
     
     public CityDataManager() {
-        super(CityField.EVENT_ID.name(), CityField.START_DATE.name());
-        this.metadata = CityRawData.metadata;
+        super(CityField.EVENT_ID.name(), CityField.START_DATE.name(), CityField.getFieldsMetadata());
     }
     
     @Override
@@ -42,7 +41,7 @@ public class CityDataManager extends AbstractDataManager {
             int count = 0;
             Set<RawData> cityData = new HashSet<>();
             while (null != (data = csv.readNext())) {
-                final RawData raw = new CityRawData(data);
+                final RawData raw = new CityRawData(datatype, data);
                 cityData.add(raw);
                 count++;
             }
@@ -57,19 +56,9 @@ public class CityDataManager extends AbstractDataManager {
         return CityField.headers();
     }
     
-    @Override
-    public Date[] getRandomStartEndDate() {
-        return CitiesDataType.CityShardId.getStartEndDates(true);
-    }
-    
-    @Override
-    public Date[] getShardStartEndDate() {
-        return CitiesDataType.CityShardId.getStartEndDates(false);
-    }
-    
     private Set<RawData> getRawData(final Set<RawData> rawData, final Date start, final Date end) {
         final Set<RawData> data = new HashSet<>(this.rawData.size());
-        final Set<String> shards = CitiesDataType.CityShardId.getShardRange(start, end);
+        final Set<String> shards = this.shardValues.getShardRange(start, end);
         for (final RawData raw : rawData) {
             String id = raw.getValue(CityField.START_DATE.name());
             if (shards.contains(id)) {
@@ -80,38 +69,13 @@ public class CityDataManager extends AbstractDataManager {
         return data;
     }
     
-    static class CityRawData extends BaseRawData {
-        
-        private static final Map<String,RawMetaData> metadata = new HashMap<>();
-        static {
-            for (final CityField field : CityField.values()) {
-                metadata.put(field.name().toLowerCase(), field.getMetadata());
-            }
-        }
-        
-        CityRawData(final String fields[]) {
-            super(fields);
+    /**
+     * POJO for a single raw data entry.
+     */
+    private static class CityRawData extends BaseRawData {
+        CityRawData(final String datatype, final String fields[]) {
+            super(datatype, fields, CityField.headers(), CityField.getFieldsMetadata());
             Assert.assertEquals("city ingest data field count is invalid", CityField.headers().size(), fields.length);
-        }
-        
-        @Override
-        protected List<String> getHeaders() {
-            return CityField.headers();
-        }
-        
-        @Override
-        protected boolean containsField(final String field) {
-            return CityField.headers().contains(field.toLowerCase());
-        }
-        
-        @Override
-        public boolean isMultiValueField(final String field) {
-            return metadata.get(field.toLowerCase()).multiValue;
-        }
-        
-        @Override
-        protected Normalizer<?> getNormalizer(String field) {
-            return metadata.get(field.toLowerCase()).normalizer;
         }
     }
 }

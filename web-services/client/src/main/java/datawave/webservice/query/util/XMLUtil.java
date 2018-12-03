@@ -7,7 +7,7 @@ public class XMLUtil {
         // prevent construction
     }
     
-    static public boolean isValidXML(String s) {
+    public static boolean isValidXML(String s) {
         for (char c : s.toCharArray()) {
             try {
                 if (XMLChar.isValid(c) == false) {

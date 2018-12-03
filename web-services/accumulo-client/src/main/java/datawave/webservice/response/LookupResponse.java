@@ -24,8 +24,6 @@ public class LookupResponse extends BaseResponse {
     @XmlElement(name = "Entry")
     private List<Entry> entries = null;
     
-    public LookupResponse() {}
-    
     public List<Entry> getEntries() {
         return entries;
     }

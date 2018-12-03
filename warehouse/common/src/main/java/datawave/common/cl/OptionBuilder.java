@@ -22,9 +22,6 @@ public class OptionBuilder {
     /** The next Option's type; defaults to null. */
     public Object type;
     
-    /** Default Constuctor. */
-    public OptionBuilder() {}
-    
     /**
      * Creates an Option using OptionBuilder's State and the given parameters.
      *

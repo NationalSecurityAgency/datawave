@@ -45,9 +45,6 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
     /** Splits raw input records Strings according to the configured separator. */
     private StrTokenizer _tokenizer;
     
-    /** Default Constructor. */
-    public CSVReaderBase() {}
-    
     /** Super class returns the position in bytes in the file as the key. This returns the record number. */
     @Override
     public LongWritable getCurrentKey() {

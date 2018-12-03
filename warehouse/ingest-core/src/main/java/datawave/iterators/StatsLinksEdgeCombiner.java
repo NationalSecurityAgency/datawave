@@ -164,9 +164,8 @@ public class StatsLinksEdgeCombiner extends WrappingIterator implements OptionDe
     @Override
     public IteratorOptions describeOptions() {
         // No custom options
-        final IteratorOptions io = new IteratorOptions("statsLinksEdgeCOmbiner", "Combines multiple STATS/LINKS edges with equal keys", null, null);
         
-        return (io);
+        return (new IteratorOptions("statsLinksEdgeCOmbiner", "Combines multiple STATS/LINKS edges with equal keys", null, null));
     }
     
     @Override

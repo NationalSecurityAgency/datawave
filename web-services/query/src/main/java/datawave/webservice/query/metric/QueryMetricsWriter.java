@@ -1,7 +1,14 @@
 package datawave.webservice.query.metric;
 
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PostConstruct;
@@ -74,7 +81,7 @@ public class QueryMetricsWriter {
     private List<QueryMetricHolder> metricQueue;
     private DecimalFormat df = new DecimalFormat("0.00");
     
-    volatile static private AtomicBoolean receivingMetrics = new AtomicBoolean(false);
+    private static volatile AtomicBoolean receivingMetrics = new AtomicBoolean(false);
     
     private UdpClient createUdpClient() {
         if (config != null && StringUtils.isNotBlank(config.getTimelyHost())) {
@@ -108,7 +115,7 @@ public class QueryMetricsWriter {
             long start = System.currentTimeMillis();
             List<QueryMetricHolder> failedMetrics = new ArrayList<>();
             try {
-                if (metricQueue.size() > 0) {
+                if (!metricQueue.isEmpty()) {
                     try {
                         // write previously failed metrics
                         failedMetrics = writeMetrics(queryMetricHandler, metricQueue);
@@ -117,13 +124,13 @@ public class QueryMetricsWriter {
                             // logged at ERROR to record successful write of previously failed writes
                             log.error("Wrote " + successful + " previously failed query metric updates");
                         }
-                        if (failedMetrics.size() > 0) {
+                        if (!failedMetrics.isEmpty()) {
                             throw new IllegalStateException(failedMetrics.size() + " metrics failed write");
                         }
                     } catch (Throwable t) {
                         log.error(failedMetrics.size() + " metric updates failed a second time, removing");
                         for (QueryMetricHolder h : failedMetrics) {
-                            log.error("Failed write : " + h.getQueryMetric().toString());
+                            log.error("Failed write : " + h.getQueryMetric());
                         }
                     } finally {
                         metricQueue.clear();
@@ -165,7 +172,7 @@ public class QueryMetricsWriter {
                     log.trace("Wrote " + (metricQueue.size() - failedMetrics.size()) + " query metric updates");
                 }
                 metricQueue.clear();
-                if (failedMetrics.size() > 0) {
+                if (!failedMetrics.isEmpty()) {
                     metricQueue.addAll(failedMetrics);
                     throw new IllegalStateException(metricQueue.size() + " metrics failed write");
                 }
@@ -186,7 +193,7 @@ public class QueryMetricsWriter {
         }
     }
     
-    synchronized private void sendMetricsToTimely(BaseQueryMetric queryMetric) {
+    private synchronized void sendMetricsToTimely(BaseQueryMetric queryMetric) {
         
         if (timelyClient != null && queryMetric.getQueryType().equalsIgnoreCase("RunningQuery")) {
             try {
@@ -228,10 +235,9 @@ public class QueryMetricsWriter {
                                 callTime = pm.getReturnTime();
                             }
                             if (pm.getPagesize() > 0) {
-                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltime " + requestTime + " " + callTime + " " + tagSb.toString());
+                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltime " + requestTime + " " + callTime + " " + tagSb);
                                 String callTimePerRecord = df.format((double) callTime / pm.getPagesize());
-                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltimeperrecord " + requestTime + " " + callTimePerRecord + " "
-                                                + tagSb.toString());
+                                timelyClient.write("put dw.query.metrics.PAGE_METRIC.calltimeperrecord " + requestTime + " " + callTimePerRecord + " " + tagSb);
                             }
                             lastPageMetricMap.put(queryId, pm.getPageNumber());
                             
@@ -241,10 +247,10 @@ public class QueryMetricsWriter {
                 
                 if (lifecycle.equals(Lifecycle.CLOSED) || lifecycle.equals(Lifecycle.CANCELLED)) {
                     // write ELAPSED_TIME
-                    timelyClient.write("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " " + tagSb.toString());
+                    timelyClient.write("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " " + tagSb);
                     
                     // write NUM_RESULTS
-                    timelyClient.write("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " " + tagSb.toString());
+                    timelyClient.write("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " " + tagSb);
                     
                     // clean up last page map
                     lastPageMetricMap.remove(queryId);
@@ -256,10 +262,10 @@ public class QueryMetricsWriter {
                     if (createTime == -1) {
                         createTime = queryMetric.getSetupTime();
                     }
-                    timelyClient.write("put dw.query.metrics.CREATE_TIME " + createDate + " " + createTime + " " + tagSb.toString());
+                    timelyClient.write("put dw.query.metrics.CREATE_TIME " + createDate + " " + createTime + " " + tagSb);
                     
                     // write a COUNT value of 1 so that we can count total queries
-                    timelyClient.write("put dw.query.metrics.COUNT " + createDate + " 1 " + tagSb.toString());
+                    timelyClient.write("put dw.query.metrics.COUNT " + createDate + " 1 " + tagSb);
                 }
                 
             } catch (Exception e) {
@@ -272,7 +278,7 @@ public class QueryMetricsWriter {
         
         List<QueryMetricHolder> failedMetrics = new ArrayList<>();
         
-        if (metricQueue.size() > 0) {
+        if (!metricQueue.isEmpty()) {
             log.debug("writing " + metricQueue.size() + " query metric updates");
             for (QueryMetricHolder queryMetricHolder : metricQueue) {
                 try {

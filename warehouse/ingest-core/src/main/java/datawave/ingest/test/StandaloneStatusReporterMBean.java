@@ -2,8 +2,8 @@ package datawave.ingest.test;
 
 public interface StandaloneStatusReporterMBean {
     
-    public long getRecordsProcessed();
+    long getRecordsProcessed();
     
-    public long getFilesProcessed();
+    long getFilesProcessed();
     
 }

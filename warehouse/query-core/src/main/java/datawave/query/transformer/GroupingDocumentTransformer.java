@@ -1,9 +1,20 @@
 package datawave.query.transformer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
-import com.google.common.collect.*;
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 import datawave.marking.MarkingFunctions;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -50,7 +61,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
         QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
         for (String groupField : groupFieldsSet) {
             String f = model.getReverseAliasForField(groupField);
-            if (f != null && f.length() > 0) {
+            if (f != null && !f.isEmpty()) {
                 this.groupFieldsList.add(f);
             }
         }
@@ -119,7 +130,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
                     created = this.makeField(shortName, this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(field.getColumnVisibility())),
                                     field.getColumnVisibility(), 0L, field.getValueOfTypedValue());
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    log.error(ex);
                 }
                 if (created != null) {
                     if (fieldMap.containsKey(fieldName)) {

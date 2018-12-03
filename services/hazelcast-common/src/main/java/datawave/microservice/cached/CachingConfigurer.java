@@ -30,23 +30,27 @@ public class CachingConfigurer extends CachingConfigurerSupport {
         public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
             // do nothing -- we want it treated as a cache miss
             logger.warn("Exception retrieving value for {} from cache {}", key, exception.getMessage(), exception);
-            cache.clear();
-            logger.warn("Cleared cache due to retrieval errors.");
+            try {
+                cache.clear();
+                logger.warn("Cleared cache due to retrieval errors.");
+            } catch (Exception e) {
+                logger.warn("Error clearing cache {} after get error on {}: {}", cache.getName(), key, exception.getMessage(), exception);
+            }
         }
         
         @Override
         public void handleCachePutError(RuntimeException exception, Cache cache, Object key, Object value) {
-            throw exception;
+            logger.warn("Error putting value in {}. key={} -> value={}: {}", cache.getName(), key, value, exception.getMessage(), exception);
         }
         
         @Override
         public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
-            throw exception;
+            logger.warn("Error evicting value from {}. key={}: {}", cache.getName(), key, exception.getMessage(), exception);
         }
         
         @Override
         public void handleCacheClearError(RuntimeException exception, Cache cache) {
-            throw exception;
+            logger.error("Error clearing cache {}: {}", cache.getName(), exception.getMessage(), exception);
         }
     }
 }

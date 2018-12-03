@@ -14,7 +14,7 @@ import com.google.common.base.Function;
 
 public class EmptyTermFrequencyFunction implements Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> {
     
-    private final static Map<String,Object> emptyContext = Collections.emptyMap();
+    private static final Map<String,Object> emptyContext = Collections.emptyMap();
     
     @Override
     public Tuple3<Key,Document,Map<String,Object>> apply(Tuple2<Key,Document> from) {

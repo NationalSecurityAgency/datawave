@@ -35,9 +35,8 @@ public class SimpleFlagDistributor implements FlagDistributor {
     
     @Override
     public boolean hasNext(boolean mustHaveMax) {
-        boolean hasNext = mustHaveMax ? inputs.size() >= fc.getMaxFlags() : !inputs.isEmpty();
         // if there's nothing to do, then reset the last time again
-        return hasNext;
+        return mustHaveMax ? inputs.size() >= fc.getMaxFlags() : !inputs.isEmpty();
     }
     
     @Override

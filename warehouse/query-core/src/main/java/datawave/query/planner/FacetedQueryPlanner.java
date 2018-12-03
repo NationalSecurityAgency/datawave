@@ -104,9 +104,8 @@ public class FacetedQueryPlanner extends IndexQueryPlanner {
         config.setExpandAllTerms(true);
         
         // update the query tree
-        ASTJexlScript script = super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
         
-        return script;
+        return super.updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
     }
     
     @Override

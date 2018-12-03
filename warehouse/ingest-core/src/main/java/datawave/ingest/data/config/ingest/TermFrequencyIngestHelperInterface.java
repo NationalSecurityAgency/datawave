@@ -8,5 +8,5 @@ package datawave.ingest.data.config.ingest;
  */
 public interface TermFrequencyIngestHelperInterface {
     
-    public abstract boolean isTermFrequencyField(String fieldName);
+    boolean isTermFrequencyField(String fieldName);
 }

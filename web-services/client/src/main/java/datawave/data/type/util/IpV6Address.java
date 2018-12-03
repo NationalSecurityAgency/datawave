@@ -1,6 +1,6 @@
 package datawave.data.type.util;
 
-import com.google.common.base.*;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import org.apache.commons.lang.StringUtils;
 
@@ -74,7 +74,7 @@ public class IpV6Address extends IpAddress {
                 byte[] bytes = IpV4Address.parse(parts[index]).toBytes();
                 ipaddress[i++] = (short) (((0x00FF & bytes[0]) << 8) | (0x00FF & bytes[1]));
                 ipaddress[i] = (short) (((0x00FF & bytes[2])) << 8 | (0x00FF & bytes[3]));
-            } else if (parts[index].length() == 0 && expectFiller) {
+            } else if (parts[index].isEmpty() && expectFiller) {
                 i += (8 - parts.length);
                 if (expectIpv4) {
                     i--;
@@ -82,7 +82,7 @@ public class IpV6Address extends IpAddress {
                 // can only have one of these
                 expectFiller = false;
             } else {
-                int value = (parts[index].length() > 0 ? Integer.parseInt(parts[index], 16) : 0);
+                int value = (!parts[index].isEmpty() ? Integer.parseInt(parts[index], 16) : 0);
                 if ((value >>> 16) != 0) {
                     throw new IllegalArgumentException("Part " + parts[i] + " of " + address + " is out of range in base 16");
                 }

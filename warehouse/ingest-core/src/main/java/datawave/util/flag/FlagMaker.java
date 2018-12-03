@@ -1,8 +1,16 @@
 package datawave.util.flag;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -84,7 +92,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private volatile boolean running = true;
     private FlagSocket flagSocket;
     private final DecimalFormat df = new DecimalFormat("#0.00");
-    private final static byte ONE = '1';
+    private static final byte ONE = '1';
     private final ReentrantLock lock = new ReentrantLock();
     private DateUtils util = new DateUtils();
     private StandaloneTaskAttemptContext<?,?,?,?> ctx;
@@ -467,7 +475,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             if (f.renameTo(f2)) {
                 flagFile = f2;
             } else {
-                throw new IOException("Failed to rename" + f.toString() + " to " + f2);
+                throw new IOException("Failed to rename" + f + " to " + f2);
             }
             
             try {
@@ -509,9 +517,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         } catch (IOException ex) {
             StringBuilder sb = new StringBuilder();
             for (Map.Entry<InputFile,Path> orphan : moved.entrySet()) {
-                sb.append("\n").append(orphan.getValue().toString());
+                sb.append("\n").append(orphan.getValue());
             }
-            log.error("An error occurred while attempting to move files. The following files were orphaned:" + sb.toString());
+            log.error("An error occurred while attempting to move files. The following files were orphaned:" + sb);
         }
     }
     

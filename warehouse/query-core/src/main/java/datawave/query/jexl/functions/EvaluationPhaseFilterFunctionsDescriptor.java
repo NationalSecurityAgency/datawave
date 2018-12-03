@@ -19,7 +19,10 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.*;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
@@ -162,8 +165,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         @Override
         public Set<String> fieldsForNormalization(MetadataHelper helper, Set<String> datatypeFilter, int arg) {
             // we do not want to normalize any of the regex arguments, nor any of the date arguments.
-            Set<String> fields = Collections.emptySet();
-            return fields;
+            return Collections.emptySet();
         }
         
         @Override

@@ -225,7 +225,7 @@ public class ProtubufEdgeDeleteModeTest {
         @Override
         public void setup(TaskAttemptContext context) {
             super.setup(context);
-            this.deleteMode = (context.getConfiguration().get("command.line.injected.delete.mode.property", "false").equals("true")) ? true : false;
+            this.deleteMode = context.getConfiguration().get("command.line.injected.delete.mode.property", "false").equals("true");
         }
         
         // a stripped-down handler retaining a minimum capability to demonstrate setting

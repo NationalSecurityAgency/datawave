@@ -17,8 +17,6 @@ import java.util.TreeSet;
 public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements SortedSet<E> {
     protected List<SortedSet<E>> sets = new ArrayList<>();
     
-    public MultiSetBackedSortedSet() {}
-    
     /**
      * Add a set to the underlying sets
      * 

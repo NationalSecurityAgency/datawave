@@ -14,7 +14,6 @@ import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.config.ShardQueryConfigurationFactory;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
@@ -338,7 +337,7 @@ public class GeoSortedQueryDataTest {
         Query query = new QueryImpl();
         query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
         
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(logic, query);
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
         logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
         

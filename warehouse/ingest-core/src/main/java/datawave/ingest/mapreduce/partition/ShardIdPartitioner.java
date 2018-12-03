@@ -1,15 +1,17 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.ingest.mapreduce.job.*;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.conf.*;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
 import java.text.ParseException;
-import java.util.*;
+import java.util.Date;
 
 /**
  * The ShardIdPartitioner will generate partitions for any table that's rows are in the format yyyyMMdd_n where n is an integer representing a shard id This
@@ -80,9 +82,8 @@ public class ShardIdPartitioner extends Partitioner<BulkIngestKey,Value> impleme
         int shard = Integer.valueOf(shardId.substring(SHARD_ID_SPLIT + 1));
         
         // now turn the shard id into a number that is sequential (without gaps) with all other shard ids
-        long shardIndex = (daysFromBaseTime * shardIdFactory.getNumShards(date.getTime())) + shard;
         
-        return shardIndex;
+        return (daysFromBaseTime * shardIdFactory.getNumShards(date.getTime())) + shard;
     }
     
     private long getBaseTime() throws IllegalArgumentException {

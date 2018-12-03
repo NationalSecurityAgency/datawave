@@ -2,7 +2,6 @@ package datawave.microservice.cached;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -13,8 +12,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-
-import java.io.ByteArrayInputStream;
 
 /**
  * Auto-configuration necessary to set up a Hazelcast client that connects to a Hazelcast cluster that has been configured using completely custom (or no)
@@ -28,27 +25,10 @@ import java.io.ByteArrayInputStream;
 @AutoConfigureAfter({HazelcastDiscoveryClientAutoConfiguration.class, HazelcastK8sClientAutoConfiguration.class,
         HazelcastDiscoveryServiceAutoConfiguration.class})
 @EnableConfigurationProperties(HazelcastClientProperties.class)
-public class HazelcastDefaultClientAutoConfiguration {
+public class HazelcastDefaultClientAutoConfiguration extends HazelcastBaseClientConfiguration {
     @Bean
     public ClientConfig clientConfig(HazelcastClientProperties clientProperties) {
-        ClientConfig clientConfig;
-        if (clientProperties.getXmlConfig() == null) {
-            clientConfig = new ClientConfig();
-        } else {
-            XmlClientConfigBuilder xmlBuilder = new XmlClientConfigBuilder(new ByteArrayInputStream(clientProperties.getXmlConfig().getBytes()));
-            clientConfig = xmlBuilder.build();
-        }
-        
-        if (!clientProperties.isSkipDefaultConfiguration()) {
-            // Configure hazelcast properties
-            clientConfig.setProperty("hazelcast.logging.type", "slf4j");
-            clientConfig.setProperty("hazelcast.phone.home.enabled", Boolean.FALSE.toString());
-            
-            // Set our cluster name
-            clientConfig.getGroupConfig().setName(clientProperties.getClusterName());
-        }
-        
-        return clientConfig;
+        return createClientConfig(clientProperties);
     }
     
     /**

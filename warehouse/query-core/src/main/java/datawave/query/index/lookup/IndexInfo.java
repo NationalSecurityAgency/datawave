@@ -201,7 +201,7 @@ public class IndexInfo implements Writable, UidIntersector {
         
         merged.count = -1;
         merged.uids = ImmutableSortedSet.of();
-        if (internalNodeList.size() == 0) {
+        if (internalNodeList.isEmpty()) {
             
             merged.myNode = null;
         } else {
@@ -356,7 +356,7 @@ public class IndexInfo implements Writable, UidIntersector {
             for (String uid : ids.keySet()) {
                 
                 Set<JexlNode> nodes = Sets.newHashSet(ids.get(uid));
-                if (nodes.size() > 0) {
+                if (!nodes.isEmpty()) {
                     nodes.addAll(delayedNodes);
                     
                     IndexMatch currentMatch = new IndexMatch(nodes, uid, IndexMatchType.OR);
@@ -379,7 +379,7 @@ public class IndexInfo implements Writable, UidIntersector {
                 log.trace("internalNodeList node  is " + node);
             }
         }
-        if (internalNodeList.size() == 0) {
+        if (internalNodeList.isEmpty()) {
             merged.myNode = null;
         } else {
             merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createUnwrappedOrNode(internalNodeList));
@@ -449,7 +449,7 @@ public class IndexInfo implements Writable, UidIntersector {
         IndexInfo merged = new IndexInfo();
         Set<JexlNode> allNodes = Sets.newHashSet();
         Multimap<TreeHashNode,JexlNode> nodesMap = ArrayListMultimap.create();
-        if (ids.keySet().size() == 0) {
+        if (ids.keySet().isEmpty()) {
             merged.count = maxPossibilities;
         } else {
             

@@ -53,7 +53,7 @@ public class GroupingRequiredFilterFunctions {
             // my fieldValue2 will be a collection that looks like [ 600_7.600.7.1:1, 600_7.600.7.2:2, 600_7.600.7.3:1 ]
             // I am only interested in a match on the one that ends with the 'tail' (.2) that I found above
             String tail = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(matchFieldName, positionFromRight);
-            if (tail != null && tail.length() > 0) {
+            if (tail != null && !tail.isEmpty()) {
                 groups.add(tail);
             }
             for (int i = 2; i < args.length; i++) {
@@ -68,7 +68,7 @@ public class GroupingRequiredFilterFunctions {
                             // includeRegex will return either an emptyCollection, or a SingletonCollection containing
                             // the first match that was found
                             Collection<ValueTuple> rightSideMatches = EvaluationPhaseFilterFunctions.includeRegex(fieldValue3, regex);
-                            if (rightSideMatches.size() > 0) {
+                            if (!rightSideMatches.isEmpty()) {
                                 matches.addAll(rightSideMatches);
                                 matches.add(match); // add the left side unmodified match
                             }
@@ -132,7 +132,7 @@ public class GroupingRequiredFilterFunctions {
                             // includeRegex will return either an emptyCollection, or a SingletonCollection containing
                             // the first match that was found
                             Collection<ValueTuple> rightSideMatches = EvaluationPhaseFilterFunctions.includeRegex(fieldValue3, regex);
-                            if (rightSideMatches.size() > 0) {
+                            if (!rightSideMatches.isEmpty()) {
                                 matches.addAll(rightSideMatches);
                                 matches.add(match); // add the left side unmodified match
                             }

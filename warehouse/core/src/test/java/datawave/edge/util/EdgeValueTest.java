@@ -112,14 +112,14 @@ public class EdgeValueTest {
     public void testEqualAfterReencodingWithValidUuid() throws InvalidProtocolBufferException {
         EdgeValue originalEdgeValue = createEdgeValueWithUuid("11111111-1111-1111-1111-111111111111");
         EdgeValue decodedEdgeValue = EdgeValue.decode(createEdgeValueWithUuid("11111111-1111-1111-1111-111111111111").encode());
-        assertEquals(originalEdgeValue.toString() + "\n" + decodedEdgeValue.toString(), originalEdgeValue, decodedEdgeValue);
+        assertEquals(originalEdgeValue + "\n" + decodedEdgeValue, originalEdgeValue, decodedEdgeValue);
     }
     
     @Test
     public void testEqualAfterReencodingWithInvalidUuid() throws InvalidProtocolBufferException {
         EdgeValue originalEdgeValue = createEdgeValueWithUuid("1234");
         EdgeValue decodedEdgeValue = EdgeValue.decode(createEdgeValueWithUuid("1234").encode());
-        assertEquals(originalEdgeValue.toString() + "\n" + decodedEdgeValue.toString(), originalEdgeValue, decodedEdgeValue);
+        assertEquals(originalEdgeValue + "\n" + decodedEdgeValue, originalEdgeValue, decodedEdgeValue);
     }
     
     @Test
@@ -133,14 +133,14 @@ public class EdgeValueTest {
     public void testHashcodeAfterReencodingWithValidUuid() throws InvalidProtocolBufferException {
         EdgeValue originalEdgeValue = createEdgeValueWithUuid("11111111-1111-1111-1111-111111111111");
         EdgeValue decodedEdgeValue = EdgeValue.decode(createEdgeValueWithUuid("11111111-1111-1111-1111-111111111111").encode());
-        assertEquals(originalEdgeValue.toString() + "\n" + decodedEdgeValue.toString(), originalEdgeValue.hashCode(), decodedEdgeValue.hashCode());
+        assertEquals(originalEdgeValue + "\n" + decodedEdgeValue, originalEdgeValue.hashCode(), decodedEdgeValue.hashCode());
     }
     
     @Test
     public void testHashcodeAfterReencodingWithInvalidUuid() throws InvalidProtocolBufferException {
         EdgeValue originalEdgeValue = createEdgeValueWithUuid("1234");
         EdgeValue decodedEdgeValue = EdgeValue.decode(createEdgeValueWithUuid("1234").encode());
-        assertEquals(originalEdgeValue.toString() + "\n" + decodedEdgeValue.toString(), originalEdgeValue.hashCode(), decodedEdgeValue.hashCode());
+        assertEquals(originalEdgeValue + "\n" + decodedEdgeValue, originalEdgeValue.hashCode(), decodedEdgeValue.hashCode());
     }
     
     @Test
@@ -181,8 +181,8 @@ public class EdgeValueTest {
         builder.setSinkValue("sink<ds2>");
         builder.setBitmask(0x801);
         builder.setCount((long) (0x8010));
-        builder.setDuration(new ArrayList<>(Arrays.asList(new Long[] {5L, 4L})));
-        builder.setHours(new ArrayList<>(Arrays.asList(new Long[] {12L, 13L})));
+        builder.setDuration(new ArrayList<>(Arrays.asList(5L, 4L)));
+        builder.setHours(new ArrayList<>(Arrays.asList(12L, 13L)));
         
         Value value = builder.build().encode();
         
@@ -208,8 +208,8 @@ public class EdgeValueTest {
         assertEquals("sink<ds2>", eValue.getSinkValue());
         assertEquals(0x801, eValue.getBitmask().intValue());
         assertEquals(0x8010, eValue.getCount().longValue());
-        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {5L, 4L})), eValue.getDuration());
-        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {12L, 13L})), eValue.getHours());
+        assertEquals(new ArrayList<>(Arrays.asList(5L, 4L)), eValue.getDuration());
+        assertEquals(new ArrayList<>(Arrays.asList(12L, 13L)), eValue.getHours());
     }
     
     @Test
@@ -231,8 +231,8 @@ public class EdgeValueTest {
         assertEquals("sink<ds2>", eValue.getSinkValue());
         assertEquals(0x801, eValue.getBitmask().intValue());
         assertEquals(0x8010, eValue.getCount().longValue());
-        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {5L, 4L})), eValue.getDuration());
-        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {12L, 13L})), eValue.getHours());
+        assertEquals(new ArrayList<>(Arrays.asList(5L, 4L)), eValue.getDuration());
+        assertEquals(new ArrayList<>(Arrays.asList(12L, 13L)), eValue.getHours());
         
         stream = new BufferedInputStream(ClassLoader.getSystemResourceAsStream("EdgeValue.3.x.bytes"));
         bytes = new ByteArrayOutputStream();
@@ -250,8 +250,8 @@ public class EdgeValueTest {
         assertEquals("sink<ds2>", eValue.getSinkValue());
         assertEquals(0x801, eValue.getBitmask().intValue());
         assertEquals(0x8010, eValue.getCount().longValue());
-        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {5L, 4L})), eValue.getDuration());
-        assertEquals(new ArrayList<>(Arrays.asList(new Long[] {12L, 13L})), eValue.getHours());
+        assertEquals(new ArrayList<>(Arrays.asList(5L, 4L)), eValue.getDuration());
+        assertEquals(new ArrayList<>(Arrays.asList(12L, 13L)), eValue.getHours());
     }
     
 }

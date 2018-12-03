@@ -169,12 +169,9 @@ public class UniqueTransformTest {
             expected = countUniqueness(input, fields);
         }
         
-        Transformer docToEntry = new Transformer() {
-            @Override
-            public Object transform(Object input) {
-                Document d = (Document) input;
-                return Maps.immutableEntry(d.getMetadata(), d);
-            }
+        Transformer docToEntry = input1 -> {
+            Document d = (Document) input1;
+            return Maps.immutableEntry(d.getMetadata(), d);
         };
         TransformIterator inputIterator = new TransformIterator(input.iterator(), docToEntry);
         UniqueTransform transform = new UniqueTransform(fields);
@@ -219,7 +216,7 @@ public class UniqueTransformTest {
         expected.add(set2);
         Collections.sort(expected);
         
-        UniqueTransform transform = new UniqueTransform(Sets.newHashSet(new String[] {"Attr0", "Attr1"}));
+        UniqueTransform transform = new UniqueTransform(Sets.newHashSet("Attr0", "Attr1"));
         List<UniqueTransform.FieldSet> fieldSets = transform.getOrderedFieldSets(d);
         Assert.assertEquals(expected, fieldSets);
     }
@@ -255,7 +252,7 @@ public class UniqueTransformTest {
         expected.add(set2);
         Collections.sort(expected);
         
-        UniqueTransform transform = new UniqueTransform(Sets.newHashSet(new String[] {"Attr0", "Attr1", "Attr3"}));
+        UniqueTransform transform = new UniqueTransform(Sets.newHashSet("Attr0", "Attr1", "Attr3"));
         List<UniqueTransform.FieldSet> fieldSets = transform.getOrderedFieldSets(d);
         Assert.assertEquals(expected, fieldSets);
     }
@@ -291,7 +288,7 @@ public class UniqueTransformTest {
         expected.add(set2);
         Collections.sort(expected);
         
-        UniqueTransform transform = new UniqueTransform(Sets.newHashSet(new String[] {"Attr0", "Attr1", "Attr3"}));
+        UniqueTransform transform = new UniqueTransform(Sets.newHashSet("Attr0", "Attr1", "Attr3"));
         List<UniqueTransform.FieldSet> fieldSets = transform.getOrderedFieldSets(d);
         Assert.assertEquals(expected, fieldSets);
     }
@@ -339,7 +336,7 @@ public class UniqueTransformTest {
         expected.add(set4);
         Collections.sort(expected);
         
-        UniqueTransform transform = new UniqueTransform(Sets.newHashSet(new String[] {"Attr0", "Attr1", "Attr3"}));
+        UniqueTransform transform = new UniqueTransform(Sets.newHashSet("Attr0", "Attr1", "Attr3"));
         List<UniqueTransform.FieldSet> fieldSets = transform.getOrderedFieldSets(d);
         Assert.assertEquals(expected, fieldSets);
     }
@@ -382,7 +379,7 @@ public class UniqueTransformTest {
         expected.add(set4);
         Collections.sort(expected);
         
-        UniqueTransform transform = new UniqueTransform(Sets.newHashSet(new String[] {"Attr0", "Attr1", "Attr3"}));
+        UniqueTransform transform = new UniqueTransform(Sets.newHashSet("Attr0", "Attr1", "Attr3"));
         List<UniqueTransform.FieldSet> fieldSets = transform.getOrderedFieldSets(d);
         Assert.assertEquals(expected, fieldSets);
     }

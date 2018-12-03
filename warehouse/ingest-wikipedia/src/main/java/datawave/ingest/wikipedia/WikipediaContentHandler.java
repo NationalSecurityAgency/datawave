@@ -208,6 +208,6 @@ public class WikipediaContentHandler implements ContentHandler {
         checkNotNull(localName);
         
         // Put on the prefix for this field to keep the fields labeled uniquely (e.g. ID to REVISION_ID)
-        return (this.currentDepth.toString() + "_" + localName.trim()).toUpperCase();
+        return (this.currentDepth + "_" + localName.trim()).toUpperCase();
     }
 }

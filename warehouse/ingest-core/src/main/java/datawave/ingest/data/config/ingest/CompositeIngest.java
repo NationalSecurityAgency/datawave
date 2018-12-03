@@ -74,7 +74,7 @@ public interface CompositeIngest {
     }
     
     static boolean isOverloadedCompositeField(Collection<String> compFields, String compositeFieldName) {
-        if (compFields != null && compFields.size() > 0)
+        if (compFields != null && !compFields.isEmpty())
             return compFields.stream().findFirst().get().equals(compositeFieldName);
         return false;
     }
@@ -217,7 +217,7 @@ public interface CompositeIngest {
                 
                 String[] members = datawave.util.StringUtils.split(fieldMembers[i], '.');
                 // if any members are indexOnly fields, skip this one
-                if (Sets.intersection(Sets.newHashSet(members), indexOnly).size() > 0) {
+                if (!Sets.intersection(Sets.newHashSet(members), indexOnly).isEmpty()) {
                     log.warn("rejecting " + name + " which includes index only field in " + indexOnly);
                     continue;
                 }

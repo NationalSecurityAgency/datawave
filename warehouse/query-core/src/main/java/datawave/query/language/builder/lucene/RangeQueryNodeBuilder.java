@@ -33,10 +33,6 @@ import org.apache.lucene.search.TermRangeQuery;
  */
 public class RangeQueryNodeBuilder implements QueryBuilder {
     
-    public RangeQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         TermRangeQueryNode rangeNode = (TermRangeQueryNode) queryNode;
         FieldQueryNode upper = rangeNode.getUpperBound();

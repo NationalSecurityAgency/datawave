@@ -19,10 +19,6 @@ public abstract class ModificationEventBase<T extends ModificationOperation> {
     @XmlElement(name = "idType", required = true)
     protected String idType = null;
     
-    public ModificationEventBase() {
-        super();
-    }
-    
     public String getId() {
         return id;
     }

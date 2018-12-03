@@ -33,6 +33,8 @@ spring:
       manager-roles: Administrator,JBossAdministrator
   rabbitmq:
     host: ${MESSAGING_SERVER_HOSTNAME:localhost}
+    publisher-confirms: true
+    publisher-returns: true
   cloud:
     consul:
       enabled: false

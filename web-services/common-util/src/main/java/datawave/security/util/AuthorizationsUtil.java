@@ -1,11 +1,22 @@
 package datawave.security.util;
 
 import java.security.Principal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.*;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import org.apache.accumulo.core.security.Authorizations;
@@ -49,8 +60,8 @@ public class AuthorizationsUtil {
         }
         
         if (!missingAuths.isEmpty()) {
-            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
-                            + requested + ", User: " + userAuths.toString());
+            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
+                            + ", User: " + userAuths);
         }
         return mergedAuths;
     }
@@ -110,8 +121,8 @@ public class AuthorizationsUtil {
             // @formatter:on
             
             if (!missingAuths.isEmpty()) {
-                throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
-                                + requested + ", User: " + userAuths);
+                throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
+                                + ", User: " + userAuths);
             }
         }
         return mergedAuths;
@@ -155,11 +166,10 @@ public class AuthorizationsUtil {
         }
         // All auths requested are auths the user has, return downgraded string for auths
         if (missingAuths.isEmpty()) {
-            String finalAuths = AuthorizationsUtil.buildAuthorizationString(Collections.singletonList(finalAuthsList));
-            return finalAuths;
+            return AuthorizationsUtil.buildAuthorizationString(Collections.singletonList(finalAuthsList));
         } else {// missing auths.size() > 0; user requested auths they don't have
-            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths.toString() + ", Requested: "
-                            + requested + ", User: " + userAuths);
+            throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
+                            + ", User: " + userAuths);
         }
     }
     
@@ -253,8 +263,7 @@ public class AuthorizationsUtil {
             // can return a smaller set of auths.
             if (!set && authorizations.size() > allAuths.size()) {
                 ArrayList<TreeSet<String>> newAuths = new ArrayList<>(allAuths.size());
-                for (TreeSet<String> a : allAuths)
-                    newAuths.add(a);
+                newAuths.addAll(allAuths);
                 authorizations = newAuths;
             }
         }

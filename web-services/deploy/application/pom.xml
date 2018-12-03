@@ -377,6 +377,33 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>client-login-example</id>
+            <dependencies>
+                <dependency>
+                    <groupId>gov.nsa.datawave.webservices</groupId>
+                    <artifactId>datawave-ws-examples-client-login</artifactId>
+                    <version>${project.version}</version>
+                    <type>ejb</type>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-ear-plugin</artifactId>
+                        <configuration>
+                            <modules>
+                                <ejbModule>
+                                    <groupId>gov.nsa.datawave.webservices</groupId>
+                                    <artifactId>datawave-ws-examples-client-login</artifactId>
+                                </ejbModule>
+                            </modules>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <!--
             When the geoserver profile is active, we will include a geoserver deployment in the ear which includes
             support for the GeoWave datastore.

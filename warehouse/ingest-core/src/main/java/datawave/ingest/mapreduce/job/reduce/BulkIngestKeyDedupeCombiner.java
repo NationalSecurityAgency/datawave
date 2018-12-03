@@ -102,7 +102,7 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
             
             List<Combiner> aggList = getAggregators(key.getTableName(), key.getKey());
             
-            if (aggList.size() == 0) {
+            if (aggList.isEmpty()) {
                 /**
                  * if we have a key that matches on TableNAme row_key columnFamily columnQualifier timestamp then it is a dup This works for the case where no
                  * aggregation is used

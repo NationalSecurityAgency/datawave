@@ -578,7 +578,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
     }
     
     public boolean isTermFrequencyField(String field) {
-        if (tokenFieldNameSuffix.length() > 0 && field.endsWith(tokenFieldNameSuffix)) {
+        if (!tokenFieldNameSuffix.isEmpty() && field.endsWith(tokenFieldNameSuffix)) {
             field = field.substring(0, (field.length() - tokenFieldNameSuffix.length()));
         }
         return contentHelper.isContentIndexField(field) || contentHelper.isReverseContentIndexField(field);

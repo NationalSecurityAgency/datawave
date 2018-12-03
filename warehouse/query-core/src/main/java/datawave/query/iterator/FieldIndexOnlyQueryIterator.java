@@ -218,7 +218,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
         
         if (!validateOptions(options)) {
-            throw new IllegalArgumentException("Could not initialize QueryIterator with " + options.toString());
+            throw new IllegalArgumentException("Could not initialize QueryIterator with " + options);
         }
         
         // Parse the query

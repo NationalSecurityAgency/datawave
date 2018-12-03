@@ -528,7 +528,7 @@ public class ShardedTableTabletBalancerTest {
             ensureUniqueMigrations(migrationsOut);
             testTServers.applyMigrations(migrationsOut);
             
-            if (migrationsOut.size() == 0)
+            if (migrationsOut.isEmpty())
                 break;
         }
         // Then balance one more time to make sure no migrations are returned.

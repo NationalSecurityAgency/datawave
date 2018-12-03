@@ -80,10 +80,6 @@ public class UpdateBean {
     @SpringBean(refreshable = true)
     private MarkingFunctions markingFunctions;
     
-    public UpdateBean() {
-        
-    }
-    
     @PostConstruct
     public void init() {}
     
@@ -294,7 +290,7 @@ public class UpdateBean {
                 response.setConstraintViolations(constraintViolations);
             }
             
-            if (tablesNotFound.size() > 0) {
+            if (!tablesNotFound.isEmpty()) {
                 response.setTableNotFoundList(tablesNotFound);
             }
             

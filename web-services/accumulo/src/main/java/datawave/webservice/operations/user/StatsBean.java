@@ -53,10 +53,6 @@ public class StatsBean {
     
     private String accumuloStatsURL = null;
     
-    public StatsBean() {
-        
-    }
-    
     @PostConstruct
     public void retrieveAccumuloStatsURL() {
         Connector connection = null;

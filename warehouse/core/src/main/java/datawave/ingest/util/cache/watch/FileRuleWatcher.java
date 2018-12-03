@@ -3,6 +3,7 @@ package datawave.ingest.util.cache.watch;
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.iterators.filter.ageoff.FilterRule;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -34,6 +35,8 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     
     private static final Logger log = Logger.getLogger(FileRuleWatcher.class);
     
+    private final IteratorEnvironment iterEnv;
+    
     /**
      * @param fs
      * @param filePath
@@ -41,7 +44,19 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
      * @throws IOException
      */
     public FileRuleWatcher(FileSystem fs, Path filePath, long configuredDiff) throws IOException {
+        this(fs, filePath, configuredDiff, null);
+    }
+    
+    /**
+     * @param fs
+     * @param filePath
+     * @param configuredDiff
+     * @param iterEnv
+     * @throws IOException
+     */
+    public FileRuleWatcher(FileSystem fs, Path filePath, long configuredDiff, IteratorEnvironment iterEnv) throws IOException {
         super(fs, filePath, configuredDiff);
+        this.iterEnv = iterEnv;
     }
     
     /**
@@ -50,7 +65,18 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
      * @throws IOException
      */
     public FileRuleWatcher(Path filePath, long configuredDiff) throws IOException {
+        this(filePath, configuredDiff, null);
+    }
+    
+    /**
+     * @param filePath
+     * @param configuredDiff
+     * @param iterEnv
+     * @throws IOException
+     */
+    public FileRuleWatcher(Path filePath, long configuredDiff, IteratorEnvironment iterEnv) throws IOException {
         super(filePath.getFileSystem(new Configuration()), filePath, configuredDiff);
+        this.iterEnv = iterEnv;
     }
     
     /*
@@ -93,7 +119,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
                     
                     option.setOption(AgeOffConfigParams.EXTENDED_OPTIONS, extOptions.toString().substring(0, extOptionLen - 1));
                     
-                    filter.init(option);
+                    filter.init(option, iterEnv);
                     
                     filterRules.add(filter);
                     
@@ -188,7 +214,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             mergeChildIntoParent(child, parent);
         }
         // might be the case that there are no matching labels
-        return candidates.size() > 0;
+        return !candidates.isEmpty();
         // @formatter:on
     }
     

@@ -66,7 +66,7 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
  */
 public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     
-    private final static Logger logger = Logger.getLogger(CustomAnalyzerQueryNodeProcessor.class);
+    private static final Logger logger = Logger.getLogger(CustomAnalyzerQueryNodeProcessor.class);
     
     private Analyzer analyzer;
     
@@ -76,8 +76,6 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     private Set<String> tokenizedFields = new HashSet<>();
     private Set<String> skipTokenizeUnfieldedFields = new HashSet<>();
     private boolean tokensAsPhrase = false;
-    
-    public CustomAnalyzerQueryNodeProcessor() {}
     
     @Override
     public QueryNode process(QueryNode queryTree) throws QueryNodeException {
@@ -96,12 +94,13 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
         }
         
         if (getQueryConfigHandler().has(LuceneToJexlQueryParser.TOKENIZED_FIELDS)) {
-            tokenizedFields.addAll(getQueryConfigHandler().get(LuceneToJexlQueryParser.TOKENIZED_FIELDS));
+            getQueryConfigHandler().get(LuceneToJexlQueryParser.TOKENIZED_FIELDS).stream().forEach(s -> tokenizedFields.add(s.toUpperCase()));
         }
         
         if (getQueryConfigHandler().has(LuceneToJexlQueryParser.SKIP_TOKENIZE_UNFIELDED_FIELDS)) {
             skipTokenizeUnfieldedFields.clear();
-            skipTokenizeUnfieldedFields.addAll(getQueryConfigHandler().get(LuceneToJexlQueryParser.SKIP_TOKENIZE_UNFIELDED_FIELDS));
+            getQueryConfigHandler().get(LuceneToJexlQueryParser.SKIP_TOKENIZE_UNFIELDED_FIELDS).stream()
+                            .forEach(s -> skipTokenizeUnfieldedFields.add(s.toUpperCase()));
         }
         
         if (getQueryConfigHandler().has(LuceneToJexlQueryParser.TOKENIZE_UNFIELDED_QUERIES)) {
@@ -121,8 +120,8 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             logger.debug("SkipTokenizeUnfieldedFields: " + Arrays.toString(skipTokenizeUnfieldedFields.toArray()));
             logger.debug("Tokenize Unfielded Queries: " + this.unfieldedTokenized);
             logger.debug("Tokens As Phrase: " + this.tokensAsPhrase);
-            logger.debug("Original QueryTree: " + queryTree.toString());
-            logger.debug("Processed QueryTree: " + queryTree.toString());
+            logger.debug("Original QueryTree: " + queryTree);
+            logger.debug("Processed QueryTree: " + queryTree);
         }
         
         return processedQueryTree;
@@ -132,7 +131,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     protected QueryNode postProcessNode(QueryNode node) throws QueryNodeException {
         
         if (logger.isDebugEnabled()) {
-            logger.debug("Incoming query node: " + node.toString());
+            logger.debug("Incoming query node: " + node);
         }
         
         if (node instanceof TextableQueryNode && !(node instanceof WildcardQueryNode) && !(node instanceof RegexpQueryNode)
@@ -148,7 +147,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             String field = fieldNode.getFieldAsString();
             
             // treat these fields as unfielded and skip tokenization if enabled.
-            if (skipTokenizeUnfieldedFields.contains(field)) {
+            if (skipTokenizeUnfieldedFields.contains(field.toUpperCase())) {
                 fieldNode.setField("");
                 
                 if (logger.isDebugEnabled()) {
@@ -158,12 +157,12 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                 return fieldNode;
             }
             
-            if ((tokenizedFields.contains(field) || (unfieldedTokenized && field.isEmpty()))) {
+            if ((tokenizedFields.contains(field.toUpperCase()) || (unfieldedTokenized && field.isEmpty()))) {
                 node = tokenizeNode(node, text, field);
             }
             
             if (logger.isDebugEnabled()) {
-                logger.debug("Post-processed query node: " + node.toString());
+                logger.debug("Post-processed query node: " + node);
             }
         }
         

@@ -207,7 +207,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         }
         
         if (!validateOptions(new SourcedOptions<>(source, env, options))) {
-            throw new IllegalArgumentException("Could not initialize QueryIterator with " + options.toString());
+            throw new IllegalArgumentException("Could not initialize QueryIterator with " + options);
         }
         
         // We want to add in spoofed dataTypes for Aggregation/Evaluation to
@@ -369,12 +369,9 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             Iterator<Entry<Key,Document>> pipelineDocuments = pipelineIter;
             
             if (log.isTraceEnabled()) {
-                pipelineDocuments = Iterators.filter(pipelineDocuments, new Predicate<Entry<Key,Document>>() {
-                    @Override
-                    public boolean apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
-                        log.trace("after pipeline, keyDocumentEntry:" + keyDocumentEntry);
-                        return true;
-                    }
+                pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
+                    log.trace("after pipeline, keyDocumentEntry:" + keyDocumentEntry);
+                    return true;
                 });
             }
             
@@ -392,12 +389,9 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 pipelineDocuments = groupingTransform.getGroupingIterator(pipelineDocuments, this.groupFieldsBatchSize);
                 
                 if (log.isTraceEnabled()) {
-                    pipelineDocuments = Iterators.filter(pipelineDocuments, new Predicate<Entry<Key,Document>>() {
-                        @Override
-                        public boolean apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
-                            log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
-                            return true;
-                        }
+                    pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
+                        log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
+                        return true;
                     });
                 }
                 
@@ -418,12 +412,9 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             
             if (log.isTraceEnabled()) {
                 KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
-                this.serializedDocuments = Iterators.filter(this.serializedDocuments, new Predicate<Entry<Key,Value>>() {
-                    @Override
-                    public boolean apply(@Nullable Entry<Key,Value> keyValueEntry) {
-                        log.trace("after serializing, keyValueEntry:" + dser.apply(keyValueEntry));
-                        return true;
-                    }
+                this.serializedDocuments = Iterators.filter(this.serializedDocuments, keyValueEntry -> {
+                    log.trace("after serializing, keyValueEntry:" + dser.apply(keyValueEntry));
+                    return true;
                 });
             }
             
@@ -442,16 +433,13 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 // if there is no document to return, then add an empty document
                 // to store the timing metadata
                 this.serializedDocuments = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, r, this.serializedDocuments,
-                                this.getReturnType(), this.isReducedResponse(), this.isCompressResults());
+                                this.getReturnType(), this.isReducedResponse(), this.isCompressResults(), this.yield);
             }
             if (log.isTraceEnabled()) {
                 KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
-                this.serializedDocuments = Iterators.filter(this.serializedDocuments, new Predicate<Entry<Key,Value>>() {
-                    @Override
-                    public boolean apply(@Nullable Entry<Key,Value> keyValueEntry) {
-                        log.debug("finally, considering:" + dser.apply(keyValueEntry));
-                        return true;
-                    }
+                this.serializedDocuments = Iterators.filter(this.serializedDocuments, keyValueEntry -> {
+                    log.debug("finally, considering:" + dser.apply(keyValueEntry));
+                    return true;
                 });
             }
             
@@ -853,7 +841,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             documents = Iterators.transform(documents, new DocumentMetadata());
         }
         
-        if (this.limitFieldsMap.size() > 0) {
+        if (!this.limitFieldsMap.isEmpty()) {
             if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents,
                                 new EvaluationTrackingFunction<>(QuerySpan.Stage.LimitFields, trackingSpan, new LimitFields(this.getLimitFieldsMap())));
@@ -1198,7 +1186,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         // query)
         if (!this.isFullTableScanOnly()) {
             
-            boolean isQueryFullySatisfiedInitialState = batchedQueries <= 0 ? true : false;
+            boolean isQueryFullySatisfiedInitialState = batchedQueries <= 0;
             String hitListOptionString = documentOptions.get(QueryOptions.HIT_LIST);
             
             if (hitListOptionString != null) {
@@ -1328,9 +1316,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         Set<String> indexedFields = new HashSet<>(this.getTypeMetadata().keySet());
         indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
         
-        SatisfactionVisitor satisfactionVisitor = new SatisfactionVisitor(getNonEventFields(), indexedFields, Collections.emptySet(),
-                        isQueryFullySatisfiedInitialState);
-        return satisfactionVisitor;
+        return new SatisfactionVisitor(getNonEventFields(), indexedFields, Collections.emptySet(), isQueryFullySatisfiedInitialState);
     }
     
     public void setQuery(String query) {

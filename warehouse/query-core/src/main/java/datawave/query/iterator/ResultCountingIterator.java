@@ -12,7 +12,7 @@ import org.apache.hadoop.io.Text;
  * Created on 9/6/16.
  */
 public class ResultCountingIterator implements Iterator<Entry<Key,Value>> {
-    volatile private long resultCount = 0;
+    private volatile long resultCount = 0;
     private Iterator<Entry<Key,Value>> serializedDocuments = null;
     private YieldCallbackWrapper<Key> yield;
     
@@ -42,8 +42,8 @@ public class ResultCountingIterator implements Iterator<Entry<Key,Value>> {
     
     private Key addKeyCount(Key key) {
         resultCount++;
-        return new Key(key.getRow(), new Text(NumericalEncoder.encode(Long.toString(resultCount)) + '\0' + key.getColumnFamily().toString()),
-                        key.getColumnQualifier(), key.getColumnVisibility(), key.getTimestamp());
+        return new Key(key.getRow(), new Text(NumericalEncoder.encode(Long.toString(resultCount)) + '\0' + key.getColumnFamily()), key.getColumnQualifier(),
+                        key.getColumnVisibility(), key.getTimestamp());
     }
     
     @Override

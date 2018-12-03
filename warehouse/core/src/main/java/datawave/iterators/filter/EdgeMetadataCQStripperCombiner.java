@@ -2,17 +2,24 @@ package datawave.iterators.filter;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.edge.protobuf.EdgeData;
-import datawave.iterators.EdgeMetadataCombiner;
-import org.apache.accumulo.core.data.*;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil;
-import org.apache.accumulo.core.iterators.SkippingIterator;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
-import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.TreeMap;
 
 public class EdgeMetadataCQStripperCombiner extends WrappingIterator {
     private static final Logger log = Logger.getLogger(EdgeMetadataCQStripperCombiner.class);

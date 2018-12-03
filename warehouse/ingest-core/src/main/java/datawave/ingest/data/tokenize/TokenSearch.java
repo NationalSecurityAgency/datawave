@@ -114,7 +114,7 @@ public interface TokenSearch {
     /**
      * Factory for loading a concrete TokenSearch instance. Utility method for loading a stopwords resource file is provided for convenience.
      */
-    static class Factory {
+    class Factory {
         
         private static final Logger logger = LoggerFactory.getLogger(Factory.class);
         

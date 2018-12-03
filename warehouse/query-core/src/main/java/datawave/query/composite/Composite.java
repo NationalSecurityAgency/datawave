@@ -34,9 +34,7 @@ public class Composite {
             clone.fieldNameList.add(new String(fieldName));
         }
         
-        for (JexlNode jexlNode : this.jexlNodeList) {
-            clone.jexlNodeList.add(jexlNode);
-        }
+        clone.jexlNodeList.addAll(this.jexlNodeList);
         
         for (String expression : this.expressionList) {
             clone.expressionList.add(new String(expression));

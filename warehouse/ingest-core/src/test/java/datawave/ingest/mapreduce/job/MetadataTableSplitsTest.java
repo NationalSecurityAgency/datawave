@@ -56,10 +56,6 @@ public class MetadataTableSplitsTest {
     
     public static class WrappedLocalFileSystem extends RawLocalFileSystem {
         
-        public WrappedLocalFileSystem() {
-            
-        }
-        
         @Override
         public FileStatus getFileStatus(Path f) throws IOException {
             

@@ -56,7 +56,7 @@ public class TypeMetadataProviderTest {
             try {
                 FileUtils.forceDelete(tempFolder);
             } catch (IOException ex) {
-                ex.printStackTrace();
+                log.error(ex);
             }
         }
     }

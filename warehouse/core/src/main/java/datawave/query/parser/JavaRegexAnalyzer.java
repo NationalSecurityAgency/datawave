@@ -103,9 +103,9 @@ public class JavaRegexAnalyzer {
     private static final String NON_DIGIT_ESCAPED_REGEX_CHARS = "tnrfaecDsw";
     
     // digit character classes
-    private static final List<String> DIGIT_CHARACTER_CLASSES = Arrays.asList(new String[] {"\\P{Lower}", "\\P{Upper}", "\\p{ASCII}", "\\P{Alpha}",
-            "\\p{Digit}", "\\p{Alnum}", "\\P{{Punct}", "\\p{Graph}", "\\p{Print}", "\\P{Blank}", "\\P{Cntrl}", "\\p{XDigit}", "\\P{Space}",
-            "\\P{javaLowerCase}", "\\P{javaUpperCase}", "\\P{javaWhitespace}", "\\P{javaMirrored}", "\\P{InGreek}", "\\P{Lu}", "\\P{Sc}", "\\p{L}"});
+    private static final List<String> DIGIT_CHARACTER_CLASSES = Arrays.asList("\\P{Lower}", "\\P{Upper}", "\\p{ASCII}", "\\P{Alpha}", "\\p{Digit}",
+                    "\\p{Alnum}", "\\P{{Punct}", "\\p{Graph}", "\\p{Print}", "\\P{Blank}", "\\P{Cntrl}", "\\p{XDigit}", "\\P{Space}", "\\P{javaLowerCase}",
+                    "\\P{javaUpperCase}", "\\P{javaWhitespace}", "\\P{javaMirrored}", "\\P{InGreek}", "\\P{Lu}", "\\P{Sc}", "\\p{L}");
     
     // the character class chars
     private static final String CHAR_REGEX_CHARS = "0xutnrfaecdDsSwWpP";
@@ -500,7 +500,7 @@ public class JavaRegexAnalyzer {
             // if ending a capturing group, then pop the literal builders, appending as appropriate
             else if (part.regex.equals(")")) {
                 if (atLeastOnce(i)) {
-                    literalBuilders.getLast().append(literalBuilder.toString());
+                    literalBuilders.getLast().append(literalBuilder);
                 }
                 literalBuilder = literalBuilders.removeLast();
             } else {
@@ -586,7 +586,7 @@ public class JavaRegexAnalyzer {
             // if ending a capturing group, then pop the literal builders, appending as appropriate
             else if (part.regex.equals("(")) {
                 if (atLeastOnce) {
-                    literalBuilders.getLast().insert(0, literalBuilder.toString());
+                    literalBuilders.getLast().insert(0, literalBuilder);
                 }
                 literalBuilder = literalBuilders.removeLast();
                 atLeastOnce = atLeastOnceFlags.removeLast();
@@ -705,7 +705,7 @@ public class JavaRegexAnalyzer {
         // to do that we find the literal '.' matches
         List<RegexPart[]> tuples = splitParts(this.regexParts, split);
         
-        List<RegexPart> ignore = Arrays.asList(new RegexPart[] {split, ALTERNATE, OPEN_PAREN, CLOSE_PAREN});
+        List<RegexPart> ignore = Arrays.asList(split, ALTERNATE, OPEN_PAREN, CLOSE_PAREN);
         
         // if we found a tuple that crosses over an open group or a close group, then we have a situation
         // we cannot handle currently. This gets even more complicates with alternatives within the groups.
@@ -1069,7 +1069,7 @@ public class JavaRegexAnalyzer {
             // up by the max count
             Matcher matcher = curlyQuantifierPattern.matcher(part.regex);
             if (matcher.matches()) {
-                if (matcher.groupCount() == 3 && matcher.group(3).length() > 0) {
+                if (matcher.groupCount() == 3 && !matcher.group(3).isEmpty()) {
                     multiplier[MAX_INDEX] = Integer.parseInt(matcher.group(3));
                 } else {
                     multiplier[MAX_INDEX] = Integer.parseInt(matcher.group(1));

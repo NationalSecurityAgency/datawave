@@ -132,7 +132,7 @@ public class GenerateShardSplits {
                     if (shardMarkerTypes != null) {
                         for (String type : shardMarkerTypes) {
                             type = type.trim();
-                            if (type.length() > 0) {
+                            if (!type.isEmpty()) {
                                 m.put(new Text(type), EMPTY_TEXT, EMPTY_VIS, nextYear.getTime(), EMPTY_VALUE);
                             }
                         }
@@ -170,7 +170,7 @@ public class GenerateShardSplits {
         } else {
             if (addSplits) {
                 for (Text t : splits) {
-                    System.out.println(t.toString());
+                    System.out.println(t);
                 }
             }
             for (Mutation m : mutations) {

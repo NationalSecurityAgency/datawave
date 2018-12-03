@@ -180,7 +180,7 @@ public class ModificationCacheBean {
     }
     
     public Map<String,Set<String>> getCachedMutableFieldList() {
-        log.trace("cache = " + cache.toString());
+        log.trace("cache = " + cache);
         return Collections.unmodifiableMap(cache);
     }
     

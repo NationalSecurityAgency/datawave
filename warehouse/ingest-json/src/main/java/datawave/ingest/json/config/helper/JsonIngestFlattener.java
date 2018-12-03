@@ -140,7 +140,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
         }
     }
     
-    static public final class DefaultMapKeyValueNormalizer implements MapKeyValueNormalizer {
+    public static final class DefaultMapKeyValueNormalizer implements MapKeyValueNormalizer {
         
         private JsonDataTypeHelper jsonDataTypeHelper;
         
@@ -161,7 +161,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
         }
     }
     
-    static public final class DefaultJsonElementNameNormalizer implements JsonElementNameNormalizer {
+    public static final class DefaultJsonElementNameNormalizer implements JsonElementNameNormalizer {
         
         private JsonDataTypeHelper jsonDataTypeHelper;
         
@@ -199,7 +199,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
      * Usage... <blockquote> $ cd warehouse/ingest-json </blockquote> <blockquote> $ java -cp lib/*:target/datawave-ingest-json-version.jar
      * datawave.ingest.json.config.helper.JsonIngestFlattener\$Test -f test.json -c test-ingest-config.xml </blockquote>
      */
-    static public final class Test {
+    public static final class Test {
         
         private File jsonInputFile = null;
         private Configuration jsonIngestConfig = null;
@@ -222,7 +222,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
          * @throws IOException
          *             on IO error
          */
-        static public void main(String[] args) throws IOException {
+        public static void main(String[] args) throws IOException {
             (new Test(args)).run();
         }
         
@@ -306,7 +306,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
                     if (args[i].equals("-f") || args[i].equals("--file")) {
                         
                         Path p = Paths.get(args[++i]);
-                        Preconditions.checkState(Files.exists(p), "Json input file does not exist: " + p.toString());
+                        Preconditions.checkState(Files.exists(p), "Json input file does not exist: " + p);
                         jsonInputFile = p.toFile();
                         
                     } else if (args[i].equals("-c") || args[i].equals("--config")) {
@@ -315,7 +315,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
                         jsonIngestConfig = new Configuration();
                         for (String configFile : configs) {
                             Path p = Paths.get(configFile.trim());
-                            Preconditions.checkState(Files.exists(p), "Config file does not exist: " + p.toString());
+                            Preconditions.checkState(Files.exists(p), "Config file does not exist: " + p);
                             jsonIngestConfig.addResource(p.toUri().toURL());
                         }
                         

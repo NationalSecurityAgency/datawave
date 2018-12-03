@@ -42,7 +42,7 @@ public class ConfigurationFileHelper {
             try {
                 conf.addResource(new Path(configFile.getCanonicalPath()));
             } catch (IOException ex) {
-                log.error("Could not add config file to configuration: " + configFile.toString(), ex);
+                log.error("Could not add config file to configuration: " + configFile, ex);
             }
         }
     }

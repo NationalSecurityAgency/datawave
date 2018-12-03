@@ -87,7 +87,7 @@ public class EdgeDataBundle {
         this.edgeDefinition = edgeDef;
         
         this.edgeDirection = edgeDef.getDirection();
-        if (event.getAltIds() != null && event.getAltIds().size() > 0) {
+        if (event.getAltIds() != null && !event.getAltIds().isEmpty()) {
             this.uuid = event.getAltIds().iterator().next();
         }
         // even though event, etc references are saved above, passing in the event

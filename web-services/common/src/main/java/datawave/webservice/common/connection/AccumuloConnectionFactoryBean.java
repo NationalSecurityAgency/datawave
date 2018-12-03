@@ -312,10 +312,10 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         StringBuilder buf = new StringBuilder();
         for (Entry<String,Map<Priority,AccumuloConnectionPool>> entry : this.pools.entrySet()) {
             buf.append("**** ").append(entry.getKey()).append(" ****\n");
-            buf.append("ADMIN: ").append(entry.getValue().get(Priority.ADMIN).toString()).append("\n");
-            buf.append("HIGH: ").append(entry.getValue().get(Priority.HIGH).toString()).append("\n");
-            buf.append("NORMAL: ").append(entry.getValue().get(Priority.NORMAL).toString()).append("\n");
-            buf.append("LOW: ").append(entry.getValue().get(Priority.LOW).toString()).append("\n");
+            buf.append("ADMIN: ").append(entry.getValue().get(Priority.ADMIN)).append("\n");
+            buf.append("HIGH: ").append(entry.getValue().get(Priority.HIGH)).append("\n");
+            buf.append("NORMAL: ").append(entry.getValue().get(Priority.NORMAL)).append("\n");
+            buf.append("LOW: ").append(entry.getValue().get(Priority.LOW)).append("\n");
         }
         
         return buf.toString();

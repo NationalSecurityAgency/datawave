@@ -6,7 +6,7 @@ import org.apache.log4j.Logger;
  * performs a logical and on the keys of the subtree's results
  */
 public class HardAndNode extends QueryNode {
-    private final static Logger log = Logger.getLogger(HardAndNode.class.getName());
+    private static final Logger log = Logger.getLogger(HardAndNode.class.getName());
     
     public HardAndNode(QueryNode... children) {
         super(children);

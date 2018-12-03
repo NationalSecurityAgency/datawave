@@ -23,19 +23,19 @@ public interface Profile {
      * 
      * @param logic
      */
-    public void configure(BaseQueryLogic<Entry<Key,Value>> logic);
+    void configure(BaseQueryLogic<Entry<Key,Value>> logic);
     
     /**
      * Tune the query planner.
      * 
      * @param planner
      */
-    public void configure(QueryPlanner planner);
+    void configure(QueryPlanner planner);
     
     /**
      * Tune the query configuration object
      * 
      * @param configuration
      */
-    public void configure(GenericQueryConfiguration configuration);
+    void configure(GenericQueryConfiguration configuration);
 }

@@ -19,10 +19,6 @@ public class VoidResponse extends BaseResponse implements Message<VoidResponse> 
     
     private static final long serialVersionUID = 1L;
     
-    public VoidResponse() {
-        super();
-    }
-    
     public static Schema<VoidResponse> getSchema() {
         return SCHEMA;
     }

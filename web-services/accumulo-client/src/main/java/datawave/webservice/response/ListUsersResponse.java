@@ -23,10 +23,6 @@ public class ListUsersResponse extends BaseResponse {
     @XmlElement(name = "User")
     private List<String> users = null;
     
-    public ListUsersResponse() {
-        super();
-    }
-    
     public List<String> getUsers() {
         return users;
     }

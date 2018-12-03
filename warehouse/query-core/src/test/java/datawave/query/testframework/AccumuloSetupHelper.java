@@ -8,6 +8,7 @@ import datawave.ingest.mapreduce.EventMapper;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.testframework.FileLoaderFactory.FileType;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -37,6 +38,7 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -52,29 +54,47 @@ public class AccumuloSetupHelper {
     private final MockAccumuloRecordWriter recordWriter;
     private final Collection<DataTypeHadoopConfig> dataTypes;
     private final Set<String> shardIds;
+    private final FileType fileFormat;
     
     public AccumuloSetupHelper(final Collection<DataTypeHadoopConfig> types) {
+        this(types, FileType.CSV);
+    }
+    
+    /**
+     * Allows loading of test data into Accumuo using multiple file formats.
+     * 
+     * @param types
+     *            datatypes for loading
+     * @param format
+     *            file format of data
+     */
+    public AccumuloSetupHelper(final Collection<DataTypeHadoopConfig> types, FileType format) {
         this.recordWriter = new MockAccumuloRecordWriter();
         this.dataTypes = types;
         this.shardIds = new HashSet<>();
+        this.fileFormat = format;
         for (DataTypeHadoopConfig config : this.dataTypes) {
             this.shardIds.addAll(config.getShardIds());
         }
     }
     
     /**
-     * Creates the Accumulo shard ids and ingests the data into the tables.
+     * Creates the Accumulo shard ids and ingests the data into the tables. Uses a CSV file for loading test data.
      *
      * @param parentLog
      *            log of parent
      * @return connector to Accumulo
+     * @throws AccumuloException
+     *             , AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException Accumulo error conditions
      */
     public Connector loadTables(final Logger parentLog) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
-                    TableExistsException, TableNotFoundException {
+                    TableExistsException, TableNotFoundException, URISyntaxException {
         log.debug("------------- loadTables -------------");
         
-        Assert.assertFalse("shard ids have not been specified", this.shardIds.isEmpty());
-        Assert.assertFalse("data types have not been specified", this.dataTypes.isEmpty());
+        if (this.fileFormat != FileType.GROUPING) {
+            Assert.assertFalse("shard ids have not been specified", this.shardIds.isEmpty());
+            Assert.assertFalse("data types have not been specified", this.dataTypes.isEmpty());
+        }
         
         QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetupHelper.class.getName(), parentLog);
         final Connector connector = tableHelper.connector;
@@ -82,9 +102,21 @@ public class AccumuloSetupHelper {
         
         for (DataTypeHadoopConfig dt : this.dataTypes) {
             HadoopTestConfiguration hadoopConfig = new HadoopTestConfiguration(dt);
-            
-            CSVTestFileLoader loader = new CSVTestFileLoader(dt.getIngestFile(), hadoopConfig);
-            ingestTestData(hadoopConfig, loader);
+            TestFileLoader loader;
+            switch (this.fileFormat) {
+                case CSV:
+                    loader = new CSVTestFileLoader(dt.getIngestFile(), hadoopConfig);
+                    ingestTestData(hadoopConfig, loader);
+                    break;
+                case JSON:
+                    loader = new JsonTestFileLoader(dt.getIngestFile(), hadoopConfig);
+                    ingestTestData(hadoopConfig, loader);
+                    break;
+                case GROUPING:
+                    break;
+                default:
+                    throw new AssertionError("unknown file format: " + this.fileFormat.name());
+            }
         }
         
         PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);

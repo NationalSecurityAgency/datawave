@@ -84,9 +84,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         // new query string will always be in the JEXL syntax
         settings.addParameter(QueryParameters.QUERY_SYNTAX, "JEXL");
         
-        GenericQueryConfiguration config = super.initialize(connection, settings, auths);
-        
-        return config;
+        return super.initialize(connection, settings, auths);
     }
     
     /**

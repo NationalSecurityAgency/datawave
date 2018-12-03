@@ -74,7 +74,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
         
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);
-            thread.setName("Speculative Scan " + threadIdentifier.toString() + " -" + threadNum++);
+            thread.setName("Speculative Scan " + threadIdentifier + " -" + threadNum++);
             thread.setDaemon(true);
             thread.setUncaughtExceptionHandler(handler);
             return thread;
@@ -134,6 +134,11 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
             if (Thread.interrupted()) {
                 throw new InterruptedException("Interrupted while parking");
             }
+        }
+        
+        if (failure != null) {
+            log.error("Exception in speculative scan detected", failure);
+            throw new RuntimeException(failure);
         }
         
         return this;
@@ -218,11 +223,9 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
         // if all failed, then return failure
         if (failureCount.incrementAndGet() >= scans.size()) {
             close();
+            failure = t;
             throw new RuntimeException(t);
-            
         }
-        
-        failure = t;
         
     }
     
@@ -245,6 +248,10 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
     
     @Override
     public void uncaughtException(Thread t, Throwable e) {
+        if (failure == null) {
+            failure = e;
+        }
+        
         close();
     }
     

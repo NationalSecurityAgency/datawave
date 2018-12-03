@@ -55,8 +55,8 @@ public class SafeFileOutputCommitterTest {
     private static final Path outDir = new Path(System.getProperty("test.build.data", System.getProperty("java.io.tmpdir")),
                     SafeFileOutputCommitterTest.class.getName());
     
-    private final static String SUB_DIR = "SUB_DIR";
-    private final static Path OUT_SUB_DIR = new Path(outDir, SUB_DIR);
+    private static final String SUB_DIR = "SUB_DIR";
+    private static final Path OUT_SUB_DIR = new Path(outDir, SUB_DIR);
     
     private static final Log LOG = LogFactory.getLog(SafeFileOutputCommitterTest.class);
     
@@ -365,9 +365,6 @@ public class SafeFileOutputCommitterTest {
     }
     
     public static class FakeFileSystem extends RawLocalFileSystem {
-        public FakeFileSystem() {
-            super();
-        }
         
         public URI getUri() {
             return URI.create("faildel:///");

@@ -1354,7 +1354,7 @@ public class ContentFunctionsTest {
     
     private void testJexlFunctionArgumentDescriptors(String query, String expected, Set<String> contentFields) throws ParseException {
         MockMetadataHelper metadataHelper = new MockMetadataHelper();
-        metadataHelper.addTermFrequencyFields(Arrays.asList(new String[] {"BODY", "META"}));
+        metadataHelper.addTermFrequencyFields(Arrays.asList("BODY", "META"));
         metadataHelper.setIndexedFields(Sets.newHashSet("BODY", "META"));
         
         if (contentFields != null) {
@@ -1421,7 +1421,7 @@ public class ContentFunctionsTest {
                                         list4)));
         
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
-        context.set("BODY", Arrays.asList(new String[] {"foo", "bar", "car"}));
+        context.set("BODY", Arrays.asList("foo", "bar", "car"));
         
         Object o = expr.evaluate(context);
         Assert.assertTrue(expect(o, false));
@@ -1447,7 +1447,7 @@ public class ContentFunctionsTest {
                                         list4)));
         
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
-        context.set("BODY", Arrays.asList(new String[] {"foo", "bar", "car"}));
+        context.set("BODY", Arrays.asList("foo", "bar", "car"));
         
         Object o = expr.evaluate(context);
         Assert.assertTrue(expect(o, false));
@@ -1473,7 +1473,7 @@ public class ContentFunctionsTest {
                                         list4)));
         
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
-        context.set("BODY", Arrays.asList(new String[] {"foo", "bar", "car"}));
+        context.set("BODY", Arrays.asList("foo", "bar", "car"));
         
         Object o = expr.evaluate(context);
         Assert.assertTrue(expect(o, false));

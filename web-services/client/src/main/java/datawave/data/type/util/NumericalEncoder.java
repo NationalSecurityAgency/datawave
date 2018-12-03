@@ -30,7 +30,7 @@ public class NumericalEncoder {
     private static Map<String,String> negativeNumIntToEncodeExponentsMap;
     private static NumberFormat plainFormatter = new DecimalFormat("0.#########################################################");
     private static NumberFormat scientificFormatter = new DecimalFormat("0.#########################################################E0");
-    private final static String zero = "+AE0";
+    private static final String zero = "+AE0";
     
     static {
         initNegativeExponents();
@@ -70,7 +70,7 @@ public class NumericalEncoder {
             
             return encodedExponent + "E" + mantissa;
         } catch (Exception ex) {
-            throw new NumberFormatException("Error formatting input: " + input + " . Error: " + ex.toString());
+            throw new NumberFormatException("Error formatting input: " + input + " . Error: " + ex);
         }
     }
     
@@ -82,7 +82,7 @@ public class NumericalEncoder {
      * @return true if possibly encoded, false if definitely no encoded
      */
     public static boolean isPossiblyEncoded(String input) {
-        if (null == input || input.length() == 0)
+        if (null == input || input.isEmpty())
             return false;
         char c = input.charAt(0);
         return (c == '+' || c == '!');
@@ -109,7 +109,7 @@ public class NumericalEncoder {
                 }
                 
             } catch (Exception ex) {
-                throw new NumberFormatException("Error decoding output: " + input + " . Error: " + ex.toString());
+                throw new NumberFormatException("Error decoding output: " + input + " . Error: " + ex);
             }
         }
         return output;

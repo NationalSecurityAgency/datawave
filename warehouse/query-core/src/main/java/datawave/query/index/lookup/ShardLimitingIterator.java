@@ -43,12 +43,12 @@ public class ShardLimitingIterator implements Iterator<Entry<Key,Value>> {
     
     @Override
     public boolean hasNext() {
-        if (currentQueue.size() == 0) {
+        if (currentQueue.isEmpty()) {
             // reset the state of the current day.
             currentDay = null;
             peekInSource();
         }
-        return currentQueue.size() > 0;
+        return !currentQueue.isEmpty();
     }
     
     protected void peekInSource() {

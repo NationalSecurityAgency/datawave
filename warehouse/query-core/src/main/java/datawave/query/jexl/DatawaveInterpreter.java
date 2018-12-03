@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.query.Constants;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.nodes.TreeHashNode;
 import datawave.query.jexl.visitors.TreeHashVisitor;
@@ -12,7 +11,21 @@ import org.apache.commons.jexl2.Interpreter;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
 import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.parser.*;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl2.parser.ASTMethodNode;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.ASTSizeMethod;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;
@@ -47,13 +60,12 @@ public class DatawaveInterpreter extends Interpreter {
     public static boolean isMatched(Object scriptExecuteResult) {
         boolean matched = false;
         if (scriptExecuteResult != null && Boolean.class.isAssignableFrom(scriptExecuteResult.getClass())) {
-            Boolean result = (Boolean) scriptExecuteResult;
-            matched = result;
+            matched = (Boolean) scriptExecuteResult;
         } else if (scriptExecuteResult != null && Collection.class.isAssignableFrom(scriptExecuteResult.getClass())) {
             // if the function returns a collection of matches, return true/false
             // based on the number of matches
             Collection<?> matches = (Collection<?>) scriptExecuteResult;
-            matched = (matches.size() > 0);
+            matched = (!matches.isEmpty());
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Unable to process non-Boolean result from JEXL evaluation '" + scriptExecuteResult);
@@ -90,8 +102,8 @@ public class DatawaveInterpreter extends Interpreter {
             resultMap.put(hash, result);
             return result;
         }
-        resultMap.put(hash, result instanceof Collection ? ((Collection) result).size() > 0 : result);
-        return result instanceof Collection ? ((Collection) result).size() > 0 : result;
+        resultMap.put(hash, result instanceof Collection ? !((Collection) result).isEmpty() : result);
+        return result instanceof Collection ? !((Collection) result).isEmpty() : result;
     }
     
     /**

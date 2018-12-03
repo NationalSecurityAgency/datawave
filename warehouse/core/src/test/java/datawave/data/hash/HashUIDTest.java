@@ -203,9 +203,9 @@ public class HashUIDTest {
         assertEquals(b, UID.parse(b.toString(), 4));
         assertTrue(UID.parse(b.toString(), 3).equals(b));
         assertFalse(UID.parse(b.toString(), 2).equals(b));
-        assertTrue(UID.parse(b.toString(), 2).toString().equals(a.toString() + ".blabla.blabla"));
+        assertTrue(UID.parse(b.toString(), 2).toString().equals(a + ".blabla.blabla"));
         assertFalse(UID.parse(b.toString(), 1).equals(b));
-        assertTrue(UID.parse(b.toString(), 1).toString().equals(a.toString() + ".blabla"));
+        assertTrue(UID.parse(b.toString(), 1).toString().equals(a + ".blabla"));
         assertFalse(UID.parse(b.toString(), 0).equals(b));
         assertTrue(UID.parse(b.toString(), 0).equals(a));
         assertTrue(UID.parse(b.toString(), -1).equals(b));
@@ -234,9 +234,9 @@ public class HashUIDTest {
         assertTrue(UID.parse(b.toString(), 4).equals(b));
         assertTrue(UID.parse(b.toString(), 3).equals(b));
         assertFalse(UID.parse(b.toString(), 2).equals(b));
-        assertTrue(UID.parse(b.toString(), 2).toString().equals(a.toString() + ".blabla.blabla"));
+        assertTrue(UID.parse(b.toString(), 2).toString().equals(a + ".blabla.blabla"));
         assertFalse(UID.parse(b.toString(), 1).equals(b));
-        assertTrue(UID.parse(b.toString(), 1).toString().equals(a.toString() + ".blabla"));
+        assertTrue(UID.parse(b.toString(), 1).toString().equals(a + ".blabla"));
         assertFalse(UID.parse(b.toString(), 0).equals(b));
         assertTrue(UID.parse(b.toString(), 0).equals(a));
         assertTrue(UID.parse(b.toString(), -1).equals(b));

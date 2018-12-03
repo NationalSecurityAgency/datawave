@@ -73,7 +73,7 @@ public class JexlControlledQueryParser implements QueryParser, ControlledQueryPa
         }
         
         if (sb.length() > 0) {
-            query = "(" + query + ")" + " && (" + sb.toString() + ")";
+            query = "(" + query + ")" + " && (" + sb + ")";
         }
         
         QueryNode node = new ServerHeadNode();
@@ -105,7 +105,7 @@ public class JexlControlledQueryParser implements QueryParser, ControlledQueryPa
         }
         fields.removeAll(allowedFields);
         if (!fields.isEmpty()) {
-            throw new ParseException("Unallowed field(s) '" + fields.toString() + "' for this type of query");
+            throw new ParseException("Unallowed field(s) '" + fields + "' for this type of query");
         }
     }
     

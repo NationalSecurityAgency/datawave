@@ -116,8 +116,6 @@ public class LookupBean {
     @SpringBean(refreshable = true)
     private MarkingFunctions markingFunctions;
     
-    public LookupBean() {}
-    
     /**
      * Look up one or more entries in Accumulo by table, row, and optionally colFam and colQual
      * 
@@ -298,7 +296,7 @@ public class LookupBean {
         }
         
         List<?> exceptionList = response.getExceptions();
-        if (exceptionList != null && exceptionList.size() > 0) {
+        if (exceptionList != null && !exceptionList.isEmpty()) {
             throw new BadRequestException(null, response);
         }
         
@@ -317,7 +315,7 @@ public class LookupBean {
             userAuths = cp.getPrimaryUser().getAuths();
         }
         
-        log.trace(sid + " has authorizations " + cbAuths.toString());
+        log.trace(sid + " has authorizations " + cbAuths);
         
         queryParameters.add(QueryParameters.QUERY_STRING, sb.toString());
         queryParameters.add(QueryParameters.QUERY_AUTHORIZATIONS, userAuths.toString());
@@ -331,10 +329,10 @@ public class LookupBean {
         if (auditor == null) {
             throw new BadRequestException(new IllegalArgumentException("Auditor is null, can not process request"), response);
         } else if (!auditType.equals(AuditType.NONE)) {
-            log.info("Auditing Lookup for " + sb.toString() + " at AuditType " + auditType.toString());
+            log.info("Auditing Lookup for " + sb + " at AuditType " + auditType);
             
             if (log.isTraceEnabled()) {
-                log.trace("Auditing Lookup for " + sb.toString() + " at AuditType " + auditType.toString());
+                log.trace("Auditing Lookup for " + sb + " at AuditType " + auditType);
             }
             
             try {

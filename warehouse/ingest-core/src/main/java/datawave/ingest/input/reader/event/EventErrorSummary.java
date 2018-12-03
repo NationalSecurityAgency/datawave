@@ -19,7 +19,14 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This class holds a summary one event's errors stored in the keyValues table
@@ -269,7 +276,7 @@ public class EventErrorSummary implements Cloneable, JexlContext {
             } else if (o != null && Collection.class.isAssignableFrom(o.getClass())) {
                 // if the function returns a collection of matches, return true/false
                 // based on the number of matches
-                matches = (((Collection<?>) o).size() > 0);
+                matches = (!((Collection<?>) o).isEmpty());
             } else {
                 matches = false;
             }

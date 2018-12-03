@@ -217,7 +217,7 @@ public class AllFieldMetadataHelper {
                     break;
                 }
             } else {
-                log.warn("ColumnQualifier null in ColumnFamilyConstants for key: " + entry.getKey().toString());
+                log.warn("ColumnQualifier null in ColumnFamilyConstants for key: " + entry.getKey());
             }
         }
         return result;
@@ -317,7 +317,7 @@ public class AllFieldMetadataHelper {
                 
                 // If types are specified and this type is not in the list,
                 // skip it.
-                if (null != ingestTypeFilter && ingestTypeFilter.size() > 0 && !ingestTypeFilter.contains(type)) {
+                if (null != ingestTypeFilter && !ingestTypeFilter.isEmpty() && !ingestTypeFilter.contains(type)) {
                     continue;
                 }
                 
@@ -325,10 +325,10 @@ public class AllFieldMetadataHelper {
                     String[] componentFields = colq.substring(idx + 1).split(",");
                     compositeToFieldMap.putAll(fieldName, Arrays.asList(componentFields));
                 } else {
-                    log.warn("EventMetadata entry did not contain a null byte in the column qualifier: " + entry.getKey().toString());
+                    log.warn("EventMetadata entry did not contain a null byte in the column qualifier: " + entry.getKey());
                 }
             } else {
-                log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey().toString());
+                log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey());
             }
         }
         
@@ -372,7 +372,7 @@ public class AllFieldMetadataHelper {
                 
                 // If types are specified and this type is not in the list,
                 // skip it.
-                if (null != ingestTypeFilter && ingestTypeFilter.size() > 0 && !ingestTypeFilter.contains(type)) {
+                if (null != ingestTypeFilter && !ingestTypeFilter.isEmpty() && !ingestTypeFilter.contains(type)) {
                     continue;
                 }
                 
@@ -384,10 +384,10 @@ public class AllFieldMetadataHelper {
                         log.trace("Unable to parse composite field transition date", e);
                     }
                 } else {
-                    log.warn("EventMetadata entry did not contain a null byte in the column qualifier: " + entry.getKey().toString());
+                    log.warn("EventMetadata entry did not contain a null byte in the column qualifier: " + entry.getKey());
                 }
             } else {
-                log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey().toString());
+                log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey());
             }
         }
         

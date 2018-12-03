@@ -436,7 +436,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
      * @return true if term is zero or more spaces
      */
     protected static boolean isEmptyTerm(String term) {
-        return ((term.length() == 0) || EMPTY_PATTERN.matcher(term).matches());
+        return ((term.isEmpty()) || EMPTY_PATTERN.matcher(term).matches());
     }
     
     /**

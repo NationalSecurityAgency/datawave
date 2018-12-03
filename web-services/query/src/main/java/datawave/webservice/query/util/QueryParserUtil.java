@@ -4,6 +4,6 @@ import java.util.List;
 
 public interface QueryParserUtil {
     
-    public List<String> getPositiveSelectors(String query);
+    List<String> getPositiveSelectors(String query);
     
 }

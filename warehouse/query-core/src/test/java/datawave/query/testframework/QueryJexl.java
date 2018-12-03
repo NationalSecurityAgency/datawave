@@ -42,11 +42,23 @@ import java.util.Set;
  * </P>
  * <b>Current Limitations</b><br>
  * <ul>
+ * <li>Differences in the manner in which the Datawave Interpreter and the Jexl Interpreter work may result in the results. One difference in with multivalue
+ * fields where the size() method will return different results.</li>
  * <li>The not equal (!=) and not regex(!~) relationships do not work properly with multivalue fields when the field contain multiple values. A single value
  * will work correctly. The following conversions should work:<br>
  * a != 'b' => not (a == 'b')<br>
  * a !~ 'a.*' => not(a =~ 'a.*)</li>
  * <li>Only one data manager is available for processing results.</li>
+ * <li>For any query that contains embedded "()", this will not be evaluate properly. The ExpressionImpl object does not return the same variable list. This
+ * variable list is used to set the context and thus the evaluation fails. Here is an example:<br>
+ * a == 'b' => this works properly<br>
+ * (a == 'b') => this works properly<br>
+ * ((a == 'b')) => this will fail; the variable "a" is not returned from the getVariables() method
+ * <p>
+ * The problem appears to be a bug in the Jexl code in the getVariables() method. This code traverses the script, extracting all variables from the tree. This
+ * could be done here but this seems to be too much effort at this time.
+ * </p>
+ * </li>
  * </ul>
  */
 public class QueryJexl {
@@ -60,7 +72,6 @@ public class QueryJexl {
     private final Expression jExpr;
     
     /**
-     *
      * @param queryStr
      *            query for test
      * @param dataManager
@@ -79,6 +90,11 @@ public class QueryJexl {
         this.jExpr = createNormalizedExpression(queryStr);
     }
     
+    /**
+     * Performs the evlation of a Jexl query.
+     * 
+     * @return matching entries for the current manager
+     */
     public Set<Map<String,String>> evaluate() {
         final JexlContext jCtx = new MapContext();
         final Set<Map<String,String>> response = new HashSet<>();
@@ -87,6 +103,8 @@ public class QueryJexl {
         // one can either normalize the query string or match the variables in the expression
         // for simplicity it is easier just to match the variables to the correct field
         final ExpressionImpl exp = (ExpressionImpl) this.jExpr;
+        // see limitations in the javadoc
+        // an expression that has "((...))" will not return the correct variables
         final Set<List<String>> vars = exp.getVariables();
         
         while (entries.hasNext()) {
@@ -113,7 +131,6 @@ public class QueryJexl {
     // private methods
     private Expression createNormalizedExpression(final String query) {
         try {
-            log.debug("expect query[" + query + "]");
             Parser parser = new Parser(new StringReader(";"));
             ASTJexlScript script = parser.parse(new StringReader(query), null);
             Deque<SimpleNode> nodes = new LinkedList<>();
@@ -126,7 +143,7 @@ public class QueryJexl {
     
     /**
      * Normalizes all of the {@link ASTIdentifier}, {@link ASTStringLiteral}, and {@link ASTNumberLiteral} entries that exist in a {@link ASTJexlScript}.
-     * 
+     *
      * @param node
      *            current node for normalization
      * @param nodes
@@ -432,37 +449,22 @@ public class QueryJexl {
     
     static class TestRawData extends BaseRawData {
         
-        static final Map<String,BaseRawData.RawMetaData> metadata = new HashMap<>();
+        static final Map<String,RawMetaData> metadata = new HashMap<>();
         
         static {
             for (final TestHeader field : TestHeader.values()) {
-                final BaseRawData.RawMetaData meta = new BaseRawData.RawMetaData(field.name(), field.getNormalizer(), true);
+                final RawMetaData meta = new RawMetaData(field.name(), field.getNormalizer(), true);
                 metadata.put(field.name(), meta);
             }
         }
         
         TestRawData(final String fields[]) {
-            super(fields);
+            super(TestManager.dataType, fields, TestHeader.headers(), metadata);
         }
         
         @Override
-        protected List<String> getHeaders() {
-            return TestHeader.headers();
-        }
-        
-        @Override
-        protected boolean containsField(final String field) {
+        public boolean containsField(final String field) {
             return (TestHeader.headers()).contains(field);
-        }
-        
-        @Override
-        public boolean isMultiValueField(final String field) {
-            return metadata.get(field).multiValue;
-        }
-        
-        @Override
-        protected Normalizer<?> getNormalizer(String field) {
-            return metadata.get(field).normalizer;
         }
     }
 }

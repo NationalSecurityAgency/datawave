@@ -2318,16 +2318,15 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations
         RoleManager roleManager = new EasyRoleManager();
         expect(this.queryLogicFactory.getQueryLogicList()).andReturn(Arrays.asList(this.queryLogic1, this.queryLogic2));
-        expect(this.queryLogic1.getLogicName()).andReturn("logic1").anyTimes(); // Begin 1st loop
+        expect(this.queryLogic1.getLogicName()).andReturn("logic1").times(1); // Begin 1st loop
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.LOCALONLY);
         expect(this.queryLogic1.getLogicDescription()).andReturn("description1");
         expect(this.queryLogic1.getOptionalQueryParameters()).andReturn(new TreeSet<>());
         expect(this.queryLogic1.getRequiredQueryParameters()).andReturn(new TreeSet<>());
         expect(this.queryLogic1.getExampleQueries()).andReturn(new TreeSet<>());
         expect(this.queryLogic1.getRoleManager()).andReturn(roleManager).anyTimes();
-        expect(this.queryLogic1.getTransformer(isA(Query.class))).andReturn(this.transformer);
-        expect(this.transformer.createResponse(isA(ResultsPage.class))).andThrow(ILLEGAL_STATE_EXCEPTION);
-        expect(this.queryLogic2.getLogicName()).andReturn("logic2").times(2); // Begin 1st loop
+        expect(this.queryLogic1.getResponseClass(EasyMock.anyObject(Query.class))).andThrow(ILLEGAL_STATE_EXCEPTION);
+        expect(this.queryLogic2.getLogicName()).andReturn("logic2").times(1); // Begin 1st loop
         expect(this.queryLogic2.getAuditType(null)).andReturn(AuditType.LOCALONLY);
         expect(this.queryLogic2.getLogicDescription()).andReturn("description2");
         expect(this.queryLogic2.getOptionalQueryParameters()).andReturn(new TreeSet<>());
@@ -2335,8 +2334,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic2.getExampleQueries()).andReturn(new TreeSet<>());
         RoleManager roleManager2 = new DatawaveRoleManager(Arrays.asList("ROLE_1", "ROLE_2"));
         expect(this.queryLogic2.getRoleManager()).andReturn(roleManager2).times(2);
-        expect(this.queryLogic2.getTransformer(isA(Query.class))).andReturn(this.transformer);
-        expect(this.transformer.createResponse(isA(ResultsPage.class))).andReturn(this.baseResponse);
+        expect(this.queryLogic2.getResponseClass(EasyMock.anyObject(Query.class))).andReturn(this.baseResponse.getClass().getCanonicalName());
         Map<String,String> parsers = new HashMap<>();
         parsers.put("PARSER1", null);
         expect(this.queryLogic2.getQuerySyntaxParsers()).andReturn((Map) parsers);

@@ -29,7 +29,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     
     private static final Logger log = Logger.getLogger(LimitFields.class);
     
-    public final static String ORIGINAL_COUNT_SUFFIX = "ORIGINAL_COUNT";
+    public static final String ORIGINAL_COUNT_SUFFIX = "ORIGINAL_COUNT";
     
     private Map<String,Integer> limitFieldsMap;
     
@@ -164,10 +164,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 } else {
                     mapOfMisses.getUnchecked(keyNoGrouping).put(keyWithGrouping, attr);
                 }
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
+            } catch (InstantiationException | IllegalAccessException e) {
+                log.error(e);
             }
         } else if (!hitTermMap.isEmpty() && limitFieldsMap.containsKey(keyNoGrouping)) {
             
@@ -252,7 +250,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * @param limitedFieldCounts
      */
     private void applyCounts(Document doc, Map<String,Integer> limitedFieldCounts) {
-        if (limitedFieldCounts.entrySet().size() > 0) {
+        if (!limitedFieldCounts.entrySet().isEmpty()) {
             ColumnVisibility docVisibility = doc.getColumnVisibility();
             for (Entry<String,Integer> limitedFieldCountEntry : limitedFieldCounts.entrySet()) {
                 doc.put(limitedFieldCountEntry.getKey(), new Numeric(limitedFieldCountEntry.getValue(), doc.getMetadata(), doc.isToKeep()), true, false);

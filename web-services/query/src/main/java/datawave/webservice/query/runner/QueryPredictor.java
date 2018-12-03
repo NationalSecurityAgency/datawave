@@ -12,9 +12,9 @@ import java.io.Serializable;
  */
 public interface QueryPredictor<T extends BaseQueryMetric> {
     
-    public Set<Prediction> predict(T query) throws PredictionException;
+    Set<Prediction> predict(T query) throws PredictionException;
     
-    public static class PredictionException extends Exception implements Serializable {
+    class PredictionException extends Exception implements Serializable {
         
         public PredictionException() {
             super();

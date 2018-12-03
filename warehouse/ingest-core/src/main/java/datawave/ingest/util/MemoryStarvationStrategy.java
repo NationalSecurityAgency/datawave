@@ -78,8 +78,7 @@ public class MemoryStarvationStrategy extends AbstractNGramTokenizationStrategy 
         }
         
         // Tokenize as normal
-        int tokenized = super.tokenize(content, maxNGramLength);
-        return tokenized;
+        return super.tokenize(content, maxNGramLength);
     }
     
     @Override

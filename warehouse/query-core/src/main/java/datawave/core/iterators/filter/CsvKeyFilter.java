@@ -64,7 +64,7 @@ public class CsvKeyFilter extends Filter {
         }
         
         if (log.isDebugEnabled()) {
-            log.debug("Will filter on key part " + this.part.toString());
+            log.debug("Will filter on key part " + this.part);
         }
     }
     

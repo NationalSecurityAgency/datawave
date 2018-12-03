@@ -32,8 +32,6 @@ public class WikipediaPageExtractor {
     public static final String MODEL_ELEMENT = "model";
     public static final String FORMAT_ELEMENT = "format";
     
-    public WikipediaPageExtractor() {}
-    
     private static XMLInputFactory xmlif = XMLInputFactory.newInstance();
     
     static {

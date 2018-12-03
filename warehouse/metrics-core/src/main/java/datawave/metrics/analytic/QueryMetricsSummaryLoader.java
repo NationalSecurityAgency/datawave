@@ -59,7 +59,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
      */
     public static class QueryMetricsMapper extends Mapper<Key,Value,Key,Value> {
         
-        final private HashSet<String> uniqueUsers = new HashSet<>();
+        private final HashSet<String> uniqueUsers = new HashSet<>();
         
         private boolean useHourlyPrecision = false;
         
@@ -206,7 +206,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
                     }
                     
                 } else {
-                    log.error("Invalid key/value pair in column qualifier. " + cq.toString());
+                    log.error("Invalid key/value pair in column qualifier. " + cq);
                     return;
                 }
             }
@@ -318,7 +318,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
         try {
             ToolRunner.run(new QueryMetricsSummaryLoader(), args);
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Called from main()
         }
     }
     

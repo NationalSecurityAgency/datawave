@@ -62,7 +62,7 @@ public class QueryTraceCache {
         }
     }
     
-    public static interface CacheListener {
+    public interface CacheListener {
         void cacheEntryModified(String key, Multimap<String,PatternWrapper> traceInfo);
     }
     

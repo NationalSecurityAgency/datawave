@@ -1,12 +1,12 @@
 package datawave.query.tables.shard;
 
 import datawave.core.iterators.filter.CsvKeyFilter;
+import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.stats.IndexStatsRecord;
 import datawave.query.index.stats.IndexStatsSummingIterator;
 import datawave.query.index.stats.MinMaxIterator;
-import datawave.query.Constants;
 import datawave.security.util.ScannerHelper;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -18,8 +18,11 @@ import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.istat.FieldStat;
 import datawave.webservice.query.result.istat.IndexStatsResponse;
 import datawave.webservice.result.BaseQueryResponse;
-import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -30,8 +33,17 @@ import org.apache.log4j.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
     private static final Logger log = Logger.getLogger(IndexStatsQueryLogic.class);
@@ -79,7 +91,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
         String typeList = query.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue();
         HashSet<String> typeFilter = null;
         
-        if (null != typeList && 0 != typeList.length()) {
+        if (null != typeList && !typeList.isEmpty()) {
             typeFilter = new HashSet<>();
             typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
             
@@ -87,7 +99,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
                 config.setDatatypeFilter(typeFilter);
                 
                 if (log.isDebugEnabled()) {
-                    log.debug("Type Filter: " + typeFilter.toString());
+                    log.debug("Type Filter: " + typeFilter);
                 }
             }
         }

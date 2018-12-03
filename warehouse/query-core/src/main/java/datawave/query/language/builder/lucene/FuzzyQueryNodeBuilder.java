@@ -28,10 +28,6 @@ import org.apache.lucene.search.FuzzyQuery;
  */
 public class FuzzyQueryNodeBuilder implements QueryBuilder {
     
-    public FuzzyQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public FuzzyQuery build(QueryNode queryNode) throws QueryNodeException {
         throw new UnsupportedOperationException(getClass().getName() + " not implemented");
     }

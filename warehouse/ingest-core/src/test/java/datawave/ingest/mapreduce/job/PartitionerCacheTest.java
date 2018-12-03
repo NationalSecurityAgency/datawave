@@ -63,7 +63,7 @@ public class PartitionerCacheTest {
         conf.set(PartitionerCache.DEFAULT_DELEGATE_PARTITIONER, DelegatingPartitionerTest.AlwaysReturnOne.class.getName());
         conf.set(PartitionerCache.PREFIX_DEDICATED_PARTITIONER + "table1", DelegatingPartitionerTest.AlwaysReturnTwo.class.getName());
         PartitionerCache partitionerCache = new PartitionerCache(conf);
-        partitionerCache.createAndCachePartitioners(Arrays.asList(new Text[] {new Text("table1")}));
+        partitionerCache.createAndCachePartitioners(Arrays.asList(new Text("table1")));
         Assert.assertTrue("table1 was configured to use a different partitioner",
                         partitionerCache.getPartitioner(new Text("table1")) instanceof DelegatingPartitionerTest.AlwaysReturnTwo);
         Assert.assertTrue("table2 was not configured with a partitioner so it should use the default but didn't",

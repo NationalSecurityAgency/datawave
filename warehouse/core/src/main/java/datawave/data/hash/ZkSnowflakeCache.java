@@ -58,7 +58,7 @@ public class ZkSnowflakeCache {
         return oldTid;
     }
     
-    public synchronized static void init(String zks, int retries, int sleepMillis) {
+    public static synchronized void init(String zks, int retries, int sleepMillis) {
         
         if (!isInitialized) {
             RetryPolicy retryPolicy = new RetryNTimes(retries, sleepMillis);
@@ -69,7 +69,7 @@ public class ZkSnowflakeCache {
         }
     }
     
-    public synchronized static void stop() {
+    public static synchronized void stop() {
         
         curator.close();
         isInitialized = false;

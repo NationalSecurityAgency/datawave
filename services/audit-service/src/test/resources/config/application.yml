@@ -46,6 +46,9 @@ management:
     web:
       base-path: "/mgmt"
 
+audit:
+  confirmAckEnabled: false
+
 logging:
   level:
     datawave.microservice.audit: DEBUG
@@ -97,4 +100,60 @@ audit:
 
 spring:
   profiles: missing
+
+---
+spring:
+  profiles: rabbit-config
+
+audit:
+  health:
+    rabbit:
+      enabled: true
+      healthyPollIntervalMillis: 5000
+      unhealthyPollIntervalMillis: 1000
+      attemptRecovery: true
+      fixMissing: true
+      fixInvalid: true
+      queues:
+        - name: 'audit.log'
+          durable: true
+          exclusive: false
+          autoDelete: false
+          arguments:
+            'x-dead-letter-exchange': 'DLX'
+            'x-dead-letter-routing-key': 'audit.log'
+        - name: 'audit.log.dlq'
+          durable: true
+          exclusive: false
+          autoDelete: false
+      exchanges:
+        - name: 'audit'
+          type: 'topic'
+          durable: true
+          autoDelete: false
+          internal: false
+          delayed: false
+        - name: 'DLX'
+          type: 'direct'
+          durable: true
+          autoDelete: false
+          internal: false
+          delayed: false
+      bindings:
+        - destination: 'audit.log'
+          destinationType: 'queue'
+          exchange: 'audit'
+          routingKey: '#'
+        - destination: 'audit.log.dlq'
+          destinationType: 'queue'
+          exchange: 'DLX'
+          routingKey: 'audit.log'
+      cluster:
+        expectedNodes: 3
+        failIfNodeMissing: true
+        numChecksBeforeFailure: 3
+      management:
+        scheme: 'http'
+        port: 15672
+        uri: '/api/'
 

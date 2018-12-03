@@ -53,10 +53,6 @@ public class TestEdge {
     
     protected AbstractNormalizer<String> normalizer;
     
-    public TestEdge() {
-        
-    }
-    
     public static TestEdge createEdge(String source, String sink, String dateStr, String dataType, String fromRel, String toRel, String fromSource,
                     String toSource, String visibility, long timestamp) {
         return createEdge(source, sink, dateStr, dataType, fromRel, toRel, fromSource, toSource, visibility, timestamp, null);

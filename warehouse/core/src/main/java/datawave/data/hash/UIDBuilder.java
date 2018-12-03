@@ -20,7 +20,7 @@ public interface UIDBuilder<UID_TYPE extends UID> {
      * @param options
      *            command-line options (may include thread-inserted options, as in the case of {@link SnowflakeUID}s)
      */
-    public void configure(Configuration config, final Option... options);
+    void configure(Configuration config, final Option... options);
     
     /**
      * Build a new UID, which may be appended with one or more "extra" values, if specified
@@ -31,7 +31,7 @@ public interface UIDBuilder<UID_TYPE extends UID> {
      *            values to append, if any
      * @return a new UID
      */
-    public UID_TYPE newId(String... extras);
+    UID_TYPE newId(String... extras);
     
     /**
      * Build a new UID based on binary data, which may be appended with one or more "extra" values, if specified
@@ -42,7 +42,7 @@ public interface UIDBuilder<UID_TYPE extends UID> {
      *            values to append, if any
      * @return a new UID
      */
-    public UID_TYPE newId(byte[] data, String... extras);
+    UID_TYPE newId(byte[] data, String... extras);
     
     /**
      * Build a new UID based on a timestamp, which may be appended with one or more "extra" values, if specified
@@ -53,7 +53,7 @@ public interface UIDBuilder<UID_TYPE extends UID> {
      *            values to append, if any
      * @return a new UID
      */
-    public UID_TYPE newId(Date time, String... extras);
+    UID_TYPE newId(Date time, String... extras);
     
     /**
      * Build a new UID based on binary data and a timestamp, which may be appended with one or more "extra" values, if specified
@@ -66,7 +66,7 @@ public interface UIDBuilder<UID_TYPE extends UID> {
      *            values to append, if any
      * @return a new UID
      */
-    public UID_TYPE newId(byte[] data, Date time, String... extras);
+    UID_TYPE newId(byte[] data, Date time, String... extras);
     
     /**
      * Build a new UID based on a template UID (presumably a parent instance), plus any optional "extra" values with which to append to the new instance. If no
@@ -78,5 +78,5 @@ public interface UIDBuilder<UID_TYPE extends UID> {
      *            values to append, if any
      * @return a new UID
      */
-    public UID_TYPE newId(UID template, String... extras);
+    UID_TYPE newId(UID template, String... extras);
 }

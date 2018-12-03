@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.FileExistsException;
@@ -121,9 +122,7 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
                         curFile = file.getPath();
                     } else {
                         FileStatus[] status = fs.listStatus(file.getPath());
-                        for (int i = 0; i < status.length; i++) {
-                            files.add(status[i]);
-                        }
+                        Collections.addAll(files, status);
                     }
                 }
                 return curFile != null;

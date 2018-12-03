@@ -206,24 +206,20 @@ public class MapReduceJobConfiguration {
         FileSystem fs = getFileSystem(job.getConfiguration());
         if (!fs.exists(baseDir))
             if (!fs.mkdirs(baseDir)) {
-                QueryException qe = new QueryException(DatawaveErrorCode.DFS_DIRECTORY_CREATE_ERROR, MessageFormat.format("Directory: {0}", baseDir.toString()));
-                throw qe;
+                throw new QueryException(DatawaveErrorCode.DFS_DIRECTORY_CREATE_ERROR, MessageFormat.format("Directory: {0}", baseDir.toString()));
             }
         
         // Create the directory for this job
         if (!fs.exists(jobDir))
             if (!fs.mkdirs(jobDir)) {
-                QueryException qe = new QueryException(DatawaveErrorCode.DFS_DIRECTORY_CREATE_ERROR, MessageFormat.format("Directory: {0}", jobDir.toString()));
-                throw qe;
+                throw new QueryException(DatawaveErrorCode.DFS_DIRECTORY_CREATE_ERROR, MessageFormat.format("Directory: {0}", jobDir.toString()));
             }
         
         // Create classpath directory for this job
         Path classpath = new Path(jobDir, "classpath");
         if (!fs.exists(classpath))
             if (!fs.mkdirs(classpath)) {
-                QueryException qe = new QueryException(DatawaveErrorCode.DFS_DIRECTORY_CREATE_ERROR, MessageFormat.format("Directory: {0}",
-                                classpath.toString()));
-                throw qe;
+                throw new QueryException(DatawaveErrorCode.DFS_DIRECTORY_CREATE_ERROR, MessageFormat.format("Directory: {0}", classpath.toString()));
             }
         
         // Add all of the jars to the classpath dir and to the DistributedCache
@@ -271,8 +267,7 @@ public class MapReduceJobConfiguration {
         // Add all of the jars in the server lib directory
         File libDir = new File(homeDir, "bin/client");
         if (!(libDir.isDirectory() && libDir.canRead())) {
-            QueryException qe = new QueryException(DatawaveErrorCode.DFS_DIRECTORY_READ_ERROR, MessageFormat.format("directory: {0}", libDir));
-            throw qe;
+            throw new QueryException(DatawaveErrorCode.DFS_DIRECTORY_READ_ERROR, MessageFormat.format("directory: {0}", libDir));
         }
         FilenameFilter jarFilter = (dir, name) -> name.toLowerCase().endsWith(".jar");
         File[] jarFiles = libDir.listFiles(jarFilter);
@@ -285,8 +280,7 @@ public class MapReduceJobConfiguration {
         // Add all of the jars in the server mapreduce helper lib directory
         libDir = new File(homeDir, "tools/mapreduce/lib");
         if (!(libDir.isDirectory() && libDir.canRead())) {
-            QueryException qe = new QueryException(DatawaveErrorCode.DFS_DIRECTORY_READ_ERROR, MessageFormat.format("directory: {0}", libDir));
-            throw qe;
+            throw new QueryException(DatawaveErrorCode.DFS_DIRECTORY_READ_ERROR, MessageFormat.format("directory: {0}", libDir));
         }
         jarFiles = libDir.listFiles(jarFilter);
         if (jarFiles != null) {
@@ -416,7 +410,7 @@ public class MapReduceJobConfiguration {
     public void initializeConfiguration(String jobId, Job job, Map<String,String> runtimeParameters, DatawavePrincipal serverPrincipal) throws Exception {
         
         // Validate the required runtime parameters exist
-        if (null != this.requiredRuntimeParameters && this.requiredRuntimeParameters.size() > 0 && null != runtimeParameters && runtimeParameters.size() > 0) {
+        if (null != this.requiredRuntimeParameters && !this.requiredRuntimeParameters.isEmpty() && null != runtimeParameters && !runtimeParameters.isEmpty()) {
             // Loop over the required runtime parameter names and make sure an entry exists in the method parameter
             for (String parameter : this.requiredRuntimeParameters.keySet()) {
                 if (!runtimeParameters.containsKey(parameter))

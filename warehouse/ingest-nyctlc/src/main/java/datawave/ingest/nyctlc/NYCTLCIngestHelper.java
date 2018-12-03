@@ -13,7 +13,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
-import static datawave.ingest.data.config.CSVHelper.*;
+import static datawave.ingest.data.config.CSVHelper.DATA_HEADER;
+import static datawave.ingest.data.config.CSVHelper.DATA_SEP;
+import static datawave.ingest.data.config.CSVHelper.DATA_HEADER_ENABLED;
+import static datawave.ingest.data.config.CSVHelper.PROCESS_EXTRA_FIELDS;
 
 /**
  * This is a specialized version of the CSV Ingest Helper intended to be used with the NYC Taxi &amp; Limousine Commission dataset. This class is responsible

@@ -17,7 +17,14 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
-import org.apache.commons.jexl2.parser.*;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNullLiteral;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {

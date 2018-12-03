@@ -44,7 +44,7 @@ import org.apache.log4j.Logger;
 // by default all methods are blocking
 public class CachedResultsCleanupBean {
     
-    static private Logger log = Logger.getLogger(CachedResultsCleanupBean.class);
+    private static Logger log = Logger.getLogger(CachedResultsCleanupBean.class);
     
     private static final String GET_TABLES_TO_REMOVE = "select table_name from information_schema.tables where "
                     + " table_name != 'cachedResultsQuery' and table_name != 'template' and table_schema = '?' and " + " table_name like 't%' and "

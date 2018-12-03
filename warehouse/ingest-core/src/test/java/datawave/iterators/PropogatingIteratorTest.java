@@ -76,8 +76,6 @@ public class PropogatingIteratorTest {
         
         protected int callCount = 0;
         
-        public WrappedPropogatingAggregator() {}
-        
         @Override
         public boolean propogateKey() {
             // TODO Auto-generated method stub
@@ -280,7 +278,7 @@ public class PropogatingIteratorTest {
         topValueResults = new Value[gtv.length];
         System.arraycopy(gtv, 0, topValueResults, 0, gtv.length);
         
-        SortedKeyValueIterator<Key,Value> mock = new SortedKeyValueIterator<Key,Value>() {
+        return new SortedKeyValueIterator<Key,Value>() {
             
             @Override
             public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
@@ -324,8 +322,6 @@ public class PropogatingIteratorTest {
                 
             }
         };
-        
-        return mock;
     }
     
     long ts = 1349541830;

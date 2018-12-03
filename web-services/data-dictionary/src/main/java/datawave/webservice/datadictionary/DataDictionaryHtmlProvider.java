@@ -108,7 +108,7 @@ public class DataDictionaryHtmlProvider implements MessageBodyWriter<Object> {
                 } else {
                     first = false;
                 }
-                builder.append(desc.toString());
+                builder.append(desc);
             }
             builder.append("</td>");
             builder.append("<td>").append(f.getLastUpdated()).append("</td>");

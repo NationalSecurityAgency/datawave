@@ -133,7 +133,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);
-            thread.setName("Datawave BatchScanner Session " + threadIdentifier.toString() + " -" + threadNum++);
+            thread.setName("Datawave BatchScanner Session " + threadIdentifier + " -" + threadNum++);
             thread.setDaemon(true);
             return thread;
         }
@@ -662,8 +662,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         
         try {
             if (lastSeenKey != null) {
-                Range newRange = new Range(lastSeenKey, false, currentRange.getEndKey(), currentRange.isEndKeyInclusive());
-                currentRange = newRange;
+                currentRange = new Range(lastSeenKey, false, currentRange.getEndKey(), currentRange.isEndKeyInclusive());
             }
         } catch (Exception e) {
             log.error(e);

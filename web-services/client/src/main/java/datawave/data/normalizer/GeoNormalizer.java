@@ -123,14 +123,14 @@ public class GeoNormalizer extends AbstractNormalizer<String> {
         return combineLatLon(parseLatOrLon(lat), parseLatOrLon(lon));
     }
     
-    private static final List<Character> DMS_DESIGNATORS = Arrays.asList(new Character[] {'n', 's', 'e', 'w'});
+    private static final List<Character> DMS_DESIGNATORS = Arrays.asList('n', 's', 'e', 'w');
     
     public static double parseLatOrLon(String value) throws ParseException {
         value = value.trim();
         
         // If we were given a zero-length value, catch this ahead of time so we
         // can throw a ParseException instead of an IndexOutOfBoundsException
-        if (0 == value.length()) {
+        if (value.isEmpty()) {
             throw new ParseException("Could not normalize empty value as latitute or longitude");
         }
         

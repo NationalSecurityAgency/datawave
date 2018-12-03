@@ -120,7 +120,7 @@ public class EventMetadataTest {
     }
     
     private void assertCountEquals(long expectedCount, Text tableName, String rowId, RawRecordMetadata eventMetadata, String groupingIdentifier) {
-        Text expectedColumnFamily = new Text(groupingIdentifier + RawRecordMetadata.DELIMITER + tableName.toString());
+        Text expectedColumnFamily = new Text(groupingIdentifier + RawRecordMetadata.DELIMITER + tableName);
         Assert.assertTrue("Didn't have entry for " + expectedColumnFamily + ", " + rowId, assertContainsKey(eventMetadata, expectedColumnFamily, rowId));
         Iterator<Value> values = getCorrespondingValue(eventMetadata, expectedColumnFamily, rowId).iterator();
         Assert.assertTrue(values.hasNext());

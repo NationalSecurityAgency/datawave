@@ -31,6 +31,6 @@ public class Tuple4<A,B,C,D> extends Tuple3<A,B,C> {
     
     @Override
     public String toString() {
-        return "[" + first().toString() + "," + second().toString() + "," + third().toString() + "," + fourth().toString() + "]";
+        return "[" + first() + "," + second() + "," + third() + "," + fourth() + "]";
     }
 }

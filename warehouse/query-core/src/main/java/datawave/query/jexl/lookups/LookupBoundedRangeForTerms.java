@@ -191,7 +191,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
         }
         
         if (log.isDebugEnabled()) {
-            log.debug("Found " + fieldToUniqueTerms.size() + " matching terms for range: " + fieldToUniqueTerms.toString());
+            log.debug("Found " + fieldToUniqueTerms.size() + " matching terms for range: " + fieldToUniqueTerms);
         }
         
         return fieldToUniqueTerms;
@@ -217,7 +217,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
                     Key k = entry.getKey();
                     
                     if (log.isTraceEnabled()) {
-                        log.trace("Foward Index entry: " + entry.getKey().toString());
+                        log.trace("Foward Index entry: " + entry.getKey());
                     }
                     
                     k.getRow(holder);
@@ -238,7 +238,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
                         // contains the datatype and normalizer class
                         
                         if (null != topKey.getColumnQualifier()) {
-                            if (null != myDatatypeFilter && myDatatypeFilter.size() > 0) {
+                            if (null != myDatatypeFilter && !myDatatypeFilter.isEmpty()) {
                                 
                                 String colq = topKey.getColumnQualifier().toString();
                                 int idx = colq.indexOf(Constants.NULL);

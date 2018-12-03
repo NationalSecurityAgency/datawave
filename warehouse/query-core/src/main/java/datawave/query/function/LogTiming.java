@@ -21,8 +21,8 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
     
     public static final String TIMING_METADATA = "TIMING_METADATA";
     protected QuerySpan spanRunner;
-    static private String host = null;
-    static private Logger log = Logger.getLogger(QuerySpan.class);
+    private static String host = null;
+    private static Logger log = Logger.getLogger(QuerySpan.class);
     
     static {
         try {

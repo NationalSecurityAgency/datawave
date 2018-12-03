@@ -128,9 +128,10 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     
     protected Map<String,String> getAdditionalCardinalityValues(Key documentKey, Document document) {
         Map<String,String> additionalValues = new HashMap<>();
-        additionalValues.put("QUERY_USER", this.settings.getOwner());
-        
-        additionalValues.put("QUERY_LOGIC_NAME", this.settings.getQueryLogicName());
+        Map<String,String> queryFields = this.settings.getCardinalityFields();
+        if (queryFields != null) {
+            additionalValues.putAll(queryFields);
+        }
         
         long documentDate = document.getTimestamp();
         additionalValues.put("RESULT_DATA_AGE", Long.toString((logicCreated - documentDate) / 86400000));
@@ -144,7 +145,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     // When a single Ivarator is used during a query on the teserver, we save time by not sorting the UIDs (not necessary for further comparisons).
     // To ensure that returned keys appear to be in sorted order on the way back we prpend a one-up number to the colFam.
     // In this edge case, the prepended number needs to be removed.
-    static protected Key correctKey(Key origKey) {
+    protected static Key correctKey(Key origKey) {
         Key key = origKey;
         if (key != null) {
             String colFam = key.getColumnFamily().toString();
@@ -172,9 +173,9 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         // If neither a projection nor a blacklist was used then the suppressFields set should remain empty
         Set<String> suppressFields = Collections.emptySet();
         if (cardinalityConfiguration != null) {
-            if (projectFields.size() > 0) {
+            if (!projectFields.isEmpty()) {
                 suppressFields = cardinalityConfiguration.getStoredProjectFieldsToAdd(getQm(), projectFields);
-            } else if (blacklistedFields.size() > 0) {
+            } else if (!blacklistedFields.isEmpty()) {
                 suppressFields = cardinalityConfiguration.getStoredBlacklistedFieldsToRemove(getQm(), blacklistedFields);
             }
         }
@@ -229,7 +230,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             if (logTimingDetails || log.isTraceEnabled()) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("retrieved document from host:").append(host).append(" at key:").append(documentKey.toStringNoTime()).append(" stageTimers:")
-                                .append(stageTimers.toString());
+                                .append(stageTimers);
                 sb.append(" sourceCount:").append(currentSourceCount).append(" nextCount:").append(currentNextCount).append(" seekCount:")
                                 .append(currentSeekCount);
                 if (log.isTraceEnabled()) {
@@ -316,8 +317,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             String row = documentKey.getRow().toString();
             dataDate = DateHelper.parseWithGMT(row);
             if (log.isTraceEnabled()) {
-                log.trace("Document.getTimestamp() returned Log.MAX_VALUE - " + documentKey.toString() + " - computed dataDate from row: "
-                                + dataDate.toString());
+                log.trace("Document.getTimestamp() returned Log.MAX_VALUE - " + documentKey + " - computed dataDate from row: " + dataDate);
             }
         } else {
             dataDate = new Date(timestamp);
