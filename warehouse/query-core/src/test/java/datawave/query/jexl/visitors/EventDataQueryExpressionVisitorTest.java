@@ -66,7 +66,7 @@ public class EventDataQueryExpressionVisitorTest {
         for (int i = 0; i < testData.length; i += 2) {
             String[] input = testData[i];
             String[] expected = testData[i + 1];
-            List<Type> types = EventDataQueryExpressionVisitor.extractTypes(attrFactory, input[0], input[1], metadata);
+            Set<Type> types = EventDataQueryExpressionVisitor.extractTypes(attrFactory, input[0], input[1], metadata);
             Set<String> output = EventDataQueryExpressionVisitor.extractNormalizedValues(types);
             Set<String> missing = new TreeSet<>();
             for (String s : expected) {

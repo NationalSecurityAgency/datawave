@@ -136,10 +136,10 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                 }
                 
                 final String keyFieldValue = datawaveKey.getFieldValue();
-                final List<Type> types = EventDataQueryExpressionVisitor.extractTypes(attributeFactory, keyFieldName, keyFieldValue, key);
-                final List<Matcher> normalizedPatternMatchers = new ArrayList<>();
-                final List<String> normalizedFieldValues = new ArrayList<>();
-                final List<LiteralRange> normalizedRanges = new ArrayList<>();
+                final Set<Type> types = EventDataQueryExpressionVisitor.extractTypes(attributeFactory, keyFieldName, keyFieldValue, key);
+                final Set<Matcher> normalizedPatternMatchers = new HashSet<>();
+                final Set<String> normalizedFieldValues = new HashSet<>();
+                final Set<LiteralRange> normalizedRanges = new HashSet<>();
                 for (Type type : types) {
                     // normalize all patterns
                     for (Pattern fieldPattern : fieldPatterns.keySet()) {
@@ -402,8 +402,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         return iol.getIdentifier() + " " + iol.getOp() + " " + iol.getLiteral();
     }
     
-    public static List<Type> extractTypes(AttributeFactory attrFactory, String fieldName, String fieldValue, Key key) {
-        final List<Type> types = new ArrayList<>();
+    public static Set<Type> extractTypes(AttributeFactory attrFactory, String fieldName, String fieldValue, Key key) {
+        final Set<Type> types = new HashSet<>();
         
         final Queue<Attribute<?>> attrQueue = new LinkedList<>();
         attrQueue.add(attrFactory.create(fieldName, fieldValue, key, true));
@@ -424,7 +424,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         return types;
     }
     
-    public static Set<String> extractNormalizedValues(List<Type> types) {
+    public static Set<String> extractNormalizedValues(Set<Type> types) {
         final Set<String> normalizedValues = new HashSet<>();
         
         for (Type type : types) {
