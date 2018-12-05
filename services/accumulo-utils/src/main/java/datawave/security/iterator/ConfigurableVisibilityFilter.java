@@ -50,7 +50,7 @@ public class ConfigurableVisibilityFilter extends WrappingIterator implements Op
     public IteratorOptions describeOptions() {
         IteratorOptions opts = new IteratorOptions(getClass().getSimpleName(),
                         "Filters keys based to return only those whose visibility tests positive against the supplied authorizations", null, null);
-        opts.addNamedOption(AUTHORIZATIONS_OPT, "Comma delimmited list of scan authorizations");
+        opts.addNamedOption(AUTHORIZATIONS_OPT, "Comma delimited list of scan authorizations");
         return opts;
     }
     

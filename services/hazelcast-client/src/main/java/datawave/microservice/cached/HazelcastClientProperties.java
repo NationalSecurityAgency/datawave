@@ -1,11 +1,13 @@
 package datawave.microservice.cached;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
  * {@link ConfigurationProperties} for configuring a client to connect to a Hazelcast server.
  */
+@EnableConfigurationProperties(HazelcastClientProperties.class)
 @ConfigurationProperties(prefix = "hazelcast.client")
 public class HazelcastClientProperties {
     /**

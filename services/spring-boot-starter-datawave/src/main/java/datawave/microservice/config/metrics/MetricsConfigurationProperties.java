@@ -4,12 +4,14 @@ import com.codahale.metrics.ScheduledReporter;
 import datawave.metrics.MetricsReporterFactory;
 import datawave.metrics.NoOpMetricsReporterFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import java.util.concurrent.TimeUnit;
 
 /**
  * {@link ConfigurationProperties} for a dropwizard {@link ScheduledReporter}.
  */
+@EnableConfigurationProperties(MetricsConfigurationProperties.class)
 @ConfigurationProperties(prefix = "metrics.reporter")
 public class MetricsConfigurationProperties {
     private Class<? extends MetricsReporterFactory> factoryClass = NoOpMetricsReporterFactory.class;

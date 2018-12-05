@@ -1,6 +1,8 @@
 # This template is for configuring your DEV profile for all microservices.
 # You should copy this file to application-dev.yml before changing configuration.
 
+system.name: DEV
+
 server:
   ssl:
     trust-store: 'classpath:/testCA.p12'

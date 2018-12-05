@@ -41,6 +41,10 @@
             <artifactId>authorization-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-accumulo-client</artifactId>
             <version>${project.version}</version>

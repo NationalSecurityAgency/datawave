@@ -1,7 +1,9 @@
 package datawave.microservice.config.discovery.rabbit;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
+@EnableConfigurationProperties(RetryProperties.class)
 @ConfigurationProperties("spring.rabbitmq.discovery.retry")
 public class RetryProperties {
     

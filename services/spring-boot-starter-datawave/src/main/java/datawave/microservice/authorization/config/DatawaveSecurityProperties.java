@@ -3,6 +3,7 @@ package datawave.microservice.authorization.config;
 import org.springframework.boot.autoconfigure.security.SecurityPrerequisite;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import javax.validation.constraints.NotNull;
@@ -13,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Datawave-specific extensions to {@link SecurityProperties}
  */
+@EnableConfigurationProperties(DatawaveSecurityProperties.class)
 @ConfigurationProperties(prefix = "spring.security.datawave")
 public class DatawaveSecurityProperties implements SecurityPrerequisite {
     @NestedConfigurationProperty

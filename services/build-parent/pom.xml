@@ -25,6 +25,7 @@
         <module>../service-parent</module>
         <!-- Temporarily removed until the first version is released and this module is removed from the parent pom. -->
         <!--<module>../accumulo-utils</module>-->
+        <!--<module>../base-rest-responses</module>-->
         <module>../metrics-reporter</module>
         <module>../authorization-api</module>
         <module>../audit-api</module>
@@ -37,8 +38,8 @@
         <module>../audit-service</module>
     </modules>
 
-    <!-- TODO: Remove this when the first version of accumulo-utils is released -->
     <profiles>
+        <!-- TODO: Remove this when the first version of accumulo-utils is released -->
         <profile>
             <id>accumulo-utils</id>
             <activation>
@@ -48,6 +49,18 @@
             </activation>
             <modules>
                 <module>../accumulo-utils</module>
+            </modules>
+        </profile>
+        <!-- TODO: Remove this when the first version of base-rest-responses is released -->
+        <profile>
+            <id>base-rest-responses</id>
+            <activation>
+                <property>
+                    <name>!services</name>
+                </property>
+            </activation>
+            <modules>
+                <module>../base-rest-responses</module>
             </modules>
         </profile>
     </profiles>

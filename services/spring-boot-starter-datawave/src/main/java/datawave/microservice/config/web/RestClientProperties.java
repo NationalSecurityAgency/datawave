@@ -1,8 +1,10 @@
 package datawave.microservice.config.web;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
-@ConfigurationProperties(prefix = "server", ignoreInvalidFields = true)
+@EnableConfigurationProperties(RestClientProperties.class)
+@ConfigurationProperties(prefix = "restclient", ignoreInvalidFields = true)
 public class RestClientProperties {
     private int maxConnectionsTotal = 20;
     private int maxConnectionsPerRoute = 20;

@@ -15,7 +15,10 @@
         </license>
     </licenses>
     <modules>
+        <!-- TODO: Remove this when the first version of accumulo-utils is released -->
         <module>services/accumulo-utils</module>
+        <!-- TODO: Remove this when the first version of base-rest-responses is released -->
+        <module>services/base-rest-responses</module>
         <module>common-test</module>
         <module>web-services</module>
         <module>warehouse</module>
@@ -81,6 +84,7 @@
         <version.microservice.accumulo-utils>1.0-SNAPSHOT</version.microservice.accumulo-utils>
         <version.microservice.audit-api>1.4</version.microservice.audit-api>
         <version.microservice.authorization-api>1.3</version.microservice.authorization-api>
+        <version.microservice.base-rest-responses>1.0-SNAPSHOT</version.microservice.base-rest-responses>
         <version.microservice.metrics-reporter>1.2</version.microservice.metrics-reporter>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>5.1.35</version.mysql-connector>
@@ -296,6 +300,11 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>authorization-api</artifactId>
                 <version>${version.microservice.authorization-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>base-rest-responses</artifactId>
+                <version>${version.microservice.base-rest-responses}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -991,6 +1000,14 @@
                 <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-common-test</artifactId>
                 <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>base-rest-responses</artifactId>
+                <version>${version.microservice.base-rest-responses}</version>
+                <classifier>tests</classifier>
+                <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
