@@ -40,6 +40,7 @@ import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
+import datawave.query.jexl.visitors.ExecutableExpansionVisitor;
 import datawave.query.jexl.visitors.ExpandCompositeTerms;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
@@ -246,6 +247,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
     protected long sourceLimit = -1;
     
     protected QueryModelProvider.Factory queryModelProviderFactory = new MetadataHelperQueryModelProvider.Factory();
+    
+    /**
+     * Should the ExecutableExpansionVisitor be run
+     */
+    protected boolean executableExpansion = true;
     
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
@@ -1013,6 +1019,19 @@ public class DefaultQueryPlanner extends QueryPlanner {
             queryTree = PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(queryTree, config, metadataHelper);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after marking index holes:");
+            }
+            
+            stopwatch.stop();
+        }
+        
+        if (executableExpansion) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Executable expansion");
+            
+            // apply distributive property to deal with executability if necessary
+            queryTree = ExecutableExpansionVisitor.expand(queryTree, config, metadataHelper);
+            
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after ExecutableExpansion");
             }
             
             stopwatch.stop();
@@ -2219,6 +2238,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     public void setCompressUids(boolean compressUidsInRangeStream) {
         this.compressUidsInRangeStream = compressUidsInRangeStream;
+    }
+    
+    public boolean getExecutableExpansion() {
+        return executableExpansion;
+    }
+    
+    public void setExecutableExpansion(boolean executableExpansion) {
+        this.executableExpansion = executableExpansion;
     }
     
     /**
