@@ -3,9 +3,11 @@ package datawave.query.jexl.visitors;
 import com.google.common.base.Predicate;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
+import datawave.data.type.Type;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
@@ -64,7 +66,8 @@ public class EventDataQueryExpressionVisitorTest {
         for (int i = 0; i < testData.length; i += 2) {
             String[] input = testData[i];
             String[] expected = testData[i + 1];
-            Set<String> output = EventDataQueryExpressionVisitor.extractNormalizedAttributes(attrFactory, input[0], input[1], metadata);
+            Set<Type> types = EventDataQueryExpressionVisitor.extractTypes(attrFactory, input[0], input[1], metadata);
+            Set<String> output = EventDataQueryExpressionVisitor.extractNormalizedValues(types);
             Set<String> missing = new TreeSet<>();
             for (String s : expected) {
                 if (!output.remove(s)) {
@@ -84,6 +87,49 @@ public class EventDataQueryExpressionVisitorTest {
                 fail("Output did not match expected output for '" + input[0] + ":" + input[1] + "';" + b);
             }
         }
+    }
+    
+    @Test
+    public void testNormalizedValuesMatching() {
+        ExpressionFilter f = new ExpressionFilter(attrFactory, "FOO");
+        f.addFieldValue("BAR");
+        f.addFieldPattern("BA[YZ]");
+        f.addFieldRange(new LiteralRange("Y", true, "Z", true, "FOO", LiteralRange.NodeOperand.OR));
+        f.addFieldRange(new LiteralRange("R", false, "S", false, "FOO", LiteralRange.NodeOperand.OR));
+        
+        Key k1 = createKey("FOO", "BaR");
+        Key k2 = createKey("FOO", "baz");
+        Key k3 = createKey("FOO", "baY");
+        
+        Key k4 = createKey("FOO", "y");
+        Key k5 = createKey("FOO", "Y");
+        Key k6 = createKey("FOO", "yap");
+        Key k7 = createKey("FOO", "YAP");
+        Key k8 = createKey("FOO", "z");
+        Key k9 = createKey("FOO", "Z");
+        
+        Key k10 = createKey("FOO", "r");
+        Key k11 = createKey("FOO", "R");
+        Key k12 = createKey("FOO", "rat");
+        Key k13 = createKey("FOO", "RAT");
+        Key k14 = createKey("FOO", "s");
+        Key k15 = createKey("FOO", "S");
+        
+        assertTrue(f.apply(k1));
+        assertTrue(f.apply(k2));
+        assertTrue(f.apply(k3));
+        assertTrue(f.apply(k4));
+        assertTrue(f.apply(k5));
+        assertTrue(f.apply(k6));
+        assertTrue(f.apply(k7));
+        assertTrue(f.apply(k8));
+        assertTrue(f.apply(k9));
+        assertFalse(f.apply(k10));
+        assertFalse(f.apply(k11));
+        assertTrue(f.apply(k12));
+        assertTrue(f.apply(k13));
+        assertFalse(f.apply(k14));
+        assertFalse(f.apply(k15));
     }
     
     @Test
