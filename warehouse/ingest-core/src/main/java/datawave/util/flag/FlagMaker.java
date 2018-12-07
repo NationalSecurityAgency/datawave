@@ -61,6 +61,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 
+import javax.xml.bind.JAXBException;
+
 /**
  * 
  */
@@ -106,35 +108,70 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     }
     
     public static void main(String... args) throws Exception {
-        String flagConfig = null;
+        FlagMakerConfig flagMakerConfig = getFlagMakerConfig(args);
+        
         boolean shutdown = false;
         for (int i = 0; i < args.length; i++) {
-            if ("-flagConfig".equals(args[i])) {
-                flagConfig = args[++i];
-            }
             if ("-shutdown".equals(args[i])) {
                 shutdown = true;
             }
         }
-        if (flagConfig == null) {
-            flagConfig = "FlagMakerConfig.xml";
-            System.out.println("No flag config file specified, attempting to use default file: " + flagConfig);
-        }
-        
-        FlagMakerConfig xmlObject = ConfigUtil.getXmlObject(FlagMakerConfig.class, flagConfig);
         
         if (shutdown) {
-            shutdown(xmlObject.getSocketPort());
+            shutdown(flagMakerConfig.getSocketPort());
             System.exit(0);
         }
         try {
-            FlagMaker m = new FlagMaker(xmlObject);
+            FlagMaker m = new FlagMaker(flagMakerConfig);
             m.run();
         } catch (IllegalArgumentException ex) {
             System.err.println("" + ex.getMessage());
             printUsage();
             System.exit(1);
         }
+        
+    }
+    
+    static FlagMakerConfig getFlagMakerConfig(String[] args) throws JAXBException, IOException {
+        String flagConfig = null;
+        String baseHDFSDirOverride = null;
+        String extraIngestArgsOverride = null;
+        String flagFileDirectoryOverride = null;
+        for (int i = 0; i < args.length; i++) {
+            if ("-flagConfig".equals(args[i])) {
+                flagConfig = args[++i];
+                log.info("Using flagConfig of " + flagConfig);
+            } else if ("-baseHDFSDirOverride".equals(args[i])) {
+                baseHDFSDirOverride = args[++i];
+                log.info("Will override baseHDFSDir with " + baseHDFSDirOverride);
+            } else if ("-extraIngestArgsOverride".equals(args[i])) {
+                extraIngestArgsOverride = args[++i];
+                log.info("Will override extraIngestArgs with " + extraIngestArgsOverride);
+            } else if ("-flagFileDirectoryOverride".equals(args[i])) {
+                flagFileDirectoryOverride = args[++i];
+                log.info("Will override flagFileDirectory with " + flagFileDirectoryOverride);
+            }
+        }
+        if (flagConfig == null) {
+            flagConfig = "FlagMakerConfig.xml";
+            log.warn("No flag config file specified, attempting to use default file: " + flagConfig);
+        }
+        
+        FlagMakerConfig xmlObject = ConfigUtil.getXmlObject(FlagMakerConfig.class, flagConfig);
+        if (null != baseHDFSDirOverride) {
+            xmlObject.setBaseHDFSDir(baseHDFSDirOverride);
+        }
+        if (null != flagFileDirectoryOverride) {
+            xmlObject.setFlagFileDirectory(flagFileDirectoryOverride);
+        }
+        if (null != extraIngestArgsOverride) {
+            for (FlagDataTypeConfig flagDataTypeConfig : xmlObject.getFlagConfigs()) {
+                flagDataTypeConfig.setExtraIngestArgs(extraIngestArgsOverride);
+            }
+            xmlObject.getDefaultCfg().setExtraIngestArgs(extraIngestArgsOverride);
+        }
+        log.debug(xmlObject.toString());
+        return xmlObject;
         
     }
     
@@ -150,6 +187,11 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private static void printUsage() {
         System.out.println("To run the Flag Maker: ");
         System.out.println("datawave.ingest.flag.FlagMaker -flagConfig [path to xml config]");
+        System.out.println("Optional arguments:");
+        System.out.println("\t\t-shutdown\tDescription: shuts down the flag maker using configured socketPort");
+        System.out.println("\t\t-baseHDFSDirOverride [HDFS Path]\tDescription: overrides baseHDFSDir in xml");
+        System.out.println("\t\t-extraIngestArgsOverride [extra ingest args]\tDescription: overrides extraIngestArgs value in xml config");
+        System.out.println("\t\t-flagFileDirectoryOverride [local path]\tDescription: overrides flagFileDirectory value in xml config");
         
     }
     
@@ -180,26 +222,31 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      */
     protected void processFlags() throws IOException {
         FileSystem fs = getHadoopFS();
-        log.debug("Querying for files");
+        log.trace("Querying for files on " + fs.getUri().toString());
         for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
             long startTime = System.currentTimeMillis();
             String dataName = fc.getDataName();
             fd.setup(fc);
-            log.debug("Checking for files for " + dataName);
+            log.trace("Checking for files for " + dataName);
             
             for (String folder : fc.getFolder()) {
                 String folderPattern = folder + "/" + fmc.getFilePattern();
-                log.debug("searching for " + dataName + " files in " + folderPattern);
+                log.trace("searching for " + dataName + " files in " + folderPattern);
                 FileStatus[] files = fs.globStatus(new Path(folderPattern));
                 if (files == null || files.length == 0) {
+                    log.trace("files: " + (files == null ? "null" : files.length));
                     continue;
                 }
                 
                 // pull the base directory off of the folder
                 if (folder.startsWith(fmc.getBaseHDFSDir())) {
+                    log.trace("Removing base directory off folder " + folder);
                     folder = folder.substring(fmc.getBaseHDFSDir().length());
+                    log.trace("Adjusted folder: " + folder);
+                    
                     if (folder.startsWith(File.separator)) {
                         folder = folder.substring(File.separator.length());
+                        log.trace("Removed separator: " + folder);
                     }
                 }
                 
@@ -218,25 +265,38 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 }
             }
             
-            while (fd.hasNext(mustHaveMax(fc)) && running) {
+            while (fd.hasNext(shouldOnlyCreateFullFlags(fc)) && running) {
                 initStats(startTime);
                 writeFlagFile(fc, fd.next(this));
             }
         }
     }
     
-    private boolean mustHaveMax(FlagDataTypeConfig fc) {
+    private boolean shouldOnlyCreateFullFlags(FlagDataTypeConfig fc) {
+        return !hasTimeoutOccurred(fc) || isBacklogExcessive(fc);
+    }
+    
+    private boolean isBacklogExcessive(FlagDataTypeConfig fc) {
+        if (fc.getFlagCountThreshold() == FlagMakerConfig.UNSET) {
+            log.trace("Not evaluating flag file backlog.  getFlagCountThreshold = " + FlagMakerConfig.UNSET);
+            return false;
+        }
+        int sizeOfFlagFileBacklog = countFlagFileBacklog(fc);
+        if (sizeOfFlagFileBacklog >= fc.getFlagCountThreshold()) {
+            log.debug("Flag file backlog is excessive: sizeOfFlagFileBacklog: " + sizeOfFlagFileBacklog + ", flagCountThreshold: " + fc.getFlagCountThreshold());
+            return true;
+        }
+        return false;
+    }
+    
+    private boolean hasTimeoutOccurred(FlagDataTypeConfig fc) {
         long now = System.currentTimeMillis();
-        boolean mustHaveMax = (now < fc.getLast());
-        int flagCount = -1;
-        if (!mustHaveMax && fc.getFlagCountThreshold() != FlagMakerConfig.UNSET) {
-            flagCount = getFlagCount(fc);
-            mustHaveMax = (flagCount >= fc.getFlagCountThreshold());
+        // fc.getLast indicates when the flag file creation timeout will occur
+        boolean hasTimeoutOccurred = (now >= fc.getLast());
+        if (!hasTimeoutOccurred) {
+            log.debug("Still waiting for timeout.  now: " + now + ", last: " + fc.getLast() + ", (now-last): " + (now - fc.getLast()));
         }
-        if (log.isDebugEnabled()) {
-            log.debug("mustHaveMax = " + mustHaveMax + ", " + now + ", " + fc.getLast() + ", " + flagCount + ", " + fc.getFlagCountThreshold());
-        }
-        return mustHaveMax;
+        return hasTimeoutOccurred;
     }
     
     public long getTimestamp(Path path, long fileTimestamp) {
@@ -260,7 +320,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      * @param fc
      * @return the flag found for this ingest pool
      */
-    int getFlagCount(final FlagDataTypeConfig fc) {
+    int countFlagFileBacklog(final FlagDataTypeConfig fc) {
         final MutableInt fileCounter = new MutableInt(0);
         final FileFilter fileFilter = new WildcardFileFilter("*_" + fc.getIngestPool() + "_" + fc.getDataName() + "_*.flag");
         final FileVisitor<java.nio.file.Path> visitor = new SimpleFileVisitor<java.nio.file.Path>() {
