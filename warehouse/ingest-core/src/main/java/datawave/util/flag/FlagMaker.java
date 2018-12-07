@@ -55,11 +55,12 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Counters;
-import org.apache.log4j.Logger;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.bind.JAXBException;
 
@@ -71,7 +72,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private static final CompressionCodec cc = new GzipCodec();
     private static final CompressionType ct = CompressionType.BLOCK;
     
-    private static final Logger log = Logger.getLogger(FlagMaker.class);
+    private static final Logger log = LoggerFactory.getLogger(FlagMaker.class);
     // our yyyy/mm/dd pattern for most things.
     public static final Pattern pattern = Pattern.compile(".*/([0-9]{4}(/[0-9]{2}){2})(?:/.*|$)");
     private static final String DATE_FORMAT_STRING = "yyyy" + File.separator + "MM" + File.separator + "dd";
@@ -140,21 +141,21 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         for (int i = 0; i < args.length; i++) {
             if ("-flagConfig".equals(args[i])) {
                 flagConfig = args[++i];
-                log.info("Using flagConfig of " + flagConfig);
+                log.info("Using flagConfig of {}", flagConfig);
             } else if ("-baseHDFSDirOverride".equals(args[i])) {
                 baseHDFSDirOverride = args[++i];
-                log.info("Will override baseHDFSDir with " + baseHDFSDirOverride);
+                log.info("Will override baseHDFSDir with {}", baseHDFSDirOverride);
             } else if ("-extraIngestArgsOverride".equals(args[i])) {
                 extraIngestArgsOverride = args[++i];
-                log.info("Will override extraIngestArgs with " + extraIngestArgsOverride);
+                log.info("Will override extraIngestArgs with {}", extraIngestArgsOverride);
             } else if ("-flagFileDirectoryOverride".equals(args[i])) {
                 flagFileDirectoryOverride = args[++i];
-                log.info("Will override flagFileDirectory with " + flagFileDirectoryOverride);
+                log.info("Will override flagFileDirectory with {}", flagFileDirectoryOverride);
             }
         }
         if (flagConfig == null) {
             flagConfig = "FlagMakerConfig.xml";
-            log.warn("No flag config file specified, attempting to use default file: " + flagConfig);
+            log.warn("No flag config file specified, attempting to use default file: {}", flagConfig);
         }
         
         FlagMakerConfig xmlObject = ConfigUtil.getXmlObject(FlagMakerConfig.class, flagConfig);
@@ -222,38 +223,38 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      */
     protected void processFlags() throws IOException {
         FileSystem fs = getHadoopFS();
-        log.trace("Querying for files on " + fs.getUri().toString());
+        log.trace("Querying for files on {}", fs.getUri().toString());
         for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
             long startTime = System.currentTimeMillis();
             String dataName = fc.getDataName();
             fd.setup(fc);
-            log.trace("Checking for files for " + dataName);
+            log.trace("Checking for files for {}", dataName);
             
             for (String folder : fc.getFolder()) {
                 String folderPattern = folder + "/" + fmc.getFilePattern();
-                log.trace("searching for " + dataName + " files in " + folderPattern);
+                log.trace("searching for {} files in {}", dataName, folderPattern);
                 FileStatus[] files = fs.globStatus(new Path(folderPattern));
                 if (files == null || files.length == 0) {
-                    log.trace("files: " + (files == null ? "null" : files.length));
+                    log.trace("files: {}", (files == null ? "null" : files.length));
                     continue;
                 }
                 
                 // pull the base directory off of the folder
                 if (folder.startsWith(fmc.getBaseHDFSDir())) {
-                    log.trace("Removing base directory off folder " + folder);
+                    log.trace("Removing base directory off folder {}", folder);
                     folder = folder.substring(fmc.getBaseHDFSDir().length());
-                    log.trace("Adjusted folder: " + folder);
+                    log.trace("Adjusted folder: {}", folder);
                     
                     if (folder.startsWith(File.separator)) {
                         folder = folder.substring(File.separator.length());
-                        log.trace("Removed separator: " + folder);
+                        log.trace("Removed separator: {}", folder);
                     }
                 }
                 
                 // add the files
                 for (FileStatus status : files) {
                     if (status.isDir()) {
-                        log.warn("Skipping subdirectory " + status.getPath());
+                        log.warn("Skipping subdirectory {}", status.getPath());
                     } else {
                         try {
                             fd.addInputFile(new InputFile(folder, status.getPath(), status.getBlockSize(), status.getLen(), getTimestamp(status.getPath(),
@@ -278,12 +279,12 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     
     private boolean isBacklogExcessive(FlagDataTypeConfig fc) {
         if (fc.getFlagCountThreshold() == FlagMakerConfig.UNSET) {
-            log.trace("Not evaluating flag file backlog.  getFlagCountThreshold = " + FlagMakerConfig.UNSET);
+            log.trace("Not evaluating flag file backlog.  getFlagCountThreshold = {}", FlagMakerConfig.UNSET);
             return false;
         }
         int sizeOfFlagFileBacklog = countFlagFileBacklog(fc);
         if (sizeOfFlagFileBacklog >= fc.getFlagCountThreshold()) {
-            log.debug("Flag file backlog is excessive: sizeOfFlagFileBacklog: " + sizeOfFlagFileBacklog + ", flagCountThreshold: " + fc.getFlagCountThreshold());
+            log.debug("Flag file backlog is excessive: sizeOfFlagFileBacklog: {}, flagCountThreshold: {}", sizeOfFlagFileBacklog, fc.getFlagCountThreshold());
             return true;
         }
         return false;
@@ -294,7 +295,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         // fc.getLast indicates when the flag file creation timeout will occur
         boolean hasTimeoutOccurred = (now >= fc.getLast());
         if (!hasTimeoutOccurred) {
-            log.debug("Still waiting for timeout.  now: " + now + ", last: " + fc.getLast() + ", (now-last): " + (now - fc.getLast()));
+            log.debug("Still waiting for timeout.  now: {}, last: {}, (now-last): {}", now, fc.getLast(), (now - fc.getLast()));
         }
         return hasTimeoutOccurred;
     }
@@ -305,7 +306,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             try {
                 return util.getFolderTimestamp(path.toString());
             } catch (Exception e) {
-                log.warn("Path does not contain yyyy/mm/dd...using file timestamp for " + path);
+                log.warn("Path does not contain yyyy/mm/dd...using file timestamp for {}", path);
                 return fileTimestamp;
             }
             
@@ -386,15 +387,15 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                     // Check for existence of the file already in the flagging, flagged, or loaded directories
                     Path dstLoaded = getDestPath(inFile, "loaded", fc);
                     if (fs.exists(dstFlagged) || fs.exists(dstFlagging) || fs.exists(dstLoaded)) {
-                        log.warn("Unable to move file " + inFile.getDirectory() + "/" + inFile.getFileName()
-                                        + " as it already exists in the flagging, flagged, or loaded directory");
+                        log.warn("Unable to move file {}/{} as it already exists in the flagging, flagged, or loaded directory", inFile.getDirectory(),
+                                        inFile.getFileName());
                     } else {
                         // now move the file into the flagging directory
                         if (fs.rename(inFile.getPath(), dstFlagging)) {
                             moved.put(inFile, dstFlagging);
                             latestTime.set(Math.max(inFile.getTimestamp(), latestTime.get()));
                         } else {
-                            log.error("Unable to move file " + inFile.getDirectory() + "/" + inFile.getFileName() + ", skipping");
+                            log.error("Unable to move file {}/{}, skipping", inFile.getDirectory(), inFile.getFileName());
                         }
                     }
                     return dstLoaded;
@@ -435,7 +436,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             long now = System.currentTimeMillis();
             String baseName = fmc.getFlagFileDirectory() + File.separator + df.format(now / 1000) + "_" + fc.getIngestPool() + "_" + fc.getDataName() + "_"
                             + first.getName() + "+" + moved.size();
-            log.info("Creating flag file" + baseName + ".flag" + " for data type " + fc.getDataName() + " containing " + moved.size() + " files");
+            log.info("Creating flag file {}.flag for data type {} containing {} files", baseName, fc.getDataName(), moved.size());
             File f = new File(baseName + ".flag.generating");
             if (f.createNewFile()) {
                 flagFile = f;
@@ -475,7 +476,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 }
             }
             if (estSize != sb.length()) {
-                log.error("Estimated size is not accurate: " + estSize + " vs " + sb.length());
+                log.error("Estimated size is not accurate: {} vs {}", estSize, sb.length());
             }
             
             flagOS.write(sb.toString().getBytes());
@@ -571,7 +572,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             for (Map.Entry<InputFile,Path> orphan : moved.entrySet()) {
                 sb.append("\n").append(orphan.getValue().toString());
             }
-            log.error("An error occurred while attempting to move files. The following files were orphaned:" + sb.toString());
+            log.error("An error occurred while attempting to move files. The following files were orphaned: {}", sb.toString());
         }
     }
     
@@ -639,7 +640,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 if (cfg.getDataName().equals(dtype)) {
                     try {
                         lock.lock();
-                        log.info("Forcing " + dtype + " to generate flag file");
+                        log.info("Forcing {} to generate flag file", dtype);
                         cfg.setLast(System.currentTimeMillis() - cfg.getTimeoutMilliSecs());
                         break;
                     } finally {
@@ -871,14 +872,14 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             maxCounters = Integer.parseInt(this.config.get(COUNTER_LIMIT_HADOOP_1));
         }
         if (calculateCounters(files.size()) > maxCounters) {
-            log.warn("Check hadoop configuration. Counter limit (" + maxCounters + ") exceeded for " + fc.getDataName() + ". " + "Restricting to "
-                            + filesPerPartition(maxCounters) + " files per flag file.");
+            log.warn("Check hadoop configuration. Counter limit ({}) exceeded for {}. Restricting to {} files per flag file.", maxCounters, fc.getDataName(),
+                            filesPerPartition(maxCounters));
             return false;
         }
         
         // now check the flag file size
         if (getFlagFileSize(fc, files) > fmc.getMaxFileLength()) {
-            log.warn("Flag file size for " + fc.getDataName() + " exceeding " + fmc.getMaxFileLength() + ".  Reducing number of files to compensate");
+            log.warn("Flag file size for {} exceeding {}.  Reducing number of files to compensate", fc.getDataName(), fmc.getMaxFileLength());
             return false;
         }
         
