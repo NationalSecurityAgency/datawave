@@ -108,6 +108,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     
     protected boolean createSequenceFileName = true;
     
+    protected boolean trimSequenceFileName = true;
+    
     protected boolean createRawFileName = true;
     
     public static final String LOAD_DATE_FIELDNAME = "LOAD_DATE";
@@ -115,6 +117,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     public static final String SEQUENCE_FILE_FIELDNAME = "ORIG_FILE";
     
     public static final String LOAD_SEQUENCE_FILE_NAME = "ingest.event.mapper.load.seq.filename";
+    
+    public static final String TRIM_SEQUENCE_FILE_NAME = "ingest.event.mapper.trim.sequence.filename";
     
     public static final String RAW_FILE_FIELDNAME = "RAW_FILE";
     
@@ -183,6 +187,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         
         // default to true, but it can be disabled
         createSequenceFileName = context.getConfiguration().getBoolean(LOAD_SEQUENCE_FILE_NAME, true);
+        
+        trimSequenceFileName = context.getConfiguration().getBoolean(TRIM_SEQUENCE_FILE_NAME, true);
         
         createRawFileName = context.getConfiguration().getBoolean(LOAD_RAW_FILE_NAME, true);
         
@@ -760,7 +766,11 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         // place the sequence filename into the event
         if (createSequenceFileName) {
             seqFileName = NDC.peek();
-            seqFileName = StringUtils.substringAfterLast(seqFileName, "/");
+            
+            if (trimSequenceFileName) {
+                seqFileName = StringUtils.substringAfterLast(seqFileName, "/");
+            }
+            
             if (null != seqFileName) {
                 StringBuilder seqFile = new StringBuilder(seqFileName);
                 
