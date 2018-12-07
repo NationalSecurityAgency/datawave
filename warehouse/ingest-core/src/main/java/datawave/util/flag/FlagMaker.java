@@ -375,12 +375,14 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 Callable<Path> mover = () -> {
                     Path dstFlagging = getDestPath(inFile, "flagging", fc);
                     if (directoryCache.getIfPresent(dstFlagging) == null && !fs.exists(dstFlagging.getParent())) {
+                        log.debug("Creating flagging directory: {}", dstFlagging.getParent());
                         fs.mkdirs(dstFlagging.getParent());
                         directoryCache.put(dstFlagging, dstFlagging);
                     }
                     // Create the flagged directory
                     Path dstFlagged = getDestPath(inFile, "flagged", fc);
                     if (directoryCache.getIfPresent(dstFlagged) == null && !fs.exists(dstFlagged.getParent())) {
+                        log.debug("Creating flagged directory: {}", dstFlagging.getParent());
                         fs.mkdirs(dstFlagged.getParent());
                         directoryCache.put(dstFlagged, dstFlagged);
                     }
@@ -392,6 +394,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                     } else {
                         // now move the file into the flagging directory
                         if (fs.rename(inFile.getPath(), dstFlagging)) {
+                            log.trace("Moved {} to destination: {}", inFile.getFileName(), dstFlagging);
                             moved.put(inFile, dstFlagging);
                             latestTime.set(Math.max(inFile.getTimestamp(), latestTime.get()));
                         } else {
@@ -498,6 +501,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 final Path dstFlagged = getDestPath(inFile, "flagged", fc);
                 Callable<Path> mover = () -> {
                     if (fs.rename(dstFlagging, dstFlagged)) {
+                        log.trace("Moved {} to {} ", dstFlagging, dstFlagged);
                         moved.put(inFile, dstFlagged);
                         if (fc.isCollectMetrics())
                             ctx.getCounter(FlagFile.class.getSimpleName(), dstFlagged.getName()).setValue(System.currentTimeMillis());
