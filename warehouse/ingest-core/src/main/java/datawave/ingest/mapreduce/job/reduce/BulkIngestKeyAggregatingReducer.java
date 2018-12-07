@@ -20,9 +20,10 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.hadoop.mapreduce.*;
 
 import com.google.common.collect.Iterators;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.log4j.Logger;
 
 @SuppressWarnings("deprecation")
@@ -111,15 +112,15 @@ public class BulkIngestKeyAggregatingReducer<K2,V2> extends AggregatingReducer<B
             int reducerId = ctx.getTaskAttemptID().getTaskID().getId();
             // increment one per key
             if (reducerId < 50) {
-                ctx.getCounter("REDUCER " + Integer.toString(reducerId), "TABLE " + key.getTableName().toString()).increment(1);
-                ctx.getCounter("TABLE " + key.getTableName().toString(), "REDUCER " + Integer.toString(reducerId)).increment(1);
+                ctx.getCounter("REDUCER " + Integer.toString(reducerId), "TABLE " + key.getTableName()).increment(1);
+                ctx.getCounter("TABLE " + key.getTableName(), "REDUCER " + Integer.toString(reducerId)).increment(1);
             }
         }
         if (useAggregators(key.getTableName())) {
             
             List<Combiner> aggList = getAggregators(key.getTableName(), key.getKey());
             
-            if (aggList.size() == 0) {
+            if (aggList.isEmpty()) {
                 boolean firstValue = true;
                 boolean foundDuplicate = false;
                 for (Value value : values) {

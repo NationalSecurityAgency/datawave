@@ -93,7 +93,7 @@ public abstract class CompositeFunctionsTest {
                 try {
                     FileUtils.forceDelete(tempFolder);
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    log.error(ex);
                 }
             }
             TypeRegistry.reset();
@@ -135,7 +135,7 @@ public abstract class CompositeFunctionsTest {
                 try {
                     FileUtils.forceDelete(tempFolder);
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    log.error(ex);
                 }
             }
             TypeRegistry.reset();
@@ -356,7 +356,7 @@ public abstract class CompositeFunctionsTest {
             try {
                 runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
             } catch (Throwable t) {
-                t.printStackTrace();
+                log.error(t);
                 Assert.assertTrue(t instanceof DatawaveFatalQueryException);
             }
         }
@@ -389,7 +389,7 @@ public abstract class CompositeFunctionsTest {
             try {
                 runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
             } catch (Throwable t) {
-                t.printStackTrace();
+                log.error(t);
                 Assert.assertTrue(t instanceof DatawaveFatalQueryException);
             }
         }

@@ -230,7 +230,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             
             log.info("Got config on first try!");
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Problem getting config for ProtobufEdgeDataTypeHandler: {}", e);
             throw e;
         }
         
@@ -500,7 +500,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         
         // Get the load date of the event from the fields map
         Collection<NormalizedContentInterface> loadDates = fields.get(EventMapper.LOAD_DATE_FIELDNAME);
-        if (loadDates.size() > 0) {
+        if (!loadDates.isEmpty()) {
             NormalizedContentInterface nci = loadDates.iterator().next();
             Date date = new Date(Long.parseLong(nci.getEventFieldValue()));
             loadDateStr = DateHelper.format(date);
@@ -885,7 +885,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         if (value instanceof GroupedNormalizedContentInterface) {
             GroupedNormalizedContentInterface grouped = (GroupedNormalizedContentInterface) value;
             if (grouped.isGrouped() && grouped.getGroup() != null) {
-                if (grouped.getGroup().length() > 0 && grouped.getGroup().charAt(0) == '.') {
+                if (!grouped.getGroup().isEmpty() && grouped.getGroup().charAt(0) == '.') {
                     fieldName = fieldName + grouped.getGroup();
                 } else {
                     fieldName = fieldName + '.' + grouped.getGroup();
@@ -1054,9 +1054,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                         .setAttribute3(edgeValue.getEdgeAttribute3()).setAttribute2(edgeValue.getEdgeAttribute2()).setColvis(visibility)
                         .setTimestamp(timestamp).setDateType(date_type);
         builder.setDeleted(edgeValue.isDeleting());
-        Key key = builder.build().encode();
         
-        return key;
+        return builder.build().encode();
     }
     
     protected Key createStatsKey(STATS_TYPE statsType, EdgeDataBundle edgeValue, VertexValue vertex, String value, Text visibility, EdgeKey.DATE_TYPE date_type) {

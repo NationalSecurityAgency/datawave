@@ -158,7 +158,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         EventBase event = null;
         final Collection<FieldBase<?>> documentFields = buildDocumentFields(documentKey, null, document, eventCV, mf);
         // if documentFields is empty, then the response contained only timing metadata
-        if (documentFields.size() > 0) {
+        if (!documentFields.isEmpty()) {
             event = this.responseObjectFactory.getEvent();
             event.setMarkings(markings);
             event.setFields(new ArrayList<>(documentFields));

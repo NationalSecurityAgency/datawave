@@ -123,7 +123,7 @@ public class ModelBean {
                 cbAuths.add(new Authorizations(auths.toArray(new String[auths.size()])));
             }
         }
-        log.trace(user + " has authorizations " + cbAuths.toString());
+        log.trace(user + " has authorizations " + cbAuths);
         
         Connector connector = null;
         HashSet<String> modelNames = new HashSet<>();
@@ -308,7 +308,7 @@ public class ModelBean {
                 cbAuths.add(new Authorizations(auths.toArray(new String[auths.size()])));
             }
         }
-        log.trace(user + " has authorizations " + cbAuths.toString());
+        log.trace(user + " has authorizations " + cbAuths);
         
         Connector connector = null;
         try {
@@ -338,7 +338,7 @@ public class ModelBean {
         }
         
         // return 404 if model not found
-        if (response.getFields().size() == 0) {
+        if (response.getFields().isEmpty()) {
             throw new NotFoundException(null, response);
         }
         

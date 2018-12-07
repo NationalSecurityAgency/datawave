@@ -21,7 +21,7 @@ public abstract class QueryNode implements Cloneable {
     protected List<QueryNode> children;
     protected int numSelectors = 1;
     
-    private final static Logger log = Logger.getLogger(QueryNode.class.getName());
+    private static final Logger log = Logger.getLogger(QueryNode.class.getName());
     protected String originalQuery = null;
     protected Set<FieldedTerm> positiveFilters = new HashSet<>();
     protected Set<FieldedTerm> negativeFilters = new HashSet<>();
@@ -68,9 +68,7 @@ public abstract class QueryNode implements Cloneable {
     
     public void setOptimizations(List<Optimization> optimizations) {
         this.optimizations.clear();
-        for (Optimization o : optimizations) {
-            this.optimizations.add(o);
-        }
+        this.optimizations.addAll(optimizations);
     }
     
     /**
@@ -115,26 +113,26 @@ public abstract class QueryNode implements Cloneable {
      */
     public String getContents() {
         StringBuilder s = new StringBuilder("[");
-        s.append(toString());
+        s.append(this);
         for (QueryNode child : children) {
             s.append(",");
             s.append(child.getContents());
         }
         s.append("]");
-        if (positiveFilters.size() > 0) {
+        if (!positiveFilters.isEmpty()) {
             s.append("[posFilter: ");
             boolean firstPos = true;
             for (FieldedTerm ft : positiveFilters) {
                 if (!firstPos) {
                     s.append(",");
                 }
-                s.append(ft.toString());
+                s.append(ft);
                 firstPos = false;
             }
             
             s.append("]");
         }
-        if (negativeFilters.size() > 0) {
+        if (!negativeFilters.isEmpty()) {
             s.append("[negFilter: ");
             boolean firstNeg = true;
             for (FieldedTerm ft : negativeFilters) {

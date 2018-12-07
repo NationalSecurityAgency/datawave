@@ -137,8 +137,7 @@ public class CondensedRangeStreamScanner extends RangeStreamScanner {
                 
                 if (!currentShard.hasNext()) {
                     nextDay = true;
-                    boolean hasNextDay = hasNext();
-                    return hasNextDay;
+                    return hasNext();
                 } else {
                     
                     return true;
@@ -210,8 +209,7 @@ public class CondensedRangeStreamScanner extends RangeStreamScanner {
             }
         }
         
-        Entry<Key,Value> retVal = Maps.immutableEntry(nextTopKey, nextTopValue);
-        return retVal;
+        return Maps.immutableEntry(nextTopKey, nextTopValue);
         
     }
     

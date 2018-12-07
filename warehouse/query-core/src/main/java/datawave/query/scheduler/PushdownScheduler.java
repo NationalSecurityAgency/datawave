@@ -117,9 +117,8 @@ public class PushdownScheduler extends Scheduler {
         }
         
         try {
-            Iterator<Entry<Key,Value>> iter = concatIterators();
             
-            return iter;
+            return concatIterators();
         } catch (AccumuloException | ParseException | TableNotFoundException | AccumuloSecurityException e) {
             throw new RuntimeException(e);
         }

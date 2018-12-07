@@ -544,7 +544,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         
         String fieldName = property.substring(dataType.typeName().length() + 1, property.length() - propertyPattern.length());
         
-        if (0 == fieldName.length()) {
+        if (fieldName.isEmpty()) {
             fieldName = null;
         } else {
             fieldName = fieldName.toUpperCase();
@@ -567,7 +567,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         
         String fieldName = property.substring(dataType.typeName().length() + 1, property.length() - propertyPattern.length());
         
-        if (0 == fieldName.length()) {
+        if (fieldName.isEmpty()) {
             fieldName = null;
         } else {
             fieldName = fieldName.toUpperCase();
@@ -1094,7 +1094,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         if (this.indexedFields == null) {
             retVal = false;
             log.error(this.getType().typeName() + ": index set has been set to null.");
-        } else if (this.indexedFields.size() == 0) {
+        } else if (this.indexedFields.isEmpty()) {
             if (log.isDebugEnabled()) {
                 log.debug(this.getType().typeName() + ": no fields have been set to index.");
             }
@@ -1105,7 +1105,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         if (this.reverseIndexedFields == null) {
             retVal = false;
             log.error(this.getType().typeName() + ": reverse index set has been set to null.");
-        } else if (this.reverseIndexedFields.size() == 0) {
+        } else if (this.reverseIndexedFields.isEmpty()) {
             if (log.isDebugEnabled()) {
                 log.debug(this.getType().typeName() + ": no fields have been set to reverse index.");
             }

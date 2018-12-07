@@ -6,13 +6,15 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.BaseShardIdRange;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
+import datawave.query.testframework.ShardIdValues;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -102,7 +104,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testDateRangeNoMatch() throws Exception {
         log.info("------  testShardDateRange  ------");
-        Date start = CitiesDataType.CityShardId.DATE_2015_0808.getDate();
+        Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0808.getDateStr());
         Calendar cal = Calendar.getInstance();
         cal.setTime(start);
         cal.add(Calendar.HOUR, 4);
@@ -117,7 +119,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testDateRangeHours() throws Exception {
         log.info("------  testShardDateRange  ------");
-        Date start = CitiesDataType.CityShardId.DATE_2015_0808.getDate();
+        Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0808.getDateStr());
         Calendar cal = Calendar.getInstance();
         cal.setTime(start);
         cal.add(Calendar.HOUR, 4);
@@ -130,7 +132,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testDateRangeSameDay() throws Exception {
         log.info("------  testDateRangeSameDay  ------");
-        Date start = CitiesDataType.CityShardId.DATE_2015_0808.getDate();
+        Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0808.getDateStr());
         String query = CityField.CITY.name() + EQ_OP + "'pAris'";
         runTest(query, query, start, start);
     }
@@ -138,7 +140,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testDateRangeOneDay() throws Exception {
         log.info("------  testDateRangeOneDay  ------");
-        Date start = CitiesDataType.CityShardId.DATE_2015_0808.getDate();
+        Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0808.getDateStr());
         Calendar cal = Calendar.getInstance();
         cal.setTime(start);
         cal.add(Calendar.DATE, 1);
@@ -151,7 +153,8 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testDateRangeMonth() throws Exception {
         log.info("------  testDateRangeMonth  ------");
-        Date start = CitiesDataType.CityShardId.DATE_2015_0808.getDate();
+        // Date start = CitiesDataType.CityShardId.DATE_2015_0808.getDate();
+        Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0808.getDateStr());
         Calendar cal = Calendar.getInstance();
         cal.setTime(start);
         cal.add(Calendar.MONTH, 3);
@@ -164,7 +167,8 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testDateRangeOneYear() throws Exception {
         log.info("------  testDateRangeOneYear  ------");
-        Date start = CitiesDataType.CityShardId.DATE_2015_0707.getDate();
+        // Date start = CitiesDataType.CityShardId.DATE_2015_0707.getDate();
+        Date start = ShardIdValues.convertShardToDate(BaseShardIdRange.DATE_2015_0707.getDateStr());
         Calendar cal = Calendar.getInstance();
         cal.setTime(start);
         cal.add(Calendar.YEAR, 1);

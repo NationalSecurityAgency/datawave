@@ -140,7 +140,7 @@ public class Intersection implements IndexStream {
             } else if (allChildrenAreUnindexed(this.children.values())) {
                 this.context = StreamContext.UNINDEXED;
                 this.contextDebug = "all children unindexed";
-            } else if (this.children.size() == 0 && delayedField) {
+            } else if (this.children.isEmpty() && delayedField) {
                 this.context = StreamContext.DELAYED_FIELD;
                 this.contextDebug = "delayed field";
             } else if (allExceededValueThreshold) {
@@ -287,7 +287,7 @@ public class Intersection implements IndexStream {
         currNode = buildCurrentNode();
         
         if (!childrenAdded) {
-            if (delayedNodes.size() > 0)
+            if (!delayedNodes.isEmpty())
                 childrenAdded = merged.intersect(delayedNodes);
             
         }
@@ -409,7 +409,7 @@ public class Intersection implements IndexStream {
         
         public Intersection build(ExecutorService service) {
             
-            if (todo.size() > 0) {
+            if (!todo.isEmpty()) {
                 if (log.isTraceEnabled())
                     log.trace("building " + todo.size() + " scanners concurrently");
                 Collection<IndexStream> streams = ConcurrentScannerInitializer.initializeScannerStreams(todo, service);

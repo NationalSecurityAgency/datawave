@@ -40,7 +40,7 @@ public class MatchesAtLeastCountOf extends JexlQueryFunction {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         List<String> params = getParameterList();
-        if (params.size() > 0) {
+        if (!params.isEmpty()) {
             sb.append(params.get(0)); // the count
         }
         if (params.size() > 1) {

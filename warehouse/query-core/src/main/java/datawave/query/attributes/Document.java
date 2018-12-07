@@ -131,7 +131,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         try {
             this.shardTimestamp = DateHelper.parseWithGMT(docKey.getRow().toString()).getTime();
         } catch (IllegalArgumentException e) {
-            log.warn("Unable to parse document key row as a shard id of the form yyyyMMdd...: " + docKey.getRow().toString(), e);
+            log.warn("Unable to parse document key row as a shard id of the form yyyyMMdd...: " + docKey.getRow(), e);
             // leave the shardTimestamp empty
             this.shardTimestamp = Long.MAX_VALUE;
         }
@@ -731,7 +731,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 }
             } else {
                 // Nothing already in the context, just add the result from the visit() as a functional set
-                if (visitObject.size() > 0) {
+                if (!visitObject.isEmpty()) {
                     Set<ValueTuple> newSet = new FunctionalSet<>();
                     newSet.addAll(visitObject);
                     // Add the final set

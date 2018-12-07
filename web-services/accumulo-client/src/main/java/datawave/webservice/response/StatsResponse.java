@@ -33,10 +33,6 @@ public class StatsResponse extends BaseResponse {
     @XmlElement
     private Totals totals = null;
     
-    public StatsResponse() {
-        super();
-    }
-    
     public List<Server> getServers() {
         return servers;
     }

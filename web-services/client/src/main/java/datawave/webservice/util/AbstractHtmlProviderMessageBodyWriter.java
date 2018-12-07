@@ -10,7 +10,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
-abstract public class AbstractHtmlProviderMessageBodyWriter<T> implements MessageBodyWriter<T> {
+public abstract class AbstractHtmlProviderMessageBodyWriter<T> implements MessageBodyWriter<T> {
     
     public static final Charset utf8 = Charset.forName("UTF-8");
     
@@ -41,13 +41,13 @@ abstract public class AbstractHtmlProviderMessageBodyWriter<T> implements Messag
         entityStream.write(data, 0, data.length);
     }
     
-    abstract public String getTitle(T t);
+    public abstract String getTitle(T t);
     
-    abstract public String getHeadContent(T t);
+    public abstract String getHeadContent(T t);
     
-    abstract public String getPageHeader(T t);
+    public abstract String getPageHeader(T t);
     
-    abstract public String getMainContent(T t);
+    public abstract String getMainContent(T t);
     
     protected byte[] createHtml(T t) {
         StringBuilder builder = new StringBuilder();

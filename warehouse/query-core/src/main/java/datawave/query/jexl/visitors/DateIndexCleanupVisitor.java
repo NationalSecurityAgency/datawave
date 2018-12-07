@@ -18,10 +18,6 @@ import datawave.query.jexl.JexlASTHelper;
 public class DateIndexCleanupVisitor extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(DateIndexCleanupVisitor.class);
     
-    public DateIndexCleanupVisitor() {
-        
-    }
-    
     /**
      * This will cleanup/remove the SHARDS_AND_DAYS assignment node.
      */

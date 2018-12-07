@@ -66,7 +66,7 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
  */
 public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     
-    private final static Logger logger = Logger.getLogger(CustomAnalyzerQueryNodeProcessor.class);
+    private static final Logger logger = Logger.getLogger(CustomAnalyzerQueryNodeProcessor.class);
     
     private Analyzer analyzer;
     
@@ -76,8 +76,6 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     private Set<String> tokenizedFields = new HashSet<>();
     private Set<String> skipTokenizeUnfieldedFields = new HashSet<>();
     private boolean tokensAsPhrase = false;
-    
-    public CustomAnalyzerQueryNodeProcessor() {}
     
     @Override
     public QueryNode process(QueryNode queryTree) throws QueryNodeException {
@@ -122,8 +120,8 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             logger.debug("SkipTokenizeUnfieldedFields: " + Arrays.toString(skipTokenizeUnfieldedFields.toArray()));
             logger.debug("Tokenize Unfielded Queries: " + this.unfieldedTokenized);
             logger.debug("Tokens As Phrase: " + this.tokensAsPhrase);
-            logger.debug("Original QueryTree: " + queryTree.toString());
-            logger.debug("Processed QueryTree: " + queryTree.toString());
+            logger.debug("Original QueryTree: " + queryTree);
+            logger.debug("Processed QueryTree: " + queryTree);
         }
         
         return processedQueryTree;
@@ -133,7 +131,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     protected QueryNode postProcessNode(QueryNode node) throws QueryNodeException {
         
         if (logger.isDebugEnabled()) {
-            logger.debug("Incoming query node: " + node.toString());
+            logger.debug("Incoming query node: " + node);
         }
         
         if (node instanceof TextableQueryNode && !(node instanceof WildcardQueryNode) && !(node instanceof RegexpQueryNode)
@@ -164,7 +162,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             }
             
             if (logger.isDebugEnabled()) {
-                logger.debug("Post-processed query node: " + node.toString());
+                logger.debug("Post-processed query node: " + node);
             }
         }
         

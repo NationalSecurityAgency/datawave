@@ -438,7 +438,6 @@ public class TestLuceneToJexlQueryParser {
         try {
             parseQuery(func);
         } catch (Exception e) {
-            e.printStackTrace();
             Assert.fail("Queries that are just post filters should now be allowed: " + func);
         }
         String query = null;

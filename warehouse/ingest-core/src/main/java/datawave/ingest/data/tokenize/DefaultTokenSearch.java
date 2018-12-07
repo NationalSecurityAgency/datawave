@@ -284,7 +284,7 @@ public class DefaultTokenSearch implements TokenSearch {
     public void getTokenWords(String input, String zone, Collection<String> synonyms) {
         // Now treat it as a bucket of words so that double quotes phrases can work too
         for (String word : getTokenWords(input)) {
-            if (word.length() > 0 && !isStop(word) && !word.equals(input)) {
+            if (!word.isEmpty() && !isStop(word) && !word.equals(input)) {
                 synonyms.add(word.toLowerCase() + zone);
             }
         }
@@ -539,7 +539,7 @@ public class DefaultTokenSearch implements TokenSearch {
                 zseg = zlc.substring(segstart);
             }
             
-            if (zseg.length() > 0) {
+            if (!zseg.isEmpty()) {
                 synonyms.add(zseg + zone);
                 
                 spacePos = zseg.indexOf(" ");
@@ -769,7 +769,7 @@ public class DefaultTokenSearch implements TokenSearch {
                 synonyms.add(lc_url.substring(0, querypos) + zone);
                 String params[] = lc_url.substring(querypos + 1, endq).split("&");
                 for (String param : params) {
-                    if (param.length() > 0) {
+                    if (!param.isEmpty()) {
                         try {
                             String decoded = urlDecode(param);
                             synonyms.add(decoded + zone);
@@ -945,7 +945,7 @@ public class DefaultTokenSearch implements TokenSearch {
      * 
      * @throws IOException
      */
-    public synchronized static CharArraySet getStopWords() throws IOException {
+    public static synchronized CharArraySet getStopWords() throws IOException {
         String stopResource = System.getProperty("STOP_WORD_LIST", "stopwords.txt");
         return getStopWords(stopResource);
     }
@@ -958,7 +958,7 @@ public class DefaultTokenSearch implements TokenSearch {
      * @param filename
      * @throws IOException
      */
-    public synchronized static CharArraySet getStopWords(String filename) throws IOException {
+    public static synchronized CharArraySet getStopWords(String filename) throws IOException {
         CharArraySet stopwords = stopwordCache.get(filename);
         if (stopwords == null) {
             stopwords = TokenSearch.Factory.loadStopWords(filename);

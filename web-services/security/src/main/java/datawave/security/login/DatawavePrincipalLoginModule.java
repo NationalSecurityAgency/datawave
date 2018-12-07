@@ -93,7 +93,6 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                     datawaveVerifier = true;
                 }
             } catch (Throwable e) {
-                e.printStackTrace();
                 if (trace)
                     log.trace("Failed to create X509CertificateVerifier", e);
                 throw new IllegalArgumentException("Invalid verifier: " + option, e);
@@ -158,7 +157,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                 }
             }
             StringBuilder buf = new StringBuilder("[" + roles.size() + "] Groups for " + targetUser + " {");
-            if (roles.size() > 0) {
+            if (!roles.isEmpty()) {
                 Group group = new SimpleGroup("Roles");
                 boolean first = true;
                 for (String r : roles)

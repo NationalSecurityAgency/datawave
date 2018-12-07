@@ -47,10 +47,6 @@ import org.apache.lucene.search.Query;
  */
 public class BooleanQueryNodeBuilder implements QueryBuilder {
     
-    public BooleanQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         BooleanQueryNode booleanNode = (BooleanQueryNode) queryNode;
         

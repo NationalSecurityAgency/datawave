@@ -61,8 +61,7 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
             final String fieldName = aliaser.normalizeAndAlias(key);
             try {
                 final Set<String> normalizedValues = normalizeFieldValue(fieldName.toUpperCase(), value);
-                final String first = normalizedValues.iterator().next();
-                return first;
+                return normalizedValues.iterator().next();
             } catch (final Exception ex) {
                 log.warn(this.getType().typeName() + ": Unable to normalize masked value of '" + value + "' for " + fieldName, ex);
                 return value;

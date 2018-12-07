@@ -24,8 +24,6 @@ public class JavaRegexAnalyzerTest {
     
     private static final Logger log = Logger.getLogger(JavaRegexAnalyzerTest.class);
     
-    public JavaRegexAnalyzerTest() {}
-    
     @BeforeClass
     public static void setUpClass() throws Exception {
         Logger.getRootLogger().setLevel(Level.OFF);

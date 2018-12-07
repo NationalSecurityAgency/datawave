@@ -17,7 +17,7 @@ public class JexlPhraseNode extends JexlNode {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         
-        if (this.field == null || this.field.length() == 0) {
+        if (this.field == null || this.field.isEmpty()) {
             sb.append("content:phrase(termOffsetMap");
         } else {
             sb.append("content:phrase(");

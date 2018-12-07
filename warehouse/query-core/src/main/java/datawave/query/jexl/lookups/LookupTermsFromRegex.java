@@ -94,14 +94,13 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
         ScannerSession bs = null;
         
         IteratorSetting fairnessIterator = null;
-        long maxLookup = maxLookupConfigured;
-        if (maxLookup > 0) {
+        if (maxLookupConfigured > 0) {
             /**
              * The fairness iterator solves the problem whereby we have runaway iterators as a result of an evaluation that never finds anything
              */
             fairnessIterator = new IteratorSetting(1, TimeoutIterator.class);
             
-            long maxTime = (long) (maxLookup * 1.25);
+            long maxTime = (long) (maxLookupConfigured * 1.25);
             fairnessIterator.addOption(TimeoutIterator.MAX_SESSION_TIME, Long.valueOf(maxTime).toString());
         }
         boolean performReverseLookup = buildReverseFields(config);
@@ -170,7 +169,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
         }
         
         try {
-            timedScan(iter, fieldsToValues, config, datatypeFilter, fields, false, maxLookup, log);
+            timedScan(iter, fieldsToValues, config, datatypeFilter, fields, false, maxLookupConfigured, log);
         } finally {
             for (ScannerSession sesh : sessions) {
                 scannerFactory.close(sesh);
@@ -209,7 +208,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
             }
             
             try {
-                timedScan(iter, fieldsToValues, config, datatypeFilter, fields, true, maxLookup, log);
+                timedScan(iter, fieldsToValues, config, datatypeFilter, fields, true, maxLookupConfigured, log);
             } finally {
                 for (ScannerSession sesh : sessions) {
                     scannerFactory.close(sesh);
@@ -242,7 +241,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                     Key topKey = entry.getKey();
                     
                     if (log.isTraceEnabled()) {
-                        log.trace("Foward Index entry: " + entry.getKey().toString());
+                        log.trace("Foward Index entry: " + entry.getKey());
                     }
                     
                     // Get the column qualifier from the key. It contains the datatype and normalizer class
@@ -254,7 +253,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                             String type = colq.substring(idx + 1);
                             
                             // If types are specified and this type is not in the list, skip it.
-                            if (null != myDatatypeFilter && myDatatypeFilter.size() > 0 && !myDatatypeFilter.contains(type)) {
+                            if (null != myDatatypeFilter && !myDatatypeFilter.isEmpty() && !myDatatypeFilter.contains(type)) {
                                 
                                 if (log.isTraceEnabled())
                                     log.trace(myDatatypeFilter + " does not contain " + type);
@@ -330,7 +329,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
             log.trace("reversefields are " + reversefields);
         }
         
-        return (fields.size() == 0 && reversefields.size() == 0) || reversefields.size() > 0;
+        return (fields.isEmpty() && reversefields.isEmpty()) || !reversefields.isEmpty();
     }
     
     public static class TooMuchExpansionException extends RuntimeException {

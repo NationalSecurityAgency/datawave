@@ -1440,11 +1440,9 @@ public class JexlASTHelper {
     private JexlASTHelper() {}
     
     public static JexlNode addEqualityToOr(ASTOrNode lhsSource, ASTEQNode rhsSource) {
-        ASTOrNode orNode = lhsSource;
-        ASTEQNode copyNode = rhsSource;
-        orNode.jjtAddChild(copyNode, orNode.jjtGetNumChildren());
-        copyNode.jjtSetParent(orNode);
-        return orNode;
+        lhsSource.jjtAddChild(rhsSource, lhsSource.jjtGetNumChildren());
+        rhsSource.jjtSetParent(lhsSource);
+        return lhsSource;
     }
     
     public static class HasMethodVisitor extends BaseVisitor {

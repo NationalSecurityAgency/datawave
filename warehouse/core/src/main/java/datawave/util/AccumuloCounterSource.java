@@ -119,7 +119,7 @@ public class AccumuloCounterSource extends CounterSource {
         source.addRange(range);
         source.addColumnFaily(columnFamily);
         CounterDump dumper = new CounterDump(source);
-        System.out.println(dumper.toString());
+        System.out.println(dumper);
     }
     
 }

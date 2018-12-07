@@ -20,7 +20,12 @@ import javax.annotation.PreDestroy;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
-import javax.ejb.*;
+import javax.ejb.DependsOn;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
+import javax.ejb.Schedule;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
 import javax.inject.Inject;
 import java.util.Date;
 
@@ -95,8 +100,8 @@ public class QueryExpirationBean {
         int count = 0;
         
         for (RunningQuery query : cache) {
-            boolean idleTooLong = !clearAll && !query.hasActiveCall() && isIdleTooLong(query, now) ? true : false;
-            boolean nextTooLong = !clearAll && query.hasActiveCall() && isNextTooLong(query, now) ? true : false;
+            boolean idleTooLong = !clearAll && !query.hasActiveCall() && isIdleTooLong(query, now);
+            boolean nextTooLong = !clearAll && query.hasActiveCall() && isNextTooLong(query, now);
             if (clearAll || idleTooLong || nextTooLong) {
                 if (query.getSettings().getUncaughtExceptionHandler() == null) {
                     query.getSettings().setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());

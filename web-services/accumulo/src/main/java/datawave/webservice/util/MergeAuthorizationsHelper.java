@@ -9,7 +9,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.ByteArraySet;
 
 public class MergeAuthorizationsHelper {
-    static private Logger log = Logger.getLogger(MergeAuthorizationsHelper.class);
+    private static Logger log = Logger.getLogger(MergeAuthorizationsHelper.class);
     
     public static Authorizations mergeAuthorizations(Connector connector, String cbUserName, Authorizations userAuthorizations) {
         Authorizations mergedAuthorizations = null;

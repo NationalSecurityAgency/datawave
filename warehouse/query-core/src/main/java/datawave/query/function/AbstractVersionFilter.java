@@ -109,7 +109,7 @@ public abstract class AbstractVersionFilter<A> {
      * The DEFAULT_VERSION_PATTERN, for example, ...
      * 
      */
-    public final static String NORMALIZED_VERSION_FILTER_ROOT_KEY = "normalized.version.filter";
+    public static final String NORMALIZED_VERSION_FILTER_ROOT_KEY = "normalized.version.filter";
     
     private static final String DATATYPES_DELIMITER = ",";
     
@@ -628,7 +628,7 @@ public abstract class AbstractVersionFilter<A> {
      */
     private boolean validate(final String dataType, final String uid, final String pattern, final Key key, final Document document, boolean isMultiMapping) {
         boolean isValid = true;
-        if (uid.length() > 0) {
+        if (!uid.isEmpty()) {
             final String[] split = uid.split(pattern);
             try {
                 final Text row = key.getRow();

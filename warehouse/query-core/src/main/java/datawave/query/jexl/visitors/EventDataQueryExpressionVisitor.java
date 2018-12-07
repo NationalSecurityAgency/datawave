@@ -2,27 +2,39 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
 import datawave.data.type.Type;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.AttributeBag;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.TypeAttribute;
 import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.attributes.*;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.postprocessing.tf.Function;
-import datawave.query.predicate.Filter;
-import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.parser.*;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static datawave.query.Constants.EMPTY_STRING;
 
 /**
  * The EventDataQueryExpressionVisitor traverses the query parse tree and generates a series of ExpressionFilters that will be used to determine if Keys
@@ -141,17 +153,77 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                 }
                 
                 final String keyFieldValue = datawaveKey.getFieldValue();
-                final Set<String> normalizedFieldValues = EventDataQueryExpressionVisitor.extractNormalizedAttributes(attributeFactory, keyFieldName,
-                                keyFieldValue, key);
+                final Set<Type> types = EventDataQueryExpressionVisitor.extractTypes(attributeFactory, keyFieldName, keyFieldValue, key);
+                final Set<Matcher> normalizedPatternMatchers = new HashSet<>();
+                final Set<String> normalizedFieldValues = new HashSet<>();
+                final Set<LiteralRange> normalizedRanges = new HashSet<>();
+                for (Type type : types) {
+                    // normalize all patterns
+                    for (Pattern fieldPattern : fieldPatterns.keySet()) {
+                        try {
+                            String normalizedPattern = type.normalizeRegex(fieldPattern.toString());
+                            if (normalizedPattern != null) {
+                                normalizedPatternMatchers.add(Pattern.compile(normalizedPattern).matcher(EMPTY_STRING));
+                            } else {
+                                // can't normalize so add the original matcher
+                                normalizedPatternMatchers.add(fieldPatterns.get(fieldPattern));
+                            }
+                        } catch (Exception e) {
+                            // can't normalize this pattern, add the original matcher
+                            normalizedPatternMatchers.add(fieldPatterns.get(fieldPattern));
+                        }
+                    }
+                    
+                    // normalize all values
+                    for (String fieldValue : fieldValues) {
+                        try {
+                            String normalizedValue = type.normalize(fieldValue);
+                            if (normalizedValue != null) {
+                                normalizedFieldValues.add(normalizedValue);
+                            } else {
+                                // can't normalize this value, add the original
+                                normalizedFieldValues.add(fieldValue);
+                            }
+                        } catch (Exception e) {
+                            // can't normalize this value, add the original
+                            normalizedFieldValues.add(fieldValue);
+                        }
+                    }
+                    
+                    // normalize all ranges
+                    for (LiteralRange range : fieldRanges) {
+                        try {
+                            LiteralRange normalizedRange = new LiteralRange(range.getFieldName(), range.getNodeOperand());
+                            
+                            String normalizedLower = type.normalize(range.getLower().toString());
+                            String normalizedUpper = type.normalize(range.getUpper().toString());
+                            
+                            if (normalizedLower != null && normalizedUpper != null) {
+                                normalizedRange.updateLower(normalizedLower, range.isLowerInclusive());
+                                normalizedRange.updateUpper(normalizedUpper, range.isUpperInclusive());
+                                
+                                normalizedRanges.add(normalizedRange);
+                            } else {
+                                // can't normalize the range values, add the original
+                                normalizedRanges.add(range);
+                            }
+                        } catch (Exception e) {
+                            // can't normalize the range values, add the original
+                            normalizedRanges.add(range);
+                        }
+                    }
+                }
                 
-                for (String normalizedFieldValue : normalizedFieldValues) {
-                    if (fieldValues.contains(normalizedFieldValue)) {
+                Set<String> fieldValuesToEvaluate = EventDataQueryExpressionVisitor.extractNormalizedValues(types);
+                
+                for (String normalizedFieldValue : fieldValuesToEvaluate) {
+                    if (normalizedFieldValues.contains(normalizedFieldValue)) {
                         // field name matches and field value matches, keep.
                         nonNullValueSeen = true;
                         return true;
                     }
                     
-                    for (Matcher m : fieldPatterns.values()) {
+                    for (Matcher m : normalizedPatternMatchers) {
                         m.reset(normalizedFieldValue);
                         if (m.matches()) {
                             // field name matches and field pattern matches, keep.
@@ -160,7 +232,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                         }
                     }
                     
-                    for (LiteralRange r : fieldRanges) {
+                    for (LiteralRange r : normalizedRanges) {
                         if (r.contains(normalizedFieldValue)) {
                             // field name patches and value is within range, keep.
                             nonNullValueSeen = true;
@@ -347,8 +419,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         return iol.getIdentifier() + " " + iol.getOp() + " " + iol.getLiteral();
     }
     
-    public static Set<String> extractNormalizedAttributes(AttributeFactory attrFactory, String fieldName, String fieldValue, Key key) {
-        final Set<String> normalizedAttributes = new HashSet<>();
+    public static Set<Type> extractTypes(AttributeFactory attrFactory, String fieldName, String fieldValue, Key key) {
+        final Set<Type> types = new HashSet<>();
         
         final Queue<Attribute<?>> attrQueue = new LinkedList<>();
         attrQueue.add(attrFactory.create(fieldName, fieldValue, key, true));
@@ -359,13 +431,23 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             if (TypeAttribute.class.isAssignableFrom(attr.getClass())) {
                 TypeAttribute dta = (TypeAttribute) attr;
                 Type t = dta.getType();
-                normalizedAttributes.add(t.getNormalizedValue());
+                types.add(t);
             } else if (AttributeBag.class.isAssignableFrom(attr.getClass())) {
                 attrQueue.addAll(((AttributeBag<?>) attr).getAttributes());
             } else {
-                log.warn("Unexpected attribute type when extracting normalized values: " + attr.getClass().getCanonicalName());
+                log.warn("Unexpected attribute type when extracting type: " + attr.getClass().getCanonicalName());
             }
         }
-        return normalizedAttributes;
+        return types;
+    }
+    
+    public static Set<String> extractNormalizedValues(Set<Type> types) {
+        final Set<String> normalizedValues = new HashSet<>();
+        
+        for (Type type : types) {
+            normalizedValues.add(type.getNormalizedValue());
+        }
+        
+        return normalizedValues;
     }
 }

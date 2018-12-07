@@ -84,7 +84,6 @@ public class DatawaveJexlContext extends MapContext {
     }
     
     public Object get(String name) {
-        Object got = map.get(name);
         // So the question is whether a mapping to nothing should return 'null' or an empty collection...
         // If we return an empty collection, then our tests that expect 'null' will need to change
         // If we return a 'null', then our tests that invoke a method on the result of the context lookup will cause a NPE
@@ -101,6 +100,6 @@ public class DatawaveJexlContext extends MapContext {
         // if(got == null) {
         // return FunctionalSet.empty();
         // }
-        return got;
+        return map.get(name);
     }
 }

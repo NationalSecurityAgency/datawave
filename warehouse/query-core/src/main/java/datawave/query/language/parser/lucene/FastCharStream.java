@@ -19,7 +19,8 @@ package datawave.query.language.parser.lucene;
  *  
  */
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Reader;
 
 /**
  * An efficient implementation of JavaCC's CharStream interface.

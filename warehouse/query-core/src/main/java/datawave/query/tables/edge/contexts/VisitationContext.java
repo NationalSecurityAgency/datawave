@@ -42,8 +42,8 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
     
     protected boolean includeStats;
     
-    private final static String OR = " || ";
-    private final static String AND = " && ";
+    private static final String OR = " || ";
+    private static final String AND = " && ";
     
     public VisitationContext() {
         normalizedQuery = new StringBuilder();
@@ -121,7 +121,7 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      */
     private Set<Range> buildRanges(List<IdentityContext> sources, List<IdentityContext> sinks) {
         Set<Range> ranges = new HashSet<>();
-        if (sources == null || sources.size() == 0) {
+        if (sources == null || sources.isEmpty()) {
             throw new RuntimeException("Can't build ranges for given query. There must be a SOURCE.");
         }
         for (IdentityContext source : sources) {

@@ -228,7 +228,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
         
         private String getHour(Multimap<String,NormalizedContentInterface> fields) {
             Collection<NormalizedContentInterface> fieldValues = fields.get("CREATETIME");
-            if (fieldValues == null || fieldValues.size() == 0) {
+            if (fieldValues == null || fieldValues.isEmpty()) {
                 return null;
             }
             

@@ -30,8 +30,6 @@ import org.apache.log4j.Logger;
 public class RangeCoalescingVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(RangeCoalescingVisitor.class);
     
-    public RangeCoalescingVisitor() {}
-    
     /**
      * Coalesce ranges into separate AND expressions.
      *

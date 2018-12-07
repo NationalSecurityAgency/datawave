@@ -1,7 +1,8 @@
 package datawave.query.iterator;
 
 import datawave.query.attributes.Document;
-import org.apache.accumulo.core.data.*;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Range;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;

@@ -11,13 +11,13 @@ public class IndexQueryLogic extends ShardQueryLogic {
     
     public IndexQueryLogic() {
         super();
-        limitAnyFieldLookups = false;
+        setLimitAnyFieldLookups(false);
         this.setQueryPlanner(new IndexQueryPlanner());
     }
     
     public IndexQueryLogic(IndexQueryLogic other) {
         super(other);
-        limitAnyFieldLookups = false;
+        setLimitAnyFieldLookups(false);
     }
     
     @Override

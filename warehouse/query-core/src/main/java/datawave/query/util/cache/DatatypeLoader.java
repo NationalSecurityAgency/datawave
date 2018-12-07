@@ -73,7 +73,7 @@ public class DatatypeLoader extends AccumuloLoader<String,Multimap<String,Type<?
     @Override
     public Multimap<String,Type<?>> load(String key) throws Exception {
         
-        if (entryCache.size() == 0) {
+        if (entryCache.isEmpty()) {
             super.load(null);
         }
         
@@ -117,7 +117,7 @@ public class DatatypeLoader extends AccumuloLoader<String,Multimap<String,Type<?
                     
                     dataNormalizer.put(type, LcNoDiacriticsType.class.newInstance());
                     
-                    if (dataTypeFilters.size() > 0 && !dataTypeFilters.contains(type)) {
+                    if (!dataTypeFilters.isEmpty() && !dataTypeFilters.contains(type)) {
                         if (log.isTraceEnabled())
                             log.trace("Returning since " + type + " is not in the data type cache");
                         return false;

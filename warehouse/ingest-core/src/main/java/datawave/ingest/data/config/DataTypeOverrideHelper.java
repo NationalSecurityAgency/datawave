@@ -178,9 +178,8 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
      * @return
      */
     public static String[] getIdComponents(String id) {
-        String[] uidParts = StringUtils.split(id, "-att-");
         
-        return uidParts;
+        return StringUtils.split(id, "-att-");
     }
     
     public boolean filterEvent(RawRecordContainer event) {

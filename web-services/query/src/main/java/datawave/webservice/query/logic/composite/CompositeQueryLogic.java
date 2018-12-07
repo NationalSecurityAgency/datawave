@@ -60,7 +60,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         
         public QueryLogicHolder(String logicName) {
             this.setDaemon(true);
-            this.setName(Thread.currentThread().getName() + "-CompositeQueryLogic-" + logicName + "-" + UUID.randomUUID().toString());
+            this.setName(Thread.currentThread().getName() + "-CompositeQueryLogic-" + logicName + "-" + UUID.randomUUID());
         }
         
         public GenericQueryConfiguration getConfig() {
@@ -147,18 +147,20 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         
         for (BaseQueryLogic<?> logic : queryLogics) {
             final BaseQueryLogic<?> queryLogic = logic;
-            int count = CollectionUtils.countMatches(queryLogics, object -> {
-                if (object instanceof BaseQueryLogic<?>) {
-                    BaseQueryLogic<?> other = (BaseQueryLogic<?>) object;
-                    if (queryLogic.getClass().equals(other.getClass()) && queryLogic.getTableName().equals(other.getTableName())) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            });
+            int count = CollectionUtils.countMatches(
+                            queryLogics,
+                            object -> {
+                                if (object instanceof BaseQueryLogic<?>) {
+                                    if (queryLogic.getClass().equals(((BaseQueryLogic<?>) object).getClass())
+                                                    && queryLogic.getTableName().equals(((BaseQueryLogic<?>) object).getTableName())) {
+                                        return true;
+                                    } else {
+                                        return false;
+                                    }
+                                } else {
+                                    return false;
+                                }
+                            });
             
             if (count > 1) {
                 throw new RuntimeException("More than one instance of query logic class configured with the same table: " + logic.getClass().getName());
@@ -183,7 +185,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             } catch (Exception e) {
                 log.info(e.getMessage() + " removing query logic " + logic.getClass().getName() + " from CompositeQuery");
                 itr.remove();
-                if (itr.hasNext() == false && logicState.size() == 0) {
+                if (itr.hasNext() == false && logicState.isEmpty()) {
                     // all logics have failed to initialize, rethrow the last exception caught
                     throw new IllegalStateException("All logics have failed to initialize", e);
                 }
@@ -253,8 +255,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             }
         }
         if (null == this.transformer) {
-            CompositeQueryLogicTransformer trans = new CompositeQueryLogicTransformer(delegates);
-            this.transformer = trans;
+            this.transformer = new CompositeQueryLogicTransformer(delegates);
         }
         return this.transformer;
     }
@@ -314,7 +315,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 itr.remove();
             }
         }
-        return (queryLogics.size() > 0);
+        return (!queryLogics.isEmpty());
     }
     
     @Override

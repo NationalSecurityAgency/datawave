@@ -116,8 +116,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             }
         }
         
-        SortedKeyValueIterator<Key,Value> kvIter = new IteratorToSortedKeyValueIterator(kv.iterator());
-        return kvIter;
+        return new IteratorToSortedKeyValueIterator(kv.iterator());
     }
     
     @Override

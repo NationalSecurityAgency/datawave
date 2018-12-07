@@ -21,7 +21,6 @@ import datawave.query.QueryParameters;
 import datawave.query.iterators.FieldIndexCountingIterator;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.config.ShardQueryConfigurationFactory;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.FieldIndexCountQueryTransformer;
@@ -94,7 +93,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         }
         
         // I'm using this config object in a pinch, we should probably create a custom one.
-        ShardQueryConfiguration config = ShardQueryConfigurationFactory.createShardQueryConfigurationFromConfiguredLogic(this, settings);
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(this, settings);
         config.setConnector(connection);
         config.setAuthorizations(auths);
         
@@ -358,7 +357,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         
         String typeList = settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue();
         HashSet<String> typeFilter;
-        if (null != typeList && 0 != typeList.length()) {
+        if (null != typeList && !typeList.isEmpty()) {
             typeFilter = new HashSet<>();
             typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
             
@@ -366,7 +365,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 config.setDatatypeFilter(typeFilter);
                 
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Type Filter: " + typeFilter.toString());
+                    logger.debug("Type Filter: " + typeFilter);
                 }
             }
         }
@@ -448,7 +447,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 }
                 
                 mapKeyBuilder.append(Constants.NULL_BYTE_STRING);
-                mapKeyBuilder.append(key.getColumnQualifier().toString());
+                mapKeyBuilder.append(key.getColumnQualifier());
                 mapKey = mapKeyBuilder.toString();
                 
                 // if we are over our threshold for unique values skip it.

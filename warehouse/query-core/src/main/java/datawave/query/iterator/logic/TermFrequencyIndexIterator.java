@@ -246,7 +246,7 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         
         if (log.isTraceEnabled()) {
-            log.trace(this.toString() + " seek'ing to: " + this.scanRange + " from requested range " + range);
+            log.trace(this + " seek'ing to: " + this.scanRange + " from requested range " + range);
         }
         
         source.seek(this.scanRange, this.seekColumnFamilies, this.includeColumnFamilies);
@@ -270,7 +270,7 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     
     protected void seek(SortedKeyValueIterator<Key,Value> source, Range r) throws IOException {
         if (log.isTraceEnabled()) {
-            log.trace(this.toString() + " seek'ing to: " + r);
+            log.trace(this + " seek'ing to: " + r);
         }
         source.seek(r, this.seekColumnFamilies, true);
         next();

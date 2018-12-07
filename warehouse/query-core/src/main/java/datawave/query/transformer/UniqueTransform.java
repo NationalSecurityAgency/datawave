@@ -84,12 +84,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * @return A unique transform predicate
      */
     public Predicate<Entry<Key,Document>> getUniquePredicate() {
-        return new Predicate<Entry<Key,Document>>() {
-            @Override
-            public boolean apply(@Nullable Entry<Key,Document> input) {
-                return UniqueTransform.this.apply(input) != null;
-            }
-        };
+        return input -> UniqueTransform.this.apply(input) != null;
     }
     
     /**
@@ -403,8 +398,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public static class ByteFunnel implements Funnel<byte[]>, Serializable {
         
         private static final long serialVersionUID = -2126172579955897986L;
-        
-        public ByteFunnel() {}
         
         @Override
         public void funnel(byte[] from, PrimitiveSink into) {

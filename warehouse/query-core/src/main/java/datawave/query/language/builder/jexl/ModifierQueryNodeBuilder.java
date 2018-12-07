@@ -32,10 +32,6 @@ import org.apache.lucene.search.Query;
  */
 public class ModifierQueryNodeBuilder implements QueryBuilder {
     
-    public ModifierQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         ModifierQueryNode modifierQueryNode = (ModifierQueryNode) queryNode;
         

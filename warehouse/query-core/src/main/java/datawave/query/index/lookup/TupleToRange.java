@@ -49,7 +49,7 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
             
         }
         
-        if (ii.uids().size() > 0) {
+        if (!ii.uids().isEmpty()) {
             List<QueryPlan> ranges = Lists.newArrayListWithCapacity(ii.uids().size());
             for (IndexMatch uid : ii.uids()) {
                 Key start = new Key(tuple.first(), uid.getUid());

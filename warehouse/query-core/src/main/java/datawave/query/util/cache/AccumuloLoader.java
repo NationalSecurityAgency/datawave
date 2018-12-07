@@ -112,7 +112,7 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
             for (Entry<Key,Value> entry : scanner) {
                 
                 if (!store(key, entry.getKey(), entry.getValue())) {
-                    log.warn("Did not accept " + entry.getKey().toString());
+                    log.warn("Did not accept " + entry.getKey());
                 }
                 
             }

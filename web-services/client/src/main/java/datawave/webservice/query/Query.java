@@ -99,6 +99,8 @@ public abstract class Query {
     
     public abstract MultivaluedMap<String,String> toMap();
     
+    public abstract Map<String,String> getCardinalityFields();
+    
     public abstract void populateMetric(BaseQueryMetric metric);
     
     public abstract void setOptionalQueryParameters(MultivaluedMap<String,String> optionalQueryParameters);

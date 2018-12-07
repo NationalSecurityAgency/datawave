@@ -3,7 +3,12 @@ package datawave.query.jexl.functions;
 import datawave.ingest.protobuf.TermWeightPosition;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * <p>
@@ -189,7 +194,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
             if (b.phraseIndex == targetIndex) {
                 found.add(0, b);
                 
-                if (skipped.size() > 0) {
+                if (!skipped.isEmpty()) {
                     // Add the skipped values that are at the same offset or within the distance of teh first term
                     evaluateSkipped(b, skipped, found, direction);
                     
@@ -200,8 +205,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                 }
                 
                 // Start the search based on the largest found term index
-                List<EvaluateTermPosition> result = traverse(found.get(found.size() - 1), sub.tailSet(b, false), found, direction);
-                return result;
+                return traverse(found.get(found.size() - 1), sub.tailSet(b, false), found, direction);
             }
             skipped.add(b);
         }
@@ -287,7 +291,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                     
                     List<EvaluateTermPosition> results = traverse(termPosition, subB, found, direction);
                     if (null == results || results.size() != terms.length) {
-                        if (skipped.size() > 0) {
+                        if (!skipped.isEmpty()) {
                             evaluateSkipped(found.get(found.size() - 1), skipped, found, direction);
                         }
                     }
@@ -325,13 +329,13 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
         
         // Failure for current root node find next
         NavigableSet<EvaluateTermPosition> subB;
-        if (skipped.size() > 0) {
+        if (!skipped.isEmpty()) {
             subB = sub.tailSet(skipped.get(0), true);
         } else {
             subB = sub.tailSet(term, true);
         }
         
-        if (subB.size() > 0) { // Nothing after a, so it will fall out of the loop
+        if (!subB.isEmpty()) { // Nothing after a, so it will fall out of the loop
             return traverse(subB, direction);
         }
         
@@ -351,7 +355,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      */
     protected void evaluateSkipped(EvaluateTermPosition root, List<EvaluateTermPosition> skipped, List<EvaluateTermPosition> found, int direction) {
         
-        while (skipped.size() > 0 && found.size() < terms.length) {
+        while (!skipped.isEmpty() && found.size() < terms.length) {
             EvaluateTermPosition skip = skipped.remove(skipped.size() - 1);
             if (root.isZeroOffset(skip)) {
                 // Fail fast, same position

@@ -148,7 +148,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
                             uids = Sets.newHashSet();
                             for (String uid : uidInfo.third()) {
                                 if (log.isTraceEnabled())
-                                    log.trace("Adding uid " + uid.split("\u0000")[1] + " " + uid.toString() + " " + TLD.parseRootPointerFromId(uid) + " "
+                                    log.trace("Adding uid " + uid.split("\u0000")[1] + " " + uid + " " + TLD.parseRootPointerFromId(uid) + " "
                                                     + TLD.parseRootPointerFromId(uid.toString()));
                                 if (isTld) {
                                     uids.add(TLD.parseRootPointerFromId(uid));
@@ -327,8 +327,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
      * @return
      */
     public static Key makeRootKey(Key k, String day) {
-        ByteSequence cq = k.getColumnQualifierData();
-        ByteSequence strippedCq = cq;
+        ByteSequence strippedCq = k.getColumnQualifierData();
         strippedCq = new ArrayByteSequence(day);
         final ByteSequence row = k.getRowData(), cf = k.getColumnFamilyData(), cv = k.getColumnVisibilityData();
         return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), strippedCq.getBackingArray(),

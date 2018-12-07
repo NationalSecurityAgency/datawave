@@ -470,8 +470,7 @@ public final class TermWeight {
         
         @java.lang.Override
         protected Builder newBuilderForType(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-            Builder builder = new Builder(parent);
-            return builder;
+            return new Builder(parent);
         }
         
         /**

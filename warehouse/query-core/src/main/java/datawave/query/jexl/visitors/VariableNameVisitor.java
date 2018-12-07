@@ -19,8 +19,6 @@ public class VariableNameVisitor extends BaseVisitor {
     
     private Set<String> variableNames = Sets.newHashSet();
     
-    public VariableNameVisitor() {}
-    
     /**
      * Static method to run a depth-first traversal over the AST
      * 

@@ -101,7 +101,7 @@ public class OozieJobConfiguration extends MapReduceJobConfiguration {
     
     public void validateWorkflowParameter(Properties oozieConf, MapReduceConfiguration mapReduceConfiguration) {
         // Validate the required runtime parameters exist
-        if (null != this.requiredRuntimeParameters && this.requiredRuntimeParameters.size() > 0) {
+        if (null != this.requiredRuntimeParameters && !this.requiredRuntimeParameters.isEmpty()) {
             // Loop over the required runtime parameter names and make sure an entry exists in the method parameter
             for (String parameter : this.requiredRuntimeParameters.keySet()) {
                 if (!oozieConf.containsKey(parameter))
@@ -110,7 +110,7 @@ public class OozieJobConfiguration extends MapReduceJobConfiguration {
         }
         
         // Validate the required parameters exist
-        if (null != this.requiredParameters && this.requiredParameters.size() > 0) {
+        if (null != this.requiredParameters && !this.requiredParameters.isEmpty()) {
             // Loop over the required parameter names and make sure an entry exists in the queryParameters
             for (String parameter : this.requiredParameters.keySet()) {
                 if (!oozieConf.containsKey(parameter))

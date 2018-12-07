@@ -2,7 +2,6 @@ package datawave.query.planner;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.HashMultimap;
@@ -41,6 +40,7 @@ import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
+import datawave.query.jexl.visitors.ExecutableExpansionVisitor;
 import datawave.query.jexl.visitors.ExpandCompositeTerms;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
@@ -126,7 +126,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -248,6 +247,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
     protected long sourceLimit = -1;
     
     protected QueryModelProvider.Factory queryModelProviderFactory = new MetadataHelperQueryModelProvider.Factory();
+    
+    /**
+     * Should the ExecutableExpansionVisitor be run
+     */
+    protected boolean executableExpansion = true;
     
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
@@ -900,20 +904,20 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (log.isDebugEnabled()) {
                 log.debug("Testing for non-existent fields, found: " + nonexistentFields.size());
             }
-            if (nonexistentFields.size() > 0) {
+            if (!nonexistentFields.isEmpty()) {
                 String datatypeFilterSet = (null == config.getDatatypeFilter()) ? "none" : config.getDatatypeFilter().toString();
                 if (log.isTraceEnabled()) {
                     try {
                         log.trace("current size of fields" + metadataHelper.getAllFields(config.getDatatypeFilter()));
-                        log.trace("all fields: " + metadataHelper.getAllFields(config.getDatatypeFilter()).toString());
+                        log.trace("all fields: " + metadataHelper.getAllFields(config.getDatatypeFilter()));
                     } catch (TableNotFoundException e) {
                         log.error("table not found when reading metadata", e);
                     }
                     log.trace("QueryModel:" + (null == queryModel ? "null" : queryModel));
-                    log.trace("metadataHelper " + metadataHelper.toString());
+                    log.trace("metadataHelper " + metadataHelper);
                 }
                 log.trace("QueryModel:" + (null == queryModel ? "null" : queryModel));
-                log.trace("metadataHelper " + metadataHelper.toString());
+                log.trace("metadataHelper " + metadataHelper);
                 
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FIELDS_NOT_IN_DATA_DICTIONARY, MessageFormat.format(
                                 "Datatype Filter: {0}, Missing Fields: {1}, Auths: {2}", datatypeFilterSet, nonexistentFields, config.getAuthorizations()));
@@ -1015,6 +1019,19 @@ public class DefaultQueryPlanner extends QueryPlanner {
             queryTree = PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(queryTree, config, metadataHelper);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after marking index holes:");
+            }
+            
+            stopwatch.stop();
+        }
+        
+        if (executableExpansion) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Executable expansion");
+            
+            // apply distributive property to deal with executability if necessary
+            queryTree = ExecutableExpansionVisitor.expand(queryTree, config, metadataHelper);
+            
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after ExecutableExpansion");
             }
             
             stopwatch.stop();
@@ -1259,7 +1276,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     }
                     builder.append(dataType);
                 }
-                log.trace("Datatypes: " + builder.toString());
+                log.trace("Datatypes: " + builder);
                 builder.delete(0, builder.length());
                 
                 for (String field : allFields) {
@@ -1268,7 +1285,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     }
                     builder.append(field);
                 }
-                log.trace("allFields: " + builder.toString());
+                log.trace("allFields: " + builder);
             }
         } catch (TableNotFoundException e) {
             stopwatch.stop();
@@ -1777,7 +1794,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         addOption(cfg, QueryOptions.REDUCED_RESPONSE, Boolean.toString(config.isReducedResponse()), false);
         addOption(cfg, QueryOptions.DISABLE_EVALUATION, Boolean.toString(config.isDisableEvaluation()), false);
-        addOption(cfg, QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, Boolean.toString(config.disableIndexOnlyDocuments()), false);
+        addOption(cfg, QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, Boolean.toString(config.isDisableIndexOnlyDocuments()), false);
         addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(config.getIncludeGroupingContext()), false);
         addOption(cfg, QueryOptions.CONTAINS_INDEX_ONLY_TERMS, Boolean.toString(config.isContainsIndexOnlyTerms()), false);
         addOption(cfg, QueryOptions.CONTAINS_COMPOSITE_TERMS, Boolean.toString(config.isContainsCompositeTerms()), false);
@@ -2221,6 +2238,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     public void setCompressUids(boolean compressUidsInRangeStream) {
         this.compressUidsInRangeStream = compressUidsInRangeStream;
+    }
+    
+    public boolean getExecutableExpansion() {
+        return executableExpansion;
+    }
+    
+    public void setExecutableExpansion(boolean executableExpansion) {
+        this.executableExpansion = executableExpansion;
     }
     
     /**

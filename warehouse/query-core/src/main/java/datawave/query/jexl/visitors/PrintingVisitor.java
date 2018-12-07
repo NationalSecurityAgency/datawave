@@ -69,7 +69,7 @@ import com.google.common.collect.Lists;
 public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVisitor {
     
     private interface Output {
-        public void writeLine(String line);
+        void writeLine(String line);
     }
     
     private static class PrintStreamOutput implements Output {

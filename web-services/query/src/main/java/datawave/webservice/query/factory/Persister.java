@@ -206,9 +206,9 @@ public class Persister {
             }
             deleter = ScannerHelper.createBatchDeleter(c, TABLE_NAME, auths, 1, 10240L, 10000L, 1);
             Key skey = new Key(query.getOwner(), query.getQueryName(), query.getId().toString());
-            Key ekey = new Key(query.getOwner(), query.getQueryName(), query.getId().toString() + "\u0001");
+            Key ekey = new Key(query.getOwner(), query.getQueryName(), query.getId() + "\u0001");
             Range range = new Range(skey, ekey);
-            log.info("Deleting query range: " + range.toString());
+            log.info("Deleting query range: " + range);
             Collection<Range> ranges = Collections.singletonList(range);
             deleter.setRanges(ranges);
             deleter.delete();

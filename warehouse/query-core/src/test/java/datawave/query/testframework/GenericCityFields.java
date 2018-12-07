@@ -46,6 +46,6 @@ public class GenericCityFields extends AbstractFields {
     
     @Override
     public String toString() {
-        return "GenericCityFields{" + super.toString() + "}";
+        return this.getClass().getSimpleName() + "{" + super.toString() + "}";
     }
 }

@@ -122,7 +122,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);
-            thread.setName("Datawave BatchScanner Session " + threadIdentifier.toString() + " -" + threadNum++);
+            thread.setName("Datawave BatchScanner Session " + threadIdentifier + " -" + threadNum++);
             thread.setDaemon(true);
             thread.setUncaughtExceptionHandler(uncaughtHandler);
             return thread;
@@ -391,7 +391,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             scan.setVisitors(visitorFunctions);
             scan.setTimeout(scanLimitTimeout);
             if (log.isTraceEnabled()) {
-                log.trace("Adding scanner " + chunk.toString());
+                log.trace("Adding scanner " + chunk);
             }
             submitScan(scan, true);
         }
@@ -441,7 +441,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             scan.setVisitors(visitorFunctions);
             scan.setTimeout(scanLimitTimeout);
             if (log.isTraceEnabled()) {
-                log.trace("Adding scanner " + chunk.toString());
+                log.trace("Adding scanner " + chunk);
             }
             submitScan(scan, true);
         }

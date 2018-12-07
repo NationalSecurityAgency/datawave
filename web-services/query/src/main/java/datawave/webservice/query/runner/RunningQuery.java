@@ -137,7 +137,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         String user = this.settings.getUserDN();
         UUID uuid = this.settings.getId();
         if (user != null && uuid != null) {
-            NDC.push("[" + user + "] [" + uuid.toString() + "]");
+            NDC.push("[" + user + "] [" + uuid + "]");
         }
     }
     
@@ -244,7 +244,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
                 if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                     log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
-                                    + pageTimeInCall + " " + timing.toString());
+                                    + pageTimeInCall + " " + timing);
                     hitPageTimeTrigger = true;
                     break;
                 }
@@ -296,7 +296,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             long now = System.currentTimeMillis();
             this.getMetric().addPageTime(currentPageCount, now - pageStartTime, pageStartTime, now);
             this.lastPageNumber++;
-            if (resultList.size() > 0) {
+            if (!resultList.isEmpty()) {
                 this.getMetric().setLifecycle(QueryMetric.Lifecycle.RESULTS);
             }
         } catch (Exception e) {
@@ -484,7 +484,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     /**
      * An interface used to force returning from a next call within a running query.
      */
-    public static interface RunningQueryTiming {
+    public interface RunningQueryTiming {
         boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall);
     }
     

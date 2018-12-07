@@ -77,7 +77,7 @@ public class GenerateEdgeKeyVersionCache {
                 
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Called from main()
             printUsageAndExit();
         }
         
@@ -97,7 +97,7 @@ public class GenerateEdgeKeyVersionCache {
         
         if (initMode) {
             if (keyVersion == null) {
-                System.out.println("Failure! Must specifiy key version number when running init.");
+                System.out.println("Failure! Must specify key version number when running init.");
                 printUsageAndExit();
             }
             Date currentTime = new Date(now.get());
@@ -122,6 +122,6 @@ public class GenerateEdgeKeyVersionCache {
             printUsageAndExit();
         }
         
-        System.out.println("done");
+        System.out.println("Done");
     }
 }

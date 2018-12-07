@@ -4,6 +4,6 @@ import datawave.webservice.query.cache.QueryCache;
 
 public interface NeedQueryCache {
     
-    public void setQueryCache(QueryCache cache);
+    void setQueryCache(QueryCache cache);
     
 }

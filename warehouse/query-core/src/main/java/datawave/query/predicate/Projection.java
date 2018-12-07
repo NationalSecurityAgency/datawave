@@ -24,8 +24,6 @@ public class Projection implements Predicate<String> {
     private boolean useWhitelist = false, useBlacklist = false;
     private boolean initialized = false;
     
-    public Projection() {}
-    
     public void setWhitelist(Set<String> whiteListFields) {
         if (this.initialized) {
             throw new RuntimeException("This Projection instance was already initialized");

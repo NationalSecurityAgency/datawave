@@ -395,7 +395,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         query.setColumnVisibility(this.getColumnVisibility());
         query.setBeginDate(this.getBeginDate());
         query.setEndDate(this.getEndDate());
-        if (null != this.parameters && this.parameters.size() > 0)
+        if (null != this.parameters && !this.parameters.isEmpty())
             query.setParameters(new HashSet<Parameter>(this.parameters));
         query.setDnList(this.dnList);
         return query;
@@ -817,6 +817,14 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         qm.setQueryAuthorizations(this.getQueryAuthorizations());
         qm.setQueryName(this.getQueryName());
         qm.setParameters(this.getParameters());
+    }
+    
+    @Override
+    public Map<String,String> getCardinalityFields() {
+        Map<String,String> cardinalityFields = new HashMap<String,String>();
+        cardinalityFields.put("QUERY_USER", getOwner());
+        cardinalityFields.put("QUERY_LOGIC_NAME", getQueryLogicName());
+        return cardinalityFields;
     }
     
     @Override

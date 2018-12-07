@@ -2,9 +2,9 @@ package datawave.query.iterator;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -49,14 +49,14 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
         this.initialSize = initialSize;
         child = new SourceManager(source);
         sourceQueue = null;
-        sourceQueue = new LinkedList<>();
+        sourceQueue = new ConcurrentLinkedQueue<>();
     }
     
     public SourceManager(SortedKeyValueIterator<Key,Value> source) {
         this.initialSize = 0;
         this.child = null;
         originalSource = source;
-        sourceQueue = new LinkedList<>();
+        sourceQueue = new ConcurrentLinkedQueue<>();
     }
     
     public SourceManager(SourceManager nextSource, boolean root) {

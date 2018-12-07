@@ -44,7 +44,7 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
     /**
      * Column family for term frequency records in the shard table
      */
-    public final static String TF_COLUMN_FAMILY = "tf";
+    public static final String TF_COLUMN_FAMILY = "tf";
     
     private static Logger LOG = Logger.getLogger(IndexOnlyFunctionIterator.class);
     

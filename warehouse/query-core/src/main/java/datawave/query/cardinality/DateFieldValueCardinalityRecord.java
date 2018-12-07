@@ -13,7 +13,7 @@ public class DateFieldValueCardinalityRecord implements Comparable, Serializable
     private String fieldValue = null;
     private String dataType = null;
     private HyperLogLogPlus hll = new HyperLogLogPlus(12, 20);
-    static private Logger log = Logger.getLogger(DateFieldValueCardinalityRecord.class);
+    private static Logger log = Logger.getLogger(DateFieldValueCardinalityRecord.class);
     
     public DateFieldValueCardinalityRecord(String eventDate, String fieldName, String fieldValue, String dataType) {
         this.eventDate = eventDate;
@@ -135,7 +135,7 @@ public class DateFieldValueCardinalityRecord implements Comparable, Serializable
         return hash(this.eventDate, this.fieldName, this.fieldValue, this.dataType);
     }
     
-    static public int hash(String eventDate, String fieldName, String fieldValue, String dataType) {
+    public static int hash(String eventDate, String fieldName, String fieldValue, String dataType) {
         int result = fieldName.hashCode();
         result = 31 * result + fieldValue.hashCode();
         result = 31 * result + eventDate.hashCode();

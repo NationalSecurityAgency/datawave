@@ -44,7 +44,12 @@ public class JexlRule extends AppliedRule {
     
     @Override
     public void init(FilterOptions options) {
-        super.init(options);
+        init(options, null);
+    }
+    
+    @Override
+    public void init(FilterOptions options, IteratorEnvironment iterEnv) {
+        super.init(options, iterEnv);
         
         isApplied = false;
         

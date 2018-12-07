@@ -24,7 +24,7 @@ import java.util.Set;
  * 
  */
 public class IndexIteratorBridge implements NestedIterator<Key>, SeekableIterator, CompositePredicateFilterer {
-    private final static Logger log = Logger.getLogger(IndexIteratorBridge.class);
+    private static final Logger log = Logger.getLogger(IndexIteratorBridge.class);
     
     /*
      * The AccumuloIterator this object wraps.
@@ -153,7 +153,7 @@ public class IndexIteratorBridge implements NestedIterator<Key>, SeekableIterato
     
     @Override
     public String toString() {
-        return "Bridge: " + delegate.toString();
+        return "Bridge: " + delegate;
     }
     
     @Override

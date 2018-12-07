@@ -113,8 +113,7 @@ public class EdgeKeyTest {
     private EdgeKey encodeCopyDecode(EdgeKey inKey) {
         EdgeKey copyKey = EdgeKey.newBuilder(inKey).build();
         Key encodedKey = copyKey.encode();
-        EdgeKey decodedKey = EdgeKey.decode(encodedKey);
-        return decodedKey;
+        return EdgeKey.decode(encodedKey);
     }
     
     @Test

@@ -194,9 +194,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     
     @Override
     public void setErrors(Collection<String> errors) {
-        for (String err : errors) {
-            this.errors.add(err);
-        }
+        this.errors.addAll(errors);
     }
     
     @Override
@@ -469,13 +467,9 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     public Set<String> getFatalErrors() {
         Set<String> localErrors = new HashSet<>();
         
-        for (String rde : this.fatalErrors.get(null)) {
-            localErrors.add(rde);
-        }
+        localErrors.addAll(this.fatalErrors.get(null));
         
-        for (String rde : this.fatalErrors.get(getDataType())) {
-            localErrors.add(rde);
-        }
+        localErrors.addAll(this.fatalErrors.get(getDataType()));
         return Collections.unmodifiableSet(localErrors);
     }
     
@@ -659,8 +653,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
             this.uid = UID.parse(data.getUid());
         errors = new ConcurrentSkipListSet<>();
         if (0 != data.getErrorsCount()) {
-            for (String error : data.getErrorsList())
-                errors.add(error);
+            errors.addAll(data.getErrorsList());
         }
         if (data.hasVisibility() && null != data.getVisibility())
             setVisibility(new ColumnVisibility(data.getVisibility().toByteArray()));

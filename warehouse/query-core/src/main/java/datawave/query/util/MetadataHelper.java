@@ -1,8 +1,8 @@
 package datawave.query.util;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.cache.Cache;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
@@ -542,8 +542,8 @@ public class MetadataHelper implements ApplicationContextAware {
         
         Set<String> unevalFields = null;
         if (log.isTraceEnabled())
-            log.trace("using connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths.toString() + " and model table name: "
-                            + modelTableName + " looking at model " + modelName + " unevaluatedFields " + unevaluatedFields);
+            log.trace("using connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths + " and model table name: " + modelTableName
+                            + " looking at model " + modelName + " unevaluatedFields " + unevaluatedFields);
         
         Scanner scan = ScannerHelper.createScanner(connector, modelTableName, auths);
         scan.setRange(new Range());
@@ -586,9 +586,9 @@ public class MetadataHelper implements ApplicationContextAware {
         unevalFields.addAll(indexOnlyFields);
         queryModel.setUnevaluatedFields(unevalFields);
         
-        if (queryModel.getReverseQueryMapping().size() == 0) {
+        if (queryModel.getReverseQueryMapping().isEmpty()) {
             if (log.isTraceEnabled()) {
-                log.trace("empty query model for " + this.toString());
+                log.trace("empty query model for " + this);
             }
             if ("DatawaveMetadata".equals(modelTableName)) {
                 log.error("Query Model should not be empty...");
@@ -615,8 +615,7 @@ public class MetadataHelper implements ApplicationContextAware {
         TraceStopwatch stopWatch = timers.newStartedStopwatch("MetadataHelper -- Getting query model names");
         
         if (log.isTraceEnabled())
-            log.trace("using connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths.toString() + " and model table name: "
-                            + modelTableName);
+            log.trace("using connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths + " and model table name: " + modelTableName);
         
         Scanner scan = ScannerHelper.createScanner(connector, modelTableName, auths);
         scan.setRange(new Range());
@@ -1550,8 +1549,6 @@ public class MetadataHelper implements ApplicationContextAware {
         
         static final String PROPS_RESOURCE = "metadata.properties";
         static final Properties defaultProps = new Properties();
-        
-        private MetadataDefaultsFactory() {}
         
         static {
             InputStream in = null;

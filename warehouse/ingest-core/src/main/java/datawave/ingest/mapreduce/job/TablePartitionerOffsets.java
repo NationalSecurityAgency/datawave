@@ -6,7 +6,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Partitioner;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.TreeMap;
 
 /**
  * Map containing Text table names as its keys and partitioner offsets at its values. Its a list of table names The offsets are used to

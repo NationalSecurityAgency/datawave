@@ -137,8 +137,7 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
      */
     @Override
     protected boolean matches(Key k) throws IOException {
-        boolean matches = super.matches(k) && filter.keep(k);
-        return matches;
+        return super.matches(k) && filter.keep(k);
     }
     
 }

@@ -34,10 +34,6 @@ public class LongLineEventRecordReader extends AbstractEventRecordReader<Text> i
     protected long start = 0;
     protected Text value = null;
     
-    public LongLineEventRecordReader() {
-        super();
-    }
-    
     @Override
     public synchronized void close() throws IOException {
         if (in != null) {

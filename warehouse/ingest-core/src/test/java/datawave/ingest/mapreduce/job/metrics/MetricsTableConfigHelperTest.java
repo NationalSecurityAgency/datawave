@@ -109,7 +109,7 @@ public class MetricsTableConfigHelperTest {
         String type = newOptions.get("type");
         String columns = newOptions.get("columns");
         
-        assertEquals("COLUMN1," + Metric.KV_PER_TABLE.toString(), columns);
+        assertEquals("COLUMN1," + Metric.KV_PER_TABLE, columns);
         assertEquals("STRING", type);
     }
     

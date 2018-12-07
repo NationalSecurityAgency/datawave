@@ -92,7 +92,7 @@ public class QueryMetricQueryLogic extends ShardQueryLogic {
         }
         
         StringBuilder jexl = new StringBuilder();
-        if (query.length() > 0) {
+        if (!query.isEmpty()) {
             jexl.append("(").append(query).append(")");
             jexl.append(" AND (USER == '").append(settings.getOwner()).append("')");
         } else {

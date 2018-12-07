@@ -263,7 +263,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         BatchScanner bs = scannerFactory.newScanner(tableName, config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
         bs.setRanges(seekRanges);
-        if (columnFamilies.size() > 0) {
+        if (!columnFamilies.isEmpty()) {
             for (Text family : columnFamilies) {
                 bs.fetchColumnFamily(family);
             }

@@ -22,8 +22,8 @@ public class CachedResultsParameters implements ParameterValidator {
     public static final String FIXED_FIELDS_IN_EVENT = "fixedFields";
     public static final Pattern VALID_NAME_PATTERN = Pattern.compile("[\\w]+");
     
-    private static final List<String> KNOWN_PARAMS = Arrays.asList(new String[] {QUERY_ID, ALIAS, VIEW, FIELDS, CONDITIONS, GROUPING, ORDER,
-            FIXED_FIELDS_IN_EVENT, QueryParameters.QUERY_PAGESIZE});
+    private static final List<String> KNOWN_PARAMS = Arrays.asList(QUERY_ID, ALIAS, VIEW, FIELDS, CONDITIONS, GROUPING, ORDER, FIXED_FIELDS_IN_EVENT,
+                    QueryParameters.QUERY_PAGESIZE);
     
     private String queryId = null;
     private String alias = null;

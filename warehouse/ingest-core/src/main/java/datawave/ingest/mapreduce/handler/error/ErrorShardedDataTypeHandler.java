@@ -322,7 +322,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
      */
     public static void getStackTrace(DataOutputBuffer buffer, Throwable e) {
         PrintStream stream = new PrintStream(buffer);
-        e.printStackTrace(stream);
+        e.printStackTrace(stream); // Prints to DataOutputBuffer
         stream.flush();
     }
     

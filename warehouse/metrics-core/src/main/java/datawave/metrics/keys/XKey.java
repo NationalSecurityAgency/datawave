@@ -7,7 +7,7 @@ import org.apache.accumulo.core.data.Key;
  * 
  */
 public interface XKey {
-    public void parse(Key k) throws InvalidKeyException;
+    void parse(Key k) throws InvalidKeyException;
     
-    public Key toKey();
+    Key toKey();
 }

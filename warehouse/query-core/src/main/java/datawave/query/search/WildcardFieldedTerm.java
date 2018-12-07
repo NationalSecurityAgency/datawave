@@ -12,7 +12,7 @@ import org.apache.lucene.queryparser.flexible.core.util.UnescapedCharSequence;
  * Keeps track of the query term, location to be searched, and also deals with wildcards.
  */
 public class WildcardFieldedTerm extends FieldedTerm {
-    static private Logger log = Logger.getLogger(WildcardFieldedTerm.class.getName());
+    private static Logger log = Logger.getLogger(WildcardFieldedTerm.class.getName());
     private Pattern selectorRegex = null;
     private String originalSelector = null;
     
@@ -52,7 +52,7 @@ public class WildcardFieldedTerm extends FieldedTerm {
         }
     }
     
-    static public Pattern convertToRegex(String s) {
+    public static Pattern convertToRegex(String s) {
         StringBuilder sb = new StringBuilder();
         char[] chars = s.toCharArray();
         
@@ -77,7 +77,7 @@ public class WildcardFieldedTerm extends FieldedTerm {
         return Pattern.compile(sb.toString(), flags);
     }
     
-    static public int getFirstWildcardIndex(FieldQueryNode node, Set<Character> charactersToNotEscape) {
+    public static int getFirstWildcardIndex(FieldQueryNode node, Set<Character> charactersToNotEscape) {
         CharSequence textSeq = node.getText();
         
         if (textSeq instanceof UnescapedCharSequence) {
@@ -98,7 +98,7 @@ public class WildcardFieldedTerm extends FieldedTerm {
         }
     }
     
-    static public int getFirstWildcardIndex(String selector) {
+    public static int getFirstWildcardIndex(String selector) {
         int firstNonEscapedWildcard = -1;
         
         char[] chars = selector.toCharArray();
@@ -148,7 +148,7 @@ public class WildcardFieldedTerm extends FieldedTerm {
         return query;
     }
     
-    static public String parseField(String termString) {
+    public static String parseField(String termString) {
         // check to see if the user specified a section of the data
         int firstQuote = termString.indexOf("\"");
         String termNoQuotes;
@@ -165,7 +165,7 @@ public class WildcardFieldedTerm extends FieldedTerm {
         return "";
     }
     
-    static public String parseSelector(String termString) {
+    public static String parseSelector(String termString) {
         // check to see if the user specified a section of the data
         int firstQuote = termString.indexOf("\"");
         String termNoQuotes;

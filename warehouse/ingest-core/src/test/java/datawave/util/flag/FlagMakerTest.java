@@ -55,8 +55,6 @@ public class FlagMakerTest {
     public static final Object CONFIG_EXTRA_INGEST_ARGS = null;
     private FlagMakerConfig fmc;
     
-    public FlagMakerTest() {}
-    
     @Before
     public void setUp() throws Exception {
         fmc = ConfigUtil.getXmlObject(FlagMakerConfig.class, TEST_CONFIG);

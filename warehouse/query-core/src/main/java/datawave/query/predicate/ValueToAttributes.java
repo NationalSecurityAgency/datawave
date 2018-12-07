@@ -146,7 +146,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     }
     
     public String getCompositeAttributeKey(String composite, String grouping) {
-        if (grouping == null || grouping.length() == 0) {
+        if (grouping == null || grouping.isEmpty()) {
             return composite;
         }
         return composite + JexlASTHelper.GROUPING_CHARACTER_SEPARATOR + grouping;
@@ -201,16 +201,14 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                 int newAttributeCount = attrs.size();
                 int originalDataListSize = dataList.size();
                 if (newAttributeCount > 0) {
-                    if (dataList.size() == 0) {
-                        for (String value : attributeValues(attrs))
-                            dataList.add(value);
+                    if (dataList.isEmpty()) {
+                        dataList.addAll(attributeValues(attrs));
                     } else {
                         for (int i = 0; i < originalDataListSize; i++) {
                             String base = dataList.remove(0);
                             if (base == null) {
-                                for (String value : attributeValues(attrs))
-                                    dataList.add(value);
-                            } else if (base.length() > 0) {
+                                dataList.addAll(attributeValues(attrs));
+                            } else if (!base.isEmpty()) {
                                 for (String value : attributeValues(attrs))
                                     dataList.add(base + CompositeUtils.SEPARATOR + value);
                             } else {
@@ -226,14 +224,13 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                 if (log.isTraceEnabled()) {
                     log.trace("Join for data list size: " + dataList.size());
                 }
-                if (dataList.size() == 0) {
-                    for (String value : attributeValues(attr))
-                        dataList.add(value);
+                if (dataList.isEmpty()) {
+                    dataList.addAll(attributeValues(attr));
                 } else {
                     int originalDataListSize = dataList.size();
                     for (int i = 0; i < originalDataListSize; i++) { // append to everything in the list
                         String base = dataList.remove(0);
-                        if (base.length() > 0) {
+                        if (!base.isEmpty()) {
                             for (String value : attributeValues(attr))
                                 dataList.add(base + CompositeUtils.SEPARATOR + value);
                         } else {
@@ -246,7 +243,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                 columnVisibilities.add(attr.getColumnVisibility());
             }
         }
-        log.debug("dataList is " + dataList.toString());
+        log.debug("dataList is " + dataList);
         ColumnVisibility combinedColumnVisibility = this.markingFunctions.combine(columnVisibilities);
         metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), new Text(), combinedColumnVisibility, timestamp);
         if (dataList.size() == 1) {

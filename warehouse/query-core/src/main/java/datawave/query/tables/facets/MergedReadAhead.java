@@ -59,11 +59,11 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
                 ;
             
         }
-        while (buf.size() == 0 && state() == State.RUNNING) {
+        while (buf.isEmpty() && state() == State.RUNNING) {
             
         }
         
-        return buf.size() > 0;
+        return !buf.isEmpty();
         
     }
     

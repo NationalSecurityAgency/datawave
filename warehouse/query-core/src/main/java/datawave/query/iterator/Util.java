@@ -29,7 +29,7 @@ public class Util {
     
     private static final Comparator<?> nestedIteratorComparator;
     
-    private final static TreeMultimap EMPTY;
+    private static final TreeMultimap EMPTY;
     
     static {
         keyTransformer = (Transformer<Object>) o -> {

@@ -162,7 +162,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     List<String> debug = null;
                     if (log.isTraceEnabled())
                         debug = Lists.newArrayList();
-                    if (!config.bypassExecutabilityCheck() || !evaluatedPreviously) {
+                    if (!config.isBypassExecutabilityCheck() || !evaluatedPreviously) {
                         if (null == script)
                             script = JexlASTHelper.parseJexlQuery(query);
                         

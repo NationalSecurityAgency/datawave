@@ -204,11 +204,10 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
                     log.debug("Received pieces: " + shardId + ", " + datatype + ", " + uid);
                     
                     // Create and add a Range
-                    final String row = shardId;
                     final String cf = ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY;
                     final String cq = datatype + Constants.NULL_BYTE_STRING + uid;
-                    final Key startKey = new Key(row, cf, cq + Constants.NULL_BYTE_STRING);
-                    final Key endKey = new Key(row, cf, cq + endKeyTerminator);
+                    final Key startKey = new Key(shardId, cf, cq + Constants.NULL_BYTE_STRING);
+                    final Key endKey = new Key(shardId, cf, cq + endKeyTerminator);
                     final Range r = new Range(startKey, true, endKey, false);
                     ranges.add(r);
                     

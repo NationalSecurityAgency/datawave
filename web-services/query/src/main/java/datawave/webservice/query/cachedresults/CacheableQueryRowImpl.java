@@ -75,10 +75,9 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
                     columnVisibilities.add(markingFunctions.translateToColumnVisibility(this.markings));
                     columnVisibilities.add(markingFunctions.translateToColumnVisibility(markings));
                     ColumnVisibility combinedVisibility = markingFunctions.combine(columnVisibilities);
-                    Map<String,String> minMarkings = markingFunctions.translateFromColumnVisibility(combinedVisibility);
                     
                     // use combined marking as new markings
-                    this.markings = minMarkings;
+                    this.markings = markingFunctions.translateFromColumnVisibility(combinedVisibility);
                 } catch (MarkingFunctions.Exception e) {
                     log.error("Invalid markings " + markings + ", skipping column " + columnName + "=" + columnTypedValue, e);
                     return;
@@ -100,7 +99,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
         }
         
         manageColumnInsert(datawaveType, columnName, columnTypedValue, markings, columnVisibility);
-        if (typedColumnName.length() > 0 && typedColumnName.startsWith("XS_STRING") == false) {
+        if (!typedColumnName.isEmpty() && typedColumnName.startsWith("XS_STRING") == false) {
             manageColumnInsert(datawaveType, typedColumnName, columnTypedValue, markings, columnVisibility);
         }
     }

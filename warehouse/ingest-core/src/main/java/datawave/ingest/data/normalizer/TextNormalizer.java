@@ -22,7 +22,7 @@ public interface TextNormalizer {
      * @param config
      *            The configuration
      */
-    public void setup(Type type, String instance, Configuration config);
+    void setup(Type type, String instance, Configuration config);
     
     /**
      * Creates normalized content for ingest based upon implemented logic.
@@ -33,7 +33,7 @@ public interface TextNormalizer {
      *            The value to normalize
      * @return a normalized value
      */
-    public String normalizeFieldValue(String field, String value) throws NormalizationException;
+    String normalizeFieldValue(String field, String value) throws NormalizationException;
     
     /**
      * Creates normalized content for ingest based upon implemented logic.
@@ -44,7 +44,7 @@ public interface TextNormalizer {
      *            The regex to normalize
      * @return a normalized value
      */
-    public String normalizeFieldRegex(String field, String regex) throws NormalizationException;
+    String normalizeFieldRegex(String field, String regex) throws NormalizationException;
     
     /**
      * Creates normalized content for ingest based upon implemented logic.
@@ -53,7 +53,7 @@ public interface TextNormalizer {
      *            The field to normalize
      * @return a normalized content object.
      */
-    public NormalizedContentInterface normalize(NormalizedContentInterface field);
+    NormalizedContentInterface normalize(NormalizedContentInterface field);
     
     /**
      * Creates normalized content for ingest based upon implemented logic.
@@ -62,7 +62,7 @@ public interface TextNormalizer {
      *            the fields to normalize
      * @return a multimap of normalized content objects.
      */
-    public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields);
+    Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields);
     
     /**
      * Creates normalized content for ingest based upon implemented logic.
@@ -71,6 +71,6 @@ public interface TextNormalizer {
      *            the fields to normalize
      * @return a multimap of normalized content objects.
      */
-    public Multimap<String,NormalizedContentInterface> normalizeMap(Multimap<String,NormalizedContentInterface> fields);
+    Multimap<String,NormalizedContentInterface> normalizeMap(Multimap<String,NormalizedContentInterface> fields);
     
 }

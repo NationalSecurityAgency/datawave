@@ -49,10 +49,6 @@ import org.apache.lucene.search.Query;
  */
 public class BooleanQueryNodeBuilder implements QueryBuilder {
     
-    public BooleanQueryNodeBuilder() {
-        // empty constructor
-    }
-    
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         BooleanQueryNode booleanNode = (BooleanQueryNode) queryNode;
         

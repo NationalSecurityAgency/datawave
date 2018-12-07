@@ -53,17 +53,13 @@ public class CompositeRange extends Composite {
         
         if (other instanceof CompositeRange) {
             CompositeRange otherRange = (CompositeRange) other;
-            for (JexlNode jexlNode : otherRange.jexlNodeListLowerBound) {
-                clone.jexlNodeListLowerBound.add(jexlNode);
-            }
+            clone.jexlNodeListLowerBound.addAll(otherRange.jexlNodeListLowerBound);
             
             for (String expression : otherRange.expressionListLowerBound) {
                 clone.expressionListLowerBound.add(new String(expression));
             }
             
-            for (JexlNode jexlNode : otherRange.jexlNodeListUpperBound) {
-                clone.jexlNodeListUpperBound.add(jexlNode);
-            }
+            clone.jexlNodeListUpperBound.addAll(otherRange.jexlNodeListUpperBound);
             
             for (String expression : otherRange.expressionListUpperBound) {
                 clone.expressionListUpperBound.add(new String(expression));

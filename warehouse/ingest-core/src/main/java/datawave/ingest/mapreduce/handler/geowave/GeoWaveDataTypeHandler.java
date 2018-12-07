@@ -278,7 +278,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
         try {
             features = createSimpleFeatures(helper, event, fields);
         } catch (ParseException e) {
-            e.printStackTrace();
+            log.error(e);
         }
         
         // Entry Key/Value Pairs
@@ -313,7 +313,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
         final AttributeDescriptor geomAttrib = simpleFeatureType.getGeometryDescriptor();
         
         // make sure we have geometries to work with, otherwise we quit now
-        if (geomAttrib == null || !fields.containsKey(geomAttrib.getLocalName()) || fields.get(geomAttrib.getLocalName()).size() == 0)
+        if (geomAttrib == null || !fields.containsKey(geomAttrib.getLocalName()) || fields.get(geomAttrib.getLocalName()).isEmpty())
             return features;
         
         final ArrayList<String> geomValues = new ArrayList<>();
@@ -328,7 +328,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
             // get the values for this field
             final Collection<NormalizedContentInterface> values = fields.get(attrib.getLocalName());
             
-            if (values.size() == 0)
+            if (values.isEmpty())
                 continue;
             
             final ArrayList<String> stringValues = new ArrayList<>(values.size());

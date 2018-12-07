@@ -386,7 +386,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         this.scanRange = buildIndexRange(range);
         
         if (log.isTraceEnabled()) {
-            log.trace(this.toString() + " seek'ing to: " + this.scanRange + " from " + range);
+            log.trace(this + " seek'ing to: " + this.scanRange + " from " + range);
         }
         
         source.seek(this.scanRange, this.seekColumnFamilies, this.includeColumnFamilies);
@@ -420,15 +420,15 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         if (newTop != null && newTop.compareTo(nextKey) < 0 && source.hasTop()) {
             Range r = new Range(nextKey, true, scanRange.getEndKey(), scanRange.isEndKeyInclusive());
             if (log.isTraceEnabled())
-                log.trace(this.toString() + " move'ing to: " + r);
+                log.trace(this + " move'ing to: " + r);
             source.seek(r, seekColumnFamilies, includeColumnFamilies);
         } else {
             if (log.isTraceEnabled())
-                log.trace(this.toString() + " stepping its way to " + newTop);
+                log.trace(this + " stepping its way to " + newTop);
         }
         
         if (log.isTraceEnabled()) {
-            log.trace(this.toString() + " finished move. Now at " + (source.hasTop() ? source.getTopKey() : "null") + ", calling next()");
+            log.trace(this + " finished move. Now at " + (source.hasTop() ? source.getTopKey() : "null") + ", calling next()");
         }
         
         next();

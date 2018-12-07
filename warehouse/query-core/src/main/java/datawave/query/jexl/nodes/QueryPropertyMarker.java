@@ -60,7 +60,7 @@ public class QueryPropertyMarker extends ASTReference {
         JexlNode refNode2 = JexlNodeFactory.createExpression(source);
         
         // wrap the assignment and source in an AND node
-        JexlNode andNode = JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(new JexlNode[] {refNode1, refNode2}));
+        JexlNode andNode = JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(refNode1, refNode2));
         
         // wrap the and node with an expression (see JexlNodeFactory.createAndNode)
         ASTReferenceExpression refExpNode1 = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);

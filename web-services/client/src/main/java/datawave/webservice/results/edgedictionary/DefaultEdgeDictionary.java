@@ -245,7 +245,7 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
             String collect = metadata.getEdgeAttribute1Source();
             StringBuilder fieldBuilder = new StringBuilder();
             for (EventField field : metadata.getEventFields()) {
-                fieldBuilder.append(field.toString()).append(SEP);
+                fieldBuilder.append(field).append(SEP);
             }
             
             String fieldNames = fieldBuilder.toString().substring(0, fieldBuilder.length() - 2);

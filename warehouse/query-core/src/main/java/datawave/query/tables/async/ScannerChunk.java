@@ -73,7 +73,7 @@ public class ScannerChunk {
      * @param ranges
      */
     protected void setRanges(Collection<Range> ranges) {
-        if (ranges.size() > 0) {
+        if (!ranges.isEmpty()) {
             List<Range> rangeList = Lists.newArrayList(ranges);
             Collections.sort(rangeList);
             this.ranges.addAll(ranges);

@@ -49,7 +49,7 @@ public class QueryException extends Exception {
      *            - Debug variables that may help troubleshooting the issue.
      */
     public QueryException(DatawaveErrorCode code, String debugMessage) {
-        super(code.toString() + " " + debugMessage);
+        super(code + " " + debugMessage);
         this.errorCode = code.getErrorCode();
     }
     
@@ -63,7 +63,7 @@ public class QueryException extends Exception {
      *            - Debug variables that may help troubleshooting the issue.
      */
     public QueryException(DatawaveErrorCode code, Throwable cause, String debugMessage) {
-        super(code.toString() + " " + debugMessage, cause);
+        super(code + " " + debugMessage, cause);
         this.errorCode = code.getErrorCode();
     }
     
@@ -124,8 +124,7 @@ public class QueryException extends Exception {
     public List<QueryException> getQueryExceptionsInStack() {
         List<Throwable> throwables = ExceptionUtils.getThrowableList(this);
         Iterable<QueryException> queryExceptions = Iterables.filter(throwables, QueryException.class);
-        List<QueryException> queryExceptionList = Lists.newArrayList(queryExceptions);
-        return queryExceptionList;
+        return Lists.newArrayList(queryExceptions);
     }
     
     /**

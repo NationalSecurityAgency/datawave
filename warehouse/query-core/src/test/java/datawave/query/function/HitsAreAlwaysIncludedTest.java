@@ -218,7 +218,7 @@ public abstract class HitsAreAlwaysIncludedTest {
             
             Assert.assertTrue(goodResults + " was not empty", goodResults.isEmpty());
         }
-        Assert.assertTrue("No docs were returned!", docs.size() > 0);
+        Assert.assertTrue("No docs were returned!", !docs.isEmpty());
     }
     
     @Test

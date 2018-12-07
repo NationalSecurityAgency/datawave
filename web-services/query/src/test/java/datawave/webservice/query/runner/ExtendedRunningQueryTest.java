@@ -130,7 +130,6 @@ public class ExtendedRunningQueryTest {
         Date beginDate = new Date(currentTime - 5000);
         Date endDate = new Date(currentTime - 1000);
         Date expirationDate = new Date(currentTime + 9999);
-        String queryAuthorizations = methodAuths;
         int pageSize = 3;
         int maxPageSize = 10;
         long pageByteTrigger = 4 * 1024L;
@@ -152,7 +151,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getEndDate()).andReturn(endDate);
         expect(this.query.getExpirationDate()).andReturn(expirationDate);
         expect(this.query.getParameters()).andReturn(new HashSet<>());
-        expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
+        expect(this.query.getQueryAuthorizations()).andReturn(methodAuths);
         expect(this.query.getUserDN()).andReturn(userDN).times(2);
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
@@ -208,7 +207,6 @@ public class ExtendedRunningQueryTest {
         Date beginDate = new Date(currentTime - 5000);
         Date endDate = new Date(currentTime - 1000);
         Date expirationDate = new Date(currentTime + 9999);
-        String queryAuthorizations = methodAuths;
         int pageSize = 5;
         int maxPageSize = 5;
         
@@ -231,7 +229,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getEndDate()).andReturn(endDate);
         expect(this.query.getExpirationDate()).andReturn(expirationDate);
         expect(this.query.getParameters()).andReturn(new HashSet<>());
-        expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
+        expect(this.query.getQueryAuthorizations()).andReturn(methodAuths);
         expect(this.query.getUserDN()).andReturn(userDN).times(2);
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);

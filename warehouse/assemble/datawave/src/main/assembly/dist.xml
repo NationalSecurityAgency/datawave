@@ -116,6 +116,7 @@
                 <include>org.apache.lucene:lucene-core</include>
                 <include>com.clearspring.analytics:stream</include>
                 <include>com.timgroup:java-statsd-client</include>
+                <include>com.github.ben-manes.caffeine:caffeine</include>
                 <!-- for dependency injection -->
                 <include>org.springframework:spring-aop</include>
                 <include>org.springframework:spring-core</include>
@@ -141,19 +142,18 @@
             <useStrictFiltering>true</useStrictFiltering>
             <fileMode>0444</fileMode>
             <includes>
-                  <include>org.apache.commons:commons-lang3</include>                  
+                  <include>org.apache.commons:commons-lang3</include>
                   <include>${groupId}:datawave-ingest-core</include>
                   <include>${groupId}:datawave-core</include>
-                  
                   <include>${groupId}:datawave-ingest-csv</include>
                   <include>${groupId}:datawave-ingest-json</include>
                   <include>${groupId}:datawave-ingest-core</include>
                   <include>${groupId}:datawave-ingest-configuration</include>
-                  
                   <include>${groupId}:datawave-query-core</include>
                   <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                   <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                   <include>com.google.code.gson:gson</include>
+                  <include>com.github.ben-manes.caffeine:caffeine</include>
                   <!-- for dependency injection -->
                   <include>org.springframework:spring-aop</include>
                   <include>org.springframework:spring-core</include>

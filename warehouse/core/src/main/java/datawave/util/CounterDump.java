@@ -47,7 +47,7 @@ public class CounterDump {
         return builder.toString();
     }
     
-    public static abstract class CounterSource implements Iterator<Entry<String,Counters>> {
+    public abstract static class CounterSource implements Iterator<Entry<String,Counters>> {
         public abstract String getNextIdentifier();
         
         public abstract byte[] getNextCounterData();

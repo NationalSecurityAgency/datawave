@@ -20,7 +20,7 @@ public interface ObjectSizeOf {
      */
     long sizeInBytes();
     
-    public static class ObjectInstance {
+    class ObjectInstance {
         private Object o;
         
         public ObjectInstance(Object _o) {
@@ -77,7 +77,7 @@ public interface ObjectSizeOf {
         public static long BIGDECIMAL_STATIC_REF = 76;
     }
     
-    public static class Sizer {
+    class Sizer {
         private static final Logger log = Logger.getLogger(Sizer.class);
         public static short OBJECT_OVERHEAD = 8;
         public static short ARRAY_OVERHEAD = 12;
@@ -94,8 +94,7 @@ public interface ObjectSizeOf {
          * @return an approximation of the object size
          */
         public static long getObjectSize(Object o) {
-            long estSize = getObjectSize(o, new HashSet<ObjectInstance>(), new Stack<ObjectInstance>(), true);
-            return estSize;
+            return getObjectSize(o, new HashSet<ObjectInstance>(), new Stack<ObjectInstance>(), true);
         }
         
         public static long getObjectSize(Object o, Set<ObjectInstance> visited, Stack<ObjectInstance> stack, boolean useSizeInBytesMethod) {

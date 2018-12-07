@@ -90,8 +90,7 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
         JexlNode indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
         if (indexQuery != null && !(indexQuery instanceof ASTTrueNode)) {
             // now link em up
-            JexlNode andNode = JexlNodeFactory.createAndNode(Arrays.asList(new JexlNode[] {node, indexQuery}));
-            return andNode;
+            return JexlNodeFactory.createAndNode(Arrays.asList(node, indexQuery));
         } else {
             return node;
         }

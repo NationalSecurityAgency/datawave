@@ -515,7 +515,7 @@ public class QueryOptions implements OptionDescriber {
         
         // first, we will see it the query passed over the serialized TypeMetadata.
         // If it did, use that.
-        if (this.typeMetadata != null && this.typeMetadata.size() != 0) {
+        if (this.typeMetadata != null && !this.typeMetadata.isEmpty()) {
             
             return this.typeMetadata;
             

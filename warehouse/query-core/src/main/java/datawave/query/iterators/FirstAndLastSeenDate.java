@@ -18,6 +18,6 @@ public class FirstAndLastSeenDate extends Pair<String,String> {
     
     @Override
     public String toString() {
-        return getFirst().toString() + "," + getSecond().toString();
+        return getFirst() + "," + getSecond();
     }
 }

@@ -6,8 +6,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.StringReader;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
 
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.ColumnRangeIterator;
@@ -351,7 +359,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     protected void addIterators(QueryData qData, List<IteratorSetting> iters) {
         for (IteratorSetting iter : iters) {
-            log.debug("Adding iterator: " + iter.toString());
+            log.debug("Adding iterator: " + iter);
             addIterator(qData, iter);
         }
     }
@@ -439,7 +447,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      */
     public static IteratorSetting getDateTypeFilter(int priority, EdgeQueryConfiguration.dateType dateFilterType) {
         IteratorSetting setting = null;
-        log.debug("Creating dateType filter=" + dateFilterType.toString());
+        log.debug("Creating dateType filter=" + dateFilterType);
         setting = new IteratorSetting(priority, DateTypeFilter.class.getSimpleName() + "_" + priority, DateTypeFilter.class);
         setting.addOption(EdgeQueryConfiguration.DATE_RANGE_TYPE, dateFilterType.name());
         

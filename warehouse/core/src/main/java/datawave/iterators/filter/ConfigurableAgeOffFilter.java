@@ -12,7 +12,11 @@ import datawave.iterators.filter.ageoff.FilterRule;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.*;
+import org.apache.accumulo.core.iterators.Filter;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorUtil;
+import org.apache.accumulo.core.iterators.OptionDescriber;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.server.util.time.SimpleTimer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -20,7 +24,14 @@ import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -372,7 +383,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                 log.trace("Reusing file system reference.");
             }
         }
-        FileRuleWatcher watcherKey = new FileRuleWatcher(fs, filePath, 1);
+        FileRuleWatcher watcherKey = new FileRuleWatcher(fs, filePath, 1, myEnv);
         
         copyRules(watcherKey);
         

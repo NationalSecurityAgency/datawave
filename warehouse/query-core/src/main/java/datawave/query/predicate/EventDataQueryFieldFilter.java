@@ -62,8 +62,7 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
     
     @Override
     public Key getStartKey(Key from) {
-        Key startKey = new Key(from.getRow(), from.getColumnFamily());
-        return startKey;
+        return new Key(from.getRow(), from.getColumnFamily());
     }
     
     @Override

@@ -21,6 +21,7 @@ import java.util.Collection;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.NE_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
 
@@ -42,6 +43,7 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
         FieldConfig generic = new GenericCityFields();
         generic.addIndexField(CityField.CODE.name());
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
+        dataTypes.add(new CitiesDataType(CityEntry.nullState, generic));
         
         final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
         connector = helper.loadTables(log);
@@ -206,17 +208,15 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
         }
     }
     
-    // TODO - how to test for a null value
-    @Ignore
     @Test
     public void testIsNullInvalidField() throws Exception {
         log.info("------  testIsNullInvalidField  ------");
         
-        String regex = "'no-match'";
+        String empty = "''";
         
         for (final TestCities city : TestCities.values()) {
-            String query = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + IsNull + "notafield" + ")";
-            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + CityField.STATE + EQ_OP + regex;
+            String query = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + IsNull + CityField.STATE.name() + ")";
+            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + CityField.STATE + EQ_OP + empty;
             runTest(query, expectQuery);
         }
     }
@@ -225,11 +225,11 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
     public void testIsNull() throws Exception {
         log.info("------  testIsNull  ------");
         
-        String regex = "'no-match'";
+        String empty = "''";
         
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + IsNull + CityField.STATE.name() + ")";
-            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + CityField.STATE + EQ_OP + regex;
+            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + CityField.STATE + EQ_OP + empty;
             runTest(query, expectQuery);
         }
     }
@@ -250,7 +250,7 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
         
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + IsNotNull + CityField.CONTINENT.name() + ")";
-            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city + "'" + "";
+            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city + "'" + "" + AND_OP + CityField.CONTINENT.name() + NE_OP + "''";
             runTest(query, expectQuery);
         }
     }
@@ -261,7 +261,7 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
         
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + IsNotNull + CityField.STATE.name() + ")";
-            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city + "'";
+            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + CityField.STATE.name() + NE_OP + "''";
             runTest(query, expectQuery);
         }
     }

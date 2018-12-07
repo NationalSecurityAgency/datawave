@@ -42,8 +42,8 @@ public class SetMembershipVisitor extends BaseVisitor {
      * Note: The logic that originally appended this suffix appeared to have been inadvertently removed from this class (renamed from IndexOnlyVisitor) when the
      * dev branch was merged into version2.x. It has since been reapplied in conjunction with the two internal helper classes.
      */
-    public final static String INDEX_ONLY_FUNCTION_SUFFIX = "@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION";
-    public final static String FILTER = "filter";
+    public static final String INDEX_ONLY_FUNCTION_SUFFIX = "@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION";
+    public static final String FILTER = "filter";
     protected final Set<String> expectedFields;
     protected final MetadataHelper metadataHelper;
     protected final DateIndexHelper dateIndexHelper;
