@@ -40,6 +40,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.xml.bind.JAXBException;
+
 /**
  *
  */
@@ -48,6 +50,9 @@ public class FlagMakerTest {
     static final String TEST_CONFIG = "target/test-classes/TestFlagMakerConfig.xml";
     static final String FLAG_DIR = "target/test/flags";
     static final int COUNTER_LIMIT = 102;
+    public static final String CONFIG_BASE_HDFS_DIR = "target/test/BulkIngest";
+    public static final String CONFIG_FLAG_FILE_DIR = "target/test/flags";
+    public static final Object CONFIG_EXTRA_INGEST_ARGS = null;
     private FlagMakerConfig fmc;
     
     @Before
@@ -85,6 +90,41 @@ public class FlagMakerTest {
         result.mkdirs(new Path(FLAG_DIR));
         assertTrue(fdir.exists() && fdir.isDirectory());
         
+    }
+    
+    @Test
+    public void testFlagMakerConfigArg() throws JAXBException, IOException {
+        FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG});
+        assertEquals(CONFIG_FLAG_FILE_DIR, flagMakerConfig.getFlagFileDirectory());
+        assertEquals(CONFIG_BASE_HDFS_DIR, flagMakerConfig.getBaseHDFSDir());
+        assertEquals(CONFIG_EXTRA_INGEST_ARGS, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
+    }
+    
+    @Test
+    public void testFlagMakerConfigWithFlagFileDirectoryOverride() throws JAXBException, IOException {
+        final String overrideValue = "/srv/data/somewhere/else/";
+        FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG, "-flagFileDirectoryOverride", overrideValue});
+        assertEquals(overrideValue, flagMakerConfig.getFlagFileDirectory());
+        assertEquals(CONFIG_BASE_HDFS_DIR, flagMakerConfig.getBaseHDFSDir());
+        assertEquals(CONFIG_EXTRA_INGEST_ARGS, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
+    }
+    
+    @Test
+    public void testFlagMakerConfigWithHdfsOverride() throws JAXBException, IOException {
+        String overrideValue = "testDir/BulkIngest";
+        FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG, "-baseHDFSDirOverride", overrideValue});
+        assertEquals(CONFIG_FLAG_FILE_DIR, flagMakerConfig.getFlagFileDirectory());
+        assertEquals(overrideValue, flagMakerConfig.getBaseHDFSDir());
+        assertEquals(CONFIG_EXTRA_INGEST_ARGS, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
+    }
+    
+    @Test
+    public void testFlagMakerConfigWithExtraArgsOverride() throws JAXBException, IOException {
+        final String overrideValue = "-fastMode -topSpeed=MAX";
+        FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG, "-extraIngestArgsOverride", overrideValue});
+        assertEquals(CONFIG_FLAG_FILE_DIR, flagMakerConfig.getFlagFileDirectory());
+        assertEquals(CONFIG_BASE_HDFS_DIR, flagMakerConfig.getBaseHDFSDir());
+        assertEquals(overrideValue, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
     }
     
     /**

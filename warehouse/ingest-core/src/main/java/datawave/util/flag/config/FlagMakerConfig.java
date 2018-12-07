@@ -219,4 +219,27 @@ public class FlagMakerConfig {
     public String getFlagMetricsDirectory() {
         return flagMetricsDirectory;
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder();
+        result.append("hdfs: " + this.getHdfs() + "\n");
+        result.append("datawaveHome: " + this.getDatawaveHome() + "\n");
+        result.append("baseHDFSDir: " + this.getBaseHDFSDir() + "\n");
+        result.append("socketPort: " + this.getSocketPort() + "\n");
+        result.append("flagFileDirectory: " + this.getFlagFileDirectory() + "\n");
+        result.append("filePattern: " + this.getFilePattern() + "\n");
+        result.append("distributorType: " + this.getDistributorType() + "\n");
+        result.append("timeoutMilliSecs: " + this.getTimeoutMilliSecs() + "\n");
+        result.append("sleepMilliSecs: " + this.getSleepMilliSecs() + "\n");
+        result.append("flagCountThreshold: " + this.getFlagCountThreshold() + "\n");
+        result.append("maxFileLength: " + this.getMaxFileLength() + "\n");
+        result.append("isSetFlagFileTimestamp: " + this.isSetFlagFileTimestamp() + "\n");
+        result.append("useFolderTimestamp: " + this.isUseFolderTimestamp() + "\n");
+        result.append("flagMetricsDirectory: " + this.getFlagMetricsDirectory() + "\n");
+        result.append("maxHdfsThreads: " + this.getMaxHdfsThreads() + "\n");
+        result.append("directoryCacheSize: " + this.getDirectoryCacheSize() + "\n");
+        result.append("directoryCacheTimeout: " + this.getDirectoryCacheTimeout() + "\n");
+        return result.toString();
+    }
 }
