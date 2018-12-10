@@ -17,8 +17,8 @@ import java.util.List;
 
 /**
  * Visitor to expand a query when it is not executable due to an Or that is NON_EXECUTABLE or ERROR state. If an AndNode exists which is a parent, that AND can
- * be distributed to the ORNode to allow the query to be EXECUTABLE. The nodes can be expanded with boolean logic and the distributive property to rewrite A &&
- * (B || C) to (A && B) || (A && C).
+ * be distributed to the ORNode to allow the query to be EXECUTABLE. The nodes can be expanded with boolean logic and the distributive property to rewrite
+ * A &amp;&amp; (B || C) to (A &amp;&amp; B) || (A &amp;&amp; C).
  */
 public class ExecutableExpansionVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(ExecutableExpansionVisitor.class);
