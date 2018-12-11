@@ -4,6 +4,7 @@ import static datawave.query.tld.TLD.parsePointerFromFI;
 import static datawave.query.tld.TLD.parseRootPointerFromFI;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Set;
 
@@ -23,6 +24,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 
 public class TLDFieldIndexAggregator extends SeekingAggregator implements FieldIndexAggregator {
@@ -53,7 +55,7 @@ public class TLDFieldIndexAggregator extends SeekingAggregator implements FieldI
             Attribute<?> attr = af.create(field, value, key, true);
             // only keep fields that are index only and pass the attribute filter
             attr.setToKeep((fieldsToAggregate == null || fieldsToAggregate.contains(JexlASTHelper.removeGroupingContext(field)))
-                            && (attrFilter == null || attrFilter.keep(key)));
+                            && (attrFilter == null || attrFilter.apply(new AbstractMap.SimpleEntry<>(key, StringUtils.EMPTY))));
             d.put(field, attr);
             
             ByteSequence thisId = parsePointerFromFI(key.getColumnQualifierData());
