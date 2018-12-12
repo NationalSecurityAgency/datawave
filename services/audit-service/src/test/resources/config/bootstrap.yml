@@ -10,3 +10,10 @@ spring:
         enabled: false
   main:
     banner-mode: "OFF"
+
+management:
+  health:
+    status:
+      order: DOWN, OUT_OF_SERVICE, UNKNOWN, RABBITMQ_UNHEALTHY, UP
+      http-mapping:
+        RABBITMQ_UNHEALTHY: 200
