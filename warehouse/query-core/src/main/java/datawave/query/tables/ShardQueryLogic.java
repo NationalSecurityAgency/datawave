@@ -2143,7 +2143,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public void setGeoWaveMaxExpansion(int geoWaveMaxExpansion) {
-        this.config.setGeoWaveMaxEnvelopes(geoWaveMaxExpansion);
+        this.config.setGeoWaveMaxExpansion(geoWaveMaxExpansion);
     }
     
     public int getGeoWaveMaxEnvelopes() {
