@@ -22,6 +22,7 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitManagementTemplate;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.Status;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -45,7 +46,7 @@ import java.util.stream.Collectors;
  * a slow poll rate when healthy, and a faster poll rate when unhealthy.
  * <p>
  * Once a problem is detected, the isHealthy method will return false, which in turn will cause the {@link AuditController} to reject audit requests, and cause
- * the health endpoint to report the audit service as DOWN.
+ * the health endpoint to report the audit service as RABBITMQ_UNHEALTHY.
  * <p>
  * If properly configured, the RabbitHealthChecker can attempt to repair the RabbitMQ configuration if a problem is detected. Any exchanges, queues, or bindings
  * which are missing will be created, and any exchanges, or bindings which have an invalid configuration will be deleted, and recreated. Queues with invalid
@@ -57,6 +58,8 @@ import java.util.stream.Collectors;
  */
 public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
     private static Logger log = LoggerFactory.getLogger(RabbitHealthChecker.class);
+    
+    static final Status RABBITMQ_UNHEALTHY = new Status("RABBITMQ_UNHEALTHY");
     
     private final RabbitHealthProperties rabbitHealthProperties;
     
@@ -634,7 +637,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
         }
         
         if (!isHealthy()) {
-            Health.Builder builder = Health.down();
+            Health.Builder builder = Health.status(RABBITMQ_UNHEALTHY);
             if (currentOutageStats != null)
                 builder.withDetail("outage", currentOutageStats.getOutageParams());
             if (queueSizeStats != null)
