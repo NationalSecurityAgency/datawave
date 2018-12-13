@@ -27,7 +27,7 @@
 
 	<bean id="metadataHelperUpdateHdfsListener" class="datawave.query.util.MetadataHelperUpdateHdfsListener" >
 		<property name="zookeepers" value="${zookeeper.hosts}" />
-		<property name="metadataHelper" ref="metadataHelper" />
+		<property name="typeMetadataHelperFactory" ref="typeMetadataHelperFactory" />
 		<property name="instance" value="${accumulo.instance.name}" />
 		<property name="password" value="${accumulo.user.password}" />
 		<property name="username" value="${accumulo.user.name}" />
