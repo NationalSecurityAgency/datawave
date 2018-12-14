@@ -30,7 +30,7 @@ public class AuthorizationsMinimizer {
         return authorizations;
     }
     
-    protected static Collection<? extends Collection<String>> minimize2(Collection<? extends Collection<String>> authorizations) {
+    private static Collection<? extends Collection<String>> minimize2(Collection<? extends Collection<String>> authorizations) {
         if (authorizations.size() > 1) {
             // check if all auth sets are subsets of a minimum set, and use just the minimum if so
             // minimize the sets to put all the common auths in the first one, and just the disjoint auths in the remainder.
