@@ -147,8 +147,6 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
      * @param connector
      * @param metadataTableName
      * @param auths
-     * @throws ExecutionException
-     * @throws TableNotFoundException
      */
     protected void initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
         this.metadataHelper = this.metadataHelperFactory.createMetadataHelper();
