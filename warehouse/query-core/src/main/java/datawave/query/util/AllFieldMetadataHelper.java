@@ -128,7 +128,6 @@ public class AllFieldMetadataHelper {
     public AllFieldMetadataHelper initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths,
                     Set<Authorizations> fullUserAuths, boolean useTypeSubstitutions) {
         if (this.connector != null) {
-            log.warn("someone is re-initializing an existing MetadataHelper. connector:" + connector + ", this.connector:" + this.connector);
             throw new RuntimeException("AllFieldMetadataHelper may not be re-initialized");
         }
         this.connector = connector;

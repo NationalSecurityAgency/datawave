@@ -42,6 +42,7 @@ import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.LiteralNodeVisitor;
 import datawave.query.jexl.visitors.PatternNodeVisitor;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.MetadataHelperFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -95,6 +96,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     protected String modelName = "DATAWAVE";
     protected String modelTableName = "DatawaveMetadata";
     protected MetadataHelper metadataHelper;
+    protected MetadataHelperFactory metadataHelperFactory;
     protected ScannerFactory scannerFactory;
     protected QueryModel queryModel;
     
@@ -148,11 +150,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
      * @throws ExecutionException
      * @throws TableNotFoundException
      */
-    protected void initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) throws TableNotFoundException,
-                    ExecutionException {
-        if (this.metadataHelper == null) {
-            throw new RuntimeException("MetadataHelper was not set. Fix this");
-        }
+    protected void initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
+        this.metadataHelper = this.metadataHelperFactory.createMetadataHelper();
         this.metadataHelper.initialize(connector, metadataTableName, auths);
     }
     
@@ -162,6 +161,14 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     
     public void setMetadataHelper(MetadataHelper metadataHelper) {
         this.metadataHelper = metadataHelper;
+    }
+    
+    public MetadataHelperFactory getMetadataHelperFactory() {
+        return metadataHelperFactory;
+    }
+    
+    public void setMetadataHelperFactory(MetadataHelperFactory metadataHelperFactory) {
+        this.metadataHelperFactory = metadataHelperFactory;
     }
     
     public String getIndexTableName() {

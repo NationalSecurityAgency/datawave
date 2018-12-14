@@ -204,7 +204,6 @@ public class MetadataHelper implements ApplicationContextAware {
     public MetadataHelper initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths, boolean useSubstitutions) {
         
         if (this.connector != null) {
-            log.warn("someone is re-initializing an existing MetadataHelper. connector:" + connector + ", this.connector:" + this.connector);
             throw new RuntimeException("MetadataHelper may not be re-initialized");
         }
         this.connector = connector;
