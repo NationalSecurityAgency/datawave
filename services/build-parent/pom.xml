@@ -35,7 +35,6 @@
         <module>../hazelcast-service</module>
         <module>../authorization-service</module>
         <module>../audit-service</module>
-        <module>../accumulo-utils</module>
     </modules>
 
     <!-- TODO: Remove this when the first version of accumulo-utils is released -->
