@@ -127,6 +127,9 @@ public class AllFieldMetadataHelper {
      */
     public AllFieldMetadataHelper initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths,
                     Set<Authorizations> fullUserAuths, boolean useTypeSubstitutions) {
+        if (this.connector != null) {
+            throw new RuntimeException("AllFieldMetadataHelper may not be re-initialized");
+        }
         this.connector = connector;
         this.instance = instance;
         this.metadataTableName = metadataTableName;
@@ -486,7 +489,8 @@ public class AllFieldMetadataHelper {
      * @throws IllegalAccessException
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getFieldsForDatatype", key = "{#datawaveType}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getFieldsForDatatype", key = "{#root.target.auths,#root.target.metadataTableName,#datawaveType}",
+                    cacheManager = "metadataHelperCacheManager")
     public Set<String> getFieldsForDatatype(Class<? extends Type<?>> datawaveType) throws InstantiationException, IllegalAccessException,
                     TableNotFoundException {
         log.debug("cache fault for getFieldsForDatatype(" + datawaveType + ")");
@@ -504,7 +508,8 @@ public class AllFieldMetadataHelper {
      * @return
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getFieldsForDatatype", key = "{#datawaveType,#ingestTypeFilter}", cacheManager = "metadataHelperCacheManager")
+    @Cacheable(value = "getFieldsForDatatype", key = "{#root.target.auths,#root.target.metadataTableName,#datawaveType,#ingestTypeFilter}",
+                    cacheManager = "metadataHelperCacheManager")
     public Set<String> getFieldsForDatatype(Class<? extends Type<?>> datawaveType, Set<String> ingestTypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getFieldsForDatatype(" + datawaveType + "," + ingestTypeFilter + ")");
         TypeMetadata typeMetadata = this.typeMetadataHelper.getTypeMetadata(ingestTypeFilter);

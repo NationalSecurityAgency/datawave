@@ -58,6 +58,9 @@ public class CompositeMetadataHelper {
      *            Any {@link Authorizations} to use
      */
     public CompositeMetadataHelper initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths) {
+        if (this.connector != null) {
+            throw new RuntimeException("CompositeMetadataHelper may not be re-initialized");
+        }
         this.connector = connector;
         this.instance = instance;
         this.metadataTableName = metadataTableName;
