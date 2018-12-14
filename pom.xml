@@ -15,6 +15,7 @@
         </license>
     </licenses>
     <modules>
+        <module>services/accumulo-utils</module>
         <module>common-test</module>
         <module>web-services</module>
         <module>warehouse</module>

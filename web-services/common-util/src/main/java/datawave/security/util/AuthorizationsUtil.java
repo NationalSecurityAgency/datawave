@@ -10,20 +10,19 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import datawave.accumulo.util.security.UserAuthFunctions;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 public class AuthorizationsUtil {
+    
     public static Authorizations union(Iterable<byte[]> authorizations1, Iterable<byte[]> authorizations2) {
         LinkedList<byte[]> aggregatedAuthorizations = Lists.newLinkedList();
         addTo(aggregatedAuthorizations, authorizations1);
@@ -88,47 +87,12 @@ public class AuthorizationsUtil {
      *         as the user actually had all of the auths. If {@code requestedAuths} is {@code null}, then the user's auths are returned as-is.
      */
     public static LinkedHashSet<Authorizations> getDowngradedAuthorizations(String requestedAuths, DatawavePrincipal principal) {
-        HashSet<String> requested = null;
-        if (!StringUtils.isEmpty(requestedAuths)) {
-            requested = new HashSet<>(splitAuths(requestedAuths));
-        }
         
-        LinkedHashSet<Authorizations> mergedAuths = new LinkedHashSet<>();
+        final DatawaveUser primaryUser = principal.getPrimaryUser();
+        final LinkedHashSet<DatawaveUser> proxyChain = new LinkedHashSet<>();
+        principal.getProxiedUsers().stream().filter(u -> u != primaryUser).forEach(proxyChain::add);
         
-        if (null == principal) {
-            mergedAuths.add(new Authorizations());
-        } else {
-            HashSet<String> missingAuths = (requested == null) ? new HashSet<>() : new HashSet<>(requested);
-            
-            final DatawaveUser primaryUser = principal.getPrimaryUser();
-            HashSet<String> userAuths = new HashSet<>(primaryUser.getAuths());
-            if (!userAuths.isEmpty()) {
-                if (null != requested) {
-                    missingAuths.removeAll(userAuths);
-                    userAuths.retainAll(requested);
-                }
-                mergedAuths.add(new Authorizations(userAuths.toArray(new String[userAuths.size()])));
-            }
-            
-            // Now simply add the auths from each non-primary user to the merged auths set
-            // @formatter:off
-            principal.getProxiedUsers().stream()
-                    .filter(u -> u != primaryUser)
-                    .map(DatawaveUser::getAuths)
-                    .map(AuthorizationsUtil::toAuthorizations)
-                    .forEach(mergedAuths::add);
-            // @formatter:on
-            
-            if (!missingAuths.isEmpty()) {
-                throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
-                                + ", User: " + userAuths);
-            }
-        }
-        return mergedAuths;
-    }
-    
-    private static Authorizations toAuthorizations(Collection<String> auths) {
-        return new Authorizations(auths.stream().map(String::trim).map(s -> s.getBytes(UTF_8)).collect(Collectors.toList()));
+        return userAuthFunctions().mergeAuthorizations(userAuthFunctions().getRequestedAuthorizations(requestedAuths, primaryUser), proxyChain);
     }
     
     /**
@@ -220,5 +184,26 @@ public class AuthorizationsUtil {
     
     public static Collection<? extends Collection<String>> prepareAuthsForMerge(Authorizations authorizations) {
         return Collections.singleton(new HashSet<>(Arrays.asList(authorizations.toString().split(","))));
+    }
+    
+    private static UserAuthFunctions userAuthFunctions() {
+        return UserAuthFunctionsHolder.INSTANCE;
+    }
+    
+    private static class UserAuthFunctionsHolder {
+        static final UserAuthFunctions INSTANCE = createUserAuthFunctions();
+        
+        private static UserAuthFunctions createUserAuthFunctions() {
+            final String classOverride = System.getProperty("datawave.user.auth.functions.class");
+            if (null == classOverride) {
+                return new UserAuthFunctions.Default();
+            } else {
+                try {
+                    return (UserAuthFunctions) Class.forName(classOverride).newInstance();
+                } catch (Throwable t) {
+                    throw new RuntimeException(String.format("Failed to create instance of '%s'", classOverride), t);
+                }
+            }
+        }
     }
 }
