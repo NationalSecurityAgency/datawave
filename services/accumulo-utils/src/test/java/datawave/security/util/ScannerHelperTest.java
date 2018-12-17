@@ -68,7 +68,7 @@ public class ScannerHelperTest {
         List<Key> expectedKeys = Lists.newArrayList(new Key("row", "cf2", "cq1", "A", 1L));
         Value expectedVal = new Value(new byte[0]);
         
-        Scanner scanner = ScannerHelper.createScanner(mockConnector, TABLE_NAME, Arrays.asList(a1, a2, a3));
+        Scanner scanner = ScannerHelper.createScanner(new WrappedConnector(mockConnector, mockConnector), TABLE_NAME, Arrays.asList(a1, a2, a3));
         for (Entry<Key,Value> entry : scanner) {
             assertFalse("Ran out of expected keys but got: " + entry.getKey(), expectedKeys.isEmpty());
             Key expectedKey = expectedKeys.remove(0);
