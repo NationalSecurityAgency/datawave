@@ -53,6 +53,10 @@
             <artifactId>datawave-in-memory-accumulo</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>accumulo-utils</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-api</artifactId>
         </dependency>
