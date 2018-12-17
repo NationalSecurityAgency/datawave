@@ -135,7 +135,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
         
-        Iterator<Entry<Key,Value>> kv = Iterators.emptyIterator();
+        Iterator<Entry<Key,Value>> kv = null;
         try {
             if (resought.get()) {
                 resought.set(false);
@@ -159,6 +159,9 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
             final long failureSleep = conf.getLong(RecordIterator.RECORDITER_FAILURE_SLEEP_INTERVAL, RecordIterator.DEFAULT_FAILURE_SLEEP);
             try {
                 splits = MultiRfileInputformat.computeSplitPoints(connector, conf, table, ranges);
+                if (log.isDebugEnabled()) {
+                    log.debug("Completed " + splits.size() + " splits");
+                }
                 String tableId = tableIdMap.getIfPresent(table);
                 if (null == tableId) {
                     tableId = Tables.getTableId(connector.getInstance(), table);
@@ -173,19 +176,26 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
                 int maxRetries = conf.getInt(RecordIterator.RECORDITER_FAILURE_COUNT_MAX, RecordIterator.FAILURE_MAX_DEFAULT);
                 int retries = 0;
                 do {
-                    if (closed.get())
+                    if (closed.get()) {
+                        log.warn("Giving up because we are closed");
                         break;
+                    }
                     try {
                         kv = getIterator(splits, acuTableConf);
                     } catch (Exception e) {
+                        log.debug("Failed to get iterator for splits", e);
                         
-                        close();
+                        // clear out the iterators
+                        clearIterators();
                         
                         // an exception has occurred that won't allow us to open the files. perhaps one was moved
                         // immediately upon opening the tablet.
                         if (++retries > maxRetries) {
-                            log.info("Giving up because" + retries + " >= " + maxRetries);
+                            log.warn("Giving up because" + retries + " >= " + maxRetries, e);
                             throw e;
+                        }
+                        if (log.isDebugEnabled()) {
+                            log.debug("Retry #" + retries + " to get splits and build an iterator");
                         }
                         
                         MultiRfileInputformat.clearMetadataCache();
@@ -193,7 +203,12 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
                         Thread.sleep(failureSleep);
                         
                         splits = MultiRfileInputformat.computeSplitPoints(connector, conf, table, ranges);
-                        
+                        if (log.isDebugEnabled()) {
+                            log.debug("Recomputed " + splits.size() + " splits");
+                        }
+                    }
+                    if (log.isTraceEnabled()) {
+                        log.trace("KV iterator is " + (kv == null ? "null" : "not null"));
                     }
                 } while (null == kv);
                 
@@ -216,12 +231,20 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
     
     @Override
     public void close() {
+        log.info("Closing RfileScanner");
         /**
          * This is required because Hadoop will swallow the interrupt. As a result we must notify ourselves that the interrupt occurred. In doing so we call a
          * subsequent close here since we weren't interrupted in the call to getIterator(...).
          */
         closed.set(true);
         
+        clearIterators();
+    }
+    
+    /**
+     * Clear out the current set of iterators
+     */
+    private void clearIterators() {
         for (RecordIterator iter : iterators) {
             try {
                 iter.close();
