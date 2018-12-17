@@ -3,9 +3,10 @@ package datawave.security.util;
 import org.apache.accumulo.core.security.Authorizations;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.TreeSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -46,14 +47,14 @@ public class AuthorizationsMinimizer {
         if (authorizations.size() > 1) {
             // Convert collection of Authorizations into a collection of String sets (the individual authorizations).
             // Since we are adding to a LinkedHashSet, this will de-dupe any duplicate authorization sets.
-            final LinkedHashSet<TreeSet<String>> allAuths = authorizations.stream()
-                            .map(a -> a.getAuthorizations().stream().map(String::new).collect(Collectors.toCollection(TreeSet::new)))
+            final LinkedHashSet<Set<String>> allAuths = authorizations.stream()
+                            .map(a -> a.getAuthorizations().stream().map(String::new).collect(Collectors.toCollection(HashSet::new)))
                             .collect(Collectors.toCollection(LinkedHashSet::new));
             
             // Go through the authorizations sets and remove any that are supersets of any other.
-            for (Iterator<TreeSet<String>> it = allAuths.iterator(); it.hasNext(); /* empty */) {
-                TreeSet<String> currentSet = it.next();
-                if (allAuths.stream().filter(a -> a != currentSet).anyMatch(currentSet::containsAll))
+            for (Iterator<Set<String>> it = allAuths.iterator(); it.hasNext(); /* empty */) {
+                Set<String> currentSet = it.next();
+                if (allAuths.stream().filter(a -> a != currentSet && a.size() <= currentSet.size()).anyMatch(currentSet::containsAll))
                     it.remove();
             }
             
