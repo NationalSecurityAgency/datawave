@@ -247,6 +247,9 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         
         try {
             fileRangeSplits = buildRangeSplits(fileSplit);
+            if (log.isTraceEnabled()) {
+                log.trace("Iterator over the following files: " + fileRangeSplits);
+            }
             
             initialize(conf, true);
             
