@@ -106,7 +106,7 @@ public class RabbitHealthCheckerTest {
         healthChecker.runHealthCheck();
         
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         
         mockServer.verify();
         
@@ -131,7 +131,7 @@ public class RabbitHealthCheckerTest {
         healthChecker.runHealthCheck();
         
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         
         mockServer.verify();
         
@@ -173,7 +173,7 @@ public class RabbitHealthCheckerTest {
         
         // ends up unhealthy with an outage stat
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         Assert.assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         Assert.assertEquals(1, healthChecker.getOutageStats().size());
         
@@ -244,7 +244,7 @@ public class RabbitHealthCheckerTest {
         healthChecker.runHealthCheck();
         
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         
         mockServer.verify();
         
@@ -286,7 +286,7 @@ public class RabbitHealthCheckerTest {
         
         // ends up unhealthy with an outage stat
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         Assert.assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         Assert.assertEquals(1, healthChecker.getOutageStats().size());
         
@@ -358,7 +358,7 @@ public class RabbitHealthCheckerTest {
         healthChecker.runHealthCheck();
         
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         
         mockServer.verify();
         mockServer.reset();
@@ -408,7 +408,7 @@ public class RabbitHealthCheckerTest {
         
         // ends up unhealthy with an outage stat
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         Assert.assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         Assert.assertEquals(1, healthChecker.getOutageStats().size());
         
@@ -456,7 +456,7 @@ public class RabbitHealthCheckerTest {
         healthChecker.runHealthCheck();
         
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         
         mockServer.verify();
         mockServer.reset();
@@ -513,7 +513,7 @@ public class RabbitHealthCheckerTest {
         
         // ends up unhealthy with an outage stat
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         Assert.assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         Assert.assertEquals(1, healthChecker.getOutageStats().size());
         
@@ -568,7 +568,7 @@ public class RabbitHealthCheckerTest {
         healthChecker.runHealthCheck();
         
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         
         mockServer.verify();
         mockServer.reset();
@@ -621,7 +621,7 @@ public class RabbitHealthCheckerTest {
         
         // ends up unhealthy with an outage stat
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         Assert.assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         Assert.assertEquals(1, healthChecker.getOutageStats().size());
         
@@ -672,7 +672,7 @@ public class RabbitHealthCheckerTest {
         healthChecker.runHealthCheck();
         
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         
         mockServer.verify();
         mockServer.reset();
@@ -722,7 +722,7 @@ public class RabbitHealthCheckerTest {
         
         // ends up unhealthy with an outage stat
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         Assert.assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         Assert.assertEquals(1, healthChecker.getOutageStats().size());
         
@@ -770,7 +770,7 @@ public class RabbitHealthCheckerTest {
         healthChecker.runHealthCheck();
         
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         
         mockServer.verify();
         mockServer.reset();
@@ -823,7 +823,7 @@ public class RabbitHealthCheckerTest {
         
         // ends up unhealthy with an outage stat
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         Assert.assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         Assert.assertEquals(1, healthChecker.getOutageStats().size());
         
@@ -874,7 +874,7 @@ public class RabbitHealthCheckerTest {
         healthChecker.runHealthCheck();
         
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         
         mockServer.verify();
         mockServer.reset();
@@ -924,7 +924,7 @@ public class RabbitHealthCheckerTest {
         
         // ends up unhealthy with an outage stat
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         Assert.assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         Assert.assertEquals(1, healthChecker.getOutageStats().size());
         
@@ -972,7 +972,7 @@ public class RabbitHealthCheckerTest {
         healthChecker.runHealthCheck();
         
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         
         mockServer.verify();
         mockServer.reset();
@@ -1025,7 +1025,7 @@ public class RabbitHealthCheckerTest {
         
         // ends up unhealthy with an outage stat
         Assert.assertFalse(healthChecker.isHealthy());
-        Assert.assertEquals(Status.DOWN, healthChecker.health().getStatus());
+        Assert.assertEquals(RabbitHealthChecker.RABBITMQ_UNHEALTHY, healthChecker.health().getStatus());
         Assert.assertEquals(rabbitHealthProperties.getUnhealthyPollIntervalMillis(), healthChecker.pollIntervalMillis());
         Assert.assertEquals(1, healthChecker.getOutageStats().size());
         

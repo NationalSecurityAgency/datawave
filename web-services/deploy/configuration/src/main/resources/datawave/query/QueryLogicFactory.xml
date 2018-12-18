@@ -437,7 +437,7 @@
         <property name="maxRowsToScan" value="-1" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
-        <property name="metadataHelper" ref="metadataHelper" />
+        <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
         <property name="undisplayedVisibilities">
@@ -459,7 +459,7 @@
         <property name="maxRowsToScan" value="-1" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
-        <property name="metadataHelper" ref="metadataHelper" />
+        <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
         <property name="undisplayedVisibilities">

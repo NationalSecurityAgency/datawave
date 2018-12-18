@@ -23,6 +23,8 @@
     <modules>
         <module>..</module>
         <module>../service-parent</module>
+        <!-- Temporarily removed until the first version is released and this module is removed from the parent pom. -->
+        <!--<module>../accumulo-utils</module>-->
         <module>../metrics-reporter</module>
         <module>../authorization-api</module>
         <module>../audit-api</module>
@@ -34,4 +36,20 @@
         <module>../authorization-service</module>
         <module>../audit-service</module>
     </modules>
+
+    <!-- TODO: Remove this when the first version of accumulo-utils is released -->
+    <profiles>
+        <profile>
+            <id>accumulo-utils</id>
+            <activation>
+                <property>
+                    <name>!services</name>
+                </property>
+            </activation>
+            <modules>
+                <module>../accumulo-utils</module>
+            </modules>
+        </profile>
+    </profiles>
+
 </project>

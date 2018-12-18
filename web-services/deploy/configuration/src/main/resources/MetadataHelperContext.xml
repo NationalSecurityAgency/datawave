@@ -24,6 +24,10 @@
         <lookup-method name="createMetadataHelper" bean="metadataHelper" />
     </bean>
 
+    <bean id="typeMetadataHelperFactory" class="datawave.query.util.TypeMetadataHelper.Factory" >
+        <lookup-method name="createTypeMetadataHelper" bean="typeMetadataHelper" />
+    </bean>
+
     <bean id="allFieldMetadataHelper" scope="prototype" class="datawave.query.util.AllFieldMetadataHelper" >
         <property name="typeMetadataHelper" ref="typeMetadataHelper"/>
         <property name="compositeMetadataHelper" ref="compositeMetadataHelper"/>

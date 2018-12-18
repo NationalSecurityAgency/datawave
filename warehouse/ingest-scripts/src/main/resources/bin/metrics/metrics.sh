@@ -9,13 +9,13 @@ THIS_DIR="${THIS_SCRIPT%/*}"
 cd $THIS_DIR
 
 . ../ingest/ingest-env.sh
+. ../ingest/findJars.sh
 #
 # Get the classpath
 #
-cd ../../lib
-CLASSPATH="../config"
-CLASSPATH=datawave-metrics-core-$METRICS_VERSION.jar:${CLASSPATH}
-CLASSPATH=datawave-ingest-core-$METRICS_VERSION.jar:${CLASSPATH}
+CLASSPATH="../../config"
+CLASSPATH=${DATAWAVE_METRICS_CORE_JAR}:${CLASSPATH}
+CLASSPATH=${DATAWAVE_INGEST_CORE_JAR}:${CLASSPATH}
 CLASSPATH=${CLASSPATH}:$WAREHOUSE_ACCUMULO_HOME/lib/accumulo-core.jar
 CLASSPATH=${CLASSPATH}:$WAREHOUSE_ACCUMULO_HOME/lib/accumulo-start.jar
 CLASSPATH=${CLASSPATH}:$WAREHOUSE_ACCUMULO_HOME/lib/accumulo-server-base.jar
@@ -23,9 +23,6 @@ CLASSPATH=${CLASSPATH}:$WAREHOUSE_ACCUMULO_HOME/lib/accumulo-fate.jar
 CLASSPATH=${CLASSPATH}:$WAREHOUSE_ACCUMULO_HOME/lib/accumulo-trace.jar
 CLASSPATH=${CLASSPATH}:$ZOOKEEPER_HOME/zookeeper-$ZOOKEEPER_VERSION.jar
 
-findJar (){
-  ls -1 $1-[0-9]*.jar | sort | tail -1
-}
 CLASSPATH=$(findJar joda-time):${CLASSPATH}
 CLASSPATH=$(findJar gson):${CLASSPATH}
 CLASSPATH=$(findJar libthrift):${CLASSPATH}
@@ -64,7 +61,7 @@ CHILD_OPTS="-Xmx2048m"
 export HADOOP_CLASSPATH=$CLASSPATH
 
 export HADOOP_OPTS=" -Dapp=${type}MetricsIngest -Dmapred.job.pool.name=bulkIngestQueue $HADOOP_OPTS"
-$INGEST_HADOOP_HOME/bin/hadoop jar ./datawave-metrics-core-${METRICS_VERSION}.jar $class $HADOOP_OPTS -Dmapreduce.job.queuename=bulkIngestQueue -Dmapred.child.java.opts="$CHILD_OPTS" -Dmapred.max.split.size=800000 -libjars $LIBJARS -jt $INGEST_JOBTRACKER_NODE -fs $INGEST_HDFS_NAME_NODE $opts
+$INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_METRICS_CORE_JAR} $class $HADOOP_OPTS -Dmapreduce.job.queuename=bulkIngestQueue -Dmapred.child.java.opts="$CHILD_OPTS" -Dmapred.max.split.size=800000 -libjars $LIBJARS -jt $INGEST_JOBTRACKER_NODE -fs $INGEST_HDFS_NAME_NODE $opts
 RETURN_CODE=$?
 
 exit $RETURN_CODE

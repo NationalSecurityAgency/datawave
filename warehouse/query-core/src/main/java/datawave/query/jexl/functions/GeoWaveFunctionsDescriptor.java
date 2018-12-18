@@ -63,7 +63,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         
         @Override
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
-            int maxExpansion = Math.max(1, config.getGeoWaveMaxExpansion());
+            int maxExpansion = config.getGeoWaveMaxExpansion();
             int maxEnvelopes = Math.max(1, config.getGeoWaveMaxEnvelopes());
             if (isSpatialRelationship(name)) {
                 Geometry geom = GeometryNormalizer.parseGeometry(args.get(1).image);
