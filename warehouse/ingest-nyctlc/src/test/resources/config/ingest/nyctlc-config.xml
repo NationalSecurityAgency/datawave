@@ -64,7 +64,7 @@
     <!-- Indexing -->
     <property>
         <name>nyctlc.data.category.index</name>
-        <value>ALL_LOCATIONS,PICKUP_LOCATION,DROPOFF_LOCATION,TOTAL_AMOUNT_INDEXED,PICKUP_LOCATION_DATETIME,DROPOFF_LOCATION_DATETIME,PICKUP_LOCATION_TOTAL_AMOUNT,DROPOFF_LOCATION_TOTAL_AMOUNT,ALL_LOCATIONS_TOTAL_AMOUNT,ALL_LOCATIONS_OVERLOADED</value>
+        <value>ALL_LOCATIONS,ALL_POINTS,ALL_POINTS_GEO,PICKUP_LOCATION,DROPOFF_LOCATION,TOTAL_AMOUNT_INDEXED,PICKUP_LOCATION_DATETIME,DROPOFF_LOCATION_DATETIME,PICKUP_LOCATION_TOTAL_AMOUNT,DROPOFF_LOCATION_TOTAL_AMOUNT,ALL_LOCATIONS_TOTAL_AMOUNT,ALL_LOCATIONS_OVERLOADED</value>
         <description>These are the fields to index (delimited by first separator).
         </description>
     </property>
@@ -193,6 +193,16 @@
     <property>
         <name>nyctlc.ALL_LOCATIONS.data.field.type.class</name>
         <value>datawave.data.type.GeometryType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.ALL_POINTS.data.field.type.class</name>
+        <value>datawave.data.type.GeometryType</value>
+    </property>
+
+    <property>
+        <name>nyctlc.ALL_POINTS_GEO.data.field.type.class</name>
+        <value>datawave.data.type.GeoType</value>
     </property>
 
     <property>

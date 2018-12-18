@@ -39,6 +39,8 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
     private static final String ALL_LOCATIONS = "ALL_LOCATIONS";
     private static final String ALL_LOCATIONS_OVERLOADED = "ALL_LOCATIONS_OVERLOADED";
     private static final String TOTAL_AMOUNT_INDEXED = "TOTAL_AMOUNT_INDEXED";
+    private static final String ALL_POINTS = "ALL_POINTS";
+    private static final String ALL_POINTS_GEO = "ALL_POINTS_GEO";
     
     @Override
     public void setup(Configuration config) {
@@ -141,6 +143,12 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
             } else
                 log.warn("Did not expect multiple TOTAL_AMOUNT values in the event.");
         }
+        
+        // add point query fields
+        derivedFields.put(ALL_POINTS, "POINT (" + pickupLon + " " + pickupLat + ")");
+        derivedFields.put(ALL_POINTS, "POINT (" + dropoffLon + " " + dropoffLat + ")");
+        derivedFields.put(ALL_POINTS_GEO, pickupLat + " " + pickupLon);
+        derivedFields.put(ALL_POINTS_GEO, dropoffLat + " " + dropoffLon);
         
         eventFields.putAll(normalize(derivedFields));
         

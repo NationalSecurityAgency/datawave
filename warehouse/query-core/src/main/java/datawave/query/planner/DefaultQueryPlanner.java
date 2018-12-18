@@ -199,10 +199,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
     protected boolean compressUidsInRangeStream = true;
     
     /**
-     * Query string length threshold, used to determine whether we should use simple or detailed debug logging. If the length of the query string exceeds this
-     * value, then we will just print the query string instead of using the verbose PrintingVisitor
+     * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
      */
-    private static long logQueryPrintMaxLength = 1000000;
+    private static int maxChildNodesToPrint = 10;
     
     private final long maxRangesPerQueryPiece;
     
@@ -587,9 +586,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         ASTJexlScript queryTree = parseQueryAndValidatePattern(query, stopwatch);
         
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after initial parse:");
-        }
+        logQuery(queryTree, "Query after initial parse:");
         
         stopwatch.stop();
         
@@ -608,9 +605,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         // the right will be re-ordered to simplify subsequent processing
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix not null intent");
         queryTree = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(queryTree);
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after inverting swapped nodes:");
-        }
+        logQuery(queryTree, "Query after inverting swapped nodes:");
         stopwatch.stop();
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix not null intent");
@@ -620,9 +615,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         } catch (Exception e1) {
             throw new DatawaveQueryException("Something bad happened", e1);
         }
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query afterfixing not null intent:");
-        }
+        logQuery(queryTree, "Query afterfixing not null intent:");
         
         stopwatch.stop();
         
@@ -633,9 +626,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         } catch (TableNotFoundException e1) {
             throw new DatawaveQueryException("Unable to resolve date index", e1);
         }
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after adding date filters:");
-        }
+        logQuery(queryTree, "Query after adding date filters:");
         
         stopwatch.stop();
         
@@ -651,9 +642,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         // flatten the tree
         queryTree = TreeFlatteningRebuildingVisitor.flatten(queryTree);
         
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after initial flatten:");
-        }
+        logQuery(queryTree, "Query after initial flatten:");
         
         stopwatch.stop();
         
@@ -663,18 +652,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         queryTree = applyRules(queryTree, scannerFactory, metadataHelper, config);
         
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after applying pushdown rules:");
-        }
+        logQuery(queryTree, "Query after applying pushdown rules:");
         
         stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Restructure negative numbers");
         
         queryTree = FixNegativeNumbersVisitor.fix(queryTree);
         
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after restructuring negative numbers:");
-        }
+        logQuery(queryTree, "Query after restructuring negative numbers:");
         
         stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Uppercase all field names");
@@ -684,17 +669,13 @@ public class DefaultQueryPlanner extends QueryPlanner {
         // is enforced at ingest time
         CaseSensitivityVisitor.upperCaseIdentifiers(config, metadataHelper, queryTree);
         
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after uppercase'ing field names:");
-        }
+        logQuery(queryTree, "Query after uppercase'ing field names:");
         
         stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Rewrite negated equality operators.");
         
         Negations.rewrite(queryTree);
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after rewriting negated equality operators:");
-        }
+        logQuery(queryTree, "Query after rewriting negated equality operators:");
         
         stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Apply query model");
@@ -711,9 +692,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             queryTree = applyQueryModel(metadataHelper, config, stopwatch, queryTree, queryModel);
         }
         
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after applying query model:");
-        }
+        logQuery(queryTree, "Query after applying query model:");
         
         stopwatch.stop();
         
@@ -752,9 +731,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
         
         // Print the nice log message
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Computed that the query " + (containsIndexOnlyFields ? " contains " : " does not contain any ") + " index only field(s)");
-        }
+        logQuery(queryTree, "Computed that the query " + (containsIndexOnlyFields ? " contains " : " does not contain any ") + " index only field(s)");
         
         config.setContainsIndexOnlyTerms(containsIndexOnlyFields);
         
@@ -782,9 +759,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
         
         // Print the nice log message
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Computed that the query " + (containsComposites ? " contains " : " does not contain any ") + " composite field(s)");
-        }
+        logQuery(queryTree, "Computed that the query " + (containsComposites ? " contains " : " does not contain any ") + " composite field(s)");
         
         config.setContainsCompositeTerms(containsComposites);
         
@@ -798,9 +773,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         boolean sortedUIDs = areSortedUIDsRequired(queryTree, config);
         
         // Print the nice log message
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Computed that the query " + (sortedUIDs ? " requires " : " does not require ") + " sorted UIDs");
-        }
+        logQuery(queryTree, "Computed that the query " + (sortedUIDs ? " requires " : " does not require ") + " sorted UIDs");
         
         config.setSortedUIDs(sortedUIDs);
         
@@ -823,10 +796,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
             queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config, metadataHelper, dateIndexHelper, queryTree);
             
             // Print the nice log message
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Computed that the query " + (queryTfFields.isEmpty() ? " does not contain any " : "contains " + queryTfFields + " as ")
-                                + " term frequency field(s)");
-            }
+            logQuery(queryTree, "Computed that the query " + (queryTfFields.isEmpty() ? " does not contain any " : "contains " + queryTfFields + " as ")
+                            + " term frequency field(s)");
         }
         
         config.setQueryTermFrequencyFields(queryTfFields);
@@ -837,9 +808,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             config.setTermFrequenciesRequired(!contentFunctions.isEmpty());
             
             // Print the nice log message
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Computed that the query " + (contentFunctions.isEmpty() ? " does not require " : "requires") + " term frequency lookup");
-            }
+            logQuery(queryTree, "Computed that the query " + (contentFunctions.isEmpty() ? " does not require " : "requires") + " term frequency lookup");
         }
         
         stopwatch.stop();
@@ -878,9 +847,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 throw new DatawaveFatalQueryException(qe);
             }
             
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after fixing unfielded queries:");
-            }
+            logQuery(queryTree, "Query after fixing unfielded queries:");
         }
         
         stopwatch.stop();
@@ -925,9 +892,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             
             // Coalesce any bounded ranges into separate AND subtrees
             queryTree = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, queryTree);
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after function index queries were expanded:");
-            }
+            logQuery(queryTree, "Query after function index queries were expanded:");
             
             stopwatch.stop();
         }
@@ -938,9 +903,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             // Coalesce any bounded ranges into separate AND subtrees
             queryTree = RangeCoalescingVisitor.coalesceRanges(queryTree);
             
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after ranges were coalesced:");
-            }
+            logQuery(queryTree, "Query after ranges were coalesced:");
             
             stopwatch.stop();
             
@@ -988,9 +951,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         queryTree = FixUnindexedNumericTerms.fixNumerics(config, queryTree);
         
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after fixing unindexed numerics:");
-        }
+        logQuery(queryTree, "Query after fixing unindexed numerics:");
         
         stopwatch.stop();
         
@@ -998,9 +959,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         queryTree = ExpandMultiNormalizedTerms.expandTerms(config, metadataHelper, queryTree);
         
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after normalizers were applied:");
-        }
+        logQuery(queryTree, "Query after normalizers were applied:");
         
         stopwatch.stop();
         
@@ -1009,9 +968,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Mark Index Holes");
             
             queryTree = PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(queryTree, config, metadataHelper);
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after marking index holes:");
-            }
+            logQuery(queryTree, "Query after marking index holes:");
             
             stopwatch.stop();
         }
@@ -1022,9 +979,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             // apply distributive property to deal with executability if necessary
             queryTree = ExecutableExpansionVisitor.expand(queryTree, config, metadataHelper);
             
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after ExecutableExpansion");
-            }
+            logQuery(queryTree, "Query after ExecutableExpansion");
             
             stopwatch.stop();
         }
@@ -1049,9 +1004,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Pushdown Low-Selective Terms");
             
             queryTree = PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(queryTree, config, metadataHelper);
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after pushing down low-selective terms:");
-            }
+            logQuery(queryTree, "Query after pushing down low-selective terms:");
             
             List<String> debugOutput = null;
             if (log.isDebugEnabled()) {
@@ -1060,10 +1013,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
                 queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
                                 nonEventFields, metadataHelper);
-                if (log.isDebugEnabled()) {
-                    logDebug(debugOutput, "Executable state after pushing low-selective terms:");
-                    logQuery(queryTree, "Query after partially executable pushdown :");
-                }
+                logDebug(debugOutput, "Executable state after pushing low-selective terms:");
+                logQuery(queryTree, "Query after partially executable pushdown :");
             }
             
             stopwatch.stop();
@@ -1096,9 +1047,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
                 queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree);
                 queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
-                if (log.isDebugEnabled()) {
-                    logQuery(queryTree, "Query after expanding regex:");
-                }
+                logQuery(queryTree, "Query after expanding regex:");
                 // if we now have an unexecutable tree because of delayed
                 // predicates, then remove delayed predicates as needed and
                 // reexpand
@@ -1113,10 +1062,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                                 .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
                     queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, config, indexedFields, indexOnlyFields,
                                     nonEventFields, metadataHelper);
-                    if (log.isDebugEnabled()) {
-                        logDebug(debugOutput, "Executable state after expanding ranges:");
-                        logQuery(queryTree, "Query after delayed pullup:");
-                    }
+                    logDebug(debugOutput, "Executable state after expanding ranges:");
+                    logQuery(queryTree, "Query after delayed pullup:");
                     
                     boolean expandAllTerms = config.isExpandAllTerms();
                     // set the expand all terms flag to avoid any more delayed
@@ -1127,9 +1074,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree);
                     queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                     config.setExpandAllTerms(expandAllTerms);
-                    if (log.isDebugEnabled()) {
-                        logQuery(queryTree, "Query after expanding ranges and regex again:");
-                    }
+                    logQuery(queryTree, "Query after expanding ranges and regex again:");
                 }
                 
                 // if we now have an unexecutable tree because of missing
@@ -1142,10 +1087,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                                 .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
                     queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, config, indexedFields, indexOnlyFields,
                                     nonEventFields, metadataHelper);
-                    if (log.isDebugEnabled()) {
-                        logDebug(debugOutput, "Executable state after expanding ranges and regex again:");
-                        logQuery(queryTree, "Query after partially executable pushdown:");
-                    }
+                    logDebug(debugOutput, "Executable state after expanding ranges and regex again:");
+                    logQuery(queryTree, "Query after partially executable pushdown:");
                 }
                 
             } catch (TableNotFoundException | InstantiationException | IllegalAccessException e1) {
@@ -1352,14 +1295,22 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
     }
     
+    public static void logTrace(List<String> output, String message) {
+        if (log.isTraceEnabled()) {
+            log.trace(message);
+            for (String line : output) {
+                log.trace(line);
+            }
+            log.trace("");
+        }
+    }
+    
     public static void logQuery(ASTJexlScript queryTree, String message) {
-        String queryString = JexlStringBuildingVisitor.buildQuery(queryTree);
-        // avoid printing large query trees the verbose way
-        // this is a common issue with geo queries
-        if (queryString.length() > logQueryPrintMaxLength)
-            logDebug(Collections.singletonList(queryString), message);
-        else
-            logDebug(PrintingVisitor.formattedQueryStringList(queryTree), message);
+        if (log.isTraceEnabled()) {
+            logTrace(PrintingVisitor.formattedQueryStringList(queryTree), message);
+        } else if (log.isDebugEnabled()) {
+            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint), message);
+        }
     }
     
     /**
@@ -2257,12 +2208,12 @@ public class DefaultQueryPlanner extends QueryPlanner {
         this.executableExpansion = executableExpansion;
     }
     
-    public static long getLogQueryPrintMaxLength() {
-        return logQueryPrintMaxLength;
+    public static int getMaxChildNodesToPrint() {
+        return maxChildNodesToPrint;
     }
     
-    public static void setLogQueryPrintMaxLength(long logQueryPrintMaxLength) {
-        DefaultQueryPlanner.logQueryPrintMaxLength = logQueryPrintMaxLength;
+    public static void setMaxChildNodesToPrint(int maxChildNodesToPrint) {
+        DefaultQueryPlanner.maxChildNodesToPrint = maxChildNodesToPrint;
     }
     
     /**
