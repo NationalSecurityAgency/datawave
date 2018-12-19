@@ -1,0 +1,18 @@
+server:
+  port: 0
+  non-secure-port: 0
+  ssl:
+    client-auth: WANT
+    trust-store: classpath:testCA.p12
+    trust-store-type: PKCS12
+    trust-store-password: ChangeIt
+    key-store: classpath:testServer.p12
+    key-store-type: PKCS12
+    key-store-password: ChangeIt
+
+---
+
+spring:
+  profiles: 'converterTest'
+
+security.jwt.enabled: false

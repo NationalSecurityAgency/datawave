@@ -10,8 +10,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  * Launcher for the authorization service.
  */
 @EnableDiscoveryClient
-@SpringBootApplication(scanBasePackages = "datawave.microservice")
-@EnableAutoConfiguration(exclude = {ErrorMvcAutoConfiguration.class})
+@SpringBootApplication(scanBasePackages = "datawave.microservice", exclude = {ErrorMvcAutoConfiguration.class})
 public class AuthorizationService {
     public static void main(String[] args) {
         SpringApplication.run(AuthorizationService.class, args);

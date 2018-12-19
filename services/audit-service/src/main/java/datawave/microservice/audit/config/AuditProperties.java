@@ -1,7 +1,9 @@
 package datawave.microservice.audit.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
+@EnableConfigurationProperties(AuditProperties.class)
 @ConfigurationProperties(prefix = "audit")
 public class AuditProperties {
     private boolean confirmAckEnabled = true;
