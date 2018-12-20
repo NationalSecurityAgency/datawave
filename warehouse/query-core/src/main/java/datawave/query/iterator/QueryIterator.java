@@ -1111,10 +1111,12 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     protected DocumentProjection getCompositeProjection() {
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         Set<String> composites = Sets.newHashSet();
-        for (Multimap<String,String> val : this.compositeMetadata.getCompositeFieldMapByType().values())
-            for (String compositeField : val.keySet())
-                if (!CompositeIngest.isOverloadedCompositeField(val, compositeField))
-                    composites.add(compositeField);
+        if (compositeMetadata != null) {
+            for (Multimap<String,String> val : this.compositeMetadata.getCompositeFieldMapByType().values())
+                for (String compositeField : val.keySet())
+                    if (!CompositeIngest.isOverloadedCompositeField(val, compositeField))
+                        composites.add(compositeField);
+        }
         projection.initializeBlacklist(composites);
         return projection;
     }

@@ -25,6 +25,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -38,12 +39,10 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 import static org.apache.commons.jexl2.parser.JexlNodes.id;
@@ -104,7 +103,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (ASTDelayedPredicate.instanceOf(node) || IndexHoleMarkerJexlNode.instanceOf(node)) {
+        if (ASTDelayedPredicate.instanceOf(node) || IndexHoleMarkerJexlNode.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
             return node;
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
                         || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
@@ -180,20 +179,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
         }
         
         for (Map.Entry<LiteralRange<?>,List<JexlNode>> range : ranges.entrySet()) {
-            JexlNode compositePredicate = null;
-            
-            // if this is a composite field, find the composite predicate, which will be
-            // used to filter out composite terms which fall outside of our range
-            String fieldName = range.getKey().getFieldName();
-            if (config.getCompositeToFieldMap().keySet().contains(fieldName)) {
-                Set<JexlNode> delayedCompositePredicates = leaves.stream()
-                                .map(leaf -> CompositePredicateVisitor.findCompositePredicates(leaf, config.getCompositeToFieldMap().get(fieldName)))
-                                .flatMap(Collection::stream).collect(Collectors.toSet());
-                if (delayedCompositePredicates != null && delayedCompositePredicates.size() == 1)
-                    compositePredicate = delayedCompositePredicates.stream().findFirst().get();
-            }
-            
-            IndexLookup lookup = ShardIndexQueryTableStaticMethods.expandRange(range.getKey(), compositePredicate);
+            IndexLookup lookup = ShardIndexQueryTableStaticMethods.expandRange(range.getKey());
             
             IndexLookupMap fieldsToTerms = null;
             

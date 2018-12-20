@@ -235,7 +235,7 @@
         </property>
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <property name="sendTimingToStatsd" value="false" />
-	<property name="collectQueryMetrics" value="false" />
+	<property name="collectQueryMetrics" value="true" />
 	<property name="logTimingDetails" value="false" />
         <property name="statsdHost" value="localhost" />
         <property name="statsdPort" value="8125" />

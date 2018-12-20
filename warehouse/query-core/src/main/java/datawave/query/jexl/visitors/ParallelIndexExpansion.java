@@ -19,7 +19,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 
 import datawave.data.type.Type;
-import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.model.QueryModel;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
@@ -43,6 +42,7 @@ import datawave.webservice.query.Query;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -275,7 +275,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         
         // check to see if this is a delayed node already
         if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededOrThresholdMarkerJexlNode.instanceOf(node) || ASTDelayedPredicate.instanceOf(node)
-                        || IndexHoleMarkerJexlNode.instanceOf(node)) {
+                        || IndexHoleMarkerJexlNode.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
             markedParents = new HashSet<>();
             markedParents.add(node);
         }
@@ -291,7 +291,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         if (markedParents != null) {
             for (JexlNode markedParent : markedParents) {
                 if (ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ExceededOrThresholdMarkerJexlNode.instanceOf(markedParent)
-                                || ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent))
+                                || ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ASTEvaluationOnly.instanceOf(node))
                     return node;
             }
         }
@@ -312,7 +312,8 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 if (markedParents != null) {
                     for (JexlNode markedParent : markedParents) {
                         if (ExceededValueThresholdMarkerJexlNode.instanceOf(markedParent) || ExceededOrThresholdMarkerJexlNode.instanceOf(markedParent)
-                                        || ASTDelayedPredicate.instanceOf(markedParent) || IndexHoleMarkerJexlNode.instanceOf(markedParent))
+                                        || ASTDelayedPredicate.instanceOf(markedParent) || IndexHoleMarkerJexlNode.instanceOf(markedParent)
+                                        || ASTEvaluationOnly.instanceOf(node))
                             return node;
                     }
                 }
@@ -414,7 +415,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             }
             default: {
                 JexlNode[] children = children(node);
-                if (children.length == 1 && !ASTDelayedPredicate.instanceOf(children[0])) {
+                if (children.length == 1 && !ASTDelayedPredicate.instanceOf(children[0]) && !ASTEvaluationOnly.instanceOf(children[0])) {
                     boolean expand = descendIntoSubtree(children[0], visited);
                     visited.put(node, expand);
                     return expand;

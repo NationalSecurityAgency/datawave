@@ -22,6 +22,7 @@ import org.apache.commons.jexl2.parser.ASTBitwiseComplNode;
 import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
 import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
 import org.apache.commons.jexl2.parser.ASTBlock;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTConstructorNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTDivNode;
@@ -385,7 +386,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             state = STATE.EXECUTABLE;
         }
         // if a delayed predicate, then this is not-executable against the index by choice
-        else if (ASTDelayedPredicate.instanceOf(node)) {
+        else if (ASTDelayedPredicate.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
             if (isNonEvent(node)) {
                 state = STATE.ERROR;
             } else {

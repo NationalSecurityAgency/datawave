@@ -6,11 +6,8 @@ import com.google.common.collect.Lists;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttributeFactory;
-import datawave.query.composite.CompositeUtils;
 import datawave.query.iterator.DocumentIterator;
 import datawave.query.iterator.Util;
-import datawave.query.iterator.filter.composite.CompositePredicateFilter;
-import datawave.query.iterator.filter.composite.CompositePredicateFilterer;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.predicate.SeekingFilter;
@@ -24,22 +21,19 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Scans a bounds within a column qualifier. This iterator needs to: - 1) Be given a global Range (ie, [-inf,+inf]) - 2) Select an arbitrary column family (ie,
  * "fi\u0000FIELD") - 3) Given a prefix, scan all keys that have a column qualifer that has that prefix that occur in the column family for all rows in a tablet
  * 
  */
-public class IndexIterator implements SortedKeyValueIterator<Key,Value>, DocumentIterator, CompositePredicateFilterer {
+public class IndexIterator implements SortedKeyValueIterator<Key,Value>, DocumentIterator {
     private static final Logger log = Logger.getLogger(IndexIterator.class);
     
     public static class Builder<B extends Builder<B>> {
@@ -51,7 +45,6 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         protected TypeMetadata typeMetadata;
         protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
         protected FieldIndexAggregator aggregation = new IdentityAggregator(null, null);
-        protected Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters = Collections.emptyMap();
         
         protected Builder(Text field, Text value, SortedKeyValueIterator<Key,Value> source) {
             this.field = field;
@@ -86,11 +79,6 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         
         public B withAggregation(FieldIndexAggregator aggregation) {
             this.aggregation = aggregation;
-            return self();
-        }
-        
-        public B withCompositePredicateFilters(Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters) {
-            this.compositePredicateFilters = compositePredicateFilters;
             return self();
         }
         
@@ -129,16 +117,14 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     protected final FieldIndexAggregator aggregation;
     protected TimeFilter timeFilter;
     protected SeekingFilter timeSeekingFilter;
-    private Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters;
     
     protected IndexIterator(Builder builder) {
         this(builder.field, builder.value, builder.source, builder.timeFilter, builder.typeMetadata, builder.buildDocument, builder.datatypeFilter,
-                        builder.aggregation, builder.compositePredicateFilters);
+                        builder.aggregation);
     }
     
     private IndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator,
-                    Map<String,Map<String,CompositePredicateFilter>> compositePredicateFilters) {
+                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
         
         valueMinPrefix = Util.minPrefix(value);
         
@@ -190,7 +176,6 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         this.aggregation = aggregator;
         
         this.timeFilter = timeFilter;
-        this.compositePredicateFilters = compositePredicateFilters;
     }
     
     @Override
@@ -334,23 +319,6 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                 continue;
             }
             
-            if (this.compositePredicateFilters != null && !this.compositePredicateFilters.isEmpty()) {
-                String colQual = top.getColumnQualifier().toString();
-                String[] terms = colQual.substring(0, colQual.indexOf('\0')).split(CompositeUtils.SEPARATOR);
-                String ingestType = colQual.substring(colQual.indexOf('\0') + 1, colQual.lastIndexOf('\0'));
-                String colFam = top.getColumnFamily().toString();
-                String fieldName = colFam.substring(colFam.indexOf('\0') + 1);
-                
-                CompositePredicateFilter compositePredicateFilter = (compositePredicateFilters.get(ingestType) != null) ? compositePredicateFilters.get(
-                                ingestType).get(fieldName) : null;
-                if (compositePredicateFilter != null && !compositePredicateFilter.keep(terms, top.getTimestamp())) {
-                    if (log.isTraceEnabled())
-                        log.trace("Ignoring key due to not passing the composite predicate filter: " + top);
-                    source.next();
-                    continue;
-                }
-            }
-            
             // Aggregate the document. NOTE: This will advance the source iterator
             tk = buildDocument ? aggregation.apply(source, document, attributeFactory) : aggregation.apply(source, scanRange, seekColumnFamilies,
                             includeColumnFamilies);
@@ -492,15 +460,5 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
         sb.append(this.valueMinPrefix.toString().replace("\0", "\\x00"));
         
         return sb.toString();
-    }
-    
-    @Override
-    public void addCompositePredicates(Set<JexlNode> compositePredicates) {
-        if (compositePredicateFilters != null) {
-            // Assign composite predicates to their corresponding field index filters
-            for (Map<String,CompositePredicateFilter> map : compositePredicateFilters.values())
-                for (CompositePredicateFilter compositePredicateFilter : map.values())
-                    compositePredicateFilter.addCompositePredicates(compositePredicates);
-        }
     }
 }
