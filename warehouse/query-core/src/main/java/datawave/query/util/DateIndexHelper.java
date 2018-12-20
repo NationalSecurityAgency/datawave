@@ -194,7 +194,7 @@ public class DateIndexHelper implements ApplicationContextAware {
      * @return the date type description
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getTypeDescription", key = "{#dateType,#begin,#end,#datatypeFilter}", cacheManager = "dateIndexHelperCacheManager")
+    @Cacheable(value = "getTypeDescription", key = "{#root.target.dateIndexTableName,#root.target.auths,#dateType,#begin,#end,#datatypeFilter}", cacheManager = "dateIndexHelperCacheManager")
     public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter) throws TableNotFoundException {
         log.debug("cache fault for getTypeDescription(" + dateType + ", " + begin + ", " + end + ", " + datatypeFilter + ")");
         if (log.isTraceEnabled()) {
@@ -274,7 +274,7 @@ public class DateIndexHelper implements ApplicationContextAware {
      * @return A string of comma delimited days and shards, order unspecified
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getShardsAndDaysHint", key = "{#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}", cacheManager = "dateIndexHelperCacheManager")
+    @Cacheable(value = "getShardsAndDaysHint", key = "{#root.target.dateIndexTableName,#root.target.auths,#root.target.collapseDatePercentThreshold,#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}", cacheManager = "dateIndexHelperCacheManager")
     public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter)
                     throws TableNotFoundException {
         log.debug("cache fault for getShardsAndDaysHint(" + field + ", " + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter
