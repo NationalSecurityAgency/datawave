@@ -194,15 +194,15 @@ public class DateIndexHelper implements ApplicationContextAware {
      * @return the date type description
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getTypeDescription", key = "{#dateType,#begin,#end,#datatypeFilter}", cacheManager = "dateIndexHelperCacheManager")
+    @Cacheable(value = "getTypeDescription", key = "{#root.target.dateIndexTableName,#root.target.auths,#dateType,#begin,#end,#datatypeFilter}",
+                    cacheManager = "dateIndexHelperCacheManager")
     public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter) throws TableNotFoundException {
-        log.debug("cache fault for getTypeDescription(" + dateType + ", " + begin + ", " + end + ", " + datatypeFilter + ")");
+        log.debug("cache fault for getTypeDescription(" + dateIndexTableName + ", " + auths + ", " + dateType + ", " + begin + ", " + end + ", "
+                        + datatypeFilter + ")");
         if (log.isTraceEnabled()) {
             this.showMeDaCache("before getTypeDescription");
         }
         long startTime = System.currentTimeMillis();
-        if (log.isTraceEnabled())
-            log.trace("getTypeDescription from table: " + dateIndexTableName + " for " + dateType);
         
         DateTypeDescription desc = new DateTypeDescription();
         
@@ -250,7 +250,8 @@ public class DateIndexHelper implements ApplicationContextAware {
         
         if (log.isDebugEnabled()) {
             long endTime = System.currentTimeMillis();
-            log.debug("getTypeDescription from table: " + dateIndexTableName + " for " + dateType + " returned " + desc + " in " + (endTime - startTime) + "ms");
+            log.debug("getTypeDescription from table: " + dateIndexTableName + ", " + auths + ", " + dateType + ", " + begin + ", " + end + ", "
+                            + datatypeFilter + " returned " + desc + " in " + (endTime - startTime) + "ms");
         }
         
         return desc;
@@ -274,18 +275,18 @@ public class DateIndexHelper implements ApplicationContextAware {
      * @return A string of comma delimited days and shards, order unspecified
      * @throws TableNotFoundException
      */
-    @Cacheable(value = "getShardsAndDaysHint", key = "{#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}", cacheManager = "dateIndexHelperCacheManager")
+    @Cacheable(
+                    value = "getShardsAndDaysHint",
+                    key = "{#root.target.dateIndexTableName,#root.target.auths,#root.target.collapseDatePercentThreshold,#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}",
+                    cacheManager = "dateIndexHelperCacheManager")
     public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter)
                     throws TableNotFoundException {
-        log.debug("cache fault for getShardsAndDaysHint(" + field + ", " + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter
-                        + ")");
+        log.debug("cache fault for getShardsAndDaysHint(" + dateIndexTableName + ", " + auths + ", " + collapseDatePercentThreshold + ", " + field + ", "
+                        + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter + ")");
         if (log.isTraceEnabled()) {
             this.showMeDaCache("before getShardsAndDaysHint");
         }
         long startTime = System.currentTimeMillis();
-        if (log.isTraceEnabled())
-            log.trace("getShardsAndDaysHint from table: " + dateIndexTableName + " for " + field + ", " + begin + ", " + end + ", " + rangeBegin + ", "
-                            + rangeEnd + ", " + datatypeFilter);
         if (log.isDebugEnabled()) {
             log.debug("timeTravel is " + this.timeTravel);
         }
@@ -365,7 +366,8 @@ public class DateIndexHelper implements ApplicationContextAware {
         
         if (log.isDebugEnabled()) {
             long endTime = System.currentTimeMillis();
-            log.debug("getShardsAndDaysHint from table: " + dateIndexTableName + " for " + field + " returned " + shardsAndDays + " in "
+            log.debug("getShardsAndDaysHint from table: " + dateIndexTableName + ", " + auths + ", " + collapseDatePercentThreshold + ", " + field + ", "
+                            + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter + " returned " + shardsAndDays + " in "
                             + (endTime - startTime) + "ms");
         }
         
