@@ -57,9 +57,14 @@ public final class QueryTestTableHelper {
     
     public QueryTestTableHelper(String instanceName, Logger log) throws AccumuloSecurityException, AccumuloException, TableExistsException,
                     TableNotFoundException {
+        this(instanceName, log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER);
+    }
+    
+    public QueryTestTableHelper(String instanceName, Logger log, RebuildingScannerTestHelper.TEARDOWN teardown) throws AccumuloSecurityException,
+                    AccumuloException, TableExistsException, TableNotFoundException {
         // create mock instance and connector
         InMemoryInstance i = new InMemoryInstance(instanceName);
-        this.connector = i.getConnector("root", new PasswordToken(""));
+        this.connector = RebuildingScannerTestHelper.getConnector(i, "root", new PasswordToken(""), teardown);
         this.log = log;
         
         createTables();

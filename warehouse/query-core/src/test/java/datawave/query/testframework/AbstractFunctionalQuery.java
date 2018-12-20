@@ -123,11 +123,15 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.dataManager = mgr;
     }
     
+    protected ShardQueryLogic createQueryLogic() {
+        return new ShardQueryLogic();
+    }
+    
     @Before
     public void querySetUp() {
         log.debug("---------  querySetUp  ---------");
         
-        this.logic = new ShardQueryLogic();
+        this.logic = createQueryLogic();
         QueryTestTableHelper.configureLogicToScanTables(this.logic);
         
         this.logic.setFullTableScanEnabled(false);
@@ -138,6 +142,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setQueryPlanner(new DefaultQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        
+        this.logic.setCollectTimingDetails(true);
+        this.logic.setLogTimingDetails(true);
         
         // count logic
         countLogic.setIncludeDataTypeAsField(true);
