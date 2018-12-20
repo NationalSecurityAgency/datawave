@@ -74,9 +74,11 @@ public class DateIndexHelper implements ApplicationContextAware {
     
     protected Connector connector;
     protected Instance instance;
+    
     protected String dateIndexTableName;
     protected Set<Authorizations> auths;
     protected int numQueryThreads;
+    
     protected float collapseDatePercentThreshold;
     protected boolean timeTravel = false;
     
@@ -90,6 +92,34 @@ public class DateIndexHelper implements ApplicationContextAware {
     
     public void setTimeTravel(boolean timeTravel) {
         this.timeTravel = timeTravel;
+    }
+    
+    public String getDateIndexTableName() {
+        return dateIndexTableName;
+    }
+    
+    public Connector getConnector() {
+        return connector;
+    }
+    
+    public Set<Authorizations> getAuths() {
+        return auths;
+    }
+    
+    public int getNumQueryThreads() {
+        return numQueryThreads;
+    }
+    
+    public float getCollapseDatePercentThreshold() {
+        return collapseDatePercentThreshold;
+    }
+    
+    public boolean isTimeTravel() {
+        return timeTravel;
+    }
+    
+    public ApplicationContext getApplicationContext() {
+        return applicationContext;
     }
     
     protected DateIndexHelper() {}
