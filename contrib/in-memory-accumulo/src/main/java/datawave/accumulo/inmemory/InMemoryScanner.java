@@ -22,6 +22,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.impl.ScannerOptions;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -30,10 +31,20 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
 
-public class InMemoryScanner extends InMemoryScannerBase implements Scanner {
+public class InMemoryScanner extends InMemoryScannerBase implements Scanner, ScannerRebuilder, Cloneable {
     
     int batchSize = 0;
     Range range = new Range();
+
+    @Override
+    public InMemoryScanner clone() {
+        InMemoryScanner clone = new InMemoryScanner(table, getAuthorizations());
+        clone.batchSize = getBatchSize();
+        clone.range = getRange();
+        ScannerOptions.setOptions(clone, this);
+        clone.timeOut = timeOut;
+        return clone;
+    }
     
     InMemoryScanner(InMemoryTable table, Authorizations auths) {
         super(table, auths);
@@ -106,6 +117,13 @@ public class InMemoryScanner extends InMemoryScannerBase implements Scanner {
             throw new RuntimeException(e);
         }
         
+    }
+
+    @Override
+    public Iterator<Entry<Key,Value>> rebuild(Key lastKey) {
+        Range newRange = new Range(lastKey, false, range.getEndKey(), range.isEndKeyInclusive());
+        this.range = newRange;
+        return iterator();
     }
     
     @Override

@@ -65,7 +65,7 @@ public abstract class GroupingTest {
         @BeforeClass
         public static void setUp() throws Exception {
             
-            QueryTestTableHelper qtth = new QueryTestTableHelper(GroupingTest.ShardRange.class.toString(), log);
+            QueryTestTableHelper qtth = new QueryTestTableHelper(GroupingTest.ShardRange.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.NEVER);
             connector = qtth.connector;
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
@@ -88,7 +88,7 @@ public abstract class GroupingTest {
         @BeforeClass
         public static void setUp() throws Exception {
             
-            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
+            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.NEVER);
             connector = qtth.connector;
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);

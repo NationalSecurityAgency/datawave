@@ -87,6 +87,17 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
         this.scanCFs = columnFamilies;
         this.scanInclusive = inclusive;
         getSource().seek(range, columnFamilies, inclusive);
+        
+        // if we have been reseeked after being torn down, and we are only returning unique terms, then advance to the next unique row/cf
+        if (!range.isStartKeyInclusive() && uniqeTermsOnly && getSource().hasTop()) {
+            Key start = range.getStartKey();
+            // verify this was actually from being torn down in that this key looks like a global index term
+            if (start.getColumnFamily().getLength() > 0 && start.getColumnQualifier().getLength() > 0
+                            && start.getColumnQualifier().toString().indexOf('\0') > 0) {
+                advance(start);
+            }
+        }
+        
         findTopEntry();
     }
     

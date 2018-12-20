@@ -19,22 +19,41 @@ package datawave.accumulo.inmemory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.impl.ScannerOptions;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
+import org.apache.accumulo.core.data.Column;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.data.thrift.IterInfo;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections.iterators.IteratorChain;
 
-public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchScanner {
+public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchScanner, ScannerRebuilder, Cloneable {
     
     List<Range> ranges = null;
+
+    @Override
+    public InMemoryBatchScanner clone() {
+        InMemoryBatchScanner clone = new InMemoryBatchScanner(table, getAuthorizations());
+        clone.ranges = (ranges == null ? null : new ArrayList<>(ranges));
+        ScannerOptions.setOptions(clone, this);
+        clone.timeOut = timeOut;
+
+        return clone;
+    }
     
     public InMemoryBatchScanner(InMemoryTable mockTable, Authorizations authorizations) {
         super(mockTable, authorizations);
@@ -68,6 +87,27 @@ public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchSc
             }
         }
         return chain;
+    }
+
+    @Override
+    public Iterator<Entry<Key,Value>> rebuild(Key lastKey) {
+        // rebuild the ranges
+        List<Range> newRanges = new ArrayList<>();
+        boolean found = false;
+        for (Range range : ranges) {
+            if (found) {
+                newRanges.add(range);
+            } else if (range.contains(lastKey)) {
+                found = true;
+                Range newRange = new Range(lastKey, false, range.getEndKey(), range.isEndKeyInclusive());
+                newRanges.add(newRange);
+            }
+        }
+        if (newRanges.isEmpty()) {
+            throw new IllegalStateException("Did not find specified key in previous set of ranges");
+        }
+        this.ranges = newRanges;
+        return iterator();
     }
     
     @Override

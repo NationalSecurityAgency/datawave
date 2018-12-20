@@ -66,7 +66,11 @@ public abstract class UniqueTest {
         @BeforeClass
         public static void setUp() throws Exception {
             
-            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
+            // testing tear downs but without consistency, because when we tear it down then we loose the ongoing bloom filter and subsequently the rebuild will
+            // start returning
+            // different keys.
+            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log,
+                            RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY);
             connector = qtth.connector;
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
@@ -90,7 +94,11 @@ public abstract class UniqueTest {
         @BeforeClass
         public static void setUp() throws Exception {
             
-            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
+            // testing tear downs but without consistency, because when we tear it down then we loose the ongoing bloom filter and subsequently the rebuild will
+            // start returning
+            // different keys.
+            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log,
+                            RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY);
             connector = qtth.connector;
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);

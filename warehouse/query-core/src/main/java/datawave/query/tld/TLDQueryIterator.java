@@ -171,17 +171,11 @@ public class TLDQueryIterator extends QueryIterator {
             if (!startKey.equals(range.getStartKey())) {
                 Key endKey = range.getEndKey();
                 boolean endKeyInclusive = range.isEndKeyInclusive();
-                // if the start key is outside of the range, then reset the end key to the next key
-                if (range.afterEndKey(startKey)) {
-                    endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
-                    endKeyInclusive = false;
-                }
                 range = new Range(startKey, false, endKey, endKeyInclusive);
             }
         }
         
         super.seek(range, columnFamilies, inclusive);
-        
     }
     
     @Override
