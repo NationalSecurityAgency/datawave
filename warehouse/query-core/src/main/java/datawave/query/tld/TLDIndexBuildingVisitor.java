@@ -6,7 +6,9 @@ import datawave.query.Constants;
 import datawave.query.iterator.builder.AbstractIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
+import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -22,6 +24,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(TLDIndexBuildingVisitor.class);
@@ -175,4 +178,8 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         return null;
     }
     
+    @Override
+    public TermFrequencyAggregator create(Set<String> fieldsToAggregate, EventDataQueryFilter attrFilter, int maxNextCount) {
+        return new TLDTermFrequencyAggregator(fieldsToAggregate, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1);
+    }
 }

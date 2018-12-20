@@ -3,10 +3,13 @@ package datawave.query.jexl.functions;
 import java.util.ArrayList;
 import java.util.Set;
 
+import com.google.common.collect.Maps;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 
 import datawave.query.data.parsers.DatawaveKey;
@@ -59,5 +62,30 @@ public class TermFrequencyAggregator extends IdentityAggregator {
         // CQ = dataType\0UID\0Normalized field value\0Field name
         // seek to the next documents TF
         return new Key(current.getRow(), current.getColumnFamily(), new Text(pointer + Constants.NULL_BYTE_STRING + Constants.MAX_UNICODE_STRING));
+    }
+    
+    /**
+     * Limit keep fields to those that are index only or if there is no filter specified
+     * 
+     * @param topKey
+     * @param fieldNameValue
+     * @return
+     */
+    @Override
+    protected boolean toKeep(Key topKey, Tuple2<String,String> fieldNameValue) {
+        return fieldsToKeep == null || filter == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first()));
+    }
+    
+    /**
+     * Only aggregate tf fields that are part of the returned document or necessary for query evaluation, not all TF
+     * 
+     * @param topKey
+     * @param fieldNameValue
+     * @param toKeep
+     * @return
+     */
+    @Override
+    protected boolean addToDoc(Key topKey, Tuple2<String,String> fieldNameValue, boolean toKeep) {
+        return toKeep && (filter == null || filter.apply(Maps.immutableEntry(topKey, StringUtils.EMPTY)));
     }
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
 
+import com.google.common.collect.Maps;
 import datawave.marking.ColumnVisibilityCache;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
@@ -20,6 +21,7 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 
 /**
@@ -102,11 +104,12 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
             
             Attribute<?> attr = attrs.create(fieldNameValue.first(), fieldNameValue.second(), topKey, true);
             // only keep fields that are index only and pass the attribute filter
-            boolean toKeep = (fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
-                            && (filter == null || filter.keep(topKey));
+            boolean toKeep = toKeep(topKey, fieldNameValue);
             attr.setToKeep(toKeep);
-            doc.put(fieldNameValue.first(), attr);
-            key = nextKey;
+            // only add to the document if the filter passes or we are keeping it
+            if (addToDoc(topKey, fieldNameValue, toKeep)) {
+                doc.put(fieldNameValue.first(), attr);
+            }
             itr.next();
             nextKey = (itr.hasTop() ? itr.getTopKey() : null);
         }
@@ -117,6 +120,15 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
         
         return TLD.buildParentKey(row, pointer, parseFieldNameValue(key.getColumnFamilyData(), key.getColumnQualifierData()), key.getColumnVisibility(),
                         key.getTimestamp());
+    }
+    
+    protected boolean toKeep(Key topKey, Tuple2<String,String> fieldNameValue) {
+        return (fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
+                        && (filter == null || filter.keep(topKey));
+    }
+    
+    protected boolean addToDoc(Key topKey, Tuple2<String,String> fieldNameValue, boolean toKeep) {
+        return true;
     }
     
     protected ByteSequence parseFieldNameValue(ByteSequence cf, ByteSequence cq) {

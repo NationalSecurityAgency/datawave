@@ -14,6 +14,8 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.jexl.functions.TermFrequencyAggregator;
+import datawave.query.jexl.functions.TermFrequencyAggregatorFactory;
 import datawave.util.UniversalSet;
 import datawave.query.iterator.SourceFactory;
 import datawave.query.iterator.SourceManager;
@@ -105,7 +107,7 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  * AST trees and iterator trees. A JEXL tree can have subtrees rooted at an ASTNotNode whereas an iterator tree cannot.
  * 
  */
-public class IteratorBuildingVisitor extends BaseVisitor {
+public class IteratorBuildingVisitor extends BaseVisitor implements TermFrequencyAggregatorFactory {
     private static final Logger log = Logger.getLogger(IteratorBuildingVisitor.class);
     
     public static final String NULL_DELIMETER = "\u0000";
@@ -375,8 +377,18 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             analyzer = new JavaRegexAnalyzer(String.valueOf(JexlASTHelper.getLiteralValue(node)));
             
             LiteralRange<String> range = new LiteralRange<>(JexlASTHelper.getIdentifier(node), NodeOperand.AND);
-            range.updateLower(analyzer.getLeadingOrTrailingLiteral(), true);
-            range.updateUpper(analyzer.getLeadingOrTrailingLiteral() + Constants.MAX_UNICODE_STRING, true);
+            if (!analyzer.isLeadingLiteral()) {
+                // if the range is a leading wildcard we have to seek over the whole range since it's forward indexed only
+                range.updateLower(Constants.NULL_BYTE_STRING, true);
+                range.updateUpper(Constants.MAX_UNICODE_STRING, true);
+            } else {
+                range.updateLower(analyzer.getLeadingOrTrailingLiteral(), true);
+                if (analyzer.hasWildCard()) {
+                    range.updateUpper(analyzer.getLeadingLiteral() + Constants.MAX_UNICODE_STRING, true);
+                } else {
+                    range.updateUpper(analyzer.getLeadingOrTrailingLiteral(), true);
+                }
+            }
             return range;
         } catch (JavaRegexParseException | NoSuchElementException e) {
             throw new DatawaveFatalQueryException(e);
@@ -413,6 +425,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setTimeFilter(timeFilter);
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
+            builder.setTermFrequencyAggregatorFactory(this);
             
             Key startKey = rangeLimiter.getStartKey();
             
@@ -1145,6 +1158,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         ivarate(builder, source, data);
+    }
+    
+    @Override
+    public TermFrequencyAggregator create(Set<String> fieldsToAggregate, EventDataQueryFilter attrFilter, int maxNextCount) {
+        return new TermFrequencyAggregator(fieldsToAggregate, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1);
     }
     
     public static class FunctionFilter implements Filter {

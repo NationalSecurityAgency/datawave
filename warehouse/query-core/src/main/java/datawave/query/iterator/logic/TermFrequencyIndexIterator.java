@@ -80,6 +80,17 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     
     public TermFrequencyIndexIterator(Key fiStartKey, Key fiEndKey, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
                     boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
+        this(fiStartKey, true, fiEndKey, false, source, timeFilter, typeMetadata, buildDocument, datatypeFilter, aggregator);
+    }
+    
+    public TermFrequencyIndexIterator(Range fiRange, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
+                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
+        this(fiRange.getStartKey(), fiRange.isStartKeyInclusive(), fiRange.getEndKey(), fiRange.isEndKeyInclusive(), source, timeFilter, typeMetadata,
+                        buildDocument, datatypeFilter, aggregator);
+    }
+    
+    public TermFrequencyIndexIterator(Key fiStartKey, boolean startInclusive, Key fiEndKey, boolean endInclusive, SortedKeyValueIterator<Key,Value> source,
+                    TimeFilter timeFilter, TypeMetadata typeMetadata, boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
         
         this.datatypeFilter = datatypeFilter;
         
@@ -102,10 +113,10 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
         this.field = startKeyParser.getFieldName().toUpperCase();
         
         Key startKey = new Key(startKeyParser.getRow(), columnFamily, new Text(startKeyParser.getDataType() + Constants.NULL + startKeyParser.getUid()
-                        + Constants.NULL + startKeyParser.getFieldValue()));
-        Key endKey = new Key(startKeyParser.getRow(), columnFamily, new Text(startKeyParser.getDataType() + Constants.NULL + startKeyParser.getUid()
-                        + Constants.NULL + stopKeyParser.getFieldValue() + Constants.MAX_UNICODE_STRING));
-        scanRange = new Range(startKey, true, endKey, false);
+                        + Constants.NULL + startKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + startKeyParser.getFieldName()));
+        Key endKey = new Key(stopKeyParser.getRow(), columnFamily, new Text(stopKeyParser.getDataType() + Constants.NULL + stopKeyParser.getUid()
+                        + Constants.NULL + stopKeyParser.getFieldValue() + Constants.NULL_BYTE_STRING + stopKeyParser.getFieldName()));
+        scanRange = new Range(startKey, startInclusive, endKey, endInclusive);
         if (log.isTraceEnabled())
             log.trace("Adding scan range of " + scanRange);
         
@@ -191,6 +202,21 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
                 Key nextKey = new Key(row, cf, new Text(builder.toString()));
                 Range newRange = new Range(nextKey, true, scanRange.getEndKey(), scanRange.isEndKeyInclusive());
                 source.seek(newRange, seekColumnFamilies, true);
+                continue;
+            }
+            
+            // only inspect the values specified in the range since a broad row or uid range will potentially go cross document
+            if (scanRange.isStartKeyInclusive() && key.getFieldValue().compareTo(startKeyParser.getFieldValue()) < 0) {
+                source.next();
+                continue;
+            } else if (!scanRange.isStartKeyInclusive() && key.getFieldValue().compareTo(startKeyParser.getFieldValue()) <= 0) {
+                source.next();
+                continue;
+            } else if (scanRange.isEndKeyInclusive() && key.getFieldValue().compareTo(stopKeyParser.getFieldValue()) > 0) {
+                source.next();
+                continue;
+            } else if (!scanRange.isEndKeyInclusive() && key.getFieldValue().compareTo(stopKeyParser.getFieldValue()) >= 0) {
+                source.next();
                 continue;
             }
             
