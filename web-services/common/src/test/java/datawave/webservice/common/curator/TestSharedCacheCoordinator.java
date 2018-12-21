@@ -1,15 +1,12 @@
 package datawave.webservice.common.curator;
 
 import com.google.common.base.Preconditions;
-import datawave.webservice.common.cache.SharedBoolean;
-import datawave.webservice.common.cache.SharedBooleanListener;
 import datawave.common.util.ArgumentChecker;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.recipes.shared.SharedCount;
@@ -20,6 +17,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
 import org.jboss.logging.Logger;
+import datawave.zookeeper.cache.util.SharedBoolean;
+import datawave.zookeeper.cache.util.SharedBooleanListener;
 
 import javax.annotation.PreDestroy;
 import java.io.IOException;

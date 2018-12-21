@@ -8,6 +8,7 @@ import java.util.concurrent.Future;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.zookeeper.cache.util.SharedCacheCoordinator;
 
 public interface TableCache extends Callable<Boolean>, Serializable {
     

@@ -1,9 +1,5 @@
 package datawave.query.util;
 
-import datawave.webservice.common.cache.SharedCacheCoordinator;
-import datawave.webservice.common.cache.SharedTriState;
-import datawave.webservice.common.cache.SharedTriStateListener;
-import datawave.webservice.common.cache.SharedTriStateReader;
 import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
@@ -13,9 +9,11 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
+import datawave.zookeeper.cache.util.SharedCacheCoordinator;
+import datawave.zookeeper.cache.util.SharedTriState;
+import datawave.zookeeper.cache.util.SharedTriStateListener;
+import datawave.zookeeper.cache.util.SharedTriStateReader;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 

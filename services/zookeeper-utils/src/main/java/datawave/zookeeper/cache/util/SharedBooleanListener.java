@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package datawave.webservice.common.cache;
+package datawave.zookeeper.cache.util;
 
 import org.apache.curator.framework.state.ConnectionStateListener;
 

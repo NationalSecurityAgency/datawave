@@ -49,6 +49,10 @@ import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import datawave.zookeeper.cache.util.SharedCacheCoordinator;
+import datawave.zookeeper.cache.util.SharedTriState;
+import datawave.zookeeper.cache.util.SharedTriStateListener;
+import datawave.zookeeper.cache.util.SharedTriStateReader;
 
 /**
  * Object that caches data from Accumulo tables.

@@ -25,6 +25,7 @@
         <module>../service-parent</module>
         <!-- Temporarily removed until the first version is released and this module is removed from the parent pom. -->
         <!--<module>../accumulo-utils</module>-->
+        <!--<module>../zookeeper-utils</module>-->
         <!--<module>../base-rest-responses</module>-->
         <module>../metrics-reporter</module>
         <module>../authorization-api</module>

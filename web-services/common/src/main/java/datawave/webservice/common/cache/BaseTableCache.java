@@ -34,6 +34,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
+import datawave.zookeeper.cache.util.SharedCacheCoordinator;
 
 public class BaseTableCache implements Serializable, TableCache {
     

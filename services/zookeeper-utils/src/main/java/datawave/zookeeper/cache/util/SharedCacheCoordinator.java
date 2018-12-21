@@ -1,7 +1,6 @@
-package datawave.webservice.common.cache;
+package datawave.zookeeper.cache.util;
 
 import com.google.common.base.Preconditions;
-import datawave.common.util.ArgumentChecker;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -22,7 +21,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -54,7 +54,7 @@ public class SharedCacheCoordinator implements Serializable {
     private static final String LIVE_SERVERS = "/liveServers";
     private static final long EVICT_MESSAGE_TIMEOUT = 60 * 1000L;
     
-    private Logger log = Logger.getLogger(getClass());
+    private Logger log = LoggerFactory.getLogger(getClass());
     private transient CuratorFramework curatorClient;
     private String localName;
     private String serverIdentifierPath;
@@ -90,10 +90,10 @@ public class SharedCacheCoordinator implements Serializable {
      */
     @Inject
     public SharedCacheCoordinator(@ConfigProperty(name = "dw.cache.coordinator.namespace") String namespace,
-                    @ConfigProperty(name = "dw.warehouse.zookeepers") String zookeeperConnectionString, @ConfigProperty(
-                                    name = "dw.cacheCoordinator.evictionReaperIntervalSeconds", defaultValue = "30") int evictionReaperIntervalInSeconds,
-                    @ConfigProperty(name = "dw.cacheCoordinator.numLocks", defaultValue = "300") int numLocks, @ConfigProperty(
-                                    name = "dw.cacheCoordinator.maxRetries", defaultValue = "10") int maxRetries) {
+                    @ConfigProperty(name = "dw.warehouse.zookeepers") String zookeeperConnectionString,
+                    @ConfigProperty(name = "dw.cacheCoordinator.evictionReaperIntervalSeconds", defaultValue = "30") int evictionReaperIntervalInSeconds,
+                    @ConfigProperty(name = "dw.cacheCoordinator.numLocks", defaultValue = "300") int numLocks,
+                    @ConfigProperty(name = "dw.cacheCoordinator.maxRetries", defaultValue = "10") int maxRetries) {
         ArgumentChecker.notNull(namespace, zookeeperConnectionString);
         
         locks = new HashMap<>();
@@ -391,8 +391,8 @@ public class SharedCacheCoordinator implements Serializable {
                 count.removeListener(sharedCountListeners.get(counterName));
                 count.close();
                 reregisterCounter(counterName, sharedCountListeners.get(counterName), newCount);
-                throw new IllegalStateException("Unable to increment shared counter " + counterName + " after " + maxRetries
-                                + " attempts. Zookeeper connection may be down.");
+                throw new IllegalStateException(
+                                "Unable to increment shared counter " + counterName + " after " + maxRetries + " attempts. Zookeeper connection may be down.");
             }
         }
         localCounters.put(counterName, newCount);
@@ -603,23 +603,23 @@ public class SharedCacheCoordinator implements Serializable {
         evictionPathCache.getListenable().addListener((client, event) -> {
             if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {
                 // Call our eviction handler to do local eviction
-                        String path = event.getData().getPath();
-                        String dn = ZKPaths.getNodeFromPath(path);
-                        callback.evict(dn);
-                        
-                        // Now register ourselves under the eviction node that that once
-                        // a child for each running web server appears, the eviction node
-                        // can be cleaned up.
-                        String responsePath = ZKPaths.makePath(path, localName);
-                        try {
-                            if (curatorClient.checkExists().creatingParentContainersIfNeeded().forPath(responsePath) == null) {
-                                curatorClient.create().creatingParentContainersIfNeeded().forPath(responsePath);
-                            }
-                        } catch (KeeperException.NodeExistsException e) {
-                            // ignored on purpose -- someone beat us to creating the node
-                        }
+                String path = event.getData().getPath();
+                String dn = ZKPaths.getNodeFromPath(path);
+                callback.evict(dn);
+                
+                // Now register ourselves under the eviction node that that once
+                // a child for each running web server appears, the eviction node
+                // can be cleaned up.
+                String responsePath = ZKPaths.makePath(path, localName);
+                try {
+                    if (curatorClient.checkExists().creatingParentContainersIfNeeded().forPath(responsePath) == null) {
+                        curatorClient.create().creatingParentContainersIfNeeded().forPath(responsePath);
                     }
-                });
+                } catch (KeeperException.NodeExistsException e) {
+                    // ignored on purpose -- someone beat us to creating the node
+                }
+            }
+        });
     }
     
     /**
@@ -657,6 +657,26 @@ public class SharedCacheCoordinator implements Serializable {
             }
         } catch (Exception e) {
             log.warn("Error cleaning up eviction notices: " + e.getMessage(), e);
+        }
+    }
+    
+    public static class ArgumentChecker {
+        private static final String NULL_ARG_MSG = "argument was null";
+        
+        public static final void notNull(final Object... args) {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] == null) {
+                    throw new IllegalArgumentException(buildErrorMessage(args));
+                }
+            }
+        }
+        
+        private static String buildErrorMessage(Object[] args) {
+            StringBuilder builder = new StringBuilder(NULL_ARG_MSG + ":Is null- ");
+            for (int i = 0; i < args.length; i++) {
+                builder.append(" arg" + i + "? " + (args[i] == null));
+            }
+            return builder.toString();
         }
     }
 }
