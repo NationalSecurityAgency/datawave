@@ -1,6 +1,9 @@
 package datawave.query.jexl.functions;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -13,6 +16,7 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 import com.google.common.collect.ImmutableSet;
@@ -50,7 +54,36 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
         
         @Override
         public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
-            // noop, covered by getIndexQuery (see comments on interface)
+            FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
+            node.jjtAccept(functionMetadata, null);
+            Map<String, String> fieldValues = new HashMap<>();
+
+            if (functionMetadata.name().equals("atomValuesMatch")) {
+                // special case
+                Set<String> fields = new HashSet<>();
+                fields.addAll(JexlASTHelper.getIdentifierNames(functionMetadata.args().get(0)));
+                fields.addAll(JexlASTHelper.getIdentifierNames(functionMetadata.args().get(1)));
+                for (String fieldName: fields) {
+                    EventDataQueryExpressionVisitor.ExpressionFilter f = filterMap.get(fieldName);
+                    if (f == null) {
+                        filterMap.put(fieldName, f = new EventDataQueryExpressionVisitor.ExpressionFilter(attributeFactory, fieldName));
+                    }
+                    f.acceptAllValues();
+                }
+            } else {
+                // don't include the last argument if the size is odd as that is a position arg
+                for (int i = 0; i < functionMetadata.args().size() - 1; i += 2) {
+                    Set<String> fields = JexlASTHelper.getIdentifierNames(functionMetadata.args().get(i));
+                    JexlNode valueNode = functionMetadata.args().get(i+1);
+                    for (String fieldName: fields) {
+                        EventDataQueryExpressionVisitor.ExpressionFilter f = filterMap.get(fieldName);
+                        if (f == null) {
+                            filterMap.put(fieldName, f = new EventDataQueryExpressionVisitor.ExpressionFilter(attributeFactory, fieldName));
+                        }
+                        f.addFieldPattern(valueNode.image);
+                    }
+                }
+            }
         }
         
         @Override
