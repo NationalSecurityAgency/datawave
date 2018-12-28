@@ -15,7 +15,6 @@ import datawave.query.composite.CompositeMetadata;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
-import datawave.query.jexl.functions.TermFrequencyAggregatorFactory;
 import datawave.util.UniversalSet;
 import datawave.query.iterator.SourceFactory;
 import datawave.query.iterator.SourceManager;
@@ -107,7 +106,7 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  * AST trees and iterator trees. A JEXL tree can have subtrees rooted at an ASTNotNode whereas an iterator tree cannot.
  * 
  */
-public class IteratorBuildingVisitor extends BaseVisitor implements TermFrequencyAggregatorFactory {
+public class IteratorBuildingVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(IteratorBuildingVisitor.class);
     
     public static final String NULL_DELIMETER = "\u0000";
@@ -425,7 +424,7 @@ public class IteratorBuildingVisitor extends BaseVisitor implements TermFrequenc
             builder.setTimeFilter(timeFilter);
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
-            builder.setTermFrequencyAggregatorFactory(this);
+            builder.setTermFrequencyAggregator(getTermFrequencyAggregator(fieldsToAggregate, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1));
             
             Key startKey = rangeLimiter.getStartKey();
             
@@ -1160,9 +1159,8 @@ public class IteratorBuildingVisitor extends BaseVisitor implements TermFrequenc
         ivarate(builder, source, data);
     }
     
-    @Override
-    public TermFrequencyAggregator create(Set<String> fieldsToAggregate, EventDataQueryFilter attrFilter, int maxNextCount) {
-        return new TermFrequencyAggregator(fieldsToAggregate, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1);
+    protected TermFrequencyAggregator getTermFrequencyAggregator(Set<String> fieldsToKeep, EventDataQueryFilter attrFilter, int maxNextCount) {
+        return new TermFrequencyAggregator(fieldsToKeep, attrFilter, maxNextCount);
     }
     
     public static class FunctionFilter implements Filter {

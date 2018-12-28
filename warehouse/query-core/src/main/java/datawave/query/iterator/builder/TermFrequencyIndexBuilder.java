@@ -6,7 +6,6 @@ import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
-import datawave.query.jexl.functions.TermFrequencyAggregatorFactory;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
@@ -34,7 +33,7 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
     protected Set<String> fieldsToAggregate;
     protected EventDataQueryFilter attrFilter;
-    protected TermFrequencyAggregatorFactory aggregatorFactory;
+    protected TermFrequencyAggregator termFrequencyAggregator;
     
     public void setSource(final SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
@@ -100,16 +99,15 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
         this.attrFilter = attrFilter;
     }
     
-    public void setTermFrequencyAggregatorFactory(TermFrequencyAggregatorFactory aggregatorFactory) {
-        this.aggregatorFactory = aggregatorFactory;
+    public void setTermFrequencyAggregator(TermFrequencyAggregator termFrequencyAggregator) {
+        this.termFrequencyAggregator = termFrequencyAggregator;
     }
     
     @SuppressWarnings("unchecked")
     public NestedIterator<Key> build() {
         if (notNull(field, range, source, datatypeFilter, timeFilter)) {
             IndexIteratorBridge itr = new IndexIteratorBridge(new TermFrequencyIndexIterator(range, source, this.timeFilter, this.typeMetadata,
-                            this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), this.datatypeFilter, aggregatorFactory.create(
-                                            fieldsToAggregate, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1)));
+                            this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), this.datatypeFilter, termFrequencyAggregator));
             field = null;
             range = null;
             source = null;
