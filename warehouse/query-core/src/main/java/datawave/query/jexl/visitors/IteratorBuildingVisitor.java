@@ -15,6 +15,9 @@ import datawave.query.composite.CompositeMetadata;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
+import datawave.query.predicate.ChainableEventDataQueryFilter;
+import datawave.query.predicate.ConfigurableEventDataQueryFilter;
+import datawave.query.predicate.EventDataQueryExpressionFilter;
 import datawave.util.UniversalSet;
 import datawave.query.iterator.SourceFactory;
 import datawave.query.iterator.SourceManager;
@@ -52,7 +55,6 @@ import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -80,6 +82,7 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -299,9 +302,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 
                 NestedIterator<Key> nested = null;
                 if (termFrequencyFields.contains(identifier)) {
-                    
-                    nested = buildExceededFromTermFrequency(identifier, range, data);
-                    
+                    nested = buildExceededFromTermFrequency(identifier, source, range, data);
                 } else {
                     /**
                      * This is okay since 1) We are doc specific 2) We are not index only or tf 3) Therefore, we must evaluate against the document for this
@@ -410,11 +411,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     /**
-     * 
-     * @param identifier
+     *
      * @param data
      */
-    private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, LiteralRange<?> range, Object data) {
+    private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode node, LiteralRange<?> range, Object data) {
         if (limitLookup) {
             
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
@@ -424,7 +424,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setTimeFilter(timeFilter);
             builder.setAttrFilter(attrFilter);
             builder.setDatatypeFilter(datatypeFilter);
-            builder.setTermFrequencyAggregator(getTermFrequencyAggregator(fieldsToAggregate, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1));
+            builder.setTermFrequencyAggregator(getTermFrequencyAggregator(node, fieldsToAggregate, attrFilter,
+                            attrFilter != null ? attrFilter.getMaxNextCount() : -1));
             
             Key startKey = rangeLimiter.getStartKey();
             
@@ -1159,8 +1160,27 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         ivarate(builder, source, data);
     }
     
-    protected TermFrequencyAggregator getTermFrequencyAggregator(Set<String> fieldsToKeep, EventDataQueryFilter attrFilter, int maxNextCount) {
-        return new TermFrequencyAggregator(fieldsToKeep, attrFilter, maxNextCount);
+    protected TermFrequencyAggregator getTermFrequencyAggregator(JexlNode node, Set<String> fieldsToKeep, EventDataQueryFilter attrFilter, int maxNextCount) {
+        EventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(node, attrFilter);
+        
+        return buildTermFrequencyAggregator(fieldsToKeep, wrapped, maxNextCount);
+    }
+    
+    protected TermFrequencyAggregator buildTermFrequencyAggregator(Set<String> fieldsToKeep, EventDataQueryFilter filter, int maxNextCount) {
+        return new TermFrequencyAggregator(fieldsToKeep, filter, maxNextCount);
+    }
+    
+    protected EventDataQueryFilter createWrappedTermFrequencyFilter(JexlNode node, EventDataQueryFilter existing) {
+        EventDataQueryFilter expressoinFilter = new EventDataQueryExpressionFilter(node, typeMetadata);
+        
+        ChainableEventDataQueryFilter chainableFilter = new ChainableEventDataQueryFilter();
+        if (existing != null) {
+            chainableFilter.addFilter(existing);
+        }
+        
+        chainableFilter.addFilter(expressoinFilter);
+        
+        return chainableFilter;
     }
     
     public static class FunctionFilter implements Filter {

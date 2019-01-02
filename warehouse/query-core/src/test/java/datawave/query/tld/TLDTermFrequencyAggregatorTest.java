@@ -69,16 +69,10 @@ public class TLDTermFrequencyAggregatorTest {
         Key result = aggregator.apply(itr, doc, attributeFactory);
         
         // test result key
-        assertTrue(result != null);
-        DatawaveKey parsedResult = new DatawaveKey(result);
-        assertTrue(parsedResult.getDataType().equals("dataType1"));
-        assertTrue(parsedResult.getUid().equals("123.345.456"));
-        assertTrue(parsedResult.getFieldName().equals("FIELD1"));
-        assertTrue(parsedResult.getFieldValue().equals("VALUE1"));
+        assertTrue(result == null);
         
         // test that the doc is empty
-        assertTrue(doc.size() == 1);
-        assertTrue(doc.get("RECORD_ID").getData().toString().equals("123/dataType1/123.345.456"));
+        assertTrue(doc.size() == 0);
         
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
@@ -176,16 +170,10 @@ public class TLDTermFrequencyAggregatorTest {
         Key result = aggregator.apply(itr, doc, attributeFactory);
         
         // test result key
-        assertTrue(result != null);
-        DatawaveKey parsedResult = new DatawaveKey(result);
-        assertTrue(parsedResult.getDataType().equals("dataType1"));
-        assertTrue(parsedResult.getUid().equals("123.345.456"));
-        assertTrue(parsedResult.getFieldName().equals("FIELD1"));
-        assertTrue(parsedResult.getFieldValue().equals("VALUE1"));
+        assertTrue(result == null);
         
         // test that the doc is empty
-        assertTrue(doc.size() == 1);
-        assertTrue(doc.get("RECORD_ID").getData().equals("123/dataType1/123.345.456"));
+        assertTrue(doc.size() == 0);
         
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());

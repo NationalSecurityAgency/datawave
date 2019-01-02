@@ -1,14 +1,19 @@
 package datawave.query.jexl.functions;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
 
 import com.google.common.collect.Maps;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 
@@ -62,6 +67,22 @@ public class TermFrequencyAggregator extends IdentityAggregator {
         // CQ = dataType\0UID\0Normalized field value\0Field name
         // seek to the next documents TF
         return new Key(current.getRow(), current.getColumnFamily(), new Text(pointer + Constants.NULL_BYTE_STRING + Constants.MAX_UNICODE_STRING));
+    }
+    
+    @Override
+    public Key apply(SortedKeyValueIterator<Key,Value> itr, Document doc, AttributeFactory attrs) throws IOException {
+        Key key = super.apply(itr, doc, attrs);
+        
+        // only return a key if something was added to the document, documents that only contain Document.DOCKEY_FIELD_NAME as they found nothing of value to
+        // aggregate
+        if (doc.size() == 1 && doc.get(Document.DOCKEY_FIELD_NAME) != null) {
+            key = null;
+            
+            // empty the document
+            doc.remove(Document.DOCKEY_FIELD_NAME);
+        }
+        
+        return key;
     }
     
     /**

@@ -179,7 +179,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     }
     
     @Override
-    protected TermFrequencyAggregator getTermFrequencyAggregator(Set<String> fieldsToAggregate, EventDataQueryFilter attrFilter, int maxNextCount) {
-        return new TLDTermFrequencyAggregator(fieldsToAggregate, attrFilter, attrFilter != null ? attrFilter.getMaxNextCount() : -1);
+    protected TermFrequencyAggregator buildTermFrequencyAggregator(Set<String> fieldsToAggregate, EventDataQueryFilter filter, int maxNextCount) {
+        return new TLDTermFrequencyAggregator(fieldsToAggregate, filter, filter != null ? filter.getMaxNextCount() : -1);
     }
 }
