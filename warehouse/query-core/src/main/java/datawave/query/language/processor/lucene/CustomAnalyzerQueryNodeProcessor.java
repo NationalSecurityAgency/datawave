@@ -52,7 +52,7 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
 
 /**
  * Applies tokenization to {@link TextableQueryNode} objects using a configured Lucene {@link Analyzer}.
- * <p/>
+ * <p>
  *
  * Uses the {@link Analyzer} specified in the the {@link ConfigurationKeys#ANALYZER} attribute of the {@link QueryConfigHandler} to process non-wildcard
  * {@link FieldQueryNode}s for fields listed in <code>tokenizedFields</code>.
@@ -71,11 +71,11 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
  * attempt will be made to adjust the slop based on the number of additional tokens generated. For exa mple, in the case of the slop query above, the new query
  * will be "portable wi fi"~4 because an additional token was generated based on the split of 'wi' and 'fi' into two separate tokens.
  *
- * FieldQueryNodes with empty fields are considered 'unfielded' and will be tokenized if <code>unfieldedTokenized</code> is
- * <code>true<code>. The <code>skipTokenizeUnfieldedFields</code> can be used in this case to indicate that a node should be treated as un-fielded but not
- * tokenized. When this processor encounters such a field in a node, it will not tokenize the text of that node and will set that node's field to an empty
- * string so that downstream processors will treat the node as if it is un-fielded.
- * <p/>
+ * FieldQueryNodes with empty fields are considered 'unfielded' and will be tokenized if <code>unfieldedTokenized</code> is <code>true</code>. The
+ * <code>skipTokenizeUnfieldedFields</code> can be used in this case to indicate that a node should be treated as un-fielded but not tokenized. When this
+ * processor encounters such a field in a node, it will not tokenize the text of that node and will set that node's field to an empty string so that downstream
+ * processors will treat the node as if it is un-fielded.
+ * <p>
  * 
  * @see Analyzer
  * @see TokenStream
