@@ -31,7 +31,7 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
         String FILTER_PROP = "RecordReader.filters";
     }
     
-    private List<? extends RecordFilter> filters = null;
+    protected List<? extends RecordFilter> filters = null;
     
     protected final Map<String,String> eventDataTypeMap = new HashMap<>();
     protected String eventDataTypeFieldName = null;
@@ -208,17 +208,5 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
             }
             this.filters = null;
         }
-    }
-    
-    /**
-     *
-     * @return - an immutable list to avoid accidental changes to the underlying collection
-     */
-    public List<? extends RecordFilter> getFilters() {
-        return ImmutableList.copyOf(filters);
-    }
-    
-    public void setFilters(List<? extends RecordFilter> filters) {
-        this.filters = filters;
     }
 }
