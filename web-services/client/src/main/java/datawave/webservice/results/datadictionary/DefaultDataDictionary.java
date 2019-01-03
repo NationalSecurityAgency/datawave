@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -19,9 +17,7 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import com.google.common.collect.Lists;
 import datawave.webservice.HtmlProvider;
-import datawave.webservice.model.FieldMapping;
 import datawave.webservice.query.result.metadata.DefaultMetadataField;
-import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.TotalResultsAware;
 
 import io.protostuff.Input;

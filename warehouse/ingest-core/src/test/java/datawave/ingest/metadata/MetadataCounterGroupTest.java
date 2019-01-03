@@ -1,7 +1,8 @@
 package datawave.ingest.metadata;
 
 import org.apache.hadoop.io.Text;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.Iterator;
 

@@ -4,7 +4,6 @@ import java.text.ParseException;
 import java.util.Date;
 
 import datawave.webservice.common.extjs.ExtJsResponse;
-import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.runner.QueryExecutor;

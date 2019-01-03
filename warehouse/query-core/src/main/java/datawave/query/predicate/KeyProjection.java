@@ -8,7 +8,6 @@ import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
 
 /**
  * 

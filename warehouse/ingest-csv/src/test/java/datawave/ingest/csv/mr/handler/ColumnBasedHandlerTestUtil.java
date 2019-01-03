@@ -13,7 +13,6 @@ import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.CompositeIngest;
-import datawave.ingest.data.config.ingest.CompositeIngestHelperInterface;
 import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
@@ -24,7 +23,6 @@ import datawave.ingest.test.StandaloneTaskAttemptContext;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -291,13 +289,13 @@ public class ColumnBasedHandlerTestUtil {
                 }
             }
             if (expectedShardKeys > 0)
-                Assert.assertTrue(countMap.get(shardTableName) == expectedShardKeys);
+                Assert.assertEquals((int) countMap.get(shardTableName), expectedShardKeys);
             if (expectedShardIndexKeys > 0)
-                Assert.assertTrue(countMap.get(shardIndexTableName) == expectedShardIndexKeys);
+                Assert.assertEquals((int) countMap.get(shardIndexTableName), expectedShardIndexKeys);
             if (expectedShardReverseIndexKeys > 0)
-                Assert.assertTrue(countMap.get(shardReverseIndexTableName) == expectedShardReverseIndexKeys);
+                Assert.assertEquals((int) countMap.get(shardReverseIndexTableName), expectedShardReverseIndexKeys);
             if (expectedEdgeKeys > 0)
-                Assert.assertTrue(countMap.get(edgeTableName) == expectedEdgeKeys);
+                Assert.assertEquals((int) countMap.get(edgeTableName), expectedEdgeKeys);
         } catch (AssertionError ae) {
             if (printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {

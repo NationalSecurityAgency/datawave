@@ -1,6 +1,11 @@
 package datawave.query.language.parser.jexl;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 import org.junit.Assert;
 import datawave.query.language.parser.ParseException;

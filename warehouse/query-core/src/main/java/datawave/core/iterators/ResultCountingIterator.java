@@ -5,11 +5,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import datawave.marking.MarkingFunctions;
 
-import datawave.marking.MarkingFunctionsFactory;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;

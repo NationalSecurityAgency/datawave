@@ -1,9 +1,6 @@
 package datawave.query.index.lookup;
 
 import com.google.common.collect.Lists;
-import datawave.query.index.lookup.IndexInfo;
-import datawave.query.index.lookup.IndexMatch;
-import datawave.query.index.lookup.TupleToRange;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.QueryPlan;

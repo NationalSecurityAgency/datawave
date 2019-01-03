@@ -63,8 +63,6 @@ import org.apache.commons.jexl2.parser.SimpleNode;
 
 import com.google.common.collect.Lists;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-
 /**
  * Does a pretty print out of a depth first traversal.
  * 

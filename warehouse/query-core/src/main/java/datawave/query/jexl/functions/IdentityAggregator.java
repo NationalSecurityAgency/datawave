@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import datawave.marking.ColumnVisibilityCache;
-import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
@@ -124,7 +123,7 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
     }
     
     protected Tuple2<String,String> parserFieldNameValue(Key topKey) {
-        return new Tuple2<String,String>(topKey.getColumnFamily().toString().substring(3), parseValue(topKey.getColumnQualifier().toString()));
+        return new Tuple2<>(topKey.getColumnFamily().toString().substring(3), parseValue(topKey.getColumnQualifier().toString()));
     }
     
     private static final ArrayByteSequence EMPTY_BYTES = new ArrayByteSequence(new byte[0]);

@@ -67,7 +67,7 @@ public class TermWeightPositionTest {
         
         List<TermWeightPosition> result = Lists.newArrayList(termWeightPositionList);
         Collections.sort(result, new TermWeightPosition.MaxOffsetComparator());
-        Assert.assertTrue(listExpected.equals(result));
+        Assert.assertEquals(listExpected, result);
         
     }
     
@@ -99,7 +99,7 @@ public class TermWeightPositionTest {
         
         List<TermWeightPosition> result = Lists.newArrayList(termWeightPositionList);
         Collections.sort(result);
-        Assert.assertTrue(listExpected.equals(result));
+        Assert.assertEquals(listExpected, result);
     }
     
     @Test
@@ -108,6 +108,6 @@ public class TermWeightPositionTest {
         Integer twScore = TermWeightPosition.positionScoreToTermWeightScore(positionScore);
         Float result = TermWeightPosition.termWeightScoreToPositionScore(twScore);
         
-        Assert.assertTrue(result + "!=" + positionScore, positionScore.equals(result));
+        Assert.assertEquals(result + "!=" + positionScore, positionScore, result);
     }
 }

@@ -15,7 +15,7 @@ public class LcNoDiacriticsNormalizerTest {
         String b = null;
         String n1 = norm.normalize(b);
         
-        Assert.assertTrue(n1 == null);
+        Assert.assertNull(n1);
         
     }
 }

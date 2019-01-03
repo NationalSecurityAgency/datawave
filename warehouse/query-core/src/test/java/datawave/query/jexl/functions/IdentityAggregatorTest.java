@@ -2,19 +2,20 @@ package datawave.query.jexl.functions;
 
 import com.google.common.collect.Maps;
 import datawave.query.Constants;
-import datawave.query.util.IteratorToSortedKeyValueIterator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.TreeMap;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class IdentityAggregatorTest {
     private IdentityAggregator aggregator;
@@ -39,7 +40,7 @@ public class IdentityAggregatorTest {
         Key result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertFalse(itr.hasTop());
-        assertTrue(result.equals(result2));
+        assertEquals(result, result2);
     }
     
     @Test
@@ -56,14 +57,14 @@ public class IdentityAggregatorTest {
         Key result = aggregator.apply(itr);
         
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getRow().toString().equals("1234"));
+        assertEquals("1234", itr.getTopKey().getRow().toString());
         
         itr.seek(new Range(), null, true);
         Key result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getRow().toString().equals("1234"));
-        assertTrue(result.equals(result2));
+        assertEquals("1234", itr.getTopKey().getRow().toString());
+        assertEquals(result, result2);
         
         // NOTE: the FIELD/VALUE are not verified as the same as part of the IdentityAggregator, so it will not be tested
         // here. In a real utilization the expectation is that there will be keys with different dataType/uids prior
@@ -80,8 +81,8 @@ public class IdentityAggregatorTest {
         result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getTimestamp() == 7);
-        assertTrue(result.equals(result2));
+        assertEquals(7, itr.getTopKey().getTimestamp());
+        assertEquals(result, result2);
         
         // test a change to the uid
         treeMap = Maps.newTreeMap();
@@ -94,8 +95,8 @@ public class IdentityAggregatorTest {
         result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getTimestamp() == 7);
-        assertTrue(result.equals(result2));
+        assertEquals(7, itr.getTopKey().getTimestamp());
+        assertEquals(result, result2);
     }
     
     private Key getFi(String row, String field, String value, String dataType, String uid, long timestamp) {

@@ -183,7 +183,7 @@ public class SafeFileOutputCommitterTest {
         } else {
             assertFalse("Version 2 commits to output dir " + jtd2, jtd2.exists());
             if (commitVersion == 1 || !patched) {
-                assertTrue("Version 2  recovery moves to output dir from " + jtd, jtd.list().length == 0);
+                assertEquals("Version 2  recovery moves to output dir from " + jtd, 0, jtd.list().length);
             }
         }
         

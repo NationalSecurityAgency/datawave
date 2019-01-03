@@ -1,13 +1,8 @@
 package datawave.query.statsd;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterators;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;

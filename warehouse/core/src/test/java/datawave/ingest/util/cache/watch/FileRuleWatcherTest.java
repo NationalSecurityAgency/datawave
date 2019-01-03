@@ -62,16 +62,16 @@ public class FileRuleWatcherTest {
     @Test
     public void verifyNoBleedOverOfExtendedOptions() throws IOException {
         Assert.assertEquals("false", rulesByMatchPattern.get("1").options.getOption("filtersWater"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("A").options.getOption("filtersWater"));
+        Assert.assertNull(rulesByMatchPattern.get("A").options.getOption("filtersWater"));
         Assert.assertEquals("true", rulesByMatchPattern.get("B").options.getOption("filtersWater"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("C").options.getOption("filtersWater"));
+        Assert.assertNull(rulesByMatchPattern.get("C").options.getOption("filtersWater"));
         Assert.assertEquals("false", rulesByMatchPattern.get("D").options.getOption("filtersWater"));
         
         Assert.assertEquals("1234", rulesByMatchPattern.get("1").options.getOption("myTagName.ttl"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("A").options.getOption("myTagName.ttl"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("B").options.getOption("myTagName.ttl"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("C").options.getOption("myTagName.ttl"));
-        Assert.assertEquals(null, rulesByMatchPattern.get("D").options.getOption("myTagName.ttl"));
+        Assert.assertNull(rulesByMatchPattern.get("A").options.getOption("myTagName.ttl"));
+        Assert.assertNull(rulesByMatchPattern.get("B").options.getOption("myTagName.ttl"));
+        Assert.assertNull(rulesByMatchPattern.get("C").options.getOption("myTagName.ttl"));
+        Assert.assertNull(rulesByMatchPattern.get("D").options.getOption("myTagName.ttl"));
     }
     
     @Test(expected = IOException.class)

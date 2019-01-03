@@ -1,7 +1,5 @@
 package datawave.data.type;
 
-import datawave.data.type.LcNoDiacriticsType;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -17,7 +15,7 @@ public class LcNoDiacriticsTypeTest {
         String b = null;
         String n1 = norm.normalize(b);
         
-        Assert.assertTrue(n1 == null);
+        Assert.assertNull(n1);
         
     }
 }

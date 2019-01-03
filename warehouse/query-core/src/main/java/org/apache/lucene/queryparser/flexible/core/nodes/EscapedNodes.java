@@ -1,6 +1,5 @@
 package org.apache.lucene.queryparser.flexible.core.nodes;
 
-import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
 
 /**

@@ -1846,7 +1846,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             log.trace("Produced range is " + r);
         }
         
-        return new CloseableListIterable<QueryPlan>(Collections.singletonList(new QueryPlan(queryTree, r)));
+        return new CloseableListIterable<>(Collections.singletonList(new QueryPlan(queryTree, r)));
     }
     
     /**
@@ -1949,7 +1949,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 log.trace("Ranges are " + ranges);
         }
         
-        return new Tuple2<CloseableIterable<QueryPlan>,Boolean>(ranges, needsFullTable);
+        return new Tuple2<>(ranges, needsFullTable);
     }
     
     /**

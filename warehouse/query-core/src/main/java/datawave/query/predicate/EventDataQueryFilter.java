@@ -1,11 +1,7 @@
 package datawave.query.predicate;
 
-import java.util.Map;
-import java.util.Set;
-
 import com.google.common.base.Predicate;
 
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.attributes.Document;
 
 import org.apache.accumulo.core.data.Key;

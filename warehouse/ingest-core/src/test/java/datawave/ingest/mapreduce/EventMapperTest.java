@@ -8,7 +8,9 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.BaseNormalizedContent;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.metrics.*;
+import datawave.ingest.mapreduce.job.metrics.Metric;
+import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
+import datawave.ingest.mapreduce.job.metrics.TestEventCountMetricsReceiver;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -17,7 +19,8 @@ import org.apache.hadoop.mrunit.mapreduce.MapDriver;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
 import java.util.Map;

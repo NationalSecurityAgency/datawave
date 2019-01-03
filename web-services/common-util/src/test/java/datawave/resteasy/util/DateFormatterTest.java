@@ -5,8 +5,6 @@ import static org.junit.Assert.assertEquals;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import datawave.resteasy.util.DateFormatter;
-
 import org.junit.Test;
 
 public class DateFormatterTest {

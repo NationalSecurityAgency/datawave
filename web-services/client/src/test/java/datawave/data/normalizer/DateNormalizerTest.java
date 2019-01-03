@@ -32,7 +32,7 @@ public class DateNormalizerTest {
     
     @Test
     public void testAllFormats() throws Exception {
-        Assert.assertTrue("The DateNormalizer may have an new untested format", inputDateStrings.length == DateNormalizer.FORMAT_STRINGS.length);
+        Assert.assertEquals("The DateNormalizer may have an new untested format", inputDateStrings.length, DateNormalizer.FORMAT_STRINGS.length);
         Set<Date> dateSet = Sets.newLinkedHashSet();
         Set<String> normalizedDates = Sets.newLinkedHashSet();
         Set<Long> dateTimes = Sets.newLinkedHashSet();
@@ -43,9 +43,9 @@ public class DateNormalizerTest {
             normalizedDates.add(normalized);
             dateTimes.add(date.getTime());
         }
-        Assert.assertTrue("There can be only one", dateSet.size() == 1);
-        Assert.assertTrue("There can be only one", normalizedDates.size() == 1);
-        Assert.assertTrue("There can be only one", dateTimes.size() == 1);
+        Assert.assertEquals("There can be only one", 1, dateSet.size());
+        Assert.assertEquals("There can be only one", 1, normalizedDates.size());
+        Assert.assertEquals("There can be only one", 1, dateTimes.size());
     }
     
     @Test

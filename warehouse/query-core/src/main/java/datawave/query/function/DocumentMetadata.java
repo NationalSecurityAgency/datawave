@@ -1,6 +1,5 @@
 package datawave.query.function;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import datawave.query.attributes.Document;
 import org.apache.accumulo.core.data.Key;

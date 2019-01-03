@@ -6,16 +6,11 @@ import java.util.List;
 
 import datawave.edge.protobuf.EdgeData;
 import datawave.edge.protobuf.EdgeData.EdgeValue;
-import datawave.edge.util.EdgeKey.EDGE_FORMAT;
-import datawave.edge.util.EdgeKey.STATS_TYPE;
 
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingArrayCombiner.VarLongArrayEncoder;
-import org.apache.accumulo.core.iterators.LongCombiner.VarLenEncoder;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 /**
