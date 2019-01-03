@@ -157,10 +157,10 @@ public abstract class FunctionalSetTest {
         
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
+        logic.setMaxEvaluationPipelines(1);
         
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
-        
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
         resultSet = new HashSet<>();
@@ -290,9 +290,9 @@ public abstract class FunctionalSetTest {
         // @formatter:off
         String[] queryStrings = {
                 
-                "10 <= AG && AG <= 18", //
-                "AG <= 18 && AG >= 10", //
-                "18 >= AG && 10 <= AG", //
+                "10 <= AG && AG <= 18",
+                "AG <= 18 && AG >= 10",
+                "18 >= AG && 10 <= AG",
                 // "AG <= 18",
                 // "18 >= AG",
                 "AG == 18",
@@ -303,15 +303,15 @@ public abstract class FunctionalSetTest {
                 "GEN == 'female'", // this succeeds for the same reason as above. normalization was a no-op.
                 "'female' == GEN", // this succeeds because no normalization is necessary
                 "'FEMALE' == GEN",
-                
+
                 // the next one matches Meadow Soprano, age 18, because the 'MAGIC' value is 18 (we don't know/care what the actual value
                 // of MAGIC is, only that whatever it is, it matches AGE in the same group as the other matches)
                 "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) == MAGIC",
-                
+
                 // the next one matches Meadow Soprano, GENDER female, age 18 but not Constanza Corleone, Gender female, age 18
                 // the < part of this is what is special. Other comparison operators should work the same way
                 "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'MEADOW', GEN, 'FEMALE')) < 19",
-                
+
                 // the next 2 queries are equivalent. the reason for the functional query stuff is for when we
                 // want to query with an operator other than '=='
                 "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE')) == 30",
@@ -326,7 +326,7 @@ public abstract class FunctionalSetTest {
                                                                                                                                                     // none
         };
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] { //
+        List<String>[] expectedLists = new List[] {
         
                 Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18",
@@ -337,7 +337,7 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("SOPRANO", "CORLEONE"), // "GENDER == 'female'"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "'female' == GENDER"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "'FEMALE' == GENDER"
-                
+
                 Arrays.asList("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) == MAGIC",
                 Arrays.asList("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) < 19"
                 Arrays.asList("CAPONE"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE')) == 30"
