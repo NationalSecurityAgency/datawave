@@ -11,9 +11,11 @@
     <properties>
         <version.accumulo>1.9.2</version.accumulo>
         <version.authorization-api>1.3</version.authorization-api>
+        <version.commons-collections>4.2</version.commons-collections>
         <!-- Guava 15 is needed for Accumulo on the tservers -->
         <version.guava>15.0</version.guava>
         <version.slf4j>1.7.25</version.slf4j>
+        <version.spring>5.0.8.RELEASE</version.spring>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -71,9 +73,16 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>${version.commons-collections}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework</groupId>
-                <artifactId>spring-jcl</artifactId>
-                <version>5.0.8.RELEASE</version>
+                <artifactId>spring-framework-bom</artifactId>
+                <version>${version.spring}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.contrib</groupId>
@@ -111,6 +120,14 @@
         <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>

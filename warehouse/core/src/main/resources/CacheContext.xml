@@ -4,7 +4,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="
      http://www.springframework.org/schema/beans 
-     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+     http://www.springframework.org/schema/beans/spring-beans.xsd">
      
     <bean id="cacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager" primary="true" >
     	<property name="cacheSpecification" value="maximumSize=1000, expireAfterAccess=24h, expireAfterWrite=24h" />

@@ -5,9 +5,9 @@
     xmlns:cache="http://www.springframework.org/schema/cache"
     xsi:schemaLocation="
      http://www.springframework.org/schema/beans 
-     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+     http://www.springframework.org/schema/beans/spring-beans.xsd
      http://www.springframework.org/schema/cache 
-     http://www.springframework.org/schema/cache/spring-cache-4.0.xsd">
+     http://www.springframework.org/schema/cache/spring-cache.xsd">
      
     <cache:annotation-driven cache-manager="markings-cache-manager"/>
 

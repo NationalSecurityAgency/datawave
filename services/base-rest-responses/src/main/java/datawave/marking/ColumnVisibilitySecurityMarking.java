@@ -53,7 +53,7 @@ public class ColumnVisibilitySecurityMarking implements SecurityMarking {
     
     @Override
     public int hashCode() {
-        return this.columnVisibility.hashCode();
+        return this.columnVisibility == null ? 0 : this.columnVisibility.hashCode();
     }
     
     @Override

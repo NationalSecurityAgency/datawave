@@ -29,6 +29,7 @@ public interface MarkingFunctions {
     
     ColumnVisibility combine(Collection<ColumnVisibility> columnVisibilities) throws MarkingFunctions.Exception;
     
+    @SuppressWarnings("unchecked")
     Map<String,String> combine(Map<String,String>... markings) throws MarkingFunctions.Exception;
     
     ColumnVisibility translateToColumnVisibility(Map<String,String> markings) throws MarkingFunctions.Exception;
@@ -76,7 +77,8 @@ public interface MarkingFunctions {
         }
         
         @Override
-        public Map<String,String> combine(Map<String,String>... markings) {
+        @SafeVarargs
+        public final Map<String,String> combine(Map<String,String>... markings) {
             return markings.length == 0 ? new HashMap<>() : markings[0];
         }
         
@@ -94,8 +96,7 @@ public interface MarkingFunctions {
         }
         
         @Override
-        public Map<String,String> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations)
-                        throws MarkingFunctions.Exception {
+        public Map<String,String> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations) {
             return translateFromColumnVisibility(columnVisibility);
         }
         
@@ -130,7 +131,8 @@ public interface MarkingFunctions {
          * Turn a set of markings into a serializable string
          * 
          * @param markings
-         * @return String
+         *            the markings map to convert to a string
+         * @return a serialized String version of {@code markings}
          */
         public static String toString(Map<String,String> markings) {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -146,11 +148,13 @@ public interface MarkingFunctions {
          * Turn a serialized set of markings into a map
          * 
          * @param encodedMarkings
-         * @return {@code Map<String, String>}
+         *            the serialized String markings to convert back to a markings Map
+         * @return a {@link Map} of the de-serialized markings from {@code encodedMarkings}
          */
         public static Map<String,String> fromString(String encodedMarkings) {
             ObjectMapper objectMapper = new ObjectMapper();
             try {
+                // noinspection unchecked
                 return objectMapper.readValue(encodedMarkings, Map.class);
             } catch (IOException e) {
                 log.error("could not deserialize " + encodedMarkings);
@@ -184,7 +188,7 @@ public interface MarkingFunctions {
                 // It is a VFSClassLoader that has the accumulo lib/ext jars set as its resources.
                 // After setting the classloader, then set the config locations and refresh the context.
                 context.setClassLoader(thisClassLoader);
-                context.setConfigLocations("classpath*:/MarkingFunctionsContext.xml", "classpath*:/CacheContext.xml");
+                context.setConfigLocations("classpath*:/MarkingFunctionsContext.xml");
                 context.refresh();
                 markingFunctions = context.getBean("markingFunctions", MarkingFunctions.class);
             } catch (Throwable t) {
