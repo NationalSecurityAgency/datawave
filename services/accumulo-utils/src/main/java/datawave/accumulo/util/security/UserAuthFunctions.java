@@ -24,6 +24,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public interface UserAuthFunctions {
     
+    /**
+     * System property for overriding {@link Default} instance at runtime, if desired.
+     * 
+     * @see #getInstance()
+     */
+    String DEFAULT_CLASS_OVERRIDE_PROPERTY = "datawave.user.auth.functions.class";
+    
     char REQUESTED_AUTHS_DELIMITER = ',';
     
     /**
@@ -169,5 +176,37 @@ public interface UserAuthFunctions {
      */
     static Authorizations toAuthorizations(Collection<String> auths) {
         return new Authorizations(auths.stream().map(String::trim).map(s -> s.getBytes(UTF_8)).collect(Collectors.toList()));
+    }
+    
+    /**
+     * Gets a {@link Default} instance, which may be overridden at runtime via system property {@link #DEFAULT_CLASS_OVERRIDE_PROPERTY}, if desired. Impl
+     * overrides must be thread-safe
+     *
+     * @return UserAuthFunctions instance
+     */
+    static UserAuthFunctions getInstance() {
+        return Holder.INSTANCE;
+    }
+    
+    /**
+     * On-demand holder for UserAuthFunctions singleton
+     */
+    class Holder {
+        private static final UserAuthFunctions INSTANCE = createUserAuthFunctions();
+        
+        private Holder() {}
+        
+        private static UserAuthFunctions createUserAuthFunctions() {
+            final String classOverride = System.getProperty(DEFAULT_CLASS_OVERRIDE_PROPERTY);
+            if (null == classOverride) {
+                return new UserAuthFunctions.Default();
+            } else {
+                try {
+                    return (UserAuthFunctions) Class.forName(classOverride).newInstance();
+                } catch (Throwable t) {
+                    throw new RuntimeException(String.format("Failed to create instance of '%s'", classOverride), t);
+                }
+            }
+        }
     }
 }
