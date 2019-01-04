@@ -59,8 +59,10 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
             if (functionMetadata.name().equals("atomValuesMatch")) {
                 // special case
                 Set<String> fields = new HashSet<>();
-                fields.addAll(JexlASTHelper.getIdentifierNames(functionMetadata.args().get(0)));
-                fields.addAll(JexlASTHelper.getIdentifierNames(functionMetadata.args().get(1)));
+                
+                for (JexlNode node : functionMetadata.args()) {
+                    fields.addAll(JexlASTHelper.getIdentifierNames(node));
+                }
                 for (String fieldName : fields) {
                     EventDataQueryExpressionVisitor.ExpressionFilter f = filterMap.get(fieldName);
                     if (f == null) {
@@ -100,8 +102,9 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
             node.jjtAccept(functionMetadata, null);
             Set<String> fields = Sets.newHashSet();
             if (functionMetadata.name().equals("atomValuesMatch")) {
-                fields.addAll(JexlASTHelper.getIdentifierNames(functionMetadata.args().get(0)));
-                fields.addAll(JexlASTHelper.getIdentifierNames(functionMetadata.args().get(1)));
+                for (JexlNode node : functionMetadata.args()) {
+                    fields.addAll(JexlASTHelper.getIdentifierNames(node));
+                }
             } else {
                 // don't include the last argument if the size is odd as that is a position arg
                 for (int i = 0; i < functionMetadata.args().size() - 1; i += 2) {
@@ -117,7 +120,12 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
             node.jjtAccept(functionMetadata, null);
             
             if (functionMetadata.name().equals("atomValuesMatch")) {
-                return JexlArgumentDescriptor.Fields.product(functionMetadata.args().get(0), functionMetadata.args().get(1));
+                Set<Set<String>> fieldSets = JexlArgumentDescriptor.Fields.product(functionMetadata.args().get(0));
+                // don't include the last argument if the size is odd as that is a position arg
+                for (int i = 1; i < functionMetadata.args().size(); i++) {
+                    fieldSets = JexlArgumentDescriptor.Fields.product(fieldSets, functionMetadata.args().get(i));
+                }
+                return fieldSets;
             } else {
                 Set<Set<String>> fieldSets = JexlArgumentDescriptor.Fields.product(functionMetadata.args().get(0));
                 // don't include the last argument if the size is odd as that is a position arg

@@ -65,8 +65,22 @@ public class EventDataQueryExpressionVisitorTest {
     public void testExtractNormalizedAttributes() {
         final Key metadata = new Key("shard", DATATYPE + "\0" + UID, "", new ColumnVisibility("U"), -1);
         
-        String[][] testData = { {"FOO", "ABcd"}, {"abcd"}, {"FOO", "1234"}, {"1234"}, {"BAZ", "ABcd"}, {"ABcd"}, {"BAZ", "1234"}, {"+dE1.234"},
-                {"BAR", "ABcd"}, {"abcd", "ABcd"}, {"BAR", "1234"}, {"1234", "+dE1.234"}};
+        // @formatter:off
+        String[][] testData = {
+                {"FOO", "ABcd"},
+                {"abcd"},
+                {"FOO", "1234"},
+                {"1234"},
+                {"BAZ", "ABcd"},
+                {"ABcd"},
+                {"BAZ", "1234"},
+                {"+dE1.234"},
+                {"BAR", "ABcd"},
+                {"abcd", "ABcd"},
+                {"BAR", "1234"},
+                {"1234", "+dE1.234"}
+        };
+        // @formatter:on
         
         for (int i = 0; i < testData.length; i += 2) {
             String[] input = testData[i];
@@ -586,9 +600,17 @@ public class EventDataQueryExpressionVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         
-        Object[][] testData = { {"FOO", createKey("FOO", "abc"), TRUE}, {"FOO", createKey("FOO", "abcdef"), FALSE}, {"FOO", createKey("FOO.1", "abc"), TRUE},
-                {"FOO", createKey("FOO.1", "abcdef"), FALSE}, {"FOO", createKey("BAR", "abc"), FALSE}, {"FOO", createKey("FOO", "def"), FALSE},
-                {"FOO", createKey("FOO.1", "def"), FALSE}};
+        // @formatter:off
+        Object[][] testData = {
+                { "FOO", createKey("FOO", "abc"), TRUE },
+                { "FOO", createKey("FOO", "abcdef"), FALSE },
+                { "FOO", createKey("FOO.1", "abc"), TRUE },
+                { "FOO", createKey("FOO.1", "abcdef"), FALSE },
+                { "FOO", createKey("BAR", "abc"), FALSE },
+                { "FOO", createKey("FOO", "def"), FALSE },
+                { "FOO", createKey("FOO.1", "def"), FALSE }
+        };
+        // @formatter:on
         
         assertNotNull(filter.get("FOO"));
         assertNull(filter.get("BAR"));
@@ -601,9 +623,17 @@ public class EventDataQueryExpressionVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         
-        Object[][] testData = { {"FOO", createKey("FOO", "abc"), TRUE}, {"FOO", createKey("FOO", "abcdef"), TRUE}, {"FOO", createKey("FOO.1", "abc"), TRUE},
-                {"FOO", createKey("FOO.1", "abcdef"), TRUE}, {"FOO", createKey("BAR", "abc"), FALSE}, {"FOO", createKey("FOO", "def"), FALSE},
-                {"FOO", createKey("FOO.1", "def"), FALSE}};
+        // @formatter:off
+        Object[][] testData = {
+                { "FOO", createKey("FOO", "abc"), TRUE },
+                { "FOO", createKey("FOO", "abcdef"), TRUE },
+                { "FOO", createKey("FOO.1", "abc"), TRUE },
+                { "FOO", createKey("FOO.1", "abcdef"), TRUE },
+                { "FOO", createKey("BAR", "abc"), FALSE },
+                { "FOO", createKey("FOO", "def"), FALSE },
+                { "FOO", createKey("FOO.1", "def"), FALSE }
+        };
+        // @formatter:on
         
         assertNotNull(filter.get("FOO"));
         assertNull(filter.get("BAR"));
@@ -616,10 +646,22 @@ public class EventDataQueryExpressionVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         
-        Object[][] testData = { {"FOO", createKey("FOO", "abc"), TRUE}, {"FOO", createKey("FOO", "abcdef"), TRUE}, {"FOO", createKey("FOO.1", "abc"), TRUE},
-                {"FOO", createKey("FOO.1", "abcdef"), TRUE}, {"BAR", createKey("BAR", "abc"), FALSE}, {"BAR", createKey("BAR", "abcdef"), FALSE},
-                {"BAR", createKey("BAR.1", "abc"), FALSE}, {"BAR", createKey("BAR.1", "abcdef"), FALSE}, {"BAR", createKey("BAR", "def"), TRUE},
-                {"BAR", createKey("BAR.1", "def"), TRUE}, {"FOO", createKey("FOO", "def"), FALSE}, {"FOO", createKey("FOO.1", "def"), FALSE}};
+        // @formatter:off
+        Object[][] testData = {
+                { "FOO", createKey("FOO", "abc"), TRUE },
+                { "FOO", createKey("FOO", "abcdef"), TRUE },
+                { "FOO", createKey("FOO.1", "abc"), TRUE },
+                { "FOO", createKey("FOO.1", "abcdef"), TRUE },
+                { "BAR", createKey("BAR", "abc"), FALSE },
+                { "BAR", createKey("BAR", "abcdef"), FALSE },
+                { "BAR", createKey("BAR.1", "abc"), FALSE },
+                { "BAR", createKey("BAR.1", "abcdef"), FALSE },
+                { "BAR", createKey("BAR", "def"), TRUE },
+                { "BAR", createKey("BAR.1", "def"), TRUE },
+                { "FOO", createKey("FOO", "def"), FALSE } ,
+                { "FOO", createKey("FOO.1", "def"), FALSE }
+        };
+        // @formatter:on
         
         assertNotNull(filter.get("FOO"));
         assertNotNull(filter.get("BAR"));
@@ -635,10 +677,22 @@ public class EventDataQueryExpressionVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         
-        Object[][] testData = { {"FOO", createKey("FOO", "abc"), TRUE}, {"FOO", createKey("FOO", "abcdef"), TRUE}, {"FOO", createKey("FOO.1", "abc"), TRUE},
-                {"FOO", createKey("FOO.1", "abcdef"), TRUE}, {"BAR", createKey("BAR", "abc"), FALSE}, {"BAR", createKey("BAR", "abcdef"), FALSE},
-                {"BAR", createKey("BAR.1", "abc"), FALSE}, {"BAR", createKey("BAR.1", "abcdef"), FALSE}, {"BAR", createKey("BAR", "def"), TRUE},
-                {"BAR", createKey("BAR.1", "def"), TRUE}, {"FOO", createKey("FOO", "def"), FALSE}, {"FOO", createKey("FOO.1", "def"), FALSE}};
+        // @formatter:off
+        Object[][] testData = {
+                { "FOO", createKey("FOO", "abc"), TRUE },
+                { "FOO", createKey("FOO", "abcdef"), TRUE },
+                { "FOO", createKey("FOO.1", "abc"), TRUE },
+                { "FOO", createKey("FOO.1", "abcdef"), TRUE },
+                { "BAR", createKey("BAR", "abc"), FALSE },
+                { "BAR", createKey("BAR", "abcdef"), FALSE },
+                { "BAR", createKey("BAR.1", "abc"), FALSE },
+                { "BAR", createKey("BAR.1", "abcdef"), FALSE },
+                { "BAR", createKey("BAR", "def"), TRUE },
+                { "BAR", createKey("BAR.1", "def"), TRUE },
+                { "FOO", createKey("FOO", "def"), FALSE } ,
+                { "FOO", createKey("FOO.1", "def"), FALSE }
+        };
+        // @formatter:on
         
         assertNotNull(filter.get("FOO"));
         assertNotNull(filter.get("BAR"));
@@ -654,10 +708,22 @@ public class EventDataQueryExpressionVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         
-        Object[][] testData = { {"FOO", createKey("FOO", "abc"), TRUE}, {"FOO", createKey("FOO", "abcdef"), TRUE}, {"FOO", createKey("FOO.1", "abc"), TRUE},
-                {"FOO", createKey("FOO.1", "abcdef"), TRUE}, {"BAR", createKey("BAR", "abc"), TRUE}, {"BAR", createKey("BAR", "abcdef"), TRUE},
-                {"BAR", createKey("BAR.1", "abc"), TRUE}, {"BAR", createKey("BAR.1", "abcdef"), TRUE}, {"BAR", createKey("BAR", "def"), TRUE},
-                {"BAR", createKey("BAR.1", "def"), TRUE}, {"FOO", createKey("FOO", "def"), TRUE}, {"FOO", createKey("FOO.1", "def"), TRUE}};
+        // @formatter:off
+        Object[][] testData = {
+                { "FOO", createKey("FOO", "abc"), TRUE },
+                { "FOO", createKey("FOO", "abcdef"), TRUE },
+                { "FOO", createKey("FOO.1", "abc"), TRUE },
+                { "FOO", createKey("FOO.1", "abcdef"), TRUE },
+                { "BAR", createKey("BAR", "abc"), TRUE },
+                { "BAR", createKey("BAR", "abcdef"), TRUE },
+                { "BAR", createKey("BAR.1", "abc"), TRUE },
+                { "BAR", createKey("BAR.1", "abcdef"), TRUE },
+                { "BAR", createKey("BAR", "def"), TRUE },
+                { "BAR", createKey("BAR.1", "def"), TRUE },
+                { "FOO", createKey("FOO", "def"), TRUE } ,
+                { "FOO", createKey("FOO.1", "def"), TRUE }
+        };
+        // @formatter:on
         
         assertNotNull(filter.get("FOO"));
         assertNotNull(filter.get("BAR"));
