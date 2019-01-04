@@ -4,6 +4,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
+import java.util.Date;
 import java.util.TimeZone;
 
 public class DateHelperTest {
@@ -16,7 +19,9 @@ public class DateHelperTest {
     public void parseIgnoresTrailingCharacters() throws Exception {
         String dateStrWithTrailingCharacters = "20130201_1";
         
-        long expected = new SimpleDateFormat(TO_DAY).parse(dateStrWithTrailingCharacters).getTime();
+        SimpleDateFormat sdf = new SimpleDateFormat(TO_DAY);
+        sdf.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
+        long expected = sdf.parse(dateStrWithTrailingCharacters).getTime();
         long actual = DateHelper.parse(dateStrWithTrailingCharacters).getTime();
         Assert.assertEquals(DATE_HELPER_SHOULD_IGNORE_TRAILING_CHARS, expected, actual);
     }
@@ -52,7 +57,9 @@ public class DateHelperTest {
     public void parseToSecondsIgnoresTrailingCharacters() throws Exception {
         String dateStrToSecondsWithTrailingCharacters = "20130201010101_1";
         
-        long expected = new SimpleDateFormat(TO_SECOND).parse(dateStrToSecondsWithTrailingCharacters).getTime();
+        SimpleDateFormat sdf = new SimpleDateFormat(TO_SECOND);
+        sdf.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
+        long expected = sdf.parse(dateStrToSecondsWithTrailingCharacters).getTime();
         long actual = DateHelper.parseTimeExactToSeconds(dateStrToSecondsWithTrailingCharacters).getTime();
         Assert.assertEquals(DATE_HELPER_SHOULD_IGNORE_TRAILING_CHARS, expected, actual);
     }
@@ -70,13 +77,33 @@ public class DateHelperTest {
         Assert.assertEquals(DATE_HELPER_SHOULD_IGNORE_TRAILING_CHARS, expected, actual);
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
+    public void testAddDays() {
+        String actual = DateHelper.format(DateHelper.addDays(DateHelper.parse("20180101"), 3));
+        Assert.assertEquals("20180104", actual);
+    }
+    
+    @Test
+    public void testAddHours() {
+        String actual = DateHelper.formatToHour(DateHelper.addHours(DateHelper.parseHour("2018010114"), 3));
+        Assert.assertEquals("2018010117", actual);
+    }
+    
+    @Test
+    public void testDateAtHour() {
+        Date date = DateHelper.parseTimeExactToSeconds("20180101204242");
+        
+        Assert.assertTrue(DateHelper.dateAtHour(date, 20));
+        Assert.assertFalse(DateHelper.dateAtHour(date, 8));
+    }
+    
+    @Test(expected = DateTimeParseException.class)
     public void testFailsIfMissingDigits() throws Exception {
         String dateStrMissingADayDigit = "2013020_1";
         DateHelper.parse(dateStrMissingADayDigit).getTime();
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = DateTimeParseException.class)
     public void testFailsIfNotISOCompliant() throws Exception {
         DateHelper.parse8601("2014-01-07'T'12:01:01'Z'").getTime();
     }

@@ -1,13 +1,14 @@
 package datawave.util.time;
 
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.DateTime;
-
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Locale;
-import java.util.TimeZone;
 
 /**
  * This class validates date ranges and converts Date objects to and from Strings in yyyyMMdd format in a way that is not dependent on local settings or
@@ -16,8 +17,8 @@ import java.util.TimeZone;
  */
 public class DateHelper {
     
-    public static final Date MIN_SUPPORTED_DATE = new Date(-62167201438000L); // one millisecond after -0001/12/31; 0000/01/01
-    public static final Date MAX_SUPPORTED_DATE = new Date(253402214400000L); // 9999/12/31
+    public static final Date MIN_SUPPORTED_DATE = new Date(-62135596800000L); // one millisecond after 0000/12/31; 0001/01/01Z
+    public static final Date MAX_SUPPORTED_DATE = new Date(253402300799999L); // one millisecond before 10000/01/01; 9999/12/31Z
     
     private static final String DATE_RANGE_FORMAT = "[%s (%s), %s (%s)]";
     private static final String ERROR_BEGIN_DATE_SHOULD_NOT_BE_NULL = "begin date should not be null; specified range is %s";
@@ -27,18 +28,17 @@ public class DateHelper {
     private static final String ERROR_END_DATE_GREATER_MAX_SUPPORTED_DATE = "end date greater than max supported date;  specified range is %s";
     
     public static final String DATE_FORMAT_STRING_TO_DAY = "yyyyMMdd";
-    private static final DateTimeFormatter DTF_day = DateTimeFormat.forPattern(DATE_FORMAT_STRING_TO_DAY);
-    private static final DateTimeFormatter DTF_day_GMT = DateTimeFormat.forPattern(DATE_FORMAT_STRING_TO_DAY).withZone(
-                    DateTimeZone.forTimeZone(TimeZone.getTimeZone("GMT")));
+    private static final DateTimeFormatter DTF_day = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING_TO_DAY).withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter DTF_day_GMT = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING_TO_DAY).withZone(ZoneOffset.UTC);
     
     public static final String DATE_FORMAT_STRING_TO_HOUR = "yyyyMMddHH";
-    private static final DateTimeFormatter DTF_hour = DateTimeFormat.forPattern(DATE_FORMAT_STRING_TO_HOUR).withZone(DateTimeZone.UTC);
+    private static final DateTimeFormatter DTF_hour = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING_TO_HOUR).withZone(ZoneOffset.UTC);
     
     public static final String DATE_FORMAT_STRING_TO_SECONDS = "yyyyMMddHHmmss";
-    private static final DateTimeFormatter DTF_Seconds = DateTimeFormat.forPattern(DATE_FORMAT_STRING_TO_SECONDS);
+    private static final DateTimeFormatter DTF_Seconds = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING_TO_SECONDS).withZone(ZoneOffset.UTC);
     
     public static final String DATE_FORMAT_STRING_8601 = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-    private static final DateTimeFormatter DTF_8601 = DateTimeFormat.forPattern(DATE_FORMAT_STRING_8601).withZone(DateTimeZone.UTC);
+    private static final DateTimeFormatter DTF_8601 = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING_8601).withZone(ZoneOffset.UTC);
     
     /**
      * Return a string representing the given date in yyyyMMdd format in a consistent way not dependent on local settings for calendar, timezone, or locale by
@@ -48,7 +48,7 @@ public class DateHelper {
      * @return the formatted date
      */
     public static String format(Date date) {
-        return DTF_day.print(date.getTime());
+        return DTF_day.format(date.toInstant());
     }
     
     /**
@@ -60,7 +60,7 @@ public class DateHelper {
      * @deprecated
      */
     public static String formatWithGMT(Date date) {
-        return DTF_day_GMT.print(date.getTime());
+        return DTF_day_GMT.format(date.toInstant());
     }
     
     /**
@@ -71,7 +71,7 @@ public class DateHelper {
      * @return the formatted date
      */
     public static String format(long inMillis) {
-        return DTF_day.print(inMillis);
+        return DTF_day.format(Instant.ofEpochMilli(inMillis));
     }
     
     /**
@@ -82,7 +82,7 @@ public class DateHelper {
      * @return the formatted date
      */
     public static String formatToHour(long inMillis) {
-        return DTF_hour.print(inMillis);
+        return DTF_hour.format(Instant.ofEpochMilli(inMillis));
     }
     
     /**
@@ -93,7 +93,7 @@ public class DateHelper {
      * @return the formatted date
      */
     public static String formatToHour(Date date) {
-        return DTF_hour.print(date.getTime());
+        return DTF_hour.format(date.toInstant());
     }
     
     /**
@@ -104,7 +104,7 @@ public class DateHelper {
      * @return the formatted date
      */
     public static String formatHour(long inMillis) {
-        return DTF_hour.print(inMillis);
+        return DTF_hour.format(Instant.ofEpochMilli(inMillis));
     }
     
     /**
@@ -115,7 +115,7 @@ public class DateHelper {
      * @return the formatted date
      */
     public static String formatToTimeExactToSeconds(long inMillis) {
-        return DTF_Seconds.print(inMillis);
+        return DTF_Seconds.format(Instant.ofEpochMilli(inMillis));
     }
     
     /**
@@ -126,7 +126,7 @@ public class DateHelper {
      * @return the formatted date
      */
     public static String formatToTimeExactToSeconds(Date date) {
-        return DTF_Seconds.print(date.getTime());
+        return DTF_Seconds.format(date.toInstant());
     }
     
     /**
@@ -137,7 +137,7 @@ public class DateHelper {
      * @return the {@code Date} object
      */
     public static Date parse(String date) {
-        return lenientParseHelper(date, DTF_day, DATE_FORMAT_STRING_TO_DAY);
+        return lenientParseHelper(date, DTF_day, DATE_FORMAT_STRING_TO_DAY, false);
     }
     
     /**
@@ -148,14 +148,19 @@ public class DateHelper {
      * @return the {@code Date} object
      */
     public static Date parseHour(String date) {
-        return lenientParseHelper(date, DTF_hour, DATE_FORMAT_STRING_TO_HOUR);
+        return lenientParseHelper(date, DTF_hour, DATE_FORMAT_STRING_TO_HOUR, true);
     }
     
     /**
      * Only use this for formats that can allow for leniency (i.e. not ISO standard formats).
      */
-    private static Date lenientParseHelper(String date, DateTimeFormatter parser, String formatStr) {
-        return parser.parseDateTime(convertToLenient(date, formatStr)).toDate();
+    private static Date lenientParseHelper(String date, DateTimeFormatter parser, String formatStr, boolean hasTime) {
+        String lenientDate = convertToLenient(date, formatStr);
+        if (hasTime) {
+            return Date.from(ZonedDateTime.parse(lenientDate, parser).toInstant());
+        } else {
+            return Date.from(LocalDate.parse(lenientDate, parser).atStartOfDay(parser.getZone()).toInstant());
+        }
     }
     
     /*
@@ -176,7 +181,7 @@ public class DateHelper {
      * @return the {@code Date} object
      */
     public static Date parseTimeExactToSeconds(String date) {
-        return lenientParseHelper(date, DTF_Seconds, DATE_FORMAT_STRING_TO_SECONDS);
+        return lenientParseHelper(date, DTF_Seconds, DATE_FORMAT_STRING_TO_SECONDS, true);
     }
     
     /**
@@ -188,7 +193,7 @@ public class DateHelper {
      * @deprecated
      */
     public static Date parseWithGMT(String date) {
-        return lenientParseHelper(date, DTF_day_GMT, DATE_FORMAT_STRING_TO_DAY);
+        return lenientParseHelper(date, DTF_day_GMT, DATE_FORMAT_STRING_TO_DAY, false);
     }
     
     /**
@@ -198,7 +203,7 @@ public class DateHelper {
      * @return the formatted date
      */
     public static String format8601(Date date) {
-        return DTF_8601.print(date.getTime());
+        return DTF_8601.format(date.toInstant());
     }
     
     /**
@@ -208,7 +213,7 @@ public class DateHelper {
      * @return the {@code Date} object
      */
     public static Date parse8601(String date) {
-        return DTF_8601.parseDateTime(date).toDate();
+        return Date.from(ZonedDateTime.parse(date, DTF_8601).toInstant());
     }
     
     /**
@@ -292,9 +297,9 @@ public class DateHelper {
      * @return the formatted dates
      */
     private static String formatDateRange(Date beginDate, Date endDate) {
-        DateTimeFormatter dtf = DateTimeFormat.forPattern("yyyyMMdd");
-        String beginDateYyyyMMdd = beginDate == null ? "null" : dtf.print(beginDate.getTime());
-        String endDateYyyyMMdd = endDate == null ? "null" : dtf.print(endDate.getTime());
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd");
+        String beginDateYyyyMMdd = beginDate == null ? "null" : dtf.format(beginDate.toInstant());
+        String endDateYyyyMMdd = endDate == null ? "null" : dtf.format(endDate.toInstant());
         String beginDateMillis = beginDate == null ? "null" : "" + beginDate.getTime();
         String endDateMillis = endDate == null ? "null" : "" + endDate.getTime();
         return String.format(Locale.US, DATE_RANGE_FORMAT, beginDateYyyyMMdd, beginDateMillis, endDateYyyyMMdd, endDateMillis);
@@ -308,7 +313,7 @@ public class DateHelper {
      * @return the new date
      */
     public static Date addDays(Date date, int days) {
-        return new DateTime(date).plusDays(days).toDate();
+        return Date.from(date.toInstant().plus(days, ChronoUnit.DAYS));
     }
     
     /**
@@ -319,7 +324,7 @@ public class DateHelper {
      * @return the new Date.
      */
     public static Date addHours(Date date, int hours) {
-        return new DateTime(date).plusHours(hours).toDate();
+        return Date.from(date.toInstant().plus(hours, ChronoUnit.HOURS));
     }
     
     /**
@@ -333,6 +338,6 @@ public class DateHelper {
         if (hour < 0 || hour > 23) {
             throw new IllegalArgumentException("Hour must be a number of 0 through 23.");
         }
-        return new DateTime(date).getHourOfDay() == hour;
+        return date.toInstant().atZone(ZoneOffset.UTC).get(ChronoField.HOUR_OF_DAY) == hour;
     }
 }

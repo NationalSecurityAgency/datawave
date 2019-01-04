@@ -71,6 +71,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -270,7 +271,7 @@ public class ContentFunctionQueryTest {
         try {
             logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
             Assert.fail("Expected query to fail with bogus date type");
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | DateTimeParseException e) {
             Assert.assertEquals("The specified date type: BOGUSDATETYPE is unknown for the specified data types", e.getMessage());
         }
         

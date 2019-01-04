@@ -14,9 +14,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.BeansException;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
@@ -28,6 +25,8 @@ import org.springframework.stereotype.Component;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
@@ -344,15 +343,15 @@ public class DateIndexHelper implements ApplicationContextAware {
                 String[] columnFamilyParts = StringUtils.split(k.getColumnFamily().toString(), '\0');
                 if (timeTravel == false && columnFamilyParts.length > 0 && columnFamilyParts[0].equals("ACTIVITY")) {
                     try {
-                        DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyyMMdd");
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
                         String rowDateString = k.getRow().toString();
                         // the row may be sharded, i need to get the date part
-                        if (rowDateString.indexOf("_") != -1) {
+                        if (rowDateString.contains("_")) {
                             // strip off the shard number part of the rowDate string
                             rowDateString = rowDateString.substring(0, rowDateString.indexOf("_"));
                         }
-                        LocalDate rowDate = formatter.parseLocalDate(rowDateString);
-                        LocalDate shardDate = formatter.parseLocalDate(date);
+                        LocalDate rowDate = LocalDate.parse(rowDateString, formatter);
+                        LocalDate shardDate = LocalDate.parse(date, formatter);
                         if (shardDate.isBefore(rowDate.minusDays(1))) {
                             continue;
                         }

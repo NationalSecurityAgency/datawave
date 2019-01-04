@@ -19,6 +19,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import java.io.IOException;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -132,7 +133,7 @@ public class EventErrorSummary implements Cloneable, JexlContext {
             try {
                 // a little validation
                 this.errorDate = DateHelper.parse(info[1]);
-            } catch (IllegalArgumentException pe) {
+            } catch (DateTimeParseException pe) {
                 throw new IllegalArgumentException("Failed to parse error info date " + key, pe);
             }
         }

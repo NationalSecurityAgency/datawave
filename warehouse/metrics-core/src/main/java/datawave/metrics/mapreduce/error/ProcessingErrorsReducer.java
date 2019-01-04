@@ -1,6 +1,7 @@
 package datawave.metrics.mapreduce.error;
 
 import java.io.IOException;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -125,7 +126,7 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         try {
             date = DateHelper.parseTimeExactToSeconds(jobTime);
             timeString = Long.toString(date.getTime());
-        } catch (IllegalArgumentException e) {
+        } catch (DateTimeParseException e) {
             throw new IOException(e);
         }
         

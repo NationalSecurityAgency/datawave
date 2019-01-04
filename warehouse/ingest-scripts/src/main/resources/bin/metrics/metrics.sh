@@ -23,7 +23,6 @@ CLASSPATH=${CLASSPATH}:$WAREHOUSE_ACCUMULO_HOME/lib/accumulo-fate.jar
 CLASSPATH=${CLASSPATH}:$WAREHOUSE_ACCUMULO_HOME/lib/accumulo-trace.jar
 CLASSPATH=${CLASSPATH}:$ZOOKEEPER_HOME/zookeeper-$ZOOKEEPER_VERSION.jar
 
-CLASSPATH=$(findJar joda-time):${CLASSPATH}
 CLASSPATH=$(findJar gson):${CLASSPATH}
 CLASSPATH=$(findJar libthrift):${CLASSPATH}
 CLASSPATH=$(findJar datawave-ws-common-util):${CLASSPATH}

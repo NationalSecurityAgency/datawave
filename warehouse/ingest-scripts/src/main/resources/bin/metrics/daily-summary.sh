@@ -25,7 +25,6 @@ CLASSPATH=$(findJar gson):${CLASSPATH}
 CLASSPATH=$(findJar libthrift):${CLASSPATH}
 CLASSPATH=$(findJar guava):${CLASSPATH}
 CLASSPATH=$(findJar javatuples):${CLASSPATH}
-CLASSPATH=$(findJar joda-time):${CLASSPATH}
 CLASSPATH=$(findJar log4j):${CLASSPATH}
 CLASSPATH=$(findJar datawave-core):${CLASSPATH}
 CLASSPATH=$(findJar datawave-query-core):${CLASSPATH}

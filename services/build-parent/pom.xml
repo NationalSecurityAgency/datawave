@@ -23,6 +23,7 @@
     <modules>
         <module>..</module>
         <module>../service-parent</module>
+        <module>../common-utils</module>
         <module>../accumulo-utils</module>
         <module>../base-rest-responses</module>
         <module>../metrics-reporter</module>

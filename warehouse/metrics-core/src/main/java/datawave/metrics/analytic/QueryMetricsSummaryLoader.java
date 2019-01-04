@@ -1,6 +1,9 @@
 package datawave.metrics.analytic;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -32,10 +35,6 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
-import org.joda.time.Days;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 /**
  * This MapReduce job computes a by-day summary of query metrics.
@@ -75,7 +74,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
         protected void setup(Mapper<Key,Value,Key,Value>.Context context) throws IOException, InterruptedException {
             super.setup(context);
             useHourlyPrecision = HourlyPrecisionHelper.checkForHourlyPrecisionOption(context.getConfiguration(), log);
-            deltaDtf = DateTimeFormat.forPattern("yyyyMMdd HHmmss");
+            deltaDtf = DateTimeFormatter.ofPattern("yyyyMMdd HHmmss");
         }
         
         @Override
@@ -220,9 +219,9 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
             // for data in the range of Jan 1 to Mar 15, the delta calculated here would be the number
             // of days between Jan 1st and Jun 1st.
             if (beginDate != null && createDate != null) {
-                DateTime beginDateTime = deltaDtf.parseDateTime(beginDate);
-                DateTime createDateTime = deltaDtf.parseDateTime(createDate);
-                int days = Days.daysBetween(beginDateTime.toLocalDate(), createDateTime.toLocalDate()).getDays();
+                LocalDateTime beginDateTime = LocalDateTime.parse(beginDate, deltaDtf);
+                LocalDateTime createDateTime = LocalDateTime.parse(createDate, deltaDtf);
+                long days = ChronoUnit.DAYS.between(beginDateTime, createDateTime);
                 String label = "DAYS_" + days;
                 
                 context.write(makeKey(outRow, QueryMetricsColumns.QUERY_DATA_ACCESS_AGE_CF, label), makeValue(1));

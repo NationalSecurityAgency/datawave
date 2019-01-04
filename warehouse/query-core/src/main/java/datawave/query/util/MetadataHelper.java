@@ -61,6 +61,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.CharacterCodingException;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
@@ -1243,7 +1244,7 @@ public class MetadataHelper implements ApplicationContextAware {
                     log.warn("Could not convert the Value to a long" + entry.getValue());
                 } catch (CharacterCodingException e) {
                     log.warn("Could not deserialize colqual: " + entry.getKey());
-                } catch (IllegalArgumentException e) {
+                } catch (DateTimeParseException e) {
                     log.warn("Could not convert date string: " + dateStr);
                 }
             }

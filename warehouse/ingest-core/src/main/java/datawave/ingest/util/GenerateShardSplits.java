@@ -18,6 +18,7 @@ import org.apache.accumulo.server.client.HdfsZooInstance;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.Text;
 
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -61,7 +62,7 @@ public class GenerateShardSplits {
             if (i == 0) {
                 try {
                     startDate = DateHelper.parse(args[i]);
-                } catch (IllegalArgumentException e) {
+                } catch (DateTimeParseException e) {
                     System.out.println("Start Date does not match format. Exception=" + e.getMessage());
                     System.exit(-2);
                 }

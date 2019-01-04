@@ -103,10 +103,6 @@
             <artifactId>netty-all</artifactId>
         </dependency>
         <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-jci-core</artifactId>
         </dependency>
@@ -543,7 +539,6 @@
                                         <includes>
                                             <include>commons-pool:commons-pool</include>
                                             <include>org.apache.commons:commons-lang3</include>
-                                            <include>joda-time:joda-time</include>
                                             <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.esotericsoftware.kryo:kryo</include>
                                             <include>org.objenesis:objenesis</include>
