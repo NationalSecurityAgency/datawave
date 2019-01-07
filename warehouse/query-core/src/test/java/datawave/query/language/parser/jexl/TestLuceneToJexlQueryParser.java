@@ -8,7 +8,6 @@ import datawave.query.Constants;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestLuceneToJexlQueryParser {
@@ -344,15 +343,12 @@ public class TestLuceneToJexlQueryParser {
     }
     
     @Test
-    @Ignore
     public void testMiscEscapeTokenization() throws ParseException {
         // apostrophe escapes
-        Assert.assertEquals("(TOKFIELD == 'johnny\\'s' || TOKFIELD == 'johnny')", parseQuery("TOKFIELD:johnny's"));
-        Assert.assertEquals("(TOKFIELD == 'johnny\\'s' || TOKFIELD == 'johnny')", parseQuery("TOKFIELD:johnny\\'s")); // lucene drops single slash
-        Assert.assertEquals("(TOKFIELD == 'johnny\\'s' || TOKFIELD == 'johnny')", parseQuery("TOKFIELD:\"johnny's\""));
-        Assert.assertEquals(
-                        "(content:phrase(TOKFIELD, termOffsetMap, 'johnny\\'s', 'chicken') || content:within(TOKFIELD, 2, termOffsetMap, 'johnny', 'chicken'))",
-                        parseQuery("TOKFIELD:\"johnny's chicken\""));
+        Assert.assertEquals("TOKFIELD == 'johnny\\'s'", parseQuery("TOKFIELD:johnny's"));
+        Assert.assertEquals("TOKFIELD == 'johnny\\'s'", parseQuery("TOKFIELD:johnny\\'s")); // lucene drops single slash
+        Assert.assertEquals("TOKFIELD == 'johnny\\'s'", parseQuery("TOKFIELD:\"johnny's\""));
+        Assert.assertEquals("content:phrase(TOKFIELD, termOffsetMap, 'johnny\\'s', 'chicken')", parseQuery("TOKFIELD:\"johnny's chicken\""));
         Assert.assertEquals("TOKFIELD =~ '11\\'22.*?'", parseQuery("TOKFIELD:11'22*"));
         Assert.assertEquals("(TOKFIELD >= 'A\\'\\u005c*' && TOKFIELD <= 'B\\'')", parseQuery("TOKFIELD:[A'\\\\\\* TO B']"));
         
@@ -360,19 +356,19 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("(TOKFIELD == 'joh.nny chicken' || content:within(TOKFIELD, 2, termOffsetMap, 'joh.nny', 'chicken'))",
                         parseQuery("TOKFIELD:joh.nny\\ chicken"));
         Assert.assertEquals("TOKFIELD =~ 'joh\\u005c.nny chick.*?'", parseQuery("TOKFIELD:joh.nny\\ chick*"));
-        Assert.assertEquals("(TOKFIELD == 'joh.nny chicken' || content:within(TOKFIELD, 2, termOffsetMap, 'joh.nny', 'chicken'))",
+        Assert.assertEquals("(TOKFIELD == 'joh.nny chicken' || content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chicken'))",
                         parseQuery("TOKFIELD:\"joh.nny\\ chicken\""));
         
         Assert.assertEquals(
-                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic ken') || content:within(TOKFIELD, 3, termOffsetMap, 'joh.nny', 'chic', 'ken'))",
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic ken') || content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic', 'ken'))",
                         parseQuery("TOKFIELD:\"joh.nny chic\\ ken\""));
         Assert.assertEquals(
-                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic k*') || content:within(TOKFIELD, 3, termOffsetMap, 'joh.nny', 'chic', 'k'))",
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic k*') || content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chic', 'k'))",
                         parseQuery("TOKFIELD:\"joh.nny chic\\ k*\""));
         
         // quote escapes
         Assert.assertEquals(
-                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', '\"chicken\"') || content:within(TOKFIELD, 2, termOffsetMap, 'joh.nny', 'chicken'))",
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', '\"chicken\"') || content:phrase(TOKFIELD, termOffsetMap, 'joh.nny', 'chicken'))",
                         parseQuery("TOKFIELD:\"joh.nny \\\"chicken\\\"\""));
         
         // unicode escapes.
@@ -383,7 +379,7 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("(TOKFIELD == 'someone\\u005c234someplace.com' || content:within(TOKFIELD, 2, termOffsetMap, 'someone', '234someplace.com'))",
                         parseQuery("TOKFIELD:someone\\\\234someplace.com"));
         Assert.assertEquals(
-                        "(content:phrase(TOKFIELD, termOffsetMap, 'someone\\u005c234someplace.com', 'otherterm') || content:within(TOKFIELD, 3, termOffsetMap, 'someone', '234someplace.com', 'otherterm'))",
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'someone\\u005c234someplace.com', 'otherterm') || content:phrase(TOKFIELD, termOffsetMap, 'someone', '234someplace.com', 'otherterm'))",
                         parseQuery("TOKFIELD:\"someone\\\\234someplace.com otherterm\""));
         // FIX THIS, trailing slashes in queries should be acceptable.
         // Assert.assertEquals("(TOKFIELD == 'someone\\u005c234someplace.com\\u005c' || content:within(TOKFIELD, 2, termOffsetMap, 'someone',

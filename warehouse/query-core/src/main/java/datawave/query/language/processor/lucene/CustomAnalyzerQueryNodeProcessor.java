@@ -200,7 +200,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                 return node;
             } else if (FuzzyQueryNode.class.isAssignableFrom(nodeClazz)) {
                 return node;
-            } else if (node.getParent() != null && TermRangeQueryNode.class.isAssignableFrom(nodeClazz)) {
+            } else if (node.getParent() != null && TermRangeQueryNode.class.isAssignableFrom(node.getParent().getClass())) {
                 // Ignore children of TermReangeQueryNodes (for now)
                 return node;
             }
@@ -342,6 +342,8 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                 }
                 
                 // Only add slop if the original had slop, or the original was not a phrase and slop is enabled.
+                // Using slop for non-quoted terms is a workaround until the phrase function will accept multiple
+                // terms in the same position as a valid match.
                 boolean originalWasQuoted = QuotedFieldQueryNode.class.isAssignableFrom(node.getClass());
                 if ((useSlopForTokenizedTerms && !originalWasQuoted) || originalSlop > 0) {
                     n = new SlopQueryNode(n, slopRange);
