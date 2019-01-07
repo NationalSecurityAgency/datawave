@@ -572,6 +572,8 @@
                                             <include>${project.groupId}:datawave-ingest-wikipedia</include>
                                             <include>${project.groupId}:datawave-ingest-nyctlc</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
+                                            <include>gov.nsa.datawave.microservice:metadata-utils</include>
+                                            <include>gov.nsa.datawave.microservice:type-utils</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
@@ -612,6 +614,8 @@
                                             <include>${project.groupId}:datawave-query-core</include>
                                             <include>${project.groupId}:datawave-metrics-core</include>
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
+                                            <include>gov.nsa.datawave.microservice:metadata-utils</include>
+                                            <include>gov.nsa.datawave.microservice:type-utils</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>com.google.code.gson:gson</include>

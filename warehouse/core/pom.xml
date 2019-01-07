@@ -61,6 +61,10 @@
             <artifactId>common-utils</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>metadata-utils</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-api</artifactId>
         </dependency>

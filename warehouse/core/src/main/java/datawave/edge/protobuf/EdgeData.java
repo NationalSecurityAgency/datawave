@@ -8,9 +8,10 @@ public final class EdgeData {
     
     public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {}
     
-    public interface EdgeValueOrBuilder extends com.google.protobuf.MessageOrBuilder {
+    public interface EdgeValueOrBuilder extends
+    // @@protoc_insertion_point(interface_extends:datawave.edge.protobuf.EdgeValue)
+                    com.google.protobuf.MessageOrBuilder {
         
-        // optional int64 count = 1;
         /**
          * <code>optional int64 count = 1;</code>
          *
@@ -29,7 +30,6 @@ public final class EdgeData {
          */
         long getCount();
         
-        // repeated int64 hours = 2 [packed = true];
         /**
          * <code>repeated int64 hours = 2 [packed = true];</code>
          *
@@ -57,7 +57,6 @@ public final class EdgeData {
          */
         long getHours(int index);
         
-        // repeated int64 duration = 3 [packed = true];
         /**
          * <code>repeated int64 duration = 3 [packed = true];</code>
          *
@@ -91,7 +90,6 @@ public final class EdgeData {
          */
         long getDuration(int index);
         
-        // optional int32 hourBitmask = 4;
         /**
          * <code>optional int32 hourBitmask = 4;</code>
          *
@@ -110,7 +108,6 @@ public final class EdgeData {
          */
         int getHourBitmask();
         
-        // optional string sourceValue = 5;
         /**
          * <code>optional string sourceValue = 5;</code>
          */
@@ -126,7 +123,6 @@ public final class EdgeData {
          */
         com.google.protobuf.ByteString getSourceValueBytes();
         
-        // optional string sinkValue = 6;
         /**
          * <code>optional string sinkValue = 6;</code>
          */
@@ -142,7 +138,6 @@ public final class EdgeData {
          */
         com.google.protobuf.ByteString getSinkValueBytes();
         
-        // optional string loadDate = 7;
         /**
          * <code>optional string loadDate = 7;</code>
          */
@@ -158,7 +153,6 @@ public final class EdgeData {
          */
         com.google.protobuf.ByteString getLoadDateBytes();
         
-        // optional bool badActivity = 8;
         /**
          * <code>optional bool badActivity = 8;</code>
          */
@@ -169,7 +163,6 @@ public final class EdgeData {
          */
         boolean getBadActivity();
         
-        // optional .datawave.edge.protobuf.EdgeValue.UUID uuid = 9;
         /**
          * <code>optional .datawave.edge.protobuf.EdgeValue.UUID uuid = 9;</code>
          *
@@ -197,7 +190,6 @@ public final class EdgeData {
          */
         datawave.edge.protobuf.EdgeData.EdgeValue.UUIDOrBuilder getUuidOrBuilder();
         
-        // optional string uuid_string = 10;
         /**
          * <code>optional string uuid_string = 10;</code>
          *
@@ -233,7 +225,9 @@ public final class EdgeData {
      * Used for the Accumulo Value bytes for Edge Table and edge Metadata Table entries
      * </pre>
      */
-    public static final class EdgeValue extends com.google.protobuf.GeneratedMessage implements EdgeValueOrBuilder {
+    public static final class EdgeValue extends com.google.protobuf.GeneratedMessage implements
+    // @@protoc_insertion_point(message_implements:datawave.edge.protobuf.EdgeValue)
+                    EdgeValueOrBuilder {
         // Use EdgeValue.newBuilder() to construct.
         private EdgeValue(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
             super(builder);
@@ -333,18 +327,21 @@ public final class EdgeData {
                             break;
                         }
                         case 42: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000004;
-                            sourceValue_ = input.readBytes();
+                            sourceValue_ = bs;
                             break;
                         }
                         case 50: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000008;
-                            sinkValue_ = input.readBytes();
+                            sinkValue_ = bs;
                             break;
                         }
                         case 58: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000010;
-                            loadDate_ = input.readBytes();
+                            loadDate_ = bs;
                             break;
                         }
                         case 64: {
@@ -366,8 +363,9 @@ public final class EdgeData {
                             break;
                         }
                         case 82: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000080;
-                            uuidString_ = input.readBytes();
+                            uuidString_ = bs;
                             break;
                         }
                     }
@@ -409,9 +407,10 @@ public final class EdgeData {
             return PARSER;
         }
         
-        public interface UUIDOrBuilder extends com.google.protobuf.MessageOrBuilder {
+        public interface UUIDOrBuilder extends
+        // @@protoc_insertion_point(interface_extends:datawave.edge.protobuf.EdgeValue.UUID)
+                        com.google.protobuf.MessageOrBuilder {
             
-            // required sint64 least_significant_bits = 1;
             /**
              * <code>required sint64 least_significant_bits = 1;</code>
              */
@@ -422,7 +421,6 @@ public final class EdgeData {
              */
             long getLeastSignificantBits();
             
-            // required sint64 most_significant_bits = 2;
             /**
              * <code>required sint64 most_significant_bits = 2;</code>
              */
@@ -437,7 +435,9 @@ public final class EdgeData {
         /**
          * Protobuf type {@code datawave.edge.protobuf.EdgeValue.UUID}
          */
-        public static final class UUID extends com.google.protobuf.GeneratedMessage implements UUIDOrBuilder {
+        public static final class UUID extends com.google.protobuf.GeneratedMessage implements
+        // @@protoc_insertion_point(message_implements:datawave.edge.protobuf.EdgeValue.UUID)
+                        UUIDOrBuilder {
             // Use UUID.newBuilder() to construct.
             private UUID(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
                 super(builder);
@@ -529,7 +529,6 @@ public final class EdgeData {
             }
             
             private int bitField0_;
-            // required sint64 least_significant_bits = 1;
             public static final int LEAST_SIGNIFICANT_BITS_FIELD_NUMBER = 1;
             private long leastSignificantBits_;
             
@@ -547,7 +546,6 @@ public final class EdgeData {
                 return leastSignificantBits_;
             }
             
-            // required sint64 most_significant_bits = 2;
             public static final int MOST_SIGNIFICANT_BITS_FIELD_NUMBER = 2;
             private long mostSignificantBits_;
             
@@ -574,8 +572,10 @@ public final class EdgeData {
             
             public final boolean isInitialized() {
                 byte isInitialized = memoizedIsInitialized;
-                if (isInitialized != -1)
-                    return isInitialized == 1;
+                if (isInitialized == 1)
+                    return true;
+                if (isInitialized == 0)
+                    return false;
                 
                 if (!hasLeastSignificantBits()) {
                     memoizedIsInitialized = 0;
@@ -698,6 +698,7 @@ public final class EdgeData {
              * Protobuf type {@code datawave.edge.protobuf.EdgeValue.UUID}
              */
             public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+            // @@protoc_insertion_point(builder_implements:datawave.edge.protobuf.EdgeValue.UUID)
                             datawave.edge.protobuf.EdgeData.EdgeValue.UUIDOrBuilder {
                 public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
                     return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_EdgeValue_UUID_descriptor;
@@ -825,7 +826,6 @@ public final class EdgeData {
                 
                 private int bitField0_;
                 
-                // required sint64 least_significant_bits = 1;
                 private long leastSignificantBits_;
                 
                 /**
@@ -862,7 +862,6 @@ public final class EdgeData {
                     return this;
                 }
                 
-                // required sint64 most_significant_bits = 2;
                 private long mostSignificantBits_;
                 
                 /**
@@ -911,7 +910,6 @@ public final class EdgeData {
         }
         
         private int bitField0_;
-        // optional int64 count = 1;
         public static final int COUNT_FIELD_NUMBER = 1;
         private long count_;
         
@@ -937,7 +935,6 @@ public final class EdgeData {
             return count_;
         }
         
-        // repeated int64 hours = 2 [packed = true];
         public static final int HOURS_FIELD_NUMBER = 2;
         private java.util.List<java.lang.Long> hours_;
         
@@ -976,7 +973,6 @@ public final class EdgeData {
         
         private int hoursMemoizedSerializedSize = -1;
         
-        // repeated int64 duration = 3 [packed = true];
         public static final int DURATION_FIELD_NUMBER = 3;
         private java.util.List<java.lang.Long> duration_;
         
@@ -1021,7 +1017,6 @@ public final class EdgeData {
         
         private int durationMemoizedSerializedSize = -1;
         
-        // optional int32 hourBitmask = 4;
         public static final int HOURBITMASK_FIELD_NUMBER = 4;
         private int hourBitmask_;
         
@@ -1047,7 +1042,6 @@ public final class EdgeData {
             return hourBitmask_;
         }
         
-        // optional string sourceValue = 5;
         public static final int SOURCEVALUE_FIELD_NUMBER = 5;
         private java.lang.Object sourceValue_;
         
@@ -1089,7 +1083,6 @@ public final class EdgeData {
             }
         }
         
-        // optional string sinkValue = 6;
         public static final int SINKVALUE_FIELD_NUMBER = 6;
         private java.lang.Object sinkValue_;
         
@@ -1131,7 +1124,6 @@ public final class EdgeData {
             }
         }
         
-        // optional string loadDate = 7;
         public static final int LOADDATE_FIELD_NUMBER = 7;
         private java.lang.Object loadDate_;
         
@@ -1173,7 +1165,6 @@ public final class EdgeData {
             }
         }
         
-        // optional bool badActivity = 8;
         public static final int BADACTIVITY_FIELD_NUMBER = 8;
         private boolean badActivity_;
         
@@ -1191,7 +1182,6 @@ public final class EdgeData {
             return badActivity_;
         }
         
-        // optional .datawave.edge.protobuf.EdgeValue.UUID uuid = 9;
         public static final int UUID_FIELD_NUMBER = 9;
         private datawave.edge.protobuf.EdgeData.EdgeValue.UUID uuid_;
         
@@ -1228,7 +1218,6 @@ public final class EdgeData {
             return uuid_;
         }
         
-        // optional string uuid_string = 10;
         public static final int UUID_STRING_FIELD_NUMBER = 10;
         private java.lang.Object uuidString_;
         
@@ -1299,8 +1288,10 @@ public final class EdgeData {
         
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
-            if (isInitialized != -1)
-                return isInitialized == 1;
+            if (isInitialized == 1)
+                return true;
+            if (isInitialized == 0)
+                return false;
             
             if (hasUuid()) {
                 if (!getUuid().isInitialized()) {
@@ -1499,6 +1490,7 @@ public final class EdgeData {
          * </pre>
          */
         public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:datawave.edge.protobuf.EdgeValue)
                         datawave.edge.protobuf.EdgeData.EdgeValueOrBuilder {
             public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
                 return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_EdgeValue_descriptor;
@@ -1729,7 +1721,6 @@ public final class EdgeData {
             
             private int bitField0_;
             
-            // optional int64 count = 1;
             private long count_;
             
             /**
@@ -1782,7 +1773,6 @@ public final class EdgeData {
                 return this;
             }
             
-            // repeated int64 hours = 2 [packed = true];
             private java.util.List<java.lang.Long> hours_ = java.util.Collections.emptyList();
             
             private void ensureHoursIsMutable() {
@@ -1862,7 +1852,7 @@ public final class EdgeData {
              */
             public Builder addAllHours(java.lang.Iterable<? extends java.lang.Long> values) {
                 ensureHoursIsMutable();
-                super.addAll(values, hours_);
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, hours_);
                 onChanged();
                 return this;
             }
@@ -1881,7 +1871,6 @@ public final class EdgeData {
                 return this;
             }
             
-            // repeated int64 duration = 3 [packed = true];
             private java.util.List<java.lang.Long> duration_ = java.util.Collections.emptyList();
             
             private void ensureDurationIsMutable() {
@@ -1973,7 +1962,7 @@ public final class EdgeData {
              */
             public Builder addAllDuration(java.lang.Iterable<? extends java.lang.Long> values) {
                 ensureDurationIsMutable();
-                super.addAll(values, duration_);
+                com.google.protobuf.AbstractMessageLite.Builder.addAll(values, duration_);
                 onChanged();
                 return this;
             }
@@ -1994,7 +1983,6 @@ public final class EdgeData {
                 return this;
             }
             
-            // optional int32 hourBitmask = 4;
             private int hourBitmask_;
             
             /**
@@ -2047,7 +2035,6 @@ public final class EdgeData {
                 return this;
             }
             
-            // optional string sourceValue = 5;
             private java.lang.Object sourceValue_ = "";
             
             /**
@@ -2063,8 +2050,11 @@ public final class EdgeData {
             public java.lang.String getSourceValue() {
                 java.lang.Object ref = sourceValue_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    sourceValue_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        sourceValue_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -2121,7 +2111,6 @@ public final class EdgeData {
                 return this;
             }
             
-            // optional string sinkValue = 6;
             private java.lang.Object sinkValue_ = "";
             
             /**
@@ -2137,8 +2126,11 @@ public final class EdgeData {
             public java.lang.String getSinkValue() {
                 java.lang.Object ref = sinkValue_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    sinkValue_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        sinkValue_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -2195,7 +2187,6 @@ public final class EdgeData {
                 return this;
             }
             
-            // optional string loadDate = 7;
             private java.lang.Object loadDate_ = "";
             
             /**
@@ -2211,8 +2202,11 @@ public final class EdgeData {
             public java.lang.String getLoadDate() {
                 java.lang.Object ref = loadDate_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    loadDate_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        loadDate_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -2269,7 +2263,6 @@ public final class EdgeData {
                 return this;
             }
             
-            // optional bool badActivity = 8;
             private boolean badActivity_;
             
             /**
@@ -2306,7 +2299,6 @@ public final class EdgeData {
                 return this;
             }
             
-            // optional .datawave.edge.protobuf.EdgeValue.UUID uuid = 9;
             private datawave.edge.protobuf.EdgeData.EdgeValue.UUID uuid_ = datawave.edge.protobuf.EdgeData.EdgeValue.UUID.getDefaultInstance();
             private com.google.protobuf.SingleFieldBuilder<datawave.edge.protobuf.EdgeData.EdgeValue.UUID,datawave.edge.protobuf.EdgeData.EdgeValue.UUID.Builder,datawave.edge.protobuf.EdgeData.EdgeValue.UUIDOrBuilder> uuidBuilder_;
             
@@ -2453,13 +2445,12 @@ public final class EdgeData {
             private com.google.protobuf.SingleFieldBuilder<datawave.edge.protobuf.EdgeData.EdgeValue.UUID,datawave.edge.protobuf.EdgeData.EdgeValue.UUID.Builder,datawave.edge.protobuf.EdgeData.EdgeValue.UUIDOrBuilder> getUuidFieldBuilder() {
                 if (uuidBuilder_ == null) {
                     uuidBuilder_ = new com.google.protobuf.SingleFieldBuilder<datawave.edge.protobuf.EdgeData.EdgeValue.UUID,datawave.edge.protobuf.EdgeData.EdgeValue.UUID.Builder,datawave.edge.protobuf.EdgeData.EdgeValue.UUIDOrBuilder>(
-                                    uuid_, getParentForChildren(), isClean());
+                                    getUuid(), getParentForChildren(), isClean());
                     uuid_ = null;
                 }
                 return uuidBuilder_;
             }
             
-            // optional string uuid_string = 10;
             private java.lang.Object uuidString_ = "";
             
             /**
@@ -2483,8 +2474,11 @@ public final class EdgeData {
             public java.lang.String getUuidString() {
                 java.lang.Object ref = uuidString_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    uuidString_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        uuidString_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -2568,1964 +2562,10 @@ public final class EdgeData {
         // @@protoc_insertion_point(class_scope:datawave.edge.protobuf.EdgeValue)
     }
     
-    public interface MetadataValueOrBuilder extends com.google.protobuf.MessageOrBuilder {
-        
-        // repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;
-        /**
-         * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-         */
-        java.util.List<datawave.edge.protobuf.EdgeData.MetadataValue.Metadata> getMetadataList();
-        
-        /**
-         * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-         */
-        datawave.edge.protobuf.EdgeData.MetadataValue.Metadata getMetadata(int index);
-        
-        /**
-         * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-         */
-        int getMetadataCount();
-        
-        /**
-         * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-         */
-        java.util.List<? extends datawave.edge.protobuf.EdgeData.MetadataValue.MetadataOrBuilder> getMetadataOrBuilderList();
-        
-        /**
-         * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-         */
-        datawave.edge.protobuf.EdgeData.MetadataValue.MetadataOrBuilder getMetadataOrBuilder(int index);
-    }
-    
-    /**
-     * Protobuf type {@code datawave.edge.protobuf.MetadataValue}
-     *
-     * <pre>
-     * moved this out because no need for Metadata values to appear in the standard edge table.
-     * this would be fixed if packed=true worked on strings, but meh
-     * </pre>
-     */
-    public static final class MetadataValue extends com.google.protobuf.GeneratedMessage implements MetadataValueOrBuilder {
-        // Use MetadataValue.newBuilder() to construct.
-        private MetadataValue(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
-            super(builder);
-            this.unknownFields = builder.getUnknownFields();
-        }
-        
-        private MetadataValue(boolean noInit) {
-            this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance();
-        }
-        
-        private static final MetadataValue defaultInstance;
-        
-        public static MetadataValue getDefaultInstance() {
-            return defaultInstance;
-        }
-        
-        public MetadataValue getDefaultInstanceForType() {
-            return defaultInstance;
-        }
-        
-        private final com.google.protobuf.UnknownFieldSet unknownFields;
-        
-        @java.lang.Override
-        public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-            return this.unknownFields;
-        }
-        
-        private MetadataValue(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                        throws com.google.protobuf.InvalidProtocolBufferException {
-            initFields();
-            int mutable_bitField0_ = 0;
-            com.google.protobuf.UnknownFieldSet.Builder unknownFields = com.google.protobuf.UnknownFieldSet.newBuilder();
-            try {
-                boolean done = false;
-                while (!done) {
-                    int tag = input.readTag();
-                    switch (tag) {
-                        case 0:
-                            done = true;
-                            break;
-                        default: {
-                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
-                                done = true;
-                            }
-                            break;
-                        }
-                        case 10: {
-                            if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-                                metadata_ = new java.util.ArrayList<datawave.edge.protobuf.EdgeData.MetadataValue.Metadata>();
-                                mutable_bitField0_ |= 0x00000001;
-                            }
-                            metadata_.add(input.readMessage(datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.PARSER, extensionRegistry));
-                            break;
-                        }
-                    }
-                }
-            } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-                throw e.setUnfinishedMessage(this);
-            } catch (java.io.IOException e) {
-                throw new com.google.protobuf.InvalidProtocolBufferException(e.getMessage()).setUnfinishedMessage(this);
-            } finally {
-                if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-                    metadata_ = java.util.Collections.unmodifiableList(metadata_);
-                }
-                this.unknownFields = unknownFields.build();
-                makeExtensionsImmutable();
-            }
-        }
-        
-        public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
-            return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_MetadataValue_descriptor;
-        }
-        
-        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
-            return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_MetadataValue_fieldAccessorTable.ensureFieldAccessorsInitialized(
-                            datawave.edge.protobuf.EdgeData.MetadataValue.class, datawave.edge.protobuf.EdgeData.MetadataValue.Builder.class);
-        }
-        
-        public static com.google.protobuf.Parser<MetadataValue> PARSER = new com.google.protobuf.AbstractParser<MetadataValue>() {
-            public MetadataValue parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                            throws com.google.protobuf.InvalidProtocolBufferException {
-                return new MetadataValue(input, extensionRegistry);
-            }
-        };
-        
-        @java.lang.Override
-        public com.google.protobuf.Parser<MetadataValue> getParserForType() {
-            return PARSER;
-        }
-        
-        public interface MetadataOrBuilder extends com.google.protobuf.MessageOrBuilder {
-            
-            // required string source = 1;
-            /**
-             * <code>required string source = 1;</code>
-             */
-            boolean hasSource();
-            
-            /**
-             * <code>required string source = 1;</code>
-             */
-            java.lang.String getSource();
-            
-            /**
-             * <code>required string source = 1;</code>
-             */
-            com.google.protobuf.ByteString getSourceBytes();
-            
-            // required string sink = 2;
-            /**
-             * <code>required string sink = 2;</code>
-             */
-            boolean hasSink();
-            
-            /**
-             * <code>required string sink = 2;</code>
-             */
-            java.lang.String getSink();
-            
-            /**
-             * <code>required string sink = 2;</code>
-             */
-            com.google.protobuf.ByteString getSinkBytes();
-            
-            // optional string enrichment = 3;
-            /**
-             * <code>optional string enrichment = 3;</code>
-             */
-            boolean hasEnrichment();
-            
-            /**
-             * <code>optional string enrichment = 3;</code>
-             */
-            java.lang.String getEnrichment();
-            
-            /**
-             * <code>optional string enrichment = 3;</code>
-             */
-            com.google.protobuf.ByteString getEnrichmentBytes();
-            
-            // optional string enrichmentIndex = 4;
-            /**
-             * <code>optional string enrichmentIndex = 4;</code>
-             */
-            boolean hasEnrichmentIndex();
-            
-            /**
-             * <code>optional string enrichmentIndex = 4;</code>
-             */
-            java.lang.String getEnrichmentIndex();
-            
-            /**
-             * <code>optional string enrichmentIndex = 4;</code>
-             */
-            com.google.protobuf.ByteString getEnrichmentIndexBytes();
-            
-            // optional string date = 5;
-            /**
-             * <code>optional string date = 5;</code>
-             */
-            boolean hasDate();
-            
-            /**
-             * <code>optional string date = 5;</code>
-             */
-            java.lang.String getDate();
-            
-            /**
-             * <code>optional string date = 5;</code>
-             */
-            com.google.protobuf.ByteString getDateBytes();
-            
-            // optional string jexlPrecondition = 6;
-            /**
-             * <code>optional string jexlPrecondition = 6;</code>
-             */
-            boolean hasJexlPrecondition();
-            
-            /**
-             * <code>optional string jexlPrecondition = 6;</code>
-             */
-            java.lang.String getJexlPrecondition();
-            
-            /**
-             * <code>optional string jexlPrecondition = 6;</code>
-             */
-            com.google.protobuf.ByteString getJexlPreconditionBytes();
-        }
-        
-        /**
-         * Protobuf type {@code datawave.edge.protobuf.MetadataValue.Metadata}
-         */
-        public static final class Metadata extends com.google.protobuf.GeneratedMessage implements MetadataOrBuilder {
-            // Use Metadata.newBuilder() to construct.
-            private Metadata(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
-                super(builder);
-                this.unknownFields = builder.getUnknownFields();
-            }
-            
-            private Metadata(boolean noInit) {
-                this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance();
-            }
-            
-            private static final Metadata defaultInstance;
-            
-            public static Metadata getDefaultInstance() {
-                return defaultInstance;
-            }
-            
-            public Metadata getDefaultInstanceForType() {
-                return defaultInstance;
-            }
-            
-            private final com.google.protobuf.UnknownFieldSet unknownFields;
-            
-            @java.lang.Override
-            public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
-                return this.unknownFields;
-            }
-            
-            private Metadata(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                            throws com.google.protobuf.InvalidProtocolBufferException {
-                initFields();
-                int mutable_bitField0_ = 0;
-                com.google.protobuf.UnknownFieldSet.Builder unknownFields = com.google.protobuf.UnknownFieldSet.newBuilder();
-                try {
-                    boolean done = false;
-                    while (!done) {
-                        int tag = input.readTag();
-                        switch (tag) {
-                            case 0:
-                                done = true;
-                                break;
-                            default: {
-                                if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
-                                    done = true;
-                                }
-                                break;
-                            }
-                            case 10: {
-                                bitField0_ |= 0x00000001;
-                                source_ = input.readBytes();
-                                break;
-                            }
-                            case 18: {
-                                bitField0_ |= 0x00000002;
-                                sink_ = input.readBytes();
-                                break;
-                            }
-                            case 26: {
-                                bitField0_ |= 0x00000004;
-                                enrichment_ = input.readBytes();
-                                break;
-                            }
-                            case 34: {
-                                bitField0_ |= 0x00000008;
-                                enrichmentIndex_ = input.readBytes();
-                                break;
-                            }
-                            case 42: {
-                                bitField0_ |= 0x00000010;
-                                date_ = input.readBytes();
-                                break;
-                            }
-                            case 50: {
-                                bitField0_ |= 0x00000020;
-                                jexlPrecondition_ = input.readBytes();
-                                break;
-                            }
-                        }
-                    }
-                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-                    throw e.setUnfinishedMessage(this);
-                } catch (java.io.IOException e) {
-                    throw new com.google.protobuf.InvalidProtocolBufferException(e.getMessage()).setUnfinishedMessage(this);
-                } finally {
-                    this.unknownFields = unknownFields.build();
-                    makeExtensionsImmutable();
-                }
-            }
-            
-            public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
-                return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_MetadataValue_Metadata_descriptor;
-            }
-            
-            protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
-                return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_MetadataValue_Metadata_fieldAccessorTable
-                                .ensureFieldAccessorsInitialized(datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.class,
-                                                datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder.class);
-            }
-            
-            public static com.google.protobuf.Parser<Metadata> PARSER = new com.google.protobuf.AbstractParser<Metadata>() {
-                public Metadata parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                                throws com.google.protobuf.InvalidProtocolBufferException {
-                    return new Metadata(input, extensionRegistry);
-                }
-            };
-            
-            @java.lang.Override
-            public com.google.protobuf.Parser<Metadata> getParserForType() {
-                return PARSER;
-            }
-            
-            private int bitField0_;
-            // required string source = 1;
-            public static final int SOURCE_FIELD_NUMBER = 1;
-            private java.lang.Object source_;
-            
-            /**
-             * <code>required string source = 1;</code>
-             */
-            public boolean hasSource() {
-                return ((bitField0_ & 0x00000001) == 0x00000001);
-            }
-            
-            /**
-             * <code>required string source = 1;</code>
-             */
-            public java.lang.String getSource() {
-                java.lang.Object ref = source_;
-                if (ref instanceof java.lang.String) {
-                    return (java.lang.String) ref;
-                } else {
-                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                    java.lang.String s = bs.toStringUtf8();
-                    if (bs.isValidUtf8()) {
-                        source_ = s;
-                    }
-                    return s;
-                }
-            }
-            
-            /**
-             * <code>required string source = 1;</code>
-             */
-            public com.google.protobuf.ByteString getSourceBytes() {
-                java.lang.Object ref = source_;
-                if (ref instanceof java.lang.String) {
-                    com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                    source_ = b;
-                    return b;
-                } else {
-                    return (com.google.protobuf.ByteString) ref;
-                }
-            }
-            
-            // required string sink = 2;
-            public static final int SINK_FIELD_NUMBER = 2;
-            private java.lang.Object sink_;
-            
-            /**
-             * <code>required string sink = 2;</code>
-             */
-            public boolean hasSink() {
-                return ((bitField0_ & 0x00000002) == 0x00000002);
-            }
-            
-            /**
-             * <code>required string sink = 2;</code>
-             */
-            public java.lang.String getSink() {
-                java.lang.Object ref = sink_;
-                if (ref instanceof java.lang.String) {
-                    return (java.lang.String) ref;
-                } else {
-                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                    java.lang.String s = bs.toStringUtf8();
-                    if (bs.isValidUtf8()) {
-                        sink_ = s;
-                    }
-                    return s;
-                }
-            }
-            
-            /**
-             * <code>required string sink = 2;</code>
-             */
-            public com.google.protobuf.ByteString getSinkBytes() {
-                java.lang.Object ref = sink_;
-                if (ref instanceof java.lang.String) {
-                    com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                    sink_ = b;
-                    return b;
-                } else {
-                    return (com.google.protobuf.ByteString) ref;
-                }
-            }
-            
-            // optional string enrichment = 3;
-            public static final int ENRICHMENT_FIELD_NUMBER = 3;
-            private java.lang.Object enrichment_;
-            
-            /**
-             * <code>optional string enrichment = 3;</code>
-             */
-            public boolean hasEnrichment() {
-                return ((bitField0_ & 0x00000004) == 0x00000004);
-            }
-            
-            /**
-             * <code>optional string enrichment = 3;</code>
-             */
-            public java.lang.String getEnrichment() {
-                java.lang.Object ref = enrichment_;
-                if (ref instanceof java.lang.String) {
-                    return (java.lang.String) ref;
-                } else {
-                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                    java.lang.String s = bs.toStringUtf8();
-                    if (bs.isValidUtf8()) {
-                        enrichment_ = s;
-                    }
-                    return s;
-                }
-            }
-            
-            /**
-             * <code>optional string enrichment = 3;</code>
-             */
-            public com.google.protobuf.ByteString getEnrichmentBytes() {
-                java.lang.Object ref = enrichment_;
-                if (ref instanceof java.lang.String) {
-                    com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                    enrichment_ = b;
-                    return b;
-                } else {
-                    return (com.google.protobuf.ByteString) ref;
-                }
-            }
-            
-            // optional string enrichmentIndex = 4;
-            public static final int ENRICHMENTINDEX_FIELD_NUMBER = 4;
-            private java.lang.Object enrichmentIndex_;
-            
-            /**
-             * <code>optional string enrichmentIndex = 4;</code>
-             */
-            public boolean hasEnrichmentIndex() {
-                return ((bitField0_ & 0x00000008) == 0x00000008);
-            }
-            
-            /**
-             * <code>optional string enrichmentIndex = 4;</code>
-             */
-            public java.lang.String getEnrichmentIndex() {
-                java.lang.Object ref = enrichmentIndex_;
-                if (ref instanceof java.lang.String) {
-                    return (java.lang.String) ref;
-                } else {
-                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                    java.lang.String s = bs.toStringUtf8();
-                    if (bs.isValidUtf8()) {
-                        enrichmentIndex_ = s;
-                    }
-                    return s;
-                }
-            }
-            
-            /**
-             * <code>optional string enrichmentIndex = 4;</code>
-             */
-            public com.google.protobuf.ByteString getEnrichmentIndexBytes() {
-                java.lang.Object ref = enrichmentIndex_;
-                if (ref instanceof java.lang.String) {
-                    com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                    enrichmentIndex_ = b;
-                    return b;
-                } else {
-                    return (com.google.protobuf.ByteString) ref;
-                }
-            }
-            
-            // optional string date = 5;
-            public static final int DATE_FIELD_NUMBER = 5;
-            private java.lang.Object date_;
-            
-            /**
-             * <code>optional string date = 5;</code>
-             */
-            public boolean hasDate() {
-                return ((bitField0_ & 0x00000010) == 0x00000010);
-            }
-            
-            /**
-             * <code>optional string date = 5;</code>
-             */
-            public java.lang.String getDate() {
-                java.lang.Object ref = date_;
-                if (ref instanceof java.lang.String) {
-                    return (java.lang.String) ref;
-                } else {
-                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                    java.lang.String s = bs.toStringUtf8();
-                    if (bs.isValidUtf8()) {
-                        date_ = s;
-                    }
-                    return s;
-                }
-            }
-            
-            /**
-             * <code>optional string date = 5;</code>
-             */
-            public com.google.protobuf.ByteString getDateBytes() {
-                java.lang.Object ref = date_;
-                if (ref instanceof java.lang.String) {
-                    com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                    date_ = b;
-                    return b;
-                } else {
-                    return (com.google.protobuf.ByteString) ref;
-                }
-            }
-            
-            // optional string jexlPrecondition = 6;
-            public static final int JEXLPRECONDITION_FIELD_NUMBER = 6;
-            private java.lang.Object jexlPrecondition_;
-            
-            /**
-             * <code>optional string jexlPrecondition = 6;</code>
-             */
-            public boolean hasJexlPrecondition() {
-                return ((bitField0_ & 0x00000020) == 0x00000020);
-            }
-            
-            /**
-             * <code>optional string jexlPrecondition = 6;</code>
-             */
-            public java.lang.String getJexlPrecondition() {
-                java.lang.Object ref = jexlPrecondition_;
-                if (ref instanceof java.lang.String) {
-                    return (java.lang.String) ref;
-                } else {
-                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
-                    java.lang.String s = bs.toStringUtf8();
-                    if (bs.isValidUtf8()) {
-                        jexlPrecondition_ = s;
-                    }
-                    return s;
-                }
-            }
-            
-            /**
-             * <code>optional string jexlPrecondition = 6;</code>
-             */
-            public com.google.protobuf.ByteString getJexlPreconditionBytes() {
-                java.lang.Object ref = jexlPrecondition_;
-                if (ref instanceof java.lang.String) {
-                    com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                    jexlPrecondition_ = b;
-                    return b;
-                } else {
-                    return (com.google.protobuf.ByteString) ref;
-                }
-            }
-            
-            private void initFields() {
-                source_ = "";
-                sink_ = "";
-                enrichment_ = "";
-                enrichmentIndex_ = "";
-                date_ = "";
-                jexlPrecondition_ = "";
-            }
-            
-            private byte memoizedIsInitialized = -1;
-            
-            public final boolean isInitialized() {
-                byte isInitialized = memoizedIsInitialized;
-                if (isInitialized != -1)
-                    return isInitialized == 1;
-                
-                if (!hasSource()) {
-                    memoizedIsInitialized = 0;
-                    return false;
-                }
-                if (!hasSink()) {
-                    memoizedIsInitialized = 0;
-                    return false;
-                }
-                memoizedIsInitialized = 1;
-                return true;
-            }
-            
-            public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-                getSerializedSize();
-                if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                    output.writeBytes(1, getSourceBytes());
-                }
-                if (((bitField0_ & 0x00000002) == 0x00000002)) {
-                    output.writeBytes(2, getSinkBytes());
-                }
-                if (((bitField0_ & 0x00000004) == 0x00000004)) {
-                    output.writeBytes(3, getEnrichmentBytes());
-                }
-                if (((bitField0_ & 0x00000008) == 0x00000008)) {
-                    output.writeBytes(4, getEnrichmentIndexBytes());
-                }
-                if (((bitField0_ & 0x00000010) == 0x00000010)) {
-                    output.writeBytes(5, getDateBytes());
-                }
-                if (((bitField0_ & 0x00000020) == 0x00000020)) {
-                    output.writeBytes(6, getJexlPreconditionBytes());
-                }
-                getUnknownFields().writeTo(output);
-            }
-            
-            private int memoizedSerializedSize = -1;
-            
-            public int getSerializedSize() {
-                int size = memoizedSerializedSize;
-                if (size != -1)
-                    return size;
-                
-                size = 0;
-                if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                    size += com.google.protobuf.CodedOutputStream.computeBytesSize(1, getSourceBytes());
-                }
-                if (((bitField0_ & 0x00000002) == 0x00000002)) {
-                    size += com.google.protobuf.CodedOutputStream.computeBytesSize(2, getSinkBytes());
-                }
-                if (((bitField0_ & 0x00000004) == 0x00000004)) {
-                    size += com.google.protobuf.CodedOutputStream.computeBytesSize(3, getEnrichmentBytes());
-                }
-                if (((bitField0_ & 0x00000008) == 0x00000008)) {
-                    size += com.google.protobuf.CodedOutputStream.computeBytesSize(4, getEnrichmentIndexBytes());
-                }
-                if (((bitField0_ & 0x00000010) == 0x00000010)) {
-                    size += com.google.protobuf.CodedOutputStream.computeBytesSize(5, getDateBytes());
-                }
-                if (((bitField0_ & 0x00000020) == 0x00000020)) {
-                    size += com.google.protobuf.CodedOutputStream.computeBytesSize(6, getJexlPreconditionBytes());
-                }
-                size += getUnknownFields().getSerializedSize();
-                memoizedSerializedSize = size;
-                return size;
-            }
-            
-            private static final long serialVersionUID = 0L;
-            
-            @java.lang.Override
-            protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
-                return super.writeReplace();
-            }
-            
-            public static datawave.edge.protobuf.EdgeData.MetadataValue.Metadata parseFrom(com.google.protobuf.ByteString data)
-                            throws com.google.protobuf.InvalidProtocolBufferException {
-                return PARSER.parseFrom(data);
-            }
-            
-            public static datawave.edge.protobuf.EdgeData.MetadataValue.Metadata parseFrom(com.google.protobuf.ByteString data,
-                            com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
-                return PARSER.parseFrom(data, extensionRegistry);
-            }
-            
-            public static datawave.edge.protobuf.EdgeData.MetadataValue.Metadata parseFrom(byte[] data)
-                            throws com.google.protobuf.InvalidProtocolBufferException {
-                return PARSER.parseFrom(data);
-            }
-            
-            public static datawave.edge.protobuf.EdgeData.MetadataValue.Metadata parseFrom(byte[] data,
-                            com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
-                return PARSER.parseFrom(data, extensionRegistry);
-            }
-            
-            public static datawave.edge.protobuf.EdgeData.MetadataValue.Metadata parseFrom(java.io.InputStream input) throws java.io.IOException {
-                return PARSER.parseFrom(input);
-            }
-            
-            public static datawave.edge.protobuf.EdgeData.MetadataValue.Metadata parseFrom(java.io.InputStream input,
-                            com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-                return PARSER.parseFrom(input, extensionRegistry);
-            }
-            
-            public static datawave.edge.protobuf.EdgeData.MetadataValue.Metadata parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
-                return PARSER.parseDelimitedFrom(input);
-            }
-            
-            public static datawave.edge.protobuf.EdgeData.MetadataValue.Metadata parseDelimitedFrom(java.io.InputStream input,
-                            com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-                return PARSER.parseDelimitedFrom(input, extensionRegistry);
-            }
-            
-            public static datawave.edge.protobuf.EdgeData.MetadataValue.Metadata parseFrom(com.google.protobuf.CodedInputStream input)
-                            throws java.io.IOException {
-                return PARSER.parseFrom(input);
-            }
-            
-            public static datawave.edge.protobuf.EdgeData.MetadataValue.Metadata parseFrom(com.google.protobuf.CodedInputStream input,
-                            com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-                return PARSER.parseFrom(input, extensionRegistry);
-            }
-            
-            public static Builder newBuilder() {
-                return Builder.create();
-            }
-            
-            public Builder newBuilderForType() {
-                return newBuilder();
-            }
-            
-            public static Builder newBuilder(datawave.edge.protobuf.EdgeData.MetadataValue.Metadata prototype) {
-                return newBuilder().mergeFrom(prototype);
-            }
-            
-            public Builder toBuilder() {
-                return newBuilder(this);
-            }
-            
-            @java.lang.Override
-            protected Builder newBuilderForType(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-                Builder builder = new Builder(parent);
-                return builder;
-            }
-            
-            /**
-             * Protobuf type {@code datawave.edge.protobuf.MetadataValue.Metadata}
-             */
-            public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-                            datawave.edge.protobuf.EdgeData.MetadataValue.MetadataOrBuilder {
-                public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
-                    return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_MetadataValue_Metadata_descriptor;
-                }
-                
-                protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
-                    return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_MetadataValue_Metadata_fieldAccessorTable
-                                    .ensureFieldAccessorsInitialized(datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.class,
-                                                    datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder.class);
-                }
-                
-                // Construct using datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.newBuilder()
-                private Builder() {
-                    maybeForceBuilderInitialization();
-                }
-                
-                private Builder(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-                    super(parent);
-                    maybeForceBuilderInitialization();
-                }
-                
-                private void maybeForceBuilderInitialization() {
-                    if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {}
-                }
-                
-                private static Builder create() {
-                    return new Builder();
-                }
-                
-                public Builder clear() {
-                    super.clear();
-                    source_ = "";
-                    bitField0_ = (bitField0_ & ~0x00000001);
-                    sink_ = "";
-                    bitField0_ = (bitField0_ & ~0x00000002);
-                    enrichment_ = "";
-                    bitField0_ = (bitField0_ & ~0x00000004);
-                    enrichmentIndex_ = "";
-                    bitField0_ = (bitField0_ & ~0x00000008);
-                    date_ = "";
-                    bitField0_ = (bitField0_ & ~0x00000010);
-                    jexlPrecondition_ = "";
-                    bitField0_ = (bitField0_ & ~0x00000020);
-                    return this;
-                }
-                
-                public Builder clone() {
-                    return create().mergeFrom(buildPartial());
-                }
-                
-                public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
-                    return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_MetadataValue_Metadata_descriptor;
-                }
-                
-                public datawave.edge.protobuf.EdgeData.MetadataValue.Metadata getDefaultInstanceForType() {
-                    return datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.getDefaultInstance();
-                }
-                
-                public datawave.edge.protobuf.EdgeData.MetadataValue.Metadata build() {
-                    datawave.edge.protobuf.EdgeData.MetadataValue.Metadata result = buildPartial();
-                    if (!result.isInitialized()) {
-                        throw newUninitializedMessageException(result);
-                    }
-                    return result;
-                }
-                
-                public datawave.edge.protobuf.EdgeData.MetadataValue.Metadata buildPartial() {
-                    datawave.edge.protobuf.EdgeData.MetadataValue.Metadata result = new datawave.edge.protobuf.EdgeData.MetadataValue.Metadata(this);
-                    int from_bitField0_ = bitField0_;
-                    int to_bitField0_ = 0;
-                    if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
-                        to_bitField0_ |= 0x00000001;
-                    }
-                    result.source_ = source_;
-                    if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-                        to_bitField0_ |= 0x00000002;
-                    }
-                    result.sink_ = sink_;
-                    if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-                        to_bitField0_ |= 0x00000004;
-                    }
-                    result.enrichment_ = enrichment_;
-                    if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-                        to_bitField0_ |= 0x00000008;
-                    }
-                    result.enrichmentIndex_ = enrichmentIndex_;
-                    if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-                        to_bitField0_ |= 0x00000010;
-                    }
-                    result.date_ = date_;
-                    if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
-                        to_bitField0_ |= 0x00000020;
-                    }
-                    result.jexlPrecondition_ = jexlPrecondition_;
-                    result.bitField0_ = to_bitField0_;
-                    onBuilt();
-                    return result;
-                }
-                
-                public Builder mergeFrom(com.google.protobuf.Message other) {
-                    if (other instanceof datawave.edge.protobuf.EdgeData.MetadataValue.Metadata) {
-                        return mergeFrom((datawave.edge.protobuf.EdgeData.MetadataValue.Metadata) other);
-                    } else {
-                        super.mergeFrom(other);
-                        return this;
-                    }
-                }
-                
-                public Builder mergeFrom(datawave.edge.protobuf.EdgeData.MetadataValue.Metadata other) {
-                    if (other == datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.getDefaultInstance())
-                        return this;
-                    if (other.hasSource()) {
-                        bitField0_ |= 0x00000001;
-                        source_ = other.source_;
-                        onChanged();
-                    }
-                    if (other.hasSink()) {
-                        bitField0_ |= 0x00000002;
-                        sink_ = other.sink_;
-                        onChanged();
-                    }
-                    if (other.hasEnrichment()) {
-                        bitField0_ |= 0x00000004;
-                        enrichment_ = other.enrichment_;
-                        onChanged();
-                    }
-                    if (other.hasEnrichmentIndex()) {
-                        bitField0_ |= 0x00000008;
-                        enrichmentIndex_ = other.enrichmentIndex_;
-                        onChanged();
-                    }
-                    if (other.hasDate()) {
-                        bitField0_ |= 0x00000010;
-                        date_ = other.date_;
-                        onChanged();
-                    }
-                    if (other.hasJexlPrecondition()) {
-                        bitField0_ |= 0x00000020;
-                        jexlPrecondition_ = other.jexlPrecondition_;
-                        onChanged();
-                    }
-                    this.mergeUnknownFields(other.getUnknownFields());
-                    return this;
-                }
-                
-                public final boolean isInitialized() {
-                    if (!hasSource()) {
-                        
-                        return false;
-                    }
-                    if (!hasSink()) {
-                        
-                        return false;
-                    }
-                    return true;
-                }
-                
-                public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                                throws java.io.IOException {
-                    datawave.edge.protobuf.EdgeData.MetadataValue.Metadata parsedMessage = null;
-                    try {
-                        parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-                    } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-                        parsedMessage = (datawave.edge.protobuf.EdgeData.MetadataValue.Metadata) e.getUnfinishedMessage();
-                        throw e;
-                    } finally {
-                        if (parsedMessage != null) {
-                            mergeFrom(parsedMessage);
-                        }
-                    }
-                    return this;
-                }
-                
-                private int bitField0_;
-                
-                // required string source = 1;
-                private java.lang.Object source_ = "";
-                
-                /**
-                 * <code>required string source = 1;</code>
-                 */
-                public boolean hasSource() {
-                    return ((bitField0_ & 0x00000001) == 0x00000001);
-                }
-                
-                /**
-                 * <code>required string source = 1;</code>
-                 */
-                public java.lang.String getSource() {
-                    java.lang.Object ref = source_;
-                    if (!(ref instanceof java.lang.String)) {
-                        java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                        source_ = s;
-                        return s;
-                    } else {
-                        return (java.lang.String) ref;
-                    }
-                }
-                
-                /**
-                 * <code>required string source = 1;</code>
-                 */
-                public com.google.protobuf.ByteString getSourceBytes() {
-                    java.lang.Object ref = source_;
-                    if (ref instanceof String) {
-                        com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                        source_ = b;
-                        return b;
-                    } else {
-                        return (com.google.protobuf.ByteString) ref;
-                    }
-                }
-                
-                /**
-                 * <code>required string source = 1;</code>
-                 */
-                public Builder setSource(java.lang.String value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000001;
-                    source_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>required string source = 1;</code>
-                 */
-                public Builder clearSource() {
-                    bitField0_ = (bitField0_ & ~0x00000001);
-                    source_ = getDefaultInstance().getSource();
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>required string source = 1;</code>
-                 */
-                public Builder setSourceBytes(com.google.protobuf.ByteString value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000001;
-                    source_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                // required string sink = 2;
-                private java.lang.Object sink_ = "";
-                
-                /**
-                 * <code>required string sink = 2;</code>
-                 */
-                public boolean hasSink() {
-                    return ((bitField0_ & 0x00000002) == 0x00000002);
-                }
-                
-                /**
-                 * <code>required string sink = 2;</code>
-                 */
-                public java.lang.String getSink() {
-                    java.lang.Object ref = sink_;
-                    if (!(ref instanceof java.lang.String)) {
-                        java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                        sink_ = s;
-                        return s;
-                    } else {
-                        return (java.lang.String) ref;
-                    }
-                }
-                
-                /**
-                 * <code>required string sink = 2;</code>
-                 */
-                public com.google.protobuf.ByteString getSinkBytes() {
-                    java.lang.Object ref = sink_;
-                    if (ref instanceof String) {
-                        com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                        sink_ = b;
-                        return b;
-                    } else {
-                        return (com.google.protobuf.ByteString) ref;
-                    }
-                }
-                
-                /**
-                 * <code>required string sink = 2;</code>
-                 */
-                public Builder setSink(java.lang.String value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000002;
-                    sink_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>required string sink = 2;</code>
-                 */
-                public Builder clearSink() {
-                    bitField0_ = (bitField0_ & ~0x00000002);
-                    sink_ = getDefaultInstance().getSink();
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>required string sink = 2;</code>
-                 */
-                public Builder setSinkBytes(com.google.protobuf.ByteString value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000002;
-                    sink_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                // optional string enrichment = 3;
-                private java.lang.Object enrichment_ = "";
-                
-                /**
-                 * <code>optional string enrichment = 3;</code>
-                 */
-                public boolean hasEnrichment() {
-                    return ((bitField0_ & 0x00000004) == 0x00000004);
-                }
-                
-                /**
-                 * <code>optional string enrichment = 3;</code>
-                 */
-                public java.lang.String getEnrichment() {
-                    java.lang.Object ref = enrichment_;
-                    if (!(ref instanceof java.lang.String)) {
-                        java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                        enrichment_ = s;
-                        return s;
-                    } else {
-                        return (java.lang.String) ref;
-                    }
-                }
-                
-                /**
-                 * <code>optional string enrichment = 3;</code>
-                 */
-                public com.google.protobuf.ByteString getEnrichmentBytes() {
-                    java.lang.Object ref = enrichment_;
-                    if (ref instanceof String) {
-                        com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                        enrichment_ = b;
-                        return b;
-                    } else {
-                        return (com.google.protobuf.ByteString) ref;
-                    }
-                }
-                
-                /**
-                 * <code>optional string enrichment = 3;</code>
-                 */
-                public Builder setEnrichment(java.lang.String value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000004;
-                    enrichment_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>optional string enrichment = 3;</code>
-                 */
-                public Builder clearEnrichment() {
-                    bitField0_ = (bitField0_ & ~0x00000004);
-                    enrichment_ = getDefaultInstance().getEnrichment();
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>optional string enrichment = 3;</code>
-                 */
-                public Builder setEnrichmentBytes(com.google.protobuf.ByteString value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000004;
-                    enrichment_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                // optional string enrichmentIndex = 4;
-                private java.lang.Object enrichmentIndex_ = "";
-                
-                /**
-                 * <code>optional string enrichmentIndex = 4;</code>
-                 */
-                public boolean hasEnrichmentIndex() {
-                    return ((bitField0_ & 0x00000008) == 0x00000008);
-                }
-                
-                /**
-                 * <code>optional string enrichmentIndex = 4;</code>
-                 */
-                public java.lang.String getEnrichmentIndex() {
-                    java.lang.Object ref = enrichmentIndex_;
-                    if (!(ref instanceof java.lang.String)) {
-                        java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                        enrichmentIndex_ = s;
-                        return s;
-                    } else {
-                        return (java.lang.String) ref;
-                    }
-                }
-                
-                /**
-                 * <code>optional string enrichmentIndex = 4;</code>
-                 */
-                public com.google.protobuf.ByteString getEnrichmentIndexBytes() {
-                    java.lang.Object ref = enrichmentIndex_;
-                    if (ref instanceof String) {
-                        com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                        enrichmentIndex_ = b;
-                        return b;
-                    } else {
-                        return (com.google.protobuf.ByteString) ref;
-                    }
-                }
-                
-                /**
-                 * <code>optional string enrichmentIndex = 4;</code>
-                 */
-                public Builder setEnrichmentIndex(java.lang.String value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000008;
-                    enrichmentIndex_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>optional string enrichmentIndex = 4;</code>
-                 */
-                public Builder clearEnrichmentIndex() {
-                    bitField0_ = (bitField0_ & ~0x00000008);
-                    enrichmentIndex_ = getDefaultInstance().getEnrichmentIndex();
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>optional string enrichmentIndex = 4;</code>
-                 */
-                public Builder setEnrichmentIndexBytes(com.google.protobuf.ByteString value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000008;
-                    enrichmentIndex_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                // optional string date = 5;
-                private java.lang.Object date_ = "";
-                
-                /**
-                 * <code>optional string date = 5;</code>
-                 */
-                public boolean hasDate() {
-                    return ((bitField0_ & 0x00000010) == 0x00000010);
-                }
-                
-                /**
-                 * <code>optional string date = 5;</code>
-                 */
-                public java.lang.String getDate() {
-                    java.lang.Object ref = date_;
-                    if (!(ref instanceof java.lang.String)) {
-                        java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                        date_ = s;
-                        return s;
-                    } else {
-                        return (java.lang.String) ref;
-                    }
-                }
-                
-                /**
-                 * <code>optional string date = 5;</code>
-                 */
-                public com.google.protobuf.ByteString getDateBytes() {
-                    java.lang.Object ref = date_;
-                    if (ref instanceof String) {
-                        com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                        date_ = b;
-                        return b;
-                    } else {
-                        return (com.google.protobuf.ByteString) ref;
-                    }
-                }
-                
-                /**
-                 * <code>optional string date = 5;</code>
-                 */
-                public Builder setDate(java.lang.String value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000010;
-                    date_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>optional string date = 5;</code>
-                 */
-                public Builder clearDate() {
-                    bitField0_ = (bitField0_ & ~0x00000010);
-                    date_ = getDefaultInstance().getDate();
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>optional string date = 5;</code>
-                 */
-                public Builder setDateBytes(com.google.protobuf.ByteString value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000010;
-                    date_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                // optional string jexlPrecondition = 6;
-                private java.lang.Object jexlPrecondition_ = "";
-                
-                /**
-                 * <code>optional string jexlPrecondition = 6;</code>
-                 */
-                public boolean hasJexlPrecondition() {
-                    return ((bitField0_ & 0x00000020) == 0x00000020);
-                }
-                
-                /**
-                 * <code>optional string jexlPrecondition = 6;</code>
-                 */
-                public java.lang.String getJexlPrecondition() {
-                    java.lang.Object ref = jexlPrecondition_;
-                    if (!(ref instanceof java.lang.String)) {
-                        java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                        jexlPrecondition_ = s;
-                        return s;
-                    } else {
-                        return (java.lang.String) ref;
-                    }
-                }
-                
-                /**
-                 * <code>optional string jexlPrecondition = 6;</code>
-                 */
-                public com.google.protobuf.ByteString getJexlPreconditionBytes() {
-                    java.lang.Object ref = jexlPrecondition_;
-                    if (ref instanceof String) {
-                        com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
-                        jexlPrecondition_ = b;
-                        return b;
-                    } else {
-                        return (com.google.protobuf.ByteString) ref;
-                    }
-                }
-                
-                /**
-                 * <code>optional string jexlPrecondition = 6;</code>
-                 */
-                public Builder setJexlPrecondition(java.lang.String value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000020;
-                    jexlPrecondition_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>optional string jexlPrecondition = 6;</code>
-                 */
-                public Builder clearJexlPrecondition() {
-                    bitField0_ = (bitField0_ & ~0x00000020);
-                    jexlPrecondition_ = getDefaultInstance().getJexlPrecondition();
-                    onChanged();
-                    return this;
-                }
-                
-                /**
-                 * <code>optional string jexlPrecondition = 6;</code>
-                 */
-                public Builder setJexlPreconditionBytes(com.google.protobuf.ByteString value) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    bitField0_ |= 0x00000020;
-                    jexlPrecondition_ = value;
-                    onChanged();
-                    return this;
-                }
-                
-                // @@protoc_insertion_point(builder_scope:datawave.edge.protobuf.MetadataValue.Metadata)
-            }
-            
-            static {
-                defaultInstance = new Metadata(true);
-                defaultInstance.initFields();
-            }
-            
-            // @@protoc_insertion_point(class_scope:datawave.edge.protobuf.MetadataValue.Metadata)
-        }
-        
-        // repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;
-        public static final int METADATA_FIELD_NUMBER = 1;
-        private java.util.List<datawave.edge.protobuf.EdgeData.MetadataValue.Metadata> metadata_;
-        
-        /**
-         * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-         */
-        public java.util.List<datawave.edge.protobuf.EdgeData.MetadataValue.Metadata> getMetadataList() {
-            return metadata_;
-        }
-        
-        /**
-         * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-         */
-        public java.util.List<? extends datawave.edge.protobuf.EdgeData.MetadataValue.MetadataOrBuilder> getMetadataOrBuilderList() {
-            return metadata_;
-        }
-        
-        /**
-         * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-         */
-        public int getMetadataCount() {
-            return metadata_.size();
-        }
-        
-        /**
-         * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-         */
-        public datawave.edge.protobuf.EdgeData.MetadataValue.Metadata getMetadata(int index) {
-            return metadata_.get(index);
-        }
-        
-        /**
-         * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-         */
-        public datawave.edge.protobuf.EdgeData.MetadataValue.MetadataOrBuilder getMetadataOrBuilder(int index) {
-            return metadata_.get(index);
-        }
-        
-        private void initFields() {
-            metadata_ = java.util.Collections.emptyList();
-        }
-        
-        private byte memoizedIsInitialized = -1;
-        
-        public final boolean isInitialized() {
-            byte isInitialized = memoizedIsInitialized;
-            if (isInitialized != -1)
-                return isInitialized == 1;
-            
-            for (int i = 0; i < getMetadataCount(); i++) {
-                if (!getMetadata(i).isInitialized()) {
-                    memoizedIsInitialized = 0;
-                    return false;
-                }
-            }
-            memoizedIsInitialized = 1;
-            return true;
-        }
-        
-        public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-            getSerializedSize();
-            for (int i = 0; i < metadata_.size(); i++) {
-                output.writeMessage(1, metadata_.get(i));
-            }
-            getUnknownFields().writeTo(output);
-        }
-        
-        private int memoizedSerializedSize = -1;
-        
-        public int getSerializedSize() {
-            int size = memoizedSerializedSize;
-            if (size != -1)
-                return size;
-            
-            size = 0;
-            for (int i = 0; i < metadata_.size(); i++) {
-                size += com.google.protobuf.CodedOutputStream.computeMessageSize(1, metadata_.get(i));
-            }
-            size += getUnknownFields().getSerializedSize();
-            memoizedSerializedSize = size;
-            return size;
-        }
-        
-        private static final long serialVersionUID = 0L;
-        
-        @java.lang.Override
-        protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
-            return super.writeReplace();
-        }
-        
-        public static datawave.edge.protobuf.EdgeData.MetadataValue parseFrom(com.google.protobuf.ByteString data)
-                        throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data);
-        }
-        
-        public static datawave.edge.protobuf.EdgeData.MetadataValue parseFrom(com.google.protobuf.ByteString data,
-                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data, extensionRegistry);
-        }
-        
-        public static datawave.edge.protobuf.EdgeData.MetadataValue parseFrom(byte[] data) throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data);
-        }
-        
-        public static datawave.edge.protobuf.EdgeData.MetadataValue parseFrom(byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                        throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data, extensionRegistry);
-        }
-        
-        public static datawave.edge.protobuf.EdgeData.MetadataValue parseFrom(java.io.InputStream input) throws java.io.IOException {
-            return PARSER.parseFrom(input);
-        }
-        
-        public static datawave.edge.protobuf.EdgeData.MetadataValue parseFrom(java.io.InputStream input,
-                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
-        }
-        
-        public static datawave.edge.protobuf.EdgeData.MetadataValue parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input);
-        }
-        
-        public static datawave.edge.protobuf.EdgeData.MetadataValue parseDelimitedFrom(java.io.InputStream input,
-                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input, extensionRegistry);
-        }
-        
-        public static datawave.edge.protobuf.EdgeData.MetadataValue parseFrom(com.google.protobuf.CodedInputStream input) throws java.io.IOException {
-            return PARSER.parseFrom(input);
-        }
-        
-        public static datawave.edge.protobuf.EdgeData.MetadataValue parseFrom(com.google.protobuf.CodedInputStream input,
-                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
-        }
-        
-        public static Builder newBuilder() {
-            return Builder.create();
-        }
-        
-        public Builder newBuilderForType() {
-            return newBuilder();
-        }
-        
-        public static Builder newBuilder(datawave.edge.protobuf.EdgeData.MetadataValue prototype) {
-            return newBuilder().mergeFrom(prototype);
-        }
-        
-        public Builder toBuilder() {
-            return newBuilder(this);
-        }
-        
-        @java.lang.Override
-        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-            Builder builder = new Builder(parent);
-            return builder;
-        }
-        
-        /**
-         * Protobuf type {@code datawave.edge.protobuf.MetadataValue}
-         *
-         * <pre>
-         * moved this out because no need for Metadata values to appear in the standard edge table.
-         * this would be fixed if packed=true worked on strings, but meh
-         * </pre>
-         */
-        public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-                        datawave.edge.protobuf.EdgeData.MetadataValueOrBuilder {
-            public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
-                return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_MetadataValue_descriptor;
-            }
-            
-            protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
-                return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_MetadataValue_fieldAccessorTable.ensureFieldAccessorsInitialized(
-                                datawave.edge.protobuf.EdgeData.MetadataValue.class, datawave.edge.protobuf.EdgeData.MetadataValue.Builder.class);
-            }
-            
-            // Construct using datawave.edge.protobuf.EdgeData.MetadataValue.newBuilder()
-            private Builder() {
-                maybeForceBuilderInitialization();
-            }
-            
-            private Builder(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-                super(parent);
-                maybeForceBuilderInitialization();
-            }
-            
-            private void maybeForceBuilderInitialization() {
-                if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-                    getMetadataFieldBuilder();
-                }
-            }
-            
-            private static Builder create() {
-                return new Builder();
-            }
-            
-            public Builder clear() {
-                super.clear();
-                if (metadataBuilder_ == null) {
-                    metadata_ = java.util.Collections.emptyList();
-                    bitField0_ = (bitField0_ & ~0x00000001);
-                } else {
-                    metadataBuilder_.clear();
-                }
-                return this;
-            }
-            
-            public Builder clone() {
-                return create().mergeFrom(buildPartial());
-            }
-            
-            public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
-                return datawave.edge.protobuf.EdgeData.internal_static_datawave_edge_protobuf_MetadataValue_descriptor;
-            }
-            
-            public datawave.edge.protobuf.EdgeData.MetadataValue getDefaultInstanceForType() {
-                return datawave.edge.protobuf.EdgeData.MetadataValue.getDefaultInstance();
-            }
-            
-            public datawave.edge.protobuf.EdgeData.MetadataValue build() {
-                datawave.edge.protobuf.EdgeData.MetadataValue result = buildPartial();
-                if (!result.isInitialized()) {
-                    throw newUninitializedMessageException(result);
-                }
-                return result;
-            }
-            
-            public datawave.edge.protobuf.EdgeData.MetadataValue buildPartial() {
-                datawave.edge.protobuf.EdgeData.MetadataValue result = new datawave.edge.protobuf.EdgeData.MetadataValue(this);
-                int from_bitField0_ = bitField0_;
-                if (metadataBuilder_ == null) {
-                    if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                        metadata_ = java.util.Collections.unmodifiableList(metadata_);
-                        bitField0_ = (bitField0_ & ~0x00000001);
-                    }
-                    result.metadata_ = metadata_;
-                } else {
-                    result.metadata_ = metadataBuilder_.build();
-                }
-                onBuilt();
-                return result;
-            }
-            
-            public Builder mergeFrom(com.google.protobuf.Message other) {
-                if (other instanceof datawave.edge.protobuf.EdgeData.MetadataValue) {
-                    return mergeFrom((datawave.edge.protobuf.EdgeData.MetadataValue) other);
-                } else {
-                    super.mergeFrom(other);
-                    return this;
-                }
-            }
-            
-            public Builder mergeFrom(datawave.edge.protobuf.EdgeData.MetadataValue other) {
-                if (other == datawave.edge.protobuf.EdgeData.MetadataValue.getDefaultInstance())
-                    return this;
-                if (metadataBuilder_ == null) {
-                    if (!other.metadata_.isEmpty()) {
-                        if (metadata_.isEmpty()) {
-                            metadata_ = other.metadata_;
-                            bitField0_ = (bitField0_ & ~0x00000001);
-                        } else {
-                            ensureMetadataIsMutable();
-                            metadata_.addAll(other.metadata_);
-                        }
-                        onChanged();
-                    }
-                } else {
-                    if (!other.metadata_.isEmpty()) {
-                        if (metadataBuilder_.isEmpty()) {
-                            metadataBuilder_.dispose();
-                            metadataBuilder_ = null;
-                            metadata_ = other.metadata_;
-                            bitField0_ = (bitField0_ & ~0x00000001);
-                            metadataBuilder_ = com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ? getMetadataFieldBuilder() : null;
-                        } else {
-                            metadataBuilder_.addAllMessages(other.metadata_);
-                        }
-                    }
-                }
-                this.mergeUnknownFields(other.getUnknownFields());
-                return this;
-            }
-            
-            public final boolean isInitialized() {
-                for (int i = 0; i < getMetadataCount(); i++) {
-                    if (!getMetadata(i).isInitialized()) {
-                        
-                        return false;
-                    }
-                }
-                return true;
-            }
-            
-            public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                            throws java.io.IOException {
-                datawave.edge.protobuf.EdgeData.MetadataValue parsedMessage = null;
-                try {
-                    parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-                } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-                    parsedMessage = (datawave.edge.protobuf.EdgeData.MetadataValue) e.getUnfinishedMessage();
-                    throw e;
-                } finally {
-                    if (parsedMessage != null) {
-                        mergeFrom(parsedMessage);
-                    }
-                }
-                return this;
-            }
-            
-            private int bitField0_;
-            
-            // repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;
-            private java.util.List<datawave.edge.protobuf.EdgeData.MetadataValue.Metadata> metadata_ = java.util.Collections.emptyList();
-            
-            private void ensureMetadataIsMutable() {
-                if (!((bitField0_ & 0x00000001) == 0x00000001)) {
-                    metadata_ = new java.util.ArrayList<datawave.edge.protobuf.EdgeData.MetadataValue.Metadata>(metadata_);
-                    bitField0_ |= 0x00000001;
-                }
-            }
-            
-            private com.google.protobuf.RepeatedFieldBuilder<datawave.edge.protobuf.EdgeData.MetadataValue.Metadata,datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder,datawave.edge.protobuf.EdgeData.MetadataValue.MetadataOrBuilder> metadataBuilder_;
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public java.util.List<datawave.edge.protobuf.EdgeData.MetadataValue.Metadata> getMetadataList() {
-                if (metadataBuilder_ == null) {
-                    return java.util.Collections.unmodifiableList(metadata_);
-                } else {
-                    return metadataBuilder_.getMessageList();
-                }
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public int getMetadataCount() {
-                if (metadataBuilder_ == null) {
-                    return metadata_.size();
-                } else {
-                    return metadataBuilder_.getCount();
-                }
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public datawave.edge.protobuf.EdgeData.MetadataValue.Metadata getMetadata(int index) {
-                if (metadataBuilder_ == null) {
-                    return metadata_.get(index);
-                } else {
-                    return metadataBuilder_.getMessage(index);
-                }
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public Builder setMetadata(int index, datawave.edge.protobuf.EdgeData.MetadataValue.Metadata value) {
-                if (metadataBuilder_ == null) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    ensureMetadataIsMutable();
-                    metadata_.set(index, value);
-                    onChanged();
-                } else {
-                    metadataBuilder_.setMessage(index, value);
-                }
-                return this;
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public Builder setMetadata(int index, datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder builderForValue) {
-                if (metadataBuilder_ == null) {
-                    ensureMetadataIsMutable();
-                    metadata_.set(index, builderForValue.build());
-                    onChanged();
-                } else {
-                    metadataBuilder_.setMessage(index, builderForValue.build());
-                }
-                return this;
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public Builder addMetadata(datawave.edge.protobuf.EdgeData.MetadataValue.Metadata value) {
-                if (metadataBuilder_ == null) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    ensureMetadataIsMutable();
-                    metadata_.add(value);
-                    onChanged();
-                } else {
-                    metadataBuilder_.addMessage(value);
-                }
-                return this;
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public Builder addMetadata(int index, datawave.edge.protobuf.EdgeData.MetadataValue.Metadata value) {
-                if (metadataBuilder_ == null) {
-                    if (value == null) {
-                        throw new NullPointerException();
-                    }
-                    ensureMetadataIsMutable();
-                    metadata_.add(index, value);
-                    onChanged();
-                } else {
-                    metadataBuilder_.addMessage(index, value);
-                }
-                return this;
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public Builder addMetadata(datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder builderForValue) {
-                if (metadataBuilder_ == null) {
-                    ensureMetadataIsMutable();
-                    metadata_.add(builderForValue.build());
-                    onChanged();
-                } else {
-                    metadataBuilder_.addMessage(builderForValue.build());
-                }
-                return this;
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public Builder addMetadata(int index, datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder builderForValue) {
-                if (metadataBuilder_ == null) {
-                    ensureMetadataIsMutable();
-                    metadata_.add(index, builderForValue.build());
-                    onChanged();
-                } else {
-                    metadataBuilder_.addMessage(index, builderForValue.build());
-                }
-                return this;
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public Builder addAllMetadata(java.lang.Iterable<? extends datawave.edge.protobuf.EdgeData.MetadataValue.Metadata> values) {
-                if (metadataBuilder_ == null) {
-                    ensureMetadataIsMutable();
-                    super.addAll(values, metadata_);
-                    onChanged();
-                } else {
-                    metadataBuilder_.addAllMessages(values);
-                }
-                return this;
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public Builder clearMetadata() {
-                if (metadataBuilder_ == null) {
-                    metadata_ = java.util.Collections.emptyList();
-                    bitField0_ = (bitField0_ & ~0x00000001);
-                    onChanged();
-                } else {
-                    metadataBuilder_.clear();
-                }
-                return this;
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public Builder removeMetadata(int index) {
-                if (metadataBuilder_ == null) {
-                    ensureMetadataIsMutable();
-                    metadata_.remove(index);
-                    onChanged();
-                } else {
-                    metadataBuilder_.remove(index);
-                }
-                return this;
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder getMetadataBuilder(int index) {
-                return getMetadataFieldBuilder().getBuilder(index);
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public datawave.edge.protobuf.EdgeData.MetadataValue.MetadataOrBuilder getMetadataOrBuilder(int index) {
-                if (metadataBuilder_ == null) {
-                    return metadata_.get(index);
-                } else {
-                    return metadataBuilder_.getMessageOrBuilder(index);
-                }
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public java.util.List<? extends datawave.edge.protobuf.EdgeData.MetadataValue.MetadataOrBuilder> getMetadataOrBuilderList() {
-                if (metadataBuilder_ != null) {
-                    return metadataBuilder_.getMessageOrBuilderList();
-                } else {
-                    return java.util.Collections.unmodifiableList(metadata_);
-                }
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder addMetadataBuilder() {
-                return getMetadataFieldBuilder().addBuilder(datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.getDefaultInstance());
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder addMetadataBuilder(int index) {
-                return getMetadataFieldBuilder().addBuilder(index, datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.getDefaultInstance());
-            }
-            
-            /**
-             * <code>repeated .datawave.edge.protobuf.MetadataValue.Metadata metadata = 1;</code>
-             */
-            public java.util.List<datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder> getMetadataBuilderList() {
-                return getMetadataFieldBuilder().getBuilderList();
-            }
-            
-            private com.google.protobuf.RepeatedFieldBuilder<datawave.edge.protobuf.EdgeData.MetadataValue.Metadata,datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder,datawave.edge.protobuf.EdgeData.MetadataValue.MetadataOrBuilder> getMetadataFieldBuilder() {
-                if (metadataBuilder_ == null) {
-                    metadataBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<datawave.edge.protobuf.EdgeData.MetadataValue.Metadata,datawave.edge.protobuf.EdgeData.MetadataValue.Metadata.Builder,datawave.edge.protobuf.EdgeData.MetadataValue.MetadataOrBuilder>(
-                                    metadata_, ((bitField0_ & 0x00000001) == 0x00000001), getParentForChildren(), isClean());
-                    metadata_ = null;
-                }
-                return metadataBuilder_;
-            }
-            
-            // @@protoc_insertion_point(builder_scope:datawave.edge.protobuf.MetadataValue)
-        }
-        
-        static {
-            defaultInstance = new MetadataValue(true);
-            defaultInstance.initFields();
-        }
-        
-        // @@protoc_insertion_point(class_scope:datawave.edge.protobuf.MetadataValue)
-    }
-    
-    private static com.google.protobuf.Descriptors.Descriptor internal_static_datawave_edge_protobuf_EdgeValue_descriptor;
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_edge_protobuf_EdgeValue_descriptor;
     private static com.google.protobuf.GeneratedMessage.FieldAccessorTable internal_static_datawave_edge_protobuf_EdgeValue_fieldAccessorTable;
-    private static com.google.protobuf.Descriptors.Descriptor internal_static_datawave_edge_protobuf_EdgeValue_UUID_descriptor;
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_edge_protobuf_EdgeValue_UUID_descriptor;
     private static com.google.protobuf.GeneratedMessage.FieldAccessorTable internal_static_datawave_edge_protobuf_EdgeValue_UUID_fieldAccessorTable;
-    private static com.google.protobuf.Descriptors.Descriptor internal_static_datawave_edge_protobuf_MetadataValue_descriptor;
-    private static com.google.protobuf.GeneratedMessage.FieldAccessorTable internal_static_datawave_edge_protobuf_MetadataValue_fieldAccessorTable;
-    private static com.google.protobuf.Descriptors.Descriptor internal_static_datawave_edge_protobuf_MetadataValue_Metadata_descriptor;
-    private static com.google.protobuf.GeneratedMessage.FieldAccessorTable internal_static_datawave_edge_protobuf_MetadataValue_Metadata_fieldAccessorTable;
     
     public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
         return descriptor;
@@ -4533,44 +2573,30 @@ public final class EdgeData {
     
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
-        java.lang.String[] descriptorData = {
-                "\n\016EdgeData.proto\022\026datawave.edge.protobuf" + "\"\271\002\n\tEdgeValue\022\r\n\005count\030\001 \001(\003\022\021\n\005hours\030\002"
-                                + " \003(\003B\002\020\001\022\024\n\010duration\030\003 \003(\003B\002\020\001\022\023\n\013hourBi"
-                                + "tmask\030\004 \001(\005\022\023\n\013sourceValue\030\005 \001(\t\022\021\n\tsink"
-                                + "Value\030\006 \001(\t\022\020\n\010loadDate\030\007 \001(\t\022\023\n\013badActi"
-                                + "vity\030\010 \001(\010\0224\n\004uuid\030\t \001(\0132&.datawave.edge"
-                                + ".protobuf.EdgeValue.UUID\022\023\n\013uuid_string\030" + "\n \001(\t\032E\n\004UUID\022\036\n\026least_significant_bits\030"
-                                + "\001 \002(\022\022\035\n\025most_significant_bits\030\002 \002(\022\"\320\001\n"
-                                + "\rMetadataValue\022@\n\010metadata\030\001 \003(\0132..dataw",
-                "ave.edge.protobuf.MetadataValue.Metadata" + "\032}\n\010Metadata\022\016\n\006source\030\001 \002(\t\022\014\n\004sink\030\002 \002"
-                                + "(\t\022\022\n\nenrichment\030\003 \001(\t\022\027\n\017enrichmentInde"
-                                + "x\030\004 \001(\t\022\014\n\004date\030\005 \001(\t\022\030\n\020jexlPreconditio"
-                                + "n\030\006 \001(\tB\032\n\026datawave.edge.protobufH\001"};
+        java.lang.String[] descriptorData = {"\n\016EdgeData.proto\022\026datawave.edge.protobuf"
+                        + "\"\271\002\n\tEdgeValue\022\r\n\005count\030\001 \001(\003\022\021\n\005hours\030\002"
+                        + " \003(\003B\002\020\001\022\024\n\010duration\030\003 \003(\003B\002\020\001\022\023\n\013hourBi"
+                        + "tmask\030\004 \001(\005\022\023\n\013sourceValue\030\005 \001(\t\022\021\n\tsink"
+                        + "Value\030\006 \001(\t\022\020\n\010loadDate\030\007 \001(\t\022\023\n\013badActi"
+                        + "vity\030\010 \001(\010\0224\n\004uuid\030\t \001(\0132&.datawave.edge" + ".protobuf.EdgeValue.UUID\022\023\n\013uuid_string\030"
+                        + "\n \001(\t\032E\n\004UUID\022\036\n\026least_significant_bits\030"
+                        + "\001 \002(\022\022\035\n\025most_significant_bits\030\002 \002(\022B\032\n\026" + "datawave.edge.protobufH\001"};
         com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner = new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
             public com.google.protobuf.ExtensionRegistry assignDescriptors(com.google.protobuf.Descriptors.FileDescriptor root) {
                 descriptor = root;
-                internal_static_datawave_edge_protobuf_EdgeValue_descriptor = getDescriptor().getMessageTypes().get(0);
-                internal_static_datawave_edge_protobuf_EdgeValue_fieldAccessorTable = new com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-                                internal_static_datawave_edge_protobuf_EdgeValue_descriptor, new java.lang.String[] {"Count", "Hours", "Duration",
-                                        "HourBitmask", "SourceValue", "SinkValue", "LoadDate", "BadActivity", "Uuid", "UuidString",});
-                internal_static_datawave_edge_protobuf_EdgeValue_UUID_descriptor = internal_static_datawave_edge_protobuf_EdgeValue_descriptor.getNestedTypes()
-                                .get(0);
-                internal_static_datawave_edge_protobuf_EdgeValue_UUID_fieldAccessorTable = new com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-                                internal_static_datawave_edge_protobuf_EdgeValue_UUID_descriptor, new java.lang.String[] {"LeastSignificantBits",
-                                        "MostSignificantBits",});
-                internal_static_datawave_edge_protobuf_MetadataValue_descriptor = getDescriptor().getMessageTypes().get(1);
-                internal_static_datawave_edge_protobuf_MetadataValue_fieldAccessorTable = new com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-                                internal_static_datawave_edge_protobuf_MetadataValue_descriptor, new java.lang.String[] {"Metadata",});
-                internal_static_datawave_edge_protobuf_MetadataValue_Metadata_descriptor = internal_static_datawave_edge_protobuf_MetadataValue_descriptor
-                                .getNestedTypes().get(0);
-                internal_static_datawave_edge_protobuf_MetadataValue_Metadata_fieldAccessorTable = new com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-                                internal_static_datawave_edge_protobuf_MetadataValue_Metadata_descriptor, new java.lang.String[] {"Source", "Sink",
-                                        "Enrichment", "EnrichmentIndex", "Date", "JexlPrecondition",});
                 return null;
             }
         };
         com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData, new com.google.protobuf.Descriptors.FileDescriptor[] {},
                         assigner);
+        internal_static_datawave_edge_protobuf_EdgeValue_descriptor = getDescriptor().getMessageTypes().get(0);
+        internal_static_datawave_edge_protobuf_EdgeValue_fieldAccessorTable = new com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+                        internal_static_datawave_edge_protobuf_EdgeValue_descriptor, new java.lang.String[] {"Count", "Hours", "Duration", "HourBitmask",
+                                "SourceValue", "SinkValue", "LoadDate", "BadActivity", "Uuid", "UuidString",});
+        internal_static_datawave_edge_protobuf_EdgeValue_UUID_descriptor = internal_static_datawave_edge_protobuf_EdgeValue_descriptor.getNestedTypes().get(0);
+        internal_static_datawave_edge_protobuf_EdgeValue_UUID_fieldAccessorTable = new com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+                        internal_static_datawave_edge_protobuf_EdgeValue_UUID_descriptor, new java.lang.String[] {"LeastSignificantBits",
+                                "MostSignificantBits",});
     }
     
     // @@protoc_insertion_point(outer_class_scope)
