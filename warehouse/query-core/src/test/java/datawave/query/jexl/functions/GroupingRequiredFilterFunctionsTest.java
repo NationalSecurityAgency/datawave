@@ -8,13 +8,14 @@ import org.apache.accumulo.core.data.Key;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
 public class GroupingRequiredFilterFunctionsTest {
     
     ValueTuple vt1 = makeValueTuple("FOO.1,BAR,bar");
-    ValueTuple vt2 = makeValueTuple("FOO.1,BAR,bar");
+    ValueTuple vt2 = makeValueTuple("FOOD.1,BAR,bar");
     ValueTuple vt3 = makeValueTuple("FOO.1,BAR,bar");
     
     ValueTuple vt4 = makeValueTuple("FOO.1,BAZ,baz");
@@ -22,11 +23,17 @@ public class GroupingRequiredFilterFunctionsTest {
     // different grouping context:
     ValueTuple vt5 = makeValueTuple("FOO.2,BAR,bar");
     
+    ValueTuple vt6 = makeValueTuple("FOO.2,BAR,bar2");
+    ValueTuple vt7 = makeValueTuple("FOOD.2,BAR,bar2");
+    
     Collection<?> vt1s = Collections.singleton(vt1);
     Collection<?> vt2s = Collections.singleton(vt2);
     Collection<?> vt3s = Collections.singleton(vt3);
     Collection<?> vt4s = Collections.singleton(vt4);
     Collection<?> vt5s = Collections.singleton(vt5);
+    
+    Collection<?> vtmult1 = Arrays.asList(new ValueTuple[] {vt1, vt6});
+    Collection<?> vtmult2 = Arrays.asList(new ValueTuple[] {vt2, vt7});
     
     private ValueTuple makeValueTuple(String csv) {
         String[] tokens = csv.split(",");
@@ -46,6 +53,13 @@ public class GroupingRequiredFilterFunctionsTest {
         Assert.assertTrue(GroupingRequiredFilterFunctions.atomValuesMatch(vt1s, vt2s, vt3s).size() > 0);
         Assert.assertTrue(GroupingRequiredFilterFunctions.atomValuesMatch(vt1s, vt2s, vt4s).size() == 0);
         Assert.assertTrue(GroupingRequiredFilterFunctions.atomValuesMatch(vt1s, vt5s, vt3s).size() == 0);
+    }
+    
+    @Test
+    public void testAtomValuesMatchMult() {
+        Assert.assertTrue(GroupingRequiredFilterFunctions.atomValuesMatch(vtmult1, vtmult2).size() == 4);
+        Assert.assertTrue(GroupingRequiredFilterFunctions.atomValuesMatch(vtmult1, vtmult2, vt3).size() == 2);
+        Assert.assertTrue(GroupingRequiredFilterFunctions.atomValuesMatch(vtmult1, vtmult2, vt4).size() == 0);
     }
     
     @Test

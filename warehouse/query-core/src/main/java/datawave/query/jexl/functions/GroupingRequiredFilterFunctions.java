@@ -4,10 +4,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import datawave.query.attributes.ValueTuple;
 
 import org.apache.log4j.Logger;
@@ -294,9 +298,10 @@ public class GroupingRequiredFilterFunctions {
         if (fields.contains(null)) {
             return matches;
         }
-        Set<String> groupSet = new HashSet<>();
-        Set<String> normedSet = new HashSet<>();
+        Multimap<String,Object> tuples = HashMultimap.create();
+        HashMap<String,String> values = null;
         for (Iterable<?> field : fields) {
+            HashMap<String,String> matchedValues = new HashMap<>();
             for (Object fieldValue : field) {
                 String group = ValueTuple.getFieldName(fieldValue);
                 if (group.indexOf(".") != -1) {
@@ -304,13 +309,24 @@ public class GroupingRequiredFilterFunctions {
                 } else {
                     group = "";
                 }
-                groupSet.add(group);
-                normedSet.add(ValueTuple.getNormalizedStringValue(fieldValue));
+                tuples.put(group, fieldValue);
+                String value = ValueTuple.getNormalizedStringValue(fieldValue);
+                if (values == null || value.equals(values.get(group))) {
+                    matchedValues.put(group, value);
+                }
+            }
+            values = matchedValues;
+            if (values.isEmpty()) {
+                break;
             }
         }
-        if (groupSet.size() == 1 && normedSet.size() == 1) {
-            matches.add(EvaluationPhaseFilterFunctions.getHitTerm(fields.iterator().next()));
+        
+        for (String matchingGroup : values.keySet()) {
+            for (Object fieldValue : tuples.get(matchingGroup)) {
+                matches.add(EvaluationPhaseFilterFunctions.getHitTerm(fieldValue));
+            }
         }
+        
         return matches;
     }
 }
