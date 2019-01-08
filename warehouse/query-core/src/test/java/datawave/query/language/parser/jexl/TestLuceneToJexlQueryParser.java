@@ -345,10 +345,12 @@ public class TestLuceneToJexlQueryParser {
     @Test
     public void testMiscEscapeTokenization() throws ParseException {
         // apostrophe escapes
-        Assert.assertEquals("TOKFIELD == 'johnny\\'s'", parseQuery("TOKFIELD:johnny's"));
-        Assert.assertEquals("TOKFIELD == 'johnny\\'s'", parseQuery("TOKFIELD:johnny\\'s")); // lucene drops single slash
-        Assert.assertEquals("TOKFIELD == 'johnny\\'s'", parseQuery("TOKFIELD:\"johnny's\""));
-        Assert.assertEquals("content:phrase(TOKFIELD, termOffsetMap, 'johnny\\'s', 'chicken')", parseQuery("TOKFIELD:\"johnny's chicken\""));
+        Assert.assertEquals("(TOKFIELD == 'johnny\\'s' || TOKFIELD == 'johnny')", parseQuery("TOKFIELD:johnny's"));
+        Assert.assertEquals("(TOKFIELD == 'johnny\\'s' || TOKFIELD == 'johnny')", parseQuery("TOKFIELD:johnny\\'s")); // lucene drops single slash
+        Assert.assertEquals("(TOKFIELD == 'johnny\\'s' || TOKFIELD == 'johnny')", parseQuery("TOKFIELD:\"johnny's\""));
+        Assert.assertEquals(
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'johnny\\'s', 'chicken') || content:phrase(TOKFIELD, termOffsetMap, 'johnny', 'chicken'))",
+                        parseQuery("TOKFIELD:\"johnny's chicken\""));
         Assert.assertEquals("TOKFIELD =~ '11\\'22.*?'", parseQuery("TOKFIELD:11'22*"));
         Assert.assertEquals("(TOKFIELD >= 'A\\'\\u005c*' && TOKFIELD <= 'B\\'')", parseQuery("TOKFIELD:[A'\\\\\\* TO B']"));
         

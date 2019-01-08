@@ -11,6 +11,8 @@ public class QueryConfigHandler extends StandardQueryConfigHandler {
         addFieldConfigListener(new FieldDateResolutionFCListener(this));
         
         set(ConfigurationKeys.DEFAULT_OPERATOR, Operator.AND);
-        set(ConfigurationKeys.LOWERCASE_EXPANDED_TERMS, Boolean.TRUE);
+        // This config no longer exists and is apparently (?) no longer needed....
+        // See 28/Jun/2016 comment from Adrien Grand on https://jira.apache.org/jira/browse/LUCENE-7355
+        // set(ConfigurationKeys.LOWERCASE_EXPANDED_TERMS, Boolean.TRUE);
     }
 }
