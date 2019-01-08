@@ -14,6 +14,7 @@
         <version.commons-collections>4.2</version.commons-collections>
         <!-- Guava 15 is needed for Accumulo on the tservers -->
         <version.guava>15.0</version.guava>
+        <version.in-memory-accumulo>1.9.2.1</version.in-memory-accumulo>
         <version.slf4j>1.7.25</version.slf4j>
         <version.spring>5.0.8.RELEASE</version.spring>
     </properties>
@@ -87,7 +88,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.contrib</groupId>
                 <artifactId>datawave-in-memory-accumulo</artifactId>
-                <version>${version.accumulo}</version>
+                <version>${version.in-memory-accumulo}</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>

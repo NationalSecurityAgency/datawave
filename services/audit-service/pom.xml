@@ -11,7 +11,7 @@
     <version>1.7-SNAPSHOT</version>
     <description>DATAWAVE Auditing Microservice</description>
     <properties>
-        <version.in-memory-accumulo>1.9.2</version.in-memory-accumulo>
+        <version.in-memory-accumulo>1.9.2.1</version.in-memory-accumulo>
         <version.microservice.audit-api>1.4</version.microservice.audit-api>
         <version.microservice.starter>1.2</version.microservice.starter>
     </properties>

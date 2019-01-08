@@ -247,7 +247,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     private static class RawDataChecker implements QueryLogicTestHarness.DocumentChecker {
         
         // additional keys added during ingest
-        static final Set<String> validKeys = new HashSet<>(Arrays.asList("ORIG_FILE", "RAW_FILE", "LOAD_DATE"));
+        static final Set<String> validKeys = new HashSet<>(Arrays.asList("ORIG_FILE", "RAW_FILE", "LOAD_DATE", "TIMING_METADATA"));
         // these keys are returned when QueryParameters.RAW_DATA_ONLY is not set
         static final Set<String> exclude = new HashSet<>(Arrays.asList("EVENT_DATATYPE", "RECORD_ID"));
         
