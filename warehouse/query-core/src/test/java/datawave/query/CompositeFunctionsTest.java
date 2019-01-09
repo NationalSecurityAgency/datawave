@@ -643,17 +643,4 @@ public abstract class CompositeFunctionsTest {
         }
     }
     
-    @Test
-    public void testRightOf() {
-        String[] inputs = {"NAME.grandparent_0.parent_0.child_0", "NAME.grandparent_0.parent_0.child_0",
-                "NAME.gggparent.ggparent.grandparent_0.parent_0.child_0",};
-        String[] expected = {"child_0", "parent_0.child_0", "ggparent.grandparent_0.parent_0.child_0",};
-        int[] groupNumber = new int[] {0, 1, 3};
-        
-        for (int i = 0; i < inputs.length; i++) {
-            String noFieldName = inputs[i].substring(inputs[i].indexOf('.') + 1);
-            String match = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(noFieldName, groupNumber[i]);
-            Assert.assertEquals(match, expected[i]);
-        }
-    }
 }
