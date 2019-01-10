@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.lucene.util.AttributeImpl;
+import org.apache.lucene.util.AttributeReflector;
 
 public class TokenizedFieldsAttributeImpl extends AttributeImpl implements TokenizedFieldsAttribute {
     
@@ -49,6 +50,13 @@ public class TokenizedFieldsAttributeImpl extends AttributeImpl implements Token
     @Override
     public void clear() {
         throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public void reflectWith(AttributeReflector reflector) {
+        reflector.reflect(TokenizedFieldsAttribute.class, "tokenizedFields", getTokenizedFields());
+        reflector.reflect(TokenizedFieldsAttribute.class, "tokenizeUnfieldedQueriesEnabled", isTokenizeUnfieldedQueriesEnabled());
+        reflector.reflect(TokenizedFieldsAttribute.class, "skipTokenizeUnfieldedFields", getSkipTokenizeUnfieldedFields());
     }
     
     @Override

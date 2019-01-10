@@ -17,7 +17,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.TokenizedPhraseQueryNod
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessorImpl;
 import org.apache.lucene.queryparser.flexible.standard.config.StandardQueryConfigHandler.ConfigurationKeys;
 import org.apache.lucene.queryparser.flexible.standard.nodes.MultiPhraseQueryNode;
-import org.apache.lucene.queryparser.flexible.standard.nodes.NumericQueryNode;
+import org.apache.lucene.queryparser.flexible.standard.nodes.PointQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.RegexpQueryNode;
 
 /**
@@ -67,8 +67,8 @@ public class CustomFieldLimiterNodeProcessor extends QueryNodeProcessorImpl {
             }
         } else if (node instanceof MultiPhraseQueryNode) {
             fields.add(((MultiPhraseQueryNode) node).getField().toString());
-        } else if (node instanceof NumericQueryNode) {
-            fields.add(((NumericQueryNode) node).getField().toString());
+        } else if (node instanceof PointQueryNode) {
+            fields.add(((PointQueryNode) node).getField().toString());
         } else if (node instanceof PhraseSlopQueryNode) {
             fields.add(((PhraseSlopQueryNode) node).getField().toString());
         } else if (node instanceof RegexpQueryNode) {
