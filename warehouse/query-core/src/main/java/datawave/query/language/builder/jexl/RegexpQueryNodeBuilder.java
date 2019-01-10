@@ -38,7 +38,6 @@ public class RegexpQueryNodeBuilder implements QueryBuilder {
         
         if (queryNode instanceof RegexpQueryNode) {
             RegexpQueryNode regexpQueryNode = (RegexpQueryNode) queryNode;
-            
             String field = regexpQueryNode.getFieldAsString();
             UnescapedCharSequence ecs = (UnescapedCharSequence) regexpQueryNode.getText();
             

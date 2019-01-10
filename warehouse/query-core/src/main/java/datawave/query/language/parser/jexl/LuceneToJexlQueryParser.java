@@ -17,12 +17,11 @@ import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import datawave.ingest.data.tokenize.StandardAnalyzer;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.apache.lucene.queryparser.flexible.core.config.ConfigurationKey;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 import org.apache.lucene.queryparser.flexible.standard.config.StandardQueryConfigHandler.ConfigurationKeys;
-import org.apache.lucene.util.Version;
 
 public class LuceneToJexlQueryParser implements QueryParser {
     private static final String[] DEFAULT_TOKENIZED_FIELDS = {"TOKFIELD"};
@@ -38,7 +37,7 @@ public class LuceneToJexlQueryParser implements QueryParser {
     private Set<String> allowedFields = null;
     private Boolean allowAnyFieldQueries = true;
     private List<JexlQueryFunction> allowedFunctions = JexlTreeBuilder.DEFAULT_ALLOWED_FUNCTION_LIST;
-    private Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
+    private Analyzer analyzer = new StandardAnalyzer();
     
     public LuceneToJexlQueryParser() {
         Collections.addAll(tokenizedFields, DEFAULT_TOKENIZED_FIELDS);
