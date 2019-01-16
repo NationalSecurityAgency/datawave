@@ -34,8 +34,9 @@ public class AuditProperties {
     }
     
     public void setRetry(Retry retry) {
-        if (retry != null)
-            this.retry = retry;
+        if (retry == null)
+            throw new NullPointerException("Audit Retry properties must not be null.");
+        this.retry = retry;
     }
     
     public static class Retry {
