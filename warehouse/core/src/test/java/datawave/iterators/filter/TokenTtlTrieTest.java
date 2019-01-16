@@ -1,7 +1,12 @@
 package datawave.iterators.filter;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,12 +34,12 @@ public class TokenTtlTrieTest {
         TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters(",;".getBytes()).addToken("foo".getBytes(), 2).addToken("bar".getBytes(), 3)
                         .addToken("baz".getBytes(), 4).build();
         
-        Assert.assertEquals(null, trie.scan("foobar,barbaz;bazfoo".getBytes()));
-        Assert.assertEquals((Long) 2L, trie.scan("foobar,foo;barfoo".getBytes()));
-        Assert.assertEquals((Long) 2L, trie.scan("bar;foo".getBytes()));
-        Assert.assertEquals((Long) 3L, trie.scan("bar,baz,foobar".getBytes()));
-        Assert.assertEquals((Long) 4L, trie.scan("buffer,baz".getBytes()));
-        Assert.assertNull(trie.scan("b;ba,banana,bread,apple,pie".getBytes()));
+        assertNull(trie.scan("foobar,barbaz;bazfoo".getBytes()));
+        assertEquals((Long) 2L, trie.scan("foobar,foo;barfoo".getBytes()));
+        assertEquals((Long) 2L, trie.scan("bar;foo".getBytes()));
+        assertEquals((Long) 3L, trie.scan("bar,baz,foobar".getBytes()));
+        assertEquals((Long) 4L, trie.scan("buffer,baz".getBytes()));
+        assertNull(trie.scan("b;ba,banana,bread,apple,pie".getBytes()));
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -78,7 +83,7 @@ public class TokenTtlTrieTest {
         TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters(",;".getBytes())
                         .parse("" + "\"foo\":2ms\n" + "\"b\\u0061r\":3d,\n" + "\"b\\x61z\":4m,\n\n").build();
         
-        Assert.assertEquals(null, trie.scan("foobar,barbaz;bazfoo".getBytes()));
+        Assert.assertNull(trie.scan("foobar,barbaz;bazfoo".getBytes()));
         Assert.assertEquals((Long) 2L, trie.scan("foobar,foo;barfoo".getBytes()));
         Assert.assertEquals((Long) 2L, trie.scan("bar;foo".getBytes()));
         Assert.assertEquals((long) AgeOffPeriod.getTtlUnitsFactor("d") * 3L, (long) trie.scan("bar,baz,foobar".getBytes()));

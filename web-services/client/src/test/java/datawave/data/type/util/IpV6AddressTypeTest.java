@@ -5,7 +5,6 @@
 
 package datawave.data.type.util;
 
-import datawave.data.type.IpAddressType;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;

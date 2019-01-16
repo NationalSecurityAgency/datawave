@@ -224,7 +224,7 @@ public abstract class HitsAreAlwaysIncludedTest {
     @Test
     public void checkThePattern() {
         String[] tokens = LimitFields.getCommonalityAndGroupingContext("FOO_3.FOO.3.3");
-        Assert.assertTrue(tokens.length == 2);
+        Assert.assertEquals(2, tokens.length);
         Assert.assertEquals(tokens[0], "FOO");
         Assert.assertEquals(tokens[1], "3");
         
@@ -232,7 +232,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         Assert.assertNull(tokens);
         
         tokens = LimitFields.getCommonalityAndGroupingContext("FOO_3_BAR.FOO.3");
-        Assert.assertTrue(tokens.length == 2);
+        Assert.assertEquals(2, tokens.length);
         Assert.assertEquals(tokens[0], "FOO");
         Assert.assertEquals(tokens[1], "3");
     }

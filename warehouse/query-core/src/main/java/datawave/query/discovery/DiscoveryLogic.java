@@ -2,9 +2,6 @@ package datawave.query.discovery;
 
 import static com.google.common.collect.Iterators.concat;
 import static com.google.common.collect.Iterators.transform;
-import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter;
-import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter;
-import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.getLiteralRange;
 
 import java.io.IOException;
 import java.util.ArrayList;

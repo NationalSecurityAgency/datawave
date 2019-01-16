@@ -8,9 +8,7 @@ import java.util.Set;
 import datawave.edge.model.EdgeModelAware;
 import datawave.edge.util.EdgeKeyUtil;
 import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.Constants;
 
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;

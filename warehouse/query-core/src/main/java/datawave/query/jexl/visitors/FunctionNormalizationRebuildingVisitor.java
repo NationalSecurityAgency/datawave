@@ -170,7 +170,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
                     JexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) {
         List<List<Type<?>>> lists = new ArrayList<>();
         
-        lists.add(new ArrayList<Type<?>>(Arrays.asList(new Type<?>[function.jjtGetNumChildren()])));
+        lists.add(new ArrayList<>(Arrays.asList(new Type<?>[function.jjtGetNumChildren()])));
         
         // first we go through the arguments and determine those that reference the same field.
         // this is done by assuming that if the fields returned by descriptor.fields is the same

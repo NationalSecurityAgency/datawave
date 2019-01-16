@@ -43,9 +43,9 @@ public class NormalFlattenQueryTest extends AbstractFunctionalQuery {
     
     private static final Logger log = Logger.getLogger(NormalFlattenQueryTest.class);
     
-    private static final FlattenMode flatMode = FlattenMode.NORMAL;
-    private static final FlattenDataType flatten;
-    private static final RawDataManager manager;
+    protected static final FlattenMode flatMode = FlattenMode.NORMAL;
+    protected static final FlattenDataType flatten;
+    protected static final RawDataManager manager;
     
     static {
         FieldConfig indexes = new NormalIndexing();

@@ -307,7 +307,8 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             // Get the query by the query id
             Query q = getQueryById(queryId);
             if (!sid.equals(q.getOwner()))
-                throw new QueryException("This query does not belong to you. expected: " + q.getOwner() + ", value: " + sid, Response.Status.UNAUTHORIZED);
+                throw new QueryException("This query does not belong to you. expected: " + q.getOwner() + ", value: " + sid,
+                                Response.Status.UNAUTHORIZED.getStatusCode());
             
             // will throw IllegalArgumentException if not defined
             logic = queryFactory.getQueryLogic(q.getQueryLogicName(), principal);
@@ -340,9 +341,9 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         } else {
             List<Query> queries = persister.findById(id);
             if (null == queries || queries.isEmpty())
-                throw new QueryException("No query object matches this id", Response.Status.NOT_FOUND);
+                throw new QueryException("No query object matches this id", Response.Status.NOT_FOUND.getStatusCode());
             if (queries.size() > 1)
-                throw new QueryException("More than one query object matches the id", Response.Status.NOT_FOUND);
+                throw new QueryException("More than one query object matches the id", Response.Status.NOT_FOUND.getStatusCode());
             return queries.get(0);
         }
     }

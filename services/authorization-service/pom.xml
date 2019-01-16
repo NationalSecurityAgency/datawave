@@ -13,7 +13,7 @@
     <properties>
         <start-class>datawave.microservice.authorization.AuthorizationService</start-class>
         <version.microservice.hazelcast-client>1.3</version.microservice.hazelcast-client>
-        <version.microservice.starter>1.2</version.microservice.starter>
+        <version.microservice.starter>1.3-SNAPSHOT</version.microservice.starter>
     </properties>
     <dependencyManagement>
         <dependencies>

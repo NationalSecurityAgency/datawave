@@ -1,6 +1,5 @@
 package datawave.query.function;
 
-import datawave.query.Constants;
 import datawave.query.attributes.Attributes;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DefaultArithmetic;
@@ -19,8 +18,6 @@ import datawave.query.attributes.Document;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.util.Tuple3;
-
-import java.util.Collection;
 
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {
     private static final Logger log = Logger.getLogger(JexlEvaluation.class);

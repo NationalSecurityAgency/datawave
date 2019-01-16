@@ -1,8 +1,6 @@
 package datawave.ingest.mapreduce;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import datawave.ingest.data.config.BaseNormalizedContent;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 

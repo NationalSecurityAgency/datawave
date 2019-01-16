@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.query.util.TypeMetadata;
-import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;

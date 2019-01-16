@@ -11,6 +11,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 
@@ -20,6 +21,8 @@ import java.io.IOException;
  * defined in the header) to each applicable value. These key/value pairings are conceptually treated as 'extra fields'.
  */
 public class NYCTLCReader extends CSVReaderBase {
+    
+    private static final Logger log = Logger.getLogger(NYCTLCReader.class);
     
     private String rawHeader;
     
@@ -57,16 +60,18 @@ public class NYCTLCReader extends CSVReaderBase {
                 // update value to be list of field/value pairings
                 StringBuffer fvBuf = new StringBuffer();
                 String[] values = this.value.toString().split(((NYCTLCHelper) helper).getSeparator());
-                if (values.length == ((NYCTLCHelper) helper).getParsedHeader().length) {
-                    completeRecord = true;
-                    for (int fieldIdx = 0; fieldIdx < values.length; fieldIdx++) {
-                        fvBuf.append(((NYCTLCHelper) helper).getParsedHeader()[fieldIdx] + "=" + values[fieldIdx]);
-                        if ((fieldIdx + 1) < values.length)
-                            fvBuf.append(((NYCTLCHelper) helper).getSeparator());
-                    }
-                    this.value = new Text(fvBuf.toString());
-                } else
-                    completeRecord = false;
+                if (values.length > ((NYCTLCHelper) helper).getParsedHeader().length)
+                    log.debug("More values present than expected.");
+                
+                int numFields = Math.min(values.length, ((NYCTLCHelper) helper).getParsedHeader().length);
+                
+                completeRecord = true;
+                for (int fieldIdx = 0; fieldIdx < numFields; fieldIdx++) {
+                    fvBuf.append(((NYCTLCHelper) helper).getParsedHeader()[fieldIdx] + "=" + values[fieldIdx]);
+                    if ((fieldIdx + 1) < numFields)
+                        fvBuf.append(((NYCTLCHelper) helper).getSeparator());
+                }
+                this.value = new Text(fvBuf.toString());
             } else
                 completeRecord = false;
         } while (hasNext && !completeRecord);

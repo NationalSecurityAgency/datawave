@@ -1,7 +1,6 @@
 package datawave.webservice.results.modification;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Set;
 
 import javax.xml.bind.annotation.XmlAccessOrder;

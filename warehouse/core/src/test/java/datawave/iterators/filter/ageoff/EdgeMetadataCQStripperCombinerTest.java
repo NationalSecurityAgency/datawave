@@ -6,9 +6,13 @@ import datawave.edge.protobuf.EdgeData;
 import datawave.iterators.filter.EdgeMetadataCQStripperCombiner;
 import datawave.iterators.filter.EdgeMetadataCQStrippingIterator;
 import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.client.*;
-import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.MutationsRejectedException;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -16,9 +20,15 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class EdgeMetadataCQStripperCombinerTest {
     private static final Logger log = Logger.getLogger(EdgeMetadataCQStripperCombinerTest.class);

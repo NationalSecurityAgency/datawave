@@ -34,7 +34,7 @@ public class CounterStatsDClientTest {
         Assert.assertEquals("queue1.dwingest", client.prefix);
         Assert.assertEquals("localhost", client.host);
         Assert.assertEquals(8125, client.port);
-        Assert.assertEquals(false, client.stopped);
+        Assert.assertFalse(client.stopped);
         
         client.sendLiveStat("CounterGroup1", new CounterToStatsDConfigurationTest.TestCounter("Counter1"), 1);
         client.sendLiveStat("CounterGroup2", new CounterToStatsDConfigurationTest.TestCounter("Counter1"), 1);
@@ -58,9 +58,9 @@ public class CounterStatsDClientTest {
                         client.messages);
         client.messages.clear();
         
-        Assert.assertEquals(false, client.stopped);
+        Assert.assertFalse(client.stopped);
         client.close();
-        Assert.assertEquals(true, client.stopped);
+        Assert.assertTrue(client.stopped);
     }
     
     public static class TestCounterStatsDClient extends CounterStatsDClient {

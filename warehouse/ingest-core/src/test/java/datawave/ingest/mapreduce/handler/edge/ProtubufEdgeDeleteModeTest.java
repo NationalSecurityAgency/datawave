@@ -35,8 +35,13 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.*;
-import org.junit.*;
+import org.apache.log4j.Appender;
+import org.apache.log4j.Logger;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,7 +50,15 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.TreeSet;
 
 public class ProtubufEdgeDeleteModeTest {
     
@@ -442,7 +455,7 @@ public class ProtubufEdgeDeleteModeTest {
                         log.info(keyString.trim());
                     }
                 }
-                Assert.assertTrue(countMap.get(edgeTableName) == expectedEdgeKeys);
+                Assert.assertEquals((int) countMap.get(edgeTableName), expectedEdgeKeys);
             } catch (AssertionError ae) {
                 if (printKeysOnlyOnFail) {
                     for (String keyString : keyPrint) {

@@ -4,8 +4,8 @@ import static datawave.query.tld.TLD.parsePointerFromFI;
 import static datawave.query.tld.TLD.parseRootPointerFromFI;
 
 import java.io.IOException;
+
 import java.util.AbstractMap;
-import java.util.Collection;
 import java.util.Set;
 
 import datawave.marking.ColumnVisibilityCache;
@@ -21,7 +21,6 @@ import datawave.query.jexl.functions.SeekingAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang.StringUtils;

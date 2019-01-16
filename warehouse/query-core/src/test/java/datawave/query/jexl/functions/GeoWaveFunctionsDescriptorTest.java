@@ -54,10 +54,10 @@ public class GeoWaveFunctionsDescriptorTest {
         Assert.assertEquals(expandedWkt.get(2), twoEnvelopesExpandedQuery);
         
         // Test the the default number of envelopes produces a different expanded query than the single envelope expansion
-        Assert.assertFalse(defaultExpandedQuery.equals(oneEnvelopeExpandedQuery));
+        Assert.assertNotEquals(defaultExpandedQuery, oneEnvelopeExpandedQuery);
         
         // Test that the default number of envelopes produces the same expanded query as the two envelope expansion
-        Assert.assertTrue(defaultExpandedQuery.equals(twoEnvelopesExpandedQuery));
+        Assert.assertEquals(defaultExpandedQuery, twoEnvelopesExpandedQuery);
     }
     
     @Test

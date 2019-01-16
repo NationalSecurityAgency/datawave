@@ -1,7 +1,6 @@
 package datawave.query.ancestor;
 
 import datawave.query.iterator.logic.IndexIterator;
-import datawave.query.predicate.TimeFilter;
 import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;

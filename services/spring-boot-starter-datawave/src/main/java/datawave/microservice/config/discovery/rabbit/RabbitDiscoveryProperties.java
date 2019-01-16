@@ -1,10 +1,12 @@
 package datawave.microservice.config.discovery.rabbit;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 /**
  * Configuration properties for discovering RabbitMQ using service discovery.
  */
+@EnableConfigurationProperties(RabbitDiscoveryProperties.class)
 @ConfigurationProperties(prefix = "spring.rabbitmq.discovery")
 public class RabbitDiscoveryProperties {
     private boolean enabled = false;

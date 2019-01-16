@@ -1,10 +1,17 @@
 package datawave.query.jexl.functions;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import datawave.query.attributes.ValueTuple;
 
 import org.apache.log4j.Logger;
@@ -58,10 +65,10 @@ public class GroupingRequiredFilterFunctions {
             }
             for (int i = 2; i < args.length; i++) {
                 
-                Object fieldValue3 = args[i];
+                Object fieldValue3;
                 if (args[i] instanceof Iterable) {
                     for (Object fv : (Iterable) args[i]) {
-                        String fieldName = (String) ValueTuple.getFieldName(fv);
+                        String fieldName = ValueTuple.getFieldName(fv);
                         if (fieldName.endsWith(tail)) {
                             fieldValue3 = fv;
                             regex = args[i + 1].toString();
@@ -74,6 +81,21 @@ public class GroupingRequiredFilterFunctions {
                             }
                         }
                     }
+                } else if (args[i] instanceof ValueTuple) {
+                    Object fv = args[i];
+                    String fieldName = ValueTuple.getFieldName(fv);
+                    if (fieldName.endsWith(tail)) {
+                        fieldValue3 = fv;
+                        regex = args[i + 1].toString();
+                        // includeRegex will return either an emptyCollection, or a SingletonCollection containing
+                        // the first match that was found
+                        Collection<ValueTuple> rightSideMatches = EvaluationPhaseFilterFunctions.includeRegex(fieldValue3, regex);
+                        if (!rightSideMatches.isEmpty()) {
+                            matches.addAll(rightSideMatches);
+                            matches.add(match); // add the left side unmodified match
+                        }
+                    }
+                    
                 }
             }
         }
@@ -120,7 +142,7 @@ public class GroupingRequiredFilterFunctions {
             // I am only interested in a match on the one that ends with the 'tail' (.2) that I found above
             String tail = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(matchFieldName, positionFromRight);
             
-            for (int i = 2; i < args.length; i++) {
+            for (int i = 2; i < args.length; i += 2) {
                 
                 Object fieldValue3 = args[i];
                 if (args[i] instanceof Iterable) {
@@ -136,6 +158,20 @@ public class GroupingRequiredFilterFunctions {
                                 matches.addAll(rightSideMatches);
                                 matches.add(match); // add the left side unmodified match
                             }
+                        }
+                    }
+                } else if (args[i] instanceof ValueTuple) {
+                    Object fv = args[i];
+                    String fieldName = ValueTuple.getFieldName(fv);
+                    if (fieldName.endsWith(tail)) {
+                        fieldValue3 = fv;
+                        regex = args[i + 1].toString();
+                        // includeRegex will return either an emptyCollection, or a SingletonCollection containing
+                        // the first match that was found
+                        Collection<ValueTuple> rightSideMatches = EvaluationPhaseFilterFunctions.includeRegex(fieldValue3, regex);
+                        if (!rightSideMatches.isEmpty()) {
+                            matches.addAll(rightSideMatches);
+                            matches.add(match); // add the left side unmodified match
                         }
                     }
                 }
@@ -181,11 +217,11 @@ public class GroupingRequiredFilterFunctions {
             // my firstMatches will be a collection that looks like [NAME.grandparent_0.parent_0.child_0:SANTINO]
             String theFirstMatch = EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(matchFieldName, positionFromLeft);
             
-            for (int i = 2; i < args.length; i++) {
+            for (int i = 2; i < args.length; i += 2) {
                 
                 if (args[i] instanceof Iterable) {
                     for (Object fv : (Iterable) args[i]) {
-                        String fieldName = (String) ValueTuple.getFieldName(fv);
+                        String fieldName = ValueTuple.getFieldName(fv);
                         
                         regex = args[i + 1].toString();
                         // args[i] is a collection that looks like:
@@ -207,6 +243,24 @@ public class GroupingRequiredFilterFunctions {
                             matches.add(match);
                         }
                     }
+                } else if (args[i] instanceof ValueTuple) {
+                    Object fv = args[i];
+                    String fieldName = ValueTuple.getFieldName(fv);
+                    regex = args[i + 1].toString();
+                    // args[i] is a ValueTuple that looks like:
+                    // [NAME.grandparent_0.parent_0.child_1,FREDO,fredo],
+                    // let's say that regex is 'FREDO'
+                    // Assuming that positionFromLeft is 0, then for each of these, I will consider only the ones that have a match on
+                    // grandparent_0.parent_0, then I will see if the name matches my regex (FREDO)
+                    // If the positionFromLeft were 1, I would consider all of the above that include grandparent.0, and then
+                    // look for a match on FREDO
+                    String theNextMatch = EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(fieldName, positionFromLeft);
+                    if (theNextMatch != null && theNextMatch.equals(theFirstMatch)) {
+                        log.trace("\tfirst match equals the second: " + theFirstMatch + " == " + theNextMatch);
+                        matches.addAll(EvaluationPhaseFilterFunctions.includeRegex(fv, regex));
+                        matches.add(match);
+                    }
+                    
                 }
             }
         }
@@ -220,49 +274,59 @@ public class GroupingRequiredFilterFunctions {
         return Collections.unmodifiableCollection(matches);
     }
     
-    public static Collection<ValueTuple> atomValuesMatch(Object fieldOne, Object fieldTwo) {
-        if (fieldOne instanceof Iterable == false) {
-            fieldOne = Collections.singleton(fieldOne);
+    public static Collection<ValueTuple> atomValuesMatch(Object... args) {
+        List<Iterable<?>> iterableFields = new ArrayList<>();
+        
+        for (Object field : args) {
+            if (field instanceof Iterable == false) {
+                field = Collections.singleton(field);
+            }
+            iterableFields.add((Iterable<?>) field);
         }
-        if (fieldTwo instanceof Iterable == false) {
-            fieldTwo = Collections.singleton(fieldTwo);
-        }
-        return atomValuesMatch((Iterable<?>) fieldOne, (Iterable<?>) fieldTwo);
+        return atomValuesMatch(iterableFields);
     }
     
     /**
      * test that fields have values that match within the same grouping context. QueryIterator will add (then remove later) the grouping context if it was not
      * specified in the original query
      * 
-     * @param fieldOneValues
-     * @param fieldTwoValues
-     * @return
+     * @param fields
+     * @return a collection of matches
      */
-    public static Collection<ValueTuple> atomValuesMatch(Iterable<?> fieldOneValues, Iterable<?> fieldTwoValues) {
+    public static Collection<ValueTuple> atomValuesMatch(List<Iterable<?>> fields) {
         Set<ValueTuple> matches = Sets.newHashSet();
-        if (fieldOneValues == null || fieldTwoValues == null)
+        if (fields.contains(null)) {
             return matches;
-        for (Object fieldOneValue : fieldOneValues) {
-            String groupOne = ValueTuple.getFieldName(fieldOneValue);
-            if (groupOne.indexOf(".") != -1) {
-                groupOne = groupOne.substring(groupOne.lastIndexOf("."));
-            } else {
-                groupOne = "";
-            }
-            String normedOne = ValueTuple.getNormalizedStringValue(fieldOneValue);
-            for (Object fieldTwoValue : fieldTwoValues) {
-                String groupTwo = ValueTuple.getFieldName(fieldTwoValue);
-                if (groupTwo.indexOf(".") != -1) {
-                    groupTwo = groupTwo.substring(groupTwo.lastIndexOf("."));
+        }
+        Multimap<String,Object> tuples = HashMultimap.create();
+        HashMap<String,String> values = null;
+        for (Iterable<?> field : fields) {
+            HashMap<String,String> matchedValues = new HashMap<>();
+            for (Object fieldValue : field) {
+                String group = ValueTuple.getFieldName(fieldValue);
+                if (group.indexOf(".") != -1) {
+                    group = group.substring(group.lastIndexOf("."));
                 } else {
-                    groupTwo = "";
+                    group = "";
                 }
-                String normedTwo = ValueTuple.getNormalizedStringValue(fieldTwoValue);
-                if (normedTwo.equals(normedOne) && groupOne.equals(groupTwo)) {
-                    matches.add(EvaluationPhaseFilterFunctions.getHitTerm(fieldTwoValue));
+                tuples.put(group, fieldValue);
+                String value = ValueTuple.getNormalizedStringValue(fieldValue);
+                if (values == null || value.equals(values.get(group))) {
+                    matchedValues.put(group, value);
                 }
+            }
+            values = matchedValues;
+            if (values.isEmpty()) {
+                break;
             }
         }
+        
+        for (String matchingGroup : values.keySet()) {
+            for (Object fieldValue : tuples.get(matchingGroup)) {
+                matches.add(EvaluationPhaseFilterFunctions.getHitTerm(fieldValue));
+            }
+        }
+        
         return matches;
     }
 }

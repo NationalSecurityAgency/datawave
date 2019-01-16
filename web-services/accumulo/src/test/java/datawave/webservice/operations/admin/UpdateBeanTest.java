@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.mock;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.*;
 
 public class UpdateBeanTest {
     

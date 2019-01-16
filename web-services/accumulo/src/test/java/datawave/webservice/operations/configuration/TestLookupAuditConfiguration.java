@@ -1,6 +1,7 @@
 package datawave.webservice.operations.configuration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import datawave.webservice.common.audit.Auditor.AuditType;
 import org.junit.Test;

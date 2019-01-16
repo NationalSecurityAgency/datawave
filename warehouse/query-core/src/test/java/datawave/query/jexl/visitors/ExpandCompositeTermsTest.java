@@ -4,14 +4,20 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.io.WKTReader;
+import datawave.data.normalizer.NoOpNormalizer;
 import datawave.data.normalizer.Normalizer;
+import datawave.data.type.BaseType;
+import datawave.data.type.DiscreteIndexType;
+import datawave.data.type.GeometryType;
+import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -19,9 +25,12 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +44,7 @@ public class ExpandCompositeTermsTest {
     ShardQueryConfiguration conf;
     
     private static Multimap<String,String> compositeToFieldMap;
+    private static Map<String,String> compositeFieldSeparators;
     
     String[] originalQueries = {"MAKE == 'Ford' && COLOR == 'red'", "MAKE == 'Ford' && COLOR == 'red' && MAKE_COLOR == 'Fordred'",
             "(MAKE == 'Ford' && WHEELS == 3) && COLOR == 'red'"};
@@ -53,12 +63,20 @@ public class ExpandCompositeTermsTest {
         multimap.put("TEAM_POINTS", "TEAM");
         multimap.put("TEAM_POINTS", "POINTS");
         compositeToFieldMap = Multimaps.unmodifiableMultimap(multimap);
+        
+        Map<String,String> sepMap = new HashMap<>();
+        sepMap.put("MAKE_COLOR", ",");
+        sepMap.put("COLOR_WHEELS", ",");
+        sepMap.put("TEAM_NAME_POINTS", ",");
+        sepMap.put("TEAM_POINTS", ",");
+        compositeFieldSeparators = Collections.unmodifiableMap(sepMap);
     }
     
     @Before
     public void before() {
         conf = new ShardQueryConfiguration();
         conf.setCompositeToFieldMap(compositeToFieldMap);
+        conf.setCompositeFieldSeparators(compositeFieldSeparators);
     }
     
     @Test
@@ -71,7 +89,7 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test2() throws Exception {
         String query = "WINNER=='blue' && TEAM=='gold' && POINTS==11";
-        String expected = "WINNER == 'blue' && TEAM_POINTS == 'gold􏿿11'";
+        String expected = "WINNER == 'blue' && TEAM_POINTS == 'gold,11'";
         
         runTestQuery(query, expected);
     }
@@ -79,27 +97,27 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test3() throws Exception {
         String query = "WINNER=='blue' && TEAM=='gold' && NAME=='gold-8' && POINTS==11";
-        runTestQuery(query, "WINNER == 'blue' && TEAM_NAME_POINTS == 'gold􏿿gold-8􏿿11'");
+        runTestQuery(query, "WINNER == 'blue' && TEAM_NAME_POINTS == 'gold,gold-8,11'");
     }
     
     @Test
     public void test4a() throws Exception {
         String query = "WINNER=='blue' && TEAM=='gold' && NAME=='gold-8' && (POINTS > 10 && POINTS <= 11)";
-        String expected = "WINNER == 'blue' && (TEAM_NAME_POINTS > 'gold􏿿gold-8􏿿10' && TEAM_NAME_POINTS <= 'gold􏿿gold-8􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-8' && (POINTS > 10 && POINTS <= 11)))))";
+        String expected = "WINNER == 'blue' && (TEAM_NAME_POINTS > 'gold,gold-8,10' && TEAM_NAME_POINTS <= 'gold,gold-8,11') && ((ASTEvaluationOnly = true) && (TEAM == 'gold' && NAME == 'gold-8' && (POINTS > 10 && POINTS <= 11)))";
         runTestQuery(query, expected);
     }
     
     @Test
     public void test4b() throws Exception {
         String query = "WINNER=='blue' && (TEAM=='gold') && (NAME=='gold-8') && (POINTS > 10 && POINTS <= 11)";
-        String expected = "WINNER == 'blue' && (TEAM_NAME_POINTS > 'gold􏿿gold-8􏿿10' && TEAM_NAME_POINTS <= 'gold􏿿gold-8􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-8' && (POINTS > 10 && POINTS <= 11)))))";
+        String expected = "WINNER == 'blue' && (TEAM_NAME_POINTS > 'gold,gold-8,10' && TEAM_NAME_POINTS <= 'gold,gold-8,11') && ((ASTEvaluationOnly = true) && (TEAM == 'gold' && NAME == 'gold-8' && (POINTS > 10 && POINTS <= 11)))";
         runTestQuery(query, expected);
     }
     
     @Test
     public void test5() throws Exception {
         String query = "WINNER=='blue' && TEAM=='gold' && NAME=='gold-1' && (POINTS > 4 && POINTS <= 5 || POINTS > 0 && POINTS < 2)";
-        String expected = "WINNER == 'blue' && (((TEAM_NAME_POINTS > 'gold􏿿gold-1􏿿4' && TEAM_NAME_POINTS <= 'gold􏿿gold-1􏿿5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-1' && (POINTS > 4 && POINTS <= 5)))))) || ((TEAM_NAME_POINTS > 'gold􏿿gold-1􏿿0' && TEAM_NAME_POINTS < 'gold􏿿gold-1􏿿2') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-1' && (POINTS > 0 && POINTS < 2)))))))";
+        String expected = "WINNER == 'blue' && (((TEAM_NAME_POINTS > 'gold,gold-1,4' && TEAM_NAME_POINTS <= 'gold,gold-1,5') && ((ASTEvaluationOnly = true) && (TEAM == 'gold' && NAME == 'gold-1' && (POINTS > 4 && POINTS <= 5)))) || ((TEAM_NAME_POINTS > 'gold,gold-1,0' && TEAM_NAME_POINTS < 'gold,gold-1,2') && ((ASTEvaluationOnly = true) && (TEAM == 'gold' && NAME == 'gold-1' && (POINTS > 0 && POINTS < 2)))))";
         runTestQuery(query, expected);
     }
     
@@ -113,7 +131,7 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test7a() throws Exception {
         String query = "WINNER == 'blue' && TEAM=='gold' && ( NAME=='gold-1' || NAME=='gold-2' && (POINTS > 10 && POINTS <= 11))";
-        String expected = "WINNER == 'blue' && ((TEAM == 'gold' && NAME == 'gold-1') || ((TEAM_NAME_POINTS > 'gold􏿿gold-2􏿿10' && TEAM_NAME_POINTS <= 'gold􏿿gold-2􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && NAME == 'gold-2' && (POINTS > 10 && POINTS <= 11)))))))";
+        String expected = "WINNER == 'blue' && ((TEAM == 'gold' && NAME == 'gold-1') || ((TEAM_NAME_POINTS > 'gold,gold-2,10' && TEAM_NAME_POINTS <= 'gold,gold-2,11') && ((ASTEvaluationOnly = true) && (TEAM == 'gold' && NAME == 'gold-2' && (POINTS > 10 && POINTS <= 11)))))";
         runTestQuery(query, expected);
     }
     
@@ -121,11 +139,12 @@ public class ExpandCompositeTermsTest {
     public void test7aa() throws Exception {
         ShardQueryConfiguration myConf = new ShardQueryConfiguration();
         myConf.setCompositeToFieldMap(compositeToFieldMap);
+        myConf.setCompositeFieldSeparators(compositeFieldSeparators);
         
         Set<String> indexedFields = Sets.newHashSet("MAKE", "COLOR", "WHEELS", "TEAM", "NAME", "POINTS");
         
         String query = "WINNER == 'blue' && COLOR == 'red' && TEAM=='gold' && ( WHEELS == 4 || NOM=='gold-1' || NOM=='gold-2' && (POINTS > 10 && POINTS <= 11))";
-        String expected = "WINNER == 'blue' && ((TEAM == 'gold' && COLOR_WHEELS == 'red􏿿4') || (COLOR == 'red' && NOM == 'gold-2' && (TEAM_POINTS > 'gold􏿿10' && TEAM_POINTS <= 'gold􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 10 && POINTS <= 11)))))) || (COLOR == 'red' && TEAM == 'gold' && NOM == 'gold-1'))";
+        String expected = "WINNER == 'blue' && ((TEAM == 'gold' && COLOR_WHEELS == 'red,4') || (COLOR == 'red' && NOM == 'gold-2' && (TEAM_POINTS > 'gold,10' && TEAM_POINTS <= 'gold,11') && ((ASTEvaluationOnly = true) && (TEAM == 'gold' && (POINTS > 10 && POINTS <= 11)))) || (COLOR == 'red' && TEAM == 'gold' && NOM == 'gold-1'))";
         runTestQuery(query, expected, indexedFields, myConf);
     }
     
@@ -146,11 +165,9 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test7d() throws Exception {
         String query = "(TEAM >= 'gold' && TEAM <= 'silver') && (POINTS > 10 && POINTS <= 11)";
-        String expected = "(TEAM_POINTS > 'gold􏿿10' && TEAM_POINTS <= 'silver􏿿11') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((TEAM >= 'gold' && TEAM <= 'silver') && (POINTS > 10 && POINTS <= 11)))))";
+        String expected = "(TEAM_POINTS > 'gold,10' && TEAM_POINTS <= 'silver,11') && ((ASTEvaluationOnly = true) && ((TEAM >= 'gold' && TEAM <= 'silver') && (POINTS > 10 && POINTS <= 11)))";
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("TEAM");
-        this.conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("TEAM", new MockDiscreteIndexType());
         
         runTestQuery(query, expected);
     }
@@ -158,14 +175,14 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test8() throws Exception {
         String query = "COLOR =~ '.*ed' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE == 'honda') && TYPE == 'truck'";
-        String expected = "TYPE == 'truck' && (WHEELS == '4' || WHEELS == '+aE4') && ((COLOR =~ '.*ed' && MAKE_COLOR == 'honda') || (MAKE_COLOR =~ 'honda􏿿.*ed' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (MAKE == 'honda' && COLOR =~ '.*ed'))))))";
+        String expected = "TYPE == 'truck' && (WHEELS == '4' || WHEELS == '+aE4') && ((COLOR =~ '.*ed' && MAKE_COLOR == 'honda') || (MAKE_COLOR =~ 'honda,.*ed' && ((ASTEvaluationOnly = true) && (MAKE == 'honda' && COLOR =~ '.*ed'))))";
         runTestQuery(query, expected);
     }
     
     @Test
     public void test9() throws Exception {
         String query = "WINNER == 'blue' && TEAM == 'gold' && NAME != 'gold-1' && (POINTS > 4 && POINTS <= 5 || POINTS > 0 && POINTS < 2)";
-        String expected = "WINNER == 'blue' && NAME != 'gold-1' && (((TEAM_POINTS > 'gold􏿿4' && TEAM_POINTS <= 'gold􏿿5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 4 && POINTS <= 5)))))) || ((TEAM_POINTS > 'gold􏿿0' && TEAM_POINTS < 'gold􏿿2') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 0 && POINTS < 2)))))))";
+        String expected = "WINNER == 'blue' && NAME != 'gold-1' && (((TEAM_POINTS > 'gold,4' && TEAM_POINTS <= 'gold,5') && ((ASTEvaluationOnly = true) && (TEAM == 'gold' && (POINTS > 4 && POINTS <= 5)))) || ((TEAM_POINTS > 'gold,0' && TEAM_POINTS < 'gold,2') && ((ASTEvaluationOnly = true) && (TEAM == 'gold' && (POINTS > 0 && POINTS < 2)))))";
         runTestQuery(query, expected);
     }
     
@@ -179,7 +196,7 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test11() throws Exception {
         String query = "WINNER == 'blue' && TEAM == 'gold' && NAME != 'gold-1' && (POINTS > 4 && POINTS <= 5 || POINTS > 0 && POINTS < 2)";
-        String expected = "WINNER == 'blue' && NAME != 'gold-1' && (((TEAM_POINTS > 'gold􏿿4' && TEAM_POINTS <= 'gold􏿿5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 4 && POINTS <= 5)))))) || ((TEAM_POINTS > 'gold􏿿0' && TEAM_POINTS < 'gold􏿿2') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (TEAM == 'gold' && (POINTS > 0 && POINTS < 2)))))))";
+        String expected = "WINNER == 'blue' && NAME != 'gold-1' && (((TEAM_POINTS > 'gold,4' && TEAM_POINTS <= 'gold,5') && ((ASTEvaluationOnly = true) && (TEAM == 'gold' && (POINTS > 4 && POINTS <= 5)))) || ((TEAM_POINTS > 'gold,0' && TEAM_POINTS < 'gold,2') && ((ASTEvaluationOnly = true) && (TEAM == 'gold' && (POINTS > 0 && POINTS < 2)))))";
         runTestQuery(query, expected);
     }
     
@@ -193,16 +210,18 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "WKT_BYTE_LENGTH");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String query = "((GEO >= '1f0155640000000000' && GEO <= '1f01556bffffffffff') || GEO == '00' || (GEO >= '0100' && GEO <= '0103')) && (WKT_BYTE_LENGTH >= '"
                         + Normalizer.NUMBER_NORMALIZER.normalize("0") + "' && WKT_BYTE_LENGTH <= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "')";
-        String expected = "(((GEO >= '1f0155640000000000􏿿+AE0' && GEO <= '1f01556bffffffffff􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '1f0155640000000000' && GEO <= '1f01556bffffffffff') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))) || ((GEO >= '00􏿿+AE0' && GEO <= '00􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '00' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))) || ((GEO >= '0100􏿿+AE0' && GEO <= '0103􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0100' && GEO <= '0103') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))";
+        String expected = "(((GEO >= '1f0155640000000000,+AE0' && GEO <= '1f01556bffffffffff,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '1f0155640000000000' && GEO <= '1f01556bffffffffff') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))) || ((GEO >= '00,+AE0' && GEO <= '00,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '00' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))) || ((GEO >= '0100,+AE0' && GEO <= '0103,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0100' && GEO <= '0103') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -217,15 +236,17 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "WKT_BYTE_LENGTH");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String query = "(GEO >= '0100' && GEO <= '0103') && WKT_BYTE_LENGTH >= '" + Normalizer.NUMBER_NORMALIZER.normalize("0") + "'";
-        String expected = "(GEO >= '0100􏿿+AE0' && GEO < '0104') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0100' && GEO <= '0103') && WKT_BYTE_LENGTH >= '+AE0'))))";
+        String expected = "(GEO >= '0100,+AE0' && GEO < '0104') && ((ASTEvaluationOnly = true) && ((GEO >= '0100' && GEO <= '0103') && WKT_BYTE_LENGTH >= '+AE0'))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -240,15 +261,17 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "WKT_BYTE_LENGTH");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String query = "(GEO >= '0100' && GEO <= '0103') && WKT_BYTE_LENGTH <= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'";
-        String expected = "(GEO >= '0100' && GEO <= '0103􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0100' && GEO <= '0103') && WKT_BYTE_LENGTH <= '+eE1.2345'))))";
+        String expected = "(GEO >= '0100' && GEO <= '0103,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0100' && GEO <= '0103') && WKT_BYTE_LENGTH <= '+eE1.2345'))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -266,12 +289,10 @@ public class ExpandCompositeTermsTest {
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String query = "GEO >= '0100' && WKT_BYTE_LENGTH <= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'";
-        String expected = "WKT_BYTE_LENGTH <= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "' && GEO >= '0100'";
+        String expected = "GEO >= '0100' && WKT_BYTE_LENGTH <= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -289,12 +310,10 @@ public class ExpandCompositeTermsTest {
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String query = "GEO <= '0103' && WKT_BYTE_LENGTH >= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'";
-        String expected = "WKT_BYTE_LENGTH >= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "' && GEO < '0104'";
+        String expected = "GEO <= '0103' && WKT_BYTE_LENGTH >= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -309,16 +328,18 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "WKT_BYTE_LENGTH");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String query = "((((GEO >= '0202' && GEO <= '020d'))) || (((GEO >= '030a' && GEO <= '0335'))) || (((GEO >= '0428' && GEO <= '0483'))) || (((GEO >= '0500aa' && GEO <= '050355'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))) && ((WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '"
                         + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'))";
-        String expected = "(((((GEO >= '0202􏿿+AE0' && GEO <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))) || ((((GEO >= '030a􏿿+AE0' && GEO <= '0335􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))) || ((((GEO >= '0428􏿿+AE0' && GEO <= '0483􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))) || ((((GEO >= '0500aa􏿿+AE0' && GEO <= '050355􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))) || ((((GEO >= '1f0aaaaaaaaaaaaaaa􏿿+AE0' && GEO <= '1f36c71c71c71c71c7􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))))";
+        String expected = "(((((GEO >= '0202,+AE0' && GEO <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))) || ((((GEO >= '030a,+AE0' && GEO <= '0335,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))) || ((((GEO >= '0428,+AE0' && GEO <= '0483,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))) || ((((GEO >= '0500aa,+AE0' && GEO <= '050355,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))) || ((((GEO >= '1f0aaaaaaaaaaaaaaa,+AE0' && GEO <= '1f36c71c71c71c71c7,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345')))))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -329,17 +350,18 @@ public class ExpandCompositeTermsTest {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
         
         Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
-        
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String upperBound = Normalizer.NUMBER_NORMALIZER.normalize("12345");
         
@@ -378,106 +400,106 @@ public class ExpandCompositeTermsTest {
         // GE to GE, use GE
         // LE to LE, use LE
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0202􏿿+AE0' && GEO <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0202,+AE0' && GEO <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LE to LE, use LE
         query = "(GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0203􏿿+AE0' && GEO <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0203,+AE0' && GEO <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GE, use GE
         // LT to LE, decrement fixed term, use LE
         query = "(GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0202􏿿+AE0' && GEO <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0202,+AE0' && GEO <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LT to LE, decrement fixed term, use LE
         query = "(GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0203􏿿+AE0' && GEO <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0203,+AE0' && GEO <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // GE to GT, use GT
         // LE to LE, use LE
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO > '0202􏿿+AE0' && GEO <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO > '0202,+AE0' && GEO <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment fixed term, use GT
         // LE to LE, use LE
         query = "(GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO > '0203􏿿+AE0' && GEO <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO > '0203,+AE0' && GEO <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GT, use GT
         // LT to LE, decrement fixed term, use LE
         query = "(GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO > '0202􏿿+AE0' && GEO <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO > '0202,+AE0' && GEO <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment base, use GT
         // LT to LE, decrement fixed term, use LE
         query = "(GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO > '0203􏿿+AE0' && GEO <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO > '0203,+AE0' && GEO <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // GE to GE, use GE
         // LE to LT, use LT
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0202􏿿+AE0' && GEO < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0202,+AE0' && GEO < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LE to LT, use LT
         query = "(GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0203􏿿+AE0' && GEO < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0203,+AE0' && GEO < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GE, use GE
         // LT to LT, decrement fixed term, use LT
         query = "(GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0202􏿿+AE0' && GEO < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0202,+AE0' && GEO < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LT to LT, decrement fixed term, use LT
         query = "(GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0203􏿿+AE0' && GEO < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0203,+AE0' && GEO < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // GE to GT, use GT
         // LE to LT, use LT
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO > '0202􏿿+AE0' && GEO < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO > '0202,+AE0' && GEO < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment fixed term, use GT
         // LE to LT, use LT
         query = "(GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO > '0203􏿿+AE0' && GEO < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO > '0203,+AE0' && GEO < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GT, use GT
         // LT to LT, decrement fixed term, use LT
         query = "(GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO > '0202􏿿+AE0' && GEO < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO > '0202,+AE0' && GEO < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment fixed term, use GT
         // LT to LT, decrement fixed term, use LT
         query = "(GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO > '0203􏿿+AE0' && GEO < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO > '0203,+AE0' && GEO < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // EQ to GE, use GE
         // EQ to LE, use LE
         query = "(GEO == '0202') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0202􏿿+AE0' && GEO <= '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0202,+AE0' && GEO <= '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // EQ to GE, use GE
         // EQ to LT, use LT
         query = "(GEO == '0202') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0202􏿿+AE0' && GEO < '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0202,+AE0' && GEO < '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // EQ to GT, use GT
         // EQ to LE, use LE
         query = "(GEO == '0202') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO > '0202􏿿+AE0' && GEO <= '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO > '0202,+AE0' && GEO <= '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // EQ to GT, use GT
         // EQ to LT, use LT
         query = "(GEO == '0202') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO > '0202􏿿+AE0' && GEO < '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO > '0202,+AE0' && GEO < '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // EQ, convert to range [keep base - use GE, increment base - use LT]
@@ -487,19 +509,19 @@ public class ExpandCompositeTermsTest {
         
         // Unbounded range w/ composite term
         query = "GEO >= '0202' && WKT < '" + upperBound + "'";
-        expected = "WKT < '" + upperBound + "' && GEO >= '0202'";
+        expected = "GEO >= '0202' && WKT < '" + upperBound + "'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO >= '0202' && WKT > '" + upperBound + "'";
-        expected = "GEO > '0202􏿿+eE1.2345' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO >= '0202' && WKT > '+eE1.2345'))))";
+        expected = "GEO >= '0202' && WKT > '" + upperBound + "'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO <= '0202' && WKT < '" + upperBound + "'";
-        expected = "GEO < '0202􏿿+eE1.2345' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO <= '0202' && WKT < '+eE1.2345'))))";
+        expected = "GEO <= '0202' && WKT < '" + upperBound + "'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO <= '0202' && WKT > '" + upperBound + "'";
-        expected = "WKT > '" + upperBound + "' && GEO < '0203'";
+        expected = "GEO <= '0202' && WKT > '" + upperBound + "'";
         runTestQuery(query, expected, indexedFields, conf);
         
         // Unbounded range w/out composite term
@@ -508,11 +530,11 @@ public class ExpandCompositeTermsTest {
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO > '0202'";
-        expected = "GEO >= '0203'";
+        expected = "GEO > '0202'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO <= '0202'";
-        expected = "GEO < '0203'";
+        expected = "GEO <= '0202'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO < '0202'";
@@ -533,12 +555,14 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         Map<String,Date> compositeWithOldDataMap = new HashMap<>();
         compositeWithOldDataMap.put("GEO", new Date(TimeUnit.DAYS.toMillis(15)));
@@ -581,106 +605,106 @@ public class ExpandCompositeTermsTest {
         // GE to GE, use GE
         // LE to LE, use LE
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LE to LE, use LE
         query = "(GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0203' && GEO <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0203' && GEO <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GE, use GE
         // LT to LE, decrement fixed term, use LE
         query = "(GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LT to LE, decrement fixed term, use LE
         query = "(GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0203' && GEO <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0203' && GEO <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // GE to GT, use GT
         // LE to LE, use LE
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment fixed term, use GT
         // LE to LE, use LE
         query = "(GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0203' && GEO <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0203' && GEO <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GT, use GT
         // LT to LE, decrement fixed term, use LE
         query = "(GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment base, use GT
         // LT to LE, decrement fixed term, use LE
         query = "(GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0203' && GEO <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0203' && GEO <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // GE to GE, use GE
         // LE to LT, use LT
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LE to LT, use LT
         query = "(GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0203' && GEO < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0203' && GEO < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GE, use GE
         // LT to LT, decrement fixed term, use LT
         query = "(GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LT to LT, decrement fixed term, use LT
         query = "(GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0203' && GEO < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0203' && GEO < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // GE to GT, use GT
         // LE to LT, use LT
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment fixed term, use GT
         // LE to LT, use LT
         query = "(GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0203' && GEO < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0203' && GEO < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GT, use GT
         // LT to LT, decrement fixed term, use LT
         query = "(GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment fixed term, use GT
         // LT to LT, decrement fixed term, use LT
         query = "(GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0203' && GEO < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0203' && GEO < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // EQ to GE, use GE
         // EQ to LE, use LE
         query = "(GEO == '0202') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO <= '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO <= '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // EQ to GE, use GE
         // EQ to LT, use LT
         query = "(GEO == '0202') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO < '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO < '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // EQ to GT, use GT
         // EQ to LE, use LE
         query = "(GEO == '0202') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO <= '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO <= '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // EQ to GT, use GT
         // EQ to LT, use LT
         query = "(GEO == '0202') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO >= '0202' && GEO < '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO >= '0202' && GEO < '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // EQ, convert to range [keep base - use GE, increment base - use LT]
@@ -690,19 +714,19 @@ public class ExpandCompositeTermsTest {
         
         // Unbounded range w/ composite term
         query = "GEO >= '0202' && WKT < '" + upperBound + "'";
-        expected = "WKT < '" + upperBound + "' && GEO >= '0202'";
+        expected = "GEO >= '0202' && WKT < '" + upperBound + "'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO >= '0202' && WKT > '" + upperBound + "'";
-        expected = "GEO >= '0202' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO >= '0202' && WKT > '+eE1.2345'))))";
+        expected = "GEO >= '0202' && WKT > '" + upperBound + "'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO <= '0202' && WKT < '" + upperBound + "'";
-        expected = "GEO < '0202􏿿+eE1.2345' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO <= '0202' && WKT < '+eE1.2345'))))";
+        expected = "GEO <= '0202' && WKT < '" + upperBound + "'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO <= '0202' && WKT > '" + upperBound + "'";
-        expected = "WKT > '" + upperBound + "' && GEO < '0203'";
+        expected = "GEO <= '0202' && WKT > '" + upperBound + "'";
         runTestQuery(query, expected, indexedFields, conf);
         
         // Unbounded range w/out composite term
@@ -711,11 +735,11 @@ public class ExpandCompositeTermsTest {
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO > '0202'";
-        expected = "GEO >= '0203'";
+        expected = "GEO > '0202'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO <= '0202'";
-        expected = "GEO < '0203'";
+        expected = "GEO <= '0202'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO < '0202'";
@@ -734,12 +758,14 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO_WKT", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO_WKT", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String upperBound = Normalizer.NUMBER_NORMALIZER.normalize("12345");
         
@@ -778,106 +804,106 @@ public class ExpandCompositeTermsTest {
         // GE to GE, use GE
         // LE to LE, use LE
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO_WKT >= '0202􏿿+AE0' && GEO_WKT <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO_WKT >= '0202,+AE0' && GEO_WKT <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LE to LE, use LE
         query = "(GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO_WKT >= '0203􏿿+AE0' && GEO_WKT <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO_WKT >= '0203,+AE0' && GEO_WKT <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GE, use GE
         // LT to LE, decrement fixed term, use LE
         query = "(GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO_WKT >= '0202􏿿+AE0' && GEO_WKT <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO_WKT >= '0202,+AE0' && GEO_WKT <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LT to LE, decrement fixed term, use LE
         query = "(GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO_WKT >= '0203􏿿+AE0' && GEO_WKT <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO_WKT >= '0203,+AE0' && GEO_WKT <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // GE to GT, use GT
         // LE to LE, use LE
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO_WKT > '0202􏿿+AE0' && GEO_WKT <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO_WKT > '0202,+AE0' && GEO_WKT <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment fixed term, use GT
         // LE to LE, use LE
         query = "(GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO_WKT > '0203􏿿+AE0' && GEO_WKT <= '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO_WKT > '0203,+AE0' && GEO_WKT <= '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GT, use GT
         // LT to LE, decrement fixed term, use LE
         query = "(GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO_WKT > '0202􏿿+AE0' && GEO_WKT <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO_WKT > '0202,+AE0' && GEO_WKT <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment base, use GT
         // LT to LE, decrement fixed term, use LE
         query = "(GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO_WKT > '0203􏿿+AE0' && GEO_WKT <= '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO_WKT > '0203,+AE0' && GEO_WKT <= '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // GE to GE, use GE
         // LE to LT, use LT
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO_WKT >= '0202􏿿+AE0' && GEO_WKT < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO_WKT >= '0202,+AE0' && GEO_WKT < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LE to LT, use LT
         query = "(GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO_WKT >= '0203􏿿+AE0' && GEO_WKT < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO_WKT >= '0203,+AE0' && GEO_WKT < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GE, use GE
         // LT to LT, decrement fixed term, use LT
         query = "(GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO_WKT >= '0202􏿿+AE0' && GEO_WKT < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO_WKT >= '0202,+AE0' && GEO_WKT < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GE, increment fixed term, use GE
         // LT to LT, decrement fixed term, use LT
         query = "(GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO_WKT >= '0203􏿿+AE0' && GEO_WKT < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO_WKT >= '0203,+AE0' && GEO_WKT < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // GE to GT, use GT
         // LE to LT, use LT
         query = "(GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO_WKT > '0202􏿿+AE0' && GEO_WKT < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO_WKT > '0202,+AE0' && GEO_WKT < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment fixed term, use GT
         // LE to LT, use LT
         query = "(GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO_WKT > '0203􏿿+AE0' && GEO_WKT < '020d􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO_WKT > '0203,+AE0' && GEO_WKT < '020d,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO <= '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GE to GT, use GT
         // LT to LT, decrement fixed term, use LT
         query = "(GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO_WKT > '0202􏿿+AE0' && GEO_WKT < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO_WKT > '0202,+AE0' && GEO_WKT < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // GT to GT, increment fixed term, use GT
         // LT to LT, decrement fixed term, use LT
         query = "(GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO_WKT > '0203􏿿+AE0' && GEO_WKT < '020c􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO_WKT > '0203,+AE0' && GEO_WKT < '020c,+eE1.2345') && ((ASTEvaluationOnly = true) && ((GEO > '0202' && GEO < '020d') && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // EQ to GE, use GE
         // EQ to LE, use LE
         query = "(GEO == '0202') && (WKT >= '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO_WKT >= '0202􏿿+AE0' && GEO_WKT <= '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO_WKT >= '0202,+AE0' && GEO_WKT <= '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // EQ to GE, use GE
         // EQ to LT, use LT
         query = "(GEO == '0202') && (WKT >= '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO_WKT >= '0202􏿿+AE0' && GEO_WKT < '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO_WKT >= '0202,+AE0' && GEO_WKT < '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT >= '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // EQ to GT, use GT
         // EQ to LE, use LE
         query = "(GEO == '0202') && (WKT > '+AE0' && WKT <= '" + upperBound + "')";
-        expected = "(GEO_WKT > '0202􏿿+AE0' && GEO_WKT <= '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT > '+AE0' && WKT <= '+eE1.2345')))))";
+        expected = "(GEO_WKT > '0202,+AE0' && GEO_WKT <= '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT > '+AE0' && WKT <= '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         // EQ to GT, use GT
         // EQ to LT, use LT
         query = "(GEO == '0202') && (WKT > '+AE0' && WKT < '" + upperBound + "')";
-        expected = "(GEO_WKT > '0202􏿿+AE0' && GEO_WKT < '0202􏿿+eE1.2345') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && (WKT > '+AE0' && WKT < '+eE1.2345')))))";
+        expected = "(GEO_WKT > '0202,+AE0' && GEO_WKT < '0202,+eE1.2345') && ((ASTEvaluationOnly = true) && (GEO == '0202' && (WKT > '+AE0' && WKT < '+eE1.2345')))";
         runTestQuery(query, expected, indexedFields, conf);
         
         // EQ, for non-overloaded, keep as-is
@@ -891,11 +917,11 @@ public class ExpandCompositeTermsTest {
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO >= '0202' && WKT > '" + upperBound + "'";
-        expected = "GEO_WKT > '0202􏿿+eE1.2345' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO >= '0202' && WKT > '+eE1.2345'))))";
+        expected = "GEO >= '0202' && WKT > '" + upperBound + "'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO <= '0202' && WKT < '" + upperBound + "'";
-        expected = "GEO_WKT < '0202􏿿+eE1.2345' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO <= '0202' && WKT < '+eE1.2345'))))";
+        expected = "GEO <= '0202' && WKT < '" + upperBound + "'";
         runTestQuery(query, expected, indexedFields, conf);
         
         query = "GEO <= '0202' && WKT > '" + upperBound + "'";
@@ -930,12 +956,14 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String query = "((((GEO >= '0202' && GEO <= '020d'))) || (((GEO >= '030a' && GEO <= '0335'))) || (((GEO >= '0428' && GEO <= '0483'))) || (((GEO >= '0500aa' && GEO <= '050355'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))))";
         String expected = "((((GEO >= '0202' && GEO < '020e'))) || (((GEO >= '030a' && GEO < '0336'))) || (((GEO >= '0428' && GEO < '0484'))) || (((GEO >= '0500aa' && GEO < '050356'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO < '1f36c71c71c71c71c8'))))";
@@ -953,15 +981,17 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String query = "((((GEO >= '0202' && GEO <= '020d'))) || (((GEO >= '030a' && GEO <= '0335'))) || (((GEO >= '0428' && GEO <= '0483'))) || (((GEO >= '0500aa' && GEO <= '050355'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))) && ((WKT >= '+AE0' && WKT < '+bE4'))";
-        String expected = "(((((GEO >= '0202􏿿+AE0' && GEO < '020d􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO >= '030a􏿿+AE0' && GEO < '0335􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO >= '0428􏿿+AE0' && GEO < '0483􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO >= '0500aa􏿿+AE0' && GEO < '050355􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO >= '1f0aaaaaaaaaaaaaaa􏿿+AE0' && GEO < '1f36c71c71c71c71c7􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT >= '+AE0' && WKT < '+bE4')))))))))";
+        String expected = "(((((GEO >= '0202,+AE0' && GEO < '020d,+bE4') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((((GEO >= '030a,+AE0' && GEO < '0335,+bE4') && ((ASTEvaluationOnly = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((((GEO >= '0428,+AE0' && GEO < '0483,+bE4') && ((ASTEvaluationOnly = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((((GEO >= '0500aa,+AE0' && GEO < '050355,+bE4') && ((ASTEvaluationOnly = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((((GEO >= '1f0aaaaaaaaaaaaaaa,+AE0' && GEO < '1f36c71c71c71c71c7,+bE4') && ((ASTEvaluationOnly = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT >= '+AE0' && WKT < '+bE4')))))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -975,6 +1005,10 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
+        
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
         
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
@@ -995,15 +1029,17 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO_WKT", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO_WKT", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String query = "((((GEO >= '0202' && GEO <= '020d'))) || (((GEO >= '030a' && GEO <= '0335'))) || (((GEO >= '0428' && GEO <= '0483'))) || (((GEO >= '0500aa' && GEO <= '050355'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')))) && ((WKT >= '+AE0' && WKT < '+bE4'))";
-        String expected = "(((((GEO_WKT >= '0202􏿿+AE0' && GEO_WKT < '020d􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO_WKT >= '030a􏿿+AE0' && GEO_WKT < '0335􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO_WKT >= '0428􏿿+AE0' && GEO_WKT < '0483􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO_WKT >= '0500aa􏿿+AE0' && GEO_WKT < '050355􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT >= '+AE0' && WKT < '+bE4')))))))) || ((((GEO_WKT >= '1f0aaaaaaaaaaaaaaa􏿿+AE0' && GEO_WKT < '1f36c71c71c71c71c7􏿿+bE4') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT >= '+AE0' && WKT < '+bE4')))))))))";
+        String expected = "(((((GEO_WKT >= '0202,+AE0' && GEO_WKT < '020d,+bE4') && ((ASTEvaluationOnly = true) && ((GEO >= '0202' && GEO <= '020d') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((((GEO_WKT >= '030a,+AE0' && GEO_WKT < '0335,+bE4') && ((ASTEvaluationOnly = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((((GEO_WKT >= '0428,+AE0' && GEO_WKT < '0483,+bE4') && ((ASTEvaluationOnly = true) && ((GEO >= '0428' && GEO <= '0483') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((((GEO_WKT >= '0500aa,+AE0' && GEO_WKT < '050355,+bE4') && ((ASTEvaluationOnly = true) && ((GEO >= '0500aa' && GEO <= '050355') && (WKT >= '+AE0' && WKT < '+bE4')))))) || ((((GEO_WKT >= '1f0aaaaaaaaaaaaaaa,+AE0' && GEO_WKT < '1f36c71c71c71c71c7,+bE4') && ((ASTEvaluationOnly = true) && ((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7') && (WKT >= '+AE0' && WKT < '+bE4')))))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1021,9 +1057,7 @@ public class ExpandCompositeTermsTest {
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
         
-        Set<String> fieldSet = new HashSet<>();
-        fieldSet.add("GEO");
-        conf.setFixedLengthFields(fieldSet);
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String query = "((((GEO >= '0202' && GEO <= '020d'))) || (((GEO >= '030a' && GEO <= '0335'))) || (((GEO >= '0428' && GEO <= '0483'))) || (((GEO >= '0500aa' && GEO <= '050355'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))))";
         String expected = "((((GEO >= '0202' && GEO <= '020d'))) || (((GEO >= '030a' && GEO <= '0335'))) || (((GEO >= '0428' && GEO <= '0483'))) || (((GEO >= '0500aa' && GEO <= '050355'))) || (((GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))))";
@@ -1040,6 +1074,10 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO_WKT", "GEO");
         compositeToFieldMap.put("GEO_WKT", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
+        
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO_WKT", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
         
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
@@ -1060,9 +1098,14 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
-        conf.setFixedLengthFields(indexedFields);
+        
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         conf.setBeginDate(new Date(0));
         conf.setEndDate(new Date(TimeUnit.DAYS.toMillis(30)));
@@ -1074,11 +1117,9 @@ public class ExpandCompositeTermsTest {
         String normNum = Normalizer.NUMBER_NORMALIZER.normalize("55");
         
         String query = "(GEO == '0202' || ((GEO >= '030a' && GEO <= '0335'))) && WKT == '" + normNum + "'";
-        String expected = "(((GEO >= '0202' && GEO <= '0202􏿿" + normNum
-                        + "') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && WKT == '" + normNum
-                        + "'))))) || (((GEO >= '030a' && GEO <= '0335􏿿" + normNum
-                        + "') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && WKT == '" + normNum
-                        + "')))))))";
+        String expected = "(((GEO >= '0202' && GEO <= '0202," + normNum + "') && ((ASTEvaluationOnly = true) && (GEO == '0202' && WKT == '" + normNum
+                        + "'))) || (((GEO >= '030a' && GEO <= '0335," + normNum
+                        + "') && ((ASTEvaluationOnly = true) && ((GEO >= '030a' && GEO <= '0335') && WKT == '" + normNum + "')))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1093,14 +1134,19 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
-        conf.setFixedLengthFields(indexedFields);
+        
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         String normNum = Normalizer.NUMBER_NORMALIZER.normalize("55");
         
         String query = "(GEO == '0202' || ((GEO >= '030a' && GEO <= '0335'))) && WKT == '" + normNum + "'";
-        String expected = "(GEO == '0202􏿿+bE5.5' || (((GEO >= '030a􏿿+bE5.5' && GEO <= '0335􏿿+bE5.5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && ((GEO >= '030a' && GEO <= '0335') && WKT == '+bE5.5')))))))";
+        String expected = "(GEO == '0202,+bE5.5' || (((GEO >= '030a,+bE5.5' && GEO <= '0335,+bE5.5') && ((ASTEvaluationOnly = true) && ((GEO >= '030a' && GEO <= '0335') && WKT == '+bE5.5')))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1115,9 +1161,14 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
-        conf.setFixedLengthFields(indexedFields);
+        
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
         conf.setBeginDate(new Date(0));
         conf.setEndDate(new Date(TimeUnit.DAYS.toMillis(30)));
@@ -1129,7 +1180,7 @@ public class ExpandCompositeTermsTest {
         String normNum = Normalizer.NUMBER_NORMALIZER.normalize("55");
         
         String query = "(GEO == '0202' || GEO >= '030a') && WKT == '" + normNum + "'";
-        String expected = "(((GEO >= '0202' && GEO <= '0202􏿿+bE5.5') && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO == '0202' && WKT == '+bE5.5'))))) || (GEO >= '030a' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO >= '030a' && WKT == '+bE5.5'))))))";
+        String expected = "((WKT == '+bE5.5' && GEO >= '030a') || ((GEO >= '0202' && GEO <= '0202,+bE5.5') && ((ASTEvaluationOnly = true) && (GEO == '0202' && WKT == '+bE5.5'))))";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1144,14 +1195,17 @@ public class ExpandCompositeTermsTest {
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
         
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
+        compositeToSeparatorMap.put("GEO", ",");
+        conf.setCompositeFieldSeparators(compositeToSeparatorMap);
+        
         Set<String> indexedFields = new HashSet<>();
         indexedFields.add("GEO");
-        conf.setFixedLengthFields(indexedFields);
         
-        String normNum = Normalizer.NUMBER_NORMALIZER.normalize("55");
+        conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
         
-        String query = "(GEO == '0202' || GEO >= '030a') && WKT == '" + normNum + "'";
-        String expected = "(GEO == '0202􏿿+bE5.5' || (GEO >= '030a􏿿+bE5.5' && ((ASTDelayedPredicate = true) && (((ASTCompositePredicate = true) && (GEO >= '030a' && WKT == '+bE5.5'))))))";
+        String query = "(GEO == '0202' || GEO >= '030a') && WKT == '+bE5.5'";
+        String expected = "((WKT == '+bE5.5' && GEO >= '030a') || GEO == '0202,+bE5.5')";
         
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1160,7 +1214,7 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test30() throws Exception {
         String query = "MAKE == 'london' && ((CODE == 'ita' || CODE == 'iTa') || COLOR == 'missouri' || NUM == '+cE1')";
-        String expected = "((MAKE == 'london' && (CODE == 'ita' || CODE == 'iTa' || NUM == '+cE1')) || MAKE_COLOR == 'london􏿿missouri')";
+        String expected = "((MAKE == 'london' && (CODE == 'ita' || CODE == 'iTa' || NUM == '+cE1')) || MAKE_COLOR == 'london,missouri')";
         
         runTestQuery(query, expected);
     }
@@ -1206,5 +1260,37 @@ public class ExpandCompositeTermsTest {
         PrintingVisitor.printQuery(script);
         System.err.println(JexlStringBuildingVisitor.buildQuery(script));
         System.err.println();
+    }
+    
+    private static class MockDiscreteIndexType extends BaseType implements DiscreteIndexType {
+        
+        public MockDiscreteIndexType() {
+            super(new NoOpNormalizer());
+        }
+        
+        @Override
+        public String incrementIndex(String index) {
+            return index;
+        }
+        
+        @Override
+        public String decrementIndex(String index) {
+            return index;
+        }
+        
+        @Override
+        public List<String> discretizeRange(String beginIndex, String endIndex) {
+            return Arrays.asList(beginIndex, endIndex);
+        }
+        
+        @Override
+        public boolean producesFixedLengthRanges() {
+            return true;
+        }
+        
+        @Override
+        public int compareTo(Object o) {
+            return 0;
+        }
     }
 }

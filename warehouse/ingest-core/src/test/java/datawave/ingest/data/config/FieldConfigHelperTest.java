@@ -23,7 +23,10 @@ import java.util.List;
 import java.util.Scanner;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class FieldConfigHelperTest {
     
@@ -254,7 +257,7 @@ public class FieldConfigHelperTest {
                 count++;
             }
         }
-        assertTrue("Expected a single type to match " + expected.getName() + ", but " + count + " types matched; List was: " + observedList, count == 1);
+        assertEquals("Expected a single type to match " + expected.getName() + ", but " + count + " types matched; List was: " + observedList, 1, count);
     }
     
     @Test

@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -324,7 +323,7 @@ public class FlagMakerTest {
         };
         instance.processFlags();
         // should have made 2 flag files
-        assertTrue(flagFileLists.size() == 2);
+        assertEquals(2, flagFileLists.size());
         long lastTime = 0;
         for (Collection<InputFile> flagFileList : flagFileLists) {
             long nextTime = 0;

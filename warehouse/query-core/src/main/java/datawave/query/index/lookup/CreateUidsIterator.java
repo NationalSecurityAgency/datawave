@@ -21,7 +21,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
 public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {

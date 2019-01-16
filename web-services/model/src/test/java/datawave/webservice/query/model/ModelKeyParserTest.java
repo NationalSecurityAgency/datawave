@@ -1,11 +1,8 @@
 package datawave.webservice.query.model;
 
-import java.net.URL;
 import java.util.Collections;
 import java.util.Set;
 
-import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 import datawave.webservice.model.Direction;
 import datawave.webservice.model.FieldMapping;
 
@@ -17,7 +14,6 @@ import org.apache.hadoop.io.Text;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;

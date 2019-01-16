@@ -3,12 +3,14 @@ package datawave.query.tld;
 import com.google.common.collect.Maps;
 import datawave.data.type.NoOpType;
 import datawave.query.Constants;
+
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -31,6 +33,7 @@ import java.util.TreeMap;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 public class TLDFieldIndexAggregatorTest {
     private TLDFieldIndexAggregator aggregator;
@@ -137,7 +140,7 @@ public class TLDFieldIndexAggregatorTest {
         Key result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertFalse(itr.hasTop());
-        assertTrue(result.equals(result2));
+        assertEquals(result, result2);
     }
     
     @Test
@@ -155,14 +158,14 @@ public class TLDFieldIndexAggregatorTest {
         Key result = aggregator.apply(itr);
         
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getTimestamp() == 11);
+        assertEquals(11, itr.getTopKey().getTimestamp());
         
         itr.seek(new Range(), null, true);
         Key result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getTimestamp() == 11);
-        assertTrue(result.equals(result2));
+        assertEquals(11, itr.getTopKey().getTimestamp());
+        assertEquals(result, result2);
         
         // test a change to the datatype
         treeMap = Maps.newTreeMap();
@@ -175,8 +178,8 @@ public class TLDFieldIndexAggregatorTest {
         result2 = aggregator.apply(itr, new Range(), null, false);
         
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().getTimestamp() == 7);
-        assertTrue(result.equals(result2));
+        assertEquals(7, itr.getTopKey().getTimestamp());
+        assertEquals(result, result2);
     }
     
     private Key getFi(String row, String field, String value, String dataType, String uid, long timestamp) {

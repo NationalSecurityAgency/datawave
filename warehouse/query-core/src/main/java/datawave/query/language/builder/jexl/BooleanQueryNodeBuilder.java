@@ -24,7 +24,6 @@ import java.util.List;
 import datawave.query.language.parser.jexl.JexlBooleanNode;
 import datawave.query.language.parser.jexl.JexlNode;
 
-import org.apache.lucene.queryparser.flexible.core.nodes.NotBooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;

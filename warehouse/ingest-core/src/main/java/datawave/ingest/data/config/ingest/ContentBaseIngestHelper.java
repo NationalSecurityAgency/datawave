@@ -3,7 +3,6 @@ package datawave.ingest.data.config.ingest;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import jline.internal.TestAccessible;
 import datawave.ingest.data.config.FieldConfigHelper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -41,7 +40,7 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
      *
      * If the TYPE=; is empty, then no fields will be tokenized
      */
-    private Map<String,Set<String>> subtypeFieldTokenizationWhitelistMap = new HashMap<String,Set<String>>();
+    private Map<String,Set<String>> subtypeFieldTokenizationWhitelistMap = new HashMap<>();
     public static final String SUBTYPE_TOKENIZATION_WHITELIST_MAP = ".data.category.index.tokenize.whitelist.subtype.map";
     
     /**
@@ -180,7 +179,7 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
      * @return unique Set of strings where whitespace has been trimmed.
      */
     public static Set<String> cleanSet(Collection<String> items) {
-        Set<String> itemSet = new HashSet<String>();
+        Set<String> itemSet = new HashSet<>();
         for (String item : items) {
             item = item.trim();
             if (!item.isEmpty()) {

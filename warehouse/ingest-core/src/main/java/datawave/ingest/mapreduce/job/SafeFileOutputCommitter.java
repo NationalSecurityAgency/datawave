@@ -75,7 +75,7 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
                 Path pendingJobAttemptsPath = getPendingJobAttemptsPath();
                 FileSystem fs = pendingJobAttemptsPath.getFileSystem(context.getConfiguration());
                 // now verify we do not have any files left in the temporary directory structure
-                List<Path> fileList = new ArrayList<Path>();
+                List<Path> fileList = new ArrayList<>();
                 if (containsFiles(fs, pendingJobAttemptsPath, fileList)) {
                     throw new FileExistsException("Found files still left in the temporary job attempts path: " + fileList);
                 }
@@ -102,7 +102,7 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
      */
     protected RemoteIterator<Path> listFiles(final FileSystem fs, final Path path) {
         return new RemoteIterator<Path>() {
-            private ArrayDeque<FileStatus> files = new ArrayDeque<FileStatus>();
+            private ArrayDeque<FileStatus> files = new ArrayDeque<>();
             private Path curFile = null;
             private boolean initialized = false;
             

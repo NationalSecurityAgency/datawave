@@ -135,17 +135,15 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
      * @throws URISyntaxException
      */
     public static Map<String,Object> getParameters(JexlNode source) throws URISyntaxException {
-        Map<String,Object> returnParameters = new HashMap<String,Object>();
+        Map<String,Object> returnParameters = new HashMap<>();
         Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
         // turn the FST URI into a URI and the values into a set of values
         for (Map.Entry<String,Object> entry : parameters.entrySet()) {
             if (entry.getKey().equalsIgnoreCase(FST_URI_PROP)) {
                 returnParameters.put(FST_URI_PROP, new URI(String.valueOf(entry.getValue())));
             } else if (entry.getKey().equalsIgnoreCase(VALUES_PROP)) {
-                returnParameters.put(
-                                VALUES_PROP,
-                                new HashSet<String>(Arrays.asList(StringUtils.split(String.valueOf(entry.getValue()), StringUtils.ESCAPE_CHAR,
-                                                StringUtils.COMMA))));
+                returnParameters.put(VALUES_PROP,
+                                new HashSet<>(Arrays.asList(StringUtils.split(String.valueOf(entry.getValue()), StringUtils.ESCAPE_CHAR, StringUtils.COMMA))));
             } else if (entry.getKey().equalsIgnoreCase(FIELD_PROP)) {
                 returnParameters.put(FIELD_PROP, String.valueOf(entry.getValue()));
             }

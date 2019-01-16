@@ -4,7 +4,6 @@ import com.google.common.io.BaseEncoding;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.WKBWriter;
 import com.vividsolutions.jts.io.WKTReader;
-import org.apache.hadoop.io.compress.Lz4Codec;
 import org.junit.Assert;
 import org.junit.Test;
 

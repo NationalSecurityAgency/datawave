@@ -8,7 +8,6 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -36,7 +35,6 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         TLDIndexIteratorBuilder builder = new TLDIndexIteratorBuilder();
         builder.setSource(source.deepCopy(env));
         builder.setTypeMetadata(typeMetadata);
-        builder.setCompositeMetadata(compositeMetadata);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
@@ -130,7 +128,6 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setSource(getSourceIterator(node, isNegation));
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
-        builder.setCompositeMetadata(compositeMetadata);
         builder.setDatatypeFilter(datatypeFilter);
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);

@@ -12,8 +12,7 @@ public class CardinalityIteratorBuilder extends IndexIteratorBuilder {
             IndexIteratorBridge itr = new IndexIteratorBridge(IndexIterator.builder(new Text(field), new Text(value), source).withTimeFilter(timeFilter)
                             .withTypeMetadata(typeMetadata)
                             .shouldBuildDocument(this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field))
-                            .withDatatypeFilter(datatypeFilter).withAggregation(this.keyTform)
-                            .withCompositePredicateFilters(createCompositePredicateFilters(field)).build());
+                            .withDatatypeFilter(datatypeFilter).withAggregation(this.keyTform).build());
             field = null;
             value = null;
             source = null;

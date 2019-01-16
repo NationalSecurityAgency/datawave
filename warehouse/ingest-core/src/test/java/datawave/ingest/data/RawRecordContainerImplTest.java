@@ -76,6 +76,7 @@ public class RawRecordContainerImplTest {
         event.generateId(null);
         event.validate();
         assertTrue(event.getErrors().isEmpty());
+        assertEquals(0, event.getErrors().size());
         
         event = create();
         event.setVisibility("TESTVIS1&TESTVIS2");
@@ -83,6 +84,7 @@ public class RawRecordContainerImplTest {
         event.generateId(null);
         event.validate();
         assertTrue(event.getErrors().isEmpty());
+        assertEquals(0, event.getErrors().size());
     }
     
     @Test
@@ -162,8 +164,8 @@ public class RawRecordContainerImplTest {
         e2.readFields(in);
         
         // Check to see if they are equal
-        assertTrue(e1.equals(e2));
-        assertTrue(e2.equals(e1));
+        assertEquals(e1, e2);
+        assertEquals(e2, e1);
         
         bytes = new ByteArrayOutputStream();
         out = new DataOutputStream(bytes);
@@ -187,8 +189,8 @@ public class RawRecordContainerImplTest {
         e2.readFields(in);
         
         // Check to see if they are equal
-        assertTrue(e1.equals(e2));
-        assertTrue(e2.equals(e1));
+        assertEquals(e1, e2);
+        assertEquals(e2, e1);
         
     }
     
@@ -238,7 +240,7 @@ public class RawRecordContainerImplTest {
         event.generateId(null);
         event.validate();
         RawRecordContainerImpl copy = event.copy();
-        assertTrue(event.equals(copy));
+        assertEquals(event, copy);
     }
     
     @Test
@@ -292,15 +294,15 @@ public class RawRecordContainerImplTest {
         ((ValidatingRawRecordContainerImpl) event).validate();
         // Create copy
         RawRecordContainerImpl copy = event.copy();
-        assertTrue(event.equals(copy));
+        assertEquals(event, copy);
         // Create copy of copy
         RawRecordContainerImpl copy2 = copy.copy();
-        assertTrue(event.equals(copy));
-        assertTrue(event.equals(copy2));
+        assertEquals(event, copy);
+        assertEquals(event, copy2);
         // Clear the original
         event.clear();
         // Test
-        assertTrue(copy.equals(copy2));
+        assertEquals(copy, copy2);
     }
     
     @Test

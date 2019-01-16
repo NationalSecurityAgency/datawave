@@ -12,7 +12,12 @@ spring:
       retry:
         max-attempts: 60
       uri: '${CONFIG_SERVER_URL:http://configuration:8888/configserver}'
-
+management:
+  health:
+    status:
+      order: DOWN, OUT_OF_SERVICE, UNKNOWN, RABBITMQ_UNHEALTHY, UP
+      http-mapping:
+        RABBITMQ_UNHEALTHY: 200
 ---
 
 # For the dev profile, check localhost for the config server by default

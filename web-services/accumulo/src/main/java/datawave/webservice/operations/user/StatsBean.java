@@ -4,7 +4,6 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.exception.AccumuloWebApplicationException;
 import datawave.webservice.response.StatsProperties;
 import datawave.webservice.response.StatsResponse;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.log4j.Logger;

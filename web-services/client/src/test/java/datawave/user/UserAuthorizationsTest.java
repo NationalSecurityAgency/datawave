@@ -2,7 +2,6 @@ package datawave.user;
 
 import java.util.TreeSet;
 
-import datawave.user.UserAuthorizations;
 import datawave.webservice.ProtobufSerializationTestBase;
 
 import org.junit.Test;

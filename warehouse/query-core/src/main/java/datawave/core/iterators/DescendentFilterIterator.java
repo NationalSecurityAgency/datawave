@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
 import datawave.util.StringUtils;
 

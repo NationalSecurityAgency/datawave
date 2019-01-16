@@ -1,25 +1,17 @@
 package datawave.core.iterators;
 
-import com.google.common.base.Predicate;
-import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
-import datawave.query.iterator.filter.composite.CompositePredicateFilter;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.predicate.TimeFilter;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 /**

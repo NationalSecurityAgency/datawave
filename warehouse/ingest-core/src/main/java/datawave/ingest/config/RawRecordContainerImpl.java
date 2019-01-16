@@ -23,7 +23,6 @@ import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.IgnorableErrorHelperInterface;
 import datawave.ingest.protobuf.RawRecordContainer.Data;
 import datawave.marking.MarkingFunctions;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
@@ -36,7 +35,6 @@ import org.apache.hadoop.io.Writable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 
 public class RawRecordContainerImpl implements Writable, Configurable, RawRecordContainer {

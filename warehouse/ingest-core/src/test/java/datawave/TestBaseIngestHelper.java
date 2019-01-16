@@ -30,4 +30,9 @@ public class TestBaseIngestHelper extends BaseIngestHelper {
     public boolean isDataTypeField(String fieldName) {
         return false;
     }
+    
+    @Override
+    public boolean isCompositeField(String fieldName) {
+        return false;
+    }
 }

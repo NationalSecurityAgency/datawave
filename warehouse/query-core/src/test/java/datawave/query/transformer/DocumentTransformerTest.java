@@ -3,11 +3,8 @@ package datawave.query.transformer;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
-import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -109,9 +106,9 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         PowerMock.verifyAll();
         
         Assert.assertNotNull(event);
-        Assert.assertTrue(event.getFields().size() == 1);
-        Assert.assertTrue(event.getFields().get(0).getName().equals("field1"));
-        Assert.assertTrue(event.getFields().get(0).getValueString().equals("5"));
+        Assert.assertEquals(1, event.getFields().size());
+        Assert.assertEquals("field1", event.getFields().get(0).getName());
+        Assert.assertEquals("5", event.getFields().get(0).getValueString());
     }
     
     @Test
@@ -135,9 +132,9 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         PowerMock.verifyAll();
         
         Assert.assertNotNull(event);
-        Assert.assertTrue(event.getFields().size() == 1);
-        Assert.assertTrue(event.getFields().get(0).getName().equals("field1"));
-        Assert.assertTrue(event.getFields().get(0).getValueString().equals("5"));
+        Assert.assertEquals(1, event.getFields().size());
+        Assert.assertEquals("field1", event.getFields().get(0).getName());
+        Assert.assertEquals("5", event.getFields().get(0).getValueString());
     }
     
     @Test
@@ -163,9 +160,9 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         PowerMock.verifyAll();
         
         Assert.assertNotNull(event);
-        Assert.assertTrue(event.getFields().size() == 1);
-        Assert.assertTrue(event.getFields().get(0).getName().equals("field1"));
-        Assert.assertTrue(event.getFields().get(0).getValueString().equals("5"));
+        Assert.assertEquals(1, event.getFields().size());
+        Assert.assertEquals("field1", event.getFields().get(0).getName());
+        Assert.assertEquals("5", event.getFields().get(0).getValueString());
     }
     
     @Test
@@ -193,12 +190,12 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         PowerMock.verifyAll();
         
         Assert.assertNotNull(event);
-        Assert.assertTrue(event.getFields().size() == 2);
+        Assert.assertEquals(2, event.getFields().size());
         
         List<String> foundFields = new ArrayList<>(2);
         for (SimpleField field : event.getFields()) {
             foundFields.add(field.getName());
-            Assert.assertTrue(field.getValueString().equals("5"));
+            Assert.assertEquals("5", field.getValueString());
         }
         
         List<String> expectedFields = new ArrayList<>();
@@ -238,15 +235,15 @@ public class DocumentTransformerTest { // extends EasyMockSupport {
         PowerMock.verifyAll();
         
         Assert.assertNotNull(event);
-        Assert.assertTrue(event.getFields().size() == 3);
+        Assert.assertEquals(3, event.getFields().size());
         
         List<String> foundFields = new ArrayList<>(3);
         for (SimpleField field : event.getFields()) {
             foundFields.add(field.getName());
             if (field.getName().equals("field1")) {
-                Assert.assertTrue(field.getValueString().equals("5"));
+                Assert.assertEquals("5", field.getValueString());
             } else {
-                Assert.assertTrue(field.getValueString().equals("6"));
+                Assert.assertEquals("6", field.getValueString());
             }
         }
         

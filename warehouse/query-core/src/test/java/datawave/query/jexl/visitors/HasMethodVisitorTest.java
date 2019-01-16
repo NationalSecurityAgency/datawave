@@ -7,8 +7,6 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 public class HasMethodVisitorTest {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(HasMethodVisitorTest.class);

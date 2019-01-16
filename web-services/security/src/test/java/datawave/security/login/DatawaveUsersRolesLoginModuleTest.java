@@ -1,6 +1,8 @@
 package datawave.security.login;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.powermock.api.easymock.PowerMock.field;
 
 import java.security.KeyStore;

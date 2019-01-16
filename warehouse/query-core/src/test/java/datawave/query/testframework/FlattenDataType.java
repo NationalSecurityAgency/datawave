@@ -12,18 +12,11 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Handles JSON flatten datatypes. Fields for this datatype are defined based upon the {@link FlattenMode} and are defined with the appropriate test class.
@@ -74,7 +67,7 @@ public class FlattenDataType extends AbstractDataTypeConfig {
     
     // ==================================
     // data manager for flatten is based upon the flatten mode - metadata may be different for each mode
-    private static volatile Map<FlattenMode,RawDataManager> manager = new EnumMap<FlattenMode,RawDataManager>(FlattenMode.class);
+    private static volatile Map<FlattenMode,RawDataManager> manager = new EnumMap<>(FlattenMode.class);
     
     public static RawDataManager getManager(final FlattenData data) {
         FlattenMode mode = data.getMode();

@@ -1,10 +1,12 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import org.apache.accumulo.core.data.*;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class LimitedKeyPartitionerTest {
     private static final int NUM_REDUCERS = 1000;

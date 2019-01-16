@@ -1,7 +1,12 @@
 package datawave.data.hash;
 
 import static datawave.data.hash.UIDConstants.TIME_SEPARATOR;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -107,7 +112,7 @@ public class HashUIDTest {
         b = new HashUID(data.getBytes(), null, "blebla.blabla") {};
         assertTrue(a.compareTo(b) != 0);
         assertTrue(a.compareTo(null) != 0);
-        assertTrue(a.compare(null, null) == 0);
+        assertEquals(0, a.compare(null, null));
         assertTrue(a.compare(a, null) != 0);
         assertTrue(a.compare(null, a) != 0);
     }
@@ -116,10 +121,10 @@ public class HashUIDTest {
     public void testParse() {
         UID a = new HashUID(data.getBytes(), (Date) null) {};
         UID b = UID.parse(a.toString());
-        assertTrue(a.equals(b));
-        assertTrue(b.equals(a));
-        assertTrue(a.compareTo(b) == 0);
-        assertTrue(a.compare(a, b) == 0);
+        assertEquals(a, b);
+        assertEquals(b, a);
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, a.compare(a, b));
         a = new HashUID(data.getBytes(), null, "blabla") {};
         b = UID.parse(a.toString());
         assertEquals(a, b);
@@ -154,8 +159,8 @@ public class HashUIDTest {
         in.close();
         baos.close();
         
-        assertTrue(a.equals(b));
-        assertTrue(b.equals(a));
+        assertEquals(a, b);
+        assertEquals(b, a);
         
         a = new HashUID(data.getBytes(), (Date) null) {};
         
@@ -171,8 +176,8 @@ public class HashUIDTest {
         in.close();
         baos.close();
         
-        assertTrue(a.equals(b));
-        assertTrue(b.equals(a));
+        assertEquals(a, b);
+        assertEquals(b, a);
         
         a = new HashUID(data.getBytes(), null, "blabla") {};
         
@@ -188,8 +193,8 @@ public class HashUIDTest {
         in.close();
         baos.close();
         
-        assertTrue(a.equals(b));
-        assertTrue(b.equals(a));
+        assertEquals(a, b);
+        assertEquals(b, a);
     }
     
     @Test
@@ -197,8 +202,8 @@ public class HashUIDTest {
         UID a = new HashUID(data.getBytes(), (Date) null) {};
         UID b = new HashUID(data.getBytes(), null, "blabla.blabla.blabla") {};
         assertTrue(b.toString().startsWith(a.toString()));
-        assertTrue(a.getShardedPortion().equals(b.getShardedPortion()));
-        assertTrue(a.toString().equals(b.getShardedPortion()));
+        assertEquals(a.getShardedPortion(), b.getShardedPortion());
+        assertEquals(a.toString(), b.getShardedPortion());
         
         assertEquals(b, UID.parse(b.toString(), 4));
         assertTrue(UID.parse(b.toString(), 3).equals(b));
@@ -210,6 +215,15 @@ public class HashUIDTest {
         assertTrue(UID.parse(b.toString(), 0).equals(a));
         assertTrue(UID.parse(b.toString(), -1).equals(b));
         assertTrue(UID.parse(b.toString(), -2).equals(b));
+        assertEquals(UID.parse(b.toString(), 3), b);
+        assertNotEquals(UID.parse(b.toString(), 2), b);
+        assertEquals(UID.parse(b.toString(), 2).toString(), a.toString() + ".blabla.blabla");
+        assertNotEquals(UID.parse(b.toString(), 1), b);
+        assertEquals(UID.parse(b.toString(), 1).toString(), a.toString() + ".blabla");
+        assertNotEquals(UID.parse(b.toString(), 0), b);
+        assertEquals(UID.parse(b.toString(), 0), a);
+        assertEquals(UID.parse(b.toString(), -1), b);
+        assertEquals(UID.parse(b.toString(), -2), b);
         
     }
     
@@ -220,14 +234,14 @@ public class HashUIDTest {
         UID a = new HashUID(data.getBytes(), date) {};
         UID b = new HashUID(data.getBytes(), date, "blabla.blabla.blabla") {};
         assertTrue(b.toString().startsWith(a.toString()));
-        assertTrue(a.getShardedPortion().equals(b.getShardedPortion()));
-        assertTrue(a.toString().equals(b.getShardedPortion()));
-        assertFalse(nodate.getShardedPortion().equals(a.getShardedPortion()));
+        assertEquals(a.getShardedPortion(), b.getShardedPortion());
+        assertEquals(a.toString(), b.getShardedPortion());
+        assertNotEquals(nodate.getShardedPortion(), a.getShardedPortion());
         
         assertTrue(a.getTime() >= 0);
         assertTrue(b.getTime() >= 0);
-        assertTrue(a.getTime() == b.getTime());
-        assertTrue(nodate.getTime() == -1);
+        assertEquals(a.getTime(), b.getTime());
+        assertEquals(nodate.getTime(), -1);
         assertTrue(a.getBaseUid().indexOf(TIME_SEPARATOR) > 0);
         assertTrue(nodate.getBaseUid().indexOf(TIME_SEPARATOR) < 0);
         
@@ -241,7 +255,16 @@ public class HashUIDTest {
         assertTrue(UID.parse(b.toString(), 0).equals(a));
         assertTrue(UID.parse(b.toString(), -1).equals(b));
         assertTrue(UID.parse(b.toString(), -2).equals(b));
-        
+        assertEquals(UID.parse(b.toString(), 4), b);
+        assertEquals(UID.parse(b.toString(), 3), b);
+        assertNotEquals(UID.parse(b.toString(), 2), b);
+        assertEquals(UID.parse(b.toString(), 2).toString(), a.toString() + ".blabla.blabla");
+        assertNotEquals(UID.parse(b.toString(), 1), b);
+        assertEquals(UID.parse(b.toString(), 1).toString(), a.toString() + ".blabla");
+        assertNotEquals(UID.parse(b.toString(), 0), b);
+        assertEquals(UID.parse(b.toString(), 0), a);
+        assertEquals(UID.parse(b.toString(), -1), b);
+        assertEquals(UID.parse(b.toString(), -2), b);
     }
     
     @Test

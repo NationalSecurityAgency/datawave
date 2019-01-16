@@ -1,7 +1,6 @@
 package datawave.query.testframework;
 
 import au.com.bytecode.opencsv.CSVReader;
-import datawave.data.normalizer.Normalizer;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
@@ -12,10 +11,8 @@ import java.io.Reader;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**

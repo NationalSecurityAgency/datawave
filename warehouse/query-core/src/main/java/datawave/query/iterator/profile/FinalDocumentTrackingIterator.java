@@ -60,8 +60,16 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
     
     private boolean isStatsEntryReturned(Range r) {
         // first check if this is a rebuild key (post teardown)
-        if (!r.isStartKeyInclusive() && r.getStartKey() != null && r.getStartKey().getColumnQualifierData() != null) {
-            ByteSequence bytes = r.getStartKey().getColumnQualifierData();
+        if (!r.isStartKeyInclusive()) {
+            // now check if the start key is a final document return
+            return isFinalDocumentKey(r.getStartKey());
+        }
+        return false;
+    }
+    
+    public static boolean isFinalDocumentKey(Key k) {
+        if (k != null && k.getColumnQualifierData() != null) {
+            ByteSequence bytes = k.getColumnQualifierData();
             if (bytes.length() >= MARKER_TEXT.getLength()) {
                 return (bytes.subSequence(bytes.length() - MARKER_TEXT.getLength(), bytes.length()).compareTo(MARKER_SEQUENCE) == 0);
             }
@@ -69,15 +77,7 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
         return false;
     }
     
-    private Map.Entry<Key,Value> getStatsEntry(Key key) {
-        
-        Key statsKey = key;
-        if (statsKey == null) {
-            statsKey = seekRange.getStartKey();
-            if (!seekRange.isStartKeyInclusive()) {
-                statsKey = statsKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
-            }
-        }
+    private Map.Entry<Key,Value> getStatsEntry(Key statsKey) {
         
         // now add our marker
         statsKey = new Key(statsKey.getRow(), statsKey.getColumnFamily(), Util.appendText(statsKey.getColumnQualifier(), MARKER_TEXT),
@@ -139,7 +139,20 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
         if (yield == null || !yield.hasYielded()) {
             if (itrIsDone) {
                 if (!statsEntryReturned) {
-                    nextEntry = getStatsEntry(this.lastKey);
+                    
+                    // determine the key to append the stats entry to
+                    Key statsKey = lastKey;
+                    
+                    // if no last key, then use the startkey of the range
+                    if (statsKey == null) {
+                        statsKey = seekRange.getStartKey();
+                        if (!seekRange.isStartKeyInclusive()) {
+                            statsKey = statsKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
+                        }
+                    }
+                    
+                    nextEntry = getStatsEntry(statsKey);
+                    
                     statsEntryReturned = true;
                 }
             } else {

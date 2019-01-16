@@ -1,12 +1,14 @@
 package datawave.microservice.audit.health.rabbit.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@EnableConfigurationProperties(RabbitHealthProperties.class)
 @ConfigurationProperties(prefix = "audit.health.rabbit")
 public class RabbitHealthProperties {
     private boolean enabled = false;

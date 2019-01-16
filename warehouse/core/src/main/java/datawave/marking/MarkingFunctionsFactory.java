@@ -1,7 +1,5 @@
 package datawave.marking;
 
-import java.util.Arrays;
-
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;

@@ -57,19 +57,19 @@ public interface ColumnFamilyConstants {
     Text COLF_H = new Text("h");
     
     /**
-     * a colf of 'ci' denotes an event that is part of a combined index
+     * a colf of 'ci' denotes an event that is part of a composite index
      */
     Text COLF_CI = new Text("ci");
-    
-    /**
-     * a colf of 'cifl' denotes whether a composite field is of fixed length
-     */
-    Text COLF_CIFL = new Text("cifl");
     
     /**
      * a colf of 'citd' denotes whether a composite field has a transition date
      */
     Text COLF_CITD = new Text("citd");
+    
+    /**
+     * a colf of 'cisep' denotes the separator to use when generating composite indices
+     */
+    Text COLF_CISEP = new Text("cisep");
     
     /**
      * a colf of 'count' denotes term counts (cardinality)

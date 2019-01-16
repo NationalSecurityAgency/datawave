@@ -35,7 +35,7 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     
     private volatile boolean cacheFilesRead = false;
     private Text holder = new Text();
-    private ThreadLocal<Map<String,Text[]>> splitsByTable = new ThreadLocal<Map<String,Text[]>>();
+    private ThreadLocal<Map<String,Text[]>> splitsByTable = new ThreadLocal<>();
     private DecimalFormat formatter = new DecimalFormat("000");
     private Configuration conf;
     private PartitionLimiter partitionLimiter;

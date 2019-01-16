@@ -111,6 +111,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String INDEX_ONLY_FIELDS = "index.only.fields";
     public static final String COMPOSITE_FIELDS = "composite.fields";
     public static final String COMPOSITE_METADATA = "composite.metadata";
+    public static final String COMPOSITE_SEEK_THRESHOLD = "composite.seek.threshold";
     public static final String CONTAINS_COMPOSITE_TERMS = "composite.terms";
     public static final String IGNORE_COLUMN_FAMILIES = "ignore.column.families";
     public static final String INCLUDE_GROUPING_CONTEXT = "include.grouping.context";
@@ -231,7 +232,8 @@ public class QueryOptions implements OptionDescriber {
     protected boolean disableIndexOnlyDocuments = false;
     protected TypeMetadata typeMetadata = new TypeMetadata();
     protected Set<String> typeMetadataAuthsKey = Sets.newHashSet();
-    protected CompositeMetadata compositeMetadata = new CompositeMetadata();
+    protected CompositeMetadata compositeMetadata = null;
+    protected int compositeSeekThreshold = 10;
     protected DocumentSerialization.ReturnType returnType = DocumentSerialization.ReturnType.kryo;
     protected boolean reducedResponse = false;
     protected boolean fullTableScanOnly = false;
@@ -369,6 +371,7 @@ public class QueryOptions implements OptionDescriber {
         this.typeMetadataAuthsKey = other.typeMetadataAuthsKey;
         this.metadataTableName = other.metadataTableName;
         this.compositeMetadata = other.compositeMetadata;
+        this.compositeSeekThreshold = other.compositeSeekThreshold;
         this.returnType = other.returnType;
         this.reducedResponse = other.reducedResponse;
         this.fullTableScanOnly = other.fullTableScanOnly;
@@ -569,6 +572,14 @@ public class QueryOptions implements OptionDescriber {
     
     public void setCompositeMetadata(CompositeMetadata compositeMetadata) {
         this.compositeMetadata = compositeMetadata;
+    }
+    
+    public int getCompositeSeekThreshold() {
+        return compositeSeekThreshold;
+    }
+    
+    public void setCompositeSeekThreshold(int compositeSeekThreshold) {
+        this.compositeSeekThreshold = compositeSeekThreshold;
     }
     
     public DocumentSerialization.ReturnType getReturnType() {
@@ -1117,6 +1128,14 @@ public class QueryOptions implements OptionDescriber {
             
             if (log.isTraceEnabled()) {
                 log.trace("Using compositeMetadata: " + this.compositeMetadata);
+            }
+        }
+        
+        if (options.containsKey(COMPOSITE_SEEK_THRESHOLD)) {
+            try {
+                this.compositeSeekThreshold = Integer.parseInt(options.get(COMPOSITE_SEEK_THRESHOLD));
+            } catch (NumberFormatException nfe) {
+                this.compositeSeekThreshold = 10;
             }
         }
         

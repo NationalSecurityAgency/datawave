@@ -3,6 +3,7 @@ package datawave.ingest.util;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
@@ -202,7 +203,7 @@ public class NGramTokenizationStrategyTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Strategy should have thrown a timeout exception", null != result1);
+        assertNotNull("Strategy should have thrown a timeout exception", result1);
     }
     
     @Test
@@ -256,7 +257,7 @@ public class NGramTokenizationStrategyTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Should have created a non-null filter", null != result1);
+        assertNotNull("Should have created a non-null filter", result1);
         
         assertEquals("Should have applied " + expectedNGramCount + " n-grams to the bloom filter", expectedNGramCount, result2);
         
@@ -314,7 +315,7 @@ public class NGramTokenizationStrategyTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Should have created a non-null filter", null != result1);
+        assertNotNull("Should have created a non-null filter", result1);
         
         assertTrue("Should have applied approximately " + expectedNGramCount + " n-grams to the bloom filter", (result2 > expectedNGramCount - 3)
                         && (result2 < idealFilterSize));
@@ -400,7 +401,7 @@ public class NGramTokenizationStrategyTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Should have created a non-null filter", null != result1);
+        assertNotNull("Should have created a non-null filter", result1);
         
         /*
          * Debugging note: Recent changes to Java package names in this project mysteriously and unfortunately had the side effect of breaking the original
@@ -473,7 +474,7 @@ public class NGramTokenizationStrategyTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Should have created a non-null filter", null != result1);
+        assertNotNull("Should have created a non-null filter", result1);
         
         assertTrue("Should have applied approximately " + expectedNGramCount + " n-grams to the bloom filter", (result2 > expectedNGramCount - 20)
                         && (result2 < idealFilterSize));
@@ -556,7 +557,7 @@ public class NGramTokenizationStrategyTest {
         
         assertEquals("Should have applied " + timeoutAfterNGramCount + " n-grams to the bloom filter", timeoutAfterNGramCount, result2);
         
-        assertTrue("Should have caught a timeout exception", null != result4);
+        assertNotNull("Should have caught a timeout exception", result4);
     }
     
     private class SimulatedProcessingDelayStrategy extends AbstractNGramTokenizationStrategy {

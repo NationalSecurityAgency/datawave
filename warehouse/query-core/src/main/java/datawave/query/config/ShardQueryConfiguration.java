@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.Constants;
@@ -177,9 +178,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Multimap<String,Type<?>> dataTypes = HashMultimap.create();
     private Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
     private Multimap<String,Type<?>> normalizedFieldsDatatypes = HashMultimap.create();
+    private Map<String,DiscreteIndexType<?>> fieldToDiscreteIndexTypes = new HashMap<>();
     private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
-    private Set<String> fixedLengthFields = new HashSet<>();
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
+    private Map<String,String> compositeFieldSeparators = new HashMap<>();
+    
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
     private Set<String> queryTermFrequencyFields = Collections.emptySet();
@@ -371,9 +374,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setDataTypes(null == other.getDataTypes() ? null : HashMultimap.create(other.getDataTypes()));
         this.setQueryFieldsDatatypes(null == other.getQueryFieldsDatatypes() ? null : HashMultimap.create(other.getQueryFieldsDatatypes()));
         this.setNormalizedFieldsDatatypes(null == other.getNormalizedFieldsDatatypes() ? null : HashMultimap.create(other.getNormalizedFieldsDatatypes()));
+        this.setFieldToDiscreteIndexTypes(null == other.getFieldToDiscreteIndexTypes() ? null : Maps.newHashMap(other.getFieldToDiscreteIndexTypes()));
         this.setCompositeToFieldMap(null == other.getCompositeToFieldMap() ? null : ArrayListMultimap.create(other.getCompositeToFieldMap()));
-        this.setFixedLengthFields(null == other.getFixedLengthFields() ? null : Sets.newHashSet(other.getFixedLengthFields()));
         this.setCompositeTransitionDates(null == other.getCompositeTransitionDates() ? null : Maps.newHashMap(other.getCompositeTransitionDates()));
+        this.setCompositeFieldSeparators(null == other.getCompositeFieldSeparators() ? null : Maps.newHashMap(other.getCompositeFieldSeparators()));
         this.setSortedUIDs(other.isSortedUIDs());
         this.setQueryTermFrequencyFields(null == other.getQueryTermFrequencyFields() ? null : Sets.newHashSet(other.getQueryTermFrequencyFields()));
         this.setTermFrequenciesRequired(other.isTermFrequenciesRequired());
@@ -1253,6 +1257,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.queryFieldsDatatypes = queryFieldsDatatypes;
     }
     
+    public Map<String,DiscreteIndexType<?>> getFieldToDiscreteIndexTypes() {
+        return fieldToDiscreteIndexTypes;
+    }
+    
+    public void setFieldToDiscreteIndexTypes(Map<String,DiscreteIndexType<?>> fieldToDiscreteIndexTypes) {
+        this.fieldToDiscreteIndexTypes = fieldToDiscreteIndexTypes;
+    }
+    
     public Multimap<String,String> getCompositeToFieldMap() {
         return compositeToFieldMap;
     }
@@ -1261,20 +1273,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.compositeToFieldMap = compositeToFieldMap;
     }
     
-    public Set<String> getFixedLengthFields() {
-        return fixedLengthFields;
-    }
-    
-    public void setFixedLengthFields(Set<String> fixedLengthFields) {
-        this.fixedLengthFields = fixedLengthFields;
-    }
-    
     public Map<String,Date> getCompositeTransitionDates() {
         return compositeTransitionDates;
     }
     
     public void setCompositeTransitionDates(Map<String,Date> compositeTransitionDates) {
         this.compositeTransitionDates = compositeTransitionDates;
+    }
+    
+    public Map<String,String> getCompositeFieldSeparators() {
+        return compositeFieldSeparators;
+    }
+    
+    public void setCompositeFieldSeparators(Map<String,String> compositeFieldSeparators) {
+        this.compositeFieldSeparators = compositeFieldSeparators;
     }
     
     public Multimap<String,Type<?>> getNormalizedFieldsDatatypes() {

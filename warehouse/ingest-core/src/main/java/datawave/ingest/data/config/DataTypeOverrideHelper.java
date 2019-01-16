@@ -30,7 +30,7 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
         String FILTER_PROP = "RecordReader.filters";
     }
     
-    private List<? extends RecordFilter> filters = null;
+    protected List<? extends RecordFilter> filters = null;
     
     protected final Map<String,String> eventDataTypeMap = new HashMap<>();
     protected String eventDataTypeFieldName = null;
@@ -67,11 +67,11 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
      *
      * If there are multiple values in <code>eventDataTypeFieldName</code> and more than one value in this field maps to a data type in the
      * <code>eventDataTypeMap</code> the behavior of this method is that the last value in the field will cause the datatype to be set.
-     * 
+     *
      * Otherwise, no action is performed.
-     * 
+     *
      * This variant is used when processing CSV data.
-     * 
+     *
      * @param event
      *            the event on which to set the datatype
      * @param parameters
@@ -95,9 +95,9 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
      * Update the data of the specified event based on the field name and value provided. If the field name does not match <code>eventDataTypeFieldName</code>
      * no action will be performed. Otherwise if this field name matches <code>eventDataTypeFieldName</code>, we will look up the replacement data type using
      * the field value and {@link #getType(String)}.
-     * 
+     *
      * This variant is used when processing CSV data.
-     * 
+     *
      * @param event
      *            the event on which to set the datatype
      * @param fieldName
@@ -115,7 +115,7 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
      * Obtain the new type from the eventDataType map based on the field value. This new type is a type in 'output name' only and will reference the internal
      * type, helper, reader, default data type handlers filter priority and default data type filters of the original type (as returned by {@link #getType()};)
      * associated with this helper. If no corresponding type for the specified value is present in the <code>eventDataTypeMap</code> return the original type.
-     * 
+     *
      * @param fieldValue
      * @return the type.
      */

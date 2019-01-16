@@ -96,7 +96,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
                     
                 }
                 
-                locations.add(new Tuple2<String,Set<String>>(location, fileLocations));
+                locations.add(new Tuple2<>(location, fileLocations));
                 
                 // if this row is equal to or past our stop row, then terminate
                 if (endRow.compareTo(stopRow) >= 0) {

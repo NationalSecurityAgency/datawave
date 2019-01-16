@@ -2,8 +2,6 @@ package datawave.data.type;
 
 import datawave.data.normalizer.Normalizer;
 
-import java.util.Date;
-
 public class RawDateType extends BaseType<String> {
     
     private static final long serialVersionUID = 936566410691643144L;
