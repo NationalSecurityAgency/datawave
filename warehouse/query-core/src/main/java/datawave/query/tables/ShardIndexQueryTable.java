@@ -111,7 +111,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         this.queryModel = other.getQueryModel();
         this.modelName = other.getModelName();
         this.modelTableName = other.getModelTableName();
-        this.metadataHelper = other.getMetadataHelper();
+        this.metadataHelperFactory = other.getMetadataHelperFactory();
         this.setRealmSuffixExclusionPatterns(other.getRealmSuffixExclusionPatterns());
     }
     
