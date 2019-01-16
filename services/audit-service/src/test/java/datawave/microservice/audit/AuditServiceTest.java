@@ -2,6 +2,7 @@ package datawave.microservice.audit;
 
 //import datawave.common.test.integration.IntegrationTest;
 import datawave.microservice.audit.common.AuditMessage;
+import datawave.microservice.audit.config.AuditProperties;
 import datawave.microservice.audit.config.AuditServiceConfig;
 import datawave.microservice.audit.health.HealthChecker;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
@@ -26,6 +27,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -64,6 +66,9 @@ public class AuditServiceTest {
     
     @Autowired
     private AuditServiceConfig.AuditSourceBinding auditSourceBinding;
+    
+    @Autowired
+    private AuditProperties auditProperties;
     
     private SubjectIssuerDNPair DN;
     private String userDN = "userDn";
@@ -179,8 +184,16 @@ public class AuditServiceTest {
         assertEquals(0, received.size());
     }
     
+    @DirtiesContext
     @Test(expected = HttpServerErrorException.class)
     public void testUnhealthy() {
+        
+        AuditProperties.Retry retry = new AuditProperties.Retry();
+        retry.setMaxAttempts(1);
+        retry.setBackoffIntervalMillis(0);
+        retry.setFailTimeoutMillis(0);
+        auditProperties.setRetry(retry);
+        
         isHealthy = false;
         Collection<String> roles = Collections.singleton("AuthorizedUser");
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
@@ -192,6 +205,65 @@ public class AuditServiceTest {
                         .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
         
         jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+    }
+    
+    @DirtiesContext
+    @Test(expected = HttpServerErrorException.class)
+    public void testRetryMaxAttempts() {
+        
+        int maxAttempts = 2;
+        long backoffIntervalMillis = 50L;
+        
+        AuditProperties.Retry retry = new AuditProperties.Retry();
+        retry.setMaxAttempts(maxAttempts);
+        retry.setBackoffIntervalMillis(backoffIntervalMillis);
+        retry.setFailTimeoutMillis(Long.MAX_VALUE);
+        auditProperties.setRetry(retry);
+        
+        isHealthy = false;
+        Collection<String> roles = Collections.singleton("AuthorizedUser");
+        DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
+        ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
+        
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
+                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
+                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
+                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        
+        long startTimeMillis = System.currentTimeMillis();
+        jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        long stopTimeMillis = System.currentTimeMillis();
+        
+        assertTrue((stopTimeMillis - startTimeMillis) >= (maxAttempts * backoffIntervalMillis));
+    }
+    
+    @DirtiesContext
+    @Test(expected = HttpServerErrorException.class)
+    public void testRetryFailTimeout() {
+        
+        long failTimeoutMillis = 50L;
+        
+        AuditProperties.Retry retry = new AuditProperties.Retry();
+        retry.setMaxAttempts(Integer.MAX_VALUE);
+        retry.setBackoffIntervalMillis(0L);
+        retry.setFailTimeoutMillis(failTimeoutMillis);
+        auditProperties.setRetry(retry);
+        
+        isHealthy = false;
+        Collection<String> roles = Collections.singleton("AuthorizedUser");
+        DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
+        ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
+        
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/audit/v1/audit")
+                        .queryParam(AuditParameters.USER_DN, userDN).queryParam(AuditParameters.QUERY_STRING, query)
+                        .queryParam(AuditParameters.QUERY_AUTHORIZATIONS, authorizations).queryParam(AuditParameters.QUERY_AUDIT_TYPE, auditType)
+                        .queryParam(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, "ALL").build();
+        
+        long startTimeMillis = System.currentTimeMillis();
+        jwtRestTemplate.exchange(authUser, HttpMethod.POST, uri, String.class);
+        long stopTimeMillis = System.currentTimeMillis();
+        
+        assertTrue((stopTimeMillis - startTimeMillis) >= failTimeoutMillis);
     }
     
     @Test
