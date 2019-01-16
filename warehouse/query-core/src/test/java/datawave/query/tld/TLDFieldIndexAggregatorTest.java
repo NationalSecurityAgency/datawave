@@ -72,6 +72,7 @@ public class TLDFieldIndexAggregatorTest {
         treeMap.put(fi6, new Value());
         treeMap.put(fi7, new Value());
         
+        EasyMock.expect(mockFilter.keep(EasyMock.isA(Key.class))).andReturn(false);
         Capture<Map.Entry> captureFoo = Capture.newInstance();
         EasyMock.expect(mockFilter.apply(EasyMock.capture(captureFoo))).andAnswer(new IAnswer<Boolean>() {
             @Override
