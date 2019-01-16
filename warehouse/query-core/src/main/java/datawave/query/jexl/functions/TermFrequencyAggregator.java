@@ -94,7 +94,7 @@ public class TermFrequencyAggregator extends IdentityAggregator {
      */
     @Override
     protected boolean toKeep(Key topKey, Tuple2<String,String> fieldNameValue) {
-        return fieldsToKeep == null || filter == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first()));
+        return fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first()));
     }
     
     /**
@@ -107,6 +107,6 @@ public class TermFrequencyAggregator extends IdentityAggregator {
      */
     @Override
     protected boolean addToDoc(Key topKey, Tuple2<String,String> fieldNameValue, boolean toKeep) {
-        return toKeep && (filter == null || filter.apply(Maps.immutableEntry(topKey, StringUtils.EMPTY)));
+        return filter == null || filter.apply(Maps.immutableEntry(topKey, StringUtils.EMPTY));
     }
 }

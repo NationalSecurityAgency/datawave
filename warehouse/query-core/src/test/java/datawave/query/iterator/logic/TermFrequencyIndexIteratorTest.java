@@ -48,7 +48,9 @@ public class TermFrequencyIndexIteratorTest {
         baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.1", "FOO", "buz"), new Value()));
         baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.2", "FOO", "alf"), new Value()));
         baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.2", "FOO", "arm"), new Value()));
-        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.2", "FOOT", "arm"), new Value()));
+        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.2", "FOOT", "armfoot"), new Value()));
+        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.3", "AFOO", "alfa"), new Value()));
+        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.3", "ZFOO", "alfz"), new Value()));
         
         source = new SortedListKeyValueIterator(baseSource);
         
@@ -71,7 +73,7 @@ public class TermFrequencyIndexIteratorTest {
         TermFrequencyAggregator aggregator = new TermFrequencyAggregator(null, null);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         
-        // jump to the first do
+        // jump to the first doc
         iterator.seek(null, null, true);
         
         Assert.assertFalse(iterator.hasTop());
@@ -83,7 +85,7 @@ public class TermFrequencyIndexIteratorTest {
         TermFrequencyAggregator aggregator = new TermFrequencyAggregator(null, null);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         
-        // jump to the first do
+        // jump to the first doc
         iterator.seek(null, null, true);
         
         Assert.assertTrue(iterator.hasTop());
@@ -102,7 +104,7 @@ public class TermFrequencyIndexIteratorTest {
         TermFrequencyAggregator aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         
-        // jump to the first do
+        // jump to the first doc
         iterator.seek(null, null, true);
         
         Assert.assertTrue(iterator.hasTop());
@@ -120,7 +122,7 @@ public class TermFrequencyIndexIteratorTest {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "bar"), false);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         
-        // jump to the first do
+        // jump to the first doc
         iterator.seek(null, null, true);
         
         Assert.assertTrue(iterator.hasTop());
@@ -139,7 +141,7 @@ public class TermFrequencyIndexIteratorTest {
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         
-        // jump to the first do
+        // jump to the first doc
         iterator.seek(null, null, true);
         
         Assert.assertTrue(iterator.hasTop());
@@ -158,7 +160,7 @@ public class TermFrequencyIndexIteratorTest {
         
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         
-        // jump to the first do
+        // jump to the first doc
         iterator.seek(null, null, true);
         
         Assert.assertTrue(iterator.hasTop());
@@ -209,7 +211,7 @@ public class TermFrequencyIndexIteratorTest {
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         
-        // jump to the first do
+        // jump to the first doc
         iterator.seek(null, null, true);
         
         Assert.assertTrue(iterator.hasTop());
@@ -233,13 +235,26 @@ public class TermFrequencyIndexIteratorTest {
     }
     
     @Test
+    public void testEndingFieldMismatch() throws IOException, ParseException {
+        Range r = new Range(getFiKey("row", "type1", "123.345.456.3", "FOO", "alf"), true, getFiKey("row", "type1", "123.345.456.3",
+                        Constants.MAX_UNICODE_STRING, "buz"), false);
+        filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata);
+        aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        
+        // jump to the first doc
+        iterator.seek(null, null, true);
+        Assert.assertFalse(iterator.hasTop());
+    }
+    
+    @Test
     public void testScanFullRangeExclusive() throws IOException, ParseException {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), false);
         filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata);
         aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         
-        // jump to the first do
+        // jump to the first doc
         iterator.seek(null, null, true);
         
         Assert.assertTrue(iterator.hasTop());
@@ -286,7 +301,7 @@ public class TermFrequencyIndexIteratorTest {
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         
-        // jump to the first do
+        // jump to the first doc
         iterator.seek(null, null, true);
         
         Assert.assertTrue(iterator.hasTop());
@@ -396,14 +411,13 @@ public class TermFrequencyIndexIteratorTest {
             }
             
             int newIndex = 0;
-            while (hasTop() && range.isStartKeyInclusive() ? sourceList.get(newIndex).getKey().compareTo(range.getStartKey()) < 0 : sourceList.get(newIndex)
-                            .getKey().compareTo(range.getStartKey()) <= 0
-                            && !columnFamilies.contains(sourceList.get(newIndex).getKey().getColumnFamilyData())) {
+            while (sourceList.size() > newIndex && range.isStartKeyInclusive() ? sourceList.get(newIndex).getKey().compareTo(range.getStartKey()) < 0
+                            : sourceList.get(newIndex).getKey().compareTo(range.getStartKey()) <= 0
+                                            && !columnFamilies.contains(sourceList.get(newIndex).getKey().getColumnFamilyData())) {
                 newIndex++;
             }
             
             currentIndex = newIndex;
-            
         }
     }
 }

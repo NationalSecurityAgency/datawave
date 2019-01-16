@@ -50,6 +50,10 @@ public class TermFrequencyAggregatorTest {
         keepFields.add("FIELD2");
         
         EventDataQueryFilter filter = new EventDataQueryFieldFilter();
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("FIELD1");
+        ((EventDataQueryFieldFilter) filter).initializeBlacklist(blacklist);
+        
         aggregator = new TermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
         
@@ -114,7 +118,7 @@ public class TermFrequencyAggregatorTest {
         itr.seek(new Range(), null, true);
         
         Set<String> keepFields = new HashSet<>();
-        keepFields.add("FIELD1");
+        keepFields.add("FIELD2");
         
         EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD2 == 'VALUE1'"));
         aggregator = new TermFrequencyAggregator(keepFields, filter, -1);

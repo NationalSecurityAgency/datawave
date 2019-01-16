@@ -39,7 +39,7 @@ public class TLDTermFrequencyAggregatorTest {
     }
     
     @Test
-    public void apply_buildDocNotKeep() throws IOException {
+    public void apply_buildDocNotKeep() throws IOException, ParseException {
         Document doc = new Document();
         AttributeFactory attributeFactory = new AttributeFactory(new TypeMetadata());
         
@@ -64,7 +64,7 @@ public class TLDTermFrequencyAggregatorTest {
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD2");
         
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter();
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD2 == 'abc'"));
         aggregator = new TLDTermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
         

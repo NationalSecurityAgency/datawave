@@ -185,7 +185,7 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
             
             for (int i = 0; i < 256 && source.hasTop() && key.getFieldName().compareTo(field) < 0; ++i) {
                 source.next();
-                key = new DatawaveKey(top);
+                key = new DatawaveKey(source.getTopKey());
                 if (log.isTraceEnabled()) {
                     log.trace("Have key " + key + " < " + field);
                 }
@@ -198,7 +198,7 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
                 }
                 
                 StringBuilder builder = new StringBuilder(key.getDataType()).append(Constants.NULL).append(key.getUid()).append(Constants.NULL)
-                                .append(key.getFieldValue()).append(field);
+                                .append(key.getFieldValue()).append(Constants.NULL).append(field);
                 Key nextKey = new Key(row, cf, new Text(builder.toString()));
                 Range newRange = new Range(nextKey, true, scanRange.getEndKey(), scanRange.isEndKeyInclusive());
                 source.seek(newRange, seekColumnFamilies, true);

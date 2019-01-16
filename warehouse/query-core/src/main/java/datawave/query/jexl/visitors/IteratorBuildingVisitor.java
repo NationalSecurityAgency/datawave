@@ -1171,14 +1171,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     protected EventDataQueryFilter createWrappedTermFrequencyFilter(JexlNode node, EventDataQueryFilter existing) {
-        EventDataQueryFilter expressoinFilter = new EventDataQueryExpressionFilter(node, typeMetadata);
+        EventDataQueryFilter expressionFilter = new EventDataQueryExpressionFilter(node, typeMetadata);
         
         ChainableEventDataQueryFilter chainableFilter = new ChainableEventDataQueryFilter();
         if (existing != null) {
             chainableFilter.addFilter(existing);
         }
         
-        chainableFilter.addFilter(expressoinFilter);
+        chainableFilter.addFilter(expressionFilter);
         
         return chainableFilter;
     }
