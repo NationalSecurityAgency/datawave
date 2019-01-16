@@ -117,9 +117,9 @@ public class AuditController {
             
             boolean success = messageChannel.send(MessageBuilder.withPayload(AuditMessage.fromParams(parameters)).setCorrelationId(auditId).build());
             
-            if (success && auditProperties.isConfirmAckEnabled()) {
+            if (auditProperties.isConfirmAckEnabled()) {
                 try {
-                    success = latch.await(auditProperties.getConfirmAckTimeoutMillis(), TimeUnit.MILLISECONDS);
+                    success = success && latch.await(auditProperties.getConfirmAckTimeoutMillis(), TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     success = false;
                 } finally {
@@ -161,19 +161,18 @@ public class AuditController {
         AuditProperties.Retry retry = auditProperties.getRetry();
         
         do {
-            success = sendMessage(restAuditParams);
-            attempts++;
-
-            if (!success) {
-                if (log.isDebugEnabled())
-                    log.debug("[" + restAuditParams.getAuditId() + "] Audit attempt " + attempts + " of " + retry.getMaxAttempts() + " failed");
-                
+            if (attempts++ > 0) {
                 try {
                     Thread.sleep(retry.getBackoffIntervalMillis());
                 } catch (InterruptedException e) {
                     // Ignore -- we'll just end up retrying a little too fast
                 }
             }
+            
+            if (log.isDebugEnabled())
+                log.debug("[" + restAuditParams.getAuditId() + "] Audit attempt " + attempts + " of " + retry.getMaxAttempts());
+            
+            success = sendMessage(restAuditParams);
             currentTime = System.currentTimeMillis();
         } while (!success && (currentTime - auditStartTime) < retry.getFailTimeoutMillis() && attempts < retry.getMaxAttempts());
         
