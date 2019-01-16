@@ -34,13 +34,14 @@ public class AuditProperties {
     }
     
     public void setRetry(Retry retry) {
-        this.retry = retry;
+        if (retry != null)
+            this.retry = retry;
     }
     
     public static class Retry {
-        private int maxAttempts = Integer.MAX_VALUE;
+        private int maxAttempts = 10;
         private long failTimeoutMillis = TimeUnit.MINUTES.toMillis(5);
-        private long backoffIntervalMillis = 5000L;
+        private long backoffIntervalMillis = TimeUnit.SECONDS.toMillis(5);
         
         public int getMaxAttempts() {
             return maxAttempts;

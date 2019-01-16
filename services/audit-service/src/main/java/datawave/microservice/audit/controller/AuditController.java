@@ -2,6 +2,7 @@ package datawave.microservice.audit.controller;
 
 import datawave.microservice.audit.common.AuditMessage;
 import datawave.microservice.audit.config.AuditProperties;
+import datawave.microservice.audit.config.AuditProperties.Retry;
 import datawave.microservice.audit.config.AuditServiceConfig;
 import datawave.microservice.audit.health.HealthChecker;
 import datawave.webservice.common.audit.AuditParameters;
@@ -158,7 +159,7 @@ public class AuditController {
         long currentTime;
         int attempts = 0;
         
-        AuditProperties.Retry retry = auditProperties.getRetry();
+        Retry retry = auditProperties.getRetry();
         
         do {
             if (attempts++ > 0) {
