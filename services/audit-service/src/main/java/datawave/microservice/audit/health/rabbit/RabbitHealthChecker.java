@@ -3,7 +3,7 @@ package datawave.microservice.audit.health.rabbit;
 import com.rabbitmq.http.client.Client;
 import com.rabbitmq.http.client.domain.NodeInfo;
 import com.rabbitmq.http.client.domain.QueueInfo;
-import datawave.microservice.audit.controller.AuditController;
+import datawave.microservice.audit.AuditController;
 import datawave.microservice.audit.health.HealthChecker;
 import datawave.microservice.audit.health.rabbit.config.RabbitHealthProperties;
 import datawave.microservice.audit.health.rabbit.config.RabbitHealthProperties.ClusterProperties;
