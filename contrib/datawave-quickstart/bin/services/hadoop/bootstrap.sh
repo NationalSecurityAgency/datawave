@@ -3,7 +3,7 @@
 DW_HADOOP_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_HADOOP_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://archive-primary.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.9.1.tar.gz}"
+DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.9.3.tar.gz}"
 DW_HADOOP_DIST="$( downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" && echo "${tarball}" )"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
