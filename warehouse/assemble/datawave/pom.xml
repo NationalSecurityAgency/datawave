@@ -574,6 +574,8 @@
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                                             <include>gov.nsa.datawave.microservice:metadata-utils</include>
                                             <include>gov.nsa.datawave.microservice:type-utils</include>
+                                            <include>gov.nsa.datawave.microservice:base-rest-responses</include>
+                                            <include>gov.nsa.datawave.microservice:common-utils</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
@@ -616,6 +618,8 @@
                                             <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                                             <include>gov.nsa.datawave.microservice:metadata-utils</include>
                                             <include>gov.nsa.datawave.microservice:type-utils</include>
+                                            <include>gov.nsa.datawave.microservice:base-rest-responses</include>
+                                            <include>gov.nsa.datawave.microservice:common-utils</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>com.google.code.gson:gson</include>
