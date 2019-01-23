@@ -95,7 +95,6 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     private List<String> realmSuffixExclusionPatterns = null;
     protected String modelName = "DATAWAVE";
     protected String modelTableName = "DatawaveMetadata";
-    protected MetadataHelper metadataHelper;
     protected MetadataHelperFactory metadataHelperFactory;
     protected ScannerFactory scannerFactory;
     protected QueryModel queryModel;
@@ -142,23 +141,15 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     }
     
     /**
-     * Initialize a metadata helper if we haven't already
+     * Create and initialize a metadata helper
      * 
      * @param connector
      * @param metadataTableName
      * @param auths
+     * @return a new initialized MetadataHelper
      */
-    protected void initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
-        this.metadataHelper = this.metadataHelperFactory.createMetadataHelper();
-        this.metadataHelper.initialize(connector, metadataTableName, auths);
-    }
-    
-    public MetadataHelper getMetadataHelper() {
-        return metadataHelper;
-    }
-    
-    public void setMetadataHelper(MetadataHelper metadataHelper) {
-        this.metadataHelper = metadataHelper;
+    protected MetadataHelper initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
+        return this.metadataHelperFactory.createMetadataHelper().initialize(connector, metadataTableName, auths);
     }
     
     public MetadataHelperFactory getMetadataHelperFactory() {
@@ -189,7 +180,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         ShardIndexQueryConfiguration config = new ShardIndexQueryConfiguration(this, settings);
         this.scannerFactory = new ScannerFactory(connection);
-        initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
+        MetadataHelper metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -264,7 +255,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         ASTJexlScript script;
         try {
             Set<String> expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
-            script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, this.metadataHelper, origScript, expansionFields);
+            script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, metadataHelper, origScript, expansionFields);
         } catch (CannotExpandUnfieldedTermFatalException e) {
             Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.create());
             config.setNormalizedTerms(emptyMap);
@@ -297,7 +288,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             }
         }
         
-        script = ExpandMultiNormalizedTerms.expandTerms(config, this.metadataHelper, script);
+        script = ExpandMultiNormalizedTerms.expandTerms(config, metadataHelper, script);
         
         Multimap<String,String> literals = LiteralNodeVisitor.getLiterals(script);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);
