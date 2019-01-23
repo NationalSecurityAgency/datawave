@@ -289,6 +289,11 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         runTestQuery(expected, queryStr, startDate, endDate, Collections.emptyMap());
     }
     
+    protected void runTestQuery(Collection<String> expected, String queryStr) throws Exception {
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        runTestQuery(expected, queryStr, startEndDate[0], startEndDate[1], Collections.emptyMap());
+    }
+    
     /**
      * Equivalent to {@link #runTestQuery(Collection, String, Date, Date, Map, List)}, with an empty list for the checkers.
      *
@@ -338,6 +343,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         
         GenericQueryConfiguration config = this.logic.initialize(connector, q, this.authSet);
         this.logic.setupQuery(config);
+        log.debug("Plan: " + config.getQueryString());
         testHarness.assertLogicResults(this.logic, expected, checkers);
     }
     

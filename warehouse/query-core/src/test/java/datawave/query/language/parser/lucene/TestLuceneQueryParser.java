@@ -202,6 +202,21 @@ public class TestLuceneQueryParser {
                         .getContents());
         Assert.assertEquals("[AND,field:selector][posFilter: filter(true, AND, field, testbade\\.scape)]",
                         luceneParser.parse("field:selector AND #include(field, testbade\\.scape)").getContents());
+        Assert.assertEquals("[AND,field:selector][posFilter: filter(true, AND, field, testbade\\.scape)]",
+                        luceneParser.parse("field:selector AND #text(field, testbade\\.scape)").getContents());
+    }
+    
+    @Test
+    public void testUnfieldedFunctions() throws ParseException {
+        LuceneQueryParser luceneParser = new LuceneQueryParser();
+        
+        // parameters to functions do not have to be escaped
+        Assert.assertEquals("[AND,field:selector][posFilter: filter(true, AND, _ANYFIELD_, testbade\\.scape)]",
+                        luceneParser.parse("field:selector AND #include(testbade\\.scape)").getContents());
+        Assert.assertEquals("[AND,field:selector][posFilter: filter(false, AND, _ANYFIELD_, testbade\\.scape)]",
+                        luceneParser.parse("field:selector AND #exclude(testbade\\.scape)").getContents());
+        Assert.assertEquals("[AND,field:selector][posFilter: filter(true, AND, _ANYFIELD_, testbade\\.scape)]",
+                        luceneParser.parse("field:selector AND #text(testbade\\.scape)").getContents());
     }
     
     @Test(expected = ParseException.class)
@@ -234,11 +249,12 @@ public class TestLuceneQueryParser {
         luceneParser.parse("#isnull(field) #include(field, test[abc]*.*)");
     }
     
-    @Test(expected = ParseException.class)
-    public void testFunctionWrongStructure() throws ParseException {
-        LuceneQueryParser luceneParser = new LuceneQueryParser();
-        luceneParser.parse("field:selector OR #include(field, test[abc]*.*)");
-    }
+    /**
+     * The include is now allowed within an or as it could be pushed down or handled by a full table scan. This is no longer an error.
+     * 
+     * @Test(expected = ParseException.class) public void testFunctionWrongStructure() throws ParseException { LuceneQueryParser luceneParser = new
+     *                LuceneQueryParser(); luceneParser.parse("field:selector OR #include(field, test[abc]*.*)"); }
+     */
     
     @Test
     public void testFunctionEscaping1() throws ParseException {

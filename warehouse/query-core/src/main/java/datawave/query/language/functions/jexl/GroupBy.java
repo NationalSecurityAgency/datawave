@@ -15,7 +15,7 @@ public class GroupBy extends JexlQueryFunction {
     }
     
     /**
-     * query options are pairs of key/value. Ensure that the number of args is even
+     * query options is a list of fields. Cannot be the empty list.
      * 
      * @throws IllegalArgumentException
      */
