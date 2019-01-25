@@ -76,6 +76,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     
     private Boolean separateCountsByColVis = false;
     private Boolean showReferenceCount = false;
+    private MetadataHelper metadataHelper;
     
     public DiscoveryLogic() {
         super();
@@ -91,7 +92,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         this.scannerFactory = new ScannerFactory(connection);
         
-        initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
+        this.metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
