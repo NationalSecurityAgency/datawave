@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -697,28 +698,52 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     }
     
     /**
-     * Parse the field from an event key, it should always be the value to to the first null in the cq or the first '.' whichever comes first. A '.' would
-     * indicate grouping notation where a null would indicate normal field notation
+     * Parse the field from a key. The field will always be stripped of grouping notation since that is how they have been parsed from the original query
      * 
      * @param current
      * @return
      */
     protected String getCurrentField(Key current) {
-        final byte[] cq = current.getColumnQualifierData().getBackingArray();
-        final int length = cq.length;
-        int stopIndex = -1;
-        for (int i = 0; i < length - 1; i++) {
-            if (cq[i] == 0x00) {
-                stopIndex = i;
-                break;
-            } else if (cq[i] == 0x2E) {
-                // test for '.' used in grouping notation
-                stopIndex = i;
-                break;
-            }
-        }
+        ByteSequence cf = current.getColumnFamilyData();
         
-        return new String(cq, 0, stopIndex);
+        if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0) {
+            ArrayList<Integer> nullIndexes = TLD.instancesOf(0, cf, 1);
+            final int startFn = nullIndexes.get(0) + 1;
+            final int stopFn = cf.length();
+            
+            byte[] fn = new byte[stopFn - startFn];
+            
+            System.arraycopy(cf.getBackingArray(), startFn + cf.offset(), fn, 0, stopFn - startFn);
+            
+            return JexlASTHelper.deconstructIdentifier(new String(fn));
+        } else if (WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 0) {
+            ByteSequence cq = current.getColumnQualifierData();
+            ArrayList<Integer> nullIndexes = TLD.lastInstancesOf(0, cq, 1);
+            final int startFn = nullIndexes.get(0) + 1;
+            final int stopFn = cq.length();
+            
+            byte[] fn = new byte[stopFn - startFn];
+            
+            System.arraycopy(cq.getBackingArray(), startFn + cq.offset(), fn, 0, stopFn - startFn);
+            
+            return JexlASTHelper.deconstructIdentifier(new String(fn));
+        } else {
+            final byte[] cq = current.getColumnQualifierData().getBackingArray();
+            final int length = cq.length;
+            int stopIndex = -1;
+            for (int i = 0; i < length - 1; i++) {
+                if (cq[i] == 0x00) {
+                    stopIndex = i;
+                    break;
+                } else if (cq[i] == 0x2E) {
+                    // test for '.' used in grouping notation
+                    stopIndex = i;
+                    break;
+                }
+            }
+            
+            return new String(cq, 0, stopIndex);
+        }
     }
     
     /**
