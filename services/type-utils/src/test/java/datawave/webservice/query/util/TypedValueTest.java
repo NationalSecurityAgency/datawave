@@ -31,6 +31,7 @@ public class TypedValueTest {
     
     @BeforeClass
     public static void setUpClass() throws Exception {
+        System.setProperty("user.timezone", "GMT");
         BufferedReader rdr;
         rdr = new BufferedReader(new InputStreamReader(TypedValueTest.class.getResourceAsStream("TypedValueExpectedUnencoded.xml")));
         EXPECTED_FORMAT = rdr.readLine();

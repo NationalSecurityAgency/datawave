@@ -24,12 +24,10 @@
         <module>..</module>
         <module>../service-parent</module>
         <module>../common-utils</module>
-        <!-- Temporarily removed until the version 1.1 is released and this module is removed from the parent pom. -->
-        <!--<module>../accumulo-utils</module>-->
+        <module>../accumulo-utils</module>
         <module>../base-rest-responses</module>
-        <!-- Temporarily removed until the first version is released and this module is removed from the parent pom. -->
-        <!--<module>../type-utils</module>-->
-        <!--<module>../metadata-utils</module>-->
+        <module>../type-utils</module>
+        <module>../metadata-utils</module>
         <module>../metrics-reporter</module>
         <module>../authorization-api</module>
         <module>../audit-api</module>
@@ -41,44 +39,5 @@
         <module>../authorization-service</module>
         <module>../audit-service</module>
     </modules>
-
-    <profiles>
-        <!-- TODO: Remove this when the first version of metadata-utils is released -->
-        <profile>
-            <id>type-utils</id>
-            <activation>
-                <property>
-                    <name>!services</name>
-                </property>
-            </activation>
-            <modules>
-                <module>../type-utils</module>
-            </modules>
-        </profile>
-        <!-- TODO: Remove this when the first version of metadata-utils is released -->
-        <profile>
-            <id>metadata-utils</id>
-            <activation>
-                <property>
-                    <name>!services</name>
-                </property>
-            </activation>
-            <modules>
-                <module>../metadata-utils</module>
-            </modules>
-        </profile>
-        <!-- TODO: Remove this when the next version of accumulo-utils is released -->
-        <profile>
-            <id>accumulo-utils</id>
-            <activation>
-                <property>
-                    <name>!services</name>
-                </property>
-            </activation>
-            <modules>
-                <module>../accumulo-utils</module>
-            </modules>
-        </profile>
-    </profiles>
 
 </project>
