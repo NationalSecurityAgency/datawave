@@ -5,7 +5,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import datawave.data.hash.UID;
 import datawave.data.normalizer.DateNormalizer;
-import datawave.edge.protobuf.EdgeData;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -26,6 +25,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
 import datawave.ingest.time.Now;
+import datawave.metadata.protobuf.EdgeMetadata;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -312,7 +312,7 @@ public class ProtubufEdgeDeleteModeTest {
             }
             
             // Track metadata for this event
-            Map<Key,Set<EdgeData.MetadataValue.Metadata>> eventMetadataRegistry = new HashMap<>();
+            Map<Key,Set<EdgeMetadata.MetadataValue.Metadata>> eventMetadataRegistry = new HashMap<>();
             
             activityLog = new HashSet<>();
             durationLog = new HashSet<>();

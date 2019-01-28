@@ -3,8 +3,9 @@ package datawave.webservice.edgedictionary;
 import com.google.common.collect.SetMultimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.configuration.spring.SpringBean;
-import datawave.edge.protobuf.EdgeData.MetadataValue;
 import datawave.edge.util.EdgeKey;
+import datawave.metadata.protobuf.EdgeMetadata;
+import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.util.StringUtils;
@@ -96,7 +97,7 @@ public class DefaultDatawaveEdgeDictionaryImpl implements DatawaveEdgeDictionary
             // Parse the Value
             MetadataValue metadataVal;
             try {
-                metadataVal = datawave.edge.protobuf.EdgeData.MetadataValue.parseFrom(value.get());
+                metadataVal = EdgeMetadata.MetadataValue.parseFrom(value.get());
             } catch (InvalidProtocolBufferException e) {
                 log.error("Found invalid Edge Metadata Value bytes.");
                 continue;
