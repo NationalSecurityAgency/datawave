@@ -287,8 +287,7 @@ public class MetadataHelper implements ApplicationContextAware {
         }
         Set<String> minimizedUserAuths = StreamSupport.stream(minimized.spliterator(), false).map(String::new).collect(Collectors.toSet());
         
-        Collection<String> minimizedAllMetadataAuths = StreamSupport.stream(minimizedUserAuths.spliterator(), false).map(String::new)
-                        .collect(Collectors.toSet());
+        Collection<String> minimizedAllMetadataAuths = StreamSupport.stream(allMetadataAuths.spliterator(), false).map(String::new).collect(Collectors.toSet());
         minimizedAllMetadataAuths.retainAll(minimizedUserAuths);
         if (log.isTraceEnabled()) {
             log.trace("minimized to:" + minimizedAllMetadataAuths);
