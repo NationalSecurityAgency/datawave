@@ -84,8 +84,8 @@ public class TextFunctionQueryTest extends AbstractFunctionalQuery {
         // testing that incorrect case misses results
         state2 = "london";
         query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#TEXT(OR, STATE," + state1 + ", STATE, " + state2 + ")";
+        // should return only the Lazio events, and not the London events
         expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + AND_OP + "STATE" + phrase1;
-        // should return the empty set
         runTest(query, expect);
         
         // testing that incorrect case misses results
