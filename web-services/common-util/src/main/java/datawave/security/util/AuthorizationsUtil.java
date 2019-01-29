@@ -89,10 +89,8 @@ public class AuthorizationsUtil {
     public static LinkedHashSet<Authorizations> getDowngradedAuthorizations(String requestedAuths, DatawavePrincipal principal) {
         
         final DatawaveUser primaryUser = principal.getPrimaryUser();
-        final LinkedHashSet<DatawaveUser> proxyChain = new LinkedHashSet<>();
-        principal.getProxiedUsers().stream().filter(u -> u != primaryUser).forEach(proxyChain::add);
         UserAuthFunctions uaf = UserAuthFunctions.getInstance();
-        return uaf.mergeAuthorizations(uaf.getRequestedAuthorizations(requestedAuths, primaryUser), proxyChain);
+        return uaf.mergeAuthorizations(uaf.getRequestedAuthorizations(requestedAuths, primaryUser), principal.getProxiedUsers(), u -> u != primaryUser);
     }
     
     /**

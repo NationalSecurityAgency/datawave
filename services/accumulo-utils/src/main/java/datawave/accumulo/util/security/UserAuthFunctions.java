@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -66,10 +67,14 @@ public interface UserAuthFunctions {
      *            Authorizations associated with the "primary" user, i.e., the initiating user to whom scan results will ultimately be delivered
      * @param proxyChain
      *            Collection of proxies denoting the complete user chain for a given request
+     * @param proxiedUserTest
+     *            A predicate that, given a user from {@code proxyChain}, indicates whether or not that user is the primary user. The predicate should return
+     *            {@code true} if the user is NOT the primary user.
      *
      * @return A set of {@link Authorizations}, one per user entity represented by the user chain including {@code primaryUserAuths}
      */
-    LinkedHashSet<Authorizations> mergeAuthorizations(Authorizations primaryUserAuths, Collection<? extends DatawaveUser> proxyChain);
+    LinkedHashSet<Authorizations> mergeAuthorizations(Authorizations primaryUserAuths, Collection<? extends DatawaveUser> proxyChain,
+                    Predicate<? super DatawaveUser> proxiedUserTest);
     
     /**
      * Default implementation of {@link UserAuthFunctions}
@@ -98,7 +103,8 @@ public interface UserAuthFunctions {
          * Authorizations instance (i.e., {@code new Authorizations()}
          */
         @Override
-        public LinkedHashSet<Authorizations> mergeAuthorizations(Authorizations primaryUserAuths, Collection<? extends DatawaveUser> proxyChain) {
+        public LinkedHashSet<Authorizations> mergeAuthorizations(Authorizations primaryUserAuths, Collection<? extends DatawaveUser> proxyChain,
+                        Predicate<? super DatawaveUser> proxiedUserTest) {
             LinkedHashSet<Authorizations> mergedAuths = new LinkedHashSet<>();
             
             if (null == primaryUserAuths) {
@@ -110,6 +116,7 @@ public interface UserAuthFunctions {
                     // Now simply add the auths from each non-primary user to the merged auths set
                     // @formatter:off
                     proxyChain.stream()
+                            .filter(proxiedUserTest)
                             .map(DatawaveUser::getAuths)
                             .map(UserAuthFunctions::toAuthorizations)
                             .forEach(mergedAuths::add);
