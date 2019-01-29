@@ -11,11 +11,12 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.text.ParseException;
@@ -26,13 +27,11 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-/**
- */
-@Configuration
 @EnableCaching
 @Component("compositeMetadataHelper")
+@Scope("prototype")
 public class CompositeMetadataHelper {
-    private static final Logger log = Logger.getLogger(CompositeMetadataHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(CompositeMetadataHelper.class);
     
     public static final String transitionDateFormat = "yyyyMMdd HHmmss.SSS";
     public static final String NULL_BYTE = "\0";

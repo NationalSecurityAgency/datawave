@@ -75,7 +75,7 @@ public class MapReduceBeanTest extends EasyMockSupport {
     @Before
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "CN=ca, OU=acme"), UserType.USER, Arrays.asList(auths),
                         Collections.singleton("AuthorizedUser"), null, 0L);
         principal = new DatawavePrincipal(Collections.singletonList(user));

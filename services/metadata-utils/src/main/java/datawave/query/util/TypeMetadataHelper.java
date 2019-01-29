@@ -14,11 +14,14 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Lookup;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -31,13 +34,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-/**
- */
-@Configuration
 @EnableCaching
 @Component("typeMetadataHelper")
+@Scope("prototype")
 public class TypeMetadataHelper {
-    private static final Logger log = Logger.getLogger(TypeMetadataHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(TypeMetadataHelper.class);
     
     public static final String NULL_BYTE = "\0";
     
@@ -48,8 +49,14 @@ public class TypeMetadataHelper {
     protected String metadataTableName;
     protected Set<Authorizations> auths;
     protected boolean useTypeSubstitution = false;
-    protected Map<String,String> typeSubstitutions = Maps.newHashMap();
-    protected Set<Authorizations> allMetadataAuths = Collections.emptySet();
+    protected final Map<String,String> typeSubstitutions;
+    protected final Set<Authorizations> allMetadataAuths;
+    
+    public TypeMetadataHelper(@Qualifier("typeSubstitutions") Map<String,String> typeSubstitutions,
+                    @Qualifier("allMetadataAuths") Set<Authorizations> allMetadataAuths) {
+        this.typeSubstitutions = (typeSubstitutions == null) ? Maps.newHashMap() : typeSubstitutions;
+        this.allMetadataAuths = (allMetadataAuths == null) ? Collections.emptySet() : allMetadataAuths;
+    }
     
     public TypeMetadataHelper initialize(Connector connector, String metadataTableName, Set<Authorizations> auths) {
         return this.initialize(connector, connector.getInstance(), metadataTableName, auths, false);
@@ -85,14 +92,6 @@ public class TypeMetadataHelper {
                             + metadataTableName);
         }
         return this;
-    }
-    
-    public void setTypeSubstitutions(Map<String,String> typeSubstitutions) {
-        this.typeSubstitutions = typeSubstitutions;
-    }
-    
-    public void setAllMetadataAuths(Set<Authorizations> allMetadataAuths) {
-        this.allMetadataAuths = allMetadataAuths;
     }
     
     public Set<Authorizations> getAuths() {
@@ -232,9 +231,11 @@ public class TypeMetadataHelper {
         log.debug("evictCaches");
     }
     
+    @Component
     public static class Factory {
+        @Lookup
         public TypeMetadataHelper createTypeMetadataHelper() {
-            return new TypeMetadataHelper();
+            return new TypeMetadataHelper(Maps.newHashMap(), Collections.emptySet());
         }
     }
 }

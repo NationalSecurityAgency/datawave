@@ -27,11 +27,12 @@ import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
@@ -52,17 +53,23 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-/**
- */
-@Configuration
 @EnableCaching
 @Component("allFieldMetadataHelper")
+@Scope("prototype")
 public class AllFieldMetadataHelper {
-    private static final Logger log = Logger.getLogger(AllFieldMetadataHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(AllFieldMetadataHelper.class);
     
     public static final String NULL_BYTE = "\0";
     
     protected static final Function<MetadataEntry,String> toFieldName = new MetadataEntryToFieldName(), toDatatype = new MetadataEntryToDatatype();
+    
+    public AllFieldMetadataHelper(TypeMetadataHelper typeMetadataHelper, CompositeMetadataHelper compositeMetadataHelper) {
+        Preconditions.checkNotNull(typeMetadataHelper);
+        this.typeMetadataHelper = typeMetadataHelper;
+        
+        Preconditions.checkNotNull(compositeMetadataHelper);
+        this.compositeMetadataHelper = compositeMetadataHelper;
+    }
     
     protected String getDatatype(Key k) {
         String datatype = k.getColumnQualifier().toString();
@@ -100,9 +107,8 @@ public class AllFieldMetadataHelper {
     protected Set<Authorizations> auths;
     protected Set<Authorizations> fullUserAuths;
     
-    protected TypeMetadataHelper typeMetadataHelper;
-    
-    protected CompositeMetadataHelper compositeMetadataHelper;
+    protected final TypeMetadataHelper typeMetadataHelper;
+    protected final CompositeMetadataHelper compositeMetadataHelper;
     
     public AllFieldMetadataHelper initialize(Connector connector, String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths) {
         return this.initialize(connector, connector.getInstance(), metadataTableName, auths, fullUserAuths, false);
@@ -154,16 +160,8 @@ public class AllFieldMetadataHelper {
         return metadataTableName;
     }
     
-    public void setTypeMetadataHelper(TypeMetadataHelper typeMetadataHelper) {
-        this.typeMetadataHelper = typeMetadataHelper;
-    }
-    
     public TypeMetadataHelper getTypeMetadataHelper() {
         return typeMetadataHelper;
-    }
-    
-    public void setCompositeMetadataHelper(CompositeMetadataHelper compositeMetadataHelper) {
-        this.compositeMetadataHelper = compositeMetadataHelper;
     }
     
     /**

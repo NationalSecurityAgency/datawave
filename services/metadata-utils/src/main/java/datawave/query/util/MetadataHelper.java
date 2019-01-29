@@ -18,7 +18,6 @@ import datawave.iterators.EdgeMetadataCombiner;
 import datawave.iterators.filter.EdgeMetadataCQStrippingIterator;
 import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadata;
-import datawave.query.composite.CompositeMetadataHelper;
 import datawave.security.util.AuthorizationsMinimizer;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
@@ -44,7 +43,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
@@ -52,13 +52,12 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.CharacterCodingException;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
@@ -72,7 +71,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
@@ -93,13 +91,11 @@ import java.util.stream.StreamSupport;
  * TODO -- Break this class apart
  * 
  */
-@Configuration
 @EnableCaching
 @Component("metadataHelper")
+@Scope("prototype")
 public class MetadataHelper implements ApplicationContextAware {
-    private static final Logger log = Logger.getLogger(MetadataHelper.class);
-    
-    public static final String DEFAULT_AUTHS_PROPERTY = "metadatahelper.default.auths";
+    private static final Logger log = LoggerFactory.getLogger(MetadataHelper.class);
     
     public static final String NULL_BYTE = "\0";
     
@@ -130,49 +126,17 @@ public class MetadataHelper implements ApplicationContextAware {
     protected Set<Authorizations> auths;
     protected Set<Authorizations> fullUserAuths;
     
-    protected AllFieldMetadataHelper allFieldMetadataHelper;
-    protected Collection<Authorizations> allMetadataAuths;
+    protected final AllFieldMetadataHelper allFieldMetadataHelper;
+    protected final Collection<Authorizations> allMetadataAuths;
     
     protected ApplicationContext applicationContext;
     
-    /**
-     *
-     */
-    protected MetadataHelper() {}
-    
-    public static MetadataHelper getInstance() {
-        log.warn("MetadataHelper created outside of dependency-injection context. This is fine for unit testing, but this is an error in production code");
-        if (log.isDebugEnabled())
-            log.debug("MetadataHelper created outside of dependency-injection context. This is fine for unit testing, but this is an error in production code",
-                            new Exception("exception for debug purposes"));
-        MetadataHelper mhwd = new MetadataHelper();
+    public MetadataHelper(AllFieldMetadataHelper allFieldMetadataHelper, Collection<Authorizations> allMetadataAuths) {
+        Preconditions.checkNotNull(allFieldMetadataHelper);
+        this.allFieldMetadataHelper = allFieldMetadataHelper;
         
-        mhwd.allFieldMetadataHelper = new AllFieldMetadataHelper();
-        mhwd.allFieldMetadataHelper.typeMetadataHelper = new TypeMetadataHelper();
-        mhwd.allFieldMetadataHelper.compositeMetadataHelper = new CompositeMetadataHelper();
-        mhwd.setAllMetadataAuths(Collections.singleton(MetadataDefaultsFactory.getDefaultAuthorizations()));
-        return mhwd;
-    }
-    
-    /**
-     * Create and instance of a metadata helper this is only for unit tests that do not use spring injection
-     *
-     * @param connector
-     * @param metadataTableName
-     * @param auths
-     * @return the metadata helper
-     */
-    public static MetadataHelper getInstance(Connector connector, String metadataTableName, Set<Authorizations> auths) {
-        log.warn("MetadataHelper created outside of dependency-injection context. This is fine for unit testing, but this is an error in production code");
-        if (log.isDebugEnabled())
-            log.debug("MetadataHelper created outside of dependency-injection context. This is fine for unit testing, but this is an error in production code",
-                            new Exception("exception for debug purposes"));
-        MetadataHelper mhwd = new MetadataHelper();
-        mhwd.allFieldMetadataHelper = new AllFieldMetadataHelper();
-        mhwd.allFieldMetadataHelper.typeMetadataHelper = new TypeMetadataHelper();
-        mhwd.allFieldMetadataHelper.compositeMetadataHelper = new CompositeMetadataHelper();
-        mhwd.setAllMetadataAuths(Collections.singleton(MetadataDefaultsFactory.getDefaultAuthorizations()));
-        return mhwd.initialize(connector, metadataTableName, auths);
+        Preconditions.checkNotNull(allMetadataAuths);
+        this.allMetadataAuths = allMetadataAuths;
     }
     
     public MetadataHelper initialize(Connector connector, String metadataTableName, Set<Authorizations> auths, boolean useSubstitutions) {
@@ -214,21 +178,13 @@ public class MetadataHelper implements ApplicationContextAware {
             // this should not happen. throw an exception and fix the calling code
             throw new RuntimeException("passed auths were null");
         }
-        if (this.allMetadataAuths == null) {
-            log.warn("this MetadataHelper was not injected and will have no caching");
-            // not dependency-injected. just use the passed auths
-            this.allMetadataAuths = auths;
-            this.auths = auths;
-            
-        } else {
-            // this.auths will be set to the intersection of this.allMetadataAuths using only the smaller set of auths (all that's required) will greatly reduce
-            // the number of cache keys and cache storage for
-            // MetadataHelper methods.
-            Collection<String> authSubset = MetadataHelper.getUsersMetadataAuthorizationSubset(auths, this.allMetadataAuths);
-            this.auths = Collections.singleton(new Authorizations(authSubset.toArray(new String[authSubset.size()])));
-            log.debug("initialized with auths subset:" + this.auths);
-            
-        }
+        // this.auths will be set to the intersection of this.allMetadataAuths using only the smaller set of auths (all that's required) will greatly reduce
+        // the number of cache keys and cache storage for
+        // MetadataHelper methods.
+        Collection<String> authSubset = MetadataHelper.getUsersMetadataAuthorizationSubset(auths, this.allMetadataAuths);
+        this.auths = Collections.singleton(new Authorizations(authSubset.toArray(new String[authSubset.size()])));
+        log.debug("initialized with auths subset:" + this.auths);
+        
         this.allFieldMetadataHelper.initialize(connector, instance, metadataTableName, this.auths, this.fullUserAuths, useSubstitutions);
         if (log.isTraceEnabled()) {
             log.trace("Constructor  connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths + " and metadata table name: "
@@ -355,20 +311,12 @@ public class MetadataHelper implements ApplicationContextAware {
         return allMetadataAuths;
     }
     
-    public void setAllMetadataAuths(Collection<Authorizations> allMetadataAuths) {
-        this.allMetadataAuths = allMetadataAuths;
-    }
-    
     public Set<Authorizations> getAuths() {
         return auths;
     }
     
     public Set<Authorizations> getFullUserAuths() {
         return fullUserAuths;
-    }
-    
-    public void setAllFieldMetadataHelper(AllFieldMetadataHelper allFieldMetadataHelper) {
-        this.allFieldMetadataHelper = allFieldMetadataHelper;
     }
     
     public AllFieldMetadataHelper getAllFieldMetadataHelper() {
@@ -1534,45 +1482,6 @@ public class MetadataHelper implements ApplicationContextAware {
     
     public void setMetadataTableName(String metadataTableName) {
         this.metadataTableName = metadataTableName;
-    }
-    
-    /**
-     * Factory primarily for injecting default authorizations that may be needed when there is no Spring injection to fall back on. Previously default auths
-     * were hard-coded above, limiting portability of the code.
-     */
-    private static class MetadataDefaultsFactory {
-        
-        static final String PROPS_RESOURCE = "metadata.properties";
-        static final Properties defaultProps = new Properties();
-        
-        static {
-            InputStream in = null;
-            try {
-                in = MetadataDefaultsFactory.class.getClassLoader().getResourceAsStream(PROPS_RESOURCE);
-                defaultProps.load(in);
-            } catch (Throwable t) {
-                log.error("Failure while loading " + PROPS_RESOURCE, t);
-                throw new RuntimeException(t);
-            } finally {
-                if (null != in) {
-                    try {
-                        in.close();
-                    } catch (IOException e) {
-                        log.warn("Failed to close input stream", e);
-                    }
-                }
-            }
-        }
-        
-        static Authorizations getDefaultAuthorizations() {
-            String defaultAuths = System.getProperty(DEFAULT_AUTHS_PROPERTY, defaultProps.getProperty(DEFAULT_AUTHS_PROPERTY));
-            if (null == defaultAuths || defaultAuths.isEmpty()) {
-                log.info("No default authorizations are defined. Hopefully the empty set will suffice");
-                return new Authorizations();
-            } else {
-                return new Authorizations(defaultAuths.split(","));
-            }
-        }
     }
     
 }

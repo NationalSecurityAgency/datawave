@@ -30,10 +30,13 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -57,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @EnableCaching
 @Component("metadataHelperWithDescriptions")
+@Scope("prototype")
 public class MetadataHelperWithDescriptions extends MetadataHelper {
     private static final Logger log = Logger.getLogger(MetadataHelperWithDescriptions.class);
     
@@ -64,6 +68,10 @@ public class MetadataHelperWithDescriptions extends MetadataHelper {
     
     @Inject
     private ResponseObjectFactory responseObjectFactory;
+    
+    protected MetadataHelperWithDescriptions(AllFieldMetadataHelper allFieldMetadataHelper, Collection<Authorizations> allMetadataAuths) {
+        super(allFieldMetadataHelper, allMetadataAuths);
+    }
     
     /**
      * Create and instance of a metadata helper. this is for unit tests only
@@ -75,11 +83,13 @@ public class MetadataHelperWithDescriptions extends MetadataHelper {
      */
     public static MetadataHelperWithDescriptions getInstance(Connector connector, String metadataTableName, Authorizations allMetadataAuths,
                     Set<Authorizations> auths) {
-        MetadataHelperWithDescriptions mhwd = new MetadataHelperWithDescriptions();
-        mhwd.allFieldMetadataHelper = new AllFieldMetadataHelper();
-        mhwd.allFieldMetadataHelper.typeMetadataHelper = new TypeMetadataHelper();
-        mhwd.allFieldMetadataHelper.compositeMetadataHelper = new CompositeMetadataHelper();
-        mhwd.setAllMetadataAuths(Collections.singleton(allMetadataAuths));
+        HashMap<String,String> typeSubstitutions = new HashMap<>();
+        typeSubstitutions.put("datawave.data.type.DateType", "datawave.data.type.RawDateType");
+        Set<Authorizations> allMetadataAuthsSet = Collections.singleton(allMetadataAuths);
+        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper(typeSubstitutions, allMetadataAuthsSet);
+        CompositeMetadataHelper compositeMetadataHelper = new CompositeMetadataHelper();
+        AllFieldMetadataHelper allFieldMetadataHelper = new AllFieldMetadataHelper(typeMetadataHelper, compositeMetadataHelper);
+        MetadataHelperWithDescriptions mhwd = new MetadataHelperWithDescriptions(allFieldMetadataHelper, allMetadataAuthsSet);
         mhwd.setResponseObjectFactory(new DefaultResponseObjectFactory());
         return mhwd.initialize(connector, connector.getInstance(), metadataTableName, auths);
     }

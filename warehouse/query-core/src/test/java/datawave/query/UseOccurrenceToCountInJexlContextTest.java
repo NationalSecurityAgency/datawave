@@ -72,6 +72,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         
         @BeforeClass
         public static void setUp() throws Exception {
+            System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,T,U,V,W,X,Y,Z");
             QueryTestTableHelper qtth = new QueryTestTableHelper(UseOccurrenceToCountInJexlContextTest.ShardRange.class.toString(), log);
             connector = qtth.connector;
             
@@ -94,6 +95,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         
         @BeforeClass
         public static void setUp() throws Exception {
+            System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,T,U,V,W,X,Y,Z");
             QueryTestTableHelper qtth = new QueryTestTableHelper(UseOccurrenceToCountInJexlContextTest.DocumentRange.class.toString(), log);
             connector = qtth.connector;
             

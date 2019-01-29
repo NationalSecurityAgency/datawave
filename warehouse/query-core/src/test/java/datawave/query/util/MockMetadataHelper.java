@@ -12,6 +12,7 @@ import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
+import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.model.QueryModel;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -53,6 +54,11 @@ public class MockMetadataHelper extends MetadataHelper {
             return input.getClass().getName();
         }
     };
+    
+    public MockMetadataHelper() {
+        super(new AllFieldMetadataHelper(new TypeMetadataHelper(Maps.newHashMap(), Collections.emptySet()), new CompositeMetadataHelper()), Collections
+                        .emptySet());
+    }
     
     public void addContentFields(Collection<String> fields) {
         this.contentFields.addAll(fields);

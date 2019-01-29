@@ -4,20 +4,25 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:util="http://www.springframework.org/schema/util"
     xmlns:cache="http://www.springframework.org/schema/cache"
+    xmlns:context="http://www.springframework.org/schema/context"
     xsi:schemaLocation="
      http://www.springframework.org/schema/beans 
      http://www.springframework.org/schema/beans/spring-beans.xsd
      http://www.springframework.org/schema/cache 
      http://www.springframework.org/schema/cache/spring-cache.xsd
-     http://www.springframework.org/schema/util 
+     http://www.springframework.org/schema/context
+     http://www.springframework.org/schema/context/spring-context.xsd
+     http://www.springframework.org/schema/util
      http://www.springframework.org/schema/util/spring-util.xsd">
-     
+
+    <context:property-placeholder system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="100" />
+
      <!--  cacheManager is in CacheContext.xml. You must also include CacheContext.xml in any spring context that includes this file -->
-    <cache:annotation-driven cache-manager="cacheManager"/>
+    <cache:annotation-driven cache-manager="metadataHelperCacheManager"/>
     
     <bean id="metadataHelper" scope="prototype" class="datawave.query.util.MetadataHelper" >
-        <property name="allFieldMetadataHelper" ref="allFieldMetadataHelper"/>
-        <property name="allMetadataAuths" ref="allMetadataAuths"/>
+        <constructor-arg ref="allFieldMetadataHelper"/>
+        <constructor-arg ref="allMetadataAuths"/>
     </bean>
     
     <bean id="metadataHelperFactory" class="datawave.query.util.MetadataHelperFactory" >
@@ -29,13 +34,13 @@
     </bean>
 
     <bean id="allFieldMetadataHelper" scope="prototype" class="datawave.query.util.AllFieldMetadataHelper" >
-        <property name="typeMetadataHelper" ref="typeMetadataHelper"/>
-        <property name="compositeMetadataHelper" ref="compositeMetadataHelper"/>
+        <constructor-arg ref="typeMetadataHelper"/>
+        <constructor-arg ref="compositeMetadataHelper"/>
     </bean>
 
     <bean id="typeMetadataHelper" scope="prototype" class="datawave.query.util.TypeMetadataHelper" >
-        <property name="typeSubstitutions" ref="typeSubstitutions" />
-        <property name="allMetadataAuths" ref="allMetadataAuths" />
+        <constructor-arg name="typeSubstitutions" ref="typeSubstitutions" />
+        <constructor-arg name="allMetadataAuths" ref="allMetadataAuths" />
     </bean>
     
     <bean id="compositeMetadataHelper" scope="prototype" class="datawave.query.composite.CompositeMetadataHelper" />
@@ -43,9 +48,9 @@
     <util:set id="allMetadataAuths" scope="prototype" value-type="org.apache.accumulo.core.security.Authorizations" >
         <bean class="org.apache.accumulo.core.security.Authorizations" >
             <constructor-arg>
-                <list>
-                    <value>${metadatahelper.default.auths}</value>
-                </list>
+                <bean class="org.springframework.util.StringUtils" factory-method="commaDelimitedListToSet">
+                    <constructor-arg type="java.lang.String" value="${dw.metadatahelper.all.auths}"/>
+                </bean>
             </constructor-arg>
         </bean>
     </util:set>

@@ -73,7 +73,7 @@ public class MapReduceStatePersisterTest {
     @Before
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         connection = instance.getConnector("root", new PasswordToken(""));
         if (connection.tableOperations().exists(TABLE_NAME))
             connection.tableOperations().delete(TABLE_NAME);

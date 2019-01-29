@@ -2,7 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.MetadataHelper;
+import datawave.query.util.MetadataHelperFactory;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.junit.Assert;
 import org.junit.Test;
@@ -21,8 +21,8 @@ public class ExpandMultiNormalizedTermsTest {
         
         ASTJexlScript smashed = TreeFlatteningRebuildingVisitor.flatten(queryTree);
         
-        ASTJexlScript script = (ASTJexlScript) smashed.jjtAccept(new ExpandMultiNormalizedTerms(new ShardQueryConfiguration(), MetadataHelper.getInstance()),
-                        null);
+        ASTJexlScript script = (ASTJexlScript) smashed.jjtAccept(
+                        new ExpandMultiNormalizedTerms(new ShardQueryConfiguration(), new MetadataHelperFactory().createMetadataHelper()), null);
         
         String originalRoundTrip = JexlStringBuildingVisitor.buildQuery(queryTree);
         String smashedRoundTrip = JexlStringBuildingVisitor.buildQuery(smashed);

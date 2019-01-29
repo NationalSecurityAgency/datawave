@@ -47,6 +47,7 @@ embed-server --server-config=standalone-full.xml
 /system-property=dw.warehouse.pool.normal.size:add(value=${accumulo.normal.defaultpool.size})
 /system-property=dw.warehouse.pool.high.size:add(value=${accumulo.high.defaultpool.size})
 /system-property=dw.warehouse.pool.admin.size:add(value=${accumulo.admin.defaultpool.size})
+/system-property=dw.metadatahelper.all.auths:add(value="${metadatahelper.default.auths}")
 /system-property=dw.metrics.pool.low.size:add(value=${accumulo.low.defaultpool.size})
 /system-property=dw.metrics.pool.normal.size:add(value=${accumulo.normal.defaultpool.size})
 /system-property=dw.metrics.pool.high.size:add(value=${accumulo.high.defaultpool.size})
