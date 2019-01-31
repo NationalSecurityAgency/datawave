@@ -11,7 +11,6 @@ import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.client.impl.Credentials;
-import org.apache.accumulo.core.security.thrift.TCredentials;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 
@@ -57,12 +56,6 @@ public class AccumuloHelper {
      */
     public Credentials getCredentials() throws AccumuloSecurityException {
         return new Credentials(username, password);
-    }
-    
-    public TCredentials getTCredentials() throws AccumuloSecurityException {
-        Credentials creds = getCredentials();
-        ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-        return creds.toThrift(instance);
     }
     
     public String getInstanceName() {

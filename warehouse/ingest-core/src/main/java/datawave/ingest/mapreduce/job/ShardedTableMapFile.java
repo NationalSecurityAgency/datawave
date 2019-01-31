@@ -8,13 +8,10 @@ import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
-import org.apache.accumulo.core.client.impl.ClientContext;
-import org.apache.accumulo.core.client.impl.Credentials;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.data.impl.KeyExtent;
-import org.apache.accumulo.core.metadata.MetadataServicer;
+import org.apache.accumulo.core.client.admin.Locations;
+import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.fate.util.UtilWaitThread;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -28,12 +25,13 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
@@ -54,7 +52,7 @@ public class ShardedTableMapFile {
     public static final String SHARDED_MAP_FILE_PATHS_RAW = "shardedMap.file.paths.raw";
     public static final String SHARD_VALIDATION_ENABLED = "shardedMap.validation.enabled";
     public static final String MAX_SHARDS_PER_TSERVER = "shardedMap.max.shards.per.tserver";
-    
+
     public static void setupFile(Configuration conf) throws IOException, URISyntaxException, AccumuloSecurityException, AccumuloException {
         // want validation turned off by default
         boolean doValidation = conf.getBoolean(ShardedTableMapFile.SHARD_VALIDATION_ENABLED, false);
@@ -99,7 +97,7 @@ public class ShardedTableMapFile {
         // assume true unless proven otherwise
         boolean isValid = true;
         int maxShardsPerTserver = conf.getInt(MAX_SHARDS_PER_TSERVER, 1);
-        
+
         for (int daysAgo = 0; daysAgo <= daysToVerify; daysAgo++) {
             long inMillis = System.currentTimeMillis() - (daysAgo * DateUtils.MILLIS_PER_DAY);
             String datePrefix = DateHelper.format(inMillis);
@@ -171,13 +169,13 @@ public class ShardedTableMapFile {
                 }
                 // increment here before checking
                 cnt.increment();
-                
+
                 // if shard is assigned to more tservers than allowed, then the shards are not balanced
                 if (cnt.intValue() > maxShardsPerTserver) {
                     log.warn(cnt.toInteger() + " Shards for " + datePrefix + " assigned to tablet " + value);
                     dateIsBalanced = false;
                 }
-                
+
                 tabletsSeenForDate.put(value, cnt);
             }
         }
@@ -238,9 +236,7 @@ public class ShardedTableMapFile {
                     accumuloHelper = new AccumuloHelper();
                     accumuloHelper.setup(conf);
                 }
-                Connector conn = accumuloHelper.getConnector();
-                Credentials credentials = accumuloHelper.getCredentials();
-                shardedMapFile = createShardedMapFile(log, conf, workDir, conn.getInstance(), credentials, shardedTableName, doValidation);
+                shardedMapFile = createShardedMapFile(log, conf, workDir, accumuloHelper, shardedTableName, doValidation);
             }
             
             // Ensure that we either computed, or were given, a valid path to the shard mappings
@@ -288,10 +284,8 @@ public class ShardedTableMapFile {
      *            hadoop configuration
      * @param workDir
      *            base dir in HDFS where the file is written
-     * @param instance
-     *            Accumulo instance to query shard locations
-     * @param credentials
-     *            Accumulo access credentials for querying shard locations
+     * @param accumuloHelper
+     *            Accumulo helper to query shard locations
      * @param shardedTableName
      *            name of the shard table--the table whose locations we are querying
      * @param validateShardLocations
@@ -300,7 +294,7 @@ public class ShardedTableMapFile {
      * @throws IOException
      * @throws URISyntaxException
      */
-    public static Path createShardedMapFile(Logger log, Configuration conf, Path workDir, Instance instance, Credentials credentials, String shardedTableName,
+    public static Path createShardedMapFile(Logger log, Configuration conf, Path workDir, AccumuloHelper accumuloHelper, String shardedTableName,
                     boolean validateShardLocations) throws IOException, URISyntaxException {
         Path shardedMapFile = null;
         // minus one to make zero based indexed
@@ -311,17 +305,16 @@ public class ShardedTableMapFile {
             // get the mapping of shard IDs to tablet locations.
             log.info("Reading metadata entries for " + shardedTableName);
             
-            Map<KeyExtent,String> rawLocations = getLocations(log, instance, credentials, shardedTableName);
-            Map<Text,String> convertedLocations = convertToTextStringMap(rawLocations);
+            Map<Text,String> splitToLocations = getLocations(log, accumuloHelper, shardedTableName);
             if (validateShardLocations) {
-                validateShardIdLocations(conf, shardedTableName, daysToVerify, convertedLocations);
+                validateShardIdLocations(conf, shardedTableName, daysToVerify, splitToLocations);
             }
             
             // Now write all of the assignments out to a file stored in HDFS
             // we're ok with putting the sharded table file in the hdfs workdir. why is that not good enough for the non sharded splits?
             shardedMapFile = new Path(workDir, shardedTableName + "_shards.lst");
             log.info("Writing shard assignments to " + shardedMapFile);
-            long count = writeSplitsFile(convertedLocations, shardedMapFile, conf);
+            long count = writeSplitsFile(splitToLocations, shardedMapFile, conf);
             log.info("Wrote " + count + " shard assignments to " + shardedMapFile);
         }
         
@@ -333,33 +326,30 @@ public class ShardedTableMapFile {
      *
      * @param log
      *            logger for reporting errors
-     * @param instance
-     *            Accumulo instance to query shard locations
-     * @param credentials
-     *            Accumulo access credentials for querying shard locations
+     * @param accumuloHelper
+     *            Accumulo helper to query shard locations
      * @param shardedTableName
      *            name of the shard table--the table whose locations we are querying
      * @return a map of KeyExtent to the location of those key extents in accumulo
      */
-    public static SortedMap<KeyExtent,String> getLocations(Logger log, Instance instance, Credentials credentials, String shardedTableName) {
-        
-        TreeMap<KeyExtent,String> locations = new TreeMap<>();
+    public static Map<Text,String> getLocations(Logger log, AccumuloHelper accumuloHelper, String shardedTableName) {
+        // split (endRow) -> String location mapping
+        Map<Text,String> splitToLocation = new TreeMap<>();
+
         boolean keepRetrying = true;
         int attempts = 0;
         while (keepRetrying && attempts < MAX_RETRY_ATTEMPTS) {
             try {
+                TableOperations tableOps = accumuloHelper.getConnector().tableOperations();
                 attempts++;
-                // re-create the locations so that we don't re-use stale metadata information.
-                locations.clear();
-                ClientContext context = new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration());
                 // if table does not exist don't want to catch the errors and end up in infinite loop
-                Map<String,String> tableIdMap = context.getConnector().tableOperations().tableIdMap();
-                boolean tableExists = tableIdMap.containsKey(shardedTableName);
-                if (!tableExists) {
+                if (!tableOps.exists(shardedTableName)) {
                     log.error("Table " + shardedTableName + " not found, skipping split locations for missing table");
                 } else {
-                    MetadataServicer servicer = MetadataServicer.forTableName(context, shardedTableName);
-                    servicer.getTabletLocations(locations);
+                    Range range = new Range();
+                    Locations locations = tableOps.locate(shardedTableName, Collections.singletonList(range));
+                    List<TabletId> tabletIds = locations.groupByRange().get(range);
+                    tabletIds.forEach(tId -> splitToLocation.put(tId.getEndRow(), locations.getTabletLocation(tId)));
                 }
                 // made it here, no errors so break out
                 keepRetrying = false;
@@ -368,7 +358,8 @@ public class ShardedTableMapFile {
                 UtilWaitThread.sleep(3000);
             }
         }
-        return locations;
+
+        return splitToLocation;
     }
     
     /**
@@ -416,27 +407,8 @@ public class ShardedTableMapFile {
      * @throws IOException
      *             if file system interaction fails
      */
-    public static long writeSplitsFileLegacy(Map<KeyExtent,String> splits, Path file, Configuration conf) throws IOException {
-        return writeSplitsFile(convertToTextStringMap(splits), file, conf);
-    }
-    
-    /**
-     * Formats KeyExtent end row to tablet server for consumption by other methods.
-     *
-     * @param splits
-     *            raw splits read from accumulo
-     * @return converted to end row to location mapping
-     */
-    private static Map<Text,String> convertToTextStringMap(Map<KeyExtent,String> splits) {
-        Map<Text,String> converted = new TreeMap<>();
-        for (Map.Entry<KeyExtent,String> entry : splits.entrySet()) {
-            KeyExtent extent = entry.getKey();
-            if (extent.getEndRow() != null && entry.getValue() != null) {
-                String location = entry.getValue().replaceAll("[\\.:]", "_");
-                converted.put(extent.getEndRow(), location);
-            }
-        }
-        return converted;
+    public static long writeSplitsFileLegacy(Map<Text,String> splits, Path file, Configuration conf) throws IOException {
+        return writeSplitsFile(splits, file, conf);
     }
     
 }
