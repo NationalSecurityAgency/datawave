@@ -1,16 +1,11 @@
 package datawave.ingest.mapreduce.job;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.util.StringUtils;
+import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -22,6 +17,7 @@ import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.metadata.MetadataServicer;
 import org.apache.accumulo.fate.util.UtilWaitThread;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -29,12 +25,16 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.util.StringUtils;
-import datawave.util.time.DateHelper;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * Extracted from IngestJob
@@ -53,6 +53,7 @@ public class ShardedTableMapFile {
     public static final String CONFIGURED_SHARDED_TABLE_NAMES = ShardedDataTypeHandler.SHARDED_TNAMES + ".configured";
     public static final String SHARDED_MAP_FILE_PATHS_RAW = "shardedMap.file.paths.raw";
     public static final String SHARD_VALIDATION_ENABLED = "shardedMap.validation.enabled";
+    public static final String SHARD_MAX_TABLETS_PER = "shardedMap.max.tablets.per.shard";
     
     public static void setupFile(Configuration conf) throws IOException, URISyntaxException, AccumuloSecurityException, AccumuloException {
         // want validation turned off by default
@@ -97,6 +98,8 @@ public class ShardedTableMapFile {
         ShardIdFactory shardIdFactory = new ShardIdFactory(conf);
         // assume true unless proven otherwise
         boolean isValid = true;
+        int maxTabletsPerShard = conf.getInt(SHARD_MAX_TABLETS_PER, 1);
+        
         for (int daysAgo = 0; daysAgo <= daysToVerify; daysAgo++) {
             long inMillis = System.currentTimeMillis() - (daysAgo * DateUtils.MILLIS_PER_DAY);
             String datePrefix = DateHelper.format(inMillis);
@@ -107,7 +110,7 @@ public class ShardedTableMapFile {
                 isValid = false;
                 continue;
             }
-            boolean shardsAreBalanced = shardsAreBalanced(shardIdToLocation, datePrefix);
+            boolean shardsAreBalanced = shardsAreBalanced(shardIdToLocation, datePrefix, maxTabletsPerShard);
             if (!shardsAreBalanced) {
                 log.error("Shards for " + datePrefix + " for table " + tableName + " are not balanced!");
                 isValid = false;
@@ -121,7 +124,7 @@ public class ShardedTableMapFile {
     
     /**
      * Existence check for the shard splits for the specified date
-     * 
+     *
      * @param locations
      *            mapping of shard to tablet
      * @param datePrefix
@@ -143,18 +146,18 @@ public class ShardedTableMapFile {
     
     /**
      * Checks that the shard splits for the given date have been assigned to unique tablets.
-     * 
+     *
      * @param locations
      *            mapping of shard to tablet
      * @param datePrefix
      *            to check
      * @return if the shards are distributed in a balanced fashion
      */
-    private static boolean shardsAreBalanced(Map<Text,String> locations, String datePrefix) {
+    private static boolean shardsAreBalanced(Map<Text,String> locations, String datePrefix, int maxTabletsPerShard) {
         // assume true unless proven wrong
         boolean dateIsBalanced = true;
         
-        Set<String> tabletsSeenForDate = new HashSet<>();
+        Map<String,MutableInt> tabletsSeenForDate = new HashMap<>();
         byte[] prefixBytes = datePrefix.getBytes();
         
         for (Entry<Text,String> entry : locations.entrySet()) {
@@ -163,11 +166,19 @@ public class ShardedTableMapFile {
             if (prefixMatches(prefixBytes, key.getBytes(), key.getLength())) {
                 String value = entry.getValue();
                 // if we have already seen this tablet assignment, then the shards are not balanced
-                if (tabletsSeenForDate.contains(value)) {
-                    log.warn("Multiple Shards for " + datePrefix + " assigned to tablet " + value);
+                MutableInt cnt = tabletsSeenForDate.get(value);
+                if (null == cnt) {
+                    cnt = new MutableInt(0);
+                }
+                // increment here before checking
+                cnt.increment();
+                
+                if (cnt.intValue() > maxTabletsPerShard) {
+                    log.warn(cnt.toInteger() + " Shards for " + datePrefix + " assigned to tablet " + value);
                     dateIsBalanced = false;
                 }
-                tabletsSeenForDate.add(value);
+                
+                tabletsSeenForDate.put(value, cnt);
             }
         }
         
@@ -411,7 +422,7 @@ public class ShardedTableMapFile {
     
     /**
      * Formats KeyExtent end row to tablet server for consumption by other methods.
-     * 
+     *
      * @param splits
      *            raw splits read from accumulo
      * @return converted to end row to location mapping
