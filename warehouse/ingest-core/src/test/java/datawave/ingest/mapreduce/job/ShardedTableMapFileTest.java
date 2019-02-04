@@ -292,6 +292,30 @@ public class ShardedTableMapFileTest {
         ShardedTableMapFile.validateShardIdLocations(conf, tableName, 1, locations);
     }
     
+    @Test(expected = IllegalStateException.class)
+    public void testUnbalancedMaxMoreThanConfigured() throws Exception {
+        String tableName = "unbalancedMoreSplitsThenMaxPer";
+        SortedMap<Text,String> splits = simulateMultipleShardsPerTServer(tableName, 3);
+        conf.setInt(ShardedTableMapFile.MAX_SHARDS_PER_TSERVER, 2);
+        
+        createSplitsFile(splits, conf, splits.size(), tableName);
+        Map<Text,String> locations = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
+        // this should cause the exception
+        ShardedTableMapFile.validateShardIdLocations(conf, tableName, 0, locations);
+    }
+    
+    @Test
+    public void testUnbalancedButNotMoreThanConfigured() throws Exception {
+        String tableName = "unbalancedNotMoreSplitsThenMaxPer";
+        SortedMap<Text,String> splits = simulateMultipleShardsPerTServer(tableName, 3);
+        conf.setInt(ShardedTableMapFile.MAX_SHARDS_PER_TSERVER, 3);
+        
+        createSplitsFile(splits, conf, splits.size(), tableName);
+        Map<Text,String> locations = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
+        // this should NOT cause an exception
+        ShardedTableMapFile.validateShardIdLocations(conf, tableName, 0, locations);
+    }
+    
     private SortedMap<Text,String> simulateUnbalancedSplitsForDay(int daysAgo, String tableName) throws IOException {
         // start with a well distributed set of shards per day for 3 days
         SortedMap<Text,String> locations = createDistributedLocations(tableName);
@@ -302,6 +326,28 @@ public class ShardedTableMapFileTest {
             locations.put(new Text(date + "_" + currShard), tserverId);
         }
         
+        return locations;
+    }
+    
+    private SortedMap<Text,String> simulateMultipleShardsPerTServer(String tableName, int shardsPerTServer) throws IOException {
+        SortedMap<Text,String> locations = new TreeMap<>();
+        long now = System.currentTimeMillis();
+        int tserverId = 1;
+        for (int daysAgo = 0; daysAgo <= 2; daysAgo++) {
+            String day = DateHelper.format(now - (daysAgo * DateUtils.MILLIS_PER_DAY));
+            
+            int currShard = 0;
+            while (currShard < SHARDS_PER_DAY) {
+                // increment once, apply this tserver shardsPerTServer times
+                tserverId++;
+                for (int i = 0; i < shardsPerTServer; i++) {
+                    if (currShard >= SHARDS_PER_DAY) {
+                        break;
+                    }
+                    locations.put(new Text(day + "_" + currShard++), Integer.toString(tserverId));
+                }
+            }
+        }
         return locations;
     }
     
