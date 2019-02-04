@@ -2,13 +2,13 @@ package datawave.query.language.functions.lucene;
 
 import datawave.query.language.functions.QueryFunction;
 
-public class Include extends AbstractEvaluationPhaseFunction {
-    public Include() {
-        super("include", true);
+public class Text extends AbstractEvaluationPhaseFunction {
+    public Text() {
+        super("text", true);
     }
     
     @Override
     public QueryFunction duplicate() {
-        return new Include();
+        return new Text();
     }
 }

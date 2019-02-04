@@ -1,6 +1,7 @@
 package datawave.query;
 
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
 import datawave.query.testframework.CitiesDataType;
@@ -9,6 +10,7 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -50,6 +52,17 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testAnyFieldInclude() throws Exception {
         log.info("------  testAnyFieldInclude  ------");
+        String code = "europe";
+        String state = "lazio";
+        String phrase = RE_OP + "'" + state + "'";
+        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#INCLUDE(" + state + ")";
+        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + AND_OP + this.dataManager.convertAnyField(phrase);
+        runTest(query, expect);
+    }
+    
+    @Test
+    public void testExplicitAnyFieldInclude() throws Exception {
+        log.info("------  testExplicitAnyFieldInclude  ------");
         String code = "europe";
         String state = "lazio";
         String phrase = RE_OP + "'" + state + "'";
