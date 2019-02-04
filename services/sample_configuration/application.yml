@@ -3,6 +3,12 @@ server:
   port: 8443
   ssl:
     client-auth: WANT
+  undertow:
+    accesslog:
+      enabled: true
+      dir: '${logDir:./logs}'
+      prefix: '${spring.application.name}_access.'
+      pattern: '%h %l %u %t "%r" %s %b %D'
 
 management:
   endpoints:

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -39,6 +40,7 @@ import java.util.List;
 @Order(SecurityProperties.BASIC_AUTH_ORDER - 2)
 @Configuration
 @EnableWebSecurity
+@ConditionalOnWebApplication
 @EnableGlobalMethodSecurity(prePostEnabled = true, jsr250Enabled = true)
 @ConditionalOnProperty(name = "security.jwt.enabled", matchIfMissing = true)
 public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
