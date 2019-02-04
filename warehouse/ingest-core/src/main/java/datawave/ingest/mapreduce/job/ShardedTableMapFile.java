@@ -171,7 +171,7 @@ public class ShardedTableMapFile {
                 }
                 // increment here before checking
                 cnt.increment();
-
+                
                 // if shard is assigned to more tservers than allowed, then the shards are not balanced
                 if (cnt.intValue() > maxShardsPerTserver) {
                     log.warn(cnt.toInteger() + " Shards for " + datePrefix + " assigned to tablet " + value);

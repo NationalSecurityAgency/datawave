@@ -24,6 +24,7 @@
         <bean class="datawave.query.language.functions.jexl.IsNotNull"/>
         <bean class="datawave.query.language.functions.jexl.Include"/>
         <bean class="datawave.query.language.functions.jexl.Exclude"/>
+        <bean class="datawave.query.language.functions.jexl.Text"/>
         <bean class="datawave.query.language.functions.jexl.GeoFunction"/>
         <bean class="datawave.query.language.functions.jexl.Loaded"/>
         <bean class="datawave.query.language.functions.jexl.DateFunction"/>
