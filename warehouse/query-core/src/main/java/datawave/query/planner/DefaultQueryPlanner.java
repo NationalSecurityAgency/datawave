@@ -854,15 +854,31 @@ public class DefaultQueryPlanner extends QueryPlanner {
     protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, ShardQueryConfiguration config, Query settings, MetadataHelper metadataHelper,
                     ScannerFactory scannerFactory, QueryData queryData, QueryStopwatch timers, QueryModel queryModel) throws DatawaveQueryException {
         ASTJexlScript queryTree = originalQueryTree;
+        
+        TraceStopwatch stopwatch = null;
+        
+        if (!disableExpandIndexFunction) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand function index queries");
+            
+            // Coalesce any bounded ranges into separate AND subtrees
+            queryTree = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, queryTree);
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after function index queries were expanded:");
+            }
+            
+            stopwatch.stop();
+        }
+        
         // Find unfielded terms, and fully qualify them with an OR of all fields
         // found in the index
         // If the max term expansion is reached, then the original query tree is
         // returned.
         // If the max regex expansion is reached for a term, then it will be
         // left as a regex
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ANYFIELD regex nodes");
         Set<String> expansionFields = null;
         if (!disableAnyFieldLookup) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ANYFIELD regex nodes");
+            
             try {
                 
                 expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
@@ -885,9 +901,9 @@ public class DefaultQueryPlanner extends QueryPlanner {
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after fixing unfielded queries:");
             }
+            stopwatch.stop();
         }
         
-        stopwatch.stop();
         if (!disableTestNonExistentFields) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Test for non-existent fields");
             
@@ -919,18 +935,6 @@ public class DefaultQueryPlanner extends QueryPlanner {
                                 "Datatype Filter: {0}, Missing Fields: {1}, Auths: {2}", datatypeFilterSet, nonexistentFields, config.getAuthorizations()));
                 log.error(qe);
                 throw new InvalidQueryException(qe);
-            }
-            
-            stopwatch.stop();
-        }
-        
-        if (!disableExpandIndexFunction) {
-            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand function index queries");
-            
-            // Coalesce any bounded ranges into separate AND subtrees
-            queryTree = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, queryTree);
-            if (log.isDebugEnabled()) {
-                logQuery(queryTree, "Query after function index queries were expanded:");
             }
             
             stopwatch.stop();

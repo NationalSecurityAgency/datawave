@@ -391,9 +391,18 @@ public class TestLuceneToJexlQueryParser {
     public void testFunctions() throws ParseException {
         testFunction("filter:isNull(nullfield)", "#isnull(nullfield)");
         testFunction("not(filter:isNull(field))", "#isnotnull(field)");
+        testFunction("filter:includeRegex(_ANYFIELD_, 'r1')", "#include(r1)");
+        testFunction("(filter:includeRegex(f1, 'r1') && filter:includeRegex(f2, 'r2'))", "#include(f1, r1, f2, r2)");
         testFunction("(filter:includeRegex(f1, 'r1') && filter:includeRegex(f2, 'r2'))", "#include(AND, f1, r1, f2, r2)");
+        testFunction("(filter:includeRegex(f1, 'r1') || filter:includeRegex(f2, 'r2'))", "#include(OR, f1, r1, f2, r2)");
         testFunction("(not(filter:includeRegex(f1, 'see.*jane.*run')) && not(filter:includeRegex(f2, 'test,escaping')))",
+                        "#exclude(f1, see.*jane.*run, f2, test\\,escaping)");
+        testFunction("(not(filter:includeRegex(f1, 'see.*jane.*run')) || not(filter:includeRegex(f2, 'test,escaping')))",
                         "#exclude(OR, f1, see.*jane.*run, f2, test\\,escaping)");
+        testFunction("filter:includeText(_ANYFIELD_, 'r1')", "#text(r1)");
+        testFunction("(filter:includeText(f1, 'r1') && filter:includeText(f2, 'r2'))", "#text(f1, r1, f2, r2)");
+        testFunction("(filter:includeText(f1, 'r1') && filter:includeText(f2, 'r2'))", "#text(AND, f1, r1, f2, r2)");
+        testFunction("(filter:includeText(f1, 'r1') || filter:includeText(f2, 'r2'))", "#text(OR, f1, r1, f2, r2)");
         
         testFunction("filter:afterLoadDate(LOAD_DATE, '20140101')", "#loaded(after, 20140101)");
         testFunction("filter:afterLoadDate(LOAD_DATE, '20140101', 'yyyyMMdd')", "#loaded(after, 20140101, yyyyMMdd)");

@@ -217,7 +217,7 @@ public class EvaluationPhaseFilterFunctions {
         return FunctionalSet.unmodifiableSet(matches);
     }
     
-    // Evaluate a regex. Note this is being done against the un-normalized value.
+    // Evaluate a regex. Note this is being done against the un-normalized value unless the regex is not case sensitive.
     public static FunctionalSet<ValueTuple> includeRegex(Object fieldValue, String regex) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null
@@ -228,7 +228,7 @@ public class EvaluationPhaseFilterFunctions {
         return matches;
     }
     
-    // Evaluate a regex. Note this is being done against the un-normalized value.
+    // Evaluate a regex. Note this is being done against the un-normalized value unless the regex is not case sensitive.
     public static FunctionalSet<ValueTuple> includeRegex(Iterable<?> values, String regex) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         // Important to note that a regex of ".*" still requires
@@ -314,6 +314,34 @@ public class EvaluationPhaseFilterFunctions {
     
     public static FunctionalSet<ValueTuple> getAllMatches(Object fieldValue, String regex) {
         return includeRegex(fieldValue, regex);
+    }
+    
+    // Evaluate text. Note this is being done against the un-normalized value.
+    public static FunctionalSet<ValueTuple> includeText(Object fieldValue, String valueToMatch) {
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
+        if (fieldValue != null && ValueTuple.getStringValue(fieldValue).equals(valueToMatch)) {
+            matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        }
+        return matches;
+    }
+    
+    // Evaluate text. Note this is being done against the un-normalized value.
+    public static FunctionalSet<ValueTuple> includeText(Iterable<?> values, String valueToMatch) {
+        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
+        if (null == values) {
+            return matches;
+        }
+        
+        for (Object value : values) {
+            if (null == value)
+                continue;
+            
+            if (ValueTuple.getStringValue(value).equals(valueToMatch)) {
+                matches = FunctionalSet.singleton(getHitTerm(value));
+                return matches;
+            }
+        }
+        return matches;
     }
     
     /**

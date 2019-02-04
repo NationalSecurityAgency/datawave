@@ -11,8 +11,8 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by GeoFunctionsDescriptor. This is kept as a separate class to reduce accumulo dependencies on
- * other jars.
+ * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by QueryFunctionsDescriptor. This is kept as a separate class to reduce accumulo dependencies
+ * on other jars.
  * 
  **/
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.QueryFunctionsDescriptor")

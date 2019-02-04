@@ -164,6 +164,19 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     }
     
     @Test
+    public void testAnyFieldLuceneText() throws Exception {
+        log.info("------  testAnyFieldLuceneText  ------");
+        String state = "ohio";
+        String anyState = this.dataManager.convertAnyField(EQ_OP + "'" + state + "'");
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + ":" + city.name() + AND_OP + " #TEXT(Ohio)";
+            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + anyState;
+            this.logic.setParser(new LuceneToJexlQueryParser());
+            runTest(query, expectQuery, true, false);
+        }
+    }
+    
+    @Test
     public void testOccurrenceFunction() throws Exception {
         log.info("------  testOccurrenceFunction  ------");
         String cont = "'europe'";

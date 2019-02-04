@@ -30,6 +30,7 @@ import datawave.query.language.functions.lucene.IsNotNull;
 import datawave.query.language.functions.lucene.IsNull;
 import datawave.query.language.functions.lucene.LuceneQueryFunction;
 import datawave.query.language.functions.lucene.Occurrence;
+import datawave.query.language.functions.lucene.Text;
 import datawave.query.language.tree.FunctionNode;
 
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -53,6 +54,7 @@ public class FunctionQueryNodeBuilder implements QueryBuilder {
         addFunction(new IsNotNull());
         addFunction(new Include());
         addFunction(new Exclude());
+        addFunction(new Text());
         addFunction(new Occurrence());
     }
     

@@ -19,7 +19,11 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.*;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
@@ -41,6 +45,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         private static final ImmutableSet<String> dateBetweenFunctions = ImmutableSet.of("betweenDates", "betweenLoadDates");
         private static final String MATCHCOUNTOF = "matchesAtLeastCountOf";
         private static final String TIMEFUNCTION = "timeFunction";
+        private static final String TEXT = "includeText";
         private final ASTFunctionNode node;
         
         public EvaluationPhaseFilterJexlArgumentDescriptor(ASTFunctionNode node) {
@@ -48,33 +53,105 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         }
         
         /**
-         * Returns 'true' because none of these functions should influence the index query.
+         * Returns 'true' for most of these functions because they are evaluation phase filter functions. However in a couple of special cases we add an index
+         * query: 1) betweenDates and betweenLoadDates: we add a SHARDS_AND_DAYS statement 2) text: we add the index query but the function does not use the
+         * indexed values
          */
         @Override
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
+            // in the special case of the text function, add an index query.
             // in the special case of date functions and then only with the between methods,
             // we want to add a range stream hint in terms of SHARDS_AND_DAYS
-            if (dateBetweenFunctions.contains(functionMetadata.name()) && dateIndexHelper != null) {
-                try {
-                    List<JexlNode> arguments = functionMetadata.args();
-                    JexlNode node0 = arguments.get(0);
-                    final String beginArg = (arguments.size() == 5 ? arguments.get(2).image : arguments.get(1).image);
-                    final String endArg = (arguments.size() == 5 ? arguments.get(3).image : arguments.get(2).image);
-                    Date begin, end = null;
-                    if (arguments.size() >= 4) {
-                        String formatArg = arguments.get(arguments.size() - 1).image;
-                        DateFormat formatter = EvaluationPhaseFilterFunctions.newSimpleDateFormat(formatArg);
-                        begin = new Date(EvaluationPhaseFilterFunctions.getTime(beginArg, formatter));
-                        end = new Date(EvaluationPhaseFilterFunctions.getTime(endArg, formatter));
-                    } else {
-                        begin = new Date(EvaluationPhaseFilterFunctions.getTime(beginArg));
-                        end = new Date(EvaluationPhaseFilterFunctions.getTime(endArg));
+            if (TEXT.equals(functionMetadata.name())) {
+                return getTextIndexQuery(functionMetadata, config);
+            } else if (dateBetweenFunctions.contains(functionMetadata.name()) && dateIndexHelper != null) {
+                return getShardsAndDaysQuery(functionMetadata, config, helper, dateIndexHelper, datatypeFilter);
+            }
+            
+            // 'true' is returned to imply that there is no range lookup possible for this function
+            return TRUE_NODE;
+        }
+        
+        private JexlNode getTextIndexQuery(FunctionJexlNodeVisitor functionMetadata, ShardQueryConfiguration config) {
+            List<JexlNode> arguments = functionMetadata.args();
+            JexlNode node0 = arguments.get(0);
+            final String value = arguments.get(1).image;
+            if (node0 instanceof ASTIdentifier) {
+                
+                final String field = JexlASTHelper.deconstructIdentifier(node0.image);
+                
+                if (log.isDebugEnabled()) {
+                    log.debug("Evaluating text with " + field + ", " + value);
+                }
+                
+                return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
+            } else {
+                // node0 is an Or node or an And node
+                // copy it
+                JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
+                int i = 0;
+                for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
+                    String field = JexlASTHelper.deconstructIdentifier(identifier.image);
+                    
+                    if (log.isDebugEnabled()) {
+                        log.debug("Evaluating text with " + field + ", " + value);
                     }
-                    if (node0 instanceof ASTIdentifier) {
-                        
-                        final String field = JexlASTHelper.deconstructIdentifier(node0.image);
+                    
+                    JexlNode kid = JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
+                    
+                    kid.jjtSetParent(newParent);
+                    newParent.jjtAddChild(kid, i++);
+                }
+                return newParent;
+            }
+        }
+        
+        private JexlNode getShardsAndDaysQuery(FunctionJexlNodeVisitor functionMetadata, ShardQueryConfiguration config, MetadataHelper helper,
+                        DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
+            try {
+                List<JexlNode> arguments = functionMetadata.args();
+                JexlNode node0 = arguments.get(0);
+                final String beginArg = (arguments.size() == 5 ? arguments.get(2).image : arguments.get(1).image);
+                final String endArg = (arguments.size() == 5 ? arguments.get(3).image : arguments.get(2).image);
+                Date begin, end = null;
+                if (arguments.size() >= 4) {
+                    String formatArg = arguments.get(arguments.size() - 1).image;
+                    DateFormat formatter = EvaluationPhaseFilterFunctions.newSimpleDateFormat(formatArg);
+                    begin = new Date(EvaluationPhaseFilterFunctions.getTime(beginArg, formatter));
+                    end = new Date(EvaluationPhaseFilterFunctions.getTime(endArg, formatter));
+                } else {
+                    begin = new Date(EvaluationPhaseFilterFunctions.getTime(beginArg));
+                    end = new Date(EvaluationPhaseFilterFunctions.getTime(endArg));
+                }
+                if (node0 instanceof ASTIdentifier) {
+                    
+                    final String field = JexlASTHelper.deconstructIdentifier(node0.image);
+                    
+                    if (log.isDebugEnabled()) {
+                        log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
+                    }
+                    String shardsAndDaysHint = dateIndexHelper.getShardsAndDaysHint(field, begin, end, config.getBeginDate(), config.getEndDate(),
+                                    datatypeFilter);
+                    // if we did not get any shards or days, then we have a field that is not indexed for the specified datatypes
+                    if (shardsAndDaysHint == null || shardsAndDaysHint.isEmpty()) {
+                        log.info("Found no index for field " + field + " and data types " + datatypeFilter);
+                        return TRUE_NODE;
+                    }
+                    // create an assignment node
+                    log.info("Found index for field " + field + " and data types " + datatypeFilter);
+                    if (log.isTraceEnabled()) {
+                        log.info("Found the following shards and days: " + shardsAndDaysHint);
+                    }
+                    return JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(Constants.SHARD_DAY_HINT, shardsAndDaysHint));
+                } else {
+                    // node0 is an Or node or an And node
+                    // copy it
+                    JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
+                    int i = 0;
+                    for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
+                        String field = JexlASTHelper.deconstructIdentifier(identifier.image);
                         
                         if (log.isDebugEnabled()) {
                             log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
@@ -84,64 +161,41 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                         // if we did not get any shards or days, then we have a field that is not indexed for the specified datatypes
                         if (shardsAndDaysHint == null || shardsAndDaysHint.isEmpty()) {
                             log.info("Found no index for field " + field + " and data types " + datatypeFilter);
-                            return TRUE_NODE;
-                        }
-                        // create an assignment node
-                        log.info("Found index for field " + field + " and data types " + datatypeFilter);
-                        if (log.isTraceEnabled()) {
-                            log.info("Found the following shards and days: " + shardsAndDaysHint);
-                        }
-                        return JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(Constants.SHARD_DAY_HINT, shardsAndDaysHint));
-                    } else {
-                        // node0 is an Or node or an And node
-                        // copy it
-                        JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
-                        int i = 0;
-                        for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
-                            String field = JexlASTHelper.deconstructIdentifier(identifier.image);
-                            
-                            if (log.isDebugEnabled()) {
-                                log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
+                            // if an or node, then basically we need to search the entire range
+                            if (newParent instanceof ASTOrNode) {
+                                return TRUE_NODE;
                             }
-                            String shardsAndDaysHint = dateIndexHelper.getShardsAndDaysHint(field, begin, end, config.getBeginDate(), config.getEndDate(),
-                                            datatypeFilter);
-                            // if we did not get any shards or days, then we have a field that is not indexed for the specified datatypes
-                            if (shardsAndDaysHint == null || shardsAndDaysHint.isEmpty()) {
-                                log.info("Found no index for field " + field + " and data types " + datatypeFilter);
-                                // if an or node, then basically we need to search the entire range
-                                if (newParent instanceof ASTOrNode) {
-                                    return TRUE_NODE;
-                                }
-                                // if an and node, then simply drop this one out of the mix
-                            } else {
-                                // create an assignment node
-                                log.info("Found index for field " + field + " and data types " + datatypeFilter);
-                                if (log.isTraceEnabled()) {
-                                    log.info("Found the following shards and days: " + shardsAndDaysHint);
-                                }
-                                JexlNode kid = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(Constants.SHARD_DAY_HINT, shardsAndDaysHint));
-                                kid.jjtSetParent(newParent);
-                                newParent.jjtAddChild(kid, i++);
+                            // if an and node, then simply drop this one out of the mix
+                        } else {
+                            // create an assignment node
+                            log.info("Found index for field " + field + " and data types " + datatypeFilter);
+                            if (log.isTraceEnabled()) {
+                                log.info("Found the following shards and days: " + shardsAndDaysHint);
                             }
+                            JexlNode kid = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(Constants.SHARD_DAY_HINT, shardsAndDaysHint));
+                            kid.jjtSetParent(newParent);
+                            newParent.jjtAddChild(kid, i++);
                         }
-                        return newParent;
-                        
                     }
-                } catch (ParseException e) {
-                    throw new IllegalArgumentException("Unable to parse dates from date function", e);
-                } catch (TableNotFoundException e) {
-                    // if we are missing the table, then lets assume the date index is simply not configured on this system
-                    log.warn("Missing date index, scanning entire range", e);
-                    return TRUE_NODE;
+                    return newParent;
+                    
                 }
+            } catch (ParseException e) {
+                throw new IllegalArgumentException("Unable to parse dates from date function", e);
+            } catch (TableNotFoundException e) {
+                // if we are missing the table, then lets assume the date index is simply not configured on this system
+                log.warn("Missing date index, scanning entire range", e);
+                return TRUE_NODE;
             }
-            
-            // 'true' is returned to imply that there is no range lookup possible for this function
-            return TRUE_NODE;
         }
         
         @Override
         public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
+            // only the text function actually returns an index query, so ignore this one
+            if (TEXT.equals(node.jjtGetChild(2).image)) {
+                return;
+            }
+            
             // Since the getIndexQuery does not supply actual filters on the fields, we need to add those filters here
             Set<String> queryFields = fields(null, null);
             // argument 0 (child 2) is the fieldname, argument 1 (child 3) is the regex
