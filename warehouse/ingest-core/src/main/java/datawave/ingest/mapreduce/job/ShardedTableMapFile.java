@@ -330,7 +330,7 @@ public class ShardedTableMapFile {
      *            Accumulo helper to query shard locations
      * @param shardedTableName
      *            name of the shard table--the table whose locations we are querying
-     * @return a map of KeyExtent to the location of those key extents in accumulo
+     * @return a map of split (endRow) to the location of those tablets in accumulo
      */
     public static Map<Text,String> getLocations(Logger log, AccumuloHelper accumuloHelper, String shardedTableName) {
         // split (endRow) -> String location mapping
