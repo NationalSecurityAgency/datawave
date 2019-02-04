@@ -295,8 +295,8 @@ public class ShardedTableMapFileTest {
     @Test(expected = IllegalStateException.class)
     public void testUnbalancedMaxMoreThanConfigured() throws Exception {
         String tableName = "unbalancedMoreSplitsThenMaxPer";
-        SortedMap<Text,String> splits = simulateMultipleShardsPerTablet(tableName, 3);
-        conf.setInt(ShardedTableMapFile.SHARD_MAX_TABLETS_PER, 2);
+        SortedMap<Text,String> splits = simulateMultipleShardsPerTServer(tableName, 3);
+        conf.setInt(ShardedTableMapFile.MAX_SHARDS_PER_TSERVER, 2);
         
         createSplitsFile(splits, conf, splits.size(), tableName);
         Map<Text,String> locations = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
@@ -307,8 +307,8 @@ public class ShardedTableMapFileTest {
     @Test
     public void testUnbalancedButNotMoreThanConfigured() throws Exception {
         String tableName = "unbalancedNotMoreSplitsThenMaxPer";
-        SortedMap<Text,String> splits = simulateMultipleShardsPerTablet(tableName, 3);
-        conf.setInt(ShardedTableMapFile.SHARD_MAX_TABLETS_PER, 3);
+        SortedMap<Text,String> splits = simulateMultipleShardsPerTServer(tableName, 3);
+        conf.setInt(ShardedTableMapFile.MAX_SHARDS_PER_TSERVER, 3);
         
         createSplitsFile(splits, conf, splits.size(), tableName);
         Map<Text,String> locations = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
@@ -329,7 +329,7 @@ public class ShardedTableMapFileTest {
         return locations;
     }
     
-    private SortedMap<Text,String> simulateMultipleShardsPerTablet(String tableName, int shardsPerTablet) throws IOException {
+    private SortedMap<Text,String> simulateMultipleShardsPerTServer(String tableName, int shardsPerTServer) throws IOException {
         SortedMap<Text,String> locations = new TreeMap<>();
         long now = System.currentTimeMillis();
         int tserverId = 1;
@@ -338,9 +338,9 @@ public class ShardedTableMapFileTest {
             
             int currShard = 0;
             while (currShard < SHARDS_PER_DAY) {
-                // increment once, apply this tserver shardsPerTablet times
+                // increment once, apply this tserver shardsPerTServer times
                 tserverId++;
-                for (int i = 0; i < shardsPerTablet; i++) {
+                for (int i = 0; i < shardsPerTServer; i++) {
                     if (currShard >= SHARDS_PER_DAY) {
                         break;
                     }

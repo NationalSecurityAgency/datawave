@@ -53,7 +53,7 @@ public class ShardedTableMapFile {
     public static final String CONFIGURED_SHARDED_TABLE_NAMES = ShardedDataTypeHandler.SHARDED_TNAMES + ".configured";
     public static final String SHARDED_MAP_FILE_PATHS_RAW = "shardedMap.file.paths.raw";
     public static final String SHARD_VALIDATION_ENABLED = "shardedMap.validation.enabled";
-    public static final String SHARD_MAX_TABLETS_PER = "shardedMap.max.tablets.per.shard";
+    public static final String MAX_SHARDS_PER_TSERVER = "shardedMap.max.shards.per.tserver";
     
     public static void setupFile(Configuration conf) throws IOException, URISyntaxException, AccumuloSecurityException, AccumuloException {
         // want validation turned off by default
@@ -98,7 +98,7 @@ public class ShardedTableMapFile {
         ShardIdFactory shardIdFactory = new ShardIdFactory(conf);
         // assume true unless proven otherwise
         boolean isValid = true;
-        int maxTabletsPerShard = conf.getInt(SHARD_MAX_TABLETS_PER, 1);
+        int maxShardsPerTserver = conf.getInt(MAX_SHARDS_PER_TSERVER, 1);
         
         for (int daysAgo = 0; daysAgo <= daysToVerify; daysAgo++) {
             long inMillis = System.currentTimeMillis() - (daysAgo * DateUtils.MILLIS_PER_DAY);
@@ -110,7 +110,7 @@ public class ShardedTableMapFile {
                 isValid = false;
                 continue;
             }
-            boolean shardsAreBalanced = shardsAreBalanced(shardIdToLocation, datePrefix, maxTabletsPerShard);
+            boolean shardsAreBalanced = shardsAreBalanced(shardIdToLocation, datePrefix, maxShardsPerTserver);
             if (!shardsAreBalanced) {
                 log.error("Shards for " + datePrefix + " for table " + tableName + " are not balanced!");
                 isValid = false;
@@ -153,7 +153,7 @@ public class ShardedTableMapFile {
      *            to check
      * @return if the shards are distributed in a balanced fashion
      */
-    private static boolean shardsAreBalanced(Map<Text,String> locations, String datePrefix, int maxTabletsPerShard) {
+    private static boolean shardsAreBalanced(Map<Text,String> locations, String datePrefix, int maxShardsPerTserver) {
         // assume true unless proven wrong
         boolean dateIsBalanced = true;
         
@@ -165,15 +165,15 @@ public class ShardedTableMapFile {
             // only check entries for specified date
             if (prefixMatches(prefixBytes, key.getBytes(), key.getLength())) {
                 String value = entry.getValue();
-                // if we have already seen this tablet assignment, then the shards are not balanced
                 MutableInt cnt = tabletsSeenForDate.get(value);
                 if (null == cnt) {
                     cnt = new MutableInt(0);
                 }
                 // increment here before checking
                 cnt.increment();
-                
-                if (cnt.intValue() > maxTabletsPerShard) {
+
+                // if shard is assigned to more tservers than allowed, then the shards are not balanced
+                if (cnt.intValue() > maxShardsPerTserver) {
                     log.warn(cnt.toInteger() + " Shards for " + datePrefix + " assigned to tablet " + value);
                     dateIsBalanced = false;
                 }
