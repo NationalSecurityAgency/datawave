@@ -99,7 +99,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         // expected key structure
         Key key = new Key("row", "column", "field1" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 1, -1, fieldLimits, "LIMIT_FIELD");
+        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
         
         assertTrue(filter.keep(key));
         assertNull(filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false));
@@ -121,7 +121,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         // expected key structure
         Key key = new Key("row", "dataType" + Constants.NULL + "123.345.456", "field1" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(query, mockAttributeFactory, false, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD");
+        filter = new TLDEventDataFilter(query, mockAttributeFactory, false, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
         
         assertTrue(filter.keep(key));
         // increments counts = 1
@@ -154,7 +154,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         Key key1 = new Key("row", "column", "field1" + Constants.NULL_BYTE_STRING + "value");
         Key key2 = new Key("row", "column", "field2" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 1, -1, fieldLimits, "LIMIT_FIELD");
+        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
         
         assertTrue(filter.keep(key1));
         // increments counts = 1
@@ -208,7 +208,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         Key key1 = new Key("row", "column", "field1" + Constants.NULL_BYTE_STRING + "value");
         Key key2 = new Key("row", "column", "field2" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 3, -1, fieldLimits, "LIMIT_FIELD");
+        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 3, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
         
         assertTrue(filter.keep(key1));
         // increments counts = 1
@@ -449,5 +449,36 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         assertTrue(filter.queryFields.contains("BAR"));
         assertTrue(filter.queryFields.contains("FOO"));
+    }
+    
+    @Test
+    public void keep_nonEventApplyBypass() throws ParseException {
+        Map<String,Integer> fieldLimits = new HashMap<>(1);
+        fieldLimits.put(Constants.ANY_FIELD, 1);
+        
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("field3");
+        
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("field2 == 'bar'");
+        
+        Set<String> nonEventFields = new HashSet<>();
+        nonEventFields.add("field2");
+        
+        replayAll();
+        
+        // blacklisted tld key to initialize doc
+        Key rootKey = new Key("row", "dataType" + Constants.NULL + "123.345.456", "field3" + Constants.NULL_BYTE_STRING + "value");
+        // child key that would normally not be kept
+        Key key = new Key("row", "dataType" + Constants.NULL + "123.345.456.1", "field2" + Constants.NULL_BYTE_STRING + "value");
+        filter = new TLDEventDataFilter(query, mockAttributeFactory, false, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD", nonEventFields);
+        
+        // set the parse info correctly
+        filter.startNewDocument(rootKey);
+        filter.keep(rootKey);
+        
+        // test the key, would normally have been rejected, but as a child with a non-event that matches it should be kept
+        assertTrue(filter.keep(key));
+        
+        verifyAll();
     }
 }

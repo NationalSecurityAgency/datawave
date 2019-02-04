@@ -1,5 +1,6 @@
 package datawave.query.predicate;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -60,9 +61,12 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
      */
     private int anyFieldLimit;
     
+    private Set<String> nonEventFields;
+    
     public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
                     Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, attributeFactory, expressionFilterEnabled, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null);
+        this(script, attributeFactory, expressionFilterEnabled, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null,
+                        Collections.EMPTY_SET);
     }
     
     /**
@@ -76,13 +80,15 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
      * @param script
      */
     public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
-                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField) {
+                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField,
+                    Set<String> nonEventFields) {
         super(script, attributeFactory, expressionFilterEnabled);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
         this.limitFieldsMap = Collections.unmodifiableMap(limitFieldsMap);
         this.limitFieldsField = limitFieldsField;
+        this.nonEventFields = nonEventFields;
         
         // set the anyFieldLimit once if specified otherwise set to -1
         anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
@@ -109,6 +115,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         limitFieldsField = other.limitFieldsField;
         limitFieldsMap = other.limitFieldsMap;
         anyFieldLimit = other.anyFieldLimit;
+        nonEventFields = other.nonEventFields;
     }
     
     @Override
@@ -159,7 +166,9 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     }
     
     /**
-     * Determine if a Key should be kept. If the Key also returns true when called with apply() the Key will be returned to the client
+     * Determine if a Key should be kept. If a Key is a part of the TLD it will always be kept as long as we have not exceeded the key count limit for that
+     * field if limits are enabled. Otherwise all TLD Key's will be kept. For a non-TLD the Key will only be kept if it is a nonEvent field which will be used
+     * for query evaluation (apply()==true)
      * 
      * @see datawave.query.predicate.Filter#keep(Key)
      *
@@ -171,7 +180,10 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
         // only keep the data from the top level document with fields that matter
         lastParseInfo = getParseInfo(k);
         boolean root = lastParseInfo.isRoot();
-        return root && (k.getColumnQualifier().getLength() == 0 || keepField(k, false, root));
+        
+        return (root && (k.getColumnQualifier().getLength() == 0 || keepField(k, false, true)))
+                        || (!root && nonEventFields.contains(lastParseInfo.getField()) && keepField(k, false, false) && super
+                                        .apply(new AbstractMap.SimpleEntry<>(k, null)));
     }
     
     /**

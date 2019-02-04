@@ -75,15 +75,7 @@ public class TLDFieldIndexAggregatorTest {
         treeMap.put(fi6, new Value());
         treeMap.put(fi7, new Value());
         
-        EasyMock.expect(mockFilter.keep(EasyMock.isA(Key.class))).andReturn(false);
-        Capture<Map.Entry> captureFoo = Capture.newInstance();
-        EasyMock.expect(mockFilter.apply(EasyMock.capture(captureFoo))).andAnswer(new IAnswer<Boolean>() {
-            @Override
-            public Boolean answer() throws Throwable {
-                // only return true if it matches the first key
-                return captureFoo.getValue().getKey().equals(fi5);
-            }
-        });
+        EasyMock.expect(mockFilter.keep(EasyMock.isA(Key.class))).andReturn(true);
         
         EasyMock.replay(mockFilter);
         
@@ -102,7 +94,6 @@ public class TLDFieldIndexAggregatorTest {
         expectedFieldValues.add("VALUE3");
         expectedFieldValues.add("VALUE4");
         
-        assertTrue(captureFoo.hasCaptured());
         assertTrue(doc.get("FIELD1").isToKeep());
         Set<Attribute> attributes = ((Set<Attribute>) doc.get("FIELD1").getData());
         assertTrue(attributes.size() == 4);
