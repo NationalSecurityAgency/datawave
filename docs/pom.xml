@@ -297,10 +297,22 @@
                 </executions>
             </plugin>
             <plugin>
-                <!--
-                    Override the javadoc configuration to include source jars from our dependencies in order to build combined
-                    documentation for the entire distribution.
-                -->
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <classifier>sources</classifier>
+                            <includeGroupIds>gov.nsa.datawave, gov.nsa.datawave.webservices</includeGroupIds>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <executions>
                     <execution>
@@ -310,12 +322,9 @@
                         </goals>
                         <phase>package</phase>
                         <configuration combine.children="append">
-                            <includeDependencySources>true</includeDependencySources>
-                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
-                            <dependencySourceIncludes>
-                                <dependencySourceInclude>gov.nsa.datawave:*</dependencySourceInclude>
-                                <dependencySourceInclude>gov.nsa.datawave.webservices:*</dependencySourceInclude>
-                            </dependencySourceIncludes>
+                            <sourcepath>${project.build.directory}/dependency</sourcepath>
+                            <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
+                            <excludePackageNames>generated-sources.*</excludePackageNames>
                         </configuration>
                     </execution>
                 </executions>
