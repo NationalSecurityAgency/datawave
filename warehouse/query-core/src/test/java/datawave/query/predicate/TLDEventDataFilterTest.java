@@ -27,7 +27,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 public class TLDEventDataFilterTest extends EasyMockSupport {
     private TLDEventDataFilter filter;
@@ -66,7 +70,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, -1, -1);
         String field = filter.getCurrentField(key);
         
-        assertTrue(field.equals("field"));
+        assertEquals("field", field);
         
         verifyAll();
     }
@@ -81,7 +85,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, -1, -1);
         String field = filter.getCurrentField(key);
         
-        assertTrue(field.equals("field"));
+        assertEquals("field", field);
         
         verifyAll();
     }
@@ -95,10 +99,10 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         // expected key structure
         Key key = new Key("row", "column", "field1" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 1, -1, fieldLimits, "LIMIT_FIELD");
+        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
         
         assertTrue(filter.keep(key));
-        assertTrue(filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false) == null);
+        assertNull(filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false));
         
         verifyAll();
     }
@@ -117,22 +121,22 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         // expected key structure
         Key key = new Key("row", "dataType" + Constants.NULL + "123.345.456", "field1" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(query, mockAttributeFactory, false, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD");
+        filter = new TLDEventDataFilter(query, mockAttributeFactory, false, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
         
         assertTrue(filter.keep(key));
         // increments counts = 1
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key, null)));
-        assertTrue(filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false) == null);
+        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(key, null)));
+        assertNull(filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false));
         // does not increment counts so will still return true
         assertTrue(filter.keep(key));
         // increments counts = 2 so rejects based on field filter
-        assertFalse(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key, null)));
+        assertFalse(filter.apply(new AbstractMap.SimpleEntry<>(key, null)));
         Range seekRange = filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false);
-        assertTrue(seekRange != null);
-        assertTrue(seekRange.getStartKey().getRow().equals(key.getRow()));
-        assertTrue(seekRange.getStartKey().getColumnFamily().equals(key.getColumnFamily()));
-        assertTrue(seekRange.getStartKey().getColumnQualifier().toString().equals("field1" + "\u0001"));
-        assertTrue(seekRange.isStartKeyInclusive() == true);
+        assertNotNull(seekRange);
+        assertEquals(seekRange.getStartKey().getRow(), key.getRow());
+        assertEquals(seekRange.getStartKey().getColumnFamily(), key.getColumnFamily());
+        assertEquals(seekRange.getStartKey().getColumnQualifier().toString(), "field1" + "\u0001");
+        assertEquals(true, seekRange.isStartKeyInclusive());
         
         // now fails
         assertFalse(filter.keep(key));
@@ -150,46 +154,46 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         Key key1 = new Key("row", "column", "field1" + Constants.NULL_BYTE_STRING + "value");
         Key key2 = new Key("row", "column", "field2" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 1, -1, fieldLimits, "LIMIT_FIELD");
+        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 1, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
         
         assertTrue(filter.keep(key1));
         // increments counts = 1
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key1, null)));
-        assertTrue(filter.transform(key1) == null);
-        assertTrue(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false) == null);
+        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(key1, null)));
+        assertNull(filter.transform(key1));
+        assertNull(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false));
         // does not increment counts so will still return true
         assertTrue(filter.keep(key1));
         // increments counts = 2
-        assertFalse(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key1, null)));
+        assertFalse(filter.apply(new AbstractMap.SimpleEntry<>(key1, null)));
         Range seekRange = filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false);
-        assertTrue(seekRange != null);
-        assertTrue(seekRange.getStartKey().getRow().equals(key1.getRow()));
-        assertTrue(seekRange.getStartKey().getColumnFamily().equals(key1.getColumnFamily()));
-        assertTrue(seekRange.getStartKey().getColumnQualifier().toString().equals("field1" + "\u0001"));
-        assertTrue(seekRange.isStartKeyInclusive() == true);
+        assertNotNull(seekRange);
+        assertEquals(seekRange.getStartKey().getRow(), key1.getRow());
+        assertEquals(seekRange.getStartKey().getColumnFamily(), key1.getColumnFamily());
+        assertEquals(seekRange.getStartKey().getColumnQualifier().toString(), "field1" + "\u0001");
+        assertEquals(true, seekRange.isStartKeyInclusive());
         // now fails
         assertFalse(filter.keep(key1));
         
         Key limitKey = filter.transform(key1);
-        assertTrue(limitKey != null);
-        assertTrue(limitKey.getRow().equals(key1.getRow()));
-        assertTrue(limitKey.getColumnFamily().equals(key1.getColumnFamily()));
-        assertTrue(limitKey.getColumnQualifier().toString().equals("LIMIT_FIELD" + Constants.NULL + "field1"));
+        assertNotNull(limitKey);
+        assertEquals(limitKey.getRow(), key1.getRow());
+        assertEquals(limitKey.getColumnFamily(), key1.getColumnFamily());
+        assertEquals(limitKey.getColumnQualifier().toString(), "LIMIT_FIELD" + Constants.NULL + "field1");
         
         // unlimited field
         assertTrue(filter.keep(key2));
         // increments counts = 1
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key2, null)));
-        assertTrue(filter.transform(key2) == null);
-        assertTrue(filter.getSeekRange(key2, key2.followingKey(PartialKey.ROW), false) == null);
+        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(key2, null)));
+        assertNull(filter.transform(key2));
+        assertNull(filter.getSeekRange(key2, key2.followingKey(PartialKey.ROW), false));
         
         assertTrue(filter.keep(key2));
         // increments counts = 2
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key2, null)));
-        assertTrue(filter.getSeekRange(key2, key2.followingKey(PartialKey.ROW), false) == null);
+        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(key2, null)));
+        assertNull(filter.getSeekRange(key2, key2.followingKey(PartialKey.ROW), false));
         // still passes
         assertTrue(filter.keep(key2));
-        assertTrue(filter.transform(key2) == null);
+        assertNull(filter.transform(key2));
         
         verifyAll();
     }
@@ -204,29 +208,29 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         Key key1 = new Key("row", "column", "field1" + Constants.NULL_BYTE_STRING + "value");
         Key key2 = new Key("row", "column", "field2" + Constants.NULL_BYTE_STRING + "value");
-        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 3, -1, fieldLimits, "LIMIT_FIELD");
+        filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, 3, -1, fieldLimits, "LIMIT_FIELD", Collections.EMPTY_SET);
         
         assertTrue(filter.keep(key1));
         // increments counts = 1
-        assertTrue(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key1, null)));
-        assertTrue(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false) == null);
+        assertTrue(filter.apply(new AbstractMap.SimpleEntry<>(key1, null)));
+        assertNull(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false));
         // does not increment counts so will still return true
         assertTrue(filter.keep(key1));
         // increments counts = 2 rejected by field count
-        assertFalse(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key1, null)));
-        assertTrue(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false) == null);
+        assertFalse(filter.apply(new AbstractMap.SimpleEntry<>(key1, null)));
+        assertNull(filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false));
         
         // now fails
         assertFalse(filter.keep(key1));
         
         // see another key on apply to trigger the seek range
-        assertFalse(filter.apply(new AbstractMap.SimpleEntry<Key,String>(key1, null)));
+        assertFalse(filter.apply(new AbstractMap.SimpleEntry<>(key1, null)));
         Range seekRange = filter.getSeekRange(key1, key1.followingKey(PartialKey.ROW), false);
-        assertTrue(seekRange != null);
-        assertTrue(seekRange.getStartKey().getRow().equals(key1.getRow()));
-        assertTrue(seekRange.getStartKey().getColumnFamily().equals(key1.getColumnFamily()));
-        assertTrue(seekRange.getStartKey().getColumnQualifier().toString().equals("field1" + "\u0001"));
-        assertTrue(seekRange.isStartKeyInclusive() == true);
+        assertNotNull(seekRange);
+        assertEquals(seekRange.getStartKey().getRow(), key1.getRow());
+        assertEquals(seekRange.getStartKey().getColumnFamily(), key1.getColumnFamily());
+        assertEquals(seekRange.getStartKey().getColumnQualifier().toString(), "field1" + "\u0001");
+        assertEquals(true, seekRange.isStartKeyInclusive());
         
         verifyAll();
     }
@@ -241,22 +245,22 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         filter = new TLDEventDataFilter(mockScript, mockAttributeFactory, false, null, null, -1, -1);
         
         TLDEventDataFilter.ParseInfo info = filter.getParseInfo(key);
-        assertTrue(info != null);
-        assertTrue(info.getField().equals("field1"));
+        assertNotNull(info);
+        assertEquals("field1", info.getField());
         assertTrue(info.isRoot());
         
         // first two calls are made without the internal update to the cached parseInfo so are calculated independently
         
         key = new Key("row", "dataype" + Constants.NULL + "123.234.345", "field1" + Constants.NULL_BYTE_STRING + "value");
         info = filter.getParseInfo(key);
-        assertTrue(info != null);
-        assertTrue(info.getField().equals("field1"));
+        assertNotNull(info);
+        assertEquals("field1", info.getField());
         assertTrue(info.isRoot());
         
         key = new Key("row", "dataype" + Constants.NULL + "123.234.345.1", "field1" + Constants.NULL_BYTE_STRING + "value");
         info = filter.getParseInfo(key);
-        assertTrue(info != null);
-        assertTrue(info.getField().equals("field1"));
+        assertNotNull(info);
+        assertEquals("field1", info.getField());
         // this was wrong assumption based when fixed length UID parse assumptions were being made in the TLDEventDataFilter
         assertTrue(info.isRoot());
         
@@ -264,40 +268,40 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // use the keep method to set the previous call state
         filter.keep(key);
         info = filter.getParseInfo(key);
-        assertTrue(info != null);
-        assertTrue(info.getField().equals("field1"));
+        assertNotNull(info);
+        assertEquals("field1", info.getField());
         assertTrue(info.isRoot());
         
         // now test the child and see that it is not root
         key = new Key("row", "dataype" + Constants.NULL + "123.234.345.1", "field1" + Constants.NULL_BYTE_STRING + "value");
         filter.keep(key);
         info = filter.getParseInfo(key);
-        assertTrue(info != null);
-        assertTrue(info.getField().equals("field1"));
+        assertNotNull(info);
+        assertEquals("field1", info.getField());
         assertFalse(info.isRoot());
         
         // a second child
         key = new Key("row", "dataype" + Constants.NULL + "123.234.345.2", "field1" + Constants.NULL_BYTE_STRING + "value");
         filter.keep(key);
         info = filter.getParseInfo(key);
-        assertTrue(info != null);
-        assertTrue(info.getField().equals("field1"));
+        assertNotNull(info);
+        assertEquals("field1", info.getField());
         assertFalse(info.isRoot());
         
         // a longer child
         key = new Key("row", "dataype" + Constants.NULL + "123.234.345.23", "field1" + Constants.NULL_BYTE_STRING + "value");
         filter.keep(key);
         info = filter.getParseInfo(key);
-        assertTrue(info != null);
-        assertTrue(info.getField().equals("field1"));
+        assertNotNull(info);
+        assertEquals("field1", info.getField());
         assertFalse(info.isRoot());
         
         // jump back to the original
         key = new Key("row", "dataype" + Constants.NULL + "123.234.345", "field1" + Constants.NULL_BYTE_STRING + "value");
         filter.keep(key);
         info = filter.getParseInfo(key);
-        assertTrue(info != null);
-        assertTrue(info.getField().equals("field1"));
+        assertNotNull(info);
+        assertEquals("field1", info.getField());
         assertTrue(info.isRoot());
         
         verifyAll();
@@ -341,8 +345,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         Key key1 = new Key("row", "datatype" + Constants.NULL + "123.234.345", "FOO" + Constants.NULL_BYTE_STRING + "baz");
         Key key2 = new Key("row", "datatype" + Constants.NULL + "123.234.345.11", "FOO" + Constants.NULL_BYTE_STRING + "baz");
-        boolean tldResult = filter.apply(new AbstractMap.SimpleEntry<Key,String>(key1, null));
-        boolean result = filter.apply(new AbstractMap.SimpleEntry<Key,String>(key2, null));
+        boolean tldResult = filter.apply(new AbstractMap.SimpleEntry<>(key1, null));
+        boolean result = filter.apply(new AbstractMap.SimpleEntry<>(key2, null));
         
         verifyAll();
         
@@ -363,10 +367,10 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // process parent first to setup proper root calculations
         Key parent = new Key("row", "datatype" + Constants.NULL + "123.234.345", "BAR" + Constants.NULL_BYTE_STRING + "baz");
         filter.keep(parent);
-        filter.apply(new AbstractMap.SimpleEntry<Key,String>(parent, null));
+        filter.apply(new AbstractMap.SimpleEntry<>(parent, null));
         
         Key child = new Key("row", "datatype" + Constants.NULL + "123.234.345.11", "FOO" + Constants.NULL_BYTE_STRING + "baz");
-        boolean result = filter.apply(new AbstractMap.SimpleEntry<Key,String>(child, null));
+        boolean result = filter.apply(new AbstractMap.SimpleEntry<>(child, null));
         
         verifyAll();
         
@@ -445,5 +449,36 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         
         assertTrue(filter.queryFields.contains("BAR"));
         assertTrue(filter.queryFields.contains("FOO"));
+    }
+    
+    @Test
+    public void keep_nonEventApplyBypass() throws ParseException {
+        Map<String,Integer> fieldLimits = new HashMap<>(1);
+        fieldLimits.put(Constants.ANY_FIELD, 1);
+        
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("field3");
+        
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("field2 == 'bar'");
+        
+        Set<String> nonEventFields = new HashSet<>();
+        nonEventFields.add("field2");
+        
+        replayAll();
+        
+        // blacklisted tld key to initialize doc
+        Key rootKey = new Key("row", "dataType" + Constants.NULL + "123.345.456", "field3" + Constants.NULL_BYTE_STRING + "value");
+        // child key that would normally not be kept
+        Key key = new Key("row", "dataType" + Constants.NULL + "123.345.456.1", "field2" + Constants.NULL_BYTE_STRING + "value");
+        filter = new TLDEventDataFilter(query, mockAttributeFactory, false, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD", nonEventFields);
+        
+        // set the parse info correctly
+        filter.startNewDocument(rootKey);
+        filter.keep(rootKey);
+        
+        // test the key, would normally have been rejected, but as a child with a non-event that matches it should be kept
+        assertTrue(filter.keep(key));
+        
+        verifyAll();
     }
 }

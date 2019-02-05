@@ -3,10 +3,8 @@ package datawave.ingest.wikipedia;
 import java.util.Collection;
 import java.util.Set;
 
-import datawave.ingest.wikipedia.WikipediaTestBed;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.wikipedia.WikipediaRecordReader;
 
 import org.junit.Assert;
 import org.junit.Before;

@@ -13,6 +13,7 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.lucene.store.DataInput;
 import org.apache.lucene.store.InputStreamDataInput;
 import org.apache.lucene.util.IntsRef;
+import org.apache.lucene.util.IntsRefBuilder;
 import org.apache.lucene.util.fst.FST;
 import org.apache.lucene.util.fst.NoOutputs;
 import org.apache.lucene.util.fst.Outputs;
@@ -162,9 +163,9 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
         String value = colq.substring(0, index);
         
         if (this.fst != null) {
-            IntsRef ints = new IntsRef();
-            Util.toUTF16(value, ints);
-            
+            final IntsRefBuilder irBuilder = new IntsRefBuilder();
+            Util.toUTF16(value, irBuilder);
+            final IntsRef ints = irBuilder.get();
             synchronized (this.fst) {
                 if (Util.get(this.fst, ints) != null) {
                     matches = true;
@@ -178,7 +179,7 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
     }
     
     public static FST<?> getFST(SortedSet<String> values) throws IOException {
-        final IntsRef scratchInt = new IntsRef();
+        final IntsRefBuilder irBuilder = new IntsRefBuilder();
         // The builder options with defaults
         FST.INPUT_TYPE inputType = FST.INPUT_TYPE.BYTE1;
         int minSuffixCount1 = 0;
@@ -186,19 +187,18 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
         boolean doShareSuffix = true;
         boolean doShareNonSingletonNodes = true;
         int shareMaxTailLength = Integer.MAX_VALUE;
-        boolean doPackFST = false;
-        float acceptableOverheadRatio = PackedInts.COMPACT;
+        
         boolean allowArrayArcs = true;
         int bytesPageBits = 15;
         final Outputs<Object> outputs = NoOutputs.getSingleton();
         
         // create the FST from the values
         org.apache.lucene.util.fst.Builder<Object> fstBuilder = new org.apache.lucene.util.fst.Builder<>(inputType, minSuffixCount1, minSuffixCount2,
-                        doShareSuffix, doShareNonSingletonNodes, shareMaxTailLength, outputs, null, doPackFST, acceptableOverheadRatio, allowArrayArcs,
-                        bytesPageBits);
+                        doShareSuffix, doShareNonSingletonNodes, shareMaxTailLength, outputs, allowArrayArcs, bytesPageBits);
         
         for (String value : values) {
-            Util.toUTF16(value, scratchInt);
+            Util.toUTF16(value, irBuilder);
+            final IntsRef scratchInt = irBuilder.get();
             fstBuilder.add(scratchInt, outputs.getNoOutput());
         }
         return fstBuilder.finish();

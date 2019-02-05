@@ -38,7 +38,7 @@ public class TermFrequencyAggregator extends IdentityAggregator {
     @Override
     protected Tuple2<String,String> parserFieldNameValue(Key topKey) {
         DatawaveKey parser = new DatawaveKey(topKey);
-        return new Tuple2<String,String>(parser.getFieldName(), parser.getFieldValue());
+        return new Tuple2<>(parser.getFieldName(), parser.getFieldValue());
     }
     
     @Override

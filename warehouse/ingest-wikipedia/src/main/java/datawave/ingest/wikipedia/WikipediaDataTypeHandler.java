@@ -239,7 +239,8 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
                 }
             }
             
-            WikipediaTokenizer wikiTokenizer = new WikipediaTokenizer(contentReader);
+            WikipediaTokenizer wikiTokenizer = new WikipediaTokenizer();
+            wikiTokenizer.setReader(contentReader);
             CharTermAttribute termAttr = wikiTokenizer.addAttribute(CharTermAttribute.class);
             wikiTokenizer.reset();
             

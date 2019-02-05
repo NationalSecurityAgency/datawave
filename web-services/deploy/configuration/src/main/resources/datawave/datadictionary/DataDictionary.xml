@@ -19,7 +19,7 @@
 	</bean>
 	-->
 
-	<bean id="DataDictionaryConfiguration" class="datawave.webservice.datadictionary.DataDictionaryConfiguration">
+	<bean id="DataDictionaryConfiguration" class="datawave.microservice.dictionary.config.DataDictionaryProperties">
         <property name="modelName" value="DATAWAVE" />
 		<property name="modelTableName" value="${metadata.table.name}" />
 		<property name="metadataTableName" value="${metadata.table.name}" />

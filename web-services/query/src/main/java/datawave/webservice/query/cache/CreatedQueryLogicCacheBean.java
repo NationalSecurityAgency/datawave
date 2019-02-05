@@ -1,7 +1,6 @@
 package datawave.webservice.query.cache;
 
 import com.google.common.base.Function;
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;

@@ -8,7 +8,6 @@ import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.TimeZone;
 
-import datawave.ingest.csv.mr.handler.ContentCSVColumnBasedHandler;
 import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;

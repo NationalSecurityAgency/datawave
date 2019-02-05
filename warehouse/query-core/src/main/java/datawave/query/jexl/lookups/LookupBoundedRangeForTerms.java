@@ -3,15 +3,15 @@ package datawave.query.jexl.lookups;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.ColumnQualifierRangeIterator;
-import datawave.core.iterators.CompositeRangeFilterIterator;
+import datawave.core.iterators.CompositeSeekingIterator;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
+import datawave.data.type.DiscreteIndexType;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -25,7 +25,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.WholeRowIterator;
-import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.springframework.util.StringUtils;
@@ -33,7 +32,6 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -46,15 +44,9 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
     protected Set<String> datatypeFilter;
     protected Set<Text> fields;
     private final LiteralRange<?> literalRange;
-    private final JexlNode compositePredicate;
     
     public LookupBoundedRangeForTerms(LiteralRange<?> literalRange) {
-        this(literalRange, null);
-    }
-    
-    public LookupBoundedRangeForTerms(LiteralRange<?> literalRange, JexlNode compositePredicate) {
         this.literalRange = literalRange;
-        this.compositePredicate = compositePredicate;
         datatypeFilter = Sets.newHashSet();
         fields = Sets.newHashSet();
     }
@@ -138,27 +130,26 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
             
             bs.addScanIterator(cfg);
             
-            // If this is a composite range, we need to setup our query to filter based on each component of the composite range
-            if (config.getCompositeToFieldMap().get(literalRange.getFieldName()) != null && compositePredicate != null) {
-                Date transitionDate = null;
-                if (config.getCompositeTransitionDates().containsKey(literalRange.getFieldName()))
-                    transitionDate = config.getCompositeTransitionDates().get(literalRange.getFieldName());
+            // If this is a composite field, with multiple terms, we need to setup our query to filter based on each component of the composite range
+            if (config.getCompositeToFieldMap().get(literalRange.getFieldName()) != null) {
                 
-                // if this is a transitioned composite field, don't add the iterator if our date range preceeds the transition date
-                if (transitionDate == null || config.getEndDate().compareTo(transitionDate) > 0) {
+                String compositeSeparator = null;
+                if (config.getCompositeFieldSeparators() != null)
+                    compositeSeparator = config.getCompositeFieldSeparators().get(literalRange.getFieldName());
+                
+                if (compositeSeparator != null && (lower.contains(compositeSeparator) || upper.contains(compositeSeparator))) {
+                    IteratorSetting compositeIterator = new IteratorSetting(config.getBaseIteratorPriority() + 51, CompositeSeekingIterator.class);
                     
-                    IteratorSetting compositeIterator = new IteratorSetting(config.getBaseIteratorPriority() + 51, CompositeRangeFilterIterator.class);
-                    
-                    compositeIterator.addOption(CompositeRangeFilterIterator.COMPOSITE_FIELDS,
+                    compositeIterator.addOption(CompositeSeekingIterator.COMPONENT_FIELDS,
                                     StringUtils.collectionToCommaDelimitedString(config.getCompositeToFieldMap().get(literalRange.getFieldName())));
                     
-                    compositeIterator.addOption(CompositeRangeFilterIterator.COMPOSITE_PREDICATE, JexlStringBuildingVisitor.buildQuery(compositePredicate));
-                    
-                    if (transitionDate != null) {
-                        // Ensure iterator runs before wholerowiterator so we get valid timestamps
-                        compositeIterator.setPriority(config.getBaseIteratorPriority() + 49);
-                        compositeIterator.addOption(CompositeRangeFilterIterator.COMPOSITE_TRANSITION_DATE, Long.toString(transitionDate.getTime()));
+                    for (String fieldName : config.getCompositeToFieldMap().get(literalRange.getFieldName())) {
+                        DiscreteIndexType type = config.getFieldToDiscreteIndexTypes().get(fieldName);
+                        if (type != null)
+                            compositeIterator.addOption(fieldName + CompositeSeekingIterator.DISCRETE_INDEX_TYPE, type.getClass().getName());
                     }
+                    
+                    compositeIterator.addOption(CompositeSeekingIterator.SEPARATOR, compositeSeparator);
                     
                     bs.addScanIterator(compositeIterator);
                 }

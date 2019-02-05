@@ -13,13 +13,12 @@ import org.apache.lucene.queryparser.flexible.standard.processors.MultiFieldQuer
 import org.apache.lucene.queryparser.flexible.standard.processors.MultiTermRewriteMethodProcessor;
 import org.apache.lucene.queryparser.flexible.standard.processors.RemoveEmptyNonLeafQueryNodeProcessor;
 import org.apache.lucene.queryparser.flexible.standard.processors.TermRangeQueryNodeProcessor;
-import org.apache.lucene.queryparser.flexible.standard.processors.WildcardQueryNodeProcessor;
 
 public class CustomQueryNodeProcessorPipeline extends QueryNodeProcessorPipeline {
     public CustomQueryNodeProcessorPipeline(QueryConfigHandler configHandler) {
         super(configHandler);
         
-        add(new WildcardQueryNodeProcessor());
+        add(new CustomWildcardQueryNodeProcessor());
         add(new MultiFieldQueryNodeProcessor());
         add(new FuzzyQueryNodeProcessor());
         add(new MatchAllDocsQueryNodeProcessor());
@@ -34,5 +33,4 @@ public class CustomQueryNodeProcessorPipeline extends QueryNodeProcessorPipeline
         add(new MultiTermRewriteMethodProcessor());
         add(new CustomFieldLimiterNodeProcessor());
     }
-    
 }

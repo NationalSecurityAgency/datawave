@@ -1,7 +1,9 @@
 package datawave.microservice.audit.accumulo.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
+@EnableConfigurationProperties(AccumuloAuditProperties.class)
 @ConfigurationProperties(prefix = "audit.accumulo")
 public class AccumuloAuditProperties {
     

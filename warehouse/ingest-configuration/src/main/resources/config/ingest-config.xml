@@ -68,7 +68,7 @@
 
 <property>
   <name>ingest.value.dedup.aggregation</name>
-  <value>${table.name.shard},${table.name.shardIndex}},${table.name.shardReverseIndex},${table.name.metadata},${table.name.dateIndex}</value>
+  <value>${table.name.shard},${table.name.shardIndex},${table.name.shardReverseIndex},${table.name.metadata},${table.name.dateIndex}</value>
   <description>
      These parameters determine how and if deduping will be done
 

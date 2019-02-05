@@ -7,7 +7,6 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
-import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.ingest.data.config.ingest.CompositeIngestHelperInterface;
 import datawave.ingest.data.config.ingest.IndexOnlyIngestHelperInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
@@ -21,7 +20,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.springframework.util.StringUtils;
 
 import java.util.Collection;
 import java.util.List;
@@ -86,8 +84,7 @@ import java.util.Set;
 public class EventMetadata implements RawRecordMetadata {
     
     private MetadataWithMostRecentDate compositeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CI);
-    private MetadataWithMostRecentDate compositeFixedLengthFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CIFL);
-    private MetadataWithMostRecentDate compositeTransitionDateInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CITD);
+    private MetadataWithMostRecentDate compositeSeparators = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CISEP);
     private MetadataWithMostRecentDate dataTypeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_T);
     private MetadataWithMostRecentDate normalizedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_N);
     
@@ -190,21 +187,11 @@ public class EventMetadata implements RawRecordMetadata {
             }
             
             if (helper.isCompositeField(fieldName)) {
-                String[] componentFields = helper.getCompositeFieldDefinitions().get(fieldName);
-                this.compositeFieldsInfo.createOrUpdate(fieldName, event.getDataType().outputName(), StringUtils.arrayToCommaDelimitedString(componentFields),
+                Collection<String> componentFields = helper.getCompositeFieldDefinitions().get(fieldName);
+                this.compositeFieldsInfo.createOrUpdate(fieldName, event.getDataType().outputName(), String.join(",", componentFields), event.getDate());
+                this.compositeSeparators.createOrUpdate(fieldName, event.getDataType().outputName(), helper.getCompositeFieldSeparators().get(fieldName),
                                 event.getDate());
-                
-                // Add fixed fields and transition date if applicable
-                if (helper.isFixedLengthCompositeField(fieldName))
-                    this.compositeFixedLengthFieldsInfo.createOrUpdate(fieldName, event.getDataType().outputName(), "", event.getDate());
-                
-                if (helper.isTransitionedCompositeField(fieldName)) {
-                    String transitionDateStr = CompositeIngest.CompositeFieldNormalizer.formatter.format(helper.getCompositeFieldTransitionDate(fieldName)
-                                    .getTime());
-                    this.compositeTransitionDateInfo.createOrUpdate(fieldName, event.getDataType().outputName(), transitionDateStr, event.getDate());
-                }
             }
-            
         }
         
         addTokenizedContent(helper, event, fields, countDelta, loadDateStr);
@@ -376,8 +363,7 @@ public class EventMetadata implements RawRecordMetadata {
         addIndexedFieldToMetadata(bulkData, normalizedFieldsInfo);
         
         addIndexedFieldToMetadata(bulkData, this.compositeFieldsInfo);
-        addIndexedFieldToMetadata(bulkData, this.compositeFixedLengthFieldsInfo);
-        addIndexedFieldToMetadata(bulkData, this.compositeTransitionDateInfo);
+        addIndexedFieldToMetadata(bulkData, this.compositeSeparators);
         
         addToLoadDates(bulkData, this.indexedFieldsLoadDateCounts);
         addToLoadDates(bulkData, this.reverseIndexedFieldsLoadDateCounts);

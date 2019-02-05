@@ -31,7 +31,7 @@ public class TreeHashVisitorTest {
     public void testExpressionDelayed() throws Exception {
         JexlNode queryA = JexlASTHelper.parseJexlQuery("FOO == 'abc'");
         JexlNode queryB = ASTDelayedPredicate.create(JexlASTHelper.parseJexlQuery("FOO == 'abc'"));
-        Assert.assertFalse(TreeHashVisitor.getNodeHash(queryA).equals(TreeHashVisitor.getNodeHash(queryB)));
+        Assert.assertNotEquals(TreeHashVisitor.getNodeHash(queryA), TreeHashVisitor.getNodeHash(queryB));
         
     }
     
@@ -39,7 +39,7 @@ public class TreeHashVisitorTest {
     public void testRange() throws Exception {
         JexlNode queryA = JexlASTHelper.parseJexlQuery("FOO >= 'abc' && FOO >= 'bcd'");
         JexlNode queryB = JexlASTHelper.parseJexlQuery("FOO >= 'bcd' && FOO >= 'abc'");
-        Assert.assertTrue(TreeHashVisitor.getNodeHash(queryA).equals(TreeHashVisitor.getNodeHash(queryB)));
+        Assert.assertEquals(TreeHashVisitor.getNodeHash(queryA), TreeHashVisitor.getNodeHash(queryB));
         
     }
     
@@ -47,7 +47,7 @@ public class TreeHashVisitorTest {
     public void testRangeFalse() throws Exception {
         JexlNode queryA = JexlASTHelper.parseJexlQuery("(FOO >= 'abc' && FOO >= 'bcd') && CAR=='wagon'");
         JexlNode queryB = JexlASTHelper.parseJexlQuery("FOO >= 'bcd' && FOO >= 'abc'");
-        Assert.assertFalse(TreeHashVisitor.getNodeHash(queryA).equals(TreeHashVisitor.getNodeHash(queryB)));
+        Assert.assertNotEquals(TreeHashVisitor.getNodeHash(queryA), TreeHashVisitor.getNodeHash(queryB));
         
     }
     
@@ -55,7 +55,7 @@ public class TreeHashVisitorTest {
     public void testFunction() throws Exception {
         JexlNode queryA = JexlASTHelper.parseJexlQuery("(FOO == 'blah1' && FOO == 'blah2' && content:phrase(termOffsetMap, 'twisted', 'pair'))");
         JexlNode queryB = JexlASTHelper.parseJexlQuery("(content:phrase(termOffsetMap, 'twisted', 'pair') && FOO == 'blah1' && FOO == 'blah2')");
-        Assert.assertTrue(TreeHashVisitor.getNodeHash(queryA).equals(TreeHashVisitor.getNodeHash(queryB)));
+        Assert.assertEquals(TreeHashVisitor.getNodeHash(queryA), TreeHashVisitor.getNodeHash(queryB));
         
     }
     
@@ -63,8 +63,8 @@ public class TreeHashVisitorTest {
     public void testSimpleEqualityNegative() throws Exception {
         String queryA = "FOO == 'ab2c'";
         String queryB = "FOO == 'abc'";
-        Assert.assertFalse(TreeHashVisitor.getNodeHash(JexlASTHelper.parseJexlQuery(queryA)).equals(
-                        TreeHashVisitor.getNodeHash(JexlASTHelper.parseJexlQuery(queryB))));
+        Assert.assertNotEquals(TreeHashVisitor.getNodeHash(JexlASTHelper.parseJexlQuery(queryA)),
+                        TreeHashVisitor.getNodeHash(JexlASTHelper.parseJexlQuery(queryB)));
         
     }
     

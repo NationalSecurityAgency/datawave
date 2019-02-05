@@ -1,6 +1,7 @@
 package datawave.query.iterator.builder;
 
 import datawave.core.iterators.querylock.QueryLock;
+import datawave.query.composite.CompositeMetadata;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import org.apache.hadoop.fs.FileSystem;
 
@@ -20,6 +21,8 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected int ivaratorMaxOpenFiles = 100;
     protected boolean collectTimingDetails = false;
     protected QuerySpanCollector querySpanCollector = null;
+    protected CompositeMetadata compositeMetadata;
+    protected int compositeSeekThreshold;
     
     public FileSystem getHdfsFileSystem() {
         return hdfsFileSystem;
@@ -101,4 +104,19 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
         this.querySpanCollector = querySpanCollector;
     }
     
+    public CompositeMetadata getCompositeMetadata() {
+        return compositeMetadata;
+    }
+    
+    public void setCompositeMetadata(CompositeMetadata compositeMetadata) {
+        this.compositeMetadata = compositeMetadata;
+    }
+    
+    public int getCompositeSeekThreshold() {
+        return compositeSeekThreshold;
+    }
+    
+    public void setCompositeSeekThreshold(int compositeSeekThreshold) {
+        this.compositeSeekThreshold = compositeSeekThreshold;
+    }
 }

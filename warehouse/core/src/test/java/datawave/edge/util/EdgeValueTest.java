@@ -11,7 +11,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import datawave.edge.util.EdgeValue;
 import datawave.edge.util.EdgeValue.EdgeValueBuilder;
 
 import org.apache.accumulo.core.data.Value;
@@ -21,7 +20,12 @@ import org.junit.Test;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 
 public class EdgeValueTest {
     
@@ -44,8 +48,8 @@ public class EdgeValueTest {
         
         assertTrue(outValue.hasCount());
         assertTrue(outValue.hasBitmask());
-        assertTrue(42 == outValue.getCount());
-        assertTrue(1 == outValue.getBitmask());
+        assertEquals(42, (long) outValue.getCount());
+        assertEquals(1, (int) outValue.getBitmask());
         
         // new builder from EdgeValue.
         builder = EdgeValue.newBuilder(eValue);
@@ -53,8 +57,8 @@ public class EdgeValueTest {
         
         assertTrue(outValue2.hasCount());
         assertTrue(outValue2.hasBitmask());
-        assertTrue(42 == outValue2.getCount());
-        assertTrue(1 == outValue2.getBitmask());
+        assertEquals(42, (long) outValue2.getCount());
+        assertEquals(1, (int) outValue2.getBitmask());
     }
     
     @Test

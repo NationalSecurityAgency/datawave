@@ -2,14 +2,9 @@ package datawave.edge.util;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Extracted from datawave.edge.util.EdgeKeyTest for code reuse.

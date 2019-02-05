@@ -261,7 +261,7 @@ public class JsonObjectFlattenerImplTest {
         try {
             flattener.flatten(job);
         } catch (IllegalStateException ill) {
-            Assert.assertTrue(ill.getMessage().equals("path delimiter and occurrence delimiter cannot be the same"));
+            Assert.assertEquals("path delimiter and occurrence delimiter cannot be the same", ill.getMessage());
             throw ill;
         }
     }

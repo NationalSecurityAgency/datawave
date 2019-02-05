@@ -5,8 +5,6 @@ import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
 
-import datawave.data.type.util.NumericalEncoder;
-
 public class NumericalEncoderTest {
     
     @Test

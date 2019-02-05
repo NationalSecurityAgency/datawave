@@ -2,9 +2,14 @@ package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class TabletLocationHashPartitionerTest {
     public static final int MAX_EXPECTED_COLLISIONS = 70;

@@ -2,7 +2,12 @@ package datawave.query.util;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.*;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
@@ -16,7 +21,15 @@ import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 
 public class MockMetadataHelper extends MetadataHelper {

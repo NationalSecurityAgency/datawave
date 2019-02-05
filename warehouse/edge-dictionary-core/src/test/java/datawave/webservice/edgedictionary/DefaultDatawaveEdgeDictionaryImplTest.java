@@ -17,7 +17,13 @@ import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.fail;
 
@@ -92,8 +98,7 @@ public class DefaultDatawaveEdgeDictionaryImplTest {
         
         // Make sure that all Metadata in EdgeDictionary have the start date set to the EARLY_DATE_FIELD
         for (MetadataBase<DefaultMetadata> meta : metadata) {
-            Assert.assertTrue("Incorrect start date. Expected: " + EARLY_DATE_FIELD + " Found: " + meta.getStartDate(),
-                            EARLY_DATE_FIELD.equals(meta.getStartDate()));
+            Assert.assertEquals("Incorrect start date. Expected: " + EARLY_DATE_FIELD + " Found: " + meta.getStartDate(), EARLY_DATE_FIELD, meta.getStartDate());
             
         }
     }

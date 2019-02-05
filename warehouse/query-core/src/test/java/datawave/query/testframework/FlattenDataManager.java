@@ -1,7 +1,6 @@
 package datawave.query.testframework;
 
 import com.google.common.collect.Multimap;
-import datawave.data.normalizer.Normalizer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
 import org.apache.log4j.Logger;
@@ -10,7 +9,6 @@ import org.junit.Assert;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;

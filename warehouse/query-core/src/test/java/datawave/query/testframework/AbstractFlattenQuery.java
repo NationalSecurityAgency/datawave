@@ -1,13 +1,5 @@
 package datawave.query.testframework;
 
-import datawave.ingest.json.util.JsonObjectFlattener;
-import datawave.query.SimpleFlattenQueryTest;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
 public abstract class AbstractFlattenQuery { // extends AbstractFunctionalQuery {
 
     // private static final Logger log = Logger.getLogger(SimpleFlattenQueryTest.class);

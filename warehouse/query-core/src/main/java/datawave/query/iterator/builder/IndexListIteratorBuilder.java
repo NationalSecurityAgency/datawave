@@ -102,7 +102,8 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                                     .withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles).withFileSystem(hdfsFileSystem)
                                     .withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
                                     .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
-                                    .withCompositePredicateFilters(createCompositePredicateFilters(field)).build();
+                                    .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
+                                    .build();
                     
                 } else {
                     FST fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstURI), hdfsFileCompressionCodec, fstHdfsFileSystem);
@@ -112,7 +113,8 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                                     .withMaxRangeSplit(maxRangeSplit).withMaxOpenFiles(ivaratorMaxOpenFiles).withFileSystem(hdfsFileSystem)
                                     .withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
                                     .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
-                                    .withCompositePredicateFilters(createCompositePredicateFilters(field)).build();
+                                    .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
+                                    .build();
                     
                 }
                 if (collectTimingDetails) {

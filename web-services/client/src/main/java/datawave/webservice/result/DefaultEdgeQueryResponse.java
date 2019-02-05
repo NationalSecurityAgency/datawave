@@ -14,13 +14,11 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
 
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.DefaultEdge;
 import datawave.webservice.query.result.edge.EdgeBase;
-import datawave.webservice.result.TotalResultsAware;
 
 import io.protostuff.Input;
 import io.protostuff.Message;

@@ -2,7 +2,6 @@ package datawave.query.testframework;
 
 import datawave.data.normalizer.Normalizer;
 
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

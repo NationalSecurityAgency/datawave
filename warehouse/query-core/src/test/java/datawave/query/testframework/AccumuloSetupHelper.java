@@ -8,6 +8,7 @@ import datawave.ingest.mapreduce.EventMapper;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.testframework.FileLoaderFactory.FileType;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -89,6 +90,20 @@ public class AccumuloSetupHelper {
      */
     public Connector loadTables(final Logger parentLog) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
                     TableExistsException, TableNotFoundException, URISyntaxException {
+        return loadTables(parentLog, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER);
+    }
+    
+    /**
+     * Creates the Accumulo shard ids and ingests the data into the tables. Uses a CSV file for loading test data.
+     *
+     * @param parentLog
+     *            log of parent
+     * @return connector to Accumulo
+     * @throws AccumuloException
+     *             , AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException Accumulo error conditions
+     */
+    public Connector loadTables(final Logger parentLog, final RebuildingScannerTestHelper.TEARDOWN teardown) throws AccumuloException,
+                    AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException, URISyntaxException {
         log.debug("------------- loadTables -------------");
         
         if (this.fileFormat != FileType.GROUPING) {
@@ -96,7 +111,7 @@ public class AccumuloSetupHelper {
             Assert.assertFalse("data types have not been specified", this.dataTypes.isEmpty());
         }
         
-        QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetupHelper.class.getName(), parentLog);
+        QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetupHelper.class.getName(), parentLog, teardown);
         final Connector connector = tableHelper.connector;
         tableHelper.configureTables(this.recordWriter);
         

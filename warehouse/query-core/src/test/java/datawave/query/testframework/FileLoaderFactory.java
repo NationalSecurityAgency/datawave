@@ -3,7 +3,6 @@ package datawave.query.testframework;
 import org.apache.hadoop.conf.Configuration;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 
 /**

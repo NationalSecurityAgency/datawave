@@ -781,7 +781,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     }
     
     private void initStats(long startTime) {
-        this.ctx = new StandaloneTaskAttemptContext<Object,Object,Object,Object>(new Configuration(), new StandaloneStatusReporter());
+        this.ctx = new StandaloneTaskAttemptContext<>(new Configuration(), new StandaloneStatusReporter());
         ctx.putIfAbsent(datawave.metrics.util.flag.InputFile.FLAGMAKER_START_TIME, startTime);
     }
     

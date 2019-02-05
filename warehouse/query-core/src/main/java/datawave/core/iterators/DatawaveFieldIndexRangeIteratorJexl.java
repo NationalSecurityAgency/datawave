@@ -1,24 +1,17 @@
 package datawave.core.iterators;
 
-import com.google.common.base.Predicate;
-import datawave.core.iterators.querylock.QueryLock;
+import datawave.data.type.DiscreteIndexType;
 import datawave.query.Constants;
-import datawave.query.iterator.filter.composite.CompositePredicateFilter;
-import datawave.query.predicate.TimeFilter;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 
@@ -126,7 +119,13 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
         if (lowerInclusive) {
             this.boundingFiRangeStringBuilder.append(fieldValue);
         } else {
-            this.boundingFiRangeStringBuilder.append(fieldValue).append(ONE_BYTE);
+            // in case of composite ranges, use the discrete index type to get the inclusive bound
+            if (compositeSeeker != null && compositeSeeker.getFieldToDiscreteIndexType().get(fiName.toString()) != null) {
+                DiscreteIndexType discreteIndexType = compositeSeeker.getFieldToDiscreteIndexType().get(fiName.toString());
+                this.boundingFiRangeStringBuilder.append(discreteIndexType.incrementIndex(fieldValue.toString()));
+            } else {
+                this.boundingFiRangeStringBuilder.append(fieldValue).append(ONE_BYTE);
+            }
         }
         this.boundingFiRangeStringBuilder.append(NULL_BYTE);
         startKey = new Key(rowId, fiName, new Text(boundingFiRangeStringBuilder.toString()));
@@ -138,8 +137,14 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
             this.boundingFiRangeStringBuilder.append(upperBound).append(ONE_BYTE);
         } else {
             String upperString = upperBound.toString();
-            this.boundingFiRangeStringBuilder.append(upperString.substring(0, upperString.length() - 1));
-            this.boundingFiRangeStringBuilder.append(upperString.charAt(upperString.length() - 1) - 1);
+            // in case of composite ranges, use the discrete index type to get the inclusive bound
+            if (compositeSeeker != null && compositeSeeker.getFieldToDiscreteIndexType().get(fiName.toString()) != null) {
+                DiscreteIndexType discreteIndexType = compositeSeeker.getFieldToDiscreteIndexType().get(fiName.toString());
+                this.boundingFiRangeStringBuilder.append(discreteIndexType.decrementIndex(upperString));
+            } else {
+                this.boundingFiRangeStringBuilder.append(upperString.substring(0, upperString.length() - 1));
+                this.boundingFiRangeStringBuilder.append((char) (upperString.charAt(upperString.length() - 1) - 1));
+            }
             this.boundingFiRangeStringBuilder.append(Constants.MAX_UNICODE_STRING);
         }
         endKey = new Key(rowId, fiName, new Text(boundingFiRangeStringBuilder.toString()));
@@ -152,6 +157,12 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
         } else {
             return new RangeSplitter(new Range(startKey, true, endKey, true), getMaxRangeSplit());
         }
+    }
+    
+    protected Range buildCompositeSafeFiRange(Text rowId, Text fiName, Text fieldValue) {
+        Key startKey = new Key(rowId, fiName, new Text(fieldValue));
+        Key endKey = new Key(rowId, fiName, new Text(upperBound));
+        return new Range(startKey, lowerInclusive, endKey, upperInclusive);
     }
     
     // -------------------------------------------------------------------------

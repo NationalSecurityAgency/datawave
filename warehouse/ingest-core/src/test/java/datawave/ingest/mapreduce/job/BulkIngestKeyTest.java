@@ -5,9 +5,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import static org.junit.Assert.*;
-
-import datawave.ingest.mapreduce.job.BulkIngestKey;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.hadoop.io.Text;
@@ -64,7 +65,7 @@ public class BulkIngestKeyTest {
         
         // for completeness...
         result = comparator.compare(key2bytes, 0, key2bytes.length, key2bytes, 0, key2bytes.length);
-        assertTrue(0 == result);
+        assertEquals(0, result);
         
         key = new Key(new Text("row\0key"), new Text("e"), new Text("col\0qual\0data"), new Text("sample\0col\0vis"));
         key.setDeleted(true);
@@ -171,14 +172,14 @@ public class BulkIngestKeyTest {
         assertEquals(bik1.hashCode(), bik2.hashCode());
         
         bik2 = new BulkIngestKey(new Text("differentTableName"), key2);
-        assertFalse(bik1.hashCode() == bik2.hashCode());
+        assertNotEquals(bik1.hashCode(), bik2.hashCode());
         
         bik2 = new BulkIngestKey(tableName2, new Key());
-        assertFalse(bik1.hashCode() == bik2.hashCode());
+        assertNotEquals(bik1.hashCode(), bik2.hashCode());
         
         // for completeness...
         bik2 = new BulkIngestKey(tableName2, null);
-        assertFalse(bik1.hashCode() == bik2.hashCode());
+        assertNotEquals(bik1.hashCode(), bik2.hashCode());
     }
     
 }

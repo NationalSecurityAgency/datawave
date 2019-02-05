@@ -17,6 +17,7 @@ import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -196,6 +197,11 @@ public class DefaultQueryPlanner extends QueryPlanner {
      * Boolean it identify if we wish to condense
      */
     protected boolean compressUidsInRangeStream = true;
+    
+    /**
+     * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
+     */
+    private static int maxChildNodesToPrint = 10;
     
     private final long maxRangesPerQueryPiece;
     
@@ -576,22 +582,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     ShardQueryConfiguration config, String query, QueryData queryData, Query settings) throws DatawaveQueryException {
         final QueryStopwatch timers = config.getTimers();
         
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - get composites");
-        if (!disableCompositeFields) {
-            
-            try {
-                config.setCompositeToFieldMap(metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()));
-                config.setCompositeTransitionDates(metadataHelper.getCompositeTransitionDateMap(config.getDatatypeFilter()));
-                config.setFixedLengthFields(metadataHelper.getFixedLengthCompositeFields(config.getDatatypeFilter()));
-            } catch (TableNotFoundException ex) {
-                QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITES_RETRIEVAL_ERROR, ex);
-                log.warn(qe);
-                throw new DatawaveQueryException(qe);
-            }
-            
-        }
-        stopwatch.stop();
-        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Parse query");
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Parse query");
         
         ASTJexlScript queryTree = parseQueryAndValidatePattern(query, stopwatch);
         
@@ -1079,6 +1070,17 @@ public class DefaultQueryPlanner extends QueryPlanner {
         
         if (!disableCompositeFields) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand composite terms");
+            
+            try {
+                config.setCompositeToFieldMap(metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()));
+                config.setCompositeTransitionDates(metadataHelper.getCompositeTransitionDateMap(config.getDatatypeFilter()));
+                config.setCompositeFieldSeparators(metadataHelper.getCompositeFieldSeparatorMap(config.getDatatypeFilter()));
+                config.setFieldToDiscreteIndexTypes(CompositeUtils.getFieldToDiscreteIndexTypeMap(config.getQueryFieldsDatatypes()));
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+                throw new DatawaveFatalQueryException(qe);
+            }
+            
             queryTree = ExpandCompositeTerms.expandTerms(config, metadataHelper, queryTree);
             stopwatch.stop();
         }
@@ -1349,8 +1351,22 @@ public class DefaultQueryPlanner extends QueryPlanner {
         }
     }
     
+    public static void logTrace(List<String> output, String message) {
+        if (log.isTraceEnabled()) {
+            log.trace(message);
+            for (String line : output) {
+                log.trace(line);
+            }
+            log.trace("");
+        }
+    }
+    
     public static void logQuery(ASTJexlScript queryTree, String message) {
-        logDebug(PrintingVisitor.formattedQueryStringList(queryTree), message);
+        if (log.isTraceEnabled()) {
+            logTrace(PrintingVisitor.formattedQueryStringList(queryTree), message);
+        } else if (log.isDebugEnabled()) {
+            logDebug(PrintingVisitor.formattedQueryStringList(queryTree, maxChildNodesToPrint), message);
+        }
     }
     
     /**
@@ -1830,7 +1846,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             log.trace("Produced range is " + r);
         }
         
-        return new CloseableListIterable<QueryPlan>(Collections.singletonList(new QueryPlan(queryTree, r)));
+        return new CloseableListIterable<>(Collections.singletonList(new QueryPlan(queryTree, r)));
     }
     
     /**
@@ -1933,7 +1949,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 log.trace("Ranges are " + ranges);
         }
         
-        return new Tuple2<CloseableIterable<QueryPlan>,Boolean>(ranges, needsFullTable);
+        return new Tuple2<>(ranges, needsFullTable);
     }
     
     /**
@@ -2246,6 +2262,14 @@ public class DefaultQueryPlanner extends QueryPlanner {
     
     public void setExecutableExpansion(boolean executableExpansion) {
         this.executableExpansion = executableExpansion;
+    }
+    
+    public static int getMaxChildNodesToPrint() {
+        return maxChildNodesToPrint;
+    }
+    
+    public static void setMaxChildNodesToPrint(int maxChildNodesToPrint) {
+        DefaultQueryPlanner.maxChildNodesToPrint = maxChildNodesToPrint;
     }
     
     /**

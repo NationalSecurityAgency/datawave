@@ -1,6 +1,6 @@
 package datawave.security.login;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.replayAll;
 import static org.powermock.api.easymock.PowerMock.resetAll;
 import static org.powermock.api.easymock.PowerMock.verifyAll;

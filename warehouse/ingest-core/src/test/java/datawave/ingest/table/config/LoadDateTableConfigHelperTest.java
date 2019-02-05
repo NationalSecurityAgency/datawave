@@ -2,14 +2,19 @@ package datawave.ingest.table.config;
 
 import com.google.common.collect.Sets;
 import datawave.test.helpers.MockTableTest;
-import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class LoadDateTableConfigHelperTest extends MockTableTest {
     

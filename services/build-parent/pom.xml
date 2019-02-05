@@ -23,6 +23,8 @@
     <modules>
         <module>..</module>
         <module>../service-parent</module>
+        <module>../accumulo-utils</module>
+        <module>../base-rest-responses</module>
         <module>../metrics-reporter</module>
         <module>../authorization-api</module>
         <module>../audit-api</module>
@@ -34,4 +36,5 @@
         <module>../authorization-service</module>
         <module>../audit-service</module>
     </modules>
+
 </project>

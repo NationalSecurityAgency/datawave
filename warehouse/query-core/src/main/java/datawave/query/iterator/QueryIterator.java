@@ -301,6 +301,10 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             }
             this.range = range;
             
+            // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
+            // so the FinalDocumentTracking iterator needs the start key with the count already appended
+            Range originalRange = range;
+            
             // determine whether this is a teardown/rebuild range
             long resultCount = 0;
             if (!range.isStartKeyInclusive()) {
@@ -424,15 +428,14 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 this.serializedDocuments = new ResultCountingIterator(serializedDocuments, resultCount, yield);
             } else if (this.sortedUIDs) {
                 // we have sorted UIDs, so we can mask out the cq
-                this.serializedDocuments = new KeyAdjudicator<Value>(serializedDocuments, yield);
+                this.serializedDocuments = new KeyAdjudicator<>(serializedDocuments, yield);
             }
             
             // only add the final document tracking iterator which sends stats back to the client if collectTimingDetails is true
             if (collectTimingDetails) {
-                Range r = (documentRange == null) ? this.range : documentRange;
                 // if there is no document to return, then add an empty document
                 // to store the timing metadata
-                this.serializedDocuments = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, r, this.serializedDocuments,
+                this.serializedDocuments = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, originalRange, this.serializedDocuments,
                                 this.getReturnType(), this.isReducedResponse(), this.isCompressResults(), this.yield);
             }
             if (log.isTraceEnabled()) {
@@ -812,9 +815,9 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
         // now filter the attributes to those with the keep flag set true
         if (gatherTimingDetails()) {
             documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.AttributeKeepFilter, trackingSpan,
-                            new AttributeKeepFilter<Key>()));
+                            new AttributeKeepFilter<>()));
         } else {
-            documents = Iterators.transform(documents, new AttributeKeepFilter<Key>());
+            documents = Iterators.transform(documents, new AttributeKeepFilter<>());
         }
         
         // Project fields using a whitelist or a blacklist before serialization
@@ -903,7 +906,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
                 
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
-                itrWithContext = Iterators.transform(tupleItr, new EmptyContext<Key,Document,String,Object>());
+                itrWithContext = Iterators.transform(tupleItr, new EmptyContext<>());
             }
             
             final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource), typeMetadataForEval,
@@ -914,7 +917,7 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
             if (log.isTraceEnabled()) {
                 log.trace("arithmetic:" + arithmetic + " range:" + getDocumentRange(documentSource) + ", thread:" + Thread.currentThread());
             }
-            return Iterators.transform(matchedDocuments, new TupleToEntry<Key,Document>());
+            return Iterators.transform(matchedDocuments, new TupleToEntry<>());
         } else if (log.isTraceEnabled()) {
             log.trace("Evaluation is disabled, not instantiating Jexl evaluation logic");
         }
@@ -1111,10 +1114,12 @@ public class QueryIterator extends QueryOptions implements SortedKeyValueIterato
     protected DocumentProjection getCompositeProjection() {
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         Set<String> composites = Sets.newHashSet();
-        for (Multimap<String,String> val : this.compositeMetadata.getCompositeFieldMapByType().values())
-            for (String compositeField : val.keySet())
-                if (!CompositeIngest.isOverloadedCompositeField(val, compositeField))
-                    composites.add(compositeField);
+        if (compositeMetadata != null) {
+            for (Multimap<String,String> val : this.compositeMetadata.getCompositeFieldMapByType().values())
+                for (String compositeField : val.keySet())
+                    if (!CompositeIngest.isOverloadedCompositeField(val, compositeField))
+                        composites.add(compositeField);
+        }
         projection.initializeBlacklist(composites);
         return projection;
     }

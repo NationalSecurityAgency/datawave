@@ -11,7 +11,6 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.wikipedia.WikipediaRecordReaderTest;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIndexingColumnBasedHandler;
 import datawave.policy.ExampleIngestPolicyEnforcer;

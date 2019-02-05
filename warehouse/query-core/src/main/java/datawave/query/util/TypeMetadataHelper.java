@@ -45,7 +45,6 @@ public class TypeMetadataHelper {
     protected Instance instance;
     protected String metadataTableName;
     protected Set<Authorizations> auths;
-    protected String typeMetadataFileName;
     protected boolean useTypeSubstitution = false;
     protected Map<String,String> typeSubstitutions = Maps.newHashMap();
     protected Set<Authorizations> allMetadataAuths = Collections.emptySet();
@@ -70,6 +69,9 @@ public class TypeMetadataHelper {
      */
     public TypeMetadataHelper initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths,
                     boolean useTypeSubstitution) {
+        if (this.connector != null) {
+            throw new RuntimeException("TypeMetadataHelper may not be re-initialized");
+        }
         this.connector = connector;
         this.instance = instance;
         this.metadataTableName = metadataTableName;
@@ -97,14 +99,6 @@ public class TypeMetadataHelper {
     
     public String getMetadataTableName() {
         return metadataTableName;
-    }
-    
-    public String getTypeMetadataFileName() {
-        return typeMetadataFileName;
-    }
-    
-    public void setTypeMetadataFileName(String typeMetadataFileName) {
-        this.typeMetadataFileName = typeMetadataFileName;
     }
     
     @Cacheable(value = "getTypeMetadata", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager")
@@ -234,5 +228,11 @@ public class TypeMetadataHelper {
     @CacheEvict(value = {"getTypeMetadata"}, allEntries = true, cacheManager = "metadataHelperCacheManager")
     public void evictCaches() {
         log.debug("evictCaches");
+    }
+    
+    public static class Factory {
+        public TypeMetadataHelper createTypeMetadataHelper() {
+            return new TypeMetadataHelper();
+        }
     }
 }

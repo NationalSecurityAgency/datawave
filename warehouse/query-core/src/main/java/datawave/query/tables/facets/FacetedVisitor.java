@@ -22,7 +22,6 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.util.SortedKeyValueIteratorToIterator;
 import datawave.query.util.TypeMetadata;
 
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;

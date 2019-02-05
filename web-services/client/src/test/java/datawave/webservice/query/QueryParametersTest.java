@@ -2,7 +2,6 @@ package datawave.webservice.query;
 
 import java.text.ParseException;
 import java.util.Date;
-import java.util.UUID;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -98,7 +97,7 @@ public class QueryParametersTest {
         
         // Test and validate the QueryParamters.equals(QueryParameters params) method
         QueryParameters carbonCopy = buildQueryParameters();
-        Assert.assertEquals(true, qp.equals(carbonCopy));
+        Assert.assertTrue(qp.equals(carbonCopy));
         
         // Test and validate date formatting, parsing
         try {
@@ -145,17 +144,17 @@ public class QueryParametersTest {
         Date end = new Date();
         long delta = end.getTime() - start.getTime();
         
-        Assert.assertEquals(null, qp.getAuths());
-        Assert.assertEquals(null, qp.getBeginDate());
-        Assert.assertEquals(null, qp.getEndDate());
+        Assert.assertNull(qp.getAuths());
+        Assert.assertNull(qp.getBeginDate());
+        Assert.assertNull(qp.getEndDate());
         Assert.assertTrue(qp.getExpirationDate().getTime() - DateUtils.addDays(start, 1).getTime() <= delta);
-        Assert.assertEquals(null, qp.getLogicName());
+        Assert.assertNull(qp.getLogicName());
         Assert.assertEquals(10, qp.getPagesize());
         Assert.assertEquals(QueryPersistence.TRANSIENT, qp.getPersistenceMode());
-        Assert.assertEquals(null, qp.getQuery());
-        Assert.assertEquals(null, qp.getQueryName());
-        Assert.assertEquals(null, qp.getRequestHeaders());
-        Assert.assertEquals(false, qp.isTrace());
+        Assert.assertNull(qp.getQuery());
+        Assert.assertNull(qp.getQueryName());
+        Assert.assertNull(qp.getRequestHeaders());
+        Assert.assertFalse(qp.isTrace());
         
         // Reset a few variables so hashCode() doesn't blow up, then
         // store results of hashCode() method, post-clear

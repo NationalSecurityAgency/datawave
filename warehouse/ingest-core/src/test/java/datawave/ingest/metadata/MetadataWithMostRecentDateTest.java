@@ -4,10 +4,10 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.hadoop.io.Text;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 public class MetadataWithMostRecentDateTest {
     

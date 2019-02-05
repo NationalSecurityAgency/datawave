@@ -49,7 +49,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.METADATA_TABLE_NAME;
 import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
 import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
 import static datawave.query.tables.edge.BaseEdgeQueryTest.MODEL_TABLE_NAME;
@@ -170,7 +169,7 @@ public abstract class ValueToAttributesTest {
         logic.setupQuery(config);
         
         String plannedScript = logic.getQueryPlanner().getPlannedScript();
-        Assert.assertTrue("Composite was not substituted into query:" + plannedScript, plannedScript.contains("MAKE_COLOR"));
+        Assert.assertTrue("CompositeTerm was not substituted into query:" + plannedScript, plannedScript.contains("MAKE_COLOR"));
         
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;

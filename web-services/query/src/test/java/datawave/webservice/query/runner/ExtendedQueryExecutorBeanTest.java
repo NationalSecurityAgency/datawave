@@ -6,9 +6,11 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
 import static org.easymock.EasyMock.notNull;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
@@ -271,7 +273,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -347,7 +349,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -404,7 +406,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -434,7 +436,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response performing an admin close", null != result1);
+        assertNotNull("Expected a non-null response performing an admin close", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -497,7 +499,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -591,7 +593,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -833,7 +835,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -1005,7 +1007,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -1119,7 +1121,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
-        assertTrue("Exception expected to have been caused by problem adding query logic to cache", ((QueryException) result1).getErrorCode().equals("500-7"));
+        assertEquals("Exception expected to have been caused by problem adding query logic to cache", "500-7", ((QueryException) result1).getErrorCode());
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -1342,8 +1344,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
-        assertTrue("Thrown exception expected to have been due to invalid expiration date", ((QueryException) result1.getCause()).getErrorCode()
-                        .equals("400-3"));
+        assertEquals("Thrown exception expected to have been due to invalid expiration date", "400-3", ((QueryException) result1.getCause()).getErrorCode());
     }
     
     @Test
@@ -1383,7 +1384,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
-        assertTrue("Thrown exception expected to have been due to invalid page size", ((QueryException) result1.getCause()).getErrorCode().equals("400-2"));
+        assertEquals("Thrown exception expected to have been due to invalid page size", "400-2", ((QueryException) result1.getCause()).getErrorCode());
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -1449,7 +1450,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
-        assertTrue("Thrown exception expected to have been due to undefined query logic", ((QueryException) result1).getErrorCode().equals("400-6"));
+        assertEquals("Thrown exception expected to have been due to undefined query logic", "400-6", ((QueryException) result1).getErrorCode());
     }
     
     @Test
@@ -1538,8 +1539,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
-        assertTrue("Thrown exception expected to have been due to invalid expiration date", ((QueryException) result1.getCause()).getErrorCode()
-                        .equals("400-3"));
+        assertEquals("Thrown exception expected to have been due to invalid expiration date", "400-3", ((QueryException) result1.getCause()).getErrorCode());
     }
     
     @Test
@@ -1579,7 +1579,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
-        assertTrue("Thrown exception expected to have been due to invalid page size", ((QueryException) result1.getCause()).getErrorCode().equals("400-2"));
+        assertEquals("Thrown exception expected to have been due to invalid page size", "400-2", ((QueryException) result1.getCause()).getErrorCode());
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -1678,7 +1678,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @Test
@@ -1710,11 +1710,11 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a BadRequestException due to null regex and user values", null != result1);
+        assertNotNull("Expected a BadRequestException due to null regex and user values", result1);
         
-        assertTrue("Expected a non-null response", null != result2);
+        assertNotNull("Expected a non-null response", result2);
         
-        assertTrue("Expected a non-null response", null != result3);
+        assertNotNull("Expected a non-null response", result3);
     }
     
     @Ignore
@@ -1831,7 +1831,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -2029,7 +2029,7 @@ public class ExtendedQueryExecutorBeanTest {
         }
         PowerMock.verifyAll();
         
-        assertTrue("Expected a DatawaveWebApplicationException.", null != result1);
+        assertNotNull("Expected a DatawaveWebApplicationException.", result1);
         assertEquals("Expected a Bad Request status code.", 400, ((DatawaveWebApplicationException) result1).getResponse().getStatus());
     }
     
@@ -2062,8 +2062,8 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a BadRequestException due to null regex and user values", null != result1);
-        assertTrue("Expected a non-null response", null != result2);
+        assertNotNull("Expected a BadRequestException due to null regex and user values", result1);
+        assertNotNull("Expected a non-null response", result2);
         
     }
     
@@ -2094,7 +2094,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected non-null response", null != result1);
+        assertNotNull("Expected non-null response", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -2247,7 +2247,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("QueryLogicResponse should not be returned null", null != result1);
+        assertNotNull("QueryLogicResponse should not be returned null", result1);
     }
     
     @Test
@@ -2267,7 +2267,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
+        assertNotNull("Expected a non-null response", result1);
     }
     
     @Test(expected = NoResultsException.class)
@@ -2350,7 +2350,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("QueryLogicResponse should not be returned null", null != result1);
+        assertNotNull("QueryLogicResponse should not be returned null", result1);
     }
     
     @Test
@@ -2368,7 +2368,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Query response should not be returned null", null != result1);
+        assertNotNull("Query response should not be returned null", result1);
     }
     
     @Test
@@ -2389,7 +2389,7 @@ public class ExtendedQueryExecutorBeanTest {
         }
         PowerMock.verifyAll();
         
-        assertTrue("Expected a DatawaveWebApplicationException.", null != result1);
+        assertNotNull("Expected a DatawaveWebApplicationException.", result1);
         assertEquals("Expected a No Results status code.", 204, ((DatawaveWebApplicationException) result1).getResponse().getStatus());
     }
     
@@ -2413,9 +2413,9 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected an exception to be thrown", null != result1);
+        assertNotNull("Expected an exception to be thrown", result1);
         assertTrue("Expected an QueryException to be wrapped by a DatawaveWebApplicationException", result1.getCause() instanceof QueryException);
-        assertTrue("Expected an unchecked exception to be wrapped by a QueryException", result1.getCause().getCause() == uncheckedException);
+        assertSame("Expected an unchecked exception to be wrapped by a QueryException", result1.getCause().getCause(), uncheckedException);
     }
     
     @Test
@@ -2463,9 +2463,9 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a DatawaveWebApplicationException to be thrown", null != result1);
-        assertTrue("Expected DatawaveWebApplicationException to have been caused by a locked cache entry", ((QueryException) result1.getCause().getCause())
-                        .getErrorCode().equals("500-9"));
+        assertNotNull("Expected a DatawaveWebApplicationException to be thrown", result1);
+        assertEquals("Expected DatawaveWebApplicationException to have been caused by a locked cache entry", "500-9", ((QueryException) result1.getCause()
+                        .getCause()).getErrorCode());
     }
     
     @Test(expected = DatawaveWebApplicationException.class)
@@ -2559,12 +2559,12 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
             assertTrue(e.getCause() instanceof QueryException);
-            assertTrue(((QueryException) e.getCause().getCause()).getErrorCode().equals("401-1"));
+            assertEquals("401-1", ((QueryException) e.getCause().getCause()).getErrorCode());
         }
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a DatawaveWebApplicationException to be thrown due an unchecked exception", null != result1);
+        assertNotNull("Expected a DatawaveWebApplicationException to be thrown due an unchecked exception", result1);
     }
     
     @Test
@@ -2610,7 +2610,7 @@ public class ExtendedQueryExecutorBeanTest {
         }
         PowerMock.verifyAll();
         
-        assertTrue("Expected a DatawaveWebApplicationException.", null != result1);
+        assertNotNull("Expected a DatawaveWebApplicationException.", result1);
         assertEquals("Expected a Not Found status code.", 404, ((DatawaveWebApplicationException) result1).getResponse().getStatus());
     }
     
@@ -2651,11 +2651,11 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response", null != result1);
-        assertTrue("Expected a null metrics instance", null == result5);
-        assertTrue("Expected a null query logic factory", null == result6);
-        assertTrue("Expected a null persister", null == result7);
-        assertTrue("Expected a NON-null cache", null != result8);
+        assertNotNull("Expected a non-null response", result1);
+        assertNull("Expected a null metrics instance", result5);
+        assertNull("Expected a null query logic factory", result6);
+        assertNull("Expected a null persister", result7);
+        assertNotNull("Expected a NON-null cache", result8);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -2776,7 +2776,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("VoidResponse should not be returned null", null != result1);
+        assertNotNull("VoidResponse should not be returned null", result1);
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -2884,7 +2884,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Verify results
         assertTrue("Query exception expected to have been thrown", result1 instanceof QueryException);
-        assertTrue("Thrown exception expected to have been due to locking problem", ((QueryException) result1.getCause()).getErrorCode().equals("500-9"));
+        assertEquals("Thrown exception expected to have been due to locking problem", "500-9", ((QueryException) result1.getCause()).getErrorCode());
     }
     
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -2983,7 +2983,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Expected a non-null response performing an admin close", null != result1);
+        assertNotNull("Expected a non-null response performing an admin close", result1);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -3128,7 +3128,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.verifyAll();
         
         // Verify results
-        assertEquals("Expected a non-null response", null, result1);
+        assertNull("Expected a non-null response", result1);
     }
     
     @Test

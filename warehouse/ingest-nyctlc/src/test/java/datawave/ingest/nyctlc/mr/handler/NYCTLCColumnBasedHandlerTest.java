@@ -85,7 +85,7 @@ public class NYCTLCColumnBasedHandlerTest {
         Assert.assertNotNull("Event 1 was null.", event);
         Assert.assertTrue("Event 1 has parsing errors", event.getErrors().isEmpty());
         System.out.println("================================= EVENT 1 =================================");
-        ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 28, 6, 0, 0, false);
+        ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 66, 33, 0, 0, false);
         
         // ----------------------------------------------------------------------
         // EVENT 2
@@ -94,7 +94,7 @@ public class NYCTLCColumnBasedHandlerTest {
         Assert.assertNotNull("Event 2 was null.", event);
         Assert.assertTrue("Event 2 has parsing errors", event.getErrors().isEmpty());
         System.out.println("================================= EVENT 2 =================================");
-        ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 29, 6, 0, 0, false);
+        ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 63, 27, 0, 0, false);
         
         // ----------------------------------------------------------------------
         // EVENT 3
@@ -103,7 +103,7 @@ public class NYCTLCColumnBasedHandlerTest {
         Assert.assertNotNull("Event 3 was null.", event);
         Assert.assertTrue("Event 3 has parsing errors", event.getErrors().isEmpty());
         System.out.println("================================= EVENT 3 =================================");
-        ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 28, 6, 0, 0, false);
+        ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 74, 39, 0, 0, false);
         
         reader.close();
     }

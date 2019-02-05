@@ -20,7 +20,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlValue;
 
-import datawave.Constants;
 import datawave.data.normalizer.DateNormalizer;
 import datawave.data.type.DateType;
 import datawave.data.type.IpAddressType;

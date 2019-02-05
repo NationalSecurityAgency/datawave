@@ -2,8 +2,6 @@ package datawave.query.util;
 
 import java.util.ArrayList;
 
-import javax.annotation.PostConstruct;
-
 import datawave.webservice.common.cache.SharedCacheCoordinator;
 
 import org.apache.curator.framework.CuratorFramework;

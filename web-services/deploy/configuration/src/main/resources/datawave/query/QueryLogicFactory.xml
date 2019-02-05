@@ -235,7 +235,7 @@
         </property>
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <property name="sendTimingToStatsd" value="false" />
-	<property name="collectQueryMetrics" value="false" />
+	<property name="collectQueryMetrics" value="true" />
 	<property name="logTimingDetails" value="false" />
         <property name="statsdHost" value="localhost" />
         <property name="statsdPort" value="8125" />
@@ -437,7 +437,7 @@
         <property name="maxRowsToScan" value="-1" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
-        <property name="metadataHelper" ref="metadataHelper" />
+        <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
         <property name="undisplayedVisibilities">
@@ -459,7 +459,7 @@
         <property name="maxRowsToScan" value="-1" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
-        <property name="metadataHelper" ref="metadataHelper" />
+        <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
         <property name="undisplayedVisibilities">

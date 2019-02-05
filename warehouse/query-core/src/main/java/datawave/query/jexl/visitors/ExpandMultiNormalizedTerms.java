@@ -16,7 +16,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -33,6 +32,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -158,7 +158,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     protected boolean isDelayedPredicate(JexlNode currNode) {
         if (ASTDelayedPredicate.instanceOf(currNode) || ExceededOrThresholdMarkerJexlNode.instanceOf(currNode)
                         || ExceededValueThresholdMarkerJexlNode.instanceOf(currNode) || ExceededTermThresholdMarkerJexlNode.instanceOf(currNode)
-                        || IndexHoleMarkerJexlNode.instanceOf(currNode))
+                        || IndexHoleMarkerJexlNode.instanceOf(currNode) || ASTEvaluationOnly.instanceOf(currNode))
             return true;
         else
             return false;

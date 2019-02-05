@@ -2,6 +2,7 @@ package datawave.microservice.audit.controller;
 
 import datawave.microservice.audit.common.AuditMessage;
 import datawave.microservice.audit.config.AuditProperties;
+import datawave.microservice.audit.config.AuditProperties.Retry;
 import datawave.microservice.audit.config.AuditServiceConfig;
 import datawave.microservice.audit.health.HealthChecker;
 import datawave.webservice.common.audit.AuditParameters;
@@ -105,25 +106,32 @@ public class AuditController {
      * @param parameters
      *            The audit parameters to be sent
      */
-    private void sendMessage(AuditParameters parameters) {
-        String auditId = parameters.getAuditId();
-        
-        CountDownLatch latch = null;
-        if (auditProperties.isConfirmAckEnabled()) {
-            latch = new CountDownLatch(1);
-            correlationLatchMap.put(auditId, latch);
+    private boolean sendMessage(AuditParameters parameters) {
+        if ((healthChecker != null && healthChecker.isHealthy()) || healthChecker == null) {
+            String auditId = parameters.getAuditId();
+            
+            CountDownLatch latch = null;
+            if (auditProperties.isConfirmAckEnabled()) {
+                latch = new CountDownLatch(1);
+                correlationLatchMap.put(auditId, latch);
+            }
+            
+            boolean success = messageChannel.send(MessageBuilder.withPayload(AuditMessage.fromParams(parameters)).setCorrelationId(auditId).build());
+            
+            if (auditProperties.isConfirmAckEnabled()) {
+                try {
+                    success = success && latch.await(auditProperties.getConfirmAckTimeoutMillis(), TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    success = false;
+                } finally {
+                    correlationLatchMap.remove(auditId);
+                }
+            }
+            
+            return success;
         }
         
-        try {
-            if (!messageChannel.send(MessageBuilder.withPayload(AuditMessage.fromParams(parameters)).setCorrelationId(auditId).build()))
-                throw new RuntimeException("Failed to send audit: " + parameters);
-            if (auditProperties.isConfirmAckEnabled() && !latch.await(auditProperties.getConfirmAckTimeoutMillis(), TimeUnit.MILLISECONDS))
-                throw new RuntimeException("Timed out waiting for confirm ack: " + parameters);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted while waiting for confirm ack: " + parameters);
-        } finally {
-            correlationLatchMap.remove(auditId);
-        }
+        return false;
     }
     
     /**
@@ -141,13 +149,44 @@ public class AuditController {
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
     @RequestMapping(path = "/audit", method = RequestMethod.POST)
     public String audit(@RequestParam MultiValueMap<String,String> parameters) {
-        if ((healthChecker != null && healthChecker.isHealthy()) || healthChecker == null) {
-            log.info("Received audit request with parameters {}", parameters);
-            restAuditParams.clear();
-            restAuditParams.validate(parameters);
-            sendMessage(restAuditParams);
+        log.info("Received audit request with parameters {}", parameters);
+        
+        restAuditParams.clear();
+        restAuditParams.validate(parameters);
+        
+        boolean success;
+        final long auditStartTime = System.currentTimeMillis();
+        long currentTime;
+        int attempts = 0;
+        
+        Retry retry = auditProperties.getRetry();
+        
+        do {
+            if (attempts++ > 0) {
+                try {
+                    Thread.sleep(retry.getBackoffIntervalMillis());
+                } catch (InterruptedException e) {
+                    // Ignore -- we'll just end up retrying a little too fast
+                }
+            }
+            
+            if (log.isDebugEnabled())
+                log.debug("[" + restAuditParams.getAuditId() + "] Audit attempt " + attempts + " of " + retry.getMaxAttempts());
+            
+            success = sendMessage(restAuditParams);
+            currentTime = System.currentTimeMillis();
+        } while (!success && (currentTime - auditStartTime) < retry.getFailTimeoutMillis() && attempts < retry.getMaxAttempts());
+        
+        if (!success) {
+            log.warn("[" + restAuditParams.getAuditId() + "] Audit failed. { attempts = " + attempts + ", elapsedMillis = " + (currentTime - auditStartTime)
+                            + "}");
+            
+            throw new RuntimeException("Unable to process audit message with id [" + restAuditParams.getAuditId() + "]");
+        } else {
+            log.info("[" + restAuditParams.getAuditId() + "] Audit successful. { attempts = " + attempts + ", elapsedMillis = " + (currentTime - auditStartTime)
+                            + "}");
+            
             return restAuditParams.getAuditId();
         }
-        throw new RuntimeException("The audit service is unable to process requests at this time.  Reason: Bad health check.");
     }
 }

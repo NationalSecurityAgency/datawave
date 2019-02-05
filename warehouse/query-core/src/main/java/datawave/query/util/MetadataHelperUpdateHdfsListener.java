@@ -29,7 +29,7 @@ public class MetadataHelperUpdateHdfsListener {
     private static final Logger log = Logger.getLogger(MetadataHelperUpdateHdfsListener.class);
     
     private String zookeepers;
-    private MetadataHelper metadataHelper;
+    private TypeMetadataHelper.Factory typeMetadataHelperFactory;
     private String[] metadataTableNames;
     private Set<Authorizations> allMetadataAuths;
     private TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
@@ -55,8 +55,8 @@ public class MetadataHelperUpdateHdfsListener {
         this.zookeepers = zookeepers;
     }
     
-    public void setMetadataHelper(MetadataHelper metadataHelper) {
-        this.metadataHelper = metadataHelper;
+    public void setTypeMetadataHelperFactory(TypeMetadataHelper.Factory typeMetadataHelperFactory) {
+        this.typeMetadataHelperFactory = typeMetadataHelperFactory;
     }
     
     public void setAllMetadataAuths(Set<Authorizations> allMetadataAuths) {
@@ -154,8 +154,9 @@ public class MetadataHelperUpdateHdfsListener {
                         ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(this.instance)
                                         .withZkHosts(this.zookeepers));
                         Connector connector = instance.getConnector(this.username, new PasswordToken(this.password));
-                        metadataHelper.initialize(connector, metadataTableName, allMetadataAuths);
-                        this.typeMetadataWriter.writeTypeMetadataMap(this.metadataHelper.getTypeMetadataMap(), metadataTableName);
+                        TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper();
+                        typeMetadataHelper.initialize(connector, metadataTableName, allMetadataAuths);
+                        typeMetadataWriter.writeTypeMetadataMap(typeMetadataHelper.getTypeMetadataMap(this.allMetadataAuths), metadataTableName);
                         if (log.isDebugEnabled()) {
                             log.debug("table:" + metadataTableName + " " + this + " set the sharedTriState needsUpdate to UPDATED for " + metadataTableName);
                         }

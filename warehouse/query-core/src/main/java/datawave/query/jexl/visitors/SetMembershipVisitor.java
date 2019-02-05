@@ -8,8 +8,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.function.IndexOnlyContextCreator;
 import datawave.query.jexl.IndexOnlyJexlContext;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 

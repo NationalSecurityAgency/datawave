@@ -10,6 +10,8 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -17,6 +19,7 @@ import org.apache.commons.jexl2.parser.ASTGTNode;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
@@ -94,5 +97,21 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
         } else {
             return node;
         }
+    }
+    
+    @Override
+    public Object visit(ASTAndNode node, Object data) {
+        if (!ASTEvaluationOnly.instanceOf(node))
+            return super.visit(node, data);
+        else
+            return node;
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        if (!ASTEvaluationOnly.instanceOf(node))
+            return super.visit(node, data);
+        else
+            return node;
     }
 }

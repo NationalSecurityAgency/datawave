@@ -13,10 +13,8 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
-import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -68,7 +66,11 @@ public abstract class UniqueTest {
         @BeforeClass
         public static void setUp() throws Exception {
             
-            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
+            // testing tear downs but without consistency, because when we tear it down then we loose the ongoing bloom filter and subsequently the rebuild will
+            // start returning
+            // different keys.
+            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log,
+                            RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY);
             connector = qtth.connector;
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
@@ -92,7 +94,11 @@ public abstract class UniqueTest {
         @BeforeClass
         public static void setUp() throws Exception {
             
-            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
+            // testing tear downs but without consistency, because when we tear it down then we loose the ongoing bloom filter and subsequently the rebuild will
+            // start returning
+            // different keys.
+            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log,
+                            RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY);
             connector = qtth.connector;
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);

@@ -107,6 +107,7 @@
                 <include>${groupId}:datawave-ingest-wikipedia</include>
                 <include>${groupId}:datawave-ingest-nyctlc</include>
                 <include>${groupId}:datawave-ingest-json</include>
+                <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
@@ -150,6 +151,7 @@
                   <include>${groupId}:datawave-ingest-core</include>
                   <include>${groupId}:datawave-ingest-configuration</include>
                   <include>${groupId}:datawave-query-core</include>
+                  <include>gov.nsa.datawave.microservice:accumulo-utils</include>
                   <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                   <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                   <include>com.google.code.gson:gson</include>

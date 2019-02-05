@@ -1,7 +1,6 @@
 package datawave.query.testframework;
 
 import datawave.data.normalizer.Normalizer;
-import org.apache.hadoop.conf.Configuration;
 
 import java.io.IOException;
 import java.net.URI;

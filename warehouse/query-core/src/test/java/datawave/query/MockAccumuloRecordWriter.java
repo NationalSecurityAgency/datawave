@@ -1,9 +1,13 @@
 package datawave.query;
 
-import org.apache.accumulo.core.client.*;
-import org.apache.accumulo.core.data.*;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.MutationsRejectedException;
+import org.apache.accumulo.core.data.ColumnUpdate;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;

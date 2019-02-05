@@ -1,7 +1,8 @@
 package datawave.webservice.query.configuration;
 
 import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -65,9 +66,9 @@ public class TestBaseQueryLogic {
         PowerMock.verifyAll();
         
         // Verify results
-        assertTrue("Incorrect max page size", result1 == 25);
-        assertTrue("Incorrect page byte trigger", result2 == 1024L);
-        assertTrue("Iterator should not be null", null != result3);
+        assertEquals("Incorrect max page size", 25, result1);
+        assertEquals("Incorrect page byte trigger", 1024L, result2);
+        assertNotNull("Iterator should not be null", result3);
     }
     
     private class TestQueryLogic<T> extends BaseQueryLogic<T> {

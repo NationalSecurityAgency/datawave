@@ -17,13 +17,11 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.log4j.Logger;
 
 import java.util.Iterator;
@@ -59,9 +57,14 @@ public final class QueryTestTableHelper {
     
     public QueryTestTableHelper(String instanceName, Logger log) throws AccumuloSecurityException, AccumuloException, TableExistsException,
                     TableNotFoundException {
+        this(instanceName, log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER);
+    }
+    
+    public QueryTestTableHelper(String instanceName, Logger log, RebuildingScannerTestHelper.TEARDOWN teardown) throws AccumuloSecurityException,
+                    AccumuloException, TableExistsException, TableNotFoundException {
         // create mock instance and connector
         InMemoryInstance i = new InMemoryInstance(instanceName);
-        this.connector = i.getConnector("root", new PasswordToken(""));
+        this.connector = RebuildingScannerTestHelper.getConnector(i, "root", new PasswordToken(""), teardown);
         this.log = log;
         
         createTables();

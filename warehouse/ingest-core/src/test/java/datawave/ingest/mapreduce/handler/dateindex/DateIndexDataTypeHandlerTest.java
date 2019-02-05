@@ -3,7 +3,6 @@ package datawave.ingest.mapreduce.handler.dateindex;
 import java.util.BitSet;
 
 import datawave.data.normalizer.DateNormalizer;
-import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.RawRecordContainerImplTest;
 import datawave.ingest.data.TypeRegistry;

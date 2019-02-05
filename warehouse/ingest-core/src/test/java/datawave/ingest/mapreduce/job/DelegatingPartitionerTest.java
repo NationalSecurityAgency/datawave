@@ -1,11 +1,18 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.mapreduce.partition.*;
-import org.apache.accumulo.core.data.*;
-import org.apache.hadoop.conf.*;
+import datawave.ingest.mapreduce.partition.DelegatePartitioner;
+import datawave.ingest.mapreduce.partition.LimitedKeyPartitioner;
+import datawave.ingest.mapreduce.partition.PartitionLimiter;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.*;
-import org.junit.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Partitioner;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class DelegatingPartitionerTest {
     public static final int DEFAULT_PARTITION = 3;

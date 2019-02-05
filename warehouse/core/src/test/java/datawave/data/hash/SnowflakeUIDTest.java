@@ -1,6 +1,10 @@
 package datawave.data.hash;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -259,16 +263,16 @@ public class SnowflakeUIDTest {
         UID a = builder.newId();
         UID b = UID.parse(a.toString());
         
-        assertTrue(a.equals(b));
-        assertTrue(b.equals(a));
-        assertTrue(a.compareTo(b) == 0);
-        assertTrue(a.compare(a, b) == 0);
+        assertEquals(a, b);
+        assertEquals(b, a);
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, a.compare(a, b));
         a = builder.newId("blabla");
         b = UID.parse(a.toString());
-        assertTrue(a.equals(b));
-        assertTrue(b.equals(a));
-        assertTrue(a.compareTo(b) == 0);
-        assertTrue(a.compare(a, b) == 0);
+        assertEquals(a, b);
+        assertEquals(b, a);
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, a.compare(a, b));
         
         // Test realistic SnowflakeUID parsing
         long timestamp = 1449585658444L;
@@ -367,16 +371,16 @@ public class SnowflakeUIDTest {
     public void testParse() {
         UID a = builder.newId();
         UID b = UID.parse(a.toString());
-        assertTrue(a.equals(b));
-        assertTrue(b.equals(a));
-        assertTrue(a.compareTo(b) == 0);
-        assertTrue(a.compare(a, b) == 0);
+        assertEquals(a, b);
+        assertEquals(b, a);
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, a.compare(a, b));
         a = builder.newId("blabla");
         b = UID.parse(a.toString());
-        assertTrue(a.equals(b));
-        assertTrue(b.equals(a));
-        assertTrue(a.compareTo(b) == 0);
-        assertTrue(a.compare(a, b) == 0);
+        assertEquals(a, b);
+        assertEquals(b, a);
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, a.compare(a, b));
     }
     
     @Test
@@ -395,8 +399,8 @@ public class SnowflakeUIDTest {
         in.close();
         baos.close();
         
-        assertTrue(a.equals(b));
-        assertTrue(b.equals(a));
+        assertEquals(a, b);
+        assertEquals(b, a);
         
         a = builder.newId(data.getBytes(), (Date) null);
         
@@ -412,8 +416,8 @@ public class SnowflakeUIDTest {
         in.close();
         baos.close();
         
-        assertTrue(a.equals(b));
-        assertTrue(b.equals(a));
+        assertEquals(a, b);
+        assertEquals(b, a);
         
         a = builder.newId(data.getBytes(), "blabla");
         
@@ -429,8 +433,8 @@ public class SnowflakeUIDTest {
         in.close();
         baos.close();
         
-        assertTrue(a.equals(b));
-        assertTrue(b.equals(a));
+        assertEquals(a, b);
+        assertEquals(b, a);
     }
     
     @Test

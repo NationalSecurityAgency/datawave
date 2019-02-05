@@ -1,7 +1,6 @@
 package datawave.util;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;

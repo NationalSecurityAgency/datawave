@@ -12,14 +12,14 @@ function downloadOracleJava8Tarball() {
     local tarball="$1"
     local tarballdir="$2"
 
-    local oracle_url="http://www.oracle.com"
+    local oracle_url="https://www.oracle.com"
     local jdk_url1="$oracle_url/technetwork/java/javase/downloads/index.html"
     local jdk_url2=$(curl -s "${jdk_url1}" | egrep -o "\/technetwork\/java/\javase\/downloads\/jdk8-downloads-.+?\.html" | head -1 | cut -d '"' -f 1)
 
     [[ -z "$jdk_url2" ]] && error "Could not get jdk download url - $jdk_url1"
 
     local jdk_url3="${oracle_url}${jdk_url2}"
-    local jdk_url4=$(curl -s $jdk_url3 | egrep -o "http\:\/\/download.oracle\.com\/otn-pub\/java\/jdk\/8u[0-9]+\-(.*)+\/jdk-8u[0-9]+(.*)linux-x64.tar.gz")
+    local jdk_url4=$(curl -s $jdk_url3 | egrep -o "https\:\/\/download.oracle\.com\/otn-pub\/java\/jdk\/8u[0-9]+\-(.*)+\/jdk-8u[0-9]+(.*)linux-x64.tar.gz")
 
     if [ ! -f "${tarballdir}/${tarball}" ] ; then
         $( cd "${tarballdir}" && wget --no-cookies --no-check-certificate \
