@@ -19,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
@@ -84,7 +85,7 @@ public class TermFrequencyAggregatorTest {
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD1");
         
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD1 == 'VALUE1'"));
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD1 == 'VALUE1'"), Collections.emptySet());
         aggregator = new TermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
         
@@ -121,7 +122,7 @@ public class TermFrequencyAggregatorTest {
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD2");
         
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD2 == 'VALUE1'"));
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD2 == 'VALUE1'"), Collections.EMPTY_SET);
         aggregator = new TermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
         

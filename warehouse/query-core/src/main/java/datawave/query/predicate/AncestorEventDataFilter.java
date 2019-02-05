@@ -1,6 +1,7 @@
 package datawave.query.predicate;
 
 import java.util.Map.Entry;
+import java.util.Set;
 
 import datawave.query.Constants;
 import datawave.query.tld.TLD;
@@ -18,8 +19,8 @@ public class AncestorEventDataFilter extends ConfigurableEventDataQueryFilter {
      * 
      * @param script
      */
-    public AncestorEventDataFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled) {
-        super(script, metadata, expressionFilterEnabled);
+    public AncestorEventDataFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled, Set<String> nonEventFields) {
+        super(script, metadata, expressionFilterEnabled, nonEventFields);
     }
     
     public AncestorEventDataFilter(AncestorEventDataFilter other) {

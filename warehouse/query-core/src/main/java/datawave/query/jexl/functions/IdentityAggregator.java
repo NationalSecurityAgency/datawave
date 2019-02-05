@@ -1,6 +1,7 @@
 package datawave.query.jexl.functions;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -103,10 +104,12 @@ public class IdentityAggregator extends SeekingAggregator implements FieldIndexA
             
             Attribute<?> attr = attrs.create(fieldNameValue.first(), fieldNameValue.second(), topKey, true);
             // only keep fields that are index only and pass the attribute filter
-            boolean toKeep = toKeep(topKey, fieldNameValue);
+            boolean toKeep = (fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first())))
+                            && (filter == null || filter.keep(topKey));
             attr.setToKeep(toKeep);
-            // only add to the document if the filter passes or we are keeping it
-            if (addToDoc(topKey, fieldNameValue, toKeep)) {
+            
+            // Anything that is being kept has to be added to the doc to be returned, if we aren't keeping only add to the doc if necessary for evaluation
+            if (toKeep || (filter == null || filter.apply(new AbstractMap.SimpleEntry<>(topKey, null)))) {
                 doc.put(fieldNameValue.first(), attr);
             }
             itr.next();

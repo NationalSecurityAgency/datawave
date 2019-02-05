@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import com.google.common.collect.Maps;
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlASTHelper;
@@ -73,40 +74,25 @@ public class TermFrequencyAggregator extends IdentityAggregator {
     public Key apply(SortedKeyValueIterator<Key,Value> itr, Document doc, AttributeFactory attrs) throws IOException {
         Key key = super.apply(itr, doc, attrs);
         
-        // only return a key if something was added to the document, documents that only contain Document.DOCKEY_FIELD_NAME as they found nothing of value to
-        // aggregate
-        if (doc.size() == 1 && doc.get(Document.DOCKEY_FIELD_NAME) != null) {
+        boolean necessary = false;
+        // test that the returned document has values required for evaluation
+        for (Attribute attr : doc.getDictionary().values()) {
+            if (attr.isToKeep()) {
+                necessary = true;
+                break;
+            }
+        }
+        
+        // only return a key if something was added to the document necessary for evaluating the query
+        if (!necessary) {
             key = null;
             
-            // empty the document
-            doc.remove(Document.DOCKEY_FIELD_NAME);
+            // strip all keys from the document
+            for (String docKey : doc.getDictionary().keySet()) {
+                doc.remove(docKey);
+            }
         }
         
         return key;
-    }
-    
-    /**
-     * Limit keep fields to those that are index only or if there is no filter specified
-     * 
-     * @param topKey
-     * @param fieldNameValue
-     * @return
-     */
-    @Override
-    protected boolean toKeep(Key topKey, Tuple2<String,String> fieldNameValue) {
-        return fieldsToKeep == null || fieldsToKeep.contains(JexlASTHelper.removeGroupingContext(fieldNameValue.first()));
-    }
-    
-    /**
-     * Only aggregate tf fields that are part of the returned document or necessary for query evaluation, not all TF
-     * 
-     * @param topKey
-     * @param fieldNameValue
-     * @param toKeep
-     * @return
-     */
-    @Override
-    protected boolean addToDoc(Key topKey, Tuple2<String,String> fieldNameValue, boolean toKeep) {
-        return filter == null || filter.apply(Maps.immutableEntry(topKey, StringUtils.EMPTY));
     }
 }

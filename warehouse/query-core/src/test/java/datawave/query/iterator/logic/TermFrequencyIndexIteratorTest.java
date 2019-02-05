@@ -63,7 +63,8 @@ public class TermFrequencyIndexIteratorTest {
         fieldsToKeep.add("FOO");
         
         filter = new EventDataQueryExpressionFilter(
-                        JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='buz' || FOO=='alf' || FOO=='arm'"), typeMetadata);
+                        JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='buz' || FOO=='alf' || FOO=='arm'"), typeMetadata,
+                        fieldsToKeep);
         aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);
     }
     
@@ -238,7 +239,8 @@ public class TermFrequencyIndexIteratorTest {
     public void testEndingFieldMismatch() throws IOException, ParseException {
         Range r = new Range(getFiKey("row", "type1", "123.345.456.3", "FOO", "alf"), true, getFiKey("row", "type1", "123.345.456.3",
                         Constants.MAX_UNICODE_STRING, "buz"), false);
-        filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata);
+        filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata,
+                        fieldsToKeep);
         aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         
@@ -250,7 +252,8 @@ public class TermFrequencyIndexIteratorTest {
     @Test
     public void testScanFullRangeExclusive() throws IOException, ParseException {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), false);
-        filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata);
+        filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata,
+                        fieldsToKeep);
         aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         
@@ -297,7 +300,8 @@ public class TermFrequencyIndexIteratorTest {
     @Test
     public void testScanFullRangeExclusiveTLD() throws IOException, ParseException {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), false);
-        filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata);
+        filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata,
+                        fieldsToKeep);
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
         

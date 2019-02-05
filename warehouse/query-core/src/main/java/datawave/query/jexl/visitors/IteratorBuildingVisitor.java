@@ -96,6 +96,7 @@ import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -1163,7 +1164,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     protected EventDataQueryFilter createWrappedTermFrequencyFilter(JexlNode node, EventDataQueryFilter existing) {
-        EventDataQueryFilter expressionFilter = new EventDataQueryExpressionFilter(node, typeMetadata);
+        // combine index only and term frequency to create non-event fields
+        final Set<String> nonEventFields = new HashSet<>(indexOnlyFields.size() + termFrequencyFields.size());
+        nonEventFields.addAll(indexOnlyFields);
+        nonEventFields.addAll(termFrequencyFields);
+        
+        EventDataQueryFilter expressionFilter = new EventDataQueryExpressionFilter(node, typeMetadata, nonEventFields);
         
         ChainableEventDataQueryFilter chainableFilter = new ChainableEventDataQueryFilter();
         if (existing != null) {

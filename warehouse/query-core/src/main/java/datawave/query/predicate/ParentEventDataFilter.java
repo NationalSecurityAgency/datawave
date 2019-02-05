@@ -4,6 +4,8 @@ import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
+import java.util.Set;
+
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.
  */
@@ -14,8 +16,8 @@ public class ParentEventDataFilter extends ConfigurableEventDataQueryFilter {
      * 
      * @param script
      */
-    public ParentEventDataFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled) {
-        super(script, metadata, expressionFilterEnabled);
+    public ParentEventDataFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled, Set<String> nonEventFields) {
+        super(script, metadata, expressionFilterEnabled, nonEventFields);
     }
     
     public ParentEventDataFilter(ParentEventDataFilter other) {

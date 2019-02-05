@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -64,7 +65,7 @@ public class TLDTermFrequencyAggregatorTest {
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD2");
         
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD2 == 'abc'"));
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD2 == 'abc'"), Collections.emptySet());
         aggregator = new TLDTermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
         
@@ -106,7 +107,8 @@ public class TLDTermFrequencyAggregatorTest {
         keepFields.add("FIELD1");
         keepFields.add("FIELD2");
         
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD1 == 'VALUE1' && FIELD2 == 'VALUE2'"));
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD1 == 'VALUE1' && FIELD2 == 'VALUE2'"),
+                        Collections.emptySet());
         aggregator = new TLDTermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
         
@@ -150,7 +152,7 @@ public class TLDTermFrequencyAggregatorTest {
     }
     
     @Test
-    public void apply_buildDocKeepFilteredOut() throws IOException, ParseException {
+    public void apply_buildDocOnlyKeepToKeep() throws IOException, ParseException {
         Document doc = new Document();
         AttributeFactory attributeFactory = new AttributeFactory(new TypeMetadata());
         
@@ -163,9 +165,9 @@ public class TLDTermFrequencyAggregatorTest {
         itr.seek(new Range(), null, true);
         
         Set<String> keepFields = new HashSet<>();
-        keepFields.add("FIELD1");
+        keepFields.add("FIELD2");
         
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD2 == 'VALUE1'"));
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD2 == 'VALUE1'"), Collections.emptySet());
         aggregator = new TLDTermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
         

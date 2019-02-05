@@ -8,6 +8,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
 import java.util.Map;
+import java.util.Set;
 
 public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
     
@@ -15,11 +16,11 @@ public class ConfigurableEventDataQueryFilter implements EventDataQueryFilter {
     
     protected Key document = null;
     
-    public ConfigurableEventDataQueryFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled) {
+    public ConfigurableEventDataQueryFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled, Set<String> nonEventFields) {
         if (expressionFilterEnabled) {
-            filter = new EventDataQueryExpressionFilter(script, metadata);
+            filter = new EventDataQueryExpressionFilter(script, metadata, nonEventFields);
         } else {
-            filter = new EventDataQueryFieldFilter(script);
+            filter = new EventDataQueryFieldFilter(script, nonEventFields);
         }
     }
     

@@ -121,7 +121,7 @@ public class AncestorQueryIterator extends QueryIterator {
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
         if (evaluationFilter == null && script != null) {
-            evaluationFilter = new AncestorEventDataFilter(script, typeMetadata, this.isDataQueryExpressionFilterEnabled());
+            evaluationFilter = new AncestorEventDataFilter(script, typeMetadata, this.isDataQueryExpressionFilterEnabled(), getNonEventFields());
         }
         // return a new script each time as this is not thread safe (maintains state)
         return evaluationFilter != null ? evaluationFilter.clone() : null;

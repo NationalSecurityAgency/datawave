@@ -82,7 +82,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
                     Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField,
                     Set<String> nonEventFields) {
-        super(script, attributeFactory, expressionFilterEnabled);
+        super(script, attributeFactory, expressionFilterEnabled, nonEventFields);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
