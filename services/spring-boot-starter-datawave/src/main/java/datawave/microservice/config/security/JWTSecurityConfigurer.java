@@ -1,5 +1,6 @@
 package datawave.microservice.config.security;
 
+import com.google.common.base.Preconditions;
 import datawave.microservice.authorization.Http403ForbiddenEntryPoint;
 import datawave.microservice.authorization.config.DatawaveSecurityProperties;
 import datawave.microservice.authorization.jwt.JWTAuthenticationFilter;
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -97,7 +99,8 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
     }
     
     @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    protected void configure(@Nullable AuthenticationManagerBuilder auth) throws Exception {
+        Preconditions.checkNotNull(auth);
         auth.authenticationProvider(jwtAuthenticationProvider);
     }
     
@@ -131,6 +134,7 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
             filterChain.doFilter(httpServletRequest, httpServletResponse);
         }
         
+        @Nullable
         private X509Certificate extractClientCertificate(HttpServletRequest request) {
             X509Certificate[] certs = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
             
