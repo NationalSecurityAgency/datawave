@@ -49,7 +49,10 @@ import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.data.impl.KeyExtent;
+import org.apache.accumulo.core.data.impl.TabletIdImpl;
 import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.metadata.MetadataTable;
@@ -66,6 +69,8 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static com.google.common.base.Preconditions.checkArgument;
+
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 
 class InMemoryTableOperations extends TableOperationsHelper {
     private static final Logger log = LoggerFactory.getLogger(InMemoryTableOperations.class);
@@ -491,6 +496,77 @@ class InMemoryTableOperations extends TableOperationsHelper {
     
     @Override
     public Locations locate(String tableName, Collection<Range> ranges) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        throw new UnsupportedOperationException();
+        Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
+        InMemoryTabletLocator locator = new InMemoryTabletLocator();
+        List<Range> ignore = locator.binRanges(null, new ArrayList<>(ranges), binnedRanges);
+        return new LocationsImpl(binnedRanges);
+    }
+
+    private static class LocationsImpl implements Locations {
+
+        private Map<Range,List<TabletId>> groupedByRanges;
+        private Map<TabletId,List<Range>> groupedByTablets;
+        private Map<TabletId,String> tabletLocations;
+
+        public LocationsImpl(Map<String,Map<KeyExtent,List<Range>>> binnedRanges) {
+            groupedByTablets = new HashMap<>();
+            groupedByRanges = null;
+            tabletLocations = new HashMap<>();
+
+            for (Entry<String,Map<KeyExtent,List<Range>>> entry : binnedRanges.entrySet()) {
+                String location = entry.getKey();
+
+                for (Entry<KeyExtent,List<Range>> entry2 : entry.getValue().entrySet()) {
+                    TabletIdImpl tabletId = new TabletIdImpl(entry2.getKey());
+                    tabletLocations.put(tabletId, location);
+                    List<Range> prev =
+                            groupedByTablets.put(tabletId, Collections.unmodifiableList(entry2.getValue()));
+                    if (prev != null) {
+                        throw new RuntimeException(
+                                "Unexpected : tablet at multiple locations : " + location + " " + tabletId);
+                    }
+                }
+            }
+
+            groupedByTablets = Collections.unmodifiableMap(groupedByTablets);
+        }
+
+        @Override
+        public String getTabletLocation(TabletId tabletId) {
+            return tabletLocations.get(tabletId);
+        }
+
+        @Override
+        public Map<Range,List<TabletId>> groupByRange() {
+            if (groupedByRanges == null) {
+                Map<Range,List<TabletId>> tmp = new HashMap<>();
+
+                for (Entry<TabletId,List<Range>> entry : groupedByTablets.entrySet()) {
+                    for (Range range : entry.getValue()) {
+                        List<TabletId> tablets = tmp.get(range);
+                        if (tablets == null) {
+                            tablets = new ArrayList<>();
+                            tmp.put(range, tablets);
+                        }
+
+                        tablets.add(entry.getKey());
+                    }
+                }
+
+                Map<Range,List<TabletId>> tmp2 = new HashMap<>();
+                for (Entry<Range,List<TabletId>> entry : tmp.entrySet()) {
+                    tmp2.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
+                }
+
+                groupedByRanges = Collections.unmodifiableMap(tmp2);
+            }
+
+            return groupedByRanges;
+        }
+
+        @Override
+        public Map<TabletId,List<Range>> groupByTablet() {
+            return groupedByTablets;
+        }
     }
 }
