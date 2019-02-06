@@ -17,12 +17,12 @@
     <!-- a singleton -->
     <bean id="metadataHelperCacheManagementListener" class="datawave.query.util.MetadataHelperCacheManagementListener" destroy-method="shutdown" >
         <constructor-arg name="zookeepers" value="${zookeeper.hosts}" />
-    	<constructor-arg name="metadataHelperFactory" ref="metadataHelperFactory" />
-    	<constructor-arg name="metadataTableNames" >
+        <constructor-arg name="metadataCacheManager" ref="metadataCacheManager" />
+        <constructor-arg name="metadataTableNames" >
     		<util:list>
 				${metadata.table.names}
     		</util:list>
-    	</constructor-arg>
+        </constructor-arg>
     </bean>
 
 	<bean id="metadataHelperUpdateHdfsListener" class="datawave.query.util.MetadataHelperUpdateHdfsListener" >

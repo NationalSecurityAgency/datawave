@@ -1,16 +1,10 @@
 package datawave.query.util;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.webservice.common.cache.SharedCacheCoordinator;
 
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.framework.recipes.shared.SharedCountReader;
@@ -29,22 +23,12 @@ public class MetadataHelperCacheManagementListener {
     private static final Logger log = Logger.getLogger(MetadataHelperCacheManagementListener.class);
     
     private final String zookeepers;
-    private final MetadataHelperFactory metadataHelperFactory;
+    private final MetadataCacheManager metadataCacheManager;
     private final ArrayList<SharedCacheCoordinator> cacheCoordinators;
-    private final Connector connector;
     
-    public MetadataHelperCacheManagementListener(String zookeepers, MetadataHelperFactory metadataHelperFactory, String[] metadataTableNames) {
-        Connector connector;
+    public MetadataHelperCacheManagementListener(String zookeepers, MetadataCacheManager metadataCacheManager, String[] metadataTableNames) {
         this.zookeepers = zookeepers;
-        this.metadataHelperFactory = metadataHelperFactory;
-        
-        try {
-            connector = new InMemoryInstance().getConnector("root", new PasswordToken(""));
-        } catch (AccumuloException | AccumuloSecurityException e) {
-            connector = null;
-            log.error("This should never happen -- can't initialize an in-memory connector.", e);
-        }
-        this.connector = connector;
+        this.metadataCacheManager = metadataCacheManager;
         
         cacheCoordinators = new ArrayList<>(metadataTableNames.length);
         for (String metadataTableName : metadataTableNames) {
@@ -87,9 +71,7 @@ public class MetadataHelperCacheManagementListener {
                     }
                     if (!watcher.checkCounter(metadataTableName, newCount)) {
                         log.debug("will evictCaches for " + metadataTableName);
-                        MetadataHelper metadataHelper = metadataHelperFactory.createMetadataHelper(connector, metadataTableName,
-                                        Collections.singleton(new Authorizations()));
-                        metadataHelper.evictCaches();
+                        metadataCacheManager.evictCaches();
                     } else {
                         log.debug("did not evictCaches for " + metadataTableName);
                     }

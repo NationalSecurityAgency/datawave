@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Scope;
@@ -212,14 +211,6 @@ public class TypeMetadataHelper {
         bs.close();
         
         return typeMetadata;
-    }
-    
-    /**
-     * Invalidates all elements in all internal caches this should also write the new typemetadata to hdfs so that the tservers will get the latest.
-     */
-    @CacheEvict(value = {"getTypeMetadata"}, allEntries = true, cacheManager = "metadataHelperCacheManager")
-    public void evictCaches() {
-        log.debug("evictCaches");
     }
     
     @Component

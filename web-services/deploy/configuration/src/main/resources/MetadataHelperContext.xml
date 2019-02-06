@@ -19,7 +19,11 @@
 
      <!--  cacheManager is in CacheContext.xml. You must also include CacheContext.xml in any spring context that includes this file -->
     <cache:annotation-driven cache-manager="metadataHelperCacheManager"/>
-    
+
+    <bean id="metadataCacheManager" class="datawave.query.util.MetadataCacheManager">
+        <constructor-arg name="cacheManager" ref="metadataHelperCacheManager" />
+    </bean>
+
     <bean id="metadataHelper" scope="prototype" class="datawave.query.util.MetadataHelper" >
         <constructor-arg name="allFieldMetadataHelper" ref="allFieldMetadataHelper"/>
         <constructor-arg name="allMetadataAuths" ref="allMetadataAuths"/>

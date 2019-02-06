@@ -1,6 +1,5 @@
 package datawave.query.util;
 
-import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
@@ -45,13 +44,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -94,7 +88,7 @@ import java.util.stream.StreamSupport;
 @EnableCaching
 @Component("metadataHelper")
 @Scope("prototype")
-public class MetadataHelper implements ApplicationContextAware {
+public class MetadataHelper {
     private static final Logger log = LoggerFactory.getLogger(MetadataHelper.class);
     
     public static final String NULL_BYTE = "\0";
@@ -128,8 +122,6 @@ public class MetadataHelper implements ApplicationContextAware {
     
     protected final AllFieldMetadataHelper allFieldMetadataHelper;
     protected final Collection<Authorizations> allMetadataAuths;
-    
-    protected ApplicationContext applicationContext;
     
     public MetadataHelper(AllFieldMetadataHelper allFieldMetadataHelper, Collection<Authorizations> allMetadataAuths, Connector connector,
                     String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths) {
@@ -308,30 +300,6 @@ public class MetadataHelper implements ApplicationContextAware {
         return new Metadata(this, ingestTypeFilter);
     }
     
-    private void showMeDaCache(String when) {
-        log.trace("from applicationContext:" + applicationContext);
-        if (this.applicationContext != null) {
-            CacheManager cacheManager = applicationContext.getBean("metadataHelperCacheManager", CacheManager.class);
-            log.trace("beans are " + Arrays.toString(applicationContext.getBeanDefinitionNames()));
-            for (String cacheName : cacheManager.getCacheNames()) {
-                log.trace(when + " got " + cacheName);
-                Object nativeCache = cacheManager.getCache(cacheName).getNativeCache();
-                log.trace("nativeCache is a " + nativeCache);
-                if (nativeCache instanceof Cache) {
-                    Cache cache = (Cache) nativeCache;
-                    Map map = cache.asMap();
-                    log.trace("cache map is " + map);
-                    log.trace("cache map size is " + map.size());
-                    for (Object key : map.keySet()) {
-                        log.trace("value for " + key + " is :" + map.get(key));
-                    }
-                } else {
-                    log.warn("Expected native cache to be a " + Cache.class + " but it was a " + nativeCache.getClass());
-                }
-            }
-        }
-    }
-    
     /**
      * Fetch the {@link Set} of all fields contained in the database. This will provide a cached view of the fields which is updated every
      * {@code updateInterval} milliseconds.
@@ -340,8 +308,6 @@ public class MetadataHelper implements ApplicationContextAware {
      * @throws TableNotFoundException
      */
     public Set<String> getAllFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
-        if (log.isTraceEnabled())
-            showMeDaCache("before call to loadAllFields from MetadataHelper");
         Multimap<String,String> allFields = this.allFieldMetadataHelper.loadAllFields();
         if (log.isTraceEnabled())
             log.trace("loadAllFields() with auths:" + this.allFieldMetadataHelper.getAuths() + " returned " + allFields);
@@ -1408,15 +1374,6 @@ public class MetadataHelper implements ApplicationContextAware {
         return getKey(this);
     }
     
-    /**
-     * Invalidates all elements in all internal caches
-     */
-    @CacheEvict(value = {"getAllNormalized", "getEdges"}, allEntries = true, cacheManager = "metadataHelperCacheManager")
-    public void evictCaches() {
-        log.debug("evictCaches");
-        allFieldMetadataHelper.evictCaches();
-    }
-    
     public static void basicIterator(Connector connector, String tableName, Collection<Authorizations> auths)
                     throws TableNotFoundException, InvalidProtocolBufferException {
         if (log.isTraceEnabled())
@@ -1431,12 +1388,6 @@ public class MetadataHelper implements ApplicationContextAware {
             if (log.isTraceEnabled())
                 log.trace("Key: " + k);
         }
-    }
-    
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-        
     }
     
     public String getMetadataTableName() {

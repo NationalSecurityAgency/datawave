@@ -1,7 +1,6 @@
 package datawave.query.util;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 import datawave.data.ColumnFamilyConstants;
@@ -27,7 +26,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Configuration;
@@ -292,14 +290,5 @@ public class MetadataHelperWithDescriptions extends MetadataHelper {
     
     public ResponseObjectFactory getResponseObjectFactory() {
         return this.responseObjectFactory;
-    }
-    
-    /**
-     * Invalidates all elements in all internal caches
-     */
-    @CacheEvict(value = {"getMetadata"}, allEntries = true, cacheManager = "metadataHelperCacheManager")
-    public void evictCaches() {
-        log.debug("evictCaches");
-        super.evictCaches();
     }
 }

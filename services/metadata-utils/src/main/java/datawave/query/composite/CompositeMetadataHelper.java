@@ -14,7 +14,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Scope;
@@ -160,13 +159,5 @@ public class CompositeMetadataHelper {
         bs.close();
         
         return compositeMetadata;
-    }
-    
-    /**
-     * Invalidates all elements in all internal caches
-     */
-    @CacheEvict(value = {"getCompositeMetadata"}, allEntries = true, cacheManager = "metadataHelperCacheManager")
-    public void evictCaches() {
-        log.debug("evictCaches");
     }
 }

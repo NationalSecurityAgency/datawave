@@ -29,7 +29,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Scope;
@@ -1004,17 +1003,6 @@ public class AllFieldMetadataHelper {
     @Override
     public String toString() {
         return getKey(this);
-    }
-    
-    /**
-     * Invalidates all elements in all internal caches
-     */
-    @CacheEvict(value = {"loadAllFields", "isIndexed", "getAllDatatypes", "getCompositeToFieldMap", "getFieldsToDatatypes", "getFieldsForDatatype",
-            "getIndexOnlyFields", "loadTermFrequencyFields", "loadIndexedFields", "loadExpansionFields", "loadContentFields", "loadDatatypes"},
-                    allEntries = true, cacheManager = "metadataHelperCacheManager")
-    public void evictCaches() {
-        log.debug("evictCaches");
-        typeMetadataHelper.evictCaches();
     }
     
 }
