@@ -149,7 +149,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
      * @return a new initialized MetadataHelper
      */
     protected MetadataHelper initializeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
-        return this.metadataHelperFactory.createMetadataHelper().initialize(connector, metadataTableName, auths);
+        return this.metadataHelperFactory.createMetadataHelper(connector, metadataTableName, auths);
     }
     
     public MetadataHelperFactory getMetadataHelperFactory() {

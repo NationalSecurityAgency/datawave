@@ -46,9 +46,7 @@ public class DefaultDatawaveEdgeDictionaryImpl implements DatawaveEdgeDictionary
     @Override
     public DefaultEdgeDictionary getEdgeDictionary(String metadataTableName, Connector connector, Set<Authorizations> auths, int numThreads) throws Exception {
         
-        MetadataHelper metadataHelper = this.metadataHelperFactory.createMetadataHelper();
-        
-        metadataHelper.initialize(connector, metadataTableName, auths);
+        MetadataHelper metadataHelper = this.metadataHelperFactory.createMetadataHelper(connector, metadataTableName, auths);
         
         // Convert them into a response object
         

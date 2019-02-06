@@ -21,32 +21,28 @@
     <cache:annotation-driven cache-manager="metadataHelperCacheManager"/>
     
     <bean id="metadataHelper" scope="prototype" class="datawave.query.util.MetadataHelper" >
-        <constructor-arg ref="allFieldMetadataHelper"/>
-        <constructor-arg ref="allMetadataAuths"/>
-    </bean>
-    
-    <bean id="metadataHelperFactory" class="datawave.query.util.MetadataHelperFactory" >
-        <lookup-method name="createMetadataHelper" bean="metadataHelper" />
+        <constructor-arg name="allFieldMetadataHelper" ref="allFieldMetadataHelper"/>
+        <constructor-arg name="allMetadataAuths" ref="allMetadataAuths"/>
     </bean>
 
-    <bean id="typeMetadataHelperFactory" class="datawave.query.util.TypeMetadataHelper.Factory" >
-        <lookup-method name="createTypeMetadataHelper" bean="typeMetadataHelper" />
-    </bean>
+    <bean id="typeMetadataHelperFactory" class="datawave.query.util.TypeMetadataHelper.Factory" autowire="constructor" />
+
+    <bean id="metadataHelperFactory" class="datawave.query.util.MetadataHelperFactory" autowire="constructor" />
 
     <bean id="allFieldMetadataHelper" scope="prototype" class="datawave.query.util.AllFieldMetadataHelper" >
-        <constructor-arg ref="typeMetadataHelper"/>
-        <constructor-arg ref="compositeMetadataHelper"/>
+        <constructor-arg name="typeMetadataHelper" ref="typeMetadataHelper"/>
+        <constructor-arg name="compositeMetadataHelper" ref="compositeMetadataHelper"/>
     </bean>
 
     <bean id="typeMetadataHelper" scope="prototype" class="datawave.query.util.TypeMetadataHelper" >
         <constructor-arg name="typeSubstitutions" ref="typeSubstitutions" />
         <constructor-arg name="allMetadataAuths" ref="allMetadataAuths" />
     </bean>
-    
+
     <bean id="compositeMetadataHelper" scope="prototype" class="datawave.query.composite.CompositeMetadataHelper" />
 
     <util:set id="allMetadataAuths" scope="prototype" value-type="org.apache.accumulo.core.security.Authorizations" >
-        <bean class="org.apache.accumulo.core.security.Authorizations" >
+        <bean class="org.apache.accumulo.core.security.Authorizations">
             <constructor-arg>
                 <bean class="org.springframework.util.StringUtils" factory-method="commaDelimitedListToSet">
                     <constructor-arg type="java.lang.String" value="${dw.metadatahelper.all.auths}"/>

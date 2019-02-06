@@ -8,6 +8,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
@@ -16,7 +17,10 @@ import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.model.QueryModel;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 
@@ -56,8 +60,26 @@ public class MockMetadataHelper extends MetadataHelper {
     };
     
     public MockMetadataHelper() {
-        super(new AllFieldMetadataHelper(new TypeMetadataHelper(Maps.newHashMap(), Collections.emptySet()), new CompositeMetadataHelper()), Collections
+        super(createAllFieldMetadataHelper(getConnector()), Collections.emptySet(), getConnector(), "DatawaveMetadata", Collections.emptySet(), Collections
                         .emptySet());
+    }
+    
+    private static AllFieldMetadataHelper createAllFieldMetadataHelper(Connector connector) {
+        final String metadataTable = "DatawaveMetadata";
+        final Set<Authorizations> allMetadataAuths = Collections.emptySet();
+        final Set<Authorizations> auths = Collections.emptySet();
+        TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, connector, metadataTable, auths, false);
+        CompositeMetadataHelper cmh = new CompositeMetadataHelper(connector, metadataTable, auths);
+        return new AllFieldMetadataHelper(tmh, cmh, connector, metadataTable, auths, allMetadataAuths);
+        
+    }
+    
+    private static Connector getConnector() {
+        try {
+            return new InMemoryInstance().getConnector("root", new PasswordToken(""));
+        } catch (AccumuloException | AccumuloSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     public void addContentFields(Collection<String> fields) {

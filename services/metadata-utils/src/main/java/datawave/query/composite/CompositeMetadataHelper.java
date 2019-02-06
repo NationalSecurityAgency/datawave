@@ -1,5 +1,6 @@
 package datawave.query.composite;
 
+import com.google.common.base.Preconditions;
 import datawave.data.ColumnFamilyConstants;
 import datawave.security.util.ScannerHelper;
 import org.apache.accumulo.core.client.Connector;
@@ -39,18 +40,14 @@ public class CompositeMetadataHelper {
     protected final List<Text> metadataCompositeColfs = Arrays.asList(ColumnFamilyConstants.COLF_CI, ColumnFamilyConstants.COLF_CITD,
                     ColumnFamilyConstants.COLF_CISEP);
     
-    protected Connector connector;
-    protected Instance instance;
-    protected String metadataTableName;
-    protected Set<Authorizations> auths;
-    
-    public CompositeMetadataHelper initialize(Connector connector, String metadataTableName, Set<Authorizations> auths) {
-        return this.initialize(connector, connector.getInstance(), metadataTableName, auths);
-    }
+    protected final Connector connector;
+    protected final Instance instance;
+    protected final String metadataTableName;
+    protected final Set<Authorizations> auths;
     
     /**
      * Initializes the instance with a provided update interval.
-     * 
+     *
      * @param connector
      *            A Connector to Accumulo
      * @param metadataTableName
@@ -58,20 +55,21 @@ public class CompositeMetadataHelper {
      * @param auths
      *            Any {@link Authorizations} to use
      */
-    public CompositeMetadataHelper initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths) {
-        if (this.connector != null) {
-            throw new RuntimeException("CompositeMetadataHelper may not be re-initialized");
-        }
+    public CompositeMetadataHelper(Connector connector, String metadataTableName, Set<Authorizations> auths) {
+        Preconditions.checkNotNull(connector, "A valid Accumulo Connector is required by CompositeMetadataHelper");
         this.connector = connector;
-        this.instance = instance;
+        this.instance = connector.getInstance();
+        
+        Preconditions.checkNotNull(metadataTableName, "The metadata table name is required by CompositeMetadataHelper");
         this.metadataTableName = metadataTableName;
+        
+        Preconditions.checkNotNull(auths, "Accumulo scan Authorizations are required by CompositeMetadataHelper");
         this.auths = auths;
         
         if (log.isTraceEnabled()) {
             log.trace("Constructor  connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths + " and metadata table name: "
                             + metadataTableName);
         }
-        return this;
     }
     
     public Set<Authorizations> getAuths() {

@@ -190,8 +190,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         logic.setupQuery(config);
         
         TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
-        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory().createTypeMetadataHelper();
-        typeMetadataHelper.initialize(connector, MODEL_TABLE_NAME, authSet);
+        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper.Factory(null).createTypeMetadataHelper(connector, MODEL_TABLE_NAME, authSet, false);
         Map<Set<String>,TypeMetadata> typeMetadataMap = typeMetadataHelper.getTypeMetadataMap(authSet);
         typeMetadataWriter.writeTypeMetadataMap(typeMetadataMap, MODEL_TABLE_NAME);
         

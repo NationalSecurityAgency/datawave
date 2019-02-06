@@ -1,6 +1,7 @@
 package datawave.query.util;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 import datawave.data.ColumnFamilyConstants;
@@ -69,8 +70,9 @@ public class MetadataHelperWithDescriptions extends MetadataHelper {
     @Inject
     private ResponseObjectFactory responseObjectFactory;
     
-    protected MetadataHelperWithDescriptions(AllFieldMetadataHelper allFieldMetadataHelper, Collection<Authorizations> allMetadataAuths) {
-        super(allFieldMetadataHelper, allMetadataAuths);
+    public MetadataHelperWithDescriptions(AllFieldMetadataHelper allFieldMetadataHelper, Collection<Authorizations> allMetadataAuths, Connector connector,
+                    String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths) {
+        super(allFieldMetadataHelper, allMetadataAuths, connector, metadataTableName, auths, fullUserAuths);
     }
     
     /**
@@ -78,45 +80,25 @@ public class MetadataHelperWithDescriptions extends MetadataHelper {
      * 
      * @param connector
      * @param metadataTableName
-     * @param auths
+     * @param allMetadataAuths
+     * @param fullUserAuths
      * @return the metadata helper
      */
     public static MetadataHelperWithDescriptions getInstance(Connector connector, String metadataTableName, Authorizations allMetadataAuths,
-                    Set<Authorizations> auths) {
-        HashMap<String,String> typeSubstitutions = new HashMap<>();
+                    Set<Authorizations> fullUserAuths) {
+        Map<String,String> typeSubstitutions = new HashMap<>();
         typeSubstitutions.put("datawave.data.type.DateType", "datawave.data.type.RawDateType");
         Set<Authorizations> allMetadataAuthsSet = Collections.singleton(allMetadataAuths);
-        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper(typeSubstitutions, allMetadataAuthsSet);
-        CompositeMetadataHelper compositeMetadataHelper = new CompositeMetadataHelper();
-        AllFieldMetadataHelper allFieldMetadataHelper = new AllFieldMetadataHelper(typeMetadataHelper, compositeMetadataHelper);
-        MetadataHelperWithDescriptions mhwd = new MetadataHelperWithDescriptions(allFieldMetadataHelper, allMetadataAuthsSet);
+        Collection<String> mergedAuths = MetadataHelper.getUsersMetadataAuthorizationSubset(fullUserAuths, allMetadataAuthsSet);
+        Set<Authorizations> authSubset = Collections.singleton(new Authorizations(mergedAuths.toArray(new String[0])));
+        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper(typeSubstitutions, allMetadataAuthsSet, connector, metadataTableName, authSubset, false);
+        CompositeMetadataHelper compositeMetadataHelper = new CompositeMetadataHelper(connector, metadataTableName, authSubset);
+        AllFieldMetadataHelper allFieldMetadataHelper = new AllFieldMetadataHelper(typeMetadataHelper, compositeMetadataHelper, connector, metadataTableName,
+                        authSubset, fullUserAuths);
+        MetadataHelperWithDescriptions mhwd = new MetadataHelperWithDescriptions(allFieldMetadataHelper, allMetadataAuthsSet, connector, metadataTableName,
+                        authSubset, fullUserAuths);
         mhwd.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        return mhwd.initialize(connector, connector.getInstance(), metadataTableName, auths);
-    }
-    
-    public MetadataHelperWithDescriptions initialize(Connector connector, String metadataTableName, Set<Authorizations> auths) {
-        return initialize(connector, connector.getInstance(), metadataTableName, auths);
-    };
-    
-    /**
-     * Initializes the instance with a provided update interval.
-     * 
-     * @param connector
-     *            A Connector to Accumulo
-     * @param metadataTableName
-     *            The name of the DatawaveMetadata table
-     * @param auths
-     *            Any {@link Authorizations} to use
-     */
-    public MetadataHelperWithDescriptions initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths,
-                    boolean useSubstitutions) {
-        super.initialize(connector, instance, metadataTableName, auths, useSubstitutions);
-        return this;
-    }
-    
-    public MetadataHelperWithDescriptions initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths) {
-        super.initialize(connector, instance, metadataTableName, auths, false);
-        return this;
+        return mhwd;
     }
     
     /**

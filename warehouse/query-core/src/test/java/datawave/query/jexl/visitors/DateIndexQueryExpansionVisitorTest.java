@@ -47,7 +47,7 @@ public class DateIndexQueryExpansionVisitorTest {
     
     protected ShardQueryLogic logic = null;
     
-    private MetadataHelper helper = new MetadataHelperFactory().createMetadataHelper();
+    private MetadataHelper helper;
     
     @BeforeClass
     public static void before() throws Exception {
@@ -58,6 +58,8 @@ public class DateIndexQueryExpansionVisitorTest {
     
     @Before
     public void setupTests() throws Exception {
+        
+        this.helper = new MetadataHelperFactory().createMetadataHelper(connector, DATE_INDEX_TABLE_NAME, Collections.singleton(auths));
         
         this.createTables();
         

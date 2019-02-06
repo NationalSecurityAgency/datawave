@@ -19,10 +19,10 @@
         <constructor-arg name="allFieldMetadataHelper" ref="allFieldMetadataHelper"/>
         <constructor-arg name="allMetadataAuths" ref="allMetadataAuths"/>
     </bean>
-    
-    <bean id="metadataHelperFactory" class="datawave.query.util.MetadataHelperFactory" >
-        <lookup-method name="createMetadataHelper" bean="metadataHelper" />
-    </bean>
+
+    <bean id="typeMetadataHelperFactory" class="datawave.query.util.TypeMetadataHelper.Factory" autowire="constructor" />
+
+    <bean id="metadataHelperFactory" class="datawave.query.util.MetadataHelperFactory" autowire="constructor" />
 
     <bean id="allFieldMetadataHelper" scope="prototype" class="datawave.query.util.AllFieldMetadataHelper" >
         <constructor-arg name="typeMetadataHelper" ref="typeMetadataHelper"/>

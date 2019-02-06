@@ -28,56 +28,26 @@ public class MetadataHelperUpdateHdfsListener {
     
     private static final Logger log = Logger.getLogger(MetadataHelperUpdateHdfsListener.class);
     
-    private String zookeepers;
-    private TypeMetadataHelper.Factory typeMetadataHelperFactory;
-    private String[] metadataTableNames;
-    private Set<Authorizations> allMetadataAuths;
+    private final String zookeepers;
+    private final TypeMetadataHelper.Factory typeMetadataHelperFactory;
+    private final Set<Authorizations> allMetadataAuths;
     private TypeMetadataWriter typeMetadataWriter = TypeMetadataWriter.Factory.createTypeMetadataWriter();
     
-    private String instance;
-    private String username;
-    private String password;
-    private long lockWaitTime = 1000L; // configurable in MetadataHelperCacheListenerContext.xml
+    private final String instance;
+    private final String username;
+    private final String password;
+    private final long lockWaitTime;
     
-    public void setPassword(String password) {
-        this.password = password;
-    }
-    
-    public void setUsername(String username) {
-        this.username = username;
-    }
-    
-    public void setInstance(String instance) {
-        this.instance = instance;
-    }
-    
-    public void setZookeepers(String zookeepers) {
+    public MetadataHelperUpdateHdfsListener(String zookeepers, TypeMetadataHelper.Factory typeMetadataHelperFactory, String[] metadataTableNames,
+                    Set<Authorizations> allMetadataAuths, String instance, String username, String password, long lockWaitTime) {
         this.zookeepers = zookeepers;
-    }
-    
-    public void setTypeMetadataHelperFactory(TypeMetadataHelper.Factory typeMetadataHelperFactory) {
         this.typeMetadataHelperFactory = typeMetadataHelperFactory;
-    }
-    
-    public void setAllMetadataAuths(Set<Authorizations> allMetadataAuths) {
         this.allMetadataAuths = allMetadataAuths;
-    }
-    
-    public void setMetadataTableNames(String[] metadataTableNames) {
-        
-        this.metadataTableNames = metadataTableNames;
-        registerCacheListeners();
-    }
-    
-    public long getLockWaitTime() {
-        return lockWaitTime;
-    }
-    
-    public void setLockWaitTime(long lockWaitTime) {
+        this.instance = instance;
+        this.username = username;
+        this.password = password;
         this.lockWaitTime = lockWaitTime;
-    }
-    
-    private void registerCacheListeners() {
+        
         for (String metadataTableName : metadataTableNames) {
             registerCacheListener(metadataTableName);
         }
@@ -154,8 +124,8 @@ public class MetadataHelperUpdateHdfsListener {
                         ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(this.instance)
                                         .withZkHosts(this.zookeepers));
                         Connector connector = instance.getConnector(this.username, new PasswordToken(this.password));
-                        TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper();
-                        typeMetadataHelper.initialize(connector, metadataTableName, allMetadataAuths);
+                        TypeMetadataHelper typeMetadataHelper = this.typeMetadataHelperFactory.createTypeMetadataHelper(connector, metadataTableName,
+                                        allMetadataAuths, false);
                         typeMetadataWriter.writeTypeMetadataMap(typeMetadataHelper.getTypeMetadataMap(this.allMetadataAuths), metadataTableName);
                         if (log.isDebugEnabled()) {
                             log.debug("table:" + metadataTableName + " " + this + " set the sharedTriState needsUpdate to UPDATED for " + metadataTableName);

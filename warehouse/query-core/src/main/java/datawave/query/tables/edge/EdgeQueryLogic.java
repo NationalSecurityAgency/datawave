@@ -124,7 +124,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         
         currentIteratorPriority = super.getBaseIteratorPriority() + 30;
-        MetadataHelper metadataHelper = prepareMetadataHelper(connection, modelTableName, auths);
         
         EdgeQueryConfiguration cfg = setUpConfig(settings);
         
@@ -197,19 +196,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths) {
         if (log.isTraceEnabled())
             log.trace("prepareMetadataHelper with " + connection);
-        MetadataHelper metadataHelper = this.metadataHelperFactory.createMetadataHelper();
-        // check to see if i need to initialize a new one
-        if (metadataHelper.getMetadataTableName() != null && metadataTableName != null && !metadataTableName.equals(metadataHelper.getMetadataTableName())) {
-            // initialize it
-            metadataHelper.initialize(connection, metadataTableName, auths);
-        } else if (metadataHelper.getAuths() == null || metadataHelper.getAuths().isEmpty()) {
-            return metadataHelper.initialize(connection, metadataTableName, auths);
-            // assumption is that it is already initialized. we shall see.....
-        } else {
-            if (log.isTraceEnabled())
-                log.trace("the MetadataHelper did not need to be initialized:" + metadataHelper + " and " + metadataTableName + " and " + auths);
-        }
-        return metadataHelper.initialize(connection, metadataTableName, auths);
+        return metadataHelperFactory.createMetadataHelper(connection, metadataTableName, auths);
     }
     
     /**

@@ -63,12 +63,54 @@ public class AllFieldMetadataHelper {
     
     protected static final Function<MetadataEntry,String> toFieldName = new MetadataEntryToFieldName(), toDatatype = new MetadataEntryToDatatype();
     
-    public AllFieldMetadataHelper(TypeMetadataHelper typeMetadataHelper, CompositeMetadataHelper compositeMetadataHelper) {
-        Preconditions.checkNotNull(typeMetadataHelper);
+    protected final Metadata metadata = new Metadata();
+    
+    protected final List<Text> metadataIndexColfs = Arrays.asList(ColumnFamilyConstants.COLF_I, ColumnFamilyConstants.COLF_RI);
+    protected final List<Text> metadataNormalizedColfs = Arrays.asList(ColumnFamilyConstants.COLF_N);
+    protected final List<Text> metadataTypeColfs = Arrays.asList(ColumnFamilyConstants.COLF_T);
+    protected final List<Text> metadataCompositeIndexColfs = Arrays.asList(ColumnFamilyConstants.COLF_CI);
+    
+    protected final Connector connector;
+    protected final Instance instance;
+    protected final String metadataTableName;
+    protected final Set<Authorizations> auths;
+    protected final Set<Authorizations> fullUserAuths;
+    
+    protected final TypeMetadataHelper typeMetadataHelper;
+    protected final CompositeMetadataHelper compositeMetadataHelper;
+    
+    /**
+     * Initializes the instance with a provided update interval.
+     *
+     * @param connector
+     *            A Connector to Accumulo
+     * @param metadataTableName
+     *            The name of the DatawaveMetadata table
+     * @param auths
+     *            Any {@link Authorizations} to use
+     */
+    public AllFieldMetadataHelper(TypeMetadataHelper typeMetadataHelper, CompositeMetadataHelper compositeMetadataHelper, Connector connector,
+                    String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths) {
+        Preconditions.checkNotNull(typeMetadataHelper, "A TypeMetadataHelper is required by AllFieldMetadataHelper");
         this.typeMetadataHelper = typeMetadataHelper;
         
-        Preconditions.checkNotNull(compositeMetadataHelper);
+        Preconditions.checkNotNull(compositeMetadataHelper, "A CompositeMetadataHelper is required by AllFieldMetadataHelper");
         this.compositeMetadataHelper = compositeMetadataHelper;
+        
+        Preconditions.checkNotNull(connector, "A valid Accumulo Connector is required by AllFieldMetadataHelper");
+        this.connector = connector;
+        this.instance = connector.getInstance();
+        
+        Preconditions.checkNotNull(metadataTableName, "The name of the metadata table is required by AllFieldMetadataHelper");
+        this.metadataTableName = metadataTableName;
+        
+        Preconditions.checkNotNull(auths, "Authorizations are required by AllFieldMetadataHelper");
+        this.auths = auths;
+        
+        Preconditions.checkNotNull(fullUserAuths, "The full set of user authorizations is required by AllFieldMetadataHelper");
+        this.fullUserAuths = fullUserAuths;
+        
+        log.trace("Constructor  connector: {} and metadata table name: {}", connector.getClass().getCanonicalName(), metadataTableName);
     }
     
     protected String getDatatype(Key k) {
@@ -92,60 +134,6 @@ public class AllFieldMetadataHelper {
             }
         }
         return compositeFieldName;
-    }
-    
-    protected final Metadata metadata = new Metadata();
-    
-    protected final List<Text> metadataIndexColfs = Arrays.asList(ColumnFamilyConstants.COLF_I, ColumnFamilyConstants.COLF_RI);
-    protected final List<Text> metadataNormalizedColfs = Arrays.asList(ColumnFamilyConstants.COLF_N);
-    protected final List<Text> metadataTypeColfs = Arrays.asList(ColumnFamilyConstants.COLF_T);
-    protected final List<Text> metadataCompositeIndexColfs = Arrays.asList(ColumnFamilyConstants.COLF_CI);
-    
-    protected Connector connector;
-    protected Instance instance;
-    protected String metadataTableName;
-    protected Set<Authorizations> auths;
-    protected Set<Authorizations> fullUserAuths;
-    
-    protected final TypeMetadataHelper typeMetadataHelper;
-    protected final CompositeMetadataHelper compositeMetadataHelper;
-    
-    public AllFieldMetadataHelper initialize(Connector connector, String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths) {
-        return this.initialize(connector, connector.getInstance(), metadataTableName, auths, fullUserAuths, false);
-    }
-    
-    public AllFieldMetadataHelper initialize(Connector connector, String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths,
-                    boolean useTypeSubstitutions) {
-        return this.initialize(connector, connector.getInstance(), metadataTableName, auths, fullUserAuths, useTypeSubstitutions);
-    }
-    
-    /**
-     * Initializes the instance with a provided update interval.
-     * 
-     * @param connector
-     *            A Connector to Accumulo
-     * @param metadataTableName
-     *            The name of the DatawaveMetadata table
-     * @param auths
-     *            Any {@link Authorizations} to use
-     */
-    public AllFieldMetadataHelper initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths,
-                    Set<Authorizations> fullUserAuths, boolean useTypeSubstitutions) {
-        if (this.connector != null) {
-            throw new RuntimeException("AllFieldMetadataHelper may not be re-initialized");
-        }
-        this.connector = connector;
-        this.instance = instance;
-        this.metadataTableName = metadataTableName;
-        this.auths = auths;
-        this.fullUserAuths = fullUserAuths;
-        this.typeMetadataHelper.initialize(connector, instance, metadataTableName, auths, useTypeSubstitutions);
-        this.compositeMetadataHelper.initialize(connector, instance, metadataTableName, auths);
-        
-        if (log.isTraceEnabled()) {
-            log.trace("Constructor  connector: " + connector.getClass().getCanonicalName() + " and metadata table name: " + metadataTableName);
-        }
-        return this;
     }
     
     public Set<Authorizations> getAuths() {

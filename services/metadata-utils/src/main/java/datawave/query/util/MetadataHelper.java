@@ -120,10 +120,10 @@ public class MetadataHelper implements ApplicationContextAware {
     protected final List<Text> metadataCompositeIndexColfs = Arrays.asList(ColumnFamilyConstants.COLF_CI);
     protected final List<Text> metadataCardinalityColfs = Arrays.asList(ColumnFamilyConstants.COLF_COUNT);
     
-    protected Connector connector;
-    protected Instance instance;
-    protected String metadataTableName;
-    protected Set<Authorizations> auths;
+    protected final Connector connector;
+    protected final Instance instance;
+    protected final String metadataTableName;
+    protected final Set<Authorizations> auths;
     protected Set<Authorizations> fullUserAuths;
     
     protected final AllFieldMetadataHelper allFieldMetadataHelper;
@@ -131,66 +131,29 @@ public class MetadataHelper implements ApplicationContextAware {
     
     protected ApplicationContext applicationContext;
     
-    public MetadataHelper(AllFieldMetadataHelper allFieldMetadataHelper, Collection<Authorizations> allMetadataAuths) {
-        Preconditions.checkNotNull(allFieldMetadataHelper);
+    public MetadataHelper(AllFieldMetadataHelper allFieldMetadataHelper, Collection<Authorizations> allMetadataAuths, Connector connector,
+                    String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths) {
+        Preconditions.checkNotNull(allFieldMetadataHelper, "An AllFieldMetadataHelper is required by MetadataHelper");
         this.allFieldMetadataHelper = allFieldMetadataHelper;
         
-        Preconditions.checkNotNull(allMetadataAuths);
+        Preconditions.checkNotNull(allMetadataAuths, "The set of all metadata authorization is required by MetadataHelper");
         this.allMetadataAuths = allMetadataAuths;
-    }
-    
-    public MetadataHelper initialize(Connector connector, String metadataTableName, Set<Authorizations> auths, boolean useSubstitutions) {
         
-        return initialize(connector, connector.getInstance(), metadataTableName, auths, useSubstitutions);
-    }
-    
-    public MetadataHelper initialize(Connector connector, String metadataTableName, Set<Authorizations> auths) {
-        
-        return initialize(connector, connector.getInstance(), metadataTableName, auths, false);
-    }
-    
-    /**
-     * Initializes the instance with a provided update interval.
-     *
-     * The MetadataHelper is injected with a collection of Authorizations (allMetadataAuths) that covers all entries in the DatawaveMetadata table. When the
-     * MetadataHelper is initialized, the user's Authorizations are compared with the allMetadataAuths to see if the user has all of the allMetadataAuths. If so
-     * (and this will be the norm), the MetadataHelper instance will set its 'auths' field to the collection of allMetadataAuths. Because the value in 'auths'
-     * is part of the cache key, this will allow all users who have the complete set of allMetadataAuths to pull responses from the cache that is shared by all
-     * instances of MetadataHelper. The user who does not have the complete set of allMetadataAuths will access non-cached responses.
-     *
-     * @param connector
-     *            A Connector to Accumulo
-     * @param metadataTableName
-     *            The name of the DatawaveMetadata table
-     * @param auths
-     *            Any {@link Authorizations} to use
-     */
-    public MetadataHelper initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths, boolean useSubstitutions) {
-        
-        if (this.connector != null) {
-            throw new RuntimeException("MetadataHelper may not be re-initialized");
-        }
+        Preconditions.checkNotNull(connector, "A valid Accumulo Connector is required by MetadataHelper");
         this.connector = connector;
-        this.instance = instance;
-        this.metadataTableName = metadataTableName;
-        this.fullUserAuths = auths;
-        if (auths == null) {
-            // this should not happen. throw an exception and fix the calling code
-            throw new RuntimeException("passed auths were null");
-        }
-        // this.auths will be set to the intersection of this.allMetadataAuths using only the smaller set of auths (all that's required) will greatly reduce
-        // the number of cache keys and cache storage for
-        // MetadataHelper methods.
-        Collection<String> authSubset = MetadataHelper.getUsersMetadataAuthorizationSubset(auths, this.allMetadataAuths);
-        this.auths = Collections.singleton(new Authorizations(authSubset.toArray(new String[authSubset.size()])));
-        log.debug("initialized with auths subset:" + this.auths);
+        this.instance = connector.getInstance();
         
-        this.allFieldMetadataHelper.initialize(connector, instance, metadataTableName, this.auths, this.fullUserAuths, useSubstitutions);
-        if (log.isTraceEnabled()) {
-            log.trace("Constructor  connector: " + connector.getClass().getCanonicalName() + " with auths: " + auths + " and metadata table name: "
-                            + metadataTableName);
-        }
-        return this;
+        Preconditions.checkNotNull(metadataTableName, "The name of the metadata table is required by MetadataHelper");
+        this.metadataTableName = metadataTableName;
+        
+        Preconditions.checkNotNull(auths, "Authorizations are required by MetadataHelper");
+        this.auths = auths;
+        
+        Preconditions.checkNotNull(fullUserAuths, "The full set of user authorizations is required by MetadataHelper");
+        this.fullUserAuths = fullUserAuths;
+        log.debug("initialized with auths subset: {}", this.auths);
+        
+        log.trace("Constructor connector: {} with auths: {} and metadata table name: {}", connector.getClass().getCanonicalName(), auths, metadataTableName);
     }
     
     /**
@@ -1478,10 +1441,6 @@ public class MetadataHelper implements ApplicationContextAware {
     
     public String getMetadataTableName() {
         return metadataTableName;
-    }
-    
-    public void setMetadataTableName(String metadataTableName) {
-        this.metadataTableName = metadataTableName;
     }
     
 }
