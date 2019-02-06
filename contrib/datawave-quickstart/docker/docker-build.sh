@@ -11,8 +11,10 @@ function help() {
     echo
     echo "  $( printGreen "Usage:" ) ./$( basename ${BASH_SOURCE[0]} ) $( printGreen "<image tag name>" ) [ $( printGreen "--use-existing-binaries" ) ]"
     echo
+    echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) latest"
     echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT"
-    echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT --use-existing-binaries"
+    echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) \"\$(cd $DATAWAVE_SOURCE_DIR && mvn -N -q -Dexec.executable='echo' -Dexec.args='\${project.version}' exec:exec)\""
+    echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.1.0-SNAPSHOT --use-existing-binaries"
     echo
     echo "     By default, this script will force a fresh build of DataWave's ingest and web tarballs to ensure"
     echo "     that they're properly configured for container deployment...that is, configured for deployment to"
@@ -48,7 +50,7 @@ function validateArgs() {
    [ "$1" == "--use-existing-binaries" ] && error "First argument must be the tag name" && help && exit 1
    [ "$2" == "--use-existing-binaries" ] && USE_EXISTING_BINARIES=true
 
-   IMAGE_NAME="datawave-quickstart:$1"
+   IMAGE_NAME="datawave/quickstart:$1"
 }
 
 function removeDatawaveTarball() {

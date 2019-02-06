@@ -6,14 +6,22 @@ QUICKSTART_DIR="$( dirname "${THIS_DIR}" )"
 source "${QUICKSTART_DIR}/bin/logging.sh"
 
 function usage() {
-    echo "  $( printGreen "Usage:" ) $( basename ${BASH_SOURCE[0]} ) $( printGreen "<image tag name>" ) $( printGreen "< -it|-d >" ) [ $( printGreen "<OPTIONAL-COMMAND>" ) ]"
-    echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -it"
-    echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -it /bin/bash"
-    echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -it datawave-bootstrap.sh --ingest --bash"
-    echo "     E.g., ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -d datawave-bootstrap.sh --ingest --web"
+    echo "  $( printGreen "Usage:" ) $( basename ${BASH_SOURCE[0]} ) $( printGreen "<your-quickstart-image>" ) $( printGreen "<-it|-d>" ) $( printGreen "<OPTIONAL-COMMAND>" )"
     echo
-    echo "  $( printGreen "Note:" ) If you happened to pull the image from a remote repo, set $( printGreen "REPO_OWNER" ) in your environment beforehand:"
-    echo "     E.g., REPO_OWNER=<dockerhubuser> && ./$( basename ${BASH_SOURCE[0]} ) 1.0.0-SNAPSHOT -it"
+    echo "  Examples:"
+    echo
+    echo "   - Run the quickstart interactively from bash shell with web services started (default)"
+    echo "       ./$( basename ${BASH_SOURCE[0]} ) datawave/quickstart:latest -it"
+    echo
+    echo "   - Run the quickstart interactively from bash shell, but don't start dw services"
+    echo "       ./$( basename ${BASH_SOURCE[0]} ) 5c6193da879c -it /bin/bash"
+    echo
+    echo "   - Run the quickstart interactively from bash shell and also start up ingest"
+    echo "       ./$( basename ${BASH_SOURCE[0]} ) datawave/quickstart:latest -it datawave-bootstrap.sh --ingest --bash"
+    echo
+    echo "   - Run the quickstart as a daemon and start up both ingest and web services"
+    echo "       ./$( basename ${BASH_SOURCE[0]} ) datawave/quickstart:2.3.0 -d datawave-bootstrap.sh --ingest --web"
+    echo
 }
 
 [[ -z "$1" || "$1" == "--help" || "$1" == "-h" ]] && usage && exit 0
@@ -22,15 +30,7 @@ function usage() {
 
 [[ "$2" != "-it" && "$2" != "-d" ]] && echo "Second argument must be -it or -d" && usage && exit 1
 
-REPO_OWNER="${REPO_OWNER:-""}"
-
-if [ -n "${REPO_OWNER}" ] ; then
-   # Pulled from docker repo
-   IMAGE_NAME="${REPO_OWNER}/datawave-quickstart:$1"
-else
-   # Built locally
-   IMAGE_NAME="datawave-quickstart:$1"
-fi
+IMAGE_NAME="$1"
 
 # We're creating a named, external Docker volume on the fly for the container's primary data
 # directory (ie, /opt/datawave/contrib/datawave-quickstart/data), which will allow the user to

@@ -47,7 +47,7 @@ $ sudo usermod -aG docker yourusername
 * Uses [Dockerfile](Dockerfile) to create a Docker image that mirrors the current DataWave source tree under an /opt/datawave root 
   directory, including a fully-initialized deployment of DataWave under /opt/datawave/contrib/datawave-quickstart
 
-#### [docker-run-example.sh](docker-run-example.sh)
+#### [docker-run.sh](docker-run.sh)
 
 * Example ` docker run ... ` wrapper script, including set up for volumes, port mapping, etc
 
