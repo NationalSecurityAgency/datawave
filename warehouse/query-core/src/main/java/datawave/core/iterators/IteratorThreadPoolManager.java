@@ -1,6 +1,7 @@
 package datawave.core.iterators;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -9,9 +10,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.util.NamingThreadFactory;
-import org.apache.accumulo.server.client.HdfsZooInstance;
-import org.apache.accumulo.server.conf.ServerConfigurationFactory;
 import org.apache.accumulo.server.util.time.SimpleTimer;
 import org.apache.log4j.Logger;
 
@@ -24,36 +25,33 @@ public class IteratorThreadPoolManager {
     private static final String IVARATOR_THREAD_NAME = "DATAWAVE Ivarator";
     private static final String EVALUATOR_THREAD_PROP = "tserver.datawave.evaluation.threads";
     private static final String EVALUATOR_THREAD_NAME = "DATAWAVE Evaluation";
-    private ExecutorService ivaratorThreadPool;
-    private ExecutorService evaluationThreadPool;
     private static final int DEFAULT_THREAD_POOL_SIZE = 100;
     
     private Map<String,ExecutorService> threadPools = new TreeMap<>();
-    
-    private ServerConfigurationFactory confFactory;
     
     private static final Object instanceSemaphore = new Object();
     private static final String instanceId = Integer.toHexString(instanceSemaphore.hashCode());
     private static volatile IteratorThreadPoolManager instance;
     
-    private IteratorThreadPoolManager() {
-        // create the thread pools\
-        try {
-            this.confFactory = new ServerConfigurationFactory(HdfsZooInstance.getInstance());
-        } catch (Throwable e) {
-            log.error("Unable to get the accumulo configuration, using default thread pool sizes (" + DEFAULT_THREAD_POOL_SIZE + " per pool)");
-        }
-        this.ivaratorThreadPool = createExecutorService(IVARATOR_THREAD_PROP, IVARATOR_THREAD_NAME);
-        this.evaluationThreadPool = createExecutorService(EVALUATOR_THREAD_PROP, EVALUATOR_THREAD_NAME);
+    private IteratorThreadPoolManager(IteratorEnvironment env) {
+        // create the thread pools
+        createExecutorService(IVARATOR_THREAD_PROP, IVARATOR_THREAD_NAME, env);
+        createExecutorService(EVALUATOR_THREAD_PROP, EVALUATOR_THREAD_NAME, env);
     }
     
-    private ThreadPoolExecutor createExecutorService(final String prop, final String name) {
-        final ThreadPoolExecutor service = createExecutorService(getMaxThreads(prop), name + " (" + instanceId + ')');
+    private ThreadPoolExecutor createExecutorService(final String prop, final String name, IteratorEnvironment env) {
+        final AccumuloConfiguration accumuloConfiguration;
+        if (env != null) {
+            accumuloConfiguration = env.getConfig();
+        } else {
+            accumuloConfiguration = DefaultConfiguration.getInstance();
+        }
+        final ThreadPoolExecutor service = createExecutorService(getMaxThreads(prop, accumuloConfiguration), name + " (" + instanceId + ')');
         threadPools.put(name, service);
-        SimpleTimer.getInstance(AccumuloConfiguration.getDefaultConfiguration()).schedule(() -> {
+        SimpleTimer.getInstance(accumuloConfiguration).schedule(() -> {
             try {
                 
-                int max = getMaxThreads(prop);
+                int max = getMaxThreads(prop, accumuloConfiguration);
                 if (service.getMaximumPoolSize() != max) {
                     log.info("Changing " + prop + " to " + max);
                     service.setCorePoolSize(max);
@@ -73,11 +71,10 @@ public class IteratorThreadPoolManager {
         return pool;
     }
     
-    private int getMaxThreads(final String prop) {
-        if (this.confFactory != null) {
-            AccumuloConfiguration conf = this.confFactory.getConfiguration();
+    private int getMaxThreads(final String prop, AccumuloConfiguration conf) {
+        if (conf != null) {
             Map<String,String> properties = new TreeMap<>();
-            conf.getProperties(properties, new AccumuloConfiguration.MatchFilter(prop));
+            conf.getProperties(properties, k -> Objects.equals(k, prop));
             if (properties.containsKey(prop)) {
                 return Integer.parseInt(properties.get(prop));
             }
@@ -85,11 +82,11 @@ public class IteratorThreadPoolManager {
         return DEFAULT_THREAD_POOL_SIZE;
     }
     
-    private static IteratorThreadPoolManager instance() {
+    private static IteratorThreadPoolManager instance(IteratorEnvironment env) {
         if (instance == null) {
             synchronized (instanceSemaphore) {
                 if (instance == null) {
-                    instance = new IteratorThreadPoolManager();
+                    instance = new IteratorThreadPoolManager(env);
                 }
             }
         }
@@ -108,12 +105,12 @@ public class IteratorThreadPoolManager {
         });
     }
     
-    public static Future<?> executeIvarator(Runnable task, String taskName) {
-        return instance().execute(IVARATOR_THREAD_NAME, task, taskName);
+    public static Future<?> executeIvarator(Runnable task, String taskName, IteratorEnvironment env) {
+        return instance(env).execute(IVARATOR_THREAD_NAME, task, taskName);
     }
     
-    public static Future<?> executeEvaluation(Runnable task, String taskName) {
-        return instance().execute(EVALUATOR_THREAD_NAME, task, taskName);
+    public static Future<?> executeEvaluation(Runnable task, String taskName, IteratorEnvironment env) {
+        return instance(env).execute(EVALUATOR_THREAD_NAME, task, taskName);
     }
     
 }

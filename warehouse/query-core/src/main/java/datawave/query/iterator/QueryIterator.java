@@ -337,7 +337,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     log.trace("Received non-inclusive event specific range: " + documentRange);
                 }
                 if (gatherTimingDetails()) {
-                    this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.EmptyTree, trackingSpan, new EmptyTreeIterable());
+                    this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.EmptyTree, trackingSpan, new EmptyTreeIterable(), myEnvironment);
                 } else {
                     this.seekKeySource = new EmptyTreeIterable();
                 }
@@ -356,7 +356,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 
                 if (gatherTimingDetails()) {
                     this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.DocumentSpecificTree, trackingSpan,
-                                    new DocumentSpecificNestedIterator(documentKey));
+                                    new DocumentSpecificNestedIterator(documentKey), myEnvironment);
                 } else {
                     this.seekKeySource = new DocumentSpecificNestedIterator(documentKey);
                 }
@@ -597,7 +597,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
                 
                 if (gatherTimingDetails()) {
-                    subDocIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, subDocIter);
+                    subDocIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, subDocIter, myEnvironment);
                 }
                 
                 // Seek() the boolean logic stuff
@@ -631,7 +631,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             
             if (gatherTimingDetails()) {
-                docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter);
+                docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter, myEnvironment);
             }
             
             // Seek() the boolean logic stuff
@@ -1249,7 +1249,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             debugBooleanLogicIterators(sourceIter);
             
             if (sourceIter != null) {
-                sourceIter = new SeekableNestedIterator(sourceIter);
+                sourceIter = new SeekableNestedIterator(sourceIter, this.myEnvironment);
             }
         }
         

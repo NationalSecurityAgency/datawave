@@ -14,6 +14,7 @@ import org.apache.accumulo.core.client.impl.BaseIteratorEnvironment;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -399,7 +400,8 @@ public class IteratorBuildingVisitorTest {
         TypeMetadata typeMetadata = new TypeMetadata();
         
         Iterator<Map.Entry<Key,Value>> iterator = source.iterator();
-        visitor.setSource(new SourceFactory(iterator), new BaseIteratorEnvironment());
+        IteratorEnvironment env = new BaseIteratorEnvironment();
+        visitor.setSource(new SourceFactory(iterator), env);
         
         // configure the visitor for use
         visitor.setTermFrequencyFields(termFrequencyFields);
@@ -412,7 +414,7 @@ public class IteratorBuildingVisitorTest {
         query.jjtAccept(visitor, null);
         NestedIterator result = visitor.root();
         Assert.assertTrue(result != null);
-        SeekableNestedIterator seekableNestedIterator = new SeekableNestedIterator(result);
+        SeekableNestedIterator seekableNestedIterator = new SeekableNestedIterator(result, env);
         seekableNestedIterator.seek(docRange, null, true);
         seekableNestedIterator.initialize();
         

@@ -82,13 +82,13 @@ public class IndexRangeIteratorBuilder extends IvaratorBuilder implements Iterat
                                 .withUniqueDir(new Path(hdfsCacheURI)).withQueryLock(queryLock).allowDirResuse(true)
                                 .withReturnKeyType(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME).withSortedUUIDs(sortedUIDs)
                                 .withCompositeMetadata(compositeMetadata).withCompositeSeekThreshold(compositeSeekThreshold).withTypeMetadata(typeMetadata)
-                                .withSubRanges(subRanges).build();
+                                .withSubRanges(subRanges).withIteratorEnv(env).build();
                 
                 if (collectTimingDetails) {
                     rangeIterator.setCollectTimingDetails(true);
                     rangeIterator.setQuerySpanCollector(this.querySpanCollector);
                 }
-                rangeIterator.init(source, null, null);
+                rangeIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexRangeIteratorJexl: " + rangeIterator);
                 
                 boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
