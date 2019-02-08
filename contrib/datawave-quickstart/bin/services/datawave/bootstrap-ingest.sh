@@ -72,13 +72,6 @@ DW_DATAWAVE_MAPRED_INGEST_OPTS="-useInlineCombiner -ingestMetricsDisabled"
 
 getDataWaveTarball "${DW_DATAWAVE_INGEST_TARBALL}"
 DW_DATAWAVE_INGEST_DIST="${tarball}"
-DW_DATAWAVE_INGEST_VERSION="$( echo "${DW_DATAWAVE_INGEST_DIST}" | sed "s/.*\///" | sed "s/datawave-${DW_DATAWAVE_BUILD_PROFILE}-//" | sed "s/-dist.tar.gz//" )"
-if [[ -z "${DW_DATAWAVE_INGEST_VERSION}" ]] ; then
-   # We didn't get the version from the assembled tarball. Build probably failed.
-   # As a last resort, try using maven to get the version...
-   setDatawaveProjectVersion
-   DW_DATAWAVE_INGEST_VERSION=${DW_DATAWAVE_PROJECT_VERSION}
-fi
 
 # Service helpers...
 
