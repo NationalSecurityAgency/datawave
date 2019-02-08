@@ -82,6 +82,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         protected TypeMetadata typeMetadata;
         private CompositeMetadata compositeMetadata;
         private int compositeSeekThreshold;
+        private IteratorEnvironment env;
         
         @SuppressWarnings("unchecked")
         protected B self() {
@@ -188,6 +189,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         
         public B withCompositeSeekThreshold(int compositeSeekThreshold) {
             this.compositeSeekThreshold = compositeSeekThreshold;
+            return self();
+        }
+        
+        public B withIteratorEnv(IteratorEnvironment env) {
+            this.env = env;
             return self();
         }
         
@@ -334,14 +340,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this(builder.fieldName, builder.fieldValue, builder.timeFilter, builder.datatypeFilter, builder.negated, builder.scanThreshold, builder.scanTimeout,
                         builder.hdfsBackedSetBufferSize, builder.maxRangeSplit, builder.maxOpenFiles, builder.fs, builder.uniqueDir, builder.queryLock,
                         builder.allowDirReuse, builder.returnKeyType, builder.sortedUIDs, builder.compositeMetadata, builder.compositeSeekThreshold,
-                        builder.typeMetadata);
+                        builder.typeMetadata, builder.env);
     }
     
     @SuppressWarnings("hiding")
     private DatawaveFieldIndexCachingIteratorJexl(Text fieldName, Text fieldValue, TimeFilter timeFilter, Predicate<Key> datatypeFilter, boolean neg,
                     long scanThreshold, long scanTimeout, int bufferSize, int maxRangeSplit, int maxOpenFiles, FileSystem fs, Path uniqueDir,
                     QueryLock queryLock, boolean allowDirReuse, PartialKey returnKeyType, boolean sortedUIDs, CompositeMetadata compositeMetadata,
-                    int compositeSeekThreshold, TypeMetadata typeMetadata) {
+                    int compositeSeekThreshold, TypeMetadata typeMetadata, IteratorEnvironment env) {
         if (fieldName.toString().startsWith("fi" + NULL_BYTE)) {
             this.fieldName = new Text(fieldName.toString().substring(3));
             this.fiName = fieldName;
@@ -379,6 +385,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
         
         this.compositeSeekThreshold = compositeSeekThreshold;
+        this.initEnv = env;
     }
     
     public DatawaveFieldIndexCachingIteratorJexl(DatawaveFieldIndexCachingIteratorJexl other, IteratorEnvironment env) {
@@ -417,6 +424,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
         
         this.lastRangeSeeked = other.lastRangeSeeked;
+        this.initEnv = env;
     }
     
     // -------------------------------------------------------------------------
@@ -1052,7 +1060,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
         };
         
-        return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange);
+        return IteratorThreadPoolManager.executeIvarator(runnable, DatawaveFieldIndexCachingIteratorJexl.this + " in " + boundingFiRange, this.initEnv);
         
     }
     
