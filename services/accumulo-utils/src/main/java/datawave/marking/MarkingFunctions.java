@@ -3,6 +3,7 @@ package datawave.marking;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -17,6 +18,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Accumulo marks all data with a columnVisibility that declares and controls access. MarkingFunctions provide a pattern for mapping a user's preferred means of
@@ -68,18 +73,29 @@ public interface MarkingFunctions {
         }
     }
     
-    class NoOp implements MarkingFunctions {
+    class Default implements MarkingFunctions {
         public static final String COLUMN_VISIBILITY = "columnVisibility";
         
         @Override
         public ColumnVisibility combine(Collection<ColumnVisibility> expressions) {
-            return expressions.isEmpty() ? new ColumnVisibility() : expressions.iterator().next();
+            
+            // filter out any empty expressions, then flatten each one (to de-dupe) and concatenate with '&'
+            // flatten the final combined ColumnVisibility and use that to make the ColumnVisibility to return
+            return new ColumnVisibility(new ColumnVisibility(expressions.stream().filter(viz -> viz.flatten().length > 0)
+                            .map(viz -> "(" + new String(viz.flatten(), UTF_8) + ")").collect(Collectors.joining("&")).getBytes(UTF_8)).flatten());
         }
         
         @Override
         @SafeVarargs
         public final Map<String,String> combine(Map<String,String>... markings) {
-            return markings.length == 0 ? new HashMap<>() : markings[0];
+            Map<String,String> combinedMap = new HashMap<>();
+            Stream.of(markings).flatMap(map -> map.entrySet().stream().filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))).forEach(entry -> {
+                String entryKey = entry.getKey();
+                String entryValue = "(" + entry.getValue() + ")"; // surround with parens for potential concatenation
+                // concat using '&', values that have the same key
+                combinedMap.put(entryKey, combinedMap.containsKey(entryKey) ? combinedMap.get(entryKey) + "&" + entryValue : entryValue);
+            });
+            return combinedMap;
         }
         
         @Override

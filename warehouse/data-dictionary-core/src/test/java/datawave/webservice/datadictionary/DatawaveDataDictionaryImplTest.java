@@ -40,7 +40,7 @@ public class DatawaveDataDictionaryImplTest {
     
     Set<Authorizations> setOfAuthObjs = Collections.singleton(new Authorizations(auths));
     
-    private final MarkingFunctions markingFunctions = new MarkingFunctions.NoOp();
+    private final MarkingFunctions markingFunctions = new MarkingFunctions.Default();
     private final MarkingFunctionsFactory mFFactory = new MarkingFunctionsFactory();
     private Connector connector;
     

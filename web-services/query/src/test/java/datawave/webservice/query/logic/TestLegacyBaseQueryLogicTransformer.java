@@ -53,7 +53,7 @@ public class TestLegacyBaseQueryLogicTransformer {
         
         // Run the test
         PowerMock.replayAll();
-        TestTransformer subject = new TestTransformer(new MarkingFunctions.NoOp(), this.response);
+        TestTransformer subject = new TestTransformer(new MarkingFunctions.Default(), this.response);
         BaseQueryResponse result1 = subject.createResponse(this.resultsPage);
         PowerMock.verifyAll();
         
@@ -69,7 +69,7 @@ public class TestLegacyBaseQueryLogicTransformer {
         
         // Run the test
         PowerMock.replayAll();
-        TestTransformer subject = new TestTransformer(new MarkingFunctions.NoOp(), this.response);
+        TestTransformer subject = new TestTransformer(new MarkingFunctions.Default(), this.response);
         BaseQueryResponse result1 = subject.createResponse(this.resultsPage);
         PowerMock.verifyAll();
         
