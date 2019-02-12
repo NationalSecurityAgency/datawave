@@ -1,5 +1,7 @@
 package datawave.query;
 
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -11,6 +13,7 @@ import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
+import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.query.util.WiseGuysIngest;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
@@ -36,13 +39,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,7 +63,7 @@ public abstract class GroupingTest {
     
     private static final Logger log = Logger.getLogger(GroupingTest.class);
     
-    private static Authorizations auths = new Authorizations("ALL");
+    private static Authorizations auths = new Authorizations("ALL", "E", "I");
     
     // @formatter:off
     private static final List<RebuildingScannerTestHelper.TEARDOWN> TEARDOWNS = Lists.newArrayList(
@@ -98,7 +101,7 @@ public abstract class GroupingTest {
                         Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown) throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log, teardown);
             Connector connector = qtth.connector;
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
+            VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
@@ -163,8 +166,7 @@ public abstract class GroupingTest {
         
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
-        // logic.setMaxEvaluationPipelines(1);
-        
+
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
         
@@ -178,9 +180,9 @@ public abstract class GroupingTest {
         BaseQueryResponse response = transformer.createResponse(eventList);
         
         // un-comment to look at the json output
-        // ObjectMapper mapper = new ObjectMapper();
-        // mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-        // mapper.writeValue(new File("/tmp/grouped2.json"), response);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
+        mapper.writeValue(new File("/tmp/grouped2.json"), response);
         
         Assert.assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
@@ -300,6 +302,7 @@ public abstract class GroupingTest {
                 .build();
         // @formatter:on
         extraParameters.put("group.fields", "AG");
+        extraParameters.put("group.fields.batch.size", "6");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
@@ -319,6 +322,7 @@ public abstract class GroupingTest {
         Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
         
         extraParameters.put("group.fields", "GEN");
+        extraParameters.put("group.fields.batch.size", "6");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
@@ -338,6 +342,7 @@ public abstract class GroupingTest {
         Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
         
         extraParameters.put("group.fields", "GEN");
+        extraParameters.put("group.fields.batch.size", "6");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
@@ -348,6 +353,7 @@ public abstract class GroupingTest {
     public void testGroupingUsingFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("group.fields.batch.size", "6");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
@@ -376,6 +382,7 @@ public abstract class GroupingTest {
     public void testGroupingUsingLuceneFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("group.fields.batch.size", "6");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");

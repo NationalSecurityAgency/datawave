@@ -3,6 +3,7 @@ package datawave.marking;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -16,7 +17,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Accumulo marks all data with a columnVisibility that declares and controls access. MarkingFunctions provide a pattern for mapping a user's preferred means of
@@ -73,7 +76,28 @@ public interface MarkingFunctions {
         
         @Override
         public ColumnVisibility combine(Collection<ColumnVisibility> expressions) {
-            return expressions.isEmpty() ? new ColumnVisibility() : expressions.iterator().next();
+            if (expressions.isEmpty()) {
+                return new ColumnVisibility();
+            } else {
+                Set<String> tokenSet = new HashSet<>();
+                StringBuilder builder = new StringBuilder();
+                for (ColumnVisibility visibility : expressions) {
+                    String token = visibility.toString().replace("[", "").replace("]", "");
+                    if (!Strings.isNullOrEmpty(token)) {
+                        String[] splits = token.split("&");
+                        for (String part : splits) {
+                            tokenSet.add(part);
+                        }
+                    }
+                }
+                for (String token : tokenSet) {
+                    if (builder.length() > 0) {
+                        builder.append('&');
+                    }
+                    builder.append(token);
+                }
+                return new ColumnVisibility(builder.toString());
+            }
         }
         
         @Override

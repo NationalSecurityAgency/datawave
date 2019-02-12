@@ -9,6 +9,7 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultimap;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
+import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
@@ -18,7 +19,8 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.slf4j.Logger;
 import org.springframework.util.Assert;
 
 import javax.annotation.Nullable;
@@ -37,18 +39,36 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toSet;
+import static org.slf4j.LoggerFactory.getLogger;
+
 public class GroupingTransform extends DocumentTransform.DefaultDocumentTransform {
     
-    private static final Logger log = Logger.getLogger(GroupingTransform.class);
+    private static final Logger log = getLogger(GroupingTransform.class);
     
+    /**
+     * the fields (user provided) to group by
+     */
     private Set<String> groupFieldsSet;
+    /**
+     * mapping of field name (with grouping context) to value attribute
+     */
     private Map<String,Attribute<?>> fieldMap = Maps.newHashMap();
     private Multimap<Collection<Attribute<?>>,String> fieldDatatypes = HashMultimap.create();
     private Multimap<Collection<Attribute<?>>,ColumnVisibility> fieldVisibilities = HashMultimap.create();
     private Multiset<Collection<Attribute<?>>> multiset = HashMultiset.create();
+    /**
+     * list of documents to return, created from the multiset
+     */
     private LinkedList<Document> documents = null;
+    /**
+     * mapping used to combine field names that map to different model names
+     */
     private Map<String,String> reverseModelMapping = null;
     
+    /**
+     * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
+     */
     private List<Key> keys = new ArrayList<>();
     
     /**
@@ -82,16 +102,14 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 reverseModelMapping = model.getReverseQueryMapping();
             }
         }
-        if (log.isTraceEnabled())
-            log.trace("groupFieldsSet:" + this.groupFieldsSet);
+        log.trace("groupFieldsSet: {}", this.groupFieldsSet);
     }
     
     @Nullable
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
-        if (log.isTraceEnabled()) {
-            log.trace("apply to " + keyDocumentEntry);
-        }
+        log.trace("apply to {}", keyDocumentEntry);
+        
         if (keyDocumentEntry != null) {
             getListKeyCounts(keyDocumentEntry);
         }
@@ -129,20 +147,45 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     lastKey = lastEntry.getKey();
                     GroupingTransform.this.apply(lastEntry);
                 }
+                log.trace("should i transform the multiset? : {}", multiset);
+                multiset = flattenMultiset(multiset);
+                
+                log.trace("multiset flattened to : {}", multiset);
+                
                 next = GroupingTransform.this.flush();
                 return next != null;
             }
             
             @Override
             public Entry<Key,Document> next() {
-                if (log.isTraceEnabled()) {
-                    log.trace("next has key:" + next.getKey() + " but I will use key:" + lastKey);
+                if (flatten) {
+                    log.trace("next has key: {} but I will use key: {}", next.getKey(), lastKey);
+                    return new AbstractMap.SimpleEntry<>(lastKey, next.getValue());
+                } else {
+                    // web server will aggregate the visibilties from the Attributes
+                    // and set the Document's visibility to that aggregation
+                    Document documentToReturn = next.getValue();
+
+                    documentToReturn.setColumnVisibility(combine(documentToReturn.getAttributes().stream().filter(attr -> attr != null)
+                                    .map(attr -> attr.getColumnVisibility()).collect(Collectors.toSet())));
+                    
+                    return new AbstractMap.SimpleEntry<>(lastKey, documentToReturn);
                 }
-                Entry<Key,Document> nextEntryWithLastKey = new AbstractMap.SimpleEntry<>(lastKey, next.getValue());
-                return nextEntryWithLastKey;
             }
         };
+    }
+    
+    private Multiset<Collection<Attribute<?>>> flattenMultiset(Multiset<Collection<Attribute<?>>> in) {
+        Multiset<Collection<Attribute<?>>> flattenedMultiset = HashMultiset.create();
+        Multimap<String,ColumnVisibility> nameToVisibilitiesMap = HashMultimap.create();
         
+        in.stream().flatMap(Collection::stream)
+                        .forEach(attribute -> nameToVisibilitiesMap.put(attribute.getData().toString(), attribute.getColumnVisibility()));
+        in.forEach(collection -> {
+            collection.forEach(attribute -> attribute.setColumnVisibility(combine(nameToVisibilitiesMap.get(attribute.getData().toString()))));
+            flattenedMultiset.add(collection);
+        });
+        return flattenedMultiset;
     }
     
     @Override
@@ -151,12 +194,14 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             documents = new LinkedList<>();
         }
         if (!multiset.isEmpty()) {
-            if (log.isTraceEnabled()) {
-                log.trace("flush will use the multiset:" + multiset);
-            }
+            
+            log.trace("flush will use the multiset: {}", multiset);
+            
             for (Collection<Attribute<?>> entry : multiset.elementSet()) {
+                log.trace("from multiset, got entry: {}", entry);
+                ColumnVisibility columnVisibility = null;
                 try {
-                    toColumnVisibility(fieldVisibilities.get(entry));
+                    columnVisibility = toColumnVisibility(fieldVisibilities.get(entry));
                 } catch (Exception e) {
                     throw new IllegalStateException("Unable to merge column visibilities: " + fieldVisibilities.get(entry), e);
                 }
@@ -164,10 +209,9 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 Assert.notEmpty(keys, "no available keys for grouping results");
                 Key docKey = keys.get(keys.size() - 1);
                 Document d = new Document(docKey, true);
+                d.setColumnVisibility(columnVisibility);
                 
-                for (Attribute base : entry) {
-                    d.put(getFieldName(base), base);
-                }
+                entry.forEach(base -> d.put(getFieldName(base), base));
                 NumberType type = new NumberType();
                 type.setDelegate(new BigDecimal(multiset.count(entry)));
                 TypeAttribute<BigDecimal> attr = new TypeAttribute<>(type, new Key("count"), true);
@@ -175,33 +219,29 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 documents.add(d);
             }
             if (flatten) {
-                // flatten to just one document
+                // flatten to just one document on the tserver.
                 flatten(documents);
             }
         }
         if (!documents.isEmpty()) {
-            if (log.isTraceEnabled()) {
-                log.trace(this.hashCode() + " will flush first of " + documents.size() + " documents:" + documents);
-            }
+            log.trace("{} will flush first of {} documents: {}", this.hashCode(), documents.size(), documents);
             Document d = documents.pop();
             Key key;
-            if (keys.size() > 0) {
+            if (keys.size() > 0 && flatten) {
                 key = keys.get(keys.size() - 1);
             } else {
                 key = d.getMetadata();
             }
             Entry<Key,Document> entry = Maps.immutableEntry(key, d);
-            if (log.isTraceEnabled()) {
-                log.trace("flushing out " + entry);
-            }
+            log.trace("flushing out {}", entry);
             multiset.clear();
             return entry;
         }
         return null;
     }
     
-    // @formatter:off
     /**
+     * <pre>
      * flush used the multiset:
      * [[MALE, 16],
      * [MALE, 20],
@@ -214,7 +254,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * [30, MALE],
      * [FEMALE, 18],
      * [34, MALE]]
-     *
+     * 
      * to create documents list: [
      * {AGE=16, COUNT=1, GENDER=MALE}:20130101_0 test%00;-d5uxna.msizfm.-oxy0iu: [ALL] 1356998400000 false,
      * {COUNT=1, ETA=20, GENERE=MALE}:20130101_0 test%00;-d5uxna.msizfm.-oxy0iu: [ALL] 1356998400000 false,
@@ -227,9 +267,9 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * {AGE=30, COUNT=1, GENDER=MALE}:20130101_0 test%00;-d5uxna.msizfm.-oxy0iu: [ALL] 1356998400000 false,
      * {COUNT=1, ETA=18, GENERE=FEMALE}:20130101_0 test%00;-d5uxna.msizfm.-oxy0iu: [ALL] 1356998400000 false,
      * {AGE=34, COUNT=1, GENDER=MALE}:20130101_0 test%00;-d5uxna.msizfm.-oxy0iu: [ALL] 1356998400000 false]
-     *
+     * 
      * which is then flattened to just one document with the fields and counts correlated with a grouping context suffix:
-     *
+     * 
      * {
      * AGE.0=16, GENDER.0=MALE, COUNT.0=1,
      * ETA.1=20, GENERE.1=MALE, COUNT.1=1,
@@ -243,30 +283,35 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * ETA.9=18, GENERE.9=FEMALE, COUNT.9=1,
      * AGE.A=34, GENDER.A=MALE, COUNT.A=1,
      * }
-     *
+     * </pre>
      *
      * @param documents
      */
-    // @formatter:on
     private void flatten(List<Document> documents) {
-        if (log.isTraceEnabled()) {
-            log.trace("flatten documents:" + documents);
-        }
+        log.trace("flatten documents: {}", documents);
         Document theDocument = new Document(documents.get(0).getMetadata(), true);
         int context = 0;
+        Set<ColumnVisibility> visibilities = new HashSet<>();
         for (Document document : documents) {
-            log.info("document:" + document);
+            log.trace("document: {}", document);
             for (Entry<String,Attribute<? extends Comparable<?>>> entry : document.entrySet()) {
                 String name = entry.getKey();
+                visibilities.add(entry.getValue().getColumnVisibility());
                 Attribute<? extends Comparable<?>> attribute = entry.getValue();
+                attribute.setColumnVisibility(entry.getValue().getColumnVisibility());
                 theDocument.put(name + "." + Integer.toHexString(context).toUpperCase(), attribute, true, false);
             }
             context++;
         }
-        documents.clear();
-        if (log.isTraceEnabled()) {
-            log.trace("flattened document:" + theDocument);
+        try {
+            ColumnVisibility combinedVisibility = markingFunctions.combine(visibilities);
+            log.trace("combined visibilities: {} to {}", visibilities, combinedVisibility);
+            theDocument.setColumnVisibility(combinedVisibility);
+        } catch (MarkingFunctions.Exception e) {
+            e.printStackTrace();
         }
+        documents.clear();
+        log.trace("flattened document: {}", theDocument);
         documents.add(theDocument);
     }
     
@@ -274,8 +319,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         Multimap<String,String> fieldToFieldWithContextMap = TreeMultimap.create();
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : d.entrySet()) {
             Attribute<?> field = entry.getValue();
-            if (log.isTraceEnabled())
-                log.trace("field is " + field);
+            log.trace("field is {}", field);
             String fieldName = entry.getKey();
             String shortName = fieldName;
             String shorterName = shortName;
@@ -283,8 +327,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 shortName = shortName.substring(0, shortName.lastIndexOf('.'));
             if (shorterName.indexOf('.') != -1)
                 shorterName = shorterName.substring(0, shorterName.indexOf('.'));
-            if (log.isTraceEnabled())
-                log.trace("fieldName:" + fieldName + ", shortName:" + shortName);
+            log.trace("fieldName: {}, shortName: {}", fieldName, shortName);
             if (reverseModelMapping != null) {
                 String finalName = reverseModelMapping.get(shorterName);
                 if (finalName != null) {
@@ -295,21 +338,19 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             }
             if (this.groupFieldsSet.contains(shorterName)) {
                 expandedGroupFieldsList.add(shortName);
-                if (log.isTraceEnabled())
-                    log.trace(this.groupFieldsSet + " contains " + shorterName);
+                log.trace("{} contains {}", this.groupFieldsSet, shorterName);
                 Attribute<?> created = makeAttribute(shortName, field.getData());
+                created.setColumnVisibility(field.getColumnVisibility());
                 fieldMap.put(fieldName, created);
                 fieldToFieldWithContextMap.put(shortName, fieldName);
             } else {
-                if (log.isTraceEnabled())
-                    log.trace(this.groupFieldsSet + " does not contain " + shorterName);
+                log.trace("{} does not contain {}", this.groupFieldsSet, shorterName);
             }
         }
-        if (log.isTraceEnabled()) {
-            log.trace("fields:" + d.entrySet());
-            log.trace("fieldToFieldWithGroupingContextMap:" + fieldToFieldWithContextMap);
-            log.trace("expandedGroupFieldsList:" + expandedGroupFieldsList);
-        }
+        log.trace("fieldMap: {}", fieldMap);
+        log.trace("fields: {}", d.entrySet());
+        log.trace("fieldToFieldWithGroupingContextMap: {}", fieldToFieldWithContextMap);
+        log.trace("expandedGroupFieldsList: {}", expandedGroupFieldsList);
         return fieldToFieldWithContextMap;
     }
     
@@ -327,9 +368,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     private void getListKeyCounts(Entry<Key,Document> entry) {
         
-        if (log.isTraceEnabled()) {
-            log.trace("get list key counts for:" + entry);
-        }
+        log.trace("get list key counts for: {}", entry);
         keys.add(entry.getKey());
         
         Set<String> expandedGroupFieldsList = new LinkedHashSet<>();
@@ -338,32 +377,26 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         // During the flush operation, a new COUNT field will be created based on the number of unique
         // field sets in the multiset
         Map<String,Attribute<? extends Comparable<?>>> dictionary = entry.getValue().getDictionary();
-        Set<String> countKeys = dictionary.keySet().stream().filter(s -> s.startsWith("COUNT")).collect(Collectors.toSet());
         Map<String,Integer> countKeyMap = new HashMap<>();
-        for (String countKey : countKeys) {
-            if (entry.getValue().getDictionary().containsKey(countKey)) {
-                TypeAttribute countTypeAttribute = ((TypeAttribute) entry.getValue().getDictionary().get(countKey));
-                int count = ((BigDecimal) countTypeAttribute.getType().getDelegate()).intValue();
-                countKeyMap.put(countKey, count);
-            }
-        }
+        dictionary.keySet().stream().filter(key -> key.startsWith("COUNT")).filter(countKey -> entry.getValue().getDictionary().containsKey(countKey))
+                        .forEach(countKey -> {
+                            TypeAttribute countTypeAttribute = ((TypeAttribute) entry.getValue().getDictionary().get(countKey));
+                            int count = ((BigDecimal) countTypeAttribute.getType().getDelegate()).intValue();
+                            countKeyMap.put(countKey, count);
+                        });
         
         Multimap<String,String> fieldToFieldWithContextMap = this.getFieldToFieldWithGroupingContextMap(entry.getValue(), expandedGroupFieldsList);
-        if (log.isTraceEnabled())
-            log.trace("got a new fieldToFieldWithContextMap:" + fieldToFieldWithContextMap);
+        log.trace("got a new fieldToFieldWithContextMap: {}", fieldToFieldWithContextMap);
         int longest = this.longestValueList(fieldToFieldWithContextMap);
         for (int i = 0; i < longest; i++) {
             Collection<Attribute<?>> fieldCollection = new HashSet<>();
             String currentGroupingContext = "";
             for (String fieldListItem : expandedGroupFieldsList) {
-                if (log.isTraceEnabled())
-                    log.trace("fieldListItem:" + fieldListItem);
+                log.trace("fieldListItem: {}", fieldListItem);
                 Collection<String> gtNames = fieldToFieldWithContextMap.get(fieldListItem);
                 if (gtNames == null || gtNames.isEmpty()) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("gtNames:" + gtNames);
-                        log.trace("fieldToFieldWithContextMap:" + fieldToFieldWithContextMap + " did not contain " + fieldListItem);
-                    }
+                    log.trace("gtNames: {}", gtNames);
+                    log.trace("fieldToFieldWithContextMap: {} did not contain: {}", fieldToFieldWithContextMap, fieldListItem);
                 } else {
                     String gtName = gtNames.iterator().next();
                     int idx = gtName.indexOf('.');
@@ -373,11 +406,9 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     if (!fieldListItem.equals(gtName)) {
                         fieldToFieldWithContextMap.remove(fieldListItem, gtName);
                     }
-                    if (log.isTraceEnabled()) {
-                        log.trace("fieldToFieldWithContextMap now:" + fieldToFieldWithContextMap);
-                        log.trace("gtName:" + gtName);
-                    }
-                    fieldCollection.add(this.fieldMap.get(gtName));
+                    log.trace("fieldToFieldWithContextMap now: {}", fieldToFieldWithContextMap);
+                    log.trace("gtName: {}", gtName);
+                    fieldCollection.add(fieldMap.get(gtName));
                 }
             }
             if (fieldCollection.size() == expandedGroupFieldsList.size()) {
@@ -391,19 +422,25 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     multiset.add(fieldCollection);
                 }
                 fieldDatatypes.put(fieldCollection, getDataType(entry));
+                log.trace("put {} to {} into fieldDatatypes {}", fieldCollection, getDataType(entry), fieldDatatypes);
                 fieldVisibilities.put(fieldCollection, getColumnVisibility(entry));
-                if (log.isTraceEnabled())
-                    log.trace("added fieldList to the map:" + fieldCollection);
+                log.trace("put {} to {} into fieldVisibilities {}", fieldCollection, getColumnVisibility(entry), fieldVisibilities);
             } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("fieldList.size() != this.expandedGroupFieldsList.size()");
-                    log.trace("fieldList:" + fieldCollection);
-                    log.trace("expandedGroupFieldsList:" + expandedGroupFieldsList);
-                }
+                log.trace("fieldList.size() != this.expandedGroupFieldsList.size()");
+                log.trace("fieldList: {}", fieldCollection);
+                log.trace("expandedGroupFieldsList: {}", expandedGroupFieldsList);
             }
         }
-        if (log.isTraceEnabled())
-            log.trace("map:" + multiset);
+        log.trace("multiset: {}", multiset);
+    }
+    
+    private ColumnVisibility combine(Collection<ColumnVisibility> in) {
+        try {
+            return markingFunctions.combine(in);
+        } catch (MarkingFunctions.Exception e) {
+            e.printStackTrace();
+        }
+        return new ColumnVisibility();
     }
     
     private String getDataType(Entry<Key,Document> e) {
