@@ -209,7 +209,7 @@ following URLs:
   of the DatawaveUser corresponding to your client certificate
 * `https://localhost:8643/authorization/swagger-ui.html` shows Swagger documentation
   of the service
-* `https://localhost:8643/authorization/mgmt/docs/` shows available management
+* `https://localhost:8643/authorization/mgmt/` shows available Spring Boot Actuator management
   endpoints
 
 You may see an exception from either the authorization or config service due to
