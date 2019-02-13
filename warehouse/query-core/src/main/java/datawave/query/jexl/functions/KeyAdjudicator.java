@@ -2,8 +2,8 @@ package datawave.query.jexl.functions;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
-import datawave.query.iterator.YieldCallbackWrapper;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.hadoop.io.Text;
 
 import java.util.Iterator;
@@ -21,15 +21,15 @@ public class KeyAdjudicator<T> implements Iterator<Entry<Key,T>>, Function<Entry
     
     private final Text colQualRef;
     private final Iterator<Entry<Key,T>> source;
-    private final YieldCallbackWrapper<Key> yield;
+    private final YieldCallback<Key> yield;
     
-    public KeyAdjudicator(Iterator<Entry<Key,T>> source, Text colQualRef, YieldCallbackWrapper<Key> yield) {
+    public KeyAdjudicator(Iterator<Entry<Key,T>> source, Text colQualRef, YieldCallback<Key> yield) {
         this.colQualRef = colQualRef;
         this.source = source;
         this.yield = yield;
     }
     
-    public KeyAdjudicator(Iterator<Entry<Key,T>> source, YieldCallbackWrapper<Key> yield) {
+    public KeyAdjudicator(Iterator<Entry<Key,T>> source, YieldCallback<Key> yield) {
         this(source, COLUMN_QUALIFIER_SUFFIX, yield);
     }
     
