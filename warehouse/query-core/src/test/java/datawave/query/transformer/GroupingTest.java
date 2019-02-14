@@ -1,4 +1,4 @@
-package datawave.query;
+package datawave.query.transformer;
 
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,14 +11,14 @@ import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.marking.MarkingFunctions;
+import datawave.query.QueryTestTableHelper;
+import datawave.query.RebuildingScannerTestHelper;
+import datawave.query.attributes.Attribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.transformer.DocumentTransformer;
-import datawave.query.transformer.GroupingTransform;
 import datawave.query.util.VisibilityWiseGuysIngest;
-import datawave.query.util.WiseGuysIngest;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -470,8 +470,8 @@ public abstract class GroupingTest {
         
         log.debug("map is: " + map);
         
-        for (Map.Entry<Collection<GroupingTransform.GroupingTypeAttribute<?>>,Integer> entry : map.entrySet()) {
-            GroupingTransform.GroupingTypeAttribute<?> attr = entry.getKey().iterator().next(); // the first and only one
+        for (Map.Entry<Collection<Attribute<?>>,Integer> entry : map.entrySet()) {
+            Attribute<?> attr = entry.getKey().iterator().next(); // the first and only one
             int count = entry.getValue();
             if (attr.getData().toString().equals("FOO")) {
                 Assert.assertEquals(2, count);
@@ -488,18 +488,18 @@ public abstract class GroupingTest {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
         GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
         
-        GroupingTransform.GroupingTypeAttribute<?> attr1a = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
+        Attribute<?> attr1a = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
         attr1a.setColumnVisibility(new ColumnVisibility("A"));
-        GroupingTransform.GroupingTypeAttribute<?> attr1b = new GroupingTransform.GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
+        Attribute<?> attr1b = new GroupingTransform.GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
         attr1b.setColumnVisibility(new ColumnVisibility("C"));
-        Set<GroupingTransform.GroupingTypeAttribute<?>> seta = Sets.newHashSet(attr1a, attr1b);
+        Set<Attribute<?>> seta = Sets.newHashSet(attr1a, attr1b);
         map.add(seta);
         
-        GroupingTransform.GroupingTypeAttribute<?> attr2a = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
+        Attribute<?> attr2a = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
         attr2a.setColumnVisibility(new ColumnVisibility("B"));
-        GroupingTransform.GroupingTypeAttribute<?> attr2b = new GroupingTransform.GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
+        Attribute<?> attr2b = new GroupingTransform.GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
         attr2b.setColumnVisibility(new ColumnVisibility("D"));
-        Set<GroupingTransform.GroupingTypeAttribute<?>> setb = Sets.newHashSet(attr2a, attr2b);
+        Set<Attribute<?>> setb = Sets.newHashSet(attr2a, attr2b);
         map.add(setb);
         
         // even though the ColumnVisibilities are different, the 2 collections seta and setb are 'equal' and generate the same hashCode
@@ -514,8 +514,8 @@ public abstract class GroupingTest {
         
         log.debug("map is: " + map);
         
-        for (Map.Entry<Collection<GroupingTransform.GroupingTypeAttribute<?>>,Integer> entry : map.entrySet()) {
-            for (GroupingTransform.GroupingTypeAttribute<?> attr : entry.getKey()) {
+        for (Map.Entry<Collection<Attribute<?>>,Integer> entry : map.entrySet()) {
+            for (Attribute<?> attr : entry.getKey()) {
                 int count = entry.getValue();
                 if (attr.getData().toString().equals("FOO")) {
                     Assert.assertEquals(2, count);

@@ -55,16 +55,16 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     /**
      * mapping of field name (with grouping context) to value attribute
      */
-    private Map<String,GroupingTypeAttribute<?>> fieldMap = Maps.newHashMap();
-//    private Multimap<Collection<GroupingTypeAttribute<?>>,String> fieldDatatypes = HashMultimap.create();
+    private Map<String,Attribute<?>> fieldMap = Maps.newHashMap();
+    
     /**
      * holds the aggregated column visibilities for each grouped event
      */
-    private Multimap<Collection<GroupingTypeAttribute<?>>,ColumnVisibility> fieldVisibilities = HashMultimap.create();
-
+    private Multimap<Collection<Attribute<?>>,ColumnVisibility> fieldVisibilities = HashMultimap.create();
+    
     /**
-     * A map of TypeAttribute collection keys to integer counts
-     * This map uses a special key type that ignores the metadata (with visibilities) in its hashCode and equals methods
+     * A map of TypeAttribute collection keys to integer counts This map uses a special key type that ignores the metadata (with visibilities) in its hashCode
+     * and equals methods
      */
     private GroupCountingHashMap countingMap;
     /**
@@ -163,11 +163,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     lastKey = lastEntry.getKey();
                     GroupingTransform.this.apply(lastEntry);
                 }
-                log.trace("should i transform the multiset? : {}", countingMap);
-                // multiset = flattenMultiset(multiset);
-                //
-                // log.trace("multiset flattened to : {}", multiset);
-                
                 next = GroupingTransform.this.flush();
                 return next != null;
             }
@@ -178,7 +173,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     log.trace("next has key: {} but I will use key: {}", next.getKey(), lastKey);
                     return new AbstractMap.SimpleEntry<>(lastKey, next.getValue());
                 } else {
-                    // web server will aggregate the visibilties from the Attributes
+                    // web server will aggregate the visibilities from the Attributes
                     // and set the Document's visibility to that aggregation
                     Document documentToReturn = next.getValue();
                     
@@ -191,39 +186,12 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         };
     }
     
-    // private Multiset<Collection<Attribute<?>>> flattenMultiset(Multiset<Collection<Attribute<?>>> in) {
-    // if (flatten) log.trace("tserver talking");
-    // else log.trace("webserver talking");
-    // Multiset<Collection<Attribute<?>>> flattenedMultiset = HashMultiset.create();
-    // Multimap<String,ColumnVisibility> nameToVisibilitiesMap = HashMultimap.create();
-    //
-    // for (Collection<Attribute<?>> collection : in) {
-    // for (Attribute<?> attribute : collection) {
-    // nameToVisibilitiesMap.put(attribute.getData().toString(), attribute.getColumnVisibility());
-    // }
-    // }
-    // for (Collection<Attribute<?>> collection : in) {
-    // for (Attribute<?> attribute : collection) {
-    // attribute.setColumnVisibility(combine(nameToVisibilitiesMap.get(attribute.getData().toString())));
-    // }
-    // flattenedMultisetAdd(flattenedMultiset, collection);
-    // }
-    // // in.stream().flatMap(Collection::stream)
-    // // .forEach(attribute -> nameToVisibilitiesMap.put(attribute.getData().toString(), attribute.getColumnVisibility()));
-    // // in.forEach(collection -> {
-    // // collection.forEach(attribute -> attribute.setColumnVisibility(combine(nameToVisibilitiesMap.get(attribute.getData().toString()))));
-    // // flattenedMultiset.add(collection);
-    // // });
-    // log.trace("{} flattened to {}", in, flattenedMultiset);
-    // return flattenedMultiset;
-    // }
-    
     @Override
     public Entry<Key,Document> flush() {
         if (flatten)
-            log.trace("tserver talking");
+            log.trace("tserver flush");
         else
-            log.trace("webserver talking");
+            log.trace("webserver flush");
         if (documents == null) {
             documents = new LinkedList<>();
         }
@@ -231,7 +199,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             log.trace("flush will use the countingMap: {}", countingMap);
             
-            for (Collection<GroupingTypeAttribute<?>> entry : countingMap.keySet()) {
+            for (Collection<Attribute<?>> entry : countingMap.keySet()) {
                 log.trace("from multiset, got entry: {}", entry);
                 ColumnVisibility columnVisibility = null;
                 try {
@@ -323,10 +291,9 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      */
     private void flatten(List<Document> documents) {
         if (flatten)
-            log.trace("tserver talking");
+            log.trace("tserver flatten {}", documents);
         else
-            log.trace("webserver talking");
-        log.trace("flatten documents: {}", documents);
+            log.trace("webserver flatten {}", documents);
         Document theDocument = new Document(documents.get(0).getMetadata(), true);
         int context = 0;
         Set<ColumnVisibility> visibilities = new HashSet<>();
@@ -335,29 +302,25 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             for (Entry<String,Attribute<? extends Comparable<?>>> entry : document.entrySet()) {
                 String name = entry.getKey();
                 visibilities.add(entry.getValue().getColumnVisibility());
+                
                 Attribute<? extends Comparable<?>> attribute = entry.getValue();
                 attribute.setColumnVisibility(entry.getValue().getColumnVisibility());
-                theDocument.put(name + "." + Integer.toHexString(context).toUpperCase(), attribute, true, false);
+                // call copy() on the GroupingTypeAttribute to get a plain TypeAttribute
+                // GroupingTypeAttribute is so embarrassing that it is package protected and won't serialize
+                theDocument.put(name + "." + Integer.toHexString(context).toUpperCase(), (TypeAttribute) attribute.copy(), true, false);
             }
             context++;
         }
-        // try {
         ColumnVisibility combinedVisibility = combine(visibilities);
         log.trace("combined visibilities: {} to {}", visibilities, combinedVisibility);
         theDocument.setColumnVisibility(combinedVisibility);
-        // } catch (MarkingFunctions.Exception e) {
-        // e.printStackTrace();
-        // }
         documents.clear();
         log.trace("flattened document: {}", theDocument);
         documents.add(theDocument);
     }
     
     private Multimap<String,String> getFieldToFieldWithGroupingContextMap(Document d, Set<String> expandedGroupFieldsList) {
-        if (flatten)
-            log.trace("tserver talking");
-        else
-            log.trace("webserver talking");
+        
         Multimap<String,String> fieldToFieldWithContextMap = TreeMultimap.create();
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : d.entrySet()) {
             Attribute<?> field = entry.getValue();
@@ -381,7 +344,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             if (this.groupFieldsSet.contains(shorterName)) {
                 expandedGroupFieldsList.add(shortName);
                 log.trace("{} contains {}", this.groupFieldsSet, shorterName);
-                GroupingTypeAttribute<?> created = makeAttribute(shortName, field.getData());
+                Attribute<?> created = makeAttribute(shortName, field.getData());
                 created.setColumnVisibility(field.getColumnVisibility());
                 fieldMap.put(fieldName, created);
                 fieldToFieldWithContextMap.put(shortName, fieldName);
@@ -396,7 +359,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         return fieldToFieldWithContextMap;
     }
     
-    private GroupingTypeAttribute<?> makeAttribute(String fieldName, Object fieldValue) {
+    private Attribute<?> makeAttribute(String fieldName, Object fieldValue) {
         return new GroupingTypeAttribute<>((Type) fieldValue, createAttrKey(fieldName), true);
     }
     
@@ -410,11 +373,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     private void getListKeyCounts(Entry<Key,Document> entry) {
         
-        if (flatten)
-            log.trace("tserver talking");
-        else
-            log.trace("webserver talking");
-        log.trace("get list key counts for: {}", entry);
+        log.trace("{} get list key counts for: {}", flatten ? "t" : "web" + "server", entry);
         keys.add(entry.getKey());
         
         Set<String> expandedGroupFieldsList = new LinkedHashSet<>();
@@ -435,7 +394,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         log.trace("got a new fieldToFieldWithContextMap: {}", fieldToFieldWithContextMap);
         int longest = this.longestValueList(fieldToFieldWithContextMap);
         for (int i = 0; i < longest; i++) {
-            Collection<GroupingTypeAttribute<?>> fieldCollection = new HashSet<>();
+            Collection<Attribute<?>> fieldCollection = new HashSet<>();
             String currentGroupingContext = "";
             for (String fieldListItem : expandedGroupFieldsList) {
                 log.trace("fieldListItem: {}", fieldListItem);
@@ -457,10 +416,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     fieldCollection.add(fieldMap.get(gtName));
                 }
             }
-            if (flatten)
-                log.trace("tserver talking");
-            else
-                log.trace("webserver talking");
             if (fieldCollection.size() == expandedGroupFieldsList.size()) {
                 
                 // get the count out of the countKeyMap
@@ -471,8 +426,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 for (int j = 0; j < count; j++) {
                     countingMap.add(fieldCollection);
                 }
-//                fieldDatatypes.put(fieldCollection, getDataType(entry));
-//                log.trace("put {} to {} into fieldDatatypes {}", fieldCollection, getDataType(entry), fieldDatatypes);
                 fieldVisibilities.put(fieldCollection, getColumnVisibility(entry));
                 log.trace("put {} to {} into fieldVisibilities {}", fieldCollection, getColumnVisibility(entry), fieldVisibilities);
             } else {
@@ -484,70 +437,9 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         log.trace("countingMap: {}", countingMap);
     }
     
-    // private void multisetAdd(Collection<Attribute<?>> collectionOfAttributes) {
-    // // check to see if this collectionOfAttributes is already present
-    // int count = countingMap.get(collectionOfAttributes);
-    // if (flatten) log.trace("tserver talking");
-    // else log.trace("webserver talking");
-    // if (count > 0) {
-    // log.trace("multiset {} already has {} copies of {}", countingMap, count, collectionOfAttributes);
-    // ColumnVisibility mergedColumnVisibility = combine(countingMap.elementSet(), collectionOfAttributes);
-    // collectionOfAttributes.stream().forEach(e -> e.setColumnVisibility(mergedColumnVisibility));
-    // } else {
-    // log.trace("multiset {} has no copies of {}", multiset, collectionOfAttributes);
-    //
-    // }
-    // // if (multiset instanceof AbstractMapBasedMultiset) {
-    //
-    //
-    // multiset.add(collectionOfAttributes);
-    // }
-    
-    // private void flattenedMultisetAdd(Multiset<Collection<Attribute<?>>> multiset, Collection<Attribute<?>> collectionOfAttributes) {
-    // // check to see if this collectionOfAttributes is already present
-    // int count = multiset.count(collectionOfAttributes);
-    // if (flatten) log.trace("tserver talking");
-    // else log.trace("webserver talking");
-    // if (count > 0) {
-    // log.trace("flattened multiset {} already has {} copies of {}", multiset, count, collectionOfAttributes);
-    // ColumnVisibility mergedColumnVisibility = combine(multiset.elementSet(), collectionOfAttributes);
-    // collectionOfAttributes.stream().forEach(e -> e.setColumnVisibility(mergedColumnVisibility));
-    // } else {
-    // log.trace("flattened multiset {} has no copies of {}", multiset, collectionOfAttributes);
-    // }
-    // multiset.add(collectionOfAttributes);
-    // }
-    
-//    private ColumnVisibility combine(Set<Collection<Attribute<?>>> collectionOne, Collection<Attribute<?>> collectionTwo) {
-//        Set<ColumnVisibility> visibilities = new HashSet<>();
-//        collectionOne.stream().flatMap(Collection::stream).forEach(attribute1 -> {
-//            collectionTwo.stream().filter(attribute2 -> attribute1.getData().equals(attribute2.getData())).forEach(attribute2 -> {
-//                visibilities.add(attribute1.getColumnVisibility());
-//                visibilities.add(attribute2.getColumnVisibility());
-//            });
-//        });
-//        return combine(visibilities);
-//
-//        // Set<ColumnVisibility> visibilities = new HashSet<>();
-//        // for (Collection<Attribute<?>> collection : collectionOne) {
-//        // for (Attribute<?> attribute1 : collection) {
-//        // for (Attribute<?> attribute2 : collectionTwo) {
-//        // if (attribute1.getData().equals(attribute2.getData())) {
-//        // visibilities.add(attribute1.getColumnVisibility());
-//        // visibilities.add(attribute2.getColumnVisibility());
-//        // }
-//        // }
-//        // }
-//        // }
-//        // return combine(visibilities);
-//
-//    }
-    
     private ColumnVisibility combine(Collection<ColumnVisibility> in) {
         try {
             ColumnVisibility columnVisibility = markingFunctions.combine(in);
-            // if (flatten) log.trace("tserver talking");
-            // else log.trace("webserver talking");
             log.trace("combined {} into {}", in, columnVisibility);
             return columnVisibility;
         } catch (MarkingFunctions.Exception e) {
@@ -573,7 +465,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         return combine(visibilities);
     }
     
-    public static class GroupCountingHashMap extends HashMap<Collection<GroupingTypeAttribute<?>>,Integer> {
+    static class GroupCountingHashMap extends HashMap<Collection<Attribute<?>>,Integer> {
         
         private MarkingFunctions markingFunctions;
         
@@ -581,7 +473,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             this.markingFunctions = markingFunctions;
         }
         
-        public int add(Collection<GroupingTypeAttribute<?>> in) {
+        public int add(Collection<Attribute<?>> in) {
             int count = 0;
             if (super.containsKey(in)) {
                 count = super.get(in);
@@ -593,38 +485,24 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             return count;
         }
         
-        private void combine(Set<Collection<GroupingTypeAttribute<?>>> collectionOne, Collection<? extends Attribute<?>> collectionTwo) {
+        private void combine(Set<Collection<Attribute<?>>> existingMapKeys, Collection<? extends Attribute<?>> incomingAttributes) {
             
-            // for each Attribute in the incoming map member, find the existing map key attribute that matches it
+            // for each Attribute in the incoming existingMapKeys, find the existing map key attribute that matches its data.
             // combine the column visibilities of the incoming attribute and the existing one, and set
             // the column visibility of the EXISTING map key to the new value.
             // Note that the hashCode and equals methods for the GroupingTypeAttribute will ignore the metadata (which contains the column visibility)
-            collectionTwo.forEach(attribute -> {
-                collectionOne.stream().flatMap(Collection::stream).filter(attr -> attr.getData().equals(attribute.getData())).forEach(attr -> {
-                    ColumnVisibility merged = combine(Arrays.asList(attr.getColumnVisibility(), attribute.getColumnVisibility()));
-                    attr.setColumnVisibility(merged);
-                });
+            incomingAttributes.forEach(attribute -> {
+                existingMapKeys.stream().flatMap(Collection::stream).filter(existingAttribute -> existingAttribute.getData().equals(attribute.getData()))
+                                .forEach(existingAttribute -> {
+                                    ColumnVisibility merged = combine(Arrays.asList(existingAttribute.getColumnVisibility(), attribute.getColumnVisibility()));
+                                    existingAttribute.setColumnVisibility(merged);
+                                });
             });
-            
-            // for (Attribute<?> attribute : collectionTwo) {
-            // // find the match in collectionOne
-            // for (Collection<GroupingTypeAttribute<?>> collection : collectionOne) {
-            // for (GroupingTypeAttribute<?> attr : collection) {
-            // if (attr.getData().equals(attribute.getData())) {
-            // ColumnVisibility merged = combine(Arrays.asList(attr.getColumnVisibility(), attribute.getColumnVisibility()));
-            // attr.setColumnVisibility(merged);
-            // }
-            // }
-            // }
-            // }
-            
         }
         
         private ColumnVisibility combine(Collection<ColumnVisibility> in) {
             try {
                 ColumnVisibility columnVisibility = markingFunctions.combine(in);
-                // if (flatten) log.trace("tserver talking");
-                // else log.trace("webserver talking");
                 log.trace("combined {} into {}", in, columnVisibility);
                 return columnVisibility;
             } catch (MarkingFunctions.Exception e) {
@@ -640,7 +518,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * 
      * @param <T>
      */
-    public static class GroupingTypeAttribute<T extends Comparable<T>> extends TypeAttribute<T> {
+    static class GroupingTypeAttribute<T extends Comparable<T>> extends TypeAttribute<T> {
         
         public GroupingTypeAttribute() {
             super(null, null, true);
@@ -670,9 +548,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
             hcb.append(getType().getDelegateAsString());
             return hcb.toHashCode();
-            
         }
-        
     }
-    
 }

@@ -2,7 +2,6 @@ package datawave.query.util;
 
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
-import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
@@ -11,7 +10,6 @@ import datawave.query.QueryTestTableHelper;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -134,7 +132,7 @@ public class VisibilityWiseGuysIngest {
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
             bw.addMutation(mutation);
             
-            // names
+            // corleone names
             mutation = new Mutation(lcNoDiacriticsType.normalize("SANTINO"));
             mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
@@ -160,7 +158,7 @@ public class VisibilityWiseGuysIngest {
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
             bw.addMutation(mutation);
             
-            // names
+            // soprano names
             mutation = new Mutation(lcNoDiacriticsType.normalize("ANTHONY"));
             mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
@@ -170,7 +168,7 @@ public class VisibilityWiseGuysIngest {
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
             bw.addMutation(mutation);
             
-            // names
+            // capone names
             mutation = new Mutation(lcNoDiacriticsType.normalize("ALPHONSE"));
             mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
@@ -217,7 +215,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID, caponeUID));
             bw.addMutation(mutation);
-            // ages
+
             mutation = new Mutation(numberType.normalize("16"));
             mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
@@ -335,16 +333,9 @@ public class VisibilityWiseGuysIngest {
             mutation.put("fi\u0000" + "AGE", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibilityEnglish, timeStamp,
                             emptyValue);
             
-            // add some index-only fields
-            mutation.put("fi\u0000" + "LOCATION", "chicago" + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibilityEnglish, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "POSIZIONE", "newyork" + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibilityItalian, timeStamp, emptyValue);
-            mutation.put("fi\u0000" + "LOCATION", "newjersey" + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibilityEnglish, timeStamp, emptyValue);
-            
+
             bw.addMutation(mutation);
-            
-            addFiTokens(bw, range, "QUOTE", "Im gonna make him an offer he cant refuse", corleoneUID);
-            addFiTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID);
-            addFiTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID);
+
         } finally {
             if (null != bw) {
                 bw.close();
@@ -352,7 +343,7 @@ public class VisibilityWiseGuysIngest {
         }
         
         try {
-            // write mAGEdata table:
+            // write metadata table:
             bw = con.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
             
             mutation = new Mutation("NAME");
@@ -362,15 +353,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
-            
-            // mutation = new Mutation("NAME");
-            // mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            // mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(19L)));
-            // mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            // mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            // mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
-            // bw.addMutation(mutation);
-            
+
             mutation = new Mutation("GENDER");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(11L)));
@@ -379,14 +362,6 @@ public class VisibilityWiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
             
-            // mutation = new Mutation("GENDER");
-            // mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            // mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(21L)));
-            // mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            // mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            // mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
-            // bw.addMutation(mutation);
-            //
             mutation = new Mutation("AGE");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
@@ -394,14 +369,6 @@ public class VisibilityWiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + numberType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
-            
-            // mutation = new Mutation("AGE");
-            // mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            // mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(22L)));
-            // mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            // mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            // mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + numberType.getClass().getName()), emptyValue);
-            // bw.addMutation(mutation);
             
             mutation = new Mutation("UUID");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
@@ -439,33 +406,5 @@ public class VisibilityWiseGuysIngest {
         builder.setCOUNT(50); // better not be zero!!!!
         builder.setIGNORE(true); // better be true!!!
         return new Value(builder.build().toByteArray());
-    }
-    
-    private static void addTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid) throws MutationsRejectedException {
-        Mutation mutation = new Mutation(lcNoDiacriticsType.normalize(phrase));
-        mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                        range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(uid));
-        bw.addMutation(mutation);
-        
-        String[] tokens = phrase.split(" ");
-        for (String token : tokens) {
-            mutation = new Mutation(lcNoDiacriticsType.normalize(token));
-            mutation.put(field.toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(uid));
-            bw.addMutation(mutation);
-        }
-    }
-    
-    private static void addFiTokens(BatchWriter bw, WhatKindaRange range, String field, String phrase, String uid) throws MutationsRejectedException {
-        Mutation fi = new Mutation(shard);
-        fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(phrase) + "\u0000" + datatype + "\u0000" + uid, columnVisibilityEnglish,
-                        timeStamp, emptyValue);
-        
-        String[] tokens = phrase.split(" ");
-        for (String token : tokens) {
-            fi.put("fi\u0000" + field.toUpperCase(), lcNoDiacriticsType.normalize(token) + "\u0000" + datatype + "\u0000" + uid, columnVisibilityEnglish,
-                            timeStamp, emptyValue);
-        }
-        bw.addMutation(fi);
     }
 }
