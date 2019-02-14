@@ -2,10 +2,8 @@ package datawave.query.transformer;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultimap;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
@@ -40,8 +38,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.toSet;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class GroupingTransform extends DocumentTransform.DefaultDocumentTransform {
@@ -68,7 +66,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      */
     private GroupCountingHashMap countingMap;
     /**
-     * list of documents to return, created from the multiset
+     * list of documents to return, created from the countingMap
      */
     private LinkedList<Document> documents = null;
     /**
@@ -200,7 +198,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             log.trace("flush will use the countingMap: {}", countingMap);
             
             for (Collection<Attribute<?>> entry : countingMap.keySet()) {
-                log.trace("from multiset, got entry: {}", entry);
+                log.trace("from countingMap, got entry: {}", entry);
                 ColumnVisibility columnVisibility = null;
                 try {
                     columnVisibility = toColumnVisibility(fieldVisibilities.get(entry));
@@ -244,7 +242,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     /**
      * <pre>
-     * flush used the multiset:
+     * flush used the countingMap:
      * [[MALE, 16],
      * [MALE, 20],
      * [40, MALE],
@@ -378,9 +376,9 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         
         Set<String> expandedGroupFieldsList = new LinkedHashSet<>();
         // if the incoming Documents have been aggregated on the tserver, they will have a COUNT field.
-        // use the value in the COUNT field as a loop max when the fields are put into the multiset
+        // use the value in the COUNT field as a loop max when the fields are put into the countingMap
         // During the flush operation, a new COUNT field will be created based on the number of unique
-        // field sets in the multiset
+        // field sets in the countingMap
         Map<String,Attribute<? extends Comparable<?>>> dictionary = entry.getValue().getDictionary();
         Map<String,Integer> countKeyMap = new HashMap<>();
         dictionary.keySet().stream().filter(key -> key.startsWith("COUNT")).filter(countKey -> entry.getValue().getDictionary().containsKey(countKey))
@@ -423,9 +421,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 if (count == null)
                     count = 1;
                 // see above comment about the COUNT field
-                for (int j = 0; j < count; j++) {
-                    countingMap.add(fieldCollection);
-                }
+                IntStream.range(0, count).forEach(j -> countingMap.add(fieldCollection));
                 fieldVisibilities.put(fieldCollection, getColumnVisibility(entry));
                 log.trace("put {} to {} into fieldVisibilities {}", fieldCollection, getColumnVisibility(entry), fieldVisibilities);
             } else {
@@ -443,7 +439,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             log.trace("combined {} into {}", in, columnVisibility);
             return columnVisibility;
         } catch (MarkingFunctions.Exception e) {
-            e.printStackTrace();
+            log.warn("unable to combine visibilities from {}", in);
         }
         return new ColumnVisibility();
     }
@@ -506,11 +502,10 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 log.trace("combined {} into {}", in, columnVisibility);
                 return columnVisibility;
             } catch (MarkingFunctions.Exception e) {
-                e.printStackTrace();
+                log.warn("was unable to combine visibilities from {}", in);
             }
             return new ColumnVisibility();
         }
-        
     }
     
     /**
@@ -538,9 +533,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 TypeAttribute other = (TypeAttribute) o;
                 return this.getType().equals(other.getType());// don't compare metadata && (0 == this.compareMetadata(other));
             }
-            
             return false;
-            
         }
         
         @Override
