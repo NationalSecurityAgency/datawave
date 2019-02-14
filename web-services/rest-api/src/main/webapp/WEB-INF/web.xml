@@ -57,7 +57,6 @@
             datawave.webservice.operations.admin.PermissionsBean,
             datawave.webservice.operations.user.StatsBean,
             datawave.webservice.operations.user.ListUsersBean,
-            datawave.webservice.operations.user.LookupBean,
             datawave.webservice.operations.user.ListUserPermissionsBean,
             datawave.webservice.operations.user.ListTablesBean,
             datawave.webservice.operations.user.ListUserAuthorizationsBean,

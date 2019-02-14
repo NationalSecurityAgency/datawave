@@ -10,8 +10,25 @@ mock:
     # Define per-user roles and auths. If the incoming DN (in lower-case subjectDN<issuerDN> form) matches an entry here, the
     # corresponding roles and authorizations are provided instead of the global ones.
     #per-user-roles-to-auths:
+    #
     #  "subjectDN<issuerDN>":
     #    ROLE1: auth1
     #    ROLE2: auth2
     #    ROLE3: auth3
-
+    #
+    # The user below matches the testUser.p12 identity in spring-boot-starter-datawave/src/main/resources/
+    # (password: ChangeIt) with associated accumulo auths that will work for the 'mock' profile canned data that is
+    # provided by the accumulo service
+    #
+    #  "[cn=test a. user, ou=example developers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>]":
+    #    AuthorizedUser: AUTH_USER
+    #    JBossAdministrator: JBOSS_ADMIN
+    #    RoleA: A
+    #    RoleB: B
+    #    RoleC: C
+    #    RoleD: D
+    #    RoleE: E
+    #    RoleF: F
+    #    RoleG: G
+    #    RoleH: H
+    #    RoleI: I
