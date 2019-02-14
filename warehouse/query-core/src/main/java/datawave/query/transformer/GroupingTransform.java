@@ -42,6 +42,17 @@ import java.util.stream.IntStream;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+/**
+ * GroupingTransform mimics GROUP BY with a COUNT in SQL. For the given fields, this
+ * transform will group into unique combinations of values and assign a count to each combination.
+ * It is possible that values in a specific group may hold different column visibilities.
+ * Because the multiple fields are aggregated into one, it is necessary to combine the column visibilities
+ * for the fields and remark the grouped fields. Additionally, the overall document visibility must be computed.
+ *
+ * Because the tserver may tear down and start a new iterator at any time after a next() call, there can be no
+ * saved state in this class. For that reason, each next call on the tserver will flatten the aggredated data
+ * into a single Event to return to the web server. The web server will then aggregate these documents by count.
+ */
 public class GroupingTransform extends DocumentTransform.DefaultDocumentTransform {
     
     private static final Logger log = getLogger(GroupingTransform.class);
@@ -85,7 +96,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     private boolean flatten;
     
     /**
-     * tserver calls this CTOR with flatten = true called by QueryIterator::seek
+     * tserver calls this CTOR with flatten = true.
+     * Called by QueryIterator::seek
      * 
      * @param logic
      * @param groupFieldsSet
@@ -285,13 +297,13 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * }
      * </pre>
      *
+     * The Attributes, which have had their visibilities merged, are copied into normal TypeAttributes for
+     * serialization to the webserver.
+     *
      * @param documents
      */
     private void flatten(List<Document> documents) {
-        if (flatten)
-            log.trace("tserver flatten {}", documents);
-        else
-            log.trace("webserver flatten {}", documents);
+        log.trace("flatten {}", documents);
         Document theDocument = new Document(documents.get(0).getMetadata(), true);
         int context = 0;
         Set<ColumnVisibility> visibilities = new HashSet<>();
@@ -342,7 +354,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             if (this.groupFieldsSet.contains(shorterName)) {
                 expandedGroupFieldsList.add(shortName);
                 log.trace("{} contains {}", this.groupFieldsSet, shorterName);
-                Attribute<?> created = makeAttribute(shortName, field.getData());
+                Attribute<?> created = makeGroupingTypeAttribute(shortName, field.getData());
                 created.setColumnVisibility(field.getColumnVisibility());
                 fieldMap.put(fieldName, created);
                 fieldToFieldWithContextMap.put(shortName, fieldName);
@@ -357,7 +369,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         return fieldToFieldWithContextMap;
     }
     
-    private Attribute<?> makeAttribute(String fieldName, Object fieldValue) {
+    private GroupingTypeAttribute<?> makeGroupingTypeAttribute(String fieldName, Object fieldValue) {
         return new GroupingTypeAttribute<>((Type) fieldValue, createAttrKey(fieldName), true);
     }
     
