@@ -1,14 +1,23 @@
 package datawave.query;
 
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import datawave.configuration.spring.SpringBean;
+import datawave.data.type.LcType;
+import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.marking.MarkingFunctions;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
+import datawave.query.transformer.GroupingTransform;
+import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.query.util.WiseGuysIngest;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
@@ -19,7 +28,9 @@ import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -30,14 +41,16 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -46,8 +59,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static datawave.query.QueryTestTableHelper.*;
+import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.*;
 
 /**
  * Applies grouping to queries
@@ -57,55 +72,51 @@ public abstract class GroupingTest {
     
     private static final Logger log = Logger.getLogger(GroupingTest.class);
     
+    private static Authorizations auths = new Authorizations("ALL", "E", "I");
+    
+    // @formatter:off
+    private static final List<RebuildingScannerTestHelper.TEARDOWN> TEARDOWNS = Lists.newArrayList(
+            NEVER,
+            ALWAYS,
+            ALWAYS_SANS_CONSISTENCY,
+            RANDOM,
+            RANDOM_SANS_CONSISTENCY,
+            EVERY_OTHER,
+            EVERY_OTHER_SANS_CONSISTENCY
+    );
+    // @formatter:on
+    
     @RunWith(Arquillian.class)
     public static class ShardRange extends GroupingTest {
-        protected static Connector connector = null;
-        private static Authorizations auths = new Authorizations("ALL");
         
-        @BeforeClass
-        public static void setUp() throws Exception {
-            
-            QueryTestTableHelper qtth = new QueryTestTableHelper(GroupingTest.ShardRange.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.NEVER);
-            connector = qtth.connector;
-            
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
+        @Override
+        protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
+                        Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown) throws Exception {
+            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.getName(), log, teardown);
+            Connector connector = qtth.connector;
+            VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.SHARD);
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
-        }
-        
-        @Override
-        protected void runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                        throws Exception {
-            super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
+            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
     
     @RunWith(Arquillian.class)
     public static class DocumentRange extends GroupingTest {
-        protected static Connector connector = null;
         
-        @BeforeClass
-        public static void setUp() throws Exception {
-            
-            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.NEVER);
-            connector = qtth.connector;
-            
-            WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
-            Authorizations auths = new Authorizations("ALL");
+        @Override
+        protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
+                        Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown) throws Exception {
+            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log, teardown);
+            Connector connector = qtth.connector;
+            VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
-        }
-        
-        @Override
-        protected void runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                        throws Exception {
-            super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
+            return super.runTestQueryWithGrouping(expected, querystr, startDate, endDate, extraParms, connector);
         }
     }
-    
-    protected Authorizations auths = new Authorizations("ALL");
     
     protected Set<Authorizations> authSet = Collections.singleton(auths);
     
@@ -146,11 +157,11 @@ public abstract class GroupingTest {
         deserializer = new KryoDocumentDeserializer();
     }
     
-    protected abstract void runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                    throws Exception;
+    protected abstract BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
+                    Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown) throws Exception;
     
-    protected void runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Connector connector) throws Exception {
+    protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
+                    Map<String,String> extraParms, Connector connector) throws Exception {
         log.debug("runTestQueryWithGrouping");
         
         QueryImpl settings = new QueryImpl();
@@ -164,7 +175,6 @@ public abstract class GroupingTest {
         
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
-        // logic.setMaxEvaluationPipelines(1);
         
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
@@ -179,9 +189,9 @@ public abstract class GroupingTest {
         BaseQueryResponse response = transformer.createResponse(eventList);
         
         // un-comment to look at the json output
-        // ObjectMapper mapper = new ObjectMapper();
-        // mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-        // mapper.writeValue(new File("/tmp/grouped2.json"), response);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
+        mapper.writeValue(new File("/tmp/grouped2.json"), response);
         
         Assert.assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
@@ -199,8 +209,14 @@ public abstract class GroupingTest {
                     case "COUNT":
                         value = Integer.valueOf(fieldBase.getValueString());
                         break;
+                    case "GENDER":
+                        genderKey = fieldBase.getValueString();
+                        break;
                     case "GEN":
                         genderKey = fieldBase.getValueString();
+                        break;
+                    case "AGE":
+                        ageKey = fieldBase.getValueString();
                         break;
                     case "AG":
                         ageKey = fieldBase.getValueString();
@@ -219,7 +235,7 @@ public abstract class GroupingTest {
             }
             Assert.assertEquals(expected.get(key), value);
         }
-        
+        return response;
     }
     
     @Test
@@ -230,7 +246,7 @@ public abstract class GroupingTest {
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
         
-        String queryString = "UUID =~ '^[CS].*' && f:options('group.fields.batch.size','6')";
+        String queryString = "UUID =~ '^[CS].*'";
         
         // @formatter:off
         Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
@@ -245,9 +261,38 @@ public abstract class GroupingTest {
                 .build();
         // @formatter:on
         
-        extraParameters.put("group.fields", "AG,GEN");
+        extraParameters.put("group.fields", "AGE,GENDER");
+        extraParameters.put("group.fields.batch.size", "6");
         
-        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+        List<List<EventBase>> responseEvents = new ArrayList<>();
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            responseEvents.add(((DefaultEventQueryResponse) runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown))
+                            .getEvents());
+        }
+        List<String> digested = digest(responseEvents);
+        log.debug("reponses:" + digested);
+        Set<String> responseSet = Sets.newHashSet(digested);
+        // if the grouped results from every type of rebuild are the same, there should be only 1 entry in the responseSet
+        Assert.assertEquals(responseSet.size(), 1);
+    }
+    
+    // grab the relevant stuff from the events and do some formatting
+    private List<String> digest(List<List<EventBase>> in) {
+        List<String> stringList = new ArrayList<>();
+        for (List<EventBase> list : in) {
+            StringBuilder builder = new StringBuilder();
+            for (EventBase eb : list) {
+                for (Object field : eb.getFields()) {
+                    FieldBase fieldBase = (FieldBase) field;
+                    builder.append(fieldBase.getName());
+                    builder.append(':');
+                    builder.append(fieldBase.getTypedValue().getValue());
+                    builder.append(',');
+                }
+            }
+            stringList.add(builder.toString() + '\n');
+        }
+        return stringList;
     }
     
     @Test
@@ -272,9 +317,12 @@ public abstract class GroupingTest {
                 .put("22", 2)
                 .build();
         // @formatter:on
-        extraParameters.put("group.fields", "AG");
+        extraParameters.put("group.fields", "AGE");
+        extraParameters.put("group.fields.batch.size", "6");
         
-        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
+        }
     }
     
     @Test
@@ -289,9 +337,12 @@ public abstract class GroupingTest {
         
         Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
         
-        extraParameters.put("group.fields", "GEN");
+        extraParameters.put("group.fields", "GENDER");
+        extraParameters.put("group.fields.batch.size", "0");
         
-        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
+        }
     }
     
     @Test
@@ -306,20 +357,24 @@ public abstract class GroupingTest {
         
         Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
         
-        extraParameters.put("group.fields", "GEN");
+        extraParameters.put("group.fields", "GENDER");
+        extraParameters.put("group.fields.batch.size", "6");
         
-        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
+        }
     }
     
     @Test
     public void testGroupingUsingFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("group.fields.batch.size", "6");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
         
-        String queryString = "UUID =~ '^[CS].*' && f:groupby('AG','GEN')";
+        String queryString = "UUID =~ '^[CS].*' && f:groupby('AGE','GENDER')";
         
         // @formatter:off
         Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
@@ -334,18 +389,21 @@ public abstract class GroupingTest {
                 .build();
         // @formatter:on
         
-        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
+        }
     }
     
     @Test
     public void testGroupingUsingLuceneFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("group.fields.batch.size", "6");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
         
-        String queryString = "(UUID:C* or UUID:S* ) and #GROUPBY('AG','GEN')";
+        String queryString = "(UUID:C* or UUID:S* ) and #GROUPBY('AGE','GENDER')";
         
         // @formatter:off
         Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
@@ -360,8 +418,122 @@ public abstract class GroupingTest {
                 .build();
         // @formatter:on
         logic.setParser(new LuceneToJexlQueryParser());
-        runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters);
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
+        }
         logic.setParser(new JexlControlledQueryParser());
+    }
+    
+    class Person {
+        String name;
+        int age;
+        
+        public Person(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
+        
+        public String toString() {
+            return name;
+        }
+        
+        public int getAge() {
+            return age;
+        }
+    }
+    
+    List<Person> persons = Arrays.asList(new Person("Max", 18), new Person("Peter", 23), new Person("Pamela", 23), new Person("Patricia", 23), new Person(
+                    "David", 12));
+    
+    @Test
+    public void nonsense() {
+        Map<Integer,List<Person>> personsByAge = persons.stream().collect(Collectors.groupingBy(p -> p.age));
+        
+        Map<Integer,String> map = persons.stream().collect(Collectors.toMap(p -> p.age, p -> p.name, (name1, name2) -> name1 + ";" + name2));
+        System.err.println(map);
+    }
+    
+    @Test
+    public void testCountingMap() {
+        MarkingFunctions markingFunctions = new MarkingFunctions.Default();
+        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        GroupingTransform.GroupingTypeAttribute attr1 = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
+        attr1.setColumnVisibility(new ColumnVisibility("A"));
+        map.add(Collections.singleton(attr1));
+        
+        GroupingTransform.GroupingTypeAttribute attr2 = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
+        attr2.setColumnVisibility(new ColumnVisibility("B"));
+        map.add(Collections.singleton(attr2));
+        GroupingTransform.GroupingTypeAttribute attr3 = new GroupingTransform.GroupingTypeAttribute(new LcType("BAR"), new Key("BAR"), true);
+        attr3.setColumnVisibility(new ColumnVisibility("C"));
+        map.add(Collections.singleton(attr3));
+        
+        log.debug("map is: " + map);
+        
+        for (Map.Entry<Collection<GroupingTransform.GroupingTypeAttribute<?>>,Integer> entry : map.entrySet()) {
+            GroupingTransform.GroupingTypeAttribute<?> attr = entry.getKey().iterator().next(); // the first and only one
+            int count = entry.getValue();
+            if (attr.getData().toString().equals("FOO")) {
+                Assert.assertEquals(2, count);
+                Assert.assertEquals(new ColumnVisibility("A&B"), attr.getColumnVisibility());
+            } else if (attr.getData().toString().equals("BAR")) {
+                Assert.assertEquals(1, count);
+                Assert.assertEquals(new ColumnVisibility("C"), attr.getColumnVisibility());
+            }
+        }
+    }
+    
+    @Test
+    public void testCountingMapAgain() {
+        MarkingFunctions markingFunctions = new MarkingFunctions.Default();
+        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        
+        GroupingTransform.GroupingTypeAttribute<?> attr1a = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
+        attr1a.setColumnVisibility(new ColumnVisibility("A"));
+        GroupingTransform.GroupingTypeAttribute<?> attr1b = new GroupingTransform.GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
+        attr1b.setColumnVisibility(new ColumnVisibility("C"));
+        Set<GroupingTransform.GroupingTypeAttribute<?>> seta = Sets.newHashSet(attr1a, attr1b);
+        map.add(seta);
+        
+        GroupingTransform.GroupingTypeAttribute<?> attr2a = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
+        attr2a.setColumnVisibility(new ColumnVisibility("B"));
+        GroupingTransform.GroupingTypeAttribute<?> attr2b = new GroupingTransform.GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
+        attr2b.setColumnVisibility(new ColumnVisibility("D"));
+        Set<GroupingTransform.GroupingTypeAttribute<?>> setb = Sets.newHashSet(attr2a, attr2b);
+        map.add(setb);
+        
+        // even though the ColumnVisibilities are different, the 2 collections seta and setb are 'equal' and generate the same hashCode
+        Assert.assertEquals(seta.hashCode(), setb.hashCode());
+        Assert.assertEquals(seta, setb);
+        
+        GroupingTransform.GroupingTypeAttribute attr3a = new GroupingTransform.GroupingTypeAttribute(new LcType("BAR"), new Key("NAME"), true);
+        attr3a.setColumnVisibility(new ColumnVisibility("C"));
+        GroupingTransform.GroupingTypeAttribute attr3b = new GroupingTransform.GroupingTypeAttribute(new NumberType("6"), new Key("AGE"), true);
+        attr3b.setColumnVisibility(new ColumnVisibility("D"));
+        map.add(Sets.newHashSet(attr3a, attr3b));
+        
+        log.debug("map is: " + map);
+        
+        for (Map.Entry<Collection<GroupingTransform.GroupingTypeAttribute<?>>,Integer> entry : map.entrySet()) {
+            for (GroupingTransform.GroupingTypeAttribute<?> attr : entry.getKey()) {
+                int count = entry.getValue();
+                if (attr.getData().toString().equals("FOO")) {
+                    Assert.assertEquals(2, count);
+                    // the ColumnVisibility for the key was changed to the merged value of the 2 items that were added to the map
+                    Assert.assertEquals(new ColumnVisibility("A&B"), attr.getColumnVisibility());
+                } else if (attr.getData().toString().equals("5")) {
+                    Assert.assertEquals(2, count);
+                    // the ColumnVisibility for the key was changed to the merged value of the 2 items that were added to the map
+                    Assert.assertEquals(new ColumnVisibility("C&D"), attr.getColumnVisibility());
+                } else if (attr.getData().toString().equals("BAR")) {
+                    Assert.assertEquals(1, count);
+                    Assert.assertEquals(new ColumnVisibility("C"), attr.getColumnVisibility());
+                } else if (attr.getData().toString().equals("6")) {
+                    Assert.assertEquals(1, count);
+                    Assert.assertEquals(new ColumnVisibility("D"), attr.getColumnVisibility());
+                }
+            }
+        }
     }
     
 }
