@@ -23,6 +23,12 @@ embed-server --server-config=standalone-full.xml
 /subsystem=transactions:write-attribute(name=node-identifier,value="Da+awav3")
 
 #
+# Threading properties
+#
+/subsystem=io/worker=default/:write-attribute(name=task-max-threads,value=${wildfly.io.worker.default.task-max-threads})
+/subsystem=io/worker=default/:write-attribute(name=io-threads,value=${wildfly.io.worker.default.io-threads})
+
+#
 # System properties
 #
 /system-property=user.timezone:add(value=GMT)

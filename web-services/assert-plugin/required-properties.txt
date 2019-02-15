@@ -99,3 +99,5 @@ hdfs.site.config.urls, For Ivarator, should be file:///etc/hadoop/conf/core-site
 id.translation.return.fields, fields returned by IdTranslator endpoint
 querymetrics.policy.enforcer.class, Needed for ingesting querymetrics since the all-config.xml filtered file does not get loaded.  See QueryMetrics.xml
 query.tokenized.fields, Needed for configuring a list of fields which gets tokenizers applied during query.    See QueryLogicFactory.xml
+wildfly.io.worker.default.io-threads, Number of threads to use for selecting I/O
+wildfly.io.worker.default.task-max-threads, Number of threads to use for servicing wildfly connections
