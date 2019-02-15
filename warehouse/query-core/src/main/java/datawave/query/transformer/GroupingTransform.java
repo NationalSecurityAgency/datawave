@@ -63,12 +63,12 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     /**
      * mapping of field name (with grouping context) to value attribute
      */
-    private Map<String,Attribute<?>> fieldMap = Maps.newHashMap();
+    private Map<String,GroupingTypeAttribute<?>> fieldMap = Maps.newHashMap();
     
     /**
      * holds the aggregated column visibilities for each grouped event
      */
-    private Multimap<Collection<Attribute<?>>,ColumnVisibility> fieldVisibilities = HashMultimap.create();
+    private Multimap<Collection<GroupingTypeAttribute<?>>,ColumnVisibility> fieldVisibilities = HashMultimap.create();
     
     /**
      * A map of TypeAttribute collection keys to integer counts This map uses a special key type that ignores the metadata (with visibilities) in its hashCode
@@ -209,7 +209,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             log.trace("flush will use the countingMap: {}", countingMap);
             
-            for (Collection<Attribute<?>> entry : countingMap.keySet()) {
+            for (Collection<GroupingTypeAttribute<?>> entry : countingMap.keySet()) {
                 log.trace("from countingMap, got entry: {}", entry);
                 ColumnVisibility columnVisibility = null;
                 try {
@@ -353,7 +353,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             if (this.groupFieldsSet.contains(shorterName)) {
                 expandedGroupFieldsList.add(shortName);
                 log.trace("{} contains {}", this.groupFieldsSet, shorterName);
-                Attribute<?> created = makeGroupingTypeAttribute(shortName, field.getData());
+                GroupingTypeAttribute<?> created = makeGroupingTypeAttribute(shortName, field.getData());
                 created.setColumnVisibility(field.getColumnVisibility());
                 fieldMap.put(fieldName, created);
                 fieldToFieldWithContextMap.put(shortName, fieldName);
@@ -369,6 +369,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     }
     
     private GroupingTypeAttribute<?> makeGroupingTypeAttribute(String fieldName, Object fieldValue) {
+        log.trace("{} creating attribute with {} and {}", flatten ? "tserver" : "webserver", fieldName, fieldValue);
         return new GroupingTypeAttribute<>((Type) fieldValue, createAttrKey(fieldName), true);
     }
     
@@ -403,7 +404,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         log.trace("got a new fieldToFieldWithContextMap: {}", fieldToFieldWithContextMap);
         int longest = this.longestValueList(fieldToFieldWithContextMap);
         for (int i = 0; i < longest; i++) {
-            Collection<Attribute<?>> fieldCollection = new HashSet<>();
+            Collection<GroupingTypeAttribute<?>> fieldCollection = new HashSet<>();
             String currentGroupingContext = "";
             for (String fieldListItem : expandedGroupFieldsList) {
                 log.trace("fieldListItem: {}", fieldListItem);
@@ -432,6 +433,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 if (count == null)
                     count = 1;
                 // see above comment about the COUNT field
+                log.trace("{} adding {} of {} to counting map", flatten ? "tserver" : "webserver", count, fieldCollection);
                 IntStream.range(0, count).forEach(j -> countingMap.add(fieldCollection));
                 fieldVisibilities.put(fieldCollection, getColumnVisibility(entry));
                 log.trace("put {} to {} into fieldVisibilities {}", fieldCollection, getColumnVisibility(entry), fieldVisibilities);
@@ -463,7 +465,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         return combine(visibilities);
     }
     
-    static class GroupCountingHashMap extends HashMap<Collection<Attribute<?>>,Integer> {
+    static class GroupCountingHashMap extends HashMap<Collection<GroupingTypeAttribute<?>>,Integer> {
         
         private MarkingFunctions markingFunctions;
         
@@ -471,7 +473,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             this.markingFunctions = markingFunctions;
         }
         
-        public int add(Collection<Attribute<?>> in) {
+        public int add(Collection<GroupingTypeAttribute<?>> in) {
             int count = 0;
             if (super.containsKey(in)) {
                 count = super.get(in);
@@ -483,7 +485,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             return count;
         }
         
-        private void combine(Set<Collection<Attribute<?>>> existingMapKeys, Collection<? extends Attribute<?>> incomingAttributes) {
+        private void combine(Set<Collection<GroupingTypeAttribute<?>>> existingMapKeys, Collection<? extends Attribute<?>> incomingAttributes) {
             
             // for each Attribute in the incoming existingMapKeys, find the existing map key attribute that matches its data.
             // combine the column visibilities of the incoming attribute and the existing one, and set

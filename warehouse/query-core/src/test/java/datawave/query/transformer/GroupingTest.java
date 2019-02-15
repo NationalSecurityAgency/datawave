@@ -18,6 +18,7 @@ import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.transformer.GroupingTransform.GroupingTypeAttribute;
 import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
@@ -426,20 +427,20 @@ public abstract class GroupingTest {
     public void testCountingMap() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
         GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
-        GroupingTransform.GroupingTypeAttribute attr1 = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
+        GroupingTypeAttribute attr1 = new GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
         attr1.setColumnVisibility(new ColumnVisibility("A"));
         map.add(Collections.singleton(attr1));
         
-        GroupingTransform.GroupingTypeAttribute attr2 = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
+        GroupingTypeAttribute attr2 = new GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
         attr2.setColumnVisibility(new ColumnVisibility("B"));
         map.add(Collections.singleton(attr2));
-        GroupingTransform.GroupingTypeAttribute attr3 = new GroupingTransform.GroupingTypeAttribute(new LcType("BAR"), new Key("BAR"), true);
+        GroupingTypeAttribute attr3 = new GroupingTypeAttribute(new LcType("BAR"), new Key("BAR"), true);
         attr3.setColumnVisibility(new ColumnVisibility("C"));
         map.add(Collections.singleton(attr3));
         
         log.debug("map is: " + map);
         
-        for (Map.Entry<Collection<Attribute<?>>,Integer> entry : map.entrySet()) {
+        for (Map.Entry<Collection<GroupingTypeAttribute<?>>,Integer> entry : map.entrySet()) {
             Attribute<?> attr = entry.getKey().iterator().next(); // the first and only one
             int count = entry.getValue();
             if (attr.getData().toString().equals("FOO")) {
@@ -457,33 +458,33 @@ public abstract class GroupingTest {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
         GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
         
-        Attribute<?> attr1a = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
+        GroupingTypeAttribute<?> attr1a = new GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
         attr1a.setColumnVisibility(new ColumnVisibility("A"));
-        Attribute<?> attr1b = new GroupingTransform.GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
+        GroupingTypeAttribute<?> attr1b = new GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
         attr1b.setColumnVisibility(new ColumnVisibility("C"));
-        Set<Attribute<?>> seta = Sets.newHashSet(attr1a, attr1b);
+        Set<GroupingTypeAttribute<?>> seta = Sets.newHashSet(attr1a, attr1b);
         map.add(seta);
         
-        Attribute<?> attr2a = new GroupingTransform.GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
+        GroupingTypeAttribute<?> attr2a = new GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
         attr2a.setColumnVisibility(new ColumnVisibility("B"));
-        Attribute<?> attr2b = new GroupingTransform.GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
+        GroupingTypeAttribute<?> attr2b = new GroupingTypeAttribute(new NumberType("5"), new Key("AGE"), true);
         attr2b.setColumnVisibility(new ColumnVisibility("D"));
-        Set<Attribute<?>> setb = Sets.newHashSet(attr2a, attr2b);
+        Set<GroupingTypeAttribute<?>> setb = Sets.newHashSet(attr2a, attr2b);
         map.add(setb);
         
         // even though the ColumnVisibilities are different, the 2 collections seta and setb are 'equal' and generate the same hashCode
         Assert.assertEquals(seta.hashCode(), setb.hashCode());
         Assert.assertEquals(seta, setb);
         
-        GroupingTransform.GroupingTypeAttribute attr3a = new GroupingTransform.GroupingTypeAttribute(new LcType("BAR"), new Key("NAME"), true);
+        GroupingTypeAttribute attr3a = new GroupingTypeAttribute(new LcType("BAR"), new Key("NAME"), true);
         attr3a.setColumnVisibility(new ColumnVisibility("C"));
-        GroupingTransform.GroupingTypeAttribute attr3b = new GroupingTransform.GroupingTypeAttribute(new NumberType("6"), new Key("AGE"), true);
+        GroupingTypeAttribute attr3b = new GroupingTypeAttribute(new NumberType("6"), new Key("AGE"), true);
         attr3b.setColumnVisibility(new ColumnVisibility("D"));
         map.add(Sets.newHashSet(attr3a, attr3b));
         
         log.debug("map is: " + map);
         
-        for (Map.Entry<Collection<Attribute<?>>,Integer> entry : map.entrySet()) {
+        for (Map.Entry<Collection<GroupingTypeAttribute<?>>,Integer> entry : map.entrySet()) {
             for (Attribute<?> attr : entry.getKey()) {
                 int count = entry.getValue();
                 if (attr.getData().toString().equals("FOO")) {
