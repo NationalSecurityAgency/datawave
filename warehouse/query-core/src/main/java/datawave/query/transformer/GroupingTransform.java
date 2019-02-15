@@ -1,6 +1,5 @@
 package datawave.query.transformer;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -43,15 +42,14 @@ import java.util.stream.IntStream;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * GroupingTransform mimics GROUP BY with a COUNT in SQL. For the given fields, this
- * transform will group into unique combinations of values and assign a count to each combination.
- * It is possible that values in a specific group may hold different column visibilities.
- * Because the multiple fields are aggregated into one, it is necessary to combine the column visibilities
- * for the fields and remark the grouped fields. Additionally, the overall document visibility must be computed.
+ * GroupingTransform mimics GROUP BY with a COUNT in SQL. For the given fields, this transform will group into unique combinations of values and assign a count
+ * to each combination. It is possible that values in a specific group may hold different column visibilities. Because the multiple fields are aggregated into
+ * one, it is necessary to combine the column visibilities for the fields and remark the grouped fields. Additionally, the overall document visibility must be
+ * computed.
  *
- * Because the tserver may tear down and start a new iterator at any time after a next() call, there can be no
- * saved state in this class. For that reason, each next call on the tserver will flatten the aggredated data
- * into a single Event to return to the web server. The web server will then aggregate these documents by count.
+ * Because the tserver may tear down and start a new iterator at any time after a next() call, there can be no saved state in this class. For that reason, each
+ * next call on the tserver will flatten the aggregated data into a single Entry&gt;Key,Document&lt; to return to the web server. The web server will then
+ * aggregate these documents by count.
  */
 public class GroupingTransform extends DocumentTransform.DefaultDocumentTransform {
     
@@ -61,6 +59,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * the fields (user provided) to group by
      */
     private Set<String> groupFieldsSet;
+    
     /**
      * mapping of field name (with grouping context) to value attribute
      */
@@ -76,10 +75,12 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * and equals methods
      */
     private GroupCountingHashMap countingMap;
+    
     /**
      * list of documents to return, created from the countingMap
      */
     private LinkedList<Document> documents = null;
+    
     /**
      * mapping used to combine field names that map to different model names
      */
@@ -96,8 +97,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     private boolean flatten;
     
     /**
-     * tserver calls this CTOR with flatten = true.
-     * Called by QueryIterator::seek
+     * tserver calls this CTOR with flatten = true. Called by QueryIterator::seek
      * 
      * @param logic
      * @param groupFieldsSet
@@ -297,8 +297,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * }
      * </pre>
      *
-     * The Attributes, which have had their visibilities merged, are copied into normal TypeAttributes for
-     * serialization to the webserver.
+     * The Attributes, which have had their visibilities merged, are copied into normal TypeAttributes for serialization to the webserver.
      *
      * @param documents
      */
@@ -456,17 +455,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         return new ColumnVisibility();
     }
     
-    private String getDataType(Entry<Key,Document> e) {
-        String colf = e.getKey().getColumnFamily().toString();
-        return colf.substring(0, colf.indexOf('\0'));
-    }
-    
     private ColumnVisibility getColumnVisibility(Entry<Key,Document> e) {
         return e.getValue().getColumnVisibility();
-    }
-    
-    private String toString(Collection<String> strings) {
-        return Joiner.on(',').join(strings);
     }
     
     private ColumnVisibility toColumnVisibility(Collection<ColumnVisibility> visibilities) throws Exception {
@@ -526,10 +516,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * @param <T>
      */
     static class GroupingTypeAttribute<T extends Comparable<T>> extends TypeAttribute<T> {
-        
-        public GroupingTypeAttribute() {
-            super(null, null, true);
-        }
         
         public GroupingTypeAttribute(Type type, Key key, boolean toKeep) {
             super(type, key, toKeep);

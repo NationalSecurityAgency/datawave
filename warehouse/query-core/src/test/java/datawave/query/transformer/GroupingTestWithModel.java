@@ -18,7 +18,7 @@ import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.util.VisibilityWiseGuysIngest;
+import datawave.query.util.VisibilityWiseGuysIngestWithModel;
 import datawave.webservice.edgedictionary.TestDatawaveEdgeDictionaryImpl;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -66,9 +66,9 @@ import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.*;
  * Applies grouping to queries
  * 
  */
-public abstract class GroupingTest {
+public abstract class GroupingTestWithModel {
     
-    private static final Logger log = Logger.getLogger(GroupingTest.class);
+    private static final Logger log = Logger.getLogger(GroupingTestWithModel.class);
     
     private static Authorizations auths = new Authorizations("ALL", "E", "I");
     
@@ -85,14 +85,14 @@ public abstract class GroupingTest {
     // @formatter:on
     
     @RunWith(Arquillian.class)
-    public static class ShardRange extends GroupingTest {
+    public static class ShardRange extends GroupingTestWithModel {
         
         @Override
         protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
                         Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown) throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.getName(), log, teardown);
             Connector connector = qtth.connector;
-            VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.SHARD);
+            VisibilityWiseGuysIngestWithModel.writeItAll(connector, VisibilityWiseGuysIngestWithModel.WhatKindaRange.SHARD);
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
@@ -101,14 +101,14 @@ public abstract class GroupingTest {
     }
     
     @RunWith(Arquillian.class)
-    public static class DocumentRange extends GroupingTest {
+    public static class DocumentRange extends GroupingTestWithModel {
         
         @Override
         protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
                         Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown) throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log, teardown);
             Connector connector = qtth.connector;
-            VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
+            VisibilityWiseGuysIngestWithModel.writeItAll(connector, VisibilityWiseGuysIngestWithModel.WhatKindaRange.DOCUMENT);
             PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
             PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
             PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
@@ -259,7 +259,7 @@ public abstract class GroupingTest {
                 .build();
         // @formatter:on
         
-        extraParameters.put("group.fields", "AGE,GENDER");
+        extraParameters.put("group.fields", "AG,GEN");
         extraParameters.put("group.fields.batch.size", "6");
         
         List<List<EventBase>> responseEvents = new ArrayList<>();
@@ -315,7 +315,7 @@ public abstract class GroupingTest {
                 .put("22", 2)
                 .build();
         // @formatter:on
-        extraParameters.put("group.fields", "AGE");
+        extraParameters.put("group.fields", "AG");
         extraParameters.put("group.fields.batch.size", "6");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
@@ -335,8 +335,8 @@ public abstract class GroupingTest {
         
         Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
         
-        extraParameters.put("group.fields", "GENDER");
-        extraParameters.put("group.fields.batch.size", "0");
+        extraParameters.put("group.fields", "GEN");
+        extraParameters.put("group.fields.batch.size", "6");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
@@ -355,8 +355,8 @@ public abstract class GroupingTest {
         
         Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
         
-        extraParameters.put("group.fields", "GENDER");
-        extraParameters.put("group.fields.batch.size", "6");
+        extraParameters.put("group.fields", "GEN");
+        extraParameters.put("group.fields.batch.size", "0");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown);
@@ -372,7 +372,7 @@ public abstract class GroupingTest {
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
         
-        String queryString = "UUID =~ '^[CS].*' && f:groupby('AGE','GENDER')";
+        String queryString = "UUID =~ '^[CS].*' && f:groupby('AG','GEN')";
         
         // @formatter:off
         Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
@@ -401,7 +401,7 @@ public abstract class GroupingTest {
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
         
-        String queryString = "(UUID:C* or UUID:S* ) and #GROUPBY('AGE','GENDER')";
+        String queryString = "(UUID:C* or UUID:S* ) and #GROUPBY('AG','GEN')";
         
         // @formatter:off
         Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
