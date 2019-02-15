@@ -186,7 +186,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     // web server will aggregate the visibilities from the Attributes
                     // and set the Document's visibility to that aggregation
                     Document documentToReturn = next.getValue();
-                    
+                    // combine the column visibilities of all attributes in order to compute the overall document column visibility
                     documentToReturn.setColumnVisibility(combine(documentToReturn.getAttributes().stream().filter(attr -> attr != null)
                                     .map(attr -> attr.getColumnVisibility()).collect(Collectors.toSet())));
                     
@@ -493,15 +493,11 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 existingMapKeys.stream()
                                 .flatMap(Collection::stream)
                                 // if the existing and incoming attributes are equal (other than the metadata), the incoming attribute's visibility will be
-                                // considered for merging into the existing attribute
-                                .filter(existingAttribute -> existingAttribute.getData().equals(incomingAttribute.getData()))
-                                // ...but if the column visibilities are already equal, there is nothing to merge
-                                .filter(existingAttribute -> !existingAttribute.getColumnVisibility().equals(incomingAttribute.getColumnVisibility()))
-                                .forEach(existingAttribute -> {
-                                    ColumnVisibility merged = combine(Arrays.asList(existingAttribute.getColumnVisibility(),
-                                                    incomingAttribute.getColumnVisibility()));
-                                    existingAttribute.setColumnVisibility(merged);
-                                });
+                                // considered for merging into the existing attribute unless the column visibilities are already equal
+                                .filter(existingAttribute -> existingAttribute.getData().equals(incomingAttribute.getData())
+                                                && !existingAttribute.getColumnVisibility().equals(incomingAttribute.getColumnVisibility()))
+                                .forEach(existingAttribute -> existingAttribute.setColumnVisibility(combine(Arrays.asList(
+                                                existingAttribute.getColumnVisibility(), incomingAttribute.getColumnVisibility()))));
             });
         }
         
@@ -536,7 +532,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             if (o instanceof TypeAttribute) {
                 TypeAttribute other = (TypeAttribute) o;
-                return this.getType().equals(other.getType());// don't compare metadata && (0 == this.compareMetadata(other));
+                return this.getType().equals(other.getType());// don't compare metadata: && (0 == this.compareMetadata(other));
             }
             return false;
         }
