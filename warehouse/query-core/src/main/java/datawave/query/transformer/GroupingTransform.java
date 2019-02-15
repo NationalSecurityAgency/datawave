@@ -489,10 +489,17 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             // combine the column visibilities of the incoming attribute and the existing one, and set
             // the column visibility of the EXISTING map key to the new value.
             // Note that the hashCode and equals methods for the GroupingTypeAttribute will ignore the metadata (which contains the column visibility)
-            incomingAttributes.forEach(attribute -> {
-                existingMapKeys.stream().flatMap(Collection::stream).filter(existingAttribute -> existingAttribute.getData().equals(attribute.getData()))
+            incomingAttributes.forEach(incomingAttribute -> {
+                existingMapKeys.stream()
+                                .flatMap(Collection::stream)
+                                // if the existing and incoming attributes are equal (other than the metadata), the incoming attribute's visibility will be
+                                // considered for merging into the existing attribute
+                                .filter(existingAttribute -> existingAttribute.getData().equals(incomingAttribute.getData()))
+                                // ...but if the column visibilities are already equal, there is nothing to merge
+                                .filter(existingAttribute -> !existingAttribute.getColumnVisibility().equals(incomingAttribute.getColumnVisibility()))
                                 .forEach(existingAttribute -> {
-                                    ColumnVisibility merged = combine(Arrays.asList(existingAttribute.getColumnVisibility(), attribute.getColumnVisibility()));
+                                    ColumnVisibility merged = combine(Arrays.asList(existingAttribute.getColumnVisibility(),
+                                                    incomingAttribute.getColumnVisibility()));
                                     existingAttribute.setColumnVisibility(merged);
                                 });
             });
