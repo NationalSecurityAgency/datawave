@@ -8,6 +8,8 @@ import org.junit.Test;
 
 import java.util.Map;
 
+import static datawave.marking.MarkingFunctions.Default.COLUMN_VISIBILITY;
+
 public class MarkingFunctionsDefaultCombineTest {
     
     @Test
@@ -36,11 +38,11 @@ public class MarkingFunctionsDefaultCombineTest {
     public void testCombineMapsOfAnds() throws MarkingFunctions.Exception {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
         
-        Map<String,String> mapOne = ImmutableMap.of("FOO", "A&B");
-        Map<String,String> mapTwo = ImmutableMap.of("FOO", "A&C");
+        Map<String,String> mapOne = ImmutableMap.of(COLUMN_VISIBILITY, "A&B");
+        Map<String,String> mapTwo = ImmutableMap.of(COLUMN_VISIBILITY, "A&C");
         
-        Map<String,String> expected = ImmutableMap.of("FOO", "(A&B)&(A&C)");
-        
+        Map<String,String> expected = ImmutableMap.of(COLUMN_VISIBILITY, "A&B&C");
+
         Assert.assertEquals(expected, markingFunctions.combine(mapOne, mapTwo));
     }
     
@@ -48,11 +50,11 @@ public class MarkingFunctionsDefaultCombineTest {
     public void testCombineMapsOfOrs() throws MarkingFunctions.Exception {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
         
-        Map<String,String> mapOne = ImmutableMap.of("FOO", "A|B");
-        Map<String,String> mapTwo = ImmutableMap.of("FOO", "A|C");
+        Map<String,String> mapOne = ImmutableMap.of(COLUMN_VISIBILITY, "A|B");
+        Map<String,String> mapTwo = ImmutableMap.of(COLUMN_VISIBILITY, "A|C");
         
-        Map<String,String> expected = ImmutableMap.of("FOO", "(A|B)&(A|C)");
-        
+        Map<String,String> expected = ImmutableMap.of(COLUMN_VISIBILITY, "(A|B)&(A|C)");
+
         Assert.assertEquals(expected, markingFunctions.combine(mapOne, mapTwo));
     }
 }

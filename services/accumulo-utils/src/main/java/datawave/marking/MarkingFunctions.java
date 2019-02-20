@@ -14,9 +14,9 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -88,14 +88,10 @@ public interface MarkingFunctions {
         @Override
         @SafeVarargs
         public final Map<String,String> combine(Map<String,String>... markings) {
-            Map<String,String> combinedMap = new HashMap<>();
-            Stream.of(markings).flatMap(map -> map.entrySet().stream().filter(entry -> !Strings.isNullOrEmpty(entry.getValue()))).forEach(entry -> {
-                String entryKey = entry.getKey();
-                String entryValue = "(" + entry.getValue() + ")"; // surround with parens for potential concatenation
-                // concat using '&', values that have the same key
-                combinedMap.put(entryKey, combinedMap.containsKey(entryKey) ? combinedMap.get(entryKey) + "&" + entryValue : entryValue);
-            });
-            return combinedMap;
+            // translate COLUMN_VISIBILITY values to ColumnVisibility, combine them and
+            // return translated back to Map
+            return translateFromColumnVisibility(combine(Arrays.stream(markings).filter(m -> m.containsKey(COLUMN_VISIBILITY))
+                            .map(this::translateToColumnVisibility).collect(Collectors.toSet())));
         }
         
         @Override
