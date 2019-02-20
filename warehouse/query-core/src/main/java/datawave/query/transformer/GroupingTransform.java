@@ -487,7 +487,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         
         private void combine(Set<Collection<GroupingTypeAttribute<?>>> existingMapKeys, Collection<? extends Attribute<?>> incomingAttributes) {
             
-            // for each Attribute in the incoming existingMapKeys, find the existing map key attribute that matches its data.
+            // for each Attribute in the incomingAttributes, find the existing map key attribute that matches its data.
             // combine the column visibilities of the incoming attribute and the existing one, and set
             // the column visibility of the EXISTING map key to the new value.
             // Note that the hashCode and equals methods for the GroupingTypeAttribute will ignore the metadata (which contains the column visibility)
