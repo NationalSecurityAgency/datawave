@@ -87,7 +87,7 @@ public interface MarkingFunctions {
         public final Map<String,String> combine(Map<String,String>... markings) {
             // translate COLUMN_VISIBILITY values to ColumnVisibility, combine them and
             // return translated back to Map
-            return translateFromColumnVisibility(combine(Arrays.stream(markings).filter(m -> m.get(COLUMN_VISIBILITY) != null)
+            return translateFromColumnVisibility(combine(Arrays.stream(markings).filter(m -> m.containsKey(COLUMN_VISIBILITY))
                             .map(this::translateToColumnVisibility).collect(Collectors.toSet())));
         }
         
