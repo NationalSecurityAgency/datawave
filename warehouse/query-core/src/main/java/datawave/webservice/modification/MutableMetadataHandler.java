@@ -844,7 +844,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      */
     protected MetadataHelper getMetadataHelper(Connector con) throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
         Authorizations auths = con.securityOperations().getUserAuthorizations(con.whoami());
-        return metadataHelperFactory.createMetadataHelper().initialize(con, this.getMetadataTableName(), Collections.singleton(auths));
+        return metadataHelperFactory.createMetadataHelper(con, this.getMetadataTableName(), Collections.singleton(auths));
     }
     
     /**

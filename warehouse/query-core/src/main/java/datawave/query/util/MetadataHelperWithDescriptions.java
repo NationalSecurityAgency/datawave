@@ -26,14 +26,16 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -57,6 +59,7 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @EnableCaching
 @Component("metadataHelperWithDescriptions")
+@Scope("prototype")
 public class MetadataHelperWithDescriptions extends MetadataHelper {
     private static final Logger log = Logger.getLogger(MetadataHelperWithDescriptions.class);
     
@@ -65,48 +68,35 @@ public class MetadataHelperWithDescriptions extends MetadataHelper {
     @Inject
     private ResponseObjectFactory responseObjectFactory;
     
+    public MetadataHelperWithDescriptions(AllFieldMetadataHelper allFieldMetadataHelper, Collection<Authorizations> allMetadataAuths, Connector connector,
+                    String metadataTableName, Set<Authorizations> auths, Set<Authorizations> fullUserAuths) {
+        super(allFieldMetadataHelper, allMetadataAuths, connector, metadataTableName, auths, fullUserAuths);
+    }
+    
     /**
      * Create and instance of a metadata helper. this is for unit tests only
      * 
      * @param connector
      * @param metadataTableName
-     * @param auths
+     * @param allMetadataAuths
+     * @param fullUserAuths
      * @return the metadata helper
      */
     public static MetadataHelperWithDescriptions getInstance(Connector connector, String metadataTableName, Authorizations allMetadataAuths,
-                    Set<Authorizations> auths) {
-        MetadataHelperWithDescriptions mhwd = new MetadataHelperWithDescriptions();
-        mhwd.allFieldMetadataHelper = new AllFieldMetadataHelper();
-        mhwd.allFieldMetadataHelper.typeMetadataHelper = new TypeMetadataHelper();
-        mhwd.allFieldMetadataHelper.compositeMetadataHelper = new CompositeMetadataHelper();
-        mhwd.setAllMetadataAuths(Collections.singleton(allMetadataAuths));
+                    Set<Authorizations> fullUserAuths) {
+        Map<String,String> typeSubstitutions = new HashMap<>();
+        typeSubstitutions.put("datawave.data.type.DateType", "datawave.data.type.RawDateType");
+        Set<Authorizations> allMetadataAuthsSet = Collections.singleton(allMetadataAuths);
+        Collection<String> mergedAuths = MetadataHelper.getUsersMetadataAuthorizationSubset(fullUserAuths, allMetadataAuthsSet);
+        Set<Authorizations> authSubset = Collections.singleton(new Authorizations(mergedAuths.toArray(new String[0])));
+        TypeMetadataHelper typeMetadataHelper = new TypeMetadataHelper(typeSubstitutions, allMetadataAuthsSet, connector, metadataTableName, authSubset, false);
+        CompositeMetadataHelper compositeMetadataHelper = new CompositeMetadataHelper(connector, metadataTableName, authSubset);
+        AllFieldMetadataHelper allFieldMetadataHelper = new AllFieldMetadataHelper(typeMetadataHelper, compositeMetadataHelper, connector, metadataTableName,
+                        authSubset, fullUserAuths);
+        MetadataHelperWithDescriptions mhwd = new MetadataHelperWithDescriptions(allFieldMetadataHelper, allMetadataAuthsSet, connector, metadataTableName,
+                        authSubset, fullUserAuths);
         mhwd.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        return mhwd.initialize(connector, connector.getInstance(), metadataTableName, auths);
-    }
-    
-    public MetadataHelperWithDescriptions initialize(Connector connector, String metadataTableName, Set<Authorizations> auths) {
-        return initialize(connector, connector.getInstance(), metadataTableName, auths);
-    };
-    
-    /**
-     * Initializes the instance with a provided update interval.
-     * 
-     * @param connector
-     *            A Connector to Accumulo
-     * @param metadataTableName
-     *            The name of the DatawaveMetadata table
-     * @param auths
-     *            Any {@link Authorizations} to use
-     */
-    public MetadataHelperWithDescriptions initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths,
-                    boolean useSubstitutions) {
-        super.initialize(connector, instance, metadataTableName, auths, useSubstitutions);
-        return this;
-    }
-    
-    public MetadataHelperWithDescriptions initialize(Connector connector, Instance instance, String metadataTableName, Set<Authorizations> auths) {
-        super.initialize(connector, instance, metadataTableName, auths, false);
-        return this;
+        return mhwd;
     }
     
     /**
@@ -300,14 +290,5 @@ public class MetadataHelperWithDescriptions extends MetadataHelper {
     
     public ResponseObjectFactory getResponseObjectFactory() {
         return this.responseObjectFactory;
-    }
-    
-    /**
-     * Invalidates all elements in all internal caches
-     */
-    @CacheEvict(value = {"getMetadata"}, allEntries = true, cacheManager = "metadataHelperCacheManager")
-    public void evictCaches() {
-        log.debug("evictCaches");
-        super.evictCaches();
     }
 }

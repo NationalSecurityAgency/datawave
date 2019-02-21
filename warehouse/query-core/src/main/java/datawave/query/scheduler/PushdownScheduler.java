@@ -81,21 +81,13 @@ public class PushdownScheduler extends Scheduler {
     
     protected MetadataHelper metadataHelper;
     
-    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
-        this.config = config;
-        this.scannerFactory = scannerFactory;
-        customizedFunctionList = Lists.newArrayList();
-        metadataHelper = MetadataHelper.getInstance(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations());
-        Preconditions.checkNotNull(config.getConnector());
-    }
-    
     public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
-        this(config, scannerFactory, metaFactory.createMetadataHelper());
+        this(config, scannerFactory, metaFactory.createMetadataHelper(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations()));
     }
     
     protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
         this.config = config;
-        this.metadataHelper = helper.initialize(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations());
+        this.metadataHelper = helper;
         this.scannerFactory = scannerFactory;
         customizedFunctionList = Lists.newArrayList();
         Preconditions.checkNotNull(config.getConnector());

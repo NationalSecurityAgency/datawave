@@ -115,7 +115,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
     @Before
     public void setup() {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("metadatahelper.default.auths", "A,B,C,D");
+        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         
         // noinspection unchecked
         requestHeaders = PowerMock.createStrictMock(MultivaluedMap.class);

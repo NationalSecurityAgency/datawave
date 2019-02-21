@@ -8,6 +8,7 @@ import datawave.query.util.DateIndexTestIngest;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.MetadataHelperFactory;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -46,7 +47,7 @@ public class DateIndexQueryExpansionVisitorTest {
     
     protected ShardQueryLogic logic = null;
     
-    private MetadataHelper helper = MetadataHelper.getInstance();
+    private MetadataHelper helper;
     
     @BeforeClass
     public static void before() throws Exception {
@@ -57,6 +58,8 @@ public class DateIndexQueryExpansionVisitorTest {
     
     @Before
     public void setupTests() throws Exception {
+        
+        this.helper = new MetadataHelperFactory().createMetadataHelper(connector, DATE_INDEX_TABLE_NAME, Collections.singleton(auths));
         
         this.createTables();
         
