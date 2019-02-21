@@ -52,7 +52,7 @@ public class ShardedTableMapFile {
     public static final String SHARDED_MAP_FILE_PATHS_RAW = "shardedMap.file.paths.raw";
     public static final String SHARD_VALIDATION_ENABLED = "shardedMap.validation.enabled";
     public static final String MAX_SHARDS_PER_TSERVER = "shardedMap.max.shards.per.tserver";
-
+    
     public static void setupFile(Configuration conf) throws IOException, URISyntaxException, AccumuloSecurityException, AccumuloException {
         // want validation turned off by default
         boolean doValidation = conf.getBoolean(ShardedTableMapFile.SHARD_VALIDATION_ENABLED, false);
@@ -97,7 +97,7 @@ public class ShardedTableMapFile {
         // assume true unless proven otherwise
         boolean isValid = true;
         int maxShardsPerTserver = conf.getInt(MAX_SHARDS_PER_TSERVER, 1);
-
+        
         for (int daysAgo = 0; daysAgo <= daysToVerify; daysAgo++) {
             long inMillis = System.currentTimeMillis() - (daysAgo * DateUtils.MILLIS_PER_DAY);
             String datePrefix = DateHelper.format(inMillis);
@@ -169,13 +169,13 @@ public class ShardedTableMapFile {
                 }
                 // increment here before checking
                 cnt.increment();
-
+                
                 // if shard is assigned to more tservers than allowed, then the shards are not balanced
                 if (cnt.intValue() > maxShardsPerTserver) {
                     log.warn(cnt.toInteger() + " Shards for " + datePrefix + " assigned to tablet " + value);
                     dateIsBalanced = false;
                 }
-
+                
                 tabletsSeenForDate.put(value, cnt);
             }
         }
@@ -335,7 +335,7 @@ public class ShardedTableMapFile {
     public static Map<Text,String> getLocations(Logger log, AccumuloHelper accumuloHelper, String shardedTableName) {
         // split (endRow) -> String location mapping
         Map<Text,String> splitToLocation = new TreeMap<>();
-
+        
         boolean keepRetrying = true;
         int attempts = 0;
         while (keepRetrying && attempts < MAX_RETRY_ATTEMPTS) {
@@ -358,7 +358,7 @@ public class ShardedTableMapFile {
                 UtilWaitThread.sleep(3000);
             }
         }
-
+        
         return splitToLocation;
     }
     
