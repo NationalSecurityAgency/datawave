@@ -40,10 +40,6 @@
                         <groupId>com.google.guava</groupId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>hadoop-hdfs</artifactId>
-                        <groupId>org.apache.hadoop</groupId>
-                    </exclusion>
-                    <exclusion>
                         <artifactId>hadoop-mapreduce-client-app</artifactId>
                         <groupId>org.apache.hadoop</groupId>
                     </exclusion>
