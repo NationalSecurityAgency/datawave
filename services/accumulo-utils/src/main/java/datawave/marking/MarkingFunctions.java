@@ -79,8 +79,8 @@ public interface MarkingFunctions {
             
             // filter out any empty expressions, then flatten each one (to de-dupe) and concatenate with '&'
             // flatten the final combined ColumnVisibility and use that to make the ColumnVisibility to return
-            return new ColumnVisibility(new ColumnVisibility(expressions.stream().filter(viz -> viz.flatten().length > 0)
-                            .map(viz -> "(" + new String(viz.flatten(), UTF_8) + ")").collect(Collectors.joining("&")).getBytes(UTF_8)).flatten());
+            return new ColumnVisibility(new ColumnVisibility(expressions.stream().map(ColumnVisibility::flatten).filter(b -> b.length > 0)
+                            .map(b -> "(" + new String(b, UTF_8) + ")").collect(Collectors.joining("&")).getBytes(UTF_8)).flatten());
         }
         
         @Override
