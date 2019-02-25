@@ -355,7 +355,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 
                 logicConfigurationList.add(d);
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                log.error("Error setting query logic description", e);
             }
         }
         Collections.sort(logicConfigurationList, Comparator.comparing(QueryLogicDescription::getName));
@@ -542,7 +542,7 @@ public class QueryExecutorBean implements QueryExecutor {
         } catch (DatawaveWebApplicationException e) {
             throw e;
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error("Error accessing optional query parameters", e);
             QueryException qe = new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
@@ -625,7 +625,7 @@ public class QueryExecutorBean implements QueryExecutor {
                                 queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
                             }
                         } catch (Exception e) {
-                            log.error(e.getMessage());
+                            log.error("Error accessing query selector", e);
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -1028,7 +1028,7 @@ public class QueryExecutorBean implements QueryExecutor {
                                 queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
                             }
                         } catch (Exception e) {
-                            log.error(e.getMessage());
+                            log.error("Error accessing query selector", e);
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -1824,7 +1824,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     try {
                         metrics.updateMetric(query.getMetric());
                     } catch (Exception e1) {
-                        log.error(e1.getMessage());
+                        log.error("Error updating query metrics", e1);
                     }
                 }
             }
@@ -1843,7 +1843,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     try {
                         metrics.updateMetric(query.getMetric());
                     } catch (Exception e1) {
-                        log.error(e1.getMessage());
+                        log.error("Error updating query metrics", e1);
                     }
                 }
             }
@@ -1946,7 +1946,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while closing query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
@@ -1999,7 +1999,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while closing query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed.");
@@ -2089,7 +2089,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while canceling query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
@@ -2144,7 +2144,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     logic.close();
                 } catch (Exception e) {
-                    log.error("Exception occured while canceling query logic; may be innocuous if scanners were running.", e);
+                    log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
                 connectionFactory.returnConnection(tuple.getSecond());
                 response.addMessage(id + " closed before create completed due to cancel.");
@@ -3096,7 +3096,7 @@ public class QueryExecutorBean implements QueryExecutor {
             try {
                 metrics.updateMetric(rq.getMetric());
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                log.error("Error updating query metric", e);
             }
             
             boolean done = false;
@@ -3145,7 +3145,7 @@ public class QueryExecutorBean implements QueryExecutor {
                         try {
                             metrics.updateMetric(rq.getMetric());
                         } catch (Exception e) {
-                            log.error(e.getMessage(), e);
+                            log.error("Error updating query metric", e);
                         }
                     }
                 }
@@ -3155,7 +3155,7 @@ public class QueryExecutorBean implements QueryExecutor {
             try {
                 close(rq);
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                log.error("Error closing query", e);
             }
         }
         
