@@ -879,13 +879,12 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
                 queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields);
             } catch (CannotExpandUnfieldedTermFatalException e) {
-                // The visitor will only throw this if we cannot expand a term that is not nested in an or.
-                // Hence this query would return no results.
+                // The visitor will only throw this if we cannot expand a term from some critical reason
                 stopwatch.stop();
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ",
                                 queryData.getQuery()));
                 log.info(qe);
-                throw new NoResultsException(qe);
+                throw new DatawaveFatalQueryException(qe);
             } catch (InstantiationException | TableNotFoundException | IllegalAccessException e) {
                 stopwatch.stop();
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
@@ -905,9 +904,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             // Verify that the query does not contain fields we've never seen
             // before
             Set<String> nonexistentFields = FieldMissingFromSchemaVisitor.getNonExistentFields(metadataHelper, queryTree, config.getDatatypeFilter(),
-                            Sets.newHashSet(QueryOptions.DEFAULT_DATATYPE_FIELDNAME, Constants.ANY_FIELD));// ,
-                                                                                                           // "filter",
-                                                                                                           // "countOf"));
+                            Sets.newHashSet(QueryOptions.DEFAULT_DATATYPE_FIELDNAME, Constants.ANY_FIELD, Constants.NO_FIELD));
             if (log.isDebugEnabled()) {
                 log.debug("Testing for non-existent fields, found: " + nonexistentFields.size());
             }

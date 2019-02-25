@@ -198,8 +198,10 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
             throw new InvalidFieldIndexQueryFatalQueryException(qe);
         }
         try {
-            if (Constants.ANY_FIELD.equals(fieldName)) {
-                return null;
+            // in the case of an ANY_FIELD or NO_FIELD, the query could not be exapnded against the index and hence this
+            // term has no results. Leave it in the query as such.
+            if (Constants.ANY_FIELD.equals(fieldName) || Constants.NO_FIELD.equals(fieldName)) {
+                return copy(node);
             }
             
             if (!this.helper.isIndexed(fieldName, config.getDatatypeFilter())) {

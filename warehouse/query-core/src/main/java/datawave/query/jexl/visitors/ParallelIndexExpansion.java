@@ -46,6 +46,7 @@ import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
@@ -616,20 +617,19 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             // If we have no children, it's impossible to find any records, so this query returns no results
             if (fieldsToValues.isEmpty()) {
                 
-                // When we're not within an Or, we cannot proceed with this query.
-                // We can proceed an in Or because we can trim this term out of the query
-                // The And (or single term) implies that all results must have this term,
-                // but we don't know which field the term actually appears in.
-                if (!JexlASTHelper.isWithinOr(node)) {
-                    log.warn("Could not convert an 'anyfield' node to an 'or' node");
-                    throw new CannotExpandUnfieldedTermFatalException("Did not find any matches in index for the expansion of unfielded terms");
-                }
-                
                 if (log.isDebugEnabled()) {
                     try {
-                        log.debug("Retaining _ANYFIELD_ node because of no mappings for {\"term\": \"" + JexlASTHelper.getLiteral(node) + "\"}");
+                        log.debug("Failed to expand _ANYFIELD_ node because of no mappings for {\"term\": \"" + JexlASTHelper.getLiteral(node) + "\"}");
                     } catch (Exception ex) {
                         // it's just a debug statement
+                    }
+                }
+                
+                // simply replace the _ANYFIELD_ with _NOFIELD_ denoting that there was no expansion. This will naturally evaluate correctly when applying
+                // the query against the document
+                for (ASTIdentifier id : JexlASTHelper.getIdentifiers(node)) {
+                    if (Constants.ANY_FIELD.equals(id.image)) {
+                        id.image = Constants.NO_FIELD;
                     }
                 }
                 newNode = node;

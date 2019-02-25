@@ -235,18 +235,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        
-        concurrentExecution();
-        try {
-            Object obj = expandFieldNames(node, false);
-            concurrentExecution();
-            return obj;
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            log.error(e);
-            ASTOrNode emptyOrNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            emptyOrNode.jjtSetParent(node.jjtGetParent());
-            return emptyOrNode;
-        }
+        return expandFieldNames(node, false);
     }
     
     @Override
@@ -256,17 +245,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        
-        concurrentExecution();
-        try {
-            Object obj = expandFieldNames(node, false);
-            concurrentExecution();
-            return obj;
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            ASTOrNode emptyOrNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            emptyOrNode.jjtSetParent(node.jjtGetParent());
-            return emptyOrNode;
-        }
+        return expandFieldNames(node, false);
     }
     
     @Override
@@ -291,18 +270,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        
-        concurrentExecution();
-        try {
-            Object obj = super.visit(node, data);
-            concurrentExecution();
-            return obj;
-        } catch (CannotExpandUnfieldedTermFatalException e) {
-            log.error(e);
-            ASTOrNode emptyOrNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            emptyOrNode.jjtSetParent(node.jjtGetParent());
-            return emptyOrNode;
-        }
+        return super.visit(node, data);
     }
     
     @Override
