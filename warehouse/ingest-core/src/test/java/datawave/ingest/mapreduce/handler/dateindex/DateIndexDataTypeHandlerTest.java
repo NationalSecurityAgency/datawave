@@ -16,6 +16,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.table.config.DateIndexTableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 
+import datawave.util.TableNames;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -48,7 +49,7 @@ public class DateIndexDataTypeHandlerTest {
         conf.set("testdatatype.handler.classes", DateIndexDataTypeHandler.class.getName());
         
         // date index configuration
-        conf.set("date.index.table.name", "DateIndex");
+        conf.set("date.index.table.name", TableNames.DATE_INDEX_TABLE_NAME);
         conf.set("date.index.table.loader.priority", "30");
         conf.set("DateIndex.table.config.class", DateIndexTableConfigHelper.class.getName());
         conf.set("date.index.table.locality.groups", "activity:ACTIVITY,loaded:LOADED");
@@ -108,7 +109,7 @@ public class DateIndexDataTypeHandlerTest {
         for (BulkIngestKey bulkIngestKey : mutations.keySet()) {
             Assert.assertEquals(1, mutations.get(bulkIngestKey).size());
             Value value = mutations.get(bulkIngestKey).iterator().next();
-            Assert.assertEquals("DateIndex", bulkIngestKey.getTableName().toString());
+            Assert.assertEquals(TableNames.DATE_INDEX_TABLE_NAME, bulkIngestKey.getTableName().toString());
             Key key = bulkIngestKey.getKey();
             Assert.assertEquals(expectedValue, BitSet.valueOf(value.get()));
             if ("ACTIVITY".equals(key.getColumnFamily().toString())) {
@@ -166,7 +167,7 @@ public class DateIndexDataTypeHandlerTest {
         for (BulkIngestKey bulkIngestKey : mutations.keySet()) {
             Assert.assertEquals(1, mutations.get(bulkIngestKey).size());
             Value value = mutations.get(bulkIngestKey).iterator().next();
-            Assert.assertEquals("DateIndex", bulkIngestKey.getTableName().toString());
+            Assert.assertEquals(TableNames.DATE_INDEX_TABLE_NAME, bulkIngestKey.getTableName().toString());
             Key key = bulkIngestKey.getKey();
             if ("ACTIVITY".equals(key.getColumnFamily().toString())) {
                 BitSet expectedValue = DateIndexUtil.merge(DateIndexUtil.getBits(shard1), DateIndexUtil.getBits(shard2));

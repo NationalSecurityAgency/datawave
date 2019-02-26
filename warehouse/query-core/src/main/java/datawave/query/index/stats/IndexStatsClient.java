@@ -20,6 +20,7 @@ import datawave.core.iterators.filter.CsvKeyFilter;
 import datawave.iterators.IteratorSettingHelper;
 import datawave.query.Constants;
 
+import datawave.util.TableNames;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -49,7 +50,7 @@ public class IndexStatsClient {
     private DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
     
     public IndexStatsClient(Connector connector) {
-        this(connector, "shardIndexStats");
+        this(connector, TableNames.INDEX_STATS_TABLE_NAME);
     }
     
     public IndexStatsClient(Connector connector, String tableName) {

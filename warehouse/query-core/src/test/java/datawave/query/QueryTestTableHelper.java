@@ -5,6 +5,7 @@ import datawave.ingest.table.config.MetadataTableConfigHelper;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.util.TableNames;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -34,11 +35,11 @@ import java.util.concurrent.TimeUnit;
 public final class QueryTestTableHelper {
     
     public static final String METADATA_TABLE_NAME = "metadata";
-    public static final String DATE_INDEX_TABLE_NAME = "dateIndex";
+    public static final String DATE_INDEX_TABLE_NAME = TableNames.DATE_INDEX_TABLE_NAME;
     public static final String LOAD_DATES_METADATA_TABLE_NAME = "LoadDates";
-    public static final String SHARD_TABLE_NAME = "shard";
-    public static final String SHARD_INDEX_TABLE_NAME = "shardIndex";
-    public static final String SHARD_RINDEX_TABLE_NAME = "shardReverseIndex";
+    public static final String SHARD_TABLE_NAME = TableNames.SHARD_TABLE_NAME;
+    public static final String SHARD_INDEX_TABLE_NAME = TableNames.SHARD_INDEX_TABLE_NAME;
+    public static final String SHARD_RINDEX_TABLE_NAME = TableNames.SHARD_RINDEX_TABLE_NAME;
     public static final String SHARD_DICT_INDEX_NAME = "shardTermDictionary";
     public static final String MODEL_TABLE_NAME = "DatawaveMetadata";
     

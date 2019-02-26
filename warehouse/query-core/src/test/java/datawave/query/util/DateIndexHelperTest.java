@@ -3,6 +3,7 @@ package datawave.query.util;
 import com.github.benmanes.caffeine.cache.Cache;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.MockAccumuloRecordWriter;
+import datawave.util.TableNames;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -43,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:/MetadataHelperContext.xml", "classpath:/CacheContext.xml"})
 public class DateIndexHelperTest implements ApplicationContextAware {
-    private static final String DATE_INDEX_TABLE_NAME = "dateIndex";
+    private static final String DATE_INDEX_TABLE_NAME = TableNames.DATE_INDEX_TABLE_NAME;
     private static Connector connector = null;
     private static final Logger log = Logger.getLogger(DateIndexHelperTest.class);
     private static MockAccumuloRecordWriter recordWriter;

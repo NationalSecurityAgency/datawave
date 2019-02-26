@@ -21,6 +21,7 @@ import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
 
+import datawave.util.TableNames;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.fs.Path;
@@ -40,9 +41,9 @@ import com.google.common.collect.Multimap;
  */
 public class ColumnBasedHandlerTestUtil {
     
-    public static final Text shardTableName = new Text("shard");
-    public static final Text shardIndexTableName = new Text("shardIndex");
-    public static final Text shardReverseIndexTableName = new Text("shardReverseIndex");
+    public static final Text shardTableName = new Text(TableNames.SHARD_TABLE_NAME);
+    public static final Text shardIndexTableName = new Text(TableNames.SHARD_INDEX_TABLE_NAME);
+    public static final Text shardReverseIndexTableName = new Text(TableNames.SHARD_RINDEX_TABLE_NAME);
     public static final Text edgeTableName = new Text("edge");
     public static final String NB = "\u0000";
     

@@ -31,6 +31,7 @@ import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.util.TableNames;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -345,7 +346,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         
         for (Entry<String,String> termEntry : config.getNormalizedTerms().entries()) {
             // scan the table
-            BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, "shardIndex",
+            BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, TableNames.SHARD_INDEX_TABLE_NAME,
                             Collections.singleton(config.getRangesForTerms().get(termEntry)), Collections.singleton(termEntry.getValue()),
                             Collections.emptySet(), config.getTableName().equals(config.getReverseIndexTableName()), false);
             
@@ -356,7 +357,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
         
         for (Entry<String,String> patternEntry : config.getNormalizedPatterns().entries()) {
             Entry<Range,Boolean> rangeEntry = config.getRangesForPatterns().get(patternEntry);
-            String tName = rangeEntry.getValue() ? "shardReverseIndex" : "shardIndex";
+            String tName = rangeEntry.getValue() ? TableNames.SHARD_RINDEX_TABLE_NAME : TableNames.SHARD_INDEX_TABLE_NAME;
             
             // scan the table
             BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, tName, Collections.singleton(rangeEntry.getKey()),

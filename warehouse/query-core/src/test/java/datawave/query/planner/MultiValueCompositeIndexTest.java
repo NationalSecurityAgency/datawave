@@ -2,6 +2,7 @@ package datawave.query.planner;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Table;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.data.type.GeometryType;
@@ -27,6 +28,7 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.util.TableNames;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
@@ -83,12 +85,12 @@ import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 public class MultiValueCompositeIndexTest {
     
     private static final int NUM_SHARDS = 241;
-    private static final String SHARD_TABLE_NAME = "shard";
-    private static final String KNOWLEDGE_SHARD_TABLE_NAME = "knowledgeShard";
-    private static final String ERROR_SHARD_TABLE_NAME = "errorShard";
-    private static final String SHARD_INDEX_TABLE_NAME = "shardIndex";
-    private static final String SHARD_REVERSE_INDEX_TABLE_NAME = "shardReverseIndex";
-    private static final String METADATA_TABLE_NAME = "DatawaveMetadata";
+    private static final String SHARD_TABLE_NAME = TableNames.SHARD_TABLE_NAME;
+    private static final String KNOWLEDGE_SHARD_TABLE_NAME = TableNames.KNOWLEDGE_TABLE_NAME;
+    private static final String ERROR_SHARD_TABLE_NAME = TableNames.ERROR_SHARD_TABLE_NAME;
+    private static final String SHARD_INDEX_TABLE_NAME = TableNames.SHARD_INDEX_TABLE_NAME;
+    private static final String SHARD_REVERSE_INDEX_TABLE_NAME = TableNames.SHARD_RINDEX_TABLE_NAME;
+    private static final String METADATA_TABLE_NAME = TableNames.METADATA_TABLE_NAME;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
     

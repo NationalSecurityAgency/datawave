@@ -1,5 +1,6 @@
 package datawave.query.util;
 
+import datawave.util.TableNames;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -14,16 +15,14 @@ import java.util.concurrent.TimeUnit;
 
 public class DateIndexTestIngest {
     
-    public static final String DATE_INDEX_TABLE_NAME = "dateIndex";
+    public static final String DATE_INDEX_TABLE_NAME = TableNames.DATE_INDEX_TABLE_NAME;
     
     protected static final String datatype = "test";
     protected static final ColumnVisibility viz = new ColumnVisibility("HUSH");
     
     protected SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
     
-    protected String[] rowValues = {"20100704", "20100703"
-    
-    };
+    protected String[] rowValues = {"20100704", "20100703"};
     
     /**
      *

@@ -9,6 +9,7 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.util.TableNames;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -43,7 +44,7 @@ public class DateIndexQueryExpansionVisitorTest {
     
     private static Connector connector = null;
     
-    public static final String DATE_INDEX_TABLE_NAME = "dateIndex";
+    public static final String DATE_INDEX_TABLE_NAME = TableNames.DATE_INDEX_TABLE_NAME;
     
     protected ShardQueryLogic logic = null;
     

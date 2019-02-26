@@ -1,5 +1,7 @@
 package datawave.metrics.config;
 
+import datawave.util.TableNames;
+
 import java.util.concurrent.TimeUnit;
 
 public class MetricsConfig {
@@ -46,7 +48,7 @@ public class MetricsConfig {
     public static final String DEFAULT_HOURLY_METRICS_SUMMARY_TABLE = "DatawaveHourlyMetrics";
     
     public static final String ERROR_SHARD_TABLE = "metrics.summary.tables.error-shard";
-    public static final String DEFAULT_ERROR_SHARD_TABLE = "errorShard";
+    public static final String DEFAULT_ERROR_SHARD_TABLE = TableNames.ERROR_SHARD_TABLE_NAME;
     
     public static final String BAD_SELECTOR_TABLE = "metrics.summary.tables.bad-selector";
     public static final String DEFAULT_BAD_SELECTOR_TABLE = "BadSelector";

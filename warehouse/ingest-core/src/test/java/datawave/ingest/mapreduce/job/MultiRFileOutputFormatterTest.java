@@ -12,6 +12,7 @@ import java.util.Set;
 
 import datawave.common.test.logging.CommonTestAppender;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.util.TableNames;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
@@ -375,19 +376,19 @@ public class MultiRFileOutputFormatterTest {
             @Override
             protected Set<String> getTableList() {
                 Set<String> tables = new HashSet<>();
-                tables.add("shard");
-                tables.add("shardIndex");
+                tables.add(TableNames.SHARD_TABLE_NAME);
+                tables.add(TableNames.SHARD_INDEX_TABLE_NAME);
                 return tables;
             }
             
             @Override
             protected void setTableIdsAndConfigs() {
                 tableConfigs = new HashMap<>();
-                tableConfigs.put("shard", null);
-                tableConfigs.put("shardIndex", null);
+                tableConfigs.put(TableNames.SHARD_TABLE_NAME, null);
+                tableConfigs.put(TableNames.SHARD_INDEX_TABLE_NAME, null);
                 tableIds = new HashMap<>();
-                tableIds.put("shard", "1");
-                tableIds.put("shardIndex", "2");
+                tableIds.put(TableNames.SHARD_TABLE_NAME, "1");
+                tableIds.put(TableNames.SHARD_INDEX_TABLE_NAME, "2");
             }
             
             @Override
@@ -446,7 +447,7 @@ public class MultiRFileOutputFormatterTest {
         formatter = createFormatter();
         conf = new Configuration();
         conf.set("mapred.output.dir", "/tmp");
-        conf.set(MultiRFileOutputFormatter.CONFIGURED_TABLE_NAMES, "shard,shardIndex");
+        conf.set(MultiRFileOutputFormatter.CONFIGURED_TABLE_NAMES, TableNames.SHARD_TABLE_NAME + ',' + TableNames.SHARD_INDEX_TABLE_NAME);
         Map<String,Path> shardedTableMapFiles = new HashMap<>();
         shardedTableMapFiles.put("shard", new Path("/tmp/shard"));
         ShardedTableMapFile.addToConf(conf, shardedTableMapFiles);
@@ -548,7 +549,7 @@ public class MultiRFileOutputFormatterTest {
     }
     
     private void writeShardEntry(RecordWriter<BulkIngestKey,Value> writer, int shardId) throws IOException, InterruptedException {
-        writer.write(new BulkIngestKey(new Text("shard"), new Key("20100101_" + shardId, "bla", "bla")), new Value(new byte[0]));
+        writer.write(new BulkIngestKey(new Text(TableNames.SHARD_TABLE_NAME), new Key("20100101_" + shardId, "bla", "bla")), new Value(new byte[0]));
     }
     
     private void assertNumFileNames(int expectedNumFiles) {

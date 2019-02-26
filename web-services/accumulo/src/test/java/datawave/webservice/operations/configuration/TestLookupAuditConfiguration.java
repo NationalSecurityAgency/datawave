@@ -3,6 +3,7 @@ package datawave.webservice.operations.configuration;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
+import datawave.util.TableNames;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import org.junit.Test;
 
@@ -18,8 +19,8 @@ public class TestLookupAuditConfiguration {
     @Test
     public void testNoAuditOfColFamInTable() {
         
-        LookupAuditConfiguration l2 = new LookupAuditConfiguration("shard", "[0-9]{8}_[0-9]+", "d", ".*CONTENT", AuditType.NONE);
-        assertTrue(l2.isMatch("shard", "20120112_100", "d", "datatype\\x00-103s6q.-y9weab.-50ho6n\\x00CONTENT"));
-        assertFalse(l2.isMatch("shard", "20120112_100", null, null));
+        LookupAuditConfiguration l2 = new LookupAuditConfiguration(TableNames.SHARD_TABLE_NAME, "[0-9]{8}_[0-9]+", "d", ".*CONTENT", AuditType.NONE);
+        assertTrue(l2.isMatch(TableNames.SHARD_TABLE_NAME, "20120112_100", "d", "datatype\\x00-103s6q.-y9weab.-50ho6n\\x00CONTENT"));
+        assertFalse(l2.isMatch(TableNames.SHARD_TABLE_NAME, "20120112_100", null, null));
     }
 }

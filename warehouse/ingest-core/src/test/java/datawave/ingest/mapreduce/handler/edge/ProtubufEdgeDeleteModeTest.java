@@ -26,6 +26,7 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
 import datawave.ingest.time.Now;
 import datawave.metadata.protobuf.EdgeMetadata;
+import datawave.util.TableNames;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -388,9 +389,6 @@ public class ProtubufEdgeDeleteModeTest {
     
     public static class HandlerTestUtil {
         
-        public static final Text shardTableName = new Text("shard");
-        public static final Text shardIndexTableName = new Text("shardIndex");
-        public static final Text shardReverseIndexTableName = new Text("shardReverseIndex");
         public static final Text edgeTableName = new Text("edge");
         public static final String NB = "\u0000";
         
@@ -462,7 +460,8 @@ public class ProtubufEdgeDeleteModeTest {
                         log.info(keyString.trim());
                     }
                 }
-                Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
+                Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(TableNames.SHARD_TABLE_NAME),
+                                countMap.get(edgeTableName)));
             }
         }
         
