@@ -1,5 +1,6 @@
 package datawave.query;
 
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetupHelper;
@@ -202,14 +203,14 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     public void testRegexZeroResults() throws Exception {
         String phrase = RE_OP + "'zero.*'";
         for (TestCities city : TestCities.values()) {
-            String qCity = CityField.CITY.name() + EQ_OP + city.name();
+            String qCity = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'";
             String query = qCity + AND_OP + Constants.ANY_FIELD + phrase;
             String expect = qCity + AND_OP + this.dataManager.convertAnyField(phrase);
             runTest(query, expect);
         }
     }
     
-    @Test
+    @Test(expected = DatawaveFatalQueryException.class)
     public void testRegexWithFIAndRI() throws Exception {
         String phrase = RE_OP + "'.*iss.*'";
         String query = Constants.ANY_FIELD + phrase;

@@ -69,7 +69,6 @@ public class IndexQueryPlanner extends DefaultQueryPlanner {
     protected ASTJexlScript limitQueryTree(ASTJexlScript script, ShardQueryConfiguration config) throws NoResultsException {
         // Assert that all of the terms in the query are indexed (so we can
         // completely use the field index)
-        // Also removes any spurious _ANYFIELD_ nodes left in from upstream
         try {
             return AllTermsIndexedVisitor.isIndexed(script, config, metadataHelper);
         } catch (CannotExpandUnfieldedTermFatalException e) {
