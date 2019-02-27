@@ -421,7 +421,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     @Override
     public ScannerStream visit(ASTEQNode node, Object data) {
         
-        if (isUnfielded(node)) {
+        if (isUnOrNotFielded(node)) {
             return ScannerStream.noData(node);
         }
         
@@ -588,7 +588,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.unindexed(node);
         }
         
-        if (isUnfielded(node)) {
+        if (isUnOrNotFielded(node)) {
             return ScannerStream.noData(node);
         }
         
@@ -613,10 +613,10 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return ScannerStream.delayedExpression(node);
     }
     
-    private boolean isUnfielded(JexlNode node) {
+    private boolean isUnOrNotFielded(JexlNode node) {
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
-            if (identifier.image.equals(Constants.ANY_FIELD)) {
+            if (identifier.image.equals(Constants.ANY_FIELD) || identifier.image.equals(Constants.NO_FIELD)) {
                 return true;
             }
         }
@@ -627,7 +627,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
             try {
-                if (!identifier.image.equals(Constants.ANY_FIELD)) {
+                if (!(identifier.image.equals(Constants.ANY_FIELD) || identifier.image.equals(Constants.NO_FIELD))) {
                     if (!metadataHelper.isIndexed(JexlASTHelper.deconstructIdentifier(identifier), config.getDatatypeFilter())) {
                         return true;
                     }
@@ -653,7 +653,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        if (isUnfielded(node)) {
+        if (isUnOrNotFielded(node)) {
             return ScannerStream.noData(node);
         }
         
@@ -671,7 +671,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        if (isUnfielded(node)) {
+        if (isUnOrNotFielded(node)) {
             return ScannerStream.noData(node);
         }
         
@@ -689,7 +689,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        if (isUnfielded(node)) {
+        if (isUnOrNotFielded(node)) {
             return ScannerStream.noData(node);
         }
         
@@ -706,7 +706,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     @Override
     public Object visit(ASTGENode node, Object data) {
-        if (isUnfielded(node)) {
+        if (isUnOrNotFielded(node)) {
             return ScannerStream.noData(node);
         }
         

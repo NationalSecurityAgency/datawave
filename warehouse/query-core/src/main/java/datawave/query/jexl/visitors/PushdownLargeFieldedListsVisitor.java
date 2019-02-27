@@ -100,7 +100,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             
             // if "OTHER_NODES", then simply add the subset back into the children list
             // or if "_ANYFIELD_" , then simply add the subset back into the children list
-            if (OTHER_NODES.equals(field) || Constants.ANY_FIELD.equals(field)) {
+            if (OTHER_NODES.equals(field) || Constants.ANY_FIELD.equals(field) || Constants.NO_FIELD.equals(field)) {
                 children.addAll(subsetChildrenCopies);
             }
             // if past our threshold, then add a ExceededValueThresholdMarker with an OR of this subset to the children list
