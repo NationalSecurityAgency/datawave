@@ -163,14 +163,10 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             Entry<Key,Document> next;
             
-            Key lastKey;
-            
             @Override
             public boolean hasNext() {
                 for (int i = 0; i < max && in.hasNext(); i++) {
                     Entry<Key,Document> lastEntry = in.next();
-                    // save the last key so I will return it with the flushed Entry<Key,Document>
-                    lastKey = lastEntry.getKey();
                     GroupingTransform.this.apply(lastEntry);
                 }
                 next = GroupingTransform.this.flush();
@@ -180,8 +176,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             @Override
             public Entry<Key,Document> next() {
                 if (flatten) {
-                    log.trace("next has key: {} but I will use key: {}", next.getKey(), lastKey);
-                    return new AbstractMap.SimpleEntry<>(lastKey, next.getValue());
+                    return new AbstractMap.SimpleEntry<>(next.getKey(), next.getValue());
                 } else {
                     // web server will aggregate the visibilities from the Attributes
                     // and set the Document's visibility to that aggregation
@@ -190,7 +185,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     documentToReturn.setColumnVisibility(combine(documentToReturn.getAttributes().stream().filter(attr -> attr != null)
                                     .map(attr -> attr.getColumnVisibility()).collect(Collectors.toSet())));
                     
-                    return new AbstractMap.SimpleEntry<>(lastKey, documentToReturn);
+                    return new AbstractMap.SimpleEntry<>(next.getKey(), documentToReturn);
                 }
             }
         };
@@ -219,6 +214,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 }
                 // grab a key from those saved during getListKeyCounts
                 Assert.notEmpty(keys, "no available keys for grouping results");
+                // use the last (most recent) key so a new iterator will know where to start
                 Key docKey = keys.get(keys.size() - 1);
                 Document d = new Document(docKey, true);
                 d.setColumnVisibility(columnVisibility);
@@ -240,6 +236,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             Document d = documents.pop();
             Key key;
             if (keys.size() > 0 && flatten) {
+                // use the last (most recent) key so a new iterator will know where to start
                 key = keys.get(keys.size() - 1);
             } else {
                 key = d.getMetadata();
