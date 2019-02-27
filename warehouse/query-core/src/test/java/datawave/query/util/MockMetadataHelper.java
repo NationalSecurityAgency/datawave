@@ -15,7 +15,7 @@ import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.model.QueryModel;
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -61,12 +61,12 @@ public class MockMetadataHelper extends MetadataHelper {
     };
     
     public MockMetadataHelper() {
-        super(createAllFieldMetadataHelper(getConnector()), Collections.emptySet(), getConnector(), TableNames.METADATA_TABLE_NAME, Collections.emptySet(),
+        super(createAllFieldMetadataHelper(getConnector()), Collections.emptySet(), getConnector(), TableName.METADATA, Collections.emptySet(),
                         Collections.emptySet());
     }
     
     private static AllFieldMetadataHelper createAllFieldMetadataHelper(Connector connector) {
-        final String metadataTable = TableNames.METADATA_TABLE_NAME;
+        final String metadataTable = TableName.METADATA;
         final Set<Authorizations> allMetadataAuths = Collections.emptySet();
         final Set<Authorizations> auths = Collections.emptySet();
         TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, connector, metadataTable, auths, false);

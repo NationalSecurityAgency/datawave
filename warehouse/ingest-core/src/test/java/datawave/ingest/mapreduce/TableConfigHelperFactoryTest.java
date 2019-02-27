@@ -3,7 +3,7 @@ package datawave.ingest.mapreduce;
 import datawave.ingest.mapreduce.job.TableConfigHelperFactory;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.mock.MockInstance;
@@ -25,7 +25,7 @@ public class TableConfigHelperFactoryTest {
     private Connector connector;
     private TableOperations tops;
     
-    private static final String SHARD_TABLE_NAME = TableNames.SHARD_TABLE_NAME;
+    private static final String SHARD_TABLE_NAME = TableName.SHARD;
     private static final String TEST_SHARD_TABLE_NAME = "testShard";
     
     @Before

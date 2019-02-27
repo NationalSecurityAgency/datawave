@@ -21,7 +21,7 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -126,12 +126,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
      */
     private int geoWaveMaxEnvelopes = 4;
-    private String shardTableName = TableNames.SHARD_TABLE_NAME;
-    private String indexTableName = TableNames.SHARD_INDEX_TABLE_NAME;
-    private String reverseIndexTableName = TableNames.SHARD_RINDEX_TABLE_NAME;
-    private String metadataTableName = TableNames.METADATA_TABLE_NAME;
-    private String dateIndexTableName = TableNames.DATE_INDEX_TABLE_NAME;
-    private String indexStatsTableName = TableNames.INDEX_STATS_TABLE_NAME;
+    private String shardTableName = TableName.SHARD;
+    private String indexTableName = TableName.SHARD_INDEX;
+    private String reverseIndexTableName = TableName.SHARD_RINDEX;
+    private String metadataTableName = TableName.METADATA;
+    private String dateIndexTableName = TableName.DATE_INDEX;
+    private String indexStatsTableName = TableName.INDEX_STATS;
     private String defaultDateTypeName = "EVENT";
     // should we cleanup the shards and days hints that are sent to the tservers?
     private boolean cleanupShardsAndDaysQueryHints = true;

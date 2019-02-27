@@ -8,7 +8,7 @@ import datawave.query.index.stats.IndexStatsRecord;
 import datawave.query.index.stats.IndexStatsSummingIterator;
 import datawave.query.index.stats.MinMaxIterator;
 import datawave.security.util.ScannerHelper;
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
@@ -122,7 +122,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
         
         StatsMonkey monkey = new StatsMonkey();
         monkey.con = connector;
-        monkey.table = TableNames.INDEX_STATS_TABLE_NAME;
+        monkey.table = TableName.INDEX_STATS;
         List<FieldStat> stats = monkey.getStat(fields, qConf.getDatatypeFilter(), qConf.getBeginDate(), qConf.getEndDate());
         this.iterator = stats.iterator();
     }

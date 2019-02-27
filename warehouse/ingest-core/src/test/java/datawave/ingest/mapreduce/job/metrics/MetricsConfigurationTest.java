@@ -1,7 +1,7 @@
 package datawave.ingest.mapreduce.job.metrics;
 
 import com.google.common.collect.Multimap;
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
@@ -21,8 +21,8 @@ public class MetricsConfigurationTest {
         assertEquals(1, MetricsConfiguration.getNumShards(conf));
         
         Multimap<String,String> labels = MetricsConfiguration.getLabels(conf);
-        assertTrue(labels.containsEntry("table", TableNames.SHARD_TABLE_NAME));
-        assertTrue(labels.containsEntry("table", TableNames.SHARD_INDEX_TABLE_NAME));
+        assertTrue(labels.containsEntry("table", TableName.SHARD));
+        assertTrue(labels.containsEntry("table", TableName.SHARD_INDEX));
         
         Collection<MetricsReceiver> receivers = MetricsConfiguration.getReceivers(conf);
         assertTrue(receivers.iterator().next() instanceof TestKeyValueCountMetricsReceiver);

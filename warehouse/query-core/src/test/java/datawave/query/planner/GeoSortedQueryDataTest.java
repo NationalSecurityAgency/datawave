@@ -20,7 +20,7 @@ import datawave.query.metrics.MockStatusReporter;
 import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
@@ -205,12 +205,12 @@ public class GeoSortedQueryDataTest {
     public static void setupEnvVariables() {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
         System.setProperty("NUM_SHARDS", Integer.toString(NUM_SHARDS));
-        System.setProperty("SHARD_TABLE_NAME", TableNames.SHARD_TABLE_NAME);
-        System.setProperty("KNOWLEDGE_SHARD_TABLE_NAME", TableNames.KNOWLEDGE_TABLE_NAME);
-        System.setProperty("ERROR_SHARD_TABLE_NAME", TableNames.ERROR_SHARD_TABLE_NAME);
-        System.setProperty("SHARD_INDEX_TABLE_NAME", TableNames.SHARD_INDEX_TABLE_NAME);
-        System.setProperty("SHARD_REVERSE_INDEX_TABLE_NAME", TableNames.SHARD_RINDEX_TABLE_NAME);
-        System.setProperty("METADATA_TABLE_NAME", TableNames.METADATA_TABLE_NAME);
+        System.setProperty("SHARD_TABLE_NAME", TableName.SHARD);
+        System.setProperty("KNOWLEDGE_SHARD_TABLE_NAME", TableName.KNOWLEDGE);
+        System.setProperty("ERROR_SHARD_TABLE_NAME", TableName.ERROR_SHARD);
+        System.setProperty("SHARD_INDEX_TABLE_NAME", TableName.SHARD_INDEX);
+        System.setProperty("SHARD_REVERSE_INDEX_TABLE_NAME", TableName.SHARD_RINDEX);
+        System.setProperty("METADATA_TABLE_NAME", TableName.METADATA);
         System.setProperty("DATA_TYPE_NAME", DATA_TYPE_NAME);
         System.setProperty("INGEST_HELPER_CLASS", INGEST_HELPER_CLASS);
         System.setProperty("FIELD_NAME", FIELD_NAME);

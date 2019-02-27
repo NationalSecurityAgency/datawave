@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -193,7 +193,7 @@ public class NumShardsTest {
         conf.set(AccumuloHelper.INSTANCE_NAME, "mock");
         conf.set(AccumuloHelper.PASSWORD, noPasswordToken.toString());
         conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
-        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableNames.METADATA_TABLE_NAME);
+        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
         
         connector.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
         BatchWriter recordWriter = connector.createBatchWriter(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME), new BatchWriterConfig());
@@ -267,7 +267,7 @@ public class NumShardsTest {
         conf.set(AccumuloHelper.INSTANCE_NAME, "mock2");
         conf.set(AccumuloHelper.PASSWORD, noPasswordToken.toString());
         conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
-        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableNames.METADATA_TABLE_NAME);
+        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
         
         connector.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
         BatchWriter recordWriter = connector.createBatchWriter(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME), new BatchWriterConfig());

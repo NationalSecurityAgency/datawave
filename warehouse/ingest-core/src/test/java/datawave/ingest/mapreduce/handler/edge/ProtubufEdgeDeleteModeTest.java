@@ -26,7 +26,7 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
 import datawave.ingest.time.Now;
 import datawave.metadata.protobuf.EdgeMetadata;
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -460,7 +460,7 @@ public class ProtubufEdgeDeleteModeTest {
                         log.info(keyString.trim());
                     }
                 }
-                Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(TableNames.SHARD_TABLE_NAME),
+                Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(TableName.SHARD),
                                 countMap.get(edgeTableName)));
             }
         }

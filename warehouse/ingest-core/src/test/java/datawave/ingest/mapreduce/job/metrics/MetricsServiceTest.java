@@ -5,7 +5,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.mapreduce.TestContextWriter;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -28,7 +28,7 @@ public class MetricsServiceTest {
     
     private DateFormat df = new SimpleDateFormat("yyyyMMdd");
     
-    private static final String SHARD_TABLE_NAME = TableNames.SHARD_TABLE_NAME;
+    private static final String SHARD_TABLE_NAME = TableName.SHARD;
     
     private String metricsTable = "ingestMetrics";
     private String metricName = Metric.KV_PER_TABLE.toString();

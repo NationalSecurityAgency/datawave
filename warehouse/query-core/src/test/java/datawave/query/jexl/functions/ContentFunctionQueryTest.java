@@ -32,7 +32,7 @@ import datawave.query.metrics.MockStatusReporter;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
@@ -95,13 +95,13 @@ import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
 public class ContentFunctionQueryTest {
     
     private static final int NUM_SHARDS = 241;
-    private static final String SHARD_TABLE_NAME = TableNames.SHARD_TABLE_NAME;
-    private static final String KNOWLEDGE_SHARD_TABLE_NAME = TableNames.KNOWLEDGE_TABLE_NAME;
-    private static final String ERROR_SHARD_TABLE_NAME = TableNames.ERROR_SHARD_TABLE_NAME;
-    private static final String SHARD_INDEX_TABLE_NAME = TableNames.SHARD_INDEX_TABLE_NAME;
-    private static final String DATE_INDEX_TABLE_NAME = TableNames.DATE_INDEX_TABLE_NAME;
-    private static final String SHARD_REVERSE_INDEX_TABLE_NAME = TableNames.SHARD_RINDEX_TABLE_NAME;
-    private static final String METADATA_TABLE_NAME = TableNames.METADATA_TABLE_NAME;
+    private static final String SHARD_TABLE_NAME = TableName.SHARD;
+    private static final String KNOWLEDGE_SHARD_TABLE_NAME = TableName.KNOWLEDGE;
+    private static final String ERROR_SHARD_TABLE_NAME = TableName.ERROR_SHARD;
+    private static final String SHARD_INDEX_TABLE_NAME = TableName.SHARD_INDEX;
+    private static final String DATE_INDEX_TABLE_NAME = TableName.DATE_INDEX;
+    private static final String SHARD_REVERSE_INDEX_TABLE_NAME = TableName.SHARD_RINDEX;
+    private static final String METADATA_TABLE_NAME = TableName.METADATA;
     private static final String DATA_TYPE_NAME = "test";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
     
@@ -193,7 +193,7 @@ public class ContentFunctionQueryTest {
         conf.set(DATA_TYPE_NAME + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         conf.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE_NAME);
         conf.set(DATA_TYPE_NAME + ".data.category.index", "ID, BODY");
-        // conf.set(DATA_TYPE_NAME + ".model.table.name", METADATA_TABLE_NAME);
+        // conf.set(DATA_TYPE_NAME + ".model.table.name", METADATA);
         conf.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE_NAME);
         conf.set(DATA_TYPE_NAME + TypeRegistry.INGEST_HELPER, INGEST_HELPER_CLASS);
         conf.set(DateIndexDataTypeHandler.DATEINDEX_TNAME, DATE_INDEX_TABLE_NAME);

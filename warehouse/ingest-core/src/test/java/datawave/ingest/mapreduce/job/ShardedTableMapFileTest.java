@@ -15,7 +15,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -52,7 +52,7 @@ public class ShardedTableMapFileTest {
     public static void defineShardLocationsFile() throws IOException {
         conf = new Configuration();
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
-        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TableNames.SHARD_TABLE_NAME);
+        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TableName.SHARD);
     }
     
     @Test

@@ -10,7 +10,7 @@ import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.util.TableNames;
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -107,9 +107,9 @@ public class ContentJsonColumnBasedHandlerTest {
         TypeRegistry.reset();
         conf = new Configuration();
         conf.setInt(ShardedDataTypeHandler.NUM_SHARDS, 1);
-        conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableNames.SHARD_TABLE_NAME);
-        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableNames.SHARD_INDEX_TABLE_NAME);
-        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableNames.SHARD_RINDEX_TABLE_NAME);
+        conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
+        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
     }
     
     @Test
