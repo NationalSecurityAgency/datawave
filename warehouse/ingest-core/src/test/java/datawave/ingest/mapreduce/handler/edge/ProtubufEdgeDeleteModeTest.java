@@ -389,7 +389,7 @@ public class ProtubufEdgeDeleteModeTest {
     
     public static class HandlerTestUtil {
         
-        public static final Text edgeTableName = new Text("edge");
+        public static final Text edgeTableName = new Text(TableName.EDGE);
         public static final String NB = "\u0000";
         
         private static Logger log = Logger.getLogger(HandlerTestUtil.class);
