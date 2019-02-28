@@ -885,7 +885,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ",
                                 queryData.getQuery()));
                 log.info(qe);
-                throw new DatawaveFatalQueryException(qe);
+                throw new NoResultsException(qe);
             } catch (InstantiationException | TableNotFoundException | IllegalAccessException e) {
                 stopwatch.stop();
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
