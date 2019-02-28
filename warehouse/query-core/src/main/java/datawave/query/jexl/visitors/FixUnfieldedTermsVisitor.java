@@ -2,7 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.lookups.FieldNameLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
@@ -143,7 +143,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
         if (node.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_UNFIELDED_TERM_EXPANSION_MATCH);
             log.warn(qe);
-            throw new CannotExpandUnfieldedTermFatalException(qe);
+            throw new EmptyUnfieldedTermExpansionException(qe);
         }
         
         return node;
