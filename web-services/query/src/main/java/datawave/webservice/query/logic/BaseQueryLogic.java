@@ -45,11 +45,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public static final String BYPASS_ACCUMULO = "rfile.debug";
     
-    /**
-     * Override number of results to return in a query, will not be higher that what is set in the web service configuration.
-     */
-    public static final String MAX_RESULTS_OVERRIDE = "max.results.override";
-    
     public BaseQueryLogic() {}
     
     public BaseQueryLogic(BaseQueryLogic<T> other) {

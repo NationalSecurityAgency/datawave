@@ -1,37 +1,22 @@
 package datawave.query.tables.edge;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.StringReader;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
-
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.data.type.Type;
+import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.EdgeQueryConfiguration;
-import datawave.query.model.edge.EdgeQueryModel;
-import datawave.query.Constants;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.filter.DateTypeFilter;
 import datawave.query.iterator.filter.EdgeFilterIterator;
 import datawave.query.iterator.filter.LoadDateFilter;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.EdgeTableRangeBuildingVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
-import datawave.query.jexl.visitors.EdgeTableRangeBuildingVisitor;
+import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.edge.contexts.VisitationContext;
 import datawave.query.transformer.EdgeQueryTransformer;
@@ -44,7 +29,6 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -62,7 +46,20 @@ import org.apache.commons.jexl2.parser.Parser;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.HashMultimap;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.StringReader;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
@@ -129,25 +126,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         cfg.setConnector(connection);
         cfg.setAuthorizations(auths);
-        
-        // Get the MAX_RESULTS_OVERRIDE parameter if given
-        String maxResultsOverrideStr = settings.findParameter(MAX_RESULTS_OVERRIDE).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(maxResultsOverrideStr)) {
-            try {
-                long override = Long.parseLong(maxResultsOverrideStr);
-                
-                if (override < cfg.getMaxQueryResults()) {
-                    cfg.setMaxQueryResults(override);
-                    
-                    // this.maxresults is initially set to the value in the config,
-                    // we are overriding it here for this instance of the query.
-                    this.setMaxResults(override);
-                }
-            } catch (NumberFormatException nfe) {
-                log.error(MAX_RESULTS_OVERRIDE + " query parameter is not a valid number: " + maxResultsOverrideStr + ", using default value");
-                throw new IllegalArgumentException("Error parsing parameter for " + MAX_RESULTS_OVERRIDE + ". Supplied value is not a number.");
-            }
-        }
         
         String queryString = settings.getQuery();
         if (null == queryString) {
@@ -698,7 +676,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         params.add(datawave.webservice.query.QueryParameters.QUERY_BEGIN);
         params.add(datawave.webservice.query.QueryParameters.QUERY_END);
         params.add(QueryParameters.DATATYPE_FILTER_SET);
-        params.add(MAX_RESULTS_OVERRIDE);
         params.add(EdgeQueryConfiguration.INCLUDE_STATS);
         params.add(EdgeQueryConfiguration.DATE_RANGE_TYPE);
         return params;
