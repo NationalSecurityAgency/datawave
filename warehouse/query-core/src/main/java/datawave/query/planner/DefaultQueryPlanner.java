@@ -23,6 +23,7 @@ import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
@@ -878,8 +879,8 @@ public class DefaultQueryPlanner extends QueryPlanner {
                 
                 expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
                 queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields);
-            } catch (CannotExpandUnfieldedTermFatalException e) {
-                // The visitor will only throw this if we cannot expand a term from some critical reason
+            } catch (EmptyUnfieldedTermExpansionException e) {
+                // The visitor will only throw this if we cannot expand anything resulting in empty query
                 stopwatch.stop();
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ",
                                 queryData.getQuery()));

@@ -1,16 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import java.text.MessageFormat;
-import java.util.NoSuchElementException;
-
+import com.google.common.base.Preconditions;
+import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.Constants;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.util.MetadataHelper;
-
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
@@ -35,7 +32,8 @@ import org.apache.commons.jexl2.parser.Node;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
+import java.text.MessageFormat;
+import java.util.NoSuchElementException;
 
 /**
  * 
@@ -91,7 +89,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
         if (newNode.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_ANYFIELD_EXPANSION_MATCH);
             log.warn(qe);
-            throw new CannotExpandUnfieldedTermFatalException(qe);
+            throw new EmptyUnfieldedTermExpansionException(qe);
         }
         
         return newNode;
