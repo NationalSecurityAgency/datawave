@@ -460,8 +460,7 @@ public class ProtubufEdgeDeleteModeTest {
                         log.info(keyString.trim());
                     }
                 }
-                Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(TableName.SHARD),
-                                countMap.get(edgeTableName)));
+                Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(TableName.SHARD), countMap.get(edgeTableName)));
             }
         }
         

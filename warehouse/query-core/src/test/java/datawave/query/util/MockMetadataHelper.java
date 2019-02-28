@@ -61,8 +61,8 @@ public class MockMetadataHelper extends MetadataHelper {
     };
     
     public MockMetadataHelper() {
-        super(createAllFieldMetadataHelper(getConnector()), Collections.emptySet(), getConnector(), TableName.METADATA, Collections.emptySet(),
-                        Collections.emptySet());
+        super(createAllFieldMetadataHelper(getConnector()), Collections.emptySet(), getConnector(), TableName.METADATA, Collections.emptySet(), Collections
+                        .emptySet());
     }
     
     private static AllFieldMetadataHelper createAllFieldMetadataHelper(Connector connector) {

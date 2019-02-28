@@ -245,8 +245,7 @@ public class BalancedShardPartitionerTest {
         int collisions = 0;
         for (int i = 1; i < SHARDS_PER_DAY; i++) {
             String shardId = formattedDay + ("_" + i);
-            int partition = partitionerIn.getPartition(new BulkIngestKey(new Text(TableName.SHARD), new Key(shardId)), new Value(),
-                            NUM_REDUCE_TASKS);
+            int partition = partitionerIn.getPartition(new BulkIngestKey(new Text(TableName.SHARD), new Key(shardId)), new Value(), NUM_REDUCE_TASKS);
             if (partitionsUsed.contains(partition)) {
                 collisions++;
             }

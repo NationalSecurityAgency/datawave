@@ -3,21 +3,21 @@ package datawave.util;
 /**
  * Class that contains default table names
  */
-public interface TableName {
+public final class TableName {
     
-    String DATE_INDEX = "dateIndex";
-
-    String ERROR_SHARD = "errorShard";
+    public static final String DATE_INDEX = "dateIndex";
     
-    String INDEX_STATS = "shardIndexStats";
+    public static final String ERROR_SHARD = "errorShard";
     
-    String KNOWLEDGE = "knowledgeShard";
-
-    String LOAD_DATES = "LoadDates";
+    public static final String INDEX_STATS = "shardIndexStats";
     
-    String METADATA = "DatawaveMetadata";
+    public static final String KNOWLEDGE = "knowledgeShard";
     
-    String SHARD = "shard";
-    String SHARD_INDEX = "shardIndex";
-    String SHARD_RINDEX = "shardReverseIndex";
+    public static final String LOAD_DATES = "LoadDates";
+    
+    public static final String METADATA = "DatawaveMetadata";
+    
+    public static final String SHARD = "shard";
+    public static final String SHARD_INDEX = "shardIndex";
+    public static final String SHARD_RINDEX = "shardReverseIndex";
 }
