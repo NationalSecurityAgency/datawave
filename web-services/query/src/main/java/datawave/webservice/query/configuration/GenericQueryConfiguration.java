@@ -34,7 +34,6 @@ public abstract class GenericQueryConfiguration {
     private Date beginDate = null;
     private Date endDate = null;
     
-    private Long maxQueryResults = 5000l;
     private Long maxRowsToScan = 25000l;
     
     private Set<String> undisplayedVisibilities = new HashSet<>();
@@ -60,7 +59,6 @@ public abstract class GenericQueryConfiguration {
      */
     public GenericQueryConfiguration(BaseQueryLogic<?> configuredLogic) {
         this.setTableName(configuredLogic.getTableName());
-        this.setMaxQueryResults(configuredLogic.getMaxResults());
         this.setMaxRowsToScan(configuredLogic.getMaxRowsToScan());
         this.setUndisplayedVisibilities(configuredLogic.getUndisplayedVisibilities());
         this.setBaseIteratorPriority(configuredLogic.getBaseIteratorPriority());
@@ -130,14 +128,6 @@ public abstract class GenericQueryConfiguration {
     
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
-    }
-    
-    public Long getMaxQueryResults() {
-        return maxQueryResults;
-    }
-    
-    public void setMaxQueryResults(Long maxQueryResults) {
-        this.maxQueryResults = maxQueryResults <= 0l ? Long.MAX_VALUE : maxQueryResults;
     }
     
     public Long getMaxRowsToScan() {
