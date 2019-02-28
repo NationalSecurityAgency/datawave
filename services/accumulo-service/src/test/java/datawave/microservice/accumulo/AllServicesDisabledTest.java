@@ -10,6 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.assertFalse;
+import static org.springframework.test.util.AssertionErrors.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -22,6 +23,7 @@ public class AllServicesDisabledTest {
     
     @Test
     public void verifyAutoConfig() {
+        assertTrue("accumuloService bean should have been found", context.containsBean("accumuloService"));
         assertFalse("auditServiceConfiguration bean should not have been found", context.containsBean("auditServiceConfiguration"));
         assertFalse("auditServiceInstanceProvider bean should not have been found", context.containsBean("auditServiceInstanceProvider"));
         assertFalse("auditLookupSecurityMarking bean should not have been found", context.containsBean("auditLookupSecurityMarking"));

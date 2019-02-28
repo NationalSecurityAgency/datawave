@@ -292,21 +292,6 @@ public class LookupServiceAuditDisabledTest {
     }
     
     @Test
-    public void testErrorOnMissingColVizParam() {
-        ProxiedUserDetails userDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A"));
-        String queryString = TestHelper.queryString("NotColumnVisibility=foo");
-        try {
-            doLookup(userDetails, path(testTableName + "/row2"), queryString);
-            fail("This code should never be reached");
-        } catch (HttpClientErrorException ex) {
-            assertEquals("Test should have returned 400 status", 400, ex.getStatusCode().value());
-        } catch (Throwable t) {
-            t.printStackTrace();
-            fail("Unexpected throwable type was caught");
-        }
-    }
-    
-    @Test
     public void testErrorOnTableDoesNotExist() {
         ProxiedUserDetails userDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A", "B", "C"));
         String queryString = TestHelper.queryString("useAuthorizations=A,B,C", "columnVisibility=foo");

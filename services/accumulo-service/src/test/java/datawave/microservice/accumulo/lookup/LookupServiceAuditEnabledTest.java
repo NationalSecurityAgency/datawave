@@ -25,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -173,6 +174,21 @@ public class LookupServiceAuditEnabledTest {
             fail("This code should never be reached");
         } catch (AssertionError ae) {
             assertTrue("Unexpected exception message", ae.getMessage().contains("\n0 request(s) executed"));
+        }
+    }
+    
+    @Test
+    public void testErrorOnMissingColVizParam() {
+        ProxiedUserDetails userDetails = TestHelper.userDetails(Collections.singleton("Administrator"), Arrays.asList("A"));
+        String queryString = TestHelper.queryString("NotColumnVisibility=foo");
+        try {
+            doLookup(userDetails, path(testTableName + "/row2"), queryString);
+            fail("This code should never be reached");
+        } catch (HttpClientErrorException ex) {
+            assertEquals("Test should have returned 400 status", 400, ex.getStatusCode().value());
+        } catch (Throwable t) {
+            t.printStackTrace();
+            fail("Unexpected throwable type was caught");
         }
     }
     

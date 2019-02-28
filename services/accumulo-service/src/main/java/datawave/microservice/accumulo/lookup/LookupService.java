@@ -130,12 +130,8 @@ public class LookupService {
         
         final LookupResponse response = new LookupResponse();
         
-        try {
-            auditSecurityMarking.clear();
-            auditSecurityMarking.validate(parameters);
-        } catch (IllegalArgumentException e) {
-            log.error("Security marking validation failed for query", e);
-            throw new BadRequestQueryException(DatawaveErrorCode.SECURITY_MARKING_CHECK_ERROR, e);
+        if (null != auditor) {
+            checkAuditParameters(parameters);
         }
         
         final String rowEnc = parameters.getFirst(Parameter.ROW_ENCODING);
@@ -326,6 +322,16 @@ public class LookupService {
         response.setEntries(entryList);
         
         return response;
+    }
+    
+    private void checkAuditParameters(MultiValueMap<String,String> parameters) throws BadRequestQueryException {
+        try {
+            auditSecurityMarking.clear();
+            auditSecurityMarking.validate(parameters);
+        } catch (IllegalArgumentException e) {
+            log.error("Security marking validation failed for query", e);
+            throw new BadRequestQueryException(DatawaveErrorCode.SECURITY_MARKING_CHECK_ERROR, e);
+        }
     }
     
     /**

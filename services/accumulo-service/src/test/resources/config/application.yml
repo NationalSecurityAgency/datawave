@@ -32,11 +32,15 @@ management:
     web:
       base-path: "/mgmt"
 
+# Silencing error logging for intentionally triggered exceptions in the admin,
+# stats, and lookup service tests (i.e., in datawave.microservice.accumulo.*)
+
 logging:
   level:
-    datawave.microservice.audit: DEBUG
-    datawave.microservice.accumulo: TRACE
+    datawave.microservice.accumulo: FATAL
     io.undertow.request: FATAL
+    org.apache.hadoop.util: ERROR
+    org.apache.curator.utils: ERROR
 
 audit-client:
   discovery:
@@ -71,12 +75,6 @@ accumulo:
     enabled: false
   lookup:
     numQueryThreads: 1
-
-# Silencing error logging for intentionally triggered exceptions
-
-logging:
-  level:
-    datawave.microservice.accumulo.lookup: FATAL
 
 ---
 
@@ -136,12 +134,6 @@ accumulo:
 
 spring:
   profiles: admin-service-enabled
-
-# Silencing error logging for intentionally triggered exceptions
-
-logging:
-  level:
-    datawave.microservice.accumulo.admin: FATAL
 
 audit-client:
   enabled: false

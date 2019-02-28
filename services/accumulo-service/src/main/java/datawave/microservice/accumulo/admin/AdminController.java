@@ -95,11 +95,13 @@ public class AdminController {
         return this.adminService.listTables();
     }
     
+    @ApiOperation(value = "Returns the specified Accumulo user's authorizations")
     @RequestMapping(path = "/ListUserAuthorizations/{userName}", method = {RequestMethod.GET})
     public ListUserAuthorizationsResponse listUserAuthorizations(@ApiParam("Accumulo user name") @PathVariable String userName) {
         return this.adminService.listUserAuthorizations(userName);
     }
     
+    @ApiOperation(value = "Returns the specified Accumulo user's permissions")
     @RequestMapping(path = "/ListUserPermissions/{userName}", method = {RequestMethod.GET})
     public ListUserPermissionsResponse listUserPermissions(@ApiParam("Accumulo user name") @PathVariable String userName) {
         return this.adminService.listUserPermissions(userName);
