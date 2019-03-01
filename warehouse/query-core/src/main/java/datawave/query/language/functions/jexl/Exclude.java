@@ -10,7 +10,9 @@ public class Exclude extends AbstractEvaluationPhaseFunction {
     
     @Override
     public String toString() {
-        return super.toString("not(filter:includeRegex(", "))");
+        // since the negation is being distributed, we need to reverse the operation.
+        String operation = (this.type.equals(WildcardFieldedFilter.BooleanType.AND)) ? " || " : " && ";
+        return super.toString("not(filter:includeRegex(", "))", operation);
     }
     
     @Override
