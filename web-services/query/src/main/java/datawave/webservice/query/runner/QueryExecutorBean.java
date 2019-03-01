@@ -1138,18 +1138,8 @@ public class QueryExecutorBean implements QueryExecutor {
         
         GenericResponse<String> createResponse = createQuery(logicName, queryParameters, httpHeaders);
         String queryId = createResponse.getResult();
-        try {
-            CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
-            return next(queryId, false);
-        } catch (NoResultsException e) {
-            close(queryId);
-            throw e;
-        } catch (EJBException e) {
-            if (e.getCause() instanceof NoResultsException) {
-                close(queryId);
-            }
-            throw e;
-        }
+        CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
+        return next(queryId, false);
     }
     
     @POST
@@ -1815,6 +1805,7 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (Exception ex) {
                 log.error("Error marking transaction for roll back", ex);
             }
+            close(id); // close the query, as there were no results and we are done here
             throw e;
         } catch (DatawaveWebApplicationException e) {
             if (query != null) {
@@ -1832,6 +1823,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 ctx.getUserTransaction().setRollbackOnly();
             } catch (Exception ex) {
                 log.error("Error marking transaction for roll back", ex);
+            }
+            if (e.getCause() instanceof NoResultsException) {
+                close(id);
             }
             throw e;
         } catch (Exception e) {
@@ -1856,6 +1850,9 @@ public class QueryExecutorBean implements QueryExecutor {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, MessageFormat.format("query id: {0}", id));
             log.error(qe);
             response.addException(qe.getBottomQueryException());
+            if (e.getCause() instanceof NoResultsException) {
+                close(id);
+            }
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
         } finally {
