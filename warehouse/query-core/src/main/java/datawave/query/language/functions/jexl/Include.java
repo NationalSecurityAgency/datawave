@@ -1,6 +1,7 @@
 package datawave.query.language.functions.jexl;
 
 import datawave.query.language.functions.QueryFunction;
+import datawave.query.search.WildcardFieldedFilter;
 
 public class Include extends AbstractEvaluationPhaseFunction {
     public Include() {
@@ -9,7 +10,8 @@ public class Include extends AbstractEvaluationPhaseFunction {
     
     @Override
     public String toString() {
-        return super.toString("filter:includeRegex(", ")");
+        String operation = (this.type.equals(WildcardFieldedFilter.BooleanType.AND)) ? " && " : " || ";
+        return super.toString("filter:includeRegex(", ")", operation);
     }
     
     @Override
