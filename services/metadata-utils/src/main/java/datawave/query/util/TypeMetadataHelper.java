@@ -217,6 +217,11 @@ public class TypeMetadataHelper {
     public static class Factory {
         private final BeanFactory beanFactory;
         
+        public Factory() {
+            // Provide a default constructor so this class can be proxied by Weld when used in the legacy Wildfly web service.
+            this(null);
+        }
+        
         public Factory(BeanFactory beanFactory) {
             this.beanFactory = beanFactory;
         }
