@@ -90,7 +90,7 @@
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>4.9.6.Final</version.picketbox>
         <version.powermock>1.6.6</version.powermock>
-        <version.protobuf>2.5.1-SNAPSHOT</version.protobuf>
+        <version.protobuf>2.5.0</version.protobuf>
         <version.protostuff>1.5.5</version.protostuff>
         <version.slf4j>1.7.5</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
