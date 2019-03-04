@@ -27,8 +27,7 @@ public class MetadataHelperFactory {
     private final TypeMetadataHelper.Factory typeMetadataHelperFactory;
     
     public MetadataHelperFactory() {
-        this.beanFactory = null;
-        this.typeMetadataHelperFactory = null;
+        this(null, null);
     }
     
     public MetadataHelperFactory(BeanFactory beanFactory, TypeMetadataHelper.Factory typeMetadataHelperFactory) {
