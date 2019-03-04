@@ -76,11 +76,13 @@
 		<tr class="highlight"><td>filter:isNull(field)</td><td>#ISNULL(field)</td></tr>
 		<tr><td>not(filter:isNull(field))</td><td>#ISNOTNULL(field)</td></tr>
 		<tr class="highlight"><td>filter:occurrence(field,operator,count))</td><td>#OCCURRENCE(field,operator,count)</td></tr>
-        <tr><td>filter:timeFunction(field1,field2,operator,equivalence,goal)</td><td>#TIME_FUNCTION(field1,field2,operator,equivalence,goal)</td></tr>
+		<tr><td>filter:timeFunction(field1,field2,operator,equivalence,goal)</td><td>#TIME_FUNCTION(field1,field2,operator,equivalence,goal)</td></tr>
+		<tr class="highlight"><td>filter:text(field, value)</td><td>#TEXT(field, value)</td></tr>
+		<tr><td>filter:text(field1, value1) &lt;op&gt; filter:text(field2, value2) ...</td><td>#TEXT(op, field1, value1, field2, value2 ...) where op is 'or' or 'and'</td></tr>
 	</table>
     <p class="left">Notes:
     <ol class="left">
-        <li>None of these filter functions can be applied against index-only fields.</li>
+        <li>None of these filter functions can be applied against index-only fields except for filter:text (#TEXT).</li>
         <li>The occurrence function is used to count the number of instances of a field in the event.  Valid operators are '==' (or '='),'>','>=','<','<=', and '!='. </li>
     </ol>
 	<p class="left">Some geo functions are supplied as well that may prove useful although the within_bounding_box function may be done with a simple range comparison (i.e. LAT_LON_USER &lt;= &lt;lat1&gt;_&lt;lon1&gt; and LAT_LON_USER &gt;= &lt;lat2&gt;_&lt;lon2&gt;.</p>
