@@ -74,7 +74,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         this.logic.setIncludeGroupingContext(true);
         
         this.logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        this.logic.setMarkingFunctions(new MarkingFunctions.NoOp());
+        this.logic.setMarkingFunctions(new MarkingFunctions.Default());
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setQueryPlanner(new DefaultQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());

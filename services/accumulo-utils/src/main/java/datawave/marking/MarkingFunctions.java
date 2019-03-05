@@ -13,10 +13,13 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Accumulo marks all data with a columnVisibility that declares and controls access. MarkingFunctions provide a pattern for mapping a user's preferred means of
@@ -68,18 +71,25 @@ public interface MarkingFunctions {
         }
     }
     
-    class NoOp implements MarkingFunctions {
+    class Default implements MarkingFunctions {
         public static final String COLUMN_VISIBILITY = "columnVisibility";
         
         @Override
         public ColumnVisibility combine(Collection<ColumnVisibility> expressions) {
-            return expressions.isEmpty() ? new ColumnVisibility() : expressions.iterator().next();
+            
+            // filter out any empty expressions, then flatten each one (to de-dupe) and concatenate with '&'
+            // flatten the final combined ColumnVisibility and use that to make the ColumnVisibility to return
+            return new ColumnVisibility(new ColumnVisibility(expressions.stream().map(ColumnVisibility::flatten).filter(b -> b.length > 0)
+                            .map(b -> "(" + new String(b, UTF_8) + ")").collect(Collectors.joining("&")).getBytes(UTF_8)).flatten());
         }
         
         @Override
         @SafeVarargs
         public final Map<String,String> combine(Map<String,String>... markings) {
-            return markings.length == 0 ? new HashMap<>() : markings[0];
+            // translate COLUMN_VISIBILITY values to ColumnVisibility, combine them and
+            // return translated back to Map
+            return translateFromColumnVisibility(combine(Arrays.stream(markings).filter(m -> m.containsKey(COLUMN_VISIBILITY))
+                            .map(this::translateToColumnVisibility).collect(Collectors.toSet())));
         }
         
         @Override

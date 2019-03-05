@@ -108,7 +108,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     
     protected void syncSecurityMarkingsToFields() {
         if (securityMarkings != null) {
-            setVisibility(securityMarkings.get(MarkingFunctions.NoOp.COLUMN_VISIBILITY));
+            setVisibility(securityMarkings.get(MarkingFunctions.Default.COLUMN_VISIBILITY));
         } else {
             setVisibility((String) null);
         }
@@ -119,10 +119,10 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
             if (securityMarkings == null) {
                 securityMarkings = new HashMap<>();
             }
-            securityMarkings.put(MarkingFunctions.NoOp.COLUMN_VISIBILITY, new String(visibility.getExpression()));
+            securityMarkings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, new String(visibility.getExpression()));
             
         } else if (securityMarkings != null) {
-            securityMarkings.remove(MarkingFunctions.NoOp.COLUMN_VISIBILITY);
+            securityMarkings.remove(MarkingFunctions.Default.COLUMN_VISIBILITY);
         }
         if (securityMarkings != null && securityMarkings.isEmpty()) {
             securityMarkings = null;
