@@ -15,8 +15,9 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(PowerMockRunner.class)
 public class TestLookupUUIDConfiguration {
+    
     @Test
-    public void testSimpleCase() throws Exception {
+    public void testSimpleCase() {
         // Run the test
         LookupUUIDConfiguration subject = new LookupUUIDConfiguration();
         subject.setBeginDate(SimpleDateFormat.getDateInstance().format(new Date()));

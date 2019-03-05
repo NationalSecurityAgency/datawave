@@ -4,6 +4,8 @@ import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -20,13 +22,18 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
+    
+    protected GenericQueryConfiguration baseConfig = new GenericQueryConfiguration() {
+        @Override
+        public Iterator<QueryData> getQueries() {
+            return super.getQueries();
+        }
+    };
+    
     private String logicName = "No logicName was set";
     private String logicDescription = "Not configured";
     private AuditType auditType = null;
-    protected String tableName;
     protected long maxResults;
-    protected long maxRowsToScan;
-    protected Set<String> undisplayedVisibilities;
     protected ScannerBase scanner;
     @SuppressWarnings("unchecked")
     protected Iterator<T> iterator = (Iterator<T>) Collections.emptyList().iterator();
@@ -34,42 +41,45 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private long pageByteTrigger = 0;
     private boolean collectQueryMetrics = true;
     private String _connPoolName;
-    protected int baseIteratorPriority = 100;
     protected Principal principal;
     protected RoleManager roleManager;
     protected MarkingFunctions markingFunctions;
     @Inject
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
-    protected boolean bypassAccumulo;
     
     public static final String BYPASS_ACCUMULO = "rfile.debug";
-    
-    public BaseQueryLogic() {}
-    
+
+    public BaseQueryLogic() {
+        this.baseConfig.setBaseIteratorPriority(100);
+    }
+
     public BaseQueryLogic(BaseQueryLogic<T> other) {
+        // Generic Query Config variables
+        setTableName(other.getTableName());
+        setMaxRowsToScan(other.getMaxRowsToScan());
+        setMaxResults(other.getMaxResults());
+        setUndisplayedVisibilities(other.getUndisplayedVisibilities());
+        setBaseIteratorPriority(other.getBaseIteratorPriority());
+        setBypassAccumulo(other.getBypassAccumulo());
+        
+        // Other variables
         setMarkingFunctions(other.getMarkingFunctions());
         setResponseObjectFactory(other.getResponseObjectFactory());
         setLogicName(other.getLogicName());
         setLogicDescription(other.getLogicDescription());
         setAuditType(other.getAuditType(null));
-        setTableName(other.getTableName());
-        setMaxResults(other.getMaxResults());
-        setMaxRowsToScan(other.getMaxRowsToScan());
-        setUndisplayedVisibilities(other.getUndisplayedVisibilities());
         this.scanner = other.scanner;
         this.iterator = other.iterator;
         setMaxPageSize(other.getMaxPageSize());
         setPageByteTrigger(other.getPageByteTrigger());
         setCollectQueryMetrics(other.getCollectQueryMetrics());
         setConnPoolName(other.getConnPoolName());
-        setBaseIteratorPriority(other.getBaseIteratorPriority());
         setPrincipal(other.getPrincipal());
         setRoleManager(other.getRoleManager());
         setMarkingFunctions(other.getMarkingFunctions());
         setResponseObjectFactory(other.getResponseObjectFactory());
         setSelectorExtractor(other.getSelectorExtractor());
-        setBypassAccumulo(other.isBypassAccumulo());
     }
     
     public MarkingFunctions getMarkingFunctions() {
@@ -98,22 +108,22 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     @Override
     public String getTableName() {
-        return tableName;
+        return this.baseConfig.getTableName();
     }
     
     @Override
     public long getMaxResults() {
-        return maxResults;
+        return this.maxResults;
     }
     
     @Override
     public long getMaxRowsToScan() {
-        return maxRowsToScan;
+        return this.baseConfig.getMaxRowsToScan();
     }
     
     @Override
     public void setTableName(String tableName) {
-        this.tableName = tableName;
+        this.baseConfig.setTableName(tableName);
     }
     
     @Override
@@ -123,7 +133,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     @Override
     public void setMaxRowsToScan(long maxRowsToScan) {
-        this.maxRowsToScan = maxRowsToScan;
+        this.baseConfig.setMaxRowsToScan(maxRowsToScan);
     }
     
     @Override
@@ -148,12 +158,12 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     @Override
     public int getBaseIteratorPriority() {
-        return baseIteratorPriority;
+        return this.baseConfig.getBaseIteratorPriority();
     }
     
     @Override
     public void setBaseIteratorPriority(final int baseIteratorPriority) {
-        this.baseIteratorPriority = baseIteratorPriority;
+        this.baseConfig.setBaseIteratorPriority(baseIteratorPriority);
     }
     
     @Override
@@ -176,21 +186,21 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         this.logicName = logicName;
     }
     
-    public boolean isBypassAccumulo() {
-        return bypassAccumulo;
+    public boolean getBypassAccumulo() {
+        return this.baseConfig.getBypassAccumulo();
     }
     
     public void setBypassAccumulo(boolean bypassAccumulo) {
-        this.bypassAccumulo = bypassAccumulo;
+        this.baseConfig.setBypassAccumulo(bypassAccumulo);
     }
     
     @Override
     public Set<String> getUndisplayedVisibilities() {
-        return undisplayedVisibilities;
+        return baseConfig.getUndisplayedVisibilities();
     }
     
     public void setUndisplayedVisibilities(Set<String> undisplayedVisibilities) {
-        this.undisplayedVisibilities = undisplayedVisibilities;
+        this.baseConfig.setUndisplayedVisibilities(undisplayedVisibilities);
     }
     
     @Override

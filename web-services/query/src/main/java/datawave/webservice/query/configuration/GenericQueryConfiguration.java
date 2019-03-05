@@ -34,7 +34,7 @@ public abstract class GenericQueryConfiguration {
     private Date beginDate = null;
     private Date endDate = null;
     
-    private Long maxRowsToScan = 25000l;
+    private Long maxRowsToScan = 25000L;
     
     private Set<String> undisplayedVisibilities = new HashSet<>();
     protected int baseIteratorPriority = 100;
@@ -43,6 +43,8 @@ public abstract class GenericQueryConfiguration {
     private String tableName = "shard";
     
     private Iterator<QueryData> queries = Iterators.emptyIterator();
+    
+    protected boolean bypassAccumulo;
     
     /**
      * Empty default constructor
@@ -62,6 +64,15 @@ public abstract class GenericQueryConfiguration {
         this.setMaxRowsToScan(configuredLogic.getMaxRowsToScan());
         this.setUndisplayedVisibilities(configuredLogic.getUndisplayedVisibilities());
         this.setBaseIteratorPriority(configuredLogic.getBaseIteratorPriority());
+        this.setBypassAccumulo(configuredLogic.getBypassAccumulo());
+    }
+    
+    public GenericQueryConfiguration(GenericQueryConfiguration genericConfig) {
+        this.setTableName(genericConfig.getTableName());
+        this.setMaxRowsToScan(genericConfig.getMaxRowsToScan());
+        this.setUndisplayedVisibilities(genericConfig.getUndisplayedVisibilities());
+        this.setBaseIteratorPriority(genericConfig.getBaseIteratorPriority());
+        this.setBypassAccumulo(genericConfig.getBypassAccumulo());
     }
     
     /**
@@ -135,7 +146,7 @@ public abstract class GenericQueryConfiguration {
     }
     
     public void setMaxRowsToScan(Long maxRowsToScan) {
-        this.maxRowsToScan = maxRowsToScan <= 0l ? Long.MAX_VALUE : maxRowsToScan;
+        this.maxRowsToScan = maxRowsToScan <= 0L ? Long.MAX_VALUE : maxRowsToScan;
     }
     
     public String getTableName() {
@@ -152,6 +163,14 @@ public abstract class GenericQueryConfiguration {
     
     public void setUndisplayedVisibilities(Set<String> undisplayedVisibilities) {
         this.undisplayedVisibilities = undisplayedVisibilities;
+    }
+    
+    public boolean getBypassAccumulo() {
+        return bypassAccumulo;
+    }
+    
+    public void setBypassAccumulo(boolean bypassAccumulo) {
+        this.bypassAccumulo = bypassAccumulo;
     }
     
     /**
