@@ -9,8 +9,11 @@ import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
- * function to test whether two key/value pairs match within datafields of the same (grouping context) group For example FROM_ADDRESS.1 == 1.2.3.4 and
- * DIRECTION.1 == 1
+ * <pre>
+ * first arg is a number, next arg is a field name, following args are possible values for the field.
+ * MatchesAtLeastCountOf(3, STOOGE, 'Moe', 'Larry', 'Joe', 'Shemp', 'Curley Joe') will return true
+ * if at least 3 of the listed names are present for STOOGE
+ * </pre>
  */
 public class MatchesAtLeastCountOf extends JexlQueryFunction {
     
@@ -20,19 +23,16 @@ public class MatchesAtLeastCountOf extends JexlQueryFunction {
     
     @Override
     public void validate() throws IllegalArgumentException {
-        if (this.parameterList.size() < 2) {
+        if (this.parameterList.size() < 3) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
             throw new IllegalArgumentException(qe);
         }
-        if (this.parameterList.size() % 2 != 0) { // odd number of args
-            String shouldBeANumber = parameterList.get(this.parameterList.size() - 1); // get the last arg
-            try {
-                Integer.parseInt(shouldBeANumber);
-            } catch (Exception ex) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", ex,
-                                this.name));
-                throw new IllegalArgumentException(qe);
-            }
+        String shouldBeANumber = parameterList.get(0); // get the first arg
+        try {
+            Integer.parseInt(shouldBeANumber);
+        } catch (Exception ex) {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", ex, this.name));
+            throw new IllegalArgumentException(qe);
         }
     }
     
