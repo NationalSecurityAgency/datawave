@@ -232,7 +232,7 @@ public class CompositeQueryLogicTest {
         
         @Override
         public QueryLogicTransformer getTransformer(Query settings) {
-            return new TestQueryLogicTransformer(new MarkingFunctions.NoOp());
+            return new TestQueryLogicTransformer(new MarkingFunctions.Default());
         }
         
         @Override
@@ -291,7 +291,7 @@ public class CompositeQueryLogicTest {
         
         @Override
         public QueryLogicTransformer getTransformer(Query settings) {
-            return new TestQueryLogicTransformer(new MarkingFunctions.NoOp());
+            return new TestQueryLogicTransformer(new MarkingFunctions.Default());
         }
         
         @Override
@@ -317,7 +317,7 @@ public class CompositeQueryLogicTest {
         
         @Override
         public QueryLogicTransformer getTransformer(Query settings) {
-            return new DifferentTestQueryLogicTransformer(new MarkingFunctions.NoOp());
+            return new DifferentTestQueryLogicTransformer(new MarkingFunctions.Default());
         }
         
         @Override

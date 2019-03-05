@@ -249,7 +249,7 @@ public abstract class ValueToAttributesTest {
         
         TypeMetadata typeMetadata = new TypeMetadata(
                         "MAKE:[beep:datawave.data.type.LcNoDiacriticsType];MAKE_COLOR:[beep:datawave.data.type.NoOpType];START_DATE:[beep:datawave.data.type.DateType];TYPE_NOEVAL:[beep:datawave.data.type.LcNoDiacriticsType];IP_ADDR:[beep:datawave.data.type.IpAddressType];WHEELS:[beep:datawave.data.type.LcNoDiacriticsType,datawave.data.type.NumberType];COLOR:[beep:datawave.data.type.LcNoDiacriticsType];COLOR_WHEELS:[beep:datawave.data.type.NoOpType];TYPE:[beep:datawave.data.type.LcNoDiacriticsType]");
-        MarkingFunctions markingFunctions = new MarkingFunctions.NoOp();
+        MarkingFunctions markingFunctions = new MarkingFunctions.Default();
         ValueToAttributes valueToAttributes = new ValueToAttributes(compositeMetadata, typeMetadata, null, markingFunctions);
     }
 }
