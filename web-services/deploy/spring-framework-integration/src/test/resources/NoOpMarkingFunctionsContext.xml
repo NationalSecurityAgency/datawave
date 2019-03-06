@@ -13,6 +13,6 @@
 
     <bean id="markings-cache-manager" class="org.springframework.cache.caffeine.CaffeineCacheManager" />
 
-    <bean id="markingFunctions" class="datawave.marking.MarkingFunctions.NoOp" />
+    <bean id="markingFunctions" class="datawave.marking.MarkingFunctions.Default" />
 
 </beans>
