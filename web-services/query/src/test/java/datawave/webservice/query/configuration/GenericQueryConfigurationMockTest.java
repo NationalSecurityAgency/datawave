@@ -85,7 +85,6 @@ public class GenericQueryConfigurationMockTest {
     public void testBasicInit() {
         // Assert good init
         assertEquals("shard", config.getTableName());
-        assertEquals(5000L, config.getMaxQueryResults().longValue());
         assertEquals(25000L, config.getMaxRowsToScan().longValue());
         assertEquals(new HashSet<>(), config.getUndisplayedVisibilities());
         assertEquals(100, config.getBaseIteratorPriority());

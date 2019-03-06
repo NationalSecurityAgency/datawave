@@ -49,11 +49,11 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected SelectorExtractor selectorExtractor;
     
     public static final String BYPASS_ACCUMULO = "rfile.debug";
-
+    
     public BaseQueryLogic() {
         this.baseConfig.setBaseIteratorPriority(100);
     }
-
+    
     public BaseQueryLogic(BaseQueryLogic<T> other) {
         // Generic Query Config variables
         setTableName(other.getTableName());
