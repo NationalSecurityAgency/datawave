@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -346,7 +347,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                                     .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new ReloadableCacheBuilder());
                     // this will schedule a check to see if the update or expiration intervals have changed
                     // if so the ruleCache will be rebuilt with these new intervals
-                    SimpleTimer.getInstance(AccumuloConfiguration.getDefaultConfiguration()).schedule(
+                    SimpleTimer.getInstance(1).schedule(
                                     () -> {
                                         try {
                                             long interval = getLongProperty(UPDATE_INTERVAL_MS_PROP, DEFAULT_UPDATE_INTERVAL_MS);
@@ -393,7 +394,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         if (this.myEnv != null && this.myEnv.getConfig() != null) {
             AccumuloConfiguration conf = this.myEnv.getConfig();
             Map<String,String> properties = new TreeMap<>();
-            conf.getProperties(properties, new AccumuloConfiguration.MatchFilter(prop));
+            conf.getProperties(properties, p -> Objects.equals(prop, p));
             if (properties.containsKey(prop)) {
                 return Long.parseLong(properties.get(prop));
             }

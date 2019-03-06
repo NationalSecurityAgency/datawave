@@ -11,7 +11,6 @@ import java.util.TreeMap;
 import com.google.common.io.Files;
 import datawave.ingest.mapreduce.job.ShardedTableMapFile;
 import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -39,12 +38,12 @@ public class TestShardGenerator {
         this.totalTservers = totalTservers;
         this.daysWithoutCollisions = totalTservers / shardsPerDay;
         registerSomeTServers();
-        Map<KeyExtent,String> locations = simulateTabletAssignments(tableNames);
+        Map<Text,String> locations = simulateTabletAssignments(tableNames);
         writeSplits(locations, TMPDIR, BALANCEDISH_SHARDS_LST);
         registerSplitsFileForShardTable(TMPDIR, BALANCEDISH_SHARDS_LST, tableNames);
     }
     
-    public TestShardGenerator(Configuration conf, Map<KeyExtent,String> locations, String... tableNames) throws IOException {
+    public TestShardGenerator(Configuration conf, Map<Text,String> locations, String... tableNames) throws IOException {
         this.conf = conf;
         // constructor that takes a created list of locations
         writeSplits(locations, TMPDIR, BALANCEDISH_SHARDS_LST);
@@ -53,10 +52,9 @@ public class TestShardGenerator {
     
     // create splits for all the shards from today back NUM_DAYS,
     // creating SHARDS_PER_DAY
-    private Map<KeyExtent,String> simulateTabletAssignments(String[] tableNames) {
-        Map<KeyExtent,String> locations = new TreeMap<>();
+    private Map<Text,String> simulateTabletAssignments(String[] tableNames) {
+        Map<Text,String> locations = new TreeMap<>();
         long now = System.currentTimeMillis();
-        Text prevEndRow = new Text();
         
         HashSet<String> alreadyUsed = new HashSet<>();
         int daysInGroup = 1;
@@ -75,14 +73,14 @@ public class TestShardGenerator {
                 }
                 alreadyUsed.add(tserver);
                 for (String tableName : tableNames) {
-                    locations.put(new KeyExtent(tableName, new Text(today + "_" + currShard), prevEndRow), tserver);
+                    locations.put(new Text(today + "_" + currShard), tserver);
                 }
             }
         }
         return locations;
     }
     
-    private void writeSplits(Map<KeyExtent,String> locations, String directory, String fileName) throws IOException {
+    private void writeSplits(Map<Text,String> locations, String directory, String fileName) throws IOException {
         Path shardedMapFile = new Path(directory, fileName);
         ShardedTableMapFile.writeSplitsFileLegacy(locations, shardedMapFile, conf);
     }
