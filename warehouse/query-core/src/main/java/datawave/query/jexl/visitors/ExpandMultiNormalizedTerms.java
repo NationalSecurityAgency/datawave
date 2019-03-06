@@ -222,7 +222,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 for (Type<?> normalizer : config.getQueryFieldsDatatypes().get(field)) {
                     JexlNode lowerBound = lowerBounds.get(field), upperBound = upperBounds.get(field);
                     
-                    JexlNode left = null;
+                    JexlNode left;
                     try {
                         left = JexlASTHelper.applyNormalization(copy(lowerBound), normalizer);
                     } catch (Exception ne) {
@@ -233,7 +233,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                         continue;
                     }
                     
-                    JexlNode right = null;
+                    JexlNode right;
                     try {
                         right = JexlASTHelper.applyNormalization(copy(upperBound), normalizer);
                     } catch (NormalizationException ne) {
@@ -257,7 +257,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                         others.add(JexlNodes.wrap(aliasedBounds.get(0)));
                     } else {
                         List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds);
-                        others.add(JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()]))));
+                        others.add(JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[0]))));
                     }
                 }
             }
@@ -270,7 +270,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
          * The rebuilding visitor adds whatever {visit()} returns to the parent's child list, so we shouldn't have some weird object graph that means old nodes
          * never get GC'd because {super.visit()} will reset the parent in the call to {copy()}
          */
-        return super.visit(JexlNodes.children(smashed, others.toArray(new JexlNode[others.size()])), data);
+        return super.visit(JexlNodes.children(smashed, others.toArray(new JexlNode[0])), data);
     }
     
     @Override

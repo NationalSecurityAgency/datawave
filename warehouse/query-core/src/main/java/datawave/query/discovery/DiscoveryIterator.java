@@ -79,7 +79,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     
     private Multimap<String,TermInfo> aggregateDate() throws IOException {
         Multimap<String,TermInfo> terms = ArrayListMultimap.create();
-        Key start = new Key(itr.getTopKey()), key = null;
+        Key start = new Key(itr.getTopKey()), key;
         while (itr.hasTop() && start.equals((key = itr.getTopKey()), PartialKey.ROW_COLFAM) && datesMatch(start, key)) {
             TermInfo ti = new TermInfo(key, itr.getTopValue());
             if (ti.valid)

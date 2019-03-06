@@ -38,8 +38,8 @@ public class AccumuloTableIterable extends AccumuloTreeIterable<Key,DocumentData
     private final Equality eq;
     private final IteratorEnvironment environment;
     private final EventDataQueryFilter evaluationFilter;
-    private boolean includeChildCount = false;
-    private boolean includeParent = false;
+    private boolean includeChildCount;
+    private boolean includeParent;
     private final Map<String,String> options;
     
     private Range totalRange;

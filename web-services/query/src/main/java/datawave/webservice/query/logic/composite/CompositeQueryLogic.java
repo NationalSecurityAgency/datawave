@@ -170,7 +170,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         StringBuilder logicQueryStringBuilder = new StringBuilder("CompositeQueryLogic: ");
         while (itr.hasNext()) {
             BaseQueryLogic<?> logic = itr.next();
-            GenericQueryConfiguration config = null;
+            GenericQueryConfiguration config;
             try {
                 config = logic.initialize(connection, settings, runtimeQueryAuthorizations);
                 logicQueryStringBuilder.append("(table=" + config.getTableName());

@@ -20,8 +20,8 @@ public class CounterToStatsDConfiguration {
     private String host = null;
     private int port = 0;
     private Map<CounterName,StatsDAspect> aspects = new HashMap<>();
-    private String queueName = null;
-    private String jobName = null;
+    private String queueName;
+    private String jobName;
     
     public CounterToStatsDConfiguration(Configuration conf) {
         this.queueName = conf.get("mapreduce.job.queuename", "default");

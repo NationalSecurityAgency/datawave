@@ -119,7 +119,7 @@ public class BulkIngestCounters {
         private String fieldIndex;
         private long count = 0;
         private long fiCount = 0;
-        private static byte[] FI_CF = null;
+        private static byte[] FI_CF;
         
         static {
             try {

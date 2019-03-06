@@ -645,7 +645,7 @@ public class ShardIndexQueryTableStaticMethods {
         Key startKey = new Key(new Text(lower));
         Key endKey = new Key(new Text(literalRange.isUpperInclusive() ? upper + Constants.MAX_UNICODE_STRING : upper));
         
-        Range range = null;
+        Range range;
         try {
             range = new Range(startKey, literalRange.isLowerInclusive(), endKey, literalRange.isUpperInclusive());
         } catch (IllegalArgumentException e) {

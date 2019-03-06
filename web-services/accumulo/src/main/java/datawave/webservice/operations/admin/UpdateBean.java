@@ -124,7 +124,7 @@ public class UpdateBean {
             ArrayList<String> tablesNotFound = new ArrayList<>();
             HashMap<String,byte[]> globalDataRefs = new HashMap<>();
             
-            MultiTableBatchWriter writer = null;
+            MultiTableBatchWriter writer;
             
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             connection = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
@@ -263,7 +263,7 @@ public class UpdateBean {
                 for (Entry<KeyExtent,Set<SecurityErrorCode>> next : authFailures.entrySet()) {
                     AuthorizationFailure failure = new AuthorizationFailure();
                     
-                    String mappedTableName = null;
+                    String mappedTableName;
                     try {
                         mappedTableName = Tables.getTableName(connection.getInstance(), next.getKey().getTableId().toString());
                     } catch (TableNotFoundException e) {

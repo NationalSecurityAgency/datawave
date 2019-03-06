@@ -38,7 +38,7 @@ public class PhraseQueryNodeBuilder implements QueryBuilder {
     
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         TokenizedPhraseQueryNode phraseNode = (TokenizedPhraseQueryNode) queryNode;
-        datawave.query.language.tree.QueryNode bNode = null;
+        datawave.query.language.tree.QueryNode bNode;
         
         List<QueryNode> children = phraseNode.getChildren();
         List<datawave.query.language.tree.QueryNode> childrenList = new ArrayList<>();

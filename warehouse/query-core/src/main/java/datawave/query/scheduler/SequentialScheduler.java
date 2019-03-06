@@ -85,7 +85,7 @@ public class SequentialScheduler extends Scheduler {
         protected final ShardQueryConfiguration config;
         protected final ScannerFactory scannerFactory;
         
-        protected Iterator<QueryData> queries = null;
+        protected Iterator<QueryData> queries;
         protected Entry<Key,Value> currentEntry = null;
         protected BatchScanner currentBS = null;
         protected Iterator<Entry<Key,Value>> currentIter = null;

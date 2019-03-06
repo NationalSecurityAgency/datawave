@@ -9,7 +9,7 @@ public enum Direction implements Serializable {
     
     FORWARD("forward"), REVERSE("reverse");
     
-    private String value = null;
+    private String value;
     
     private Direction(String value) {
         this.value = value;

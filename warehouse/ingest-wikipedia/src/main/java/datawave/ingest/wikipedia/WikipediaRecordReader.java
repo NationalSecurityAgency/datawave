@@ -46,7 +46,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
     
     private static final Logger log = Logger.getLogger(WikipediaRecordReader.class);
     
-    private ReaderDelegate delegate = null;
+    private ReaderDelegate delegate;
     
     public WikipediaRecordReader() {
         delegate = new ReaderDelegate();
@@ -286,7 +286,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
                 if (-1 != index) {
                     String newType = rawFileName.substring(0, index + searchPrefix.length() - 1);
                     
-                    Type t = null;
+                    Type t;
                     if (wikipediaTypeRegistry.containsKey(newType)) {
                         t = wikipediaTypeRegistry.get(newType);
                     } else {

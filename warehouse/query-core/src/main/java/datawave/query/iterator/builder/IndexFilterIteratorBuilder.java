@@ -55,7 +55,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                 log.trace("Generating ivarator (caching field index iterator) for " + filter + " over " + range);
             }
             // get the hadoop file system and a temporary directory
-            URI hdfsCacheURI = null;
+            URI hdfsCacheURI;
             try {
                 hdfsCacheURI = new URI(ivaratorCacheDirURI);
                 hdfsFileSystem.mkdirs(new Path(hdfsCacheURI));
@@ -67,7 +67,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                 throw new IllegalStateException("Invalid hdfs cache dir URI: " + ivaratorCacheDirURI, e);
             }
             
-            DocumentIterator docIterator = null;
+            DocumentIterator docIterator;
             try {
                 // create a field index caching ivarator
                 DatawaveFieldIndexFilterIteratorJexl rangeIterator = DatawaveFieldIndexFilterIteratorJexl.builder()

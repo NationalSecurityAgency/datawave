@@ -31,7 +31,7 @@ public class QueryPlan {
     
     protected JexlNode queryTree = null;
     protected String queryTreeString = null;
-    protected List<Range> ranges = null;
+    protected List<Range> ranges;
     protected int hashCode;
     protected List<String> columnFamilies = Lists.newArrayList();
     protected List<IteratorSetting> settings = Lists.newArrayList();

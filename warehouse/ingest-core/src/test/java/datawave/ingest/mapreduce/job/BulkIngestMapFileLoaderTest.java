@@ -79,7 +79,7 @@ public class BulkIngestMapFileLoaderTest {
     public static class WrappedPositionedReadable extends InputStream implements PositionedReadable, Seekable {
         
         protected long position = 0;
-        protected ByteArrayInputStream mockedInputStream = null;
+        protected ByteArrayInputStream mockedInputStream;
         
         public WrappedPositionedReadable(ByteArrayInputStream mis) {
             
@@ -139,15 +139,15 @@ public class BulkIngestMapFileLoaderTest {
     
     public static class WrappedLocalFileSystem extends RawLocalFileSystem {
         
-        protected ByteArrayInputStream mockedInputStream = null;
-        protected FileStatus[] globStatusResults = null;
-        protected boolean mkdirsResults = false;
-        protected boolean renameResults = false;
-        protected boolean deleteResults = false;
-        protected boolean createNewFileResults = false;
-        protected Map<String,Boolean> existsResults = null;
-        protected boolean renameThrowsException = false;
-        protected boolean existsThrowsException = false;
+        protected ByteArrayInputStream mockedInputStream;
+        protected FileStatus[] globStatusResults;
+        protected boolean mkdirsResults;
+        protected boolean renameResults;
+        protected boolean deleteResults;
+        protected boolean createNewFileResults;
+        protected Map<String,Boolean> existsResults;
+        protected boolean renameThrowsException;
+        protected boolean existsThrowsException;
         protected List<String> wrappedFilsSystemCallParameters = new ArrayList<>();
         
         public List<String> callsLogs() {

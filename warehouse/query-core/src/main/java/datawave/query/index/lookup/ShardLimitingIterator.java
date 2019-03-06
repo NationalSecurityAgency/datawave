@@ -25,7 +25,7 @@ import com.google.common.collect.Queues;
 public class ShardLimitingIterator implements Iterator<Entry<Key,Value>> {
     
     protected PeekingIterator<Entry<Key,Value>> kvIter;
-    protected int maxShardsPerDay = Integer.MAX_VALUE;
+    protected int maxShardsPerDay;
     protected Queue<Entry<Key,Value>> currentQueue;
     protected String currentDay = null;
     // simply compare the strings. no need for a date formatter
@@ -118,7 +118,7 @@ public class ShardLimitingIterator implements Iterator<Entry<Key,Value>> {
             
             IndexInfo info = new IndexInfo(-1);
             
-            Value newValue = null;
+            Value newValue;
             try {
                 
                 ByteArrayOutputStream outByteStream = new ByteArrayOutputStream();

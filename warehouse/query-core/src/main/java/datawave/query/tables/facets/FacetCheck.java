@@ -40,7 +40,7 @@ public class FacetCheck extends AllTermsIndexedVisitor {
      */
     @Override
     protected JexlNode equalityVisitor(JexlNode node, Object data) {
-        String fieldName = null;
+        String fieldName;
         try {
             fieldName = JexlASTHelper.getIdentifier(node);
         } catch (NoSuchElementException e) {

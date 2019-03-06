@@ -60,7 +60,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     
     private EventDataQueryFilter filter;
     
-    private boolean includeParent = false;
+    private boolean includeParent;
     
     public KeyToDocumentData(SortedKeyValueIterator<Key,Value> source) {
         this(source, new PrefixEquality(PartialKey.ROW_COLFAM), false, false);

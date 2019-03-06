@@ -146,7 +146,6 @@ public class IndexInfo implements Writable, UidIntersector {
             JexlNode topLevelOr = getOrNode(sourceNode);
             
             if (null == topLevelOr) {
-                topLevelOr = sourceNode;
                 // add the source node
                 nodesMap.put(TreeHashVisitor.getNodeHash(sourceNode), first.myNode);
             } else {
@@ -280,7 +279,6 @@ public class IndexInfo implements Writable, UidIntersector {
             
             JexlNode topLevelOr = getOrNode(sourceNode);
             if (null == topLevelOr) {
-                topLevelOr = sourceNode;
                 // add the source node
                 nodesMap.put(TreeHashVisitor.getNodeHash(sourceNode), myNode);
             } else {
@@ -298,7 +296,6 @@ public class IndexInfo implements Writable, UidIntersector {
             
             JexlNode topLevelOr = getOrNode(sourceNode);
             if (null == topLevelOr) {
-                topLevelOr = sourceNode;
                 // add the source node
                 nodesMap.put(TreeHashVisitor.getNodeHash(sourceNode), o.myNode);
             } else {
@@ -463,7 +460,6 @@ public class IndexInfo implements Writable, UidIntersector {
                         
                         JexlNode topLevelOr = getOrNode(sourceNode);
                         if (null == topLevelOr) {
-                            topLevelOr = sourceNode;
                             // add the source node
                             nodesMap.put(TreeHashVisitor.getNodeHash(sourceNode), node);
                         } else {

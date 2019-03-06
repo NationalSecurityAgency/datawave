@@ -173,7 +173,7 @@ public class BaseTableCache implements Serializable, TableCache {
             if (accumuloConn instanceof WrappedConnector) {
                 accumuloConn = ((WrappedConnector) accumuloConn).getReal();
             }
-            Authorizations authorizations = null;
+            Authorizations authorizations;
             if (null == auths) {
                 authorizations = accumuloConn.securityOperations().getUserAuthorizations(accumuloConn.whoami());
             } else {

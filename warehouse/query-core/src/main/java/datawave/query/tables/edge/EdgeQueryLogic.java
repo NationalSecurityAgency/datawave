@@ -207,8 +207,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @return
      */
     protected String applyQueryModel(String queryString) {
-        ASTJexlScript origScript = null;
-        ASTJexlScript script = null;
+        ASTJexlScript origScript;
+        ASTJexlScript script;
         try {
             origScript = JexlASTHelper.parseJexlQuery(queryString);
             HashSet<String> allFields = new HashSet<>();
@@ -352,7 +352,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public static String fixQueryString(String original) {
-        String newQuery = original;
+        String newQuery;
         // first fix uppercase operators
         newQuery = original.replaceAll("\\s+[Aa][Nn][Dd]\\s+", " and ");
         newQuery = newQuery.replaceAll("\\s+[Oo][Rr]\\s+", " or ");
@@ -433,7 +433,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @return created iterator
      */
     public static IteratorSetting getDateTypeFilter(int priority, EdgeQueryConfiguration.dateType dateFilterType) {
-        IteratorSetting setting = null;
+        IteratorSetting setting;
         log.debug("Creating dateType filter=" + dateFilterType);
         setting = new IteratorSetting(priority, DateTypeFilter.class.getSimpleName() + "_" + priority, DateTypeFilter.class);
         setting.addOption(EdgeQueryConfiguration.DATE_RANGE_TYPE, dateFilterType.name());

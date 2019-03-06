@@ -80,7 +80,7 @@ public class BooleanQueryNodeBuilder implements QueryBuilder {
     
     private datawave.query.language.tree.QueryNode createNode(QueryNode queryNode, datawave.query.language.tree.QueryNode[] childrenArray, boolean isNegation,
                     LinkedList<QueryNode> extraNodeList) throws QueryNodeException {
-        datawave.query.language.tree.QueryNode bNode = null;
+        datawave.query.language.tree.QueryNode bNode;
         
         if (queryNode instanceof AndQueryNode) {
             bNode = new HardAndNode(childrenArray);

@@ -24,7 +24,7 @@ public class ThreadConfigurableLogger extends Logger {
         return new ThreadConfigurableLogger(Logger.getRootLogger());
     }
     
-    Logger log = null;
+    Logger log;
     
     public ThreadConfigurableLogger(Logger log) {
         super(log.getName());

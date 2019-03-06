@@ -88,8 +88,8 @@ public class GeoFunctions {
     }
     
     public static boolean within_bounding_box(Object lonField, Object latField, double minLon, double minLat, double maxLon, double maxLat) {
-        Set<Double> lonValues = null;
-        Set<Double> latValues = null;
+        Set<Double> lonValues;
+        Set<Double> latValues;
         try {
             lonValues = getDoublesFromFieldValue(lonField);
             latValues = getDoublesFromFieldValue(latField);

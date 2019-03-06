@@ -353,7 +353,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                     continue;
                 }
                 
-                FailurePolicy policy = null;
+                FailurePolicy policy;
                 try {
                     policy = FailurePolicy.valueOf(property.getValue());
                 } catch (Exception e) {

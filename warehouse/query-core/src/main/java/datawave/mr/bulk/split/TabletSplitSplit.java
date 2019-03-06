@@ -105,7 +105,7 @@ public class TabletSplitSplit extends org.apache.hadoop.mapreduce.InputSplit imp
                 Collections.addAll(hosts, hints);
             }
         }
-        return hosts.toArray(new String[hosts.size()]);
+        return hosts.toArray(new String[0]);
     }
     
     /**

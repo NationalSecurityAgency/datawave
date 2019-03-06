@@ -164,7 +164,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         EventDataQueryFieldFilter projection = null;
         
-        Iterator<Entry<Key,Document>> documents = null;
+        Iterator<Entry<Key,Document>> documents;
         
         if (!configuration.getFacetedFields().isEmpty()) {
             projection = new EventDataQueryFieldFilter();
@@ -176,7 +176,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
                             this.includeHierarchyFields);
         }
         
-        AccumuloTreeIterable<Key,DocumentData> doc = null;
+        AccumuloTreeIterable<Key,DocumentData> doc;
         if (null != keyToDoc) {
             doc = new AccumuloTreeIterable<>(fieldIndexResults.tree, keyToDoc);
         } else {
@@ -233,7 +233,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         this.range = range;
         
-        Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
+        Iterator<Entry<Key,Document>> fieldIndexDocuments;
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
         } catch (ConfigException e) {
@@ -273,8 +273,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
             
             this.key = entry.getKey();
             this.value = entry.getValue();
-            
-            entry = null;
+
         } else {
             this.key = null;
             this.value = null;

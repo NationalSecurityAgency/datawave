@@ -133,7 +133,7 @@ public class IngestMetricsMapper extends Mapper<Text,Counters,Text,Mutation> {
                 Collection<Text> inputFiles = typeInputFiles.get(tuple.getKey());
                 ArrayWritable value = new ArrayWritable(Text.class);
                 if (inputFiles != null && !inputFiles.isEmpty()) {
-                    Text[] typeIFs = inputFiles.toArray(new Text[inputFiles.size()]);
+                    Text[] typeIFs = inputFiles.toArray(new Text[0]);
                     value.set(typeIFs);
                 } else {
                     value.set(emptyTextArray);

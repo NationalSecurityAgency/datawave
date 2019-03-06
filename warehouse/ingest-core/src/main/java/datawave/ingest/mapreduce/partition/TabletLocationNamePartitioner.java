@@ -58,7 +58,7 @@ public class TabletLocationNamePartitioner extends Partitioner<BulkIngestKey,Val
      * between when the job starts and the map files are loaded, then we may end up sending multiple map files to each tablet server.
      */
     private int getLocationPartition(Text shardId, Map<Text,Integer> shardHash, int numReduceTasks) {
-        int partition = 0;
+        int partition;
         Integer hash = shardHash.get(shardId);
         if (hash != null) {
             partition = (hash & Integer.MAX_VALUE) % numReduceTasks;

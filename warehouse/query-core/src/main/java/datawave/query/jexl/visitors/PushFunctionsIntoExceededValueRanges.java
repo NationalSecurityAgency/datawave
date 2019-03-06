@@ -116,7 +116,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
             children.addAll(exceededValueRangeNodes.values());
             
             // and return the new and node with the new children
-            return children(newNode, children.toArray(new JexlNode[children.size()]));
+            return children(newNode, children.toArray(new JexlNode[0]));
         }
     }
     

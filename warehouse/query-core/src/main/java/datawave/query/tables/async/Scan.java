@@ -259,7 +259,7 @@ public class Scan implements Callable<Scan> {
                     lastSeenKey = null;
                 }
                 
-                Entry<Key,Value> myEntry = null;
+                Entry<Key,Value> myEntry;
                 if (null != myStats)
                     myStats.getTimer(TIMERS.SCANNER_ITERATE).resume();
                 while (iter.hasNext()) {

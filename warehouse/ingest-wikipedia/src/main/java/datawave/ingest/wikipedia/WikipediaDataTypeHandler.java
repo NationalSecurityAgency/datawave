@@ -145,8 +145,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
         contextWriter.write(keys, context);
         
         // gc before we get into the tokenization piece
-        keys = null;
-        
+
         // stream the tokens to the context writer here
         StatusReporter reporter = new ContextWrappedStatusReporter(context);
         count += tokenizeEvent(event, context, contextWriter, reporter);
@@ -436,8 +435,6 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
             if (baos != null) {
                 value = new Value(baos.toByteArray());
             }
-            gzos = null;
-            baos = null;
         }
         
         this.counters.increment(ContentIndexCounters.CONTENT_RECORDS_CREATED, reporter);

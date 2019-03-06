@@ -267,7 +267,7 @@ public interface VirtualIngest {
                     }
                     if (start != end)
                         escapedValue.add(concatValue.substring(start, end).replace("\\,", ","));
-                    return escapedValue.toArray(new String[escapedValue.size()]);
+                    return escapedValue.toArray(new String[0]);
                 }
             }
             return defaultVal;
@@ -286,7 +286,7 @@ public interface VirtualIngest {
             // type specific ones first, then the "all" ones
             prefixes.addAll(Arrays.asList(getConfPrefixes(type.typeName(), instance)));
             prefixes.addAll(Arrays.asList(getConfPrefixes("all", null)));
-            return prefixes.toArray(new String[prefixes.size()]);
+            return prefixes.toArray(new String[0]);
         }
         
         private String[] getConfPrefixes(String type, String instance) {
@@ -388,7 +388,7 @@ public interface VirtualIngest {
                         String virtualFieldName, String replacement, String[] grouping, GroupingPolicy groupingPolicy, boolean allowMissing, String[] fields,
                         int pos, String startSeparator, String endSeparator, StringBuilder originalValue, StringBuilder normalizedValue,
                         Map<String,String> markings) {
-            String separator = "";
+            String separator;
             // append any constants that have been specified
             while (pos < fields.length && isConstant(fields[pos])) {
                 String constant = getConstant(fields[pos++]);

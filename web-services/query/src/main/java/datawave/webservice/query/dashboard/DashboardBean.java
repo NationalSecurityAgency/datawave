@@ -119,7 +119,7 @@ public class DashboardBean {
         Set<Authorizations> auths = new HashSet<>();
         
         for (Collection<String> cbAuths : dp.getAuthorizations()) {
-            auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
+            auths.add(new Authorizations(cbAuths.toArray(new String[0])));
         }
         
         return auths;

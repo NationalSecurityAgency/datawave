@@ -169,7 +169,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
             if (tableName != null) {
                 tableNames.add(tableName);
             }
-            return tableNames.toArray(new String[tableNames.size()]);
+            return tableNames.toArray(new String[0]);
         }
         
         public int[] getTableLoaderPriorities(Configuration conf) {

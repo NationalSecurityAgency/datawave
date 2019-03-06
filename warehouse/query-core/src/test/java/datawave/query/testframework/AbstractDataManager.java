@@ -129,7 +129,7 @@ public abstract class AbstractDataManager implements RawDataManager {
             try {
                 if (getNormalizer(field) instanceof NumberNormalizer) {
                     // remove quotes from phrase
-                    String num = "";
+                    String num;
                     String numPhrase = phrase;
                     int start = phrase.indexOf('\'');
                     if (0 <= start) {

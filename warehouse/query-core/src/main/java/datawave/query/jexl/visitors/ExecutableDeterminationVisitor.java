@@ -304,7 +304,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
      */
     protected STATE executableUnlessItIsnt(JexlNode node, Object data) {
         STATE state;
-        boolean containsIgnorable = false;
+        boolean containsIgnorable;
         Set<STATE> states = new HashSet<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             states.add((STATE) (node.jjtGetChild(i).jjtAccept(this, data + PREFIX)));

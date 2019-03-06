@@ -23,8 +23,8 @@ public class MergeSortIterator<T> implements Iterator<T> {
     
     private List<Iterator<T>> iterators = new ArrayList<>();
     private List<T> lastList = new ArrayList<>();
-    private boolean[] finished = null;
-    private SortedSet<T> set = null;
+    private boolean[] finished;
+    private SortedSet<T> set;
     private boolean populated = false;
     private T next = null;
     private List<Iterator<T>> nextIterators = new ArrayList<>();

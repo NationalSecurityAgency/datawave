@@ -21,7 +21,7 @@ import org.apache.accumulo.core.data.Range;
  */
 public class RangeSplitter implements List<Range> {
     
-    private List<Range> delegate = null;
+    private List<Range> delegate;
     
     /**
      * Create a range splitter
@@ -69,7 +69,7 @@ public class RangeSplitter implements List<Range> {
                 // now create ranges using the bytes for the integers between xInt and yInt by step sizes of div
                 for (int j = 0; j < numRanges; j++) {
                     // Get the values for the end of the range
-                    ByteSequence endRange = y;
+                    ByteSequence endRange;
                     Key endKey = range.getEndKey();
                     
                     if (j < (numRanges - 1)) {
@@ -112,7 +112,7 @@ public class RangeSplitter implements List<Range> {
      * Create a key given a set of ByteSequences split up between start, middel, and end
      */
     protected Key getKey(List<ByteSequence> start, ByteSequence middle, List<ByteSequence> end, byte[] cv, long ts) {
-        ByteSequence row, cf, cq = null;
+        ByteSequence row, cf, cq;
         switch (start.size()) {
             case 0:
                 row = middle;

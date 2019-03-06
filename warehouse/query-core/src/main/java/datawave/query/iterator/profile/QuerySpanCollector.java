@@ -64,7 +64,7 @@ public class QuerySpanCollector {
     
     public QuerySpan getCombinedQuerySpan(QuerySpan querySpan) {
         
-        QuerySpan combinedQuerySpan = null;
+        QuerySpan combinedQuerySpan;
         synchronized (this) {
             if (querySpan != null) {
                 addQuerySpan(querySpan);

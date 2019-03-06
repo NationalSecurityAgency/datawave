@@ -60,7 +60,7 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     
     protected PreNormalizedAttributeFactory attributeFactory;
     protected Document document;
-    protected boolean buildDocument = false;
+    protected boolean buildDocument;
     protected Predicate<Key> datatypeFilter;
     protected final FieldIndexAggregator aggregation;
     protected TimeFilter timeFilter;

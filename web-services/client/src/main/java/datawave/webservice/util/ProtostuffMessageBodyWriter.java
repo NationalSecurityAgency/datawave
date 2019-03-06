@@ -53,7 +53,7 @@ public class ProtostuffMessageBodyWriter implements MessageBodyWriter<Object> {
         // This map must be mofified before any data is written to out,
         // since at that time the response headers will be flushed.
         
-        Schema<Object> schema = null;
+        Schema<Object> schema;
         if (message instanceof Message) {
             Message<Object> msg = (Message<Object>) message;
             schema = msg.cachedSchema();

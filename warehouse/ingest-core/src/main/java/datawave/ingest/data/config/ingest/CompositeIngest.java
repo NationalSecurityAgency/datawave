@@ -253,7 +253,7 @@ public interface CompositeIngest {
             // type specific ones first, then the "all" ones
             prefixes.addAll(Arrays.asList(getConfPrefixes(type.typeName())));
             prefixes.addAll(Arrays.asList(getConfPrefixes("all")));
-            return prefixes.toArray(new String[prefixes.size()]);
+            return prefixes.toArray(new String[0]);
         }
         
         private String[] getConfPrefixes(String type) {

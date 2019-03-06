@@ -7,7 +7,7 @@ import org.apache.log4j.Logger;
 public class RequireNode extends QueryNode {
     private static final Logger log = Logger.getLogger(RequireNode.class.getName());
     
-    Set<String> requiredFields = null;
+    Set<String> requiredFields;
     
     public RequireNode(Set<String> requiredFields, QueryNode... children) {
         super(children);

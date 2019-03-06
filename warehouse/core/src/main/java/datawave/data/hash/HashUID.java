@@ -267,7 +267,7 @@ public class HashUID extends UID {
         int a = Integer.parseInt(parts[1], RADIX);
         int timeIndex = parts[2].indexOf(TIME_SEPARATOR);
         int time = -1;
-        int b = 0;
+        int b;
         if (timeIndex >= 0) {
             time = Integer.parseInt(parts[2].substring(timeIndex + 1), RADIX);
             b = Integer.parseInt(parts[2].substring(0, timeIndex), RADIX);

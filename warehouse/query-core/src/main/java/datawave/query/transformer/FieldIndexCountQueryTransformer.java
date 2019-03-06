@@ -31,10 +31,10 @@ import org.apache.log4j.Logger;
 
 public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<Entry<String,Tuple>,EventBase> implements CacheableLogic {
     
-    private Authorizations auths = null;
+    private Authorizations auths;
     private Logger log = Logger.getLogger(FieldIndexCountQueryTransformer.class);
     private List<String> variableFieldList = null;
-    private BaseQueryLogic<Entry<Key,Value>> logic = null;
+    private BaseQueryLogic<Entry<Key,Value>> logic;
     private ResponseObjectFactory responseObjectFactory;
     
     public FieldIndexCountQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
@@ -59,7 +59,7 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
         String key = entry.getKey();
         Tuple val = entry.getValue();
         
-        Map<String,String> markings = null;
+        Map<String,String> markings;
         try {
             markings = this.markingFunctions.translateFromColumnVisibilityForAuths(val.getColumnVisibility(), this.auths);
         } catch (Exception e) {

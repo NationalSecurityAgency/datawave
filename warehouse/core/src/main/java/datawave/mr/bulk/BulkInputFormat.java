@@ -402,7 +402,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 col += ":" + new String(Base64.encodeBase64(TextUtil.getBytes(column.getSecond())));
             columnStrings.add(col);
         }
-        conf.setStrings(COLUMNS, columnStrings.toArray(new String[columnStrings.size()]));
+        conf.setStrings(COLUMNS, columnStrings.toArray(new String[0]));
     }
     
     /**
@@ -1139,7 +1139,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         ArrayList<InputSplit> splits = new ArrayList<>(ranges.size());
         
         HashMap<String,String> hostNameCache = new HashMap<>();
-        LocationStrategy strategy = null;
+        LocationStrategy strategy;
         
         strategy = getLocationStrategy(job.getConfiguration());
         

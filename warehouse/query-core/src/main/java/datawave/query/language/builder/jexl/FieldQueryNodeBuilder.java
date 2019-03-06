@@ -46,7 +46,7 @@ public class FieldQueryNodeBuilder implements QueryBuilder {
     public static final String SPACE = " ";
     
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
-        JexlNode returnNode = null;
+        JexlNode returnNode;
         
         if (queryNode instanceof QuotedFieldQueryNode) {
             List<String> phraseWordList = new ArrayList<>();
@@ -103,7 +103,7 @@ public class FieldQueryNodeBuilder implements QueryBuilder {
             String field = fieldNode.getFieldAsString();
             String selector = fieldNode.getTextAsString();
             
-            JexlSelectorNode.Type type = null;
+            JexlSelectorNode.Type type;
             
             int firstWildcard = WildcardFieldedTerm.getFirstWildcardIndex(fieldNode, Sets.newHashSet(' ', '/'));
             

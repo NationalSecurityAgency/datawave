@@ -75,7 +75,7 @@ public class BooleanQueryNodeBuilder implements QueryBuilder {
     
     private JexlNode createNode(QueryNode queryNode, List<JexlNode> children, boolean isNegation, LinkedList<QueryNode> extraNodeList)
                     throws QueryNodeException {
-        JexlNode bNode = null;
+        JexlNode bNode;
         
         if (queryNode instanceof AndQueryNode) {
             bNode = new JexlBooleanNode(JexlBooleanNode.Type.AND, children);

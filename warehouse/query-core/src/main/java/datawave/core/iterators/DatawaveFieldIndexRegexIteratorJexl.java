@@ -87,8 +87,8 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
     
     @Override
     protected List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue) {
-        Key startKey = null;
-        Key endKey = null;
+        Key startKey;
+        Key endKey;
         if (isNegated()) {
             startKey = new Key(rowId, fiName);
             endKey = new Key(rowId, new Text(fiName.toString() + '\0'));
@@ -117,7 +117,7 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
      */
     @Override
     protected boolean matches(Key k) throws IOException {
-        boolean matches = false;
+        boolean matches;
         String colq = k.getColumnQualifier().toString();
         
         // search backwards for the null bytes to expose the value in value\0datatype\0UID

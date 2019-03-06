@@ -46,7 +46,7 @@ public class MetadataTableSplits {
     private static final boolean DEFAULT_REFRESH_SPLITS = true;
     private final Configuration conf;
     private AccumuloHelper cbHelper = null;
-    private Path splitsPath = null;
+    private Path splitsPath;
     private Map<String,List<Text>> splits = null;
     
     /**
@@ -126,7 +126,7 @@ public class MetadataTableSplits {
     private Path createTempFile(FileSystem fs) throws IOException {
         // create a new temporary file
         int count = 1;
-        Path tmpSplitsFile = null;
+        Path tmpSplitsFile;
         try {
             do {
                 Path parentDirectory = this.splitsPath.getParent();
@@ -197,7 +197,7 @@ public class MetadataTableSplits {
     
     private Map<String,Integer> writeSplits(FileSystem fs, Path tmpSplitsFile) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
                     IOException {
-        TableOperations tops = null;
+        TableOperations tops;
         initAccumuloHelper();
         try {
             tops = this.cbHelper.getConnector().tableOperations();

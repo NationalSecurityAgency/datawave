@@ -30,7 +30,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
      * However more information (e.g. the document key) can be maintained in this field for use locally.
      */
     protected Key metadata = null;
-    protected boolean toKeep = true; // a flag denoting whether this attribute is to be kept in the returned results (transient or not)
+    protected boolean toKeep; // a flag denoting whether this attribute is to be kept in the returned results (transient or not)
     
     public Attribute(Key metadata, boolean toKeep) {
         this.toKeep = toKeep;

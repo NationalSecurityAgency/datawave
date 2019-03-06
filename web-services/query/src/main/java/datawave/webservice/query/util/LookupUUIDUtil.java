@@ -87,7 +87,7 @@ public class LookupUUIDUtil {
     private LookupUUIDConfiguration lookupUUIDConfiguration;
     private Logger log = Logger.getLogger(this.getClass());
     
-    private int maxAllowedBatchLookupUUIDs = LookupUUIDConstants.DEFAULT_BATCH_LOOKUP_UPPER_LIMIT;
+    private int maxAllowedBatchLookupUUIDs;
     
     private final QueryExecutor queryExecutor;
     
@@ -475,8 +475,8 @@ public class LookupUUIDUtil {
      */
     public <T> T lookupContentByUUIDs(final AbstractUUIDLookupCriteria unvalidatedCriteria) {
         // Initialize the query responses
-        BaseQueryResponse nextQueryResponse = null;
-        T contentQueryResponse = null;
+        BaseQueryResponse nextQueryResponse;
+        T contentQueryResponse;
         
         // Lookup the next set of UUID-queried events
         if (unvalidatedCriteria instanceof NextContentCriteria) {
@@ -510,7 +510,7 @@ public class LookupUUIDUtil {
     @SuppressWarnings("unchecked")
     private <T> T lookupContentByEvents(final AbstractUUIDLookupCriteria criteria, final BaseQueryResponse uuidQueryResponse) {
         // Initialize the return value
-        T contentResponse = null;
+        T contentResponse;
         
         // Validate for the expected response implementation
         final EventQueryResponseBase eventResponse = this.validatePagedResponse(uuidQueryResponse);
@@ -724,7 +724,7 @@ public class LookupUUIDUtil {
         
         // Get each set of next events, remove irrelevant information, and merge them into the main response
         try {
-            EventQueryResponseBase eventResponse = null;
+            EventQueryResponseBase eventResponse;
             do {
                 final BaseQueryResponse nextResponse = this.queryExecutor.next(queryId);
                 eventResponse = this.validatePagedResponse(nextResponse);

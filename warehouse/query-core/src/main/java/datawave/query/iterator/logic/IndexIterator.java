@@ -111,7 +111,7 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
     
     protected PreNormalizedAttributeFactory attributeFactory;
     protected Document document;
-    protected boolean buildDocument = false;
+    protected boolean buildDocument;
     protected Predicate<Key> datatypeFilter;
     protected SeekingFilter dataTypeSeekingFilter;
     protected final FieldIndexAggregator aggregation;

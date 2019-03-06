@@ -106,7 +106,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     
     protected AccumuloConfiguration acuTableConf;
     
-    protected Authorizations auths = null;
+    protected Authorizations auths;
     
     private long MAX_COUNT = 1;
     
@@ -137,7 +137,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         
     }
     
-    protected ExecutorService executor = null;
+    protected ExecutorService executor;
     
     protected volatile int numberFiles = 0;
     
@@ -622,7 +622,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     public boolean hasTop() {
         if (!isOpen)
             return false;
-        boolean hasTop = false;
+        boolean hasTop;
         try {
             hasTop = globalIter.hasTop();
         } catch (Exception e) {
@@ -722,7 +722,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     @Override
     public Key getTopKey() {
         
-        Key topKey = null;
+        Key topKey;
         try {
             topKey = globalIter.getTopKey();
         } catch (Exception e) {
@@ -736,7 +736,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     
     @Override
     public Value getTopValue() {
-        Value topValue = null;
+        Value topValue;
         try {
             topValue = globalIter.getTopValue();
         } catch (Exception e) {

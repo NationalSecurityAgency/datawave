@@ -59,6 +59,6 @@ public class FunctionJexlNodeVisitor extends BaseVisitor {
         nodes.add(namespace);
         nodes.add(function);
         Collections.addAll(nodes, arguments);
-        return JexlNodes.children(fn, nodes.toArray(new JexlNode[nodes.size()]));
+        return JexlNodes.children(fn, nodes.toArray(new JexlNode[0]));
     }
 }

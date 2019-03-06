@@ -72,7 +72,7 @@ public class WiseGuysIngest {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        Mutation mutation = null;
+        Mutation mutation;
         
         try {
             // write the shard table :

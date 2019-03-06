@@ -30,7 +30,7 @@ public class FullTableScan extends PushDownRule {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         
-        JexlNode returnNode = null;
+        JexlNode returnNode;
         
         List<JexlNode> rewrittenNodes = Lists.newArrayList();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {

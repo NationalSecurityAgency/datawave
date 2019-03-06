@@ -35,7 +35,7 @@ public class DocumentProjection implements DocumentPermutation {
     /**
      * should track document sizes
      */
-    private boolean trackSizes = true;
+    private boolean trackSizes;
     
     public DocumentProjection() {
         this(false, false);

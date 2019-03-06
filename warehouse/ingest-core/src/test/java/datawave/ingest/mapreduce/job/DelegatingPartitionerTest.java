@@ -299,7 +299,7 @@ public class DelegatingPartitionerTest {
     }
     
     public static class HardcodedTestPartitioner extends Partitioner<BulkIngestKey,Value> {
-        int predefinedPartition = 1;
+        int predefinedPartition;
         
         public HardcodedTestPartitioner(int partition) {
             predefinedPartition = partition;

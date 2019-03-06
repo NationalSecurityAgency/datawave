@@ -103,7 +103,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @return
      */
     public static Map<String,String> generateInitialTableProperties() {
-        Map<String,String> props = null;
+        Map<String,String> props;
         try {
             Method method = IteratorUtil.class.getMethod("generateInitialTableProperties");
             props = (Map<String,String>) (method.invoke(null));
@@ -142,7 +142,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @throws TableNotFoundException
      */
     protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops) throws TableNotFoundException {
-        boolean aggregatorsConfigured = false;
+        boolean aggregatorsConfigured;
         Map<String,String> props = generateInitialTableProperties();
         props.putAll(generateAggTableProperties(aggregators));
         Iterable<Entry<String,String>> properties;

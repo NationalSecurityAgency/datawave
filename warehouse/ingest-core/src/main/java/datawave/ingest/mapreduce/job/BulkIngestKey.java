@@ -20,7 +20,7 @@ import org.apache.accumulo.core.data.Key;
  */
 public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     
-    protected Text tableName = null;
+    protected Text tableName;
     protected Key key = new Key();
     // computed hashcode. we won't write this through the writable interface
     // to avoid increasing the size of our spilled data

@@ -262,14 +262,14 @@ public class DataTypeAgeOffFilter extends AppliedRule {
             isIndextable = Boolean.valueOf(options.getOption("isindextable"));
         }
         
-        long ttlUnitsFactor = 1L; // default to "days" as the unit.
+        long ttlUnitsFactor; // default to "days" as the unit.
         
         if (ttlUnits != null) {
             ttlUnitsFactor = AgeOffPeriod.getTtlUnitsFactor(options.getTTLUnits());
             
             dataTypeTimes = new HashMap<>();
             
-            long myCutOffDateMillis = 0;
+            long myCutOffDateMillis;
             
             for (ByteSequence dataType : dataTypes) {
                 String optionTTL = options.getOption(dataType + "." + AgeOffConfigParams.TTL);

@@ -76,7 +76,7 @@ public class GlobalIndexRangeSamplingIterator implements SortedKeyValueIterator<
             // Get the shard id and datatype from the colq
             String colq = this.iterator.getTopKey().getColumnQualifier().toString();
             // Parse the UID.List object from the value
-            Uid.List uidList = null;
+            Uid.List uidList;
             try {
                 uidList = Uid.List.parseFrom(this.iterator.getTopValue().get());
                 // Add the count for this shard to the total count for the term.

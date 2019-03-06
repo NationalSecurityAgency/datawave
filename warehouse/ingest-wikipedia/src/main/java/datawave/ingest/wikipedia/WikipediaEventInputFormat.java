@@ -81,7 +81,7 @@ public class WikipediaEventInputFormat extends SequenceFileInputFormat<LongWrita
     @Override
     public RecordReader<LongWritable,RawRecordContainer> createRecordReader(InputSplit split, TaskAttemptContext context) {
         return new RecordReader<LongWritable,RawRecordContainer>() {
-            private AbstractEventRecordReader<RawRecordContainer> rrDelegate = null;
+            private AbstractEventRecordReader<RawRecordContainer> rrDelegate;
             
             {
                 /*

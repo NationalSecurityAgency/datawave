@@ -69,7 +69,7 @@ public class HudBean {
     public String getRunningQueries(@PathParam("userid") String userId) throws Exception {
         DatawavePrincipal principal = getPrincipal();
         boolean isAnAdmin = isAnAdmin(principal);
-        QueryImplListResponse runningQueries = null;
+        QueryImplListResponse runningQueries;
         if (isAnAdmin) {
             runningQueries = queryExecutor.listQueriesForUser(userId);
         } else {

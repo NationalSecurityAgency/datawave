@@ -188,7 +188,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         if (null != tableName)
             tableNames.add(tableName);
         
-        return tableNames.toArray(new String[tableNames.size()]);
+        return tableNames.toArray(new String[0]);
     }
     
     @Override
@@ -271,7 +271,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      * @return The key and value
      */
     public KeyValue getDateIndexEntry(String shardId, String dataType, String type, String dateField, String dateValue, ColumnVisibility visibility) {
-        Date date = null;
+        Date date;
         try {
             // get the date to be indexed
             date = dateNormalizer.denormalize(dateValue);

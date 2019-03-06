@@ -34,11 +34,11 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> implements CacheableLogic {
     
-    private Authorizations auths = null;
+    private Authorizations auths;
     private Logger log = Logger.getLogger(ShardIndexQueryTransformer.class);
     private List<String> variableFieldList = null;
-    private BaseQueryLogic<Entry<Key,Value>> logic = null;
-    private QueryModel myQueryModel = null;
+    private BaseQueryLogic<Entry<Key,Value>> logic;
+    private QueryModel myQueryModel;
     private ResponseObjectFactory responseObjectFactory;
     
     public ShardIndexQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
@@ -91,7 +91,7 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         fields.add(makeField("DATE", markings, cv, 0L, cq.substring(0, 8)));
         fields.add(makeField("DATA TYPE", markings, cv, 0L, cq.substring(9)));
         // Parse the UID.List object from the value
-        Uid.List uidList = null;
+        Uid.List uidList;
         long count = 0;
         try {
             uidList = Uid.List.parseFrom(entry.getValue().get());

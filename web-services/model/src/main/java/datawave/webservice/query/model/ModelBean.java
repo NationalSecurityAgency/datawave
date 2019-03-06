@@ -120,7 +120,7 @@ public class ModelBean {
             DatawavePrincipal cp = (DatawavePrincipal) p;
             user = cp.getShortName();
             for (Collection<String> auths : cp.getAuthorizations()) {
-                cbAuths.add(new Authorizations(auths.toArray(new String[auths.size()])));
+                cbAuths.add(new Authorizations(auths.toArray(new String[0])));
             }
         }
         log.trace(user + " has authorizations " + cbAuths);
@@ -305,7 +305,7 @@ public class ModelBean {
             DatawavePrincipal cp = (DatawavePrincipal) p;
             user = cp.getShortName();
             for (Collection<String> auths : cp.getAuthorizations()) {
-                cbAuths.add(new Authorizations(auths.toArray(new String[auths.size()])));
+                cbAuths.add(new Authorizations(auths.toArray(new String[0])));
             }
         }
         log.trace(user + " has authorizations " + cbAuths);

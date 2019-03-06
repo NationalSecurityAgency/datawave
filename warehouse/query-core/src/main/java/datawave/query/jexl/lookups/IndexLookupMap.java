@@ -15,8 +15,8 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
     private Set<String> patterns = new HashSet<>();
     private Map<String,ValueSet> index = new HashMap<>();
     private boolean exceededKeyThreshold = false;
-    private int keyThreshold = -1;
-    private int valueThreshold = -1;
+    private int keyThreshold;
+    private int valueThreshold;
     
     public IndexLookupMap(int keyThreshold, int valueThreshold) {
         this.keyThreshold = keyThreshold;

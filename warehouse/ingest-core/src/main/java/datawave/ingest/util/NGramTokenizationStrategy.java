@@ -141,7 +141,7 @@ public class NGramTokenizationStrategy extends AbstractNGramTokenizationStrategy
                     ngramCount = 0;
                     
                     // Increment the tokenizer and applied any generated n-grams
-                    String ngram = null;
+                    String ngram;
                     while (null != (ngram = this.increment(tokenizer))) {
                         if (this.updateFilter(ngram, content)) {
                             ngramCount++;

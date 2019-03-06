@@ -59,12 +59,12 @@ public class NumShards {
     private TreeMap<String,Integer> yyyyMMddToNumShardsCache = new TreeMap<>();
     
     // seems like a good thing to calculate
-    private int maxNumShards = 0;
-    private int minNumShards = 0;
+    private int maxNumShards;
+    private int minNumShards;
     private int shardCount = 0;
     
-    private Path numShardsCachePath = null;
-    private int defaultNumShards = 0;
+    private Path numShardsCachePath;
+    private int defaultNumShards;
     
     private static final int MAX_NUMBER_OF_RETRIES_CACHEFILE = 10;
     

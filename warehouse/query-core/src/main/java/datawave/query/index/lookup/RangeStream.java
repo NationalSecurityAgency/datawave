@@ -135,7 +135,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     protected ExecutorService streamExecutor;
     
-    protected boolean collapseUids = false;
+    protected boolean collapseUids;
     
     private boolean setCondenseUids = true;
     
@@ -196,7 +196,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             log.trace(JexlStringBuildingVisitor.buildQuery(node));
         }
         
-        IndexStream ranges = null;
+        IndexStream ranges;
         
         ranges = (IndexStream) node.jjtAccept(this, null);
         
@@ -292,7 +292,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     public static class MinimizeRanges implements Function<QueryPlan,QueryPlan> {
         
-        StreamContext myContext = null;
+        StreamContext myContext;
         
         Text row = new Text();
         
@@ -465,11 +465,11 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         try {
             
             // two scenarios
-            Iterator<Tuple2<String,IndexInfo>> itr = null;
+            Iterator<Tuple2<String,IndexInfo>> itr;
             int stackStart = config.getBaseIteratorPriority();
             
             if (limitScanners) {
-                RangeStreamScanner scanSession = null;
+                RangeStreamScanner scanSession;
                 
                 // configuration class
                 Class<? extends SortedKeyValueIterator<Key,Value>> iterClazz = createUidsIteratorClass;

@@ -131,7 +131,7 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
                 children.add(copiedChild);
             }
         }
-        return children(newNode, children.toArray(new JexlNode[children.size()]));
+        return children(newNode, children.toArray(new JexlNode[0]));
     }
     
     @Override

@@ -93,7 +93,7 @@ public class LookupBoundedRangeForTerms extends IndexLookup {
             endKey = new Key(new Text(upper));
         }
         
-        Range range = null;
+        Range range;
         try {
             range = new Range(startKey, true, endKey, literalRange.isUpperInclusive());
         } catch (IllegalArgumentException e) {

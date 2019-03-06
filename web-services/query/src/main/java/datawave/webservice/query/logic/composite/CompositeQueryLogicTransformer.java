@@ -16,7 +16,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
     
     protected static final Logger log = Logger.getLogger(CompositeQueryLogicTransformer.class);
     
-    private List<QueryLogicTransformer<I,O>> delegates = null;
+    private List<QueryLogicTransformer<I,O>> delegates;
     
     public CompositeQueryLogicTransformer(List<QueryLogicTransformer<I,O>> delegates) {
         this.delegates = delegates;

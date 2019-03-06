@@ -64,7 +64,7 @@ public class EdgeKeyVersioningCache {
     
     private Configuration conf;
     private AccumuloHelper cbHelper = null;
-    private Path versioningCache = null;
+    private Path versioningCache;
     private String metadataTableName;
     
     private Map<Integer,String> edgeKeyVersionDateChange = null;

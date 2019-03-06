@@ -466,7 +466,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                 return false;
             }
             
-            int low, high = -1;
+            int low, high;
             EvaluateTermPosition eval;
             switch (direction) {
                 case FORWARD:

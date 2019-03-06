@@ -6,8 +6,8 @@ package datawave.query.exceptions;
  */
 public class BooleanLogicFatalQueryException extends Exception {
     
-    private String query = "";
-    private String reason = "";
+    private String query;
+    private String reason;
     
     public BooleanLogicFatalQueryException(String query, String reason) {
         this.query = query;

@@ -66,12 +66,12 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     
     protected ReentrantReadWriteLock queueLock = new ReentrantReadWriteLock(true);
     
-    protected Lock readLock = null;
-    protected Lock writeLock = null;
+    protected Lock readLock;
+    protected Lock writeLock;
     
     volatile boolean finished = false;
     
-    ExecutorService myExecutor = null;
+    ExecutorService myExecutor;
     
     private int threadNum = 1;
     
@@ -253,7 +253,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         
         int retrievalCount = 0;
         
-        Entry<Key,Value> myEntry = null;
+        Entry<Key,Value> myEntry;
         
         String currentDay = null;
         
@@ -373,7 +373,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 
                 IndexInfo info = new IndexInfo(-1);
                 
-                Value newValue = null;
+                Value newValue;
                 try {
                     
                     ByteArrayOutputStream outByteStream = new ByteArrayOutputStream();

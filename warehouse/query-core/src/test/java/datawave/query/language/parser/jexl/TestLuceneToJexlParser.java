@@ -14,7 +14,7 @@ public class TestLuceneToJexlParser {
         LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
         
         try {
-            QueryNode node = null;
+            QueryNode node;
             
             node = parser.parse("FIELD:SELECTOR AND #EXCLUDE(AND, F1, GB.*, F2, GB.*)");
             Assert.assertEquals("FIELD == 'SELECTOR' && (not(filter:includeRegex(F1, 'GB.*')) || not(filter:includeRegex(F2, 'GB.*')))",
@@ -59,7 +59,7 @@ public class TestLuceneToJexlParser {
         LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
         
         try {
-            QueryNode node = null;
+            QueryNode node;
             
             node = parser.parse("FIELD:SELECTOR AND #INCLUDE(F1, GB.*)");
             Assert.assertEquals("FIELD == 'SELECTOR' && (filter:includeRegex(F1, 'GB.*'))", node.getOriginalQuery());

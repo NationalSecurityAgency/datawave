@@ -334,7 +334,7 @@ public class ExecutableExpansionVisitor extends BaseVisitor {
             }
         }
         
-        JexlNode poolNode = null;
+        JexlNode poolNode;
         // add the nonExecutablePool elements to a newOr that will be carried forward if there is more than one element
         if (nonExecutablePool.size() > 1) {
             poolNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);

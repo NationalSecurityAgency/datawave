@@ -159,7 +159,7 @@ public class IndexStatsClient {
                 log.debug("Received key " + kv.getKey().toStringNoTime());
             }
             Text field = kv.getKey().getRow();
-            Double weight = null;
+            Double weight;
             try {
                 vWeight.readFields(new DataInputStream(new ByteArrayInputStream(kv.getValue().get())));
                 weight = vWeight.get();

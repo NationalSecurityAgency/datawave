@@ -748,7 +748,7 @@ public class JexlASTHelper {
             String fieldName = JexlASTHelper.getIdentifier(firstNode);
             Object literal = JexlASTHelper.getLiteralValue(firstNode);
             
-            LiteralRange<?> range = null;
+            LiteralRange<?> range;
             List<JexlNode> thisRangesNodes = new ArrayList<>();
             if (literal instanceof String) {
                 range = getStringBoundedRange(rangeNodes, thisRangesNodes, new LiteralRange<>(fieldName, LiteralRange.NodeOperand.AND));

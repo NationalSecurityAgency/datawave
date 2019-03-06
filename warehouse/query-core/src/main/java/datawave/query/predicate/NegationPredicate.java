@@ -37,7 +37,7 @@ public class NegationPredicate implements Predicate<ASTJexlScript> {
     }
     
     private static final class NegationTest extends BaseVisitor {
-        private boolean hasNot = false;
+        private boolean hasNot;
         protected Set<String> indexOnlyFields;
         
         public NegationTest(Set<String> indexOnlyFields) {

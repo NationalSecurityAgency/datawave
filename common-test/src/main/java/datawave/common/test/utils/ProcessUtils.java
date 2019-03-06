@@ -40,7 +40,7 @@ public class ProcessUtils {
     
     public static String[] convertCommandLine(List<String> arguments) {
         
-        return arguments.toArray(new String[arguments.size()]);
+        return arguments.toArray(new String[0]);
     }
     
     public static Process runInstance(String[] cmdArray, Map<String,String> newEnvironment, List<String> dropFromEnvironment, File workingDirectory)
@@ -81,7 +81,7 @@ public class ProcessUtils {
         
         BufferedReader br = new BufferedReader(isr);
         
-        String line = null;
+        String line;
         
         while (null != (line = br.readLine())) {
             

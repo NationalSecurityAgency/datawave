@@ -374,7 +374,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
             cfg = getQueryIterator(metadataHelper, config, settings, "", false);
         }
         
-        ASTJexlScript queryTree = null;
+        ASTJexlScript queryTree;
         try {
             queryTree = updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
         } catch (StackOverflowError e) {
@@ -699,7 +699,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
         stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Apply query model");
         
-        QueryModel queryModel = null;
+        QueryModel queryModel;
         QueryModelProvider queryModelProvider = this.queryModelProviderFactory.createQueryModelProvider();
         if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
             ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
@@ -851,7 +851,7 @@ public class DefaultQueryPlanner extends QueryPlanner {
                     ScannerFactory scannerFactory, QueryData queryData, QueryStopwatch timers, QueryModel queryModel) throws DatawaveQueryException {
         ASTJexlScript queryTree = originalQueryTree;
         
-        TraceStopwatch stopwatch = null;
+        TraceStopwatch stopwatch;
         
         if (!disableExpandIndexFunction) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand function index queries");

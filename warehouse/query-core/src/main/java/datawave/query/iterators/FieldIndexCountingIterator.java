@@ -88,7 +88,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     public static final String DATE_FORMAT_STRING = "yyyyMMddHHmmss";
     public static final Text fi_PREFIX_TEXT = new Text("fi\u0000");
     
-    private Set<Text> visibilitySet = new HashSet<>();
+    private Set<Text> visibilitySet;
     
     protected static final MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     

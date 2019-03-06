@@ -38,9 +38,9 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
     /**
      * child hash
      */
-    protected int childHash = 0;
+    protected int childHash;
     
-    protected boolean lazy = true;
+    protected boolean lazy;
     
     private static final Logger log = Logger.getLogger(Loader.class);
     

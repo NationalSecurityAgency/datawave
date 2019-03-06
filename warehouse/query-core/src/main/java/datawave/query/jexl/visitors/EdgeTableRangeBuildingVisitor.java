@@ -97,7 +97,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     private static final char STRING_QUOTE = '\'';
     private Set<String> allowedFunctions = Sets.newHashSet("has_all");
     private int termCount = 0;
-    private long maxTerms = 10000;
+    private long maxTerms;
     private boolean sawEquivalenceRegexSource = false;
     private boolean sawEquivalenceRegexSink = false;
     
@@ -540,7 +540,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
         
         // If the sink field appears in a query contexts, 'otherContext' list then it will have to be included in the normalized
         // query string sent to the edge filter iterator
-        boolean includeSink = false;
+        boolean includeSink;
         boolean includeSource = false;
         for (QueryContext queryContext : queryContexts) {
             if (queryContext.hasCompleteColumnFamily() == false) {

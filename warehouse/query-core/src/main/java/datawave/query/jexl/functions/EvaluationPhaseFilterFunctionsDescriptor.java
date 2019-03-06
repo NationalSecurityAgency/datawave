@@ -115,7 +115,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                 JexlNode node0 = arguments.get(0);
                 final String beginArg = (arguments.size() == 5 ? arguments.get(2).image : arguments.get(1).image);
                 final String endArg = (arguments.size() == 5 ? arguments.get(3).image : arguments.get(2).image);
-                Date begin, end = null;
+                Date begin, end;
                 if (arguments.size() >= 4) {
                     String formatArg = arguments.get(arguments.size() - 1).image;
                     DateFormat formatter = EvaluationPhaseFilterFunctions.newSimpleDateFormat(formatArg);

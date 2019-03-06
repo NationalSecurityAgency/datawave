@@ -100,7 +100,7 @@ public class EventMetadata implements RawRecordMetadata {
     private final MetadataCounterGroup frequencyCounts = new MetadataCounterGroup(ColumnFamilyConstants.COLF_F); // by event date
     private final MetadataCounterGroup indexedFieldsLoadDateCounts;
     private final MetadataCounterGroup reverseIndexedFieldsLoadDateCounts;
-    private boolean frequency = false;
+    private boolean frequency;
     
     /**
      * @param shardTableName

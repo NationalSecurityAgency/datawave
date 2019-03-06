@@ -132,7 +132,7 @@ public class Chain extends JexlQueryFunction {
         for (String s : split1) {
             String[] split2 = s.trim().split("=");
             String variableName = split2[0];
-            Object variableValue = null;
+            Object variableValue;
             
             if (split2.length == 1) {
                 variableValue = variableName;
@@ -226,7 +226,7 @@ public class Chain extends JexlQueryFunction {
             for (Map.Entry<String,Integer> entry : index.entrySet()) {
                 p.setProperty(entry.getKey(), multiValueMap.get(entry.getKey()).get(entry.getValue()));
             }
-            String finalQuery = null;
+            String finalQuery;
             if (undefinedProperties.isEmpty()) {
                 finalQuery = pph.replacePlaceholders(query, p);
             } else {
@@ -244,7 +244,7 @@ public class Chain extends JexlQueryFunction {
     
     private static String fixQuery(String query) {
         
-        JexlNode node = null;
+        JexlNode node;
         try {
             LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
             node = parser.convertToJexlNode(query);
@@ -321,7 +321,7 @@ public class Chain extends JexlQueryFunction {
                 return terms;
             }
             
-            Attributes desiredFieldAttributes = null;
+            Attributes desiredFieldAttributes;
             if (desiredFieldAttr instanceof Attributes == false) {
                 desiredFieldAttributes = new Attributes(false);
                 desiredFieldAttributes.add(desiredFieldAttr);

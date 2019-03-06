@@ -379,7 +379,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected void setTableIdsAndConfigs() throws IOException {
         ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(conf.get(INSTANCE_NAME))
                         .withZkHosts(conf.get(ZOOKEEPERS)));
-        Connector connector = null;
+        Connector connector;
         tableConfigs = new HashMap<>();
         Iterable<String> localityGroupTables = Splitter.on(",").split(conf.get(CONFIGURE_LOCALITY_GROUPS, ""));
         try {

@@ -24,7 +24,7 @@ public class DocumentCountCardinality implements Function<Entry<Key,Document>,En
     
     protected FacetedSearchType type;
     
-    protected boolean setDocIds = true;
+    protected boolean setDocIds;
     
     public DocumentCountCardinality(FacetedSearchType type, boolean setDocIds) {
         this.type = type;

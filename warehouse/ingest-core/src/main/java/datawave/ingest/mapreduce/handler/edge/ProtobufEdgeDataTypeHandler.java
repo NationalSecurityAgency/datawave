@@ -225,7 +225,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          * Parse and Store the Edge defs by data type
          */
         edges = new HashMap<>();
-        ClassPathXmlApplicationContext ctx = null;
+        ClassPathXmlApplicationContext ctx;
         try {
             ctx = new ClassPathXmlApplicationContext(ProtobufEdgeDataTypeHandler.class.getClassLoader().getResource(springConfigFile).toString());
             
@@ -464,7 +464,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         boolean activityEqualsEvent = false;
         String edgeAttribute2 = null, edgeAttribute3 = null;
         
-        String loadDateStr = null;
+        String loadDateStr;
         
         if (event.fatalError()) {
             return edgesCreated;
@@ -473,8 +473,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         // get edge definitions for this event type
         Type dataType = event.getDataType();
         String typeName = dataType.typeName();
-        List<EdgeDefinition> edgeDefs = null;
-        EdgeDefinitionConfigurationHelper edgeDefConfigs = null;
+        List<EdgeDefinition> edgeDefs;
+        EdgeDefinitionConfigurationHelper edgeDefConfigs;
         if (!edges.containsKey(typeName)) {
             return edgesCreated; // short circuit, no edges defined for this type
         }
@@ -515,7 +515,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
          */
         Multimap<String,NormalizedContentInterface> normalizedFields = HashMultimap.create();
         Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList = new HashMap<>();
-        Multimap<String,NormalizedContentInterface> tmp = null;
+        Multimap<String,NormalizedContentInterface> tmp;
         for (Entry<String,NormalizedContentInterface> e : fields.entries()) {
             NormalizedContentInterface value = e.getValue();
             String subGroup = null;
@@ -613,8 +613,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             
             String enrichmentFieldName = getEnrichmentFieldName(edgeDef);
             
-            Multimap<String,NormalizedContentInterface> mSource = null;
-            Multimap<String,NormalizedContentInterface> mSink = null;
+            Multimap<String,NormalizedContentInterface> mSource;
+            Multimap<String,NormalizedContentInterface> mSink;
             
             String sourceGroup = getGroup(edgeDef.getSourceFieldName());
             String sinkGroup = getGroup(edgeDef.getSinkFieldName());
@@ -1251,7 +1251,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 tableNames.add(LoadDateTableConfigHelper.getLoadDatesTableName(conf));
             }
         }
-        return tableNames.toArray(new String[tableNames.size()]);
+        return tableNames.toArray(new String[0]);
     }
     
     @Override

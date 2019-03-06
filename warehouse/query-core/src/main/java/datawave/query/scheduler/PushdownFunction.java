@@ -66,7 +66,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
     protected Set<Integer> queryPlanSet;
     protected Collection<IteratorSetting> customSettings;
     
-    protected String tableId = "0";
+    protected String tableId;
     
     public PushdownFunction(TabletLocator tl, ShardQueryConfiguration config, Collection<IteratorSetting> settings, String tableId) {
         this.tl = tl;

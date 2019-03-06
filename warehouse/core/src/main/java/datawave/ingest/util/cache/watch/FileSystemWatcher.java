@@ -56,7 +56,7 @@ public abstract class FileSystemWatcher<V> extends Reloadable<V> {
     @Override
     public boolean hasChanged() {
         
-        boolean reload = false;
+        boolean reload;
         
         long currentModTime;
         try {

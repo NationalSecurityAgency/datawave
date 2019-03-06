@@ -13,7 +13,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 public class QueryMetricMessage implements Serializable {
     
     private static final long serialVersionUID = 1L;
-    private QueryMetricHolder metricHolder = null;
+    private QueryMetricHolder metricHolder;
     
     public QueryMetricMessage(QueryMetricHolder metricHolder) {
         this.metricHolder = metricHolder;

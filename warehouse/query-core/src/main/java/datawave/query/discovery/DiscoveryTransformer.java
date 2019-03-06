@@ -29,8 +29,8 @@ import com.google.common.base.Preconditions;
 
 public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredThing,EventBase> implements CacheableLogic {
     private List<String> variableFieldList = null;
-    private BaseQueryLogic<DiscoveredThing> logic = null;
-    private QueryModel myQueryModel = null;
+    private BaseQueryLogic<DiscoveredThing> logic;
+    private QueryModel myQueryModel;
     private MarkingFunctions markingFunctions;
     private ResponseObjectFactory responseObjectFactory;
     

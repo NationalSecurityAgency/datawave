@@ -120,9 +120,9 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         
         String jobTime = StringUtils.split(jobNameSplit[1], '.')[0];
         
-        Date date = null;
+        Date date;
         
-        String timeString = "";
+        String timeString;
         try {
             date = DateHelper.parseTimeExactToSeconds(jobTime);
             timeString = Long.toString(date.getTime());

@@ -192,9 +192,9 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
      * 
      */
     protected static class TermInfoSummary {
-        private String fieldValue = null;
-        private String fieldName = null;
-        private String date = null;
+        private String fieldValue;
+        private String fieldName;
+        private String date;
         private Map<String,MutableLong> summary = new HashMap<>();
         private Map<String,Set<ColumnVisibility>> columnVisibilitiesMap = Maps.newHashMap();
         
@@ -283,8 +283,8 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
      */
     protected static class TermInfo {
         protected long count = 0;
-        protected String fieldValue = null;
-        protected String fieldName = null;
+        protected String fieldValue;
+        protected String fieldName;
         protected String date = null;
         protected String datatype = null;
         protected ColumnVisibility vis = null;
@@ -319,7 +319,7 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
                 }
                 
                 // Parse the UID.List object from the value
-                Uid.List uidList = null;
+                Uid.List uidList;
                 try {
                     uidList = Uid.List.parseFrom(value.get());
                     if (null != uidList) {

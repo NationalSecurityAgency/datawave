@@ -29,7 +29,7 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
     protected volatile int sources = 0;
     protected volatile int deepCopiesCalled = 0;
     
-    protected long initialSize = 0;
+    protected long initialSize;
     protected long createdSize = 0;
     
     Queue<SourceManager> sourceQueue;
@@ -41,7 +41,7 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
     protected boolean inclusive = false;
     
     protected SortedKeyValueIterator<Key,Value> originalSource = null;
-    protected SourceManager child = null;
+    protected SourceManager child;
     private IteratorEnvironment originalEnv = null;
     private boolean root = false;
     
@@ -217,7 +217,7 @@ public class SourceManager implements SortedKeyValueIterator<Key,Value> {
         deepCopiesCalled++;
         if (initialSize > 0) {
             Queue<SourceManager> queue = sourceQueue;
-            SourceManager nextSource = null;
+            SourceManager nextSource;
             // lazily create the sources.
             if (createdSize < initialSize) {
                 nextSource = createSource();

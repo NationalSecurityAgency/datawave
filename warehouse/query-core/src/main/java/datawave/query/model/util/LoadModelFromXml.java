@@ -71,7 +71,7 @@ public class LoadModelFromXml {
      * @return QueryModel instance
      */
     public static QueryModel loadModel(String queryModelXml) throws Exception {
-        QueryModel model = null;
+        QueryModel model;
         try (InputStream modelStream = LoadModelFromXml.class.getResourceAsStream(queryModelXml)) {
             model = loadModelFromXml(modelStream);
         } catch (Throwable t) {

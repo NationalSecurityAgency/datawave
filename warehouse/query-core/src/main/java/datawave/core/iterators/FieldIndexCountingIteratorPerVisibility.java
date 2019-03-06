@@ -87,7 +87,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     private Text currentFieldName = null;
     private String currentFieldValue = null;
     private String currentDataType = null;
-    private Map<Text,MutableInt> currentVisibilityCounts = null;
+    private Map<Text,MutableInt> currentVisibilityCounts;
     
     private StringBuilder dataTypeStringBuilder = new StringBuilder();
     private StringBuilder fieldValueStringBuilder = new StringBuilder();
@@ -96,7 +96,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     public static final String DATE_FORMAT_STRING = "yyyyMMddHHmmss";
     
     private Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
-    private TreeMap<Key,Value> keyCache = null;
+    private TreeMap<Key,Value> keyCache;
     protected static MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     
     // -------------------------------------------------------------------------
@@ -558,7 +558,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 }
             }
             
-            ColumnVisibility cv = null;
+            ColumnVisibility cv;
             try {
                 // Calculate the columnVisibility for this key from the combiner.
                 cv = markingFunctions.combine(columnVisibilities);

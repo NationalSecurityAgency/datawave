@@ -129,7 +129,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         // should have the correct top-level visibility
         ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
         
-        EventBase output = null;
+        EventBase output;
         try {
             // build response method here
             output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);

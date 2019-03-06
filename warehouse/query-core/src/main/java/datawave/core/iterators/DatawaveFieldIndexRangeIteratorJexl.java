@@ -109,8 +109,8 @@ public class DatawaveFieldIndexRangeIteratorJexl extends DatawaveFieldIndexCachi
     
     @Override
     protected List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue) {
-        Key startKey = null;
-        Key endKey = null;
+        Key startKey;
+        Key endKey;
         // construct new range
         
         // we cannot simply use startKeyInclusive in the Range as the datatype and UID follow the value in the keys

@@ -51,7 +51,7 @@ public class EdgeDataBundle {
     private String edgeAttribute3;
     private String edgeAttribute2;
     
-    private long eventDate = 0;
+    private long eventDate;
     private IngestHelperInterface helper;
     private Map<String,String> markings = null;
     private ColumnVisibility maskedVisibility = null;
@@ -62,7 +62,7 @@ public class EdgeDataBundle {
     private DurationValue durationValue = null;
     
     private String loadDate;
-    private MarkingFunctions mf = null;
+    private MarkingFunctions mf;
     private String uuid;
     private long activityDate;
     private boolean validActivityDate;
@@ -181,7 +181,7 @@ public class EdgeDataBundle {
     
     public Value getEdgeValue(boolean forwardEdge, EdgeKey.DATE_TYPE date_type) {
         EdgeValueBuilder builder = datawave.edge.util.EdgeValue.newBuilder();
-        int hour = -1;
+        int hour;
         
         if (date_type == EdgeKey.DATE_TYPE.ACTIVITY_ONLY || date_type == EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT) {
             hour = getHour(activityDate);
@@ -225,7 +225,7 @@ public class EdgeDataBundle {
     
     public Value getStatsActivityValue(boolean forwardEdge, EdgeKey.DATE_TYPE date_type) {
         EdgeValueBuilder builder = datawave.edge.util.EdgeValue.newBuilder();
-        int hour = -1;
+        int hour;
         
         if (date_type == EdgeKey.DATE_TYPE.ACTIVITY_ONLY || date_type == EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT) {
             hour = getHour(activityDate);

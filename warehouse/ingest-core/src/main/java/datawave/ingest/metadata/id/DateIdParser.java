@@ -10,7 +10,7 @@ import com.google.common.collect.Multimap;
 
 public class DateIdParser extends MetadataIdParser {
     
-    private SimpleDateFormat format = null;
+    private SimpleDateFormat format;
     private String value = null;
     
     public DateIdParser(String pattern, String dateFormat) {
@@ -28,7 +28,7 @@ public class DateIdParser extends MetadataIdParser {
         Matcher matcher = getMatcher(key);
         if (matcher.matches()) {
             String date = (value == null ? matcher.group(1) : value);
-            long time = -1;
+            long time;
             synchronized (format) {
                 time = format.parse(date).getTime();
             }

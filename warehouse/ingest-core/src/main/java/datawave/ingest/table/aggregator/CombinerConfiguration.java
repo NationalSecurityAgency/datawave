@@ -10,7 +10,7 @@ import com.google.common.collect.Sets;
 public class CombinerConfiguration {
     
     protected Collection<IteratorSetting.Column> columns;
-    protected IteratorSetting setting = null;
+    protected IteratorSetting setting;
     
     public CombinerConfiguration(IteratorSetting.Column column, IteratorSetting setting) {
         

@@ -17,7 +17,7 @@ public class ExtendedHyperLogLogPlus {
     public static final long CARDINILITY_THRESHOLD = 750;
     public static final int SP = 20;
     public static final int P = 12;
-    private HyperLogLogPlus hllp = null;
+    private HyperLogLogPlus hllp;
     private boolean exceededCardinalityThreshold = false;
     
     static {

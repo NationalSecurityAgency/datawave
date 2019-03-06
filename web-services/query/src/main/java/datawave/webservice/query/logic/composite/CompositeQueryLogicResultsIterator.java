@@ -11,10 +11,10 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object> {
     
     protected static final Logger log = Logger.getLogger(CompositeQueryLogicResultsIterator.class);
     
-    private ArrayBlockingQueue<Object> results = null;
+    private ArrayBlockingQueue<Object> results;
     private Object nextEntry = null;
     private Object lock = new Object();
-    private CountDownLatch completionLatch = null;
+    private CountDownLatch completionLatch;
     
     public CompositeQueryLogicResultsIterator(ArrayBlockingQueue<Object> results, CountDownLatch completionLatch) {
         this.results = results;

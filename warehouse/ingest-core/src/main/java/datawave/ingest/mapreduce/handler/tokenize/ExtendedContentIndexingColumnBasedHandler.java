@@ -257,8 +257,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         StatusReporter reporter = new ContextWrappedStatusReporter(context);
         
         // gc before we get into the tokenization piece
-        keys = null;
-        
+
         // stream the tokens to the context writer here
         count += tokenizeEvent(event, context, contextWriter, reporter);
         
@@ -560,9 +559,6 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
             if (baos != null) {
                 value = new Value(baos.toByteArray());
             }
-            gzos = null;
-            b64os = null;
-            baos = null;
         }
         counters.increment(ContentIndexCounters.CONTENT_RECORDS_CREATED, reporter);
         if (!disableDCol) {

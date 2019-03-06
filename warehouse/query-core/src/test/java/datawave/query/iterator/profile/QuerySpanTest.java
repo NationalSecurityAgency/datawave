@@ -88,8 +88,8 @@ public class QuerySpanTest {
     
     private class QSRunnable implements Runnable {
         
-        private QuerySpan querySpan = null;
-        private QuerySpanCollector querySpanCollector = null;
+        private QuerySpan querySpan;
+        private QuerySpanCollector querySpanCollector;
         
         public QSRunnable(QuerySpanCollector querySpanCollector, QuerySpan querySpan) {
             this.querySpanCollector = querySpanCollector;

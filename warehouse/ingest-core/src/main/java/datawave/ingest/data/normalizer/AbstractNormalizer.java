@@ -144,7 +144,7 @@ public abstract class AbstractNormalizer implements TextNormalizer {
         // type specific ones first, then the "all" ones
         prefixes.addAll(Arrays.asList(getConfPrefixes(type.typeName(), instance)));
         prefixes.addAll(Arrays.asList(getConfPrefixes("all", null)));
-        return prefixes.toArray(new String[prefixes.size()]);
+        return prefixes.toArray(new String[0]);
     }
     
     private String[] getConfPrefixes(String type, String instance) {
@@ -206,7 +206,7 @@ public abstract class AbstractNormalizer implements TextNormalizer {
         // if handling all fields, then we need to navigate the entire list
         for (Entry<String,String> field : fields.entries()) {
             if (field.getValue() != null) {
-                NormalizedContentInterface normalizedContent = null;
+                NormalizedContentInterface normalizedContent;
                 try {
                     normalizedContent = normalize(new NormalizedFieldAndValue(field.getKey(), field.getValue()));
                 } catch (Exception e) {

@@ -91,7 +91,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
         
         Collection<ScannerSession> sessions = Lists.newArrayList();
         
-        ScannerSession bs = null;
+        ScannerSession bs;
         
         IteratorSetting fairnessIterator = null;
         if (maxLookupConfigured > 0) {
@@ -113,7 +113,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
                 throw new DoNotPerformOptimizedQueryException(qe);
             }
             
-            ShardIndexQueryTableStaticMethods.RefactoredRangeDescription rangeDescription = null;
+            ShardIndexQueryTableStaticMethods.RefactoredRangeDescription rangeDescription;
             try {
                 rangeDescription = ShardIndexQueryTableStaticMethods.getRegexRange(null, pattern, config.getFullTableScanEnabled(), helperRef, config);
             } catch (IllegalArgumentException e) {

@@ -17,7 +17,7 @@ public class WildcardFieldedFilter extends FieldedTerm {
     private static Logger log = Logger.getLogger(WildcardFieldedFilter.class.getName());
     private List<Pattern> selectorRegexList = new ArrayList<>();
     private List<String> fieldList = new ArrayList<>();
-    private Boolean includeIfMatch = null;
+    private Boolean includeIfMatch;
     private BooleanType type;
     
     public WildcardFieldedFilter(boolean includeIfMatch, BooleanType type) {

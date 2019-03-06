@@ -22,7 +22,7 @@ import com.google.common.collect.SetMultimap;
  * Object used to hold the fields in an event. This is a multimap because fields can be repeated.
  */
 public class EventFields implements SetMultimap<String,FieldValue>, KryoSerializable {
-    private Multimap<String,FieldValue> map = null;
+    private Multimap<String,FieldValue> map;
     
     public static class FieldValue {
         ColumnVisibility visibility;

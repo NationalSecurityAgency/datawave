@@ -45,7 +45,7 @@ public class LimitFieldsTestingIngest {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        Mutation mutation = null;
+        Mutation mutation;
         
         String myUID = UID.builder().newId("MyUid".getBytes(), (Date) null).toString();
         

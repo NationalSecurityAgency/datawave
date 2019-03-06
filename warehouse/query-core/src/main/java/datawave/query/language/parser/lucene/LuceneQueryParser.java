@@ -40,7 +40,7 @@ public class LuceneQueryParser implements QueryParser {
         query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147
         query = query.replaceAll("\\u0094", "\""); // replace close smart quote 148
         
-        datawave.query.language.tree.QueryNode parsedQuery = null;
+        datawave.query.language.tree.QueryNode parsedQuery;
         
         try {
             Locale.setDefault(Locale.US);
@@ -49,7 +49,7 @@ public class LuceneQueryParser implements QueryParser {
             
             org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler queryConfigHandler = new QueryConfigHandler();
             QueryNodeProcessor processor = new CustomQueryNodeProcessorPipeline(queryConfigHandler);
-            QueryBuilder builder = null;
+            QueryBuilder builder;
             if (allowedFunctions == null) {
                 builder = new AccumuloQueryTreeBuilder();
             } else {

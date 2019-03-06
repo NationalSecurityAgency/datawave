@@ -56,7 +56,7 @@ public class VertexValue {
     
     public String getValue(ValueType valueType) {
         
-        String value = null;
+        String value;
         if (valueType.equals(ValueType.INDEXED)) {
             value = this.getIndexedFieldValue();
         } else {

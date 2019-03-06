@@ -331,7 +331,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             tableNames.add(LoadDateTableConfigHelper.getLoadDatesTableName(conf));
         }
         
-        return tableNames.toArray(new String[tableNames.size()]);
+        return tableNames.toArray(new String[0]);
     }
     
     @Override

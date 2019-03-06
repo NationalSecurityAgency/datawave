@@ -24,9 +24,9 @@ public class TupleToRange implements Function<Tuple2<String,IndexInfo>,Iterator<
     public static final String MAX_UNICODE_STRING = new String(Character.toChars(Character.MAX_CODE_POINT));
     
     private static final Logger log = Logger.getLogger(TupleToRange.class);
-    protected JexlNode currentScript = null;
+    protected JexlNode currentScript;
     protected JexlNode tree = null;
-    protected ShardQueryConfiguration config = null;
+    protected ShardQueryConfiguration config;
     
     /**
      * @param currentNode

@@ -3,11 +3,11 @@ package datawave.query.language.parser.jexl;
 import java.util.ArrayList;
 
 public class JexlRangeNode extends JexlNode {
-    private String field = null;
-    private String beginRange = null;
-    private String endRange = null;
-    private Boolean lowerInclusive = null;
-    private Boolean upperInclusive = null;
+    private String field;
+    private String beginRange;
+    private String endRange;
+    private Boolean lowerInclusive;
+    private Boolean upperInclusive;
     
     private JexlRangeNode() {
         super(new ArrayList<>());

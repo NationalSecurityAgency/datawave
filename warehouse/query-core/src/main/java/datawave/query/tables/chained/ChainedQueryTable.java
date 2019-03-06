@@ -82,7 +82,7 @@ public abstract class ChainedQueryTable<T1,T2> extends BaseQueryLogic<T2> {
         
         ChainedQueryConfiguration config = new ChainedQueryConfiguration();
         
-        long maxConfiguredResults = 0;
+        long maxConfiguredResults;
         // General query options
         if (-1 == this.getMaxResults()) {
             maxConfiguredResults = Long.MAX_VALUE;

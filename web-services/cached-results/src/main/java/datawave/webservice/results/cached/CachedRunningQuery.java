@@ -514,7 +514,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                 fieldChanged = true;
             }
             
-            String newSql = null;
+            String newSql;
             if (this.view != null) {
                 
                 if (fieldChanged == true) {
@@ -1297,7 +1297,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                 result.add(trimmedSubstr);
             }
         }
-        return result.toArray(new String[result.size()]);
+        return result.toArray(new String[0]);
     }
     
     public String buildOrderClause(String order) {

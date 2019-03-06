@@ -90,7 +90,7 @@ public class CountAggregatingIterator extends TransformIterator {
     
     @Override
     public Object next() {
-        ColumnVisibility cv = null;
+        ColumnVisibility cv;
         
         try {
             // Calculate the columnVisibility for this key from the combination.

@@ -756,7 +756,7 @@ public class IngestJob implements Tool {
             log.error("Configured tables for configured data types is empty");
             return false;
         }
-        tableNames = tables.toArray(new String[tables.size()]);
+        tableNames = tables.toArray(new String[0]);
         conf.set("job.table.names", org.apache.hadoop.util.StringUtils.join(",", tableNames));
         return true;
     }
@@ -1115,7 +1115,7 @@ public class IngestJob implements Tool {
         if (inputFileLists) {
             log.info("inputPathList is " + inputPathList);
         }
-        return inputPathList.toArray(new Path[inputPathList.size()]);
+        return inputPathList.toArray(new Path[0]);
     }
     
     protected FileSystem getFileSystem(Configuration conf, URI uri) throws IOException {

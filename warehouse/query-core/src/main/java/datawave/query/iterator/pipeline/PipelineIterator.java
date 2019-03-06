@@ -202,7 +202,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
         // get the next evaluated result
         Tuple2<Future<?>,Pipeline> nextFuture = evaluationQueue.poll();
         
-        Entry<Key,Document> result = null;
+        Entry<Key,Document> result;
         try {
             if (log.isTraceEnabled()) {
                 Key docKey = nextFuture.second().getSource().getKey();

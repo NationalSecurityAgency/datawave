@@ -67,7 +67,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 public class TreeEqualityVisitor implements ParserVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(TreeEqualityVisitor.class);
     
-    private boolean equal = true;
+    private boolean equal;
     
     public TreeEqualityVisitor() {
         this.equal = true;

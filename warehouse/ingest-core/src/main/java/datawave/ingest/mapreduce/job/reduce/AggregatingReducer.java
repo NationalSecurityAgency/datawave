@@ -179,7 +179,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     CustomColumnToClassMapping mapping;
                     try {
                         
-                        Combiner myCombiner = null;
+                        Combiner myCombiner;
                         
                         final String columnStr = options.get("columns");
                         
@@ -379,7 +379,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 
                 PerColumnIteratorConfig pcic = PerColumnIteratorConfig.decodeColumns(column, className);
                 
-                Combiner agg = null;
+                Combiner agg;
                 
                 try {
                     Class<? extends Combiner> clazz = Class.forName(className).asSubclass(Combiner.class);
@@ -413,7 +413,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 
                 PerColumnIteratorConfig pcic = PerColumnIteratorConfig.decodeColumns(column, className);
                 
-                Combiner agg = null;
+                Combiner agg;
                 
                 try {
                     Class<? extends Combiner> clazz = Class.forName(className).asSubclass(Combiner.class);

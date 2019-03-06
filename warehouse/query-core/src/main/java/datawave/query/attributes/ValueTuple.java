@@ -12,7 +12,7 @@ import java.util.Collection;
  */
 public class ValueTuple extends Tuple3<String,Object,Object> implements Comparable<ValueTuple> {
     
-    private Attribute<?> source = null;
+    private Attribute<?> source;
     
     /**
      * @param value

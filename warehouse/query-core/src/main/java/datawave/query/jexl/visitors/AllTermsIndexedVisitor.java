@@ -186,7 +186,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
      * @return
      */
     protected JexlNode equalityVisitor(JexlNode node, Object data) {
-        String fieldName = null;
+        String fieldName;
         try {
             fieldName = JexlASTHelper.getIdentifier(node);
         } catch (NoSuchElementException e) {

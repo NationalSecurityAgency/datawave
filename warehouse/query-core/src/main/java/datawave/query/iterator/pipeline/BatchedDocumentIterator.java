@@ -12,7 +12,7 @@ import com.google.common.collect.Sets;
 
 public class BatchedDocumentIterator implements Iterator<Entry<Key,Document>> {
     
-    SortedSet<Entry<Key,Document>> sortedResponses = null;
+    SortedSet<Entry<Key,Document>> sortedResponses;
     Iterator<Entry<Key,Document>> subIter = null;
     private PipelineIterator parent;
     

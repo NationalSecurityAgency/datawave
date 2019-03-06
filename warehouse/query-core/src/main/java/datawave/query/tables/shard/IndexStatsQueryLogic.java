@@ -89,7 +89,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
         
         // Get the datatype set if specified
         String typeList = query.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue();
-        HashSet<String> typeFilter = null;
+        HashSet<String> typeFilter;
         
         if (null != typeList && !typeList.isEmpty()) {
             typeFilter = new HashSet<>();

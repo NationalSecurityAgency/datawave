@@ -23,9 +23,9 @@ public class LoadAverageWatchIterator extends WrappingIterator {
     
     private static final String SYSTEM_LOAD_THRESHOLD = "SYSTEM_LOAD_THRESHOLD";
     
-    protected boolean reportHighLoad = false;
+    protected boolean reportHighLoad;
     
-    protected double loadThresholdAboveProcs = 2.0;
+    protected double loadThresholdAboveProcs;
     
     protected static OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
     

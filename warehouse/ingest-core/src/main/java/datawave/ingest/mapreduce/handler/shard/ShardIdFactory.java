@@ -12,7 +12,7 @@ import org.apache.hadoop.conf.Configuration;
 public class ShardIdFactory {
     
     public static final String NUM_SHARDS = "num.shards";
-    private NumShards numShards = null;
+    private NumShards numShards;
     
     public ShardIdFactory(Configuration conf) {
         this.numShards = new NumShards(conf);

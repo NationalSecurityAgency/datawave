@@ -11,7 +11,7 @@ import com.google.common.collect.Maps;
 
 public class RfileIterator implements Iterator<Entry<Key,Value>> {
     
-    protected RecordIterator recordIter = null;
+    protected RecordIterator recordIter;
     
     public RfileIterator(RecordIterator iter) {
         recordIter = iter;

@@ -106,7 +106,7 @@ public class FunctionQueryNode extends QueryNodeImpl {
                 }
             }
             
-            String seq = null;
+            String seq;
             if (c == ',' && chars.wasEscaped(x) == false && beginQuote == null) {
                 UnescapedCharSequence unescapedSeq = (UnescapedCharSequence) chars.subSequence(currArgStart, x);
                 if (endQuote != null) {

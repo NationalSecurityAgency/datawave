@@ -31,7 +31,7 @@ import java.net.URI;
 public class CounterStatsDClient {
     private static Logger log = Logger.getLogger(CounterStatsDClient.class);
     
-    protected StatsDClient client = null;
+    protected StatsDClient client;
     protected CounterToStatsDConfiguration config;
     
     public CounterStatsDClient(CounterToStatsDConfiguration config) {

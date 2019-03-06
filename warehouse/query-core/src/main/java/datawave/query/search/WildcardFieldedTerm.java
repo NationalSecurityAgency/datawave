@@ -13,8 +13,8 @@ import org.apache.lucene.queryparser.flexible.core.util.UnescapedCharSequence;
  */
 public class WildcardFieldedTerm extends FieldedTerm {
     private static Logger log = Logger.getLogger(WildcardFieldedTerm.class.getName());
-    private Pattern selectorRegex = null;
-    private String originalSelector = null;
+    private Pattern selectorRegex;
+    private String originalSelector;
     
     public WildcardFieldedTerm(String term) {
         this.field = parseField(term);

@@ -25,7 +25,7 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
     
     private Iterator<T> iter;
     
-    protected Queue buf = null;
+    protected Queue buf;
     
     protected FacetedConfiguration facetedConfig;
     

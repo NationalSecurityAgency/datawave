@@ -53,7 +53,7 @@ public class ContentKeyValueFactory {
                 try {
                     gzip = new GZIPInputStream(bais);
                     byte[] buf = new byte[4096];
-                    int length = 0;
+                    int length;
                     while ((length = gzip.read(buf)) >= 0) {
                         baos.write(buf, 0, length);
                     }

@@ -285,7 +285,7 @@ public class TermOffsetPopulator {
         // Get the dataType version of the term for each dataType set up on
         // the zone (field)
         for (Class<? extends Type<?>> dataTypeClass : dataTypesForZone) {
-            Type<?> dataTypeInstance = null;
+            Type<?> dataTypeInstance;
             
             // Get an instance of the dataType
             if (dataTypeCacheMap.containsKey(dataTypeClass) && dataTypeCacheMap.get(dataTypeClass) != null) {

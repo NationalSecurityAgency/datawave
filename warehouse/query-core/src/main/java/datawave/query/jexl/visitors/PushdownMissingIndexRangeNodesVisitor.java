@@ -120,7 +120,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
                 rangeNodes.jjtAddChild(range.getValue().get(i), i);
             }
             
-            JexlNode child = rangeNodes;
+            JexlNode child;
             if (missingIndexRange(range.getKey())) {
                 child = IndexHoleMarkerJexlNode.create(rangeNodes);
             } else {
@@ -202,7 +202,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         Object literal = JexlASTHelper.getLiteralValue(node);
         if (literal != null) {
             String strLiteral = String.valueOf(literal);
-            JavaRegexAnalyzer analyzer = null;
+            JavaRegexAnalyzer analyzer;
             try {
                 analyzer = new JavaRegexAnalyzer(strLiteral);
                 if (analyzer.isLeadingLiteral()) {

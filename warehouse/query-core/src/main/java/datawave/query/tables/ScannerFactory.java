@@ -168,7 +168,7 @@ public class ScannerFactory {
             stats = new ScanSessionStats();
         }
         
-        T session = null;
+        T session;
         if (wrapper == ScannerSession.class) {
             session = (T) new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats);
         } else {

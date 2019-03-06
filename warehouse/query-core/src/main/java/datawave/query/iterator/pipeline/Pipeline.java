@@ -28,9 +28,9 @@ public class Pipeline implements Runnable {
     // the result
     private Entry<Key,Document> result = null;
     // the pipeline
-    private Iterator<Entry<Key,Document>> iterator = null;
+    private Iterator<Entry<Key,Document>> iterator;
     
-    private QuerySpanCollector querySpanCollector = null;
+    private QuerySpanCollector querySpanCollector;
     
     public Pipeline(QuerySpanCollector querySpanCollector, SortedKeyValueIterator<Key,Value> sourceForDeepCopy) {
         this.querySpanCollector = querySpanCollector;

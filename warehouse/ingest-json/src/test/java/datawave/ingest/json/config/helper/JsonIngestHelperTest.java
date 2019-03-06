@@ -203,9 +203,9 @@ public class JsonIngestHelperTest {
     
     protected JsonRecordReader initReader(boolean parseHeaderOnly, Configuration conf) throws Exception {
         
-        TaskAttemptContext ctx = null;
-        InputSplit split = null;
-        File dataFile = null;
+        TaskAttemptContext ctx;
+        InputSplit split;
+        File dataFile;
         
         URL data = JsonIngestHelperTest.class.getResource("/input/my.json");
         Assert.assertNotNull(data);

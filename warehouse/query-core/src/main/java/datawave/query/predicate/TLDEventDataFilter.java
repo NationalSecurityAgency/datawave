@@ -69,7 +69,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
     /**
      * Field which should be used when transform() is called on a rejected Key that is field limited to store the field
      */
-    private String limitFieldsField = null;
+    private String limitFieldsField;
     
     /**
      * Initialize the query field filter with all of the fields required to evaluation this query
@@ -269,7 +269,7 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
             return true;
             
         } else {
-            int i = 0;
+            int i;
             for (i = 0; i < cf.length(); i++) {
                 
                 if (cf.byteAt(i) == 0x00) {

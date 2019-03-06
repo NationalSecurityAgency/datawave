@@ -44,7 +44,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     private static final Logger log = Logger.getLogger(GroupingTransform.class);
     
-    private BloomFilter<byte[]> bloom = null;
+    private BloomFilter<byte[]> bloom;
     private HashSet<ByteSequence> seen;
     private Set<String> fields;
     private Multimap<String,String> modelMapping;

@@ -6,8 +6,8 @@ package datawave.query.exceptions;
  */
 public class FieldNotMutableException extends Exception {
     
-    private String fieldName = "";
-    private String dataType = "";
+    private String fieldName;
+    private String dataType;
     
     public FieldNotMutableException(String dataType, String fieldName) {
         this.fieldName = fieldName;

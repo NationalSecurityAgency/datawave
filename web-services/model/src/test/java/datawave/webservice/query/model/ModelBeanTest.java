@@ -331,7 +331,7 @@ public class ModelBeanTest {
         System.out.println("******************* Start Dump Models **********************");
         Set<Authorizations> cbAuths = new HashSet<>();
         for (Collection<String> auths : principal.getAuthorizations()) {
-            cbAuths.add(new Authorizations(auths.toArray(new String[auths.size()])));
+            cbAuths.add(new Authorizations(auths.toArray(new String[0])));
         }
         
         Scanner scanner = ScannerHelper.createScanner(connector, ModelBean.DEFAULT_MODEL_TABLE_NAME, cbAuths);

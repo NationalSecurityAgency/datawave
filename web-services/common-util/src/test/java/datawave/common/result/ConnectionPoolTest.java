@@ -45,7 +45,7 @@ public class ConnectionPoolTest {
         TreeSet<ConnectionPool> pools = new TreeSet<>();
         pools.addAll(connectionPools);
         Iterator<ConnectionPool> itr = pools.iterator();
-        ConnectionPool p = null;
+        ConnectionPool p;
         
         p = itr.next();
         Assert.assertEquals("INGEST", p.getPoolName());

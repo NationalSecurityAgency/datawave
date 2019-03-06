@@ -253,7 +253,7 @@ public class ProtubufEdgeDeleteModeTest {
             boolean activityEqualsEvent = false;
             String edgeAttribute2 = null, edgeAttribute3 = null;
             
-            String loadDateStr = null;
+            String loadDateStr;
             
             if (event.fatalError()) {
                 return edgesCreated;
@@ -262,8 +262,8 @@ public class ProtubufEdgeDeleteModeTest {
             // get edge definitions for this event type
             Type dataType = event.getDataType();
             String typeName = dataType.typeName();
-            List<EdgeDefinition> edgeDefs = null;
-            EdgeDefinitionConfigurationHelper edgeDefConfigs = null;
+            List<EdgeDefinition> edgeDefs;
+            EdgeDefinitionConfigurationHelper edgeDefConfigs;
             if (!edges.containsKey(typeName)) {
                 return edgesCreated; // short circuit, no edges defined for this type
             }
@@ -277,7 +277,7 @@ public class ProtubufEdgeDeleteModeTest {
              */
             Multimap<String,NormalizedContentInterface> normalizedFields = HashMultimap.create();
             Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList = new HashMap<>();
-            Multimap<String,NormalizedContentInterface> tmp = null;
+            Multimap<String,NormalizedContentInterface> tmp;
             for (Map.Entry<String,NormalizedContentInterface> e : fields.entries()) {
                 NormalizedContentInterface value = e.getValue();
                 String subGroup = null;
@@ -333,8 +333,8 @@ public class ProtubufEdgeDeleteModeTest {
                     }
                 }
                 
-                Multimap<String,NormalizedContentInterface> mSource = null;
-                Multimap<String,NormalizedContentInterface> mSink = null;
+                Multimap<String,NormalizedContentInterface> mSource;
+                Multimap<String,NormalizedContentInterface> mSink;
                 
                 String sourceGroup = getGroup(edgeDef.getSourceFieldName());
                 String sinkGroup = getGroup(edgeDef.getSinkFieldName());

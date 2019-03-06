@@ -107,7 +107,7 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
         public static <T> AccumuloResource initializeResource(Class<T> clazz, AccumuloResource baseResource, final String tableName,
                         final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
             
-            AccumuloResource newResource = null;
+            AccumuloResource newResource;
             try {
                 newResource = (AccumuloResource) clazz.getConstructor(AccumuloResource.class).newInstance(baseResource);
                 newResource.init(tableName, auths, currentRange);

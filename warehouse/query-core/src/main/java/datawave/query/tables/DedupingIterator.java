@@ -18,7 +18,7 @@ import org.apache.accumulo.core.data.Value;
 class DedupingIterator implements Iterator<Entry<Key,Value>> {
     private Iterator<Entry<Key,Value>> delegate;
     private Entry<Key,Value> next;
-    private BloomFilter<byte[]> bloom = null;
+    private BloomFilter<byte[]> bloom;
     private HashSet<ByteSequence> seen;
     private final boolean DEBUG = true;
     

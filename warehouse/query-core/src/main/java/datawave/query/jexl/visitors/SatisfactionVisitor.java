@@ -44,8 +44,8 @@ public class SatisfactionVisitor extends BaseVisitor {
     protected Set<String> nonEventFields;
     private Collection<String> unindexedFields = Lists.newArrayList();
     protected boolean isQueryFullySatisfied;
-    protected Collection<String> includeReferences = UniversalSet.instance();
-    protected Collection<String> excludeReferences = Collections.emptyList();
+    protected Collection<String> includeReferences;
+    protected Collection<String> excludeReferences;
     
     public boolean isQueryFullySatisfied() {
         return isQueryFullySatisfied;

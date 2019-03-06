@@ -111,8 +111,8 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
      * @return modified query string
      */
     protected String applyQueryModel(String queryString) {
-        ASTJexlScript origScript = null;
-        ASTJexlScript script = null;
+        ASTJexlScript origScript;
+        ASTJexlScript script;
         try {
             origScript = JexlASTHelper.parseJexlQuery(queryString);
             HashSet<String> allFields = new HashSet<>();

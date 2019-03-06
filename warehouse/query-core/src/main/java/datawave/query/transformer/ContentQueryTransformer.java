@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 
 public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,DefaultEvent> {
     
-    private Authorizations auths = null;
+    private Authorizations auths;
     private Logger log = Logger.getLogger(ContentQueryTransformer.class);
     
     public ContentQueryTransformer(Query query, MarkingFunctions markingFunctions) {

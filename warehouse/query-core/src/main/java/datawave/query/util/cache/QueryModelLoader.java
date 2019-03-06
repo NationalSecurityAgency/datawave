@@ -27,7 +27,7 @@ public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<
     
     private static final Logger log = Logger.getLogger(NormalizerLoader.class);
     
-    protected Set<String> allFields = null;
+    protected Set<String> allFields;
     
     /**
      * Fetch a query model loader without a known set of fields
@@ -115,7 +115,7 @@ public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<
         
         Entry<QueryModel,Set<String>> modelEntry = entryCache.get(storeKey);
         
-        QueryModel queryModel = null;
+        QueryModel queryModel;
         
         if (null == modelEntry)
             queryModel = new QueryModel();

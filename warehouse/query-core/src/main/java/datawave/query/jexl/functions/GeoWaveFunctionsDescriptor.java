@@ -275,7 +275,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         // compute the envelope for the intersected geometries and the source geometry, and look for more intersections
         if (!intersected.isEmpty()) {
             intersected.add(srcGeom);
-            Geometry mergedGeom = new GeometryCollection(intersected.toArray(new Geometry[intersected.size()]), new GeometryFactory()).getEnvelope();
+            Geometry mergedGeom = new GeometryCollection(intersected.toArray(new Geometry[0]), new GeometryFactory()).getEnvelope();
             return findIntersectedGeoms(mergedGeom, geometries);
         }
         

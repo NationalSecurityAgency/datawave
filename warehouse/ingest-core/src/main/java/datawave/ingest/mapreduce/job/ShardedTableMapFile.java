@@ -203,7 +203,7 @@ public class ShardedTableMapFile {
             conf.set(SHARD_TSERVER_MAP_FILE + "." + entry.getKey(), entry.getValue().toString());
         }
         Set<String> var = map.keySet();
-        conf.setStrings(CONFIGURED_SHARDED_TABLE_NAMES, var.toArray(new String[var.size()]));
+        conf.setStrings(CONFIGURED_SHARDED_TABLE_NAMES, var.toArray(new String[0]));
     }
     
     private static Map<String,Path> loadMap(Configuration conf, boolean doValidation) throws IOException, URISyntaxException, AccumuloSecurityException,

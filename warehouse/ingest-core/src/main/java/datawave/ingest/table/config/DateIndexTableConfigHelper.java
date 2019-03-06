@@ -37,7 +37,7 @@ public class DateIndexTableConfigHelper extends AbstractTableConfigHelper {
             throw new IllegalArgumentException("No DateIndex Table Defined");
         }
         
-        String localityGroupsConf = null;
+        String localityGroupsConf;
         localityGroupsConf = conf.get(LOCALITY_GROUPS, ExtendedDataTypeHandler.FULL_CONTENT_LOCALITY_NAME + ':'
                         + ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY + ',' + ExtendedDataTypeHandler.TERM_FREQUENCY_LOCALITY_NAME + ':'
                         + ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY);

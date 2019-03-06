@@ -48,7 +48,7 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
     @Override
     public Key move(Key minimum) {
         if (totalRange != null) {
-            Range newRange = totalRange;
+            Range newRange;
             if (totalRange.contains(minimum)) {
                 newRange = new Range(minimum, true, totalRange.getEndKey(), totalRange.isEndKeyInclusive());
             } else {

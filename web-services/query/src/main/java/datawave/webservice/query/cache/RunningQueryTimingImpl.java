@@ -4,11 +4,11 @@ import datawave.webservice.query.runner.RunningQuery.RunningQueryTiming;
 
 public class RunningQueryTimingImpl implements RunningQueryTiming {
     // The max time allowed within a call (e.g. next())
-    private long maxCallMs = 60 * 60 * 1000; // the default is 60, can be overridden in call
+    private long maxCallMs; // the default is 60, can be overridden in call
     // The time after which we start checking the page size velocity
-    private long pageSizeShortCircuitCheckTimeMs = 30 * 60 * 1000;
+    private long pageSizeShortCircuitCheckTimeMs;
     // The time after which will we prematurely return if we have results.
-    private long pageShortCircuitTimeoutMs = 58 * 60 * 1000;
+    private long pageShortCircuitTimeoutMs;
     
     public RunningQueryTimingImpl(QueryExpirationConfiguration conf, int pageTimeout) {
         this(conf.getCallTimeInMS(), conf.getPageSizeShortCircuitCheckTimeInMS(), conf.getPageShortCircuitTimeoutInMS());

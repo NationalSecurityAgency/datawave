@@ -22,7 +22,7 @@ public class DefaultTokenSearch implements TokenSearch {
     
     protected final CharArraySet stopwords;
     
-    protected boolean reverse = false;
+    protected boolean reverse;
     
     protected boolean emailDomainTokensEnabled = true;
     
@@ -263,7 +263,7 @@ public class DefaultTokenSearch implements TokenSearch {
     
     protected static String[] dezone(String term) {
         int pos = term.lastIndexOf(":");
-        String word = "";
+        String word;
         String zone = "";
         if (pos > -1) {
             zone = term.substring(pos);

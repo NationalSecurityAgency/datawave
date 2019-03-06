@@ -14,7 +14,7 @@ public class DateFormatUtil {
     private String defaultTime = "000000";
     private String defaultMillisec = "000";
     private static String formatPattern = "yyyyMMdd HHmmss.SSS";
-    private static SimpleDateFormat dateFormat = null;
+    private static SimpleDateFormat dateFormat;
     
     private static Logger log = Logger.getLogger(DateFormatUtil.class);
     
@@ -24,7 +24,7 @@ public class DateFormatUtil {
     }
     
     public Date fromString(String s) {
-        Date d = null;
+        Date d;
         ParseException e = null;
         synchronized (DateFormatUtil.dateFormat) {
             String str = s;

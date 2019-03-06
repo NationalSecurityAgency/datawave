@@ -93,7 +93,7 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
             log.debug("Building cache from accumulo");
         synchronized (entryCache) {
             Scanner scanner = ScannerHelper.createScanner(connector, myTableName, auths);
-            Range range = null;
+            Range range;
             if (key == null) {
                 if (log.isDebugEnabled())
                     log.debug("Key is null, infinite range");

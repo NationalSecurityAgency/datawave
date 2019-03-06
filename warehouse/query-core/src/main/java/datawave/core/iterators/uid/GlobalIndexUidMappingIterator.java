@@ -41,7 +41,7 @@ public class GlobalIndexUidMappingIterator extends UidMappingIterator {
                 boolean changed = false;
                 for (int i = 0; i < uidList.getUIDList().size(); i++) {
                     String uid = uidList.getUID(i);
-                    String newUid = null;
+                    String newUid;
                     if (startKey) {
                         // if we had extra characters, or not startKeyInclusive, then we do not want an inclusive start key
                         newUid = uidMapper.getStartKeyUidMapping(uid, startKeyInclusive);

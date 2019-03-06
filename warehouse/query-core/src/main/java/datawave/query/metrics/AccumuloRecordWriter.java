@@ -36,12 +36,12 @@ import org.apache.log4j.Logger;
 
 public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     private MultiTableBatchWriter mtbw = null;
-    private HashMap<Text,BatchWriter> bws = null;
-    private Text defaultTableName = null;
+    private HashMap<Text,BatchWriter> bws;
+    private Text defaultTableName;
     private Logger log = Logger.getLogger(AccumuloRecordWriter.class);
     
-    private boolean simulate = false;
-    private boolean createTables = false;
+    private boolean simulate;
+    private boolean createTables;
     
     private long mutCount = 0;
     private long valCount = 0;
@@ -145,7 +145,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         }
         
         log.debug("Adding table: " + tableName);
-        BatchWriter bw = null;
+        BatchWriter bw;
         String table = tableName.toString();
         
         if (createTables && !conn.tableOperations().exists(table)) {

@@ -112,7 +112,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
             DescriptiveStatistics stats = new DescriptiveStatistics();
             final String day = getDay(src.getTopKey());
             Key reference = makeRootKey(src.getTopKey(), day + "_");
-            Set<String> uids = Sets.newHashSet();
+            Set<String> uids;
             long count = 0L;
             boolean ignore = false;
             boolean ignoreDay = false;
@@ -195,7 +195,7 @@ public class CondensedUidIterator implements SortedKeyValueIterator<Key,Value>, 
         if (cq.length() > 8 && cq.getBackingArray()[8] == '_') {
             return new String(cq.getBackingArray(), 0, 8);
         } else {
-            ByteSequence strippedCq = cq;
+            ByteSequence strippedCq;
             strippedCq = cq.subSequence(0, lastNull(cq));
             return new String(strippedCq.getBackingArray(), 0, strippedCq.length());
         }

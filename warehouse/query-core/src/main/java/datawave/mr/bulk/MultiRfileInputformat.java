@@ -93,7 +93,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
             ranges.add(new Range());
         }
         
-        List<InputSplit> inputSplits = Lists.newArrayList();
+        List<InputSplit> inputSplits;
         try {
             inputSplits = computeSplitPoints(job, tableName, ranges);
         } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException | InterruptedException e) {
@@ -150,7 +150,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
         
         Multimap<Text,Range> rowMap = TreeMultimap.create();
         
-        String defaultNamespace = null, basePath = null;
+        String defaultNamespace, basePath;
         
         /**
          * Attempt the following 1) try to get the default namespace from accumulo 2) Use the custom config option 3) use default name in the hdfs configuration

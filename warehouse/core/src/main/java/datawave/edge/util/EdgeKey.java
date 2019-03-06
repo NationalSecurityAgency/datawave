@@ -837,12 +837,12 @@ public class EdgeKey {
     }
     
     private Key encode(EDGE_VERSION version) {
-        Text rowid = null;
-        Text colf = null;
-        Text colq = null;
-        Text colvis = null;
-        boolean deleted = false;
-        long timestamp = Long.MAX_VALUE;
+        Text rowid;
+        Text colf;
+        Text colq;
+        Text colvis;
+        boolean deleted;
+        long timestamp;
         
         List<String> parts = new ArrayList<>(version.getTotalColPieces());
         for (int ii = 0; ii < version.getTotalColPieces(); ii++) {

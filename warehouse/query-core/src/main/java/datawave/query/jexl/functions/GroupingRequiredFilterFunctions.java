@@ -334,7 +334,7 @@ public class GroupingRequiredFilterFunctions {
             }
             iterableFields.add((Iterable<?>) field);
         }
-        return atomValuesMatch(iterableFields.toArray(new Iterable[iterableFields.size()]));
+        return atomValuesMatch(iterableFields.toArray(new Iterable[0]));
     }
     
     /**

@@ -97,7 +97,7 @@ public class AuthorizationsUtilTest {
     public void testMethodAuthsIsNull() {
         HashSet<Authorizations> expected = new HashSet<>();
         for (Set<String> auths : userAuths) {
-            expected.add(new Authorizations(auths.toArray(new String[auths.size()])));
+            expected.add(new Authorizations(auths.toArray(new String[0])));
         }
         assertEquals(expected, AuthorizationsUtil.mergeAuthorizations(null, userAuths));
     }

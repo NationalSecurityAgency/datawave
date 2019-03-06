@@ -107,7 +107,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     /**
      * Scanner options.
      */
-    protected SessionOptions options = null;
+    protected SessionOptions options;
     
     protected Query settings;
     
@@ -514,7 +514,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     protected int scannerInvariant(final Iterator<Entry<Key,Value>> iter) {
         int retrievalCount = 0;
         
-        Entry<Key,Value> myEntry = null;
+        Entry<Key,Value> myEntry;
         
         while (iter.hasNext()) {
             myEntry = iter.next();

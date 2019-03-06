@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 public abstract class SeekingAggregator implements FieldIndexAggregator {
-    private int maxNextCount = -1;
+    private int maxNextCount;
     
     public SeekingAggregator(int maxNextCount) {
         this.maxNextCount = maxNextCount;

@@ -305,7 +305,7 @@ public class ShardUidMappingIterator extends UidMappingIterator {
             }
         }
         String orgUid = parts[partIndex];
-        String newUid = null;
+        String newUid;
         if (startKey) {
             // if we had extra characters, or not startKeyInclusive, then we do not want an inclusive start key
             newUid = uidMapper.getStartKeyUidMapping(orgUid, (extra == null && startKeyInclusive));

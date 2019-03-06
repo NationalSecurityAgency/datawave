@@ -183,7 +183,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     
     public static class MyAccumuloConnectionPool extends AccumuloConnectionPool {
         
-        private AccumuloConnectionPoolFactory factory = null;
+        private AccumuloConnectionPoolFactory factory;
         
         public MyAccumuloConnectionPool(AccumuloConnectionPoolFactory factory) {
             super(factory);

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JexlPhraseNode extends JexlNode {
-    private String field = null;
-    private List<String> wordList = new ArrayList<>();
+    private String field;
+    private List<String> wordList;
     
     public JexlPhraseNode(String field, List<String> wordList) {
         super(new ArrayList<>());

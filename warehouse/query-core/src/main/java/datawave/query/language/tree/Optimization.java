@@ -5,7 +5,7 @@ public class Optimization {
         NONE, AND, NOT
     }
     
-    private Type optimizationType = Type.NONE;
+    private Type optimizationType;
     
     Optimization(Type optimizationType) {
         this.optimizationType = optimizationType;

@@ -175,13 +175,14 @@ public class MapReduceBean {
     @GZIP
     public List<MapReduceJobDescription> listConfiguredMapReduceJobs(@DefaultValue("none") @QueryParam("jobType") String jobType) {
         List<MapReduceJobDescription> jobs = new ArrayList<>();
-        if (jobType.equals("none")) {
+
+        if (jobType.equals("none"))
             jobType = null;
-        }
+
         for (Entry<String,MapReduceJobConfiguration> entry : this.mapReduceConfiguration.getJobConfiguration().entrySet()) {
-            if (jobType != null && !entry.getValue().getJobType().equals(jobType)) {
+            if (jobType != null && !entry.getValue().getJobType().equals(jobType))
                 continue;
-            }
+
             jobs.add(entry.getValue().getConfigurationDescription(entry.getKey()));
         }
         return jobs;
@@ -210,9 +211,9 @@ public class MapReduceBean {
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         
-        String sid = null;
+        String sid;
         String userDn = p.getName();
-        DatawavePrincipal datawavePrincipal = null;
+        DatawavePrincipal datawavePrincipal;
         if (p instanceof DatawavePrincipal) {
             datawavePrincipal = (DatawavePrincipal) p;
             sid = datawavePrincipal.getShortName();
@@ -253,7 +254,7 @@ public class MapReduceBean {
         }
         
         String id = sid + "_" + UUID.randomUUID();
-        OozieClient oozieClient = null;
+        OozieClient oozieClient;
         Properties oozieConf = null;
         
         try {
@@ -299,7 +300,7 @@ public class MapReduceBean {
         }
         // Submit the Oozie workflow.
         try {
-            String jobID = null;
+            String jobID;
             try {
                 jobID = oozieClient.run(oozieConf);
             } catch (Exception e) {
@@ -370,7 +371,7 @@ public class MapReduceBean {
         Principal p = ctx.getCallerPrincipal();
         String sid;
         Set<Collection<String>> cbAuths = new HashSet<>();
-        DatawavePrincipal datawavePrincipal = null;
+        DatawavePrincipal datawavePrincipal;
         
         if (p instanceof DatawavePrincipal) {
             datawavePrincipal = (DatawavePrincipal) p;

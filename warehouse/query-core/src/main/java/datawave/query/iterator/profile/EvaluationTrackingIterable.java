@@ -19,7 +19,7 @@ public class EvaluationTrackingIterable extends AccumuloTreeIterable<Key,Documen
     private Logger log = Logger.getLogger(EvaluationTrackingIterable.class);
     private Iterator<Entry<DocumentData,Document>> itr = null;
     private AccumuloTreeIterable<Key,DocumentData> iterable;
-    private QuerySpan.Stage stageName = null;
+    private QuerySpan.Stage stageName;
     
     public EvaluationTrackingIterable(QuerySpan.Stage stageName, QuerySpan mySpan, AccumuloTreeIterable<Key,DocumentData> iterable) {
         this.mySpan = mySpan;

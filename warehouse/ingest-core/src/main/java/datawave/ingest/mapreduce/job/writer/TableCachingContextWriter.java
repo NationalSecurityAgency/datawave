@@ -78,7 +78,7 @@ public class TableCachingContextWriter extends AbstractContextWriter<BulkIngestK
         }
         
         // create and setup the chained context writer
-        Class<ContextWriter<BulkIngestKey,Value>> contextWriterClass = null;
+        Class<ContextWriter<BulkIngestKey,Value>> contextWriterClass;
         if (Mutation.class.equals(conf.getClass(MAPRED_OUTPUT_VALUE_CLASS, null))) {
             contextWriterClass = (Class<ContextWriter<BulkIngestKey,Value>>) conf.getClass(CONTEXT_WRITER_CLASS, LiveContextWriter.class, ContextWriter.class);
         } else {

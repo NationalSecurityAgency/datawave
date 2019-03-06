@@ -54,7 +54,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                 throw new IllegalStateException("Invalid hdfs cache dir URI: " + ivaratorCacheDirURI, e);
             }
             
-            DocumentIterator docIterator = null;
+            DocumentIterator docIterator;
             try {
                 // create a field index caching ivarator
                 DatawaveFieldIndexRegexIteratorJexl regexIterator = DatawaveFieldIndexRegexIteratorJexl.builder().withFieldName(new Text(field))

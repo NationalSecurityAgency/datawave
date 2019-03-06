@@ -120,7 +120,7 @@ public class SafeFileOutputCommitterTest {
     
     private void writeMapFileOutput(RecordWriter theRecordWriter, TaskAttemptContext context) throws IOException, InterruptedException {
         try {
-            int key = 0;
+            int key;
             for (int i = 0; i < 10; ++i) {
                 key = i;
                 Text val = (i % 2 == 1) ? val1 : val2;
@@ -568,7 +568,7 @@ public class SafeFileOutputCommitterTest {
         int len = (int) f.length();
         byte[] buf = new byte[len];
         FileInputStream in = new FileInputStream(f);
-        String contents = null;
+        String contents;
         try {
             in.read(buf, 0, len);
             contents = new String(buf, "UTF-8");

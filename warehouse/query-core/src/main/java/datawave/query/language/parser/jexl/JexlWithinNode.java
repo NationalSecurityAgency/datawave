@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JexlWithinNode extends JexlNode {
-    private String field = null;
-    private List<String> wordList = new ArrayList<>();
-    private Integer distance = null;
+    private String field;
+    private List<String> wordList;
+    private Integer distance;
     
     public JexlWithinNode(String field, List<String> wordList, Integer distance) {
         super(new ArrayList<>());

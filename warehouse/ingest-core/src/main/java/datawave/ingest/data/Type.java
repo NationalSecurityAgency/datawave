@@ -16,7 +16,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 
 public class Type implements Comparable<Type> {
     // This is the name of the type which is used to match types, pull appropriate configuration, determine data handlers
-    private String name = null, outputName = null;
+    private String name, outputName;
     private Class<? extends IngestHelperInterface> helperClass;
     private Class<? extends RecordReader<?,?>> readerClass;
     private String[] defaultDataTypeHandlers;

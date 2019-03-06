@@ -294,7 +294,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         
         shouldPropogate = !(env.getIteratorScope() == IteratorScope.majc && env.isFullMajorCompaction());
         
-        PropogatingCombiner propAgg = null;
+        PropogatingCombiner propAgg;
         
         for (Entry<String,String> familyOption : options.entrySet()) {
             Object agg = createAggregator(familyOption.getValue());

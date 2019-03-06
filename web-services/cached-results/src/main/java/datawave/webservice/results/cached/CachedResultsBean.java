@@ -207,7 +207,7 @@ public class CachedResultsBean {
     @Inject
     private QueryPredictor predictor;
     
-    protected static String BASE_COLUMNS = null;
+    protected static String BASE_COLUMNS;
     
     @Inject
     private ResponseObjectFactory responseObjectFactory;
@@ -375,9 +375,9 @@ public class CachedResultsBean {
             // This RunningQuery may be in use. Make a copy using the defined Query.
             
             RunningQuery rq = null;
-            QueryLogic<?> logic = null;
-            Query q = null;
-            BaseQueryMetric queryMetric = null;
+            QueryLogic<?> logic;
+            Query q;
+            BaseQueryMetric queryMetric;
             TInfo traceInfo = null;
             try {
                 rq = getQueryById(queryId);
@@ -523,7 +523,7 @@ public class CachedResultsBean {
             Map<String,Integer> fieldMap = new HashMap<>();
             
             // Loop over the results and put them into the database.
-            ResultsPage results = null;
+            ResultsPage results;
             
             // If we're tracing this query, then continue the trace for the next call.
             if (traceInfo != null) {
@@ -549,7 +549,6 @@ public class CachedResultsBean {
                         nextSpan.stop();
                 }
                 if (results.getResults().isEmpty()) {
-                    go = false;
                     break;
                 }
                 
@@ -614,7 +613,6 @@ public class CachedResultsBean {
             if (rowsWritten > 0) {
                 persistBatch(ps);
                 ps.clearBatch();
-                rowsWritten = 0;
             }
             
             // Dump the fieldMap for debugging
@@ -860,7 +858,7 @@ public class CachedResultsBean {
     }
     
     protected void persistBatch(PreparedStatement ps) throws SQLException {
-        int[] batchResults = null;
+        int[] batchResults;
         try {
             batchResults = ps.executeBatch();
             int failCount = 0;
@@ -1078,7 +1076,7 @@ public class CachedResultsBean {
         Principal p = ctx.getCallerPrincipal();
         String owner = getOwnerFromPrincipal(p);
         
-        CachedRunningQuery crq = null;
+        CachedRunningQuery crq;
         try {
             persistByQueryId(newQueryId, alias, owner, CachedRunningQuery.Status.LOADING, "", true);
             crq = retrieve(newQueryId, owner);
@@ -1093,7 +1091,7 @@ public class CachedResultsBean {
             throw new PreConditionFailedException(e, null);
         }
         
-        RunningQuery rq = null;
+        RunningQuery rq;
         try {
             rq = getQueryById(queryId);
             if (rq != null) {
@@ -1245,7 +1243,7 @@ public class CachedResultsBean {
         String owner = getOwnerFromPrincipal(p);
         
         CachedRunningQuery crq = null;
-        Connection con = null;
+        Connection con;
         try {
             con = ds.getConnection();
             CachedRunningQuery loadCrq = retrieve(cp.getView(), owner); // the caller may have used the alias name for the view.
@@ -1562,7 +1560,7 @@ public class CachedResultsBean {
                         ResultsPage resultList = crq.previous(cachedResultsConfiguration.getPageByteTrigger());
                         long pageNum = crq.getLastPageNumber();
                         response = crq.getTransformer().createResponse(resultList);
-                        Status status = null;
+                        Status status;
                         if (!resultList.getResults().isEmpty()) {
                             response.setHasResults(true);
                             status = Status.OK;
@@ -1597,7 +1595,7 @@ public class CachedResultsBean {
                 }
             }
         } catch (Exception e) {
-            QueryException qe = null;
+            QueryException qe;
             if (e instanceof NoResultsException) {
                 qe = new QueryException(DatawaveErrorCode.NO_CONTENT_STATUS, e);
             } else {
@@ -1773,7 +1771,7 @@ public class CachedResultsBean {
                         ResultsPage resultList = crq.next(cachedResultsConfiguration.getPageByteTrigger());
                         long pageNum = crq.getLastPageNumber();
                         response = crq.getTransformer().createResponse(resultList);
-                        Status status = null;
+                        Status status;
                         if (!resultList.getResults().isEmpty()) {
                             response.setHasResults(true);
                             status = Status.OK;
@@ -1808,7 +1806,7 @@ public class CachedResultsBean {
                 }
             }
         } catch (Exception e) {
-            QueryException qe = null;
+            QueryException qe;
             if (e instanceof NoResultsException) {
                 qe = new QueryException(DatawaveErrorCode.NO_CONTENT_STATUS, e);
             } else {

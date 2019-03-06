@@ -6,8 +6,8 @@ import java.util.concurrent.CountDownLatch;
 
 public class CompositeQueryLogicResults implements Iterable<Object> {
     
-    private ArrayBlockingQueue<Object> results = null;
-    private CountDownLatch completionLatch = null;
+    private ArrayBlockingQueue<Object> results;
+    private CountDownLatch completionLatch;
     
     public CompositeQueryLogicResults(int pagesize, CountDownLatch completionLatch) {
         this.results = new ArrayBlockingQueue<>(pagesize);

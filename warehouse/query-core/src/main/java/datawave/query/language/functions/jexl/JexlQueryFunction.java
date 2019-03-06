@@ -8,8 +8,8 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 public abstract class JexlQueryFunction implements QueryFunction {
     
-    protected String name = null;
-    protected List<String> parameterList = null;
+    protected String name;
+    protected List<String> parameterList;
     protected int depth = -1;
     protected QueryNode parent = null;
     

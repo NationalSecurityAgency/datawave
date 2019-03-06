@@ -66,7 +66,7 @@ public class LuceneToJexlQueryParser implements QueryParser {
         query = query.replaceAll("\\u201c", "\""); // replace open left double quote
         query = query.replaceAll("\\u201d", "\""); // replace close right double quote
         
-        JexlNode parsedQuery = null;
+        JexlNode parsedQuery;
         
         try {
             Locale.setDefault(Locale.US);

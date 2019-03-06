@@ -303,7 +303,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         
         this.range = range;
         
-        Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
+        Iterator<Entry<Key,Document>> fieldIndexDocuments;
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
         } catch (ConfigException e) {
@@ -357,8 +357,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             
             this.key = entry.getKey();
             this.value = entry.getValue();
-            
-            entry = null;
+
         } else {
             this.key = null;
             this.value = null;

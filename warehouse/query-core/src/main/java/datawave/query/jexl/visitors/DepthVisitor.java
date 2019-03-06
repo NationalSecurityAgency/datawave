@@ -11,7 +11,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
  * 
  */
 public class DepthVisitor extends BaseVisitor {
-    private int maxDepth = 100;
+    private int maxDepth;
     
     public DepthVisitor(int maxDepth) {
         this.maxDepth = maxDepth;

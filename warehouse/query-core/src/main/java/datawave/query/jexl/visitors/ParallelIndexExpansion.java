@@ -121,7 +121,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         private ThreadFactory dtf = Executors.defaultThreadFactory();
         private int threadNum = 1;
         private String threadIdentifier;
-        protected String name = "Datawave ParallelIndexExpansion";
+        protected String name;
         
         public ParallelExpansionFactory(Query query, String name) {
             if (query == null || query.getId() == null) {
@@ -571,7 +571,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         protected boolean positive;
         protected boolean ignoreComposites;
         
-        protected JexlNode parentNode = null;
+        protected JexlNode parentNode;
         private int id;
         private JexlNode newNode;
         protected boolean enforceTimeout;
@@ -598,7 +598,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         @Override
         public JexlNode call() throws Exception {
             
-            IndexLookupMap fieldsToValues = null;
+            IndexLookupMap fieldsToValues;
             try {
                 long timeout = -1;
                 if (enforceTimeout)

@@ -364,7 +364,7 @@ public class TokenizationHelper {
             stopWordsFile = conf.get(helper.getType().typeName() + STOP_WORD_LIST);
         }
         
-        CharArraySet stopWords = CharArraySet.EMPTY_SET;
+        CharArraySet stopWords;
         if (stopWordsFile != null) {
             try {
                 stopWords = DefaultTokenSearch.getStopWords(stopWordsFile);

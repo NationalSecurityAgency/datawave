@@ -54,7 +54,7 @@ public class AuthorizationsUtil {
                 auths.retainAll(requested);
             }
             
-            mergedAuths.add(new Authorizations(auths.toArray(new String[auths.size()])));
+            mergedAuths.add(new Authorizations(auths.toArray(new String[0])));
         }
         
         if (!missingAuths.isEmpty()) {
@@ -145,7 +145,7 @@ public class AuthorizationsUtil {
         
         HashSet<Authorizations> auths = Sets.newHashSet();
         for (Collection<String> userAuth : userAuths) {
-            auths.add(new Authorizations(userAuth.toArray(new String[userAuth.size()])));
+            auths.add(new Authorizations(userAuth.toArray(new String[0])));
         }
         
         return auths;

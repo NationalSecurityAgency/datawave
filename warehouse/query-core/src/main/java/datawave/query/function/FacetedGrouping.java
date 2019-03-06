@@ -51,7 +51,7 @@ public class FacetedGrouping implements Function<Entry<Key,Document>,Entry<Key,D
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> input) {
         
-        Document currentDoc = input.getValue();
+        Document currentDoc;
         // list of document attributes to update.
         TreeMultimap<String,Attribute<?>> newDocumentAttributes = TreeMultimap.create();
         Key topKey = null;
@@ -156,7 +156,7 @@ public class FacetedGrouping implements Function<Entry<Key,Document>,Entry<Key,D
      */
     private List<FieldValueCardinality> adjustAttributeGrouping(Collection<FieldValueCardinality> cardList, Set<Attribute<? extends Comparable<?>>> attributes) {
         
-        boolean found = false;
+        boolean found;
         
         List<FieldValueCardinality> newCardList = Lists.newArrayList();
         List<FieldValueCardinality> fixNewList = Lists.newArrayList(cardList);

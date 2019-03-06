@@ -37,7 +37,7 @@ public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
     @Override
     public O next() {
         
-        O o = null;
+        O o;
         if (next == null) {
             o = getNext();
         } else {

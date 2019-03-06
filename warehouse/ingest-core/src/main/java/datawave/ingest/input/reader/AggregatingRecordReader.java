@@ -22,7 +22,7 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
     public static final String END_TOKEN = "aggregating.token.end";
     public static final String RETURN_PARTIAL_MATCHES = "aggregating.allow.partial";
     
-    private ReaderDelegate delegate = null;
+    private ReaderDelegate delegate;
     
     public AggregatingRecordReader() {
         delegate = new ReaderDelegate();
@@ -187,7 +187,7 @@ public class AggregatingRecordReader extends LongLineEventRecordReader implement
             Preconditions.checkNotNull(currentValueReader, "currentValueReader cannot be null");
             
             aggValue.clear();
-            boolean hasNext = false;
+            boolean hasNext;
             boolean finished;
             // Find the start token
             while ((hasNext = nextKeyValueReader.readKeyValue()) || remainder.length() > 0) {

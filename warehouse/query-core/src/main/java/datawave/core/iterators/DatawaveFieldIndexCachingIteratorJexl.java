@@ -256,7 +256,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // must the returned UIDs be in sorted order? This is to allow for am optimization where the UIDs are not sorted which avoids the entire
     // caching and merge sorting that is done in the the initial seek. Note that the keys returned from this iterator will not be in sorted
     // order if sortedUIDs = false, and the calling iterator must handle that appropriately.
-    private boolean sortedUIDs = true;
+    private boolean sortedUIDs;
     
     // an fiSource used when not doing sorted UIDs
     private SortedKeyValueIterator<Key,Value> fiSource = null;
@@ -1359,7 +1359,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             while (!done && count < 3) {
                 count++;
                 try {
-                    FSDataOutputStream stream = null;
+                    FSDataOutputStream stream;
                     if (append) {
                         try {
                             stream = fs.append(file, bufferSize);
@@ -1421,7 +1421,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     }
     
     public static String getHostname() {
-        String hostname = null;
+        String hostname;
         if (System.getProperty("os.name").startsWith("Windows")) { // probably unnecessary, but for completeness
             hostname = System.getenv("COMPUTERNAME");
         } else {

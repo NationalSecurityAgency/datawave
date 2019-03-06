@@ -264,7 +264,6 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                                     plan = combineDocSpecificPlans(plansToCombine);
                                 }
                                 plansToCombine = null;
-                                matchedDocumentRange = false;
                                 break;
                             }
                         } while (matchedDocumentRange == true && plansToCombine.size() < docsToCombine);
@@ -346,7 +345,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     private QueryPlan combineDocSpecificPlans(List<QueryPlan> plans) throws IOException {
         int count = 0;
         QueryPlan firstPlan = null;
-        IteratorSetting firstQueryIterator = null;
+        IteratorSetting firstQueryIterator;
         if (isTld) {
             firstQueryIterator = new IteratorSetting(1, TLDQueryIterator.class);
         } else {

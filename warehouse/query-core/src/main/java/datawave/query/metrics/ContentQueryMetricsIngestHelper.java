@@ -63,7 +63,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
         for (Map.Entry<String,String> e : fields.entries()) {
             if (e.getValue() != null) {
                 String field = e.getKey();
-                NormalizedFieldAndValue nfv = null;
+                NormalizedFieldAndValue nfv;
                 int x = field.indexOf('.');
                 if (x > -1) {
                     String baseFieldName = field.substring(0, x);

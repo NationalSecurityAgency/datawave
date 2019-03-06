@@ -374,11 +374,11 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         String ttlValue = null;
         String ttlUnits = null;
         String matchPattern = "";
-        String filterClassName = null;
+        String filterClassName;
         String label;
         boolean isMerge = false;
         Map<String,String> extendedOptions = new HashMap<>();
-        int priority = -1;
+        int priority;
         
         public RuleConfig(String filterClassName, int priority) {
             this.filterClassName = filterClassName;

@@ -58,7 +58,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                     returnNode = regexNode;
                 }
             } else {
-                JexlNode newParent = null;
+                JexlNode newParent;
                 if (functionMetadata.name().equals("excludeRegex")) {
                     newParent = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
                 } else {

@@ -37,7 +37,7 @@ public class ReferencedValue {
     public String getValue() {
         
         if (this.base64Encoded != null && this.base64Encoded.equals(Boolean.TRUE)) {
-            byte[] incoming = null;
+            byte[] incoming;
             String decoded = null;
             
             try {

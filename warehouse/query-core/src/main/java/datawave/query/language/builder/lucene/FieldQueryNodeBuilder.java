@@ -41,7 +41,7 @@ public class FieldQueryNodeBuilder implements QueryBuilder {
     public static final String SPACE = " ";
     
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
-        datawave.query.language.tree.QueryNode returnNode = null;
+        datawave.query.language.tree.QueryNode returnNode;
         
         if (queryNode instanceof QuotedFieldQueryNode) {
             List<datawave.query.language.tree.QueryNode> childrenList = new ArrayList<>();

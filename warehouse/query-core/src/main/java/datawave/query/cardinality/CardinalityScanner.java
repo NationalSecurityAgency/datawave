@@ -55,7 +55,7 @@ public class CardinalityScanner {
     private static final String HELP_OPT = "help";
     
     private static final Logger log = Logger.getLogger(CardinalityScanner.class);
-    private CardinalityScannerConfiguration config = null;
+    private CardinalityScannerConfiguration config;
     
     public enum DateAggregationType {
         DAY, MONTH, ALL
@@ -70,7 +70,7 @@ public class CardinalityScanner {
         Logger.getRootLogger().setLevel(Level.ERROR);
         
         Options opts = getConfigurationOptions();
-        CommandLine cl = null;
+        CommandLine cl;
         try {
             cl = new BasicParser().parse(opts, args);
             if (cl.hasOption(HELP_OPT)) {
@@ -404,10 +404,10 @@ public class CardinalityScanner {
     
     public class CardinalityIntersectionRecord implements Comparable {
         
-        public Pair<String,String> tuple = null;
+        public Pair<String,String> tuple;
         private HyperLogLogPlus baseHllp = null;
         
-        private String date = null;
+        private String date;
         private String datatype;
         
         private Map<Pair<String,String>,Long> intersectionSum = new TreeMap<>();
@@ -453,7 +453,7 @@ public class CardinalityScanner {
         @Override
         public boolean equals(Object obj) {
             
-            CardinalityIntersectionRecord other = null;
+            CardinalityIntersectionRecord other;
             if (obj instanceof CardinalityIntersectionRecord) {
                 other = (CardinalityIntersectionRecord) obj;
             } else {
@@ -468,7 +468,7 @@ public class CardinalityScanner {
         
         @Override
         public int compareTo(Object obj) {
-            CardinalityIntersectionRecord other = null;
+            CardinalityIntersectionRecord other;
             if (obj instanceof CardinalityIntersectionRecord) {
                 other = (CardinalityIntersectionRecord) obj;
             } else {

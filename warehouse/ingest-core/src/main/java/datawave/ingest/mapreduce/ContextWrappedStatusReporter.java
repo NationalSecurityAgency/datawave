@@ -10,7 +10,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 public class ContextWrappedStatusReporter extends StatusReporter {
     
     @SuppressWarnings("rawtypes")
-    private TaskAttemptContext context = null;
+    private TaskAttemptContext context;
     
     @SuppressWarnings({"rawtypes", "hiding"})
     public ContextWrappedStatusReporter(TaskAttemptContext context) {

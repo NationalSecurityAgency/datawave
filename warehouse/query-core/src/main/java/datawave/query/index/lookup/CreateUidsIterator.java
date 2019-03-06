@@ -182,7 +182,7 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
      */
     public static Key makeRootKey(Key k) {
         ByteSequence cq = k.getColumnQualifierData();
-        ByteSequence strippedCq = cq;
+        ByteSequence strippedCq;
         strippedCq = cq.subSequence(0, lastNull(cq));
         final ByteSequence row = k.getRowData(), cf = k.getColumnFamilyData(), cv = k.getColumnVisibilityData();
         return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), strippedCq.getBackingArray(),

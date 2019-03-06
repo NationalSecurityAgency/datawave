@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<Entry<Long,ColumnVisibility>,EventBase> implements CacheableLogic {
     public static final String COUNT_CELL = "count";
     
-    private Authorizations auths = null;
+    private Authorizations auths;
     
     private static final Logger log = Logger.getLogger(ShardQueryCountTableTransformer.class);
     

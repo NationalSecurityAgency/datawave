@@ -258,14 +258,14 @@ public class FieldAgeOffFilter extends AppliedRule {
             isIndextable = Boolean.valueOf(options.getOption("isindextable"));
         }
         
-        long defaultUnitsFactor = 1L; // default to "days" as the unit.
+        long defaultUnitsFactor; // default to "days" as the unit.
         
         if (ttlUnits != null) {
             defaultUnitsFactor = options.getAgeOffPeriod().getTtlUnitsFactor();
             
             fieldTimes = new HashMap<>();
             
-            long myCutOffDateMillis = 0;
+            long myCutOffDateMillis;
             
             for (ByteSequence fieldName : fields) {
                 String optionTTL = options.getOption(OPTION_PREFIX + fieldName + "." + AgeOffConfigParams.TTL);

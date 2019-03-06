@@ -40,7 +40,7 @@ public class WikipediaPageExtractor {
     
     public WikipediaPage extract(Reader reader) {
         
-        XMLStreamReader xmlr = null;
+        XMLStreamReader xmlr;
         
         try {
             xmlr = xmlif.createXMLStreamReader(reader);

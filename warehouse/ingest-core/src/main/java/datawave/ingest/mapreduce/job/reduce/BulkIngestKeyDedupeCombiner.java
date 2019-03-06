@@ -47,7 +47,7 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
     }
     
     protected void setupContextWriter(Configuration conf) throws IOException {
-        Class<ContextWriter<K2,V2>> contextWriterClass = null;
+        Class<ContextWriter<K2,V2>> contextWriterClass;
         if (Mutation.class.equals(conf.getClass(MAPRED_OUTPUT_VALUE_CLASS, null))) {
             contextWriterClass = (Class<ContextWriter<K2,V2>>) conf.getClass(CONTEXT_WRITER_CLASS, LiveContextWriter.class, ContextWriter.class);
         } else {
@@ -95,7 +95,7 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
     
     @Override
     public void doReduce(BulkIngestKey key, Iterable<Value> values, TaskInputOutputContext<?,?,K2,V2> ctx) throws IOException, InterruptedException {
-        long ts = 0;
+        long ts;
         boolean useTSDedup = false;
         
         if (useAggregators(key.getTableName())) {

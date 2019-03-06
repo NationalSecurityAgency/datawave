@@ -32,7 +32,7 @@ public class FieldIndexKeyDataTypeFilter implements Predicate<Key>, SeekingFilte
     /**
      * The threshold for nextCount before getSeekRange will return a non-null range. Disable feature by setting to -1
      */
-    protected int maxNextBeforeSeek = -1;
+    protected int maxNextBeforeSeek;
     
     /**
      * The number of failed keys since a key was accepted

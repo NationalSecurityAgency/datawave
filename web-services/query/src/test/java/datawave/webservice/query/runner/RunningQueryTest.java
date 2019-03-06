@@ -86,7 +86,7 @@ public class RunningQueryTest {
         List<URL> additionalURLs = new LinkedList<>();
         additionalURLs.add(new File("conf/").toURI().toURL());
         
-        URL[] urlsArray = additionalURLs.toArray(new URL[additionalURLs.size()]);
+        URL[] urlsArray = additionalURLs.toArray(new URL[0]);
         ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
         URLClassLoader urlClassloader = new URLClassLoader(urlsArray, currentClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassloader);

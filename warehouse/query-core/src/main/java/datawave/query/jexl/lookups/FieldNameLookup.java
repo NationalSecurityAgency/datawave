@@ -81,7 +81,7 @@ public class FieldNameLookup extends IndexLookup {
         
         Collection<ScannerSession> sessions = Lists.newArrayList();
         
-        ScannerSession bs = null;
+        ScannerSession bs;
         
         try {
             

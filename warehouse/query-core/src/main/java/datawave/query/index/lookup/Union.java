@@ -31,7 +31,7 @@ public class Union implements IndexStream {
     protected final StreamContext context;
     protected final String contextDebug;
     protected final List<String> childrenContextDebug = new ArrayList<>();
-    protected JexlNode currNode = null;
+    protected JexlNode currNode;
     protected List<JexlNode> delayedNodes;
     protected Tuple2<String,IndexInfo> next;
     

@@ -40,7 +40,7 @@ public class DocumentDataIterator implements Iterator<DocumentData> {
     
     private Entry<DocumentData,Document> documentData = null;
     
-    private EventDataQueryFilter evaluationFilter = null;
+    private EventDataQueryFilter evaluationFilter;
     
     private final Predicate<Key> dataTypeFilter;
     

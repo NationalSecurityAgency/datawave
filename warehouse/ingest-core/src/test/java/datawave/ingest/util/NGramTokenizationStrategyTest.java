@@ -561,7 +561,7 @@ public class NGramTokenizationStrategyTest {
     }
     
     private class SimulatedProcessingDelayStrategy extends AbstractNGramTokenizationStrategy {
-        int sleepAtUpdate = 0;
+        int sleepAtUpdate;
         int updateCount = 0;
         
         public SimulatedProcessingDelayStrategy(final BloomFilter<String> filter, int sleepAtUpdate) {

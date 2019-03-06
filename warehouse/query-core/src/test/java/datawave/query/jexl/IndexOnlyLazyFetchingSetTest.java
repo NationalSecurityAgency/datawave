@@ -342,7 +342,7 @@ public class IndexOnlyLazyFetchingSetTest extends EasyMockSupport {
         replayAll();
         IndexOnlyLazyFetchingSet<String,Object> subject = new IndexOnlyLazyFetchingSet<>(fieldName, this.parentIterator);
         Object[] result1 = subject.toArray();
-        Object[] result2 = subject.toArray(new Object[subject.size()]);
+        Object[] result2 = subject.toArray(new Object[0]);
         verifyAll();
         
         // Verify results

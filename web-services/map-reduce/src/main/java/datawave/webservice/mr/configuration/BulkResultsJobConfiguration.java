@@ -63,10 +63,10 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
      *
      */
     public static class QuerySettings {
-        private QueryLogic<?> logic = null;
-        private GenericQueryConfiguration queryConfig = null;
-        private String base64EncodedQuery = null;
-        private Set<Authorizations> runtimeQueryAuthorizations = null;
+        private QueryLogic<?> logic;
+        private GenericQueryConfiguration queryConfig;
+        private String base64EncodedQuery;
+        private Set<Authorizations> runtimeQueryAuthorizations;
         private Class<? extends Query> queryImplClass;
         
         public QuerySettings(QueryLogic<?> logic, GenericQueryConfiguration queryConfig, String base64EncodedQuery, Class<? extends Query> queryImplClass,

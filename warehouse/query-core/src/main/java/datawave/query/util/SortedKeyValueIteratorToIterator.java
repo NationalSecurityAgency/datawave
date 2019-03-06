@@ -19,7 +19,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
  * 
  */
 public class SortedKeyValueIteratorToIterator implements Iterator<Map.Entry<Key,Value>> {
-    private SortedKeyValueIterator<Key,Value> iterator = null;
+    private SortedKeyValueIterator<Key,Value> iterator;
     private Map.Entry<Key,Value> next = null;
     private boolean loaded = false;
     
@@ -99,8 +99,8 @@ public class SortedKeyValueIteratorToIterator implements Iterator<Map.Entry<Key,
     }
     
     public static class SortedKeyValueEntry implements Map.Entry<Key,Value> {
-        private Key key = null;
-        private Value value = null;
+        private Key key;
+        private Value value;
         
         public SortedKeyValueEntry(Key key, Value value) {
             this.key = key;

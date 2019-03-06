@@ -30,8 +30,8 @@ import org.apache.log4j.Logger;
  */
 public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
     private static Logger log = Logger.getLogger(FileSortedSet.class);
-    protected boolean persisted = false;
-    protected SortedSet<E> set = null;
+    protected boolean persisted;
+    protected SortedSet<E> set;
     // A null entry placeholder
     public static final NullObject NULL_OBJECT = new NullObject();
     
@@ -224,7 +224,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
         InputStream inStream = handler.getInputStream();
         try {
             long total = 0;
-            long cur = 0;
+            long cur;
             
             while ((total < bytesToSkip) && ((cur = inStream.skip(bytesToSkip - total)) > 0)) {
                 total += cur;
@@ -643,7 +643,7 @@ public class FileSortedSet<E extends Serializable> implements SortedSet<E> {
      * 
      */
     protected class FileIterator implements Iterator<E> {
-        private int size = 0;
+        private int size;
         private int index = 0;
         private ObjectInputStream stream = null;
         

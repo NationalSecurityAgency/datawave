@@ -62,7 +62,7 @@ public class PartitionedQueryTable extends ShardQueryLogic {
         params.add(new Parameter(QueryParameters.QUERY_SYNTAX, "JEXL"));
         this.settings.setParameters(params);
         
-        long maxConfiguredResults = 0;
+        long maxConfiguredResults;
         // General query options
         if (-1 == this.getMaxResults()) {
             maxConfiguredResults = Long.MAX_VALUE;

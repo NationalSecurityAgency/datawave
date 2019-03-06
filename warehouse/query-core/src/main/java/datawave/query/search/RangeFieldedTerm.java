@@ -1,10 +1,10 @@
 package datawave.query.search;
 
 public class RangeFieldedTerm extends FieldedTerm {
-    private String beginRange = null;
-    private String endRange = null;
-    private Boolean lowerInclusive = null;
-    private Boolean upperInclusive = null;
+    private String beginRange;
+    private String endRange;
+    private Boolean lowerInclusive;
+    private Boolean upperInclusive;
     
     public RangeFieldedTerm() {
         this.field = "";
@@ -26,7 +26,7 @@ public class RangeFieldedTerm extends FieldedTerm {
     
     @Override
     public String getRangeBegin(EscapedCharacterTreatment escapedCharacterTreatment) {
-        String returnString = null;
+        String returnString;
         
         if (escapedCharacterTreatment == EscapedCharacterTreatment.ESCAPED) {
             returnString = beginRange;
@@ -43,7 +43,7 @@ public class RangeFieldedTerm extends FieldedTerm {
     
     @Override
     public String getRangeEnd(EscapedCharacterTreatment escapedCharacterTreatment) {
-        String returnString = null;
+        String returnString;
         
         if (escapedCharacterTreatment == EscapedCharacterTreatment.ESCAPED) {
             returnString = endRange;
@@ -108,8 +108,8 @@ public class RangeFieldedTerm extends FieldedTerm {
         int beginComp = selector.compareToIgnoreCase(beginRange);
         int endComp = selector.compareToIgnoreCase(endRange);
         
-        Boolean withinLower = null;
-        Boolean withinUpper = null;
+        Boolean withinLower;
+        Boolean withinUpper;
         
         if (lowerInclusive) {
             withinLower = beginComp >= 0;

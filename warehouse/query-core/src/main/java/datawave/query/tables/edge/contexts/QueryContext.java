@@ -440,7 +440,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     HashMultimap<String,String> preFilterValues, boolean addToPrefilter) {
         int numTermsAdded = 0;
         boolean createStats = includeStats;
-        boolean expandStats = false;
+        boolean expandStats;
         StringBuilder tempStatsStringBuilder = new StringBuilder();
         
         trimmedQuery.append("(");

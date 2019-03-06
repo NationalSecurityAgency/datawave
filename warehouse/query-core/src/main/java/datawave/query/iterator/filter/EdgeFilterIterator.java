@@ -170,7 +170,7 @@ public class EdgeFilterIterator extends Filter {
         
         if (null != inPrefilter) {
             byte[] data = Base64.decodeBase64(inPrefilter);
-            ObjectInputStream ois = null;
+            ObjectInputStream ois;
             try {
                 ois = new ObjectInputStream(new ByteArrayInputStream(data));
                 Object o = ois.readObject();
@@ -240,7 +240,7 @@ public class EdgeFilterIterator extends Filter {
      */
     @Override
     public boolean accept(Key k, Value V) {
-        boolean value = false;
+        boolean value;
         
         Map<FieldKey,String> keyComponents = EdgeKeyUtil.dissasembleKey(k, protobuffFormat);
         

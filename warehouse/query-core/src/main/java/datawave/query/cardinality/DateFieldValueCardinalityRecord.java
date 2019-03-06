@@ -8,10 +8,10 @@ import org.apache.log4j.Logger;
 
 public class DateFieldValueCardinalityRecord implements Comparable, Serializable {
     private static final long serialVersionUID = 1L;
-    private String eventDate = null;
-    private String fieldName = null;
-    private String fieldValue = null;
-    private String dataType = null;
+    private String eventDate;
+    private String fieldName;
+    private String fieldValue;
+    private String dataType;
     private HyperLogLogPlus hll = new HyperLogLogPlus(12, 20);
     private static Logger log = Logger.getLogger(DateFieldValueCardinalityRecord.class);
     

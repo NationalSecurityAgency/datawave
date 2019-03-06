@@ -251,8 +251,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // Ivarator to get the job done unless we don't have to
             JexlNode source = ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(and);
             
-            String identifier = null;
-            LiteralRange<?> range = null;
+            String identifier;
+            LiteralRange<?> range;
             boolean negatedLocal = false;
             if (source instanceof ASTAndNode) {
                 range = buildLiteralRange(source, null);
@@ -524,7 +524,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             // We don't support querying only on a negation
             throw new IllegalStateException("Root node cannot be a negation");
         }
-        IndexIteratorBuilder builder = null;
+        IndexIteratorBuilder builder;
         try {
             builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
@@ -578,7 +578,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        IndexIteratorBuilder builder = null;
+        IndexIteratorBuilder builder;
         try {
             builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
@@ -659,7 +659,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     protected SortedKeyValueIterator<Key,Value> getSourceIterator(final ASTEQNode node, boolean negation) {
         
-        SortedKeyValueIterator<Key,Value> kvIter = null;
+        SortedKeyValueIterator<Key,Value> kvIter;
         String identifier = JexlASTHelper.getIdentifier(node);
         try {
             if (limitLookup && !negation) {
@@ -825,7 +825,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @return
      */
     protected NestedIterator<Key> createExceededCheck(String identifier, LiteralRange<?> range) {
-        IndexIteratorBuilder builder = null;
+        IndexIteratorBuilder builder;
         try {
             builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
@@ -846,7 +846,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     protected Object visitDelayedIndexOnly(ASTEQNode node, Object data) {
-        IndexIteratorBuilder builder = null;
+        IndexIteratorBuilder builder;
         try {
             builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
@@ -1146,7 +1146,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (nodes.size() > 1) {
                 ASTAndNode andNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
                 children(script, andNode);
-                children(andNode, nodes.toArray(new JexlNode[nodes.size()]));
+                children(andNode, nodes.toArray(new JexlNode[0]));
             } else {
                 children(script, nodes.get(0));
             }

@@ -67,7 +67,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
         
         JexlStringBuildingVisitor visitor = new JexlStringBuildingVisitor();
         
-        String s = null;
+        String s;
         try {
             StringBuilder sb = (StringBuilder) script.jjtAccept(visitor, new StringBuilder());
             
@@ -103,7 +103,7 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     public static String buildQueryWithoutParse(JexlNode script) {
         JexlStringBuildingVisitor visitor = new JexlStringBuildingVisitor();
         
-        String s = null;
+        String s;
         try {
             StringBuilder sb = (StringBuilder) script.jjtAccept(visitor, new StringBuilder());
             

@@ -321,7 +321,7 @@ public class MapReduceStatePersisterBean {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             sid = dp.getShortName();
             for (Collection<String> cbAuths : dp.getAuthorizations())
-                auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
+                auths.add(new Authorizations(cbAuths.toArray(new String[0])));
         }
         log.trace(sid + " has authorizations " + auths);
         
@@ -391,7 +391,7 @@ public class MapReduceStatePersisterBean {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             sid = dp.getShortName();
             for (Collection<String> cbAuths : dp.getAuthorizations())
-                auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
+                auths.add(new Authorizations(cbAuths.toArray(new String[0])));
         }
         log.trace(sid + " has authorizations " + auths);
         

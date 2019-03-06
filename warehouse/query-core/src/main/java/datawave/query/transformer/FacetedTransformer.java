@@ -72,7 +72,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
         final Map<String,Attribute<? extends Comparable<?>>> documentData = document.getDictionary();
         
         String fn = null;
-        Attribute<?> attribute = null;
+        Attribute<?> attribute;
         
         for (Entry<String,Attribute<? extends Comparable<?>>> data : documentData.entrySet()) {
             
@@ -227,7 +227,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
         // should have the correct top-level visibility
         ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
         
-        FacetsBase output = null;
+        FacetsBase output;
         try {
             // build response method here
             output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);

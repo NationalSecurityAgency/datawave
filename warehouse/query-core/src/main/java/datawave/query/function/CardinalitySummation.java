@@ -26,11 +26,11 @@ public class CardinalitySummation implements Function<Entry<Key,Document>,Entry<
     private static final Logger log = Logger.getLogger(CardinalitySummation.class);
     protected Document referenceDocument;
     
-    protected Key referenceKey = null;
+    protected Key referenceKey;
     
-    protected TreeMultimap<String,Attribute<? extends Comparable<?>>> newDocumentAttributes = null;
+    protected TreeMultimap<String,Attribute<? extends Comparable<?>>> newDocumentAttributes;
     
-    protected boolean merge = false;
+    protected boolean merge;
     
     public CardinalitySummation(Key topKey, Document doc) {
         this(topKey, doc, false);

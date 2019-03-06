@@ -15,7 +15,7 @@ public class ValueSet implements Set<String>, Serializable {
     private static final long serialVersionUID = -2272124724019410449L;
     private Set<String> values = new HashSet<>();
     private boolean exceededThreshold = false;
-    private int threshold = -1;
+    private int threshold;
     
     public ValueSet(int _threshold) {
         super();

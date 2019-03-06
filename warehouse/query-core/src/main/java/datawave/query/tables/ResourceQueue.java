@@ -21,14 +21,14 @@ public class ResourceQueue implements Closeable {
     /**
      * default connector.
      */
-    protected Connector connector = null;
+    protected Connector connector;
     
     /**
      * Object pool that contains the scanner resources we will return
      */
     GenericObjectPool scannerPool;
     
-    protected boolean isOpen = false;
+    protected boolean isOpen;
     
     protected PoolableObjectFactory factory;
     

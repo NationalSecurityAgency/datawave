@@ -274,7 +274,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
             invalidateMetadata();
         } else {
             if (!existingAttr.equals(value)) {
-                Attributes attrs = null;
+                Attributes attrs;
                 
                 // When calling put() on a Document which already contains an Attributes
                 // for a given with another Attributes, issue the equivalent of a putAll() on the new Attributes

@@ -39,7 +39,6 @@ public class GetAllMatches extends JexlQueryFunction {
                                 this.name));
                 throw new IllegalArgumentException(qe);
             }
-            x = 1;
             this.parameterList.remove(0);
         }
     }

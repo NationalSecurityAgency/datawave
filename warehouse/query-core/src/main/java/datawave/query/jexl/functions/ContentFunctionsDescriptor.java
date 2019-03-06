@@ -224,7 +224,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             }
             
             if (args.hasNext()) {
-                JexlNode termOffsetMap = null;
+                JexlNode termOffsetMap;
                 
                 if (ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME.equals(funcName)) {
                     JexlNode firstArg = args.next();

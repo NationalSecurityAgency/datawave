@@ -15,7 +15,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 
 public abstract class DocumentSerializer implements Function<Entry<Key,Document>,Entry<Key,Value>> {
-    protected boolean reducedResponse = false;
+    protected boolean reducedResponse;
     protected final int compression;
     protected final int minCompressionSize;
     protected final String concreteName;

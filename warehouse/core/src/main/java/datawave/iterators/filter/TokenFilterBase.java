@@ -59,7 +59,7 @@ public abstract class TokenFilterBase extends AppliedRule {
     @Override
     public boolean accept(AgeOffPeriod period, Key k, Value v) {
         // Keep the pair if its date is after the cutoff date
-        boolean dtFlag = false;
+        boolean dtFlag;
         ruleApplied = false;
         
         if (this.patternBytes == null) // patterns are not being used

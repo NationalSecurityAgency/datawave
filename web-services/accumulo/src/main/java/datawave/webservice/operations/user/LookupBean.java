@@ -362,8 +362,8 @@ public class LookupBean {
             batchScanner = ScannerHelper.createBatchScanner(connection, table, mergedAuths, 8);
             
             List<Range> ranges = new ArrayList<>();
-            Key begin = null;
-            Key end = null;
+            Key begin;
+            Key end;
             if (colFam == null && colQual == null) {
                 begin = new Key(new Text(row));
                 end = begin.followingKey(PartialKey.ROW);

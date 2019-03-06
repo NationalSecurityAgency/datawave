@@ -29,7 +29,7 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
     protected Key nextKey;
     protected Value nextValue;
     protected Document document;
-    protected boolean buildDocument = false;
+    protected boolean buildDocument;
     protected final FieldIndexAggregator aggregation;
     
     public DocumentAggregatingIterator(DocumentAggregatingIterator other, IteratorEnvironment env) {

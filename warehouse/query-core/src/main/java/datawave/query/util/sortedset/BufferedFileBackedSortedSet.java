@@ -25,9 +25,9 @@ public class BufferedFileBackedSortedSet<E extends Serializable> implements Sort
     protected static final int DEFAULT_MAX_OPEN_FILES = 100;
     
     protected MultiSetBackedSortedSet<E> set = new MultiSetBackedSortedSet<>();
-    protected int maxOpenFiles = 10000;
+    protected int maxOpenFiles;
     protected FileSortedSet<E> buffer = null;
-    protected Comparator<? super E> comparator = null;
+    protected Comparator<? super E> comparator;
     protected boolean sizeModified = false;
     protected int size = 0;
     

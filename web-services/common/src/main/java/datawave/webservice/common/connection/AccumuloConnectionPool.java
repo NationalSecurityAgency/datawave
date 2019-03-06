@@ -17,7 +17,7 @@ public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
     private static final Logger log = Logger.getLogger(AccumuloConnectionPool.class);
     private final Map<Long,Map<String,String>> threadToTrackingMapMap = Collections.synchronizedMap(new HashMap<>());
     private final Map<Connector,Map<String,String>> connectorToTrackingMapMap = Collections.synchronizedMap(new HashMap<>());
-    private AccumuloConnectionPoolFactory factory = null;
+    private AccumuloConnectionPoolFactory factory;
     
     public AccumuloConnectionPool(AccumuloConnectionPoolFactory factory) {
         super(factory);
@@ -32,7 +32,7 @@ public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
     public Connector borrowObject(Map<String,String> trackingMap) throws Exception {
         
         Long threadId = Thread.currentThread().getId();
-        Connector o = null;
+        Connector o;
         try {
             trackingMap.put("connection.state.start", Long.valueOf(System.currentTimeMillis()).toString());
             trackingMap.put("state", AccumuloConnectionFactory.State.WAITING.toString());

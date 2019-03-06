@@ -27,7 +27,7 @@ public class Now {
         }
     }
     
-    private Timer timer = null;
+    private Timer timer;
     
     private AtomicLong now = new AtomicLong();
     

@@ -27,11 +27,11 @@ import datawave.query.util.Tuples;
 public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,IndexInfo>> {
     protected ASTEQNode currNode;
     
-    protected String fieldName = null;
+    protected String fieldName;
     
-    protected String literal = null;
+    protected String literal;
     
-    private boolean skipNodeDelay = false;
+    private boolean skipNodeDelay;
     
     private Set<String> indexOnlyFields = null;
     private static final Logger log = Logger.getLogger(EntryParser.class);

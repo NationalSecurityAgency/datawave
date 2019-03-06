@@ -8,7 +8,7 @@ import com.google.common.collect.Multimap;
 
 public class NamedMetadataIdParser extends MetadataIdParser {
     
-    private String name = null;
+    private String name;
     private String value = null;
     
     public NamedMetadataIdParser(String pattern, String name) {

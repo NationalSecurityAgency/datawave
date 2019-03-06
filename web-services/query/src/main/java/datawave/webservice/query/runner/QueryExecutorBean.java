@@ -1252,7 +1252,7 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private <T> T lookupContentByUUID(String uuidType, String uuid, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
-        T response = null;
+        T response;
         String queryId = null;
         try {
             String streaming = queryParameters.getFirst("streaming");
@@ -1318,7 +1318,7 @@ public class QueryExecutorBean implements QueryExecutor {
         if (!queryParameters.containsKey("uuidPairs")) {
             throw new BadRequestException(new IllegalArgumentException("uuidPairs missing from query parameters"), new VoidResponse());
         }
-        T response = null;
+        T response;
         String queryId = null;
         try {
             String uuidPairs = queryParameters.getFirst("uuidPairs");
@@ -3019,7 +3019,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         long start = System.nanoTime();
-        GenericResponse<String> createResponse = null;
+        GenericResponse<String> createResponse;
         createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
         long createCallTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         final String queryId = createResponse.getResult();
@@ -3135,7 +3135,6 @@ public class QueryExecutorBean implements QueryExecutor {
                         }
                         QueryException qe = (e instanceof QueryException) ? (QueryException) e : new QueryException(e);
                         observer.queryException(qe);
-                        done = true;
                         break;
                     }
                 } finally {
@@ -3169,12 +3168,12 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     public class ExecuteStreamingOutputResponse implements StreamingOutput {
-        private String queryId = null;
-        private Class<?> queryResponseClass = null;
-        private VoidResponse errorResponse = null;
-        private RunningQuery rq = null;
-        private SerializationType serializationType = SerializationType.XML;
-        private Collection<String> proxies = null;
+        private String queryId;
+        private Class<?> queryResponseClass;
+        private VoidResponse errorResponse;
+        private RunningQuery rq;
+        private SerializationType serializationType;
+        private Collection<String> proxies;
         
         public ExecuteStreamingOutputResponse(String queryId, Class<?> queryResponseClass, VoidResponse errorResponse, RunningQuery rq,
                         SerializationType serializationType, Collection<String> proxies) {
@@ -3271,7 +3270,6 @@ public class QueryExecutorBean implements QueryExecutor {
                     } catch (Exception e) {
                         if (e instanceof NoResultsException || e.getCause() instanceof NoResultsException) {
                             // No more results, break out of loop
-                            done = true;
                             break; // probably redundant
                         } else {
                             throw e;

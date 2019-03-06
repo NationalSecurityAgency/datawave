@@ -64,9 +64,9 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
             }
             long count = 0L;
             Map<String,Long> counts = new HashMap<>();
-            long termCount = 0L;
-            long referenceCount = 0L;
-            long chosenCount = 0L;
+            long termCount;
+            long referenceCount;
+            long chosenCount;
             for (TermInfo ti : from) {
                 termCount = ti.count;
                 referenceCount = ti.getListSize();
@@ -79,7 +79,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                     
                     // Keep track of counts for individual vis
                     if (separateCountsByColumnVisibility) {
-                        Long cnt = 0L;
+                        Long cnt;
                         String vis = new String(ti.vis.flatten());
                         if (counts.containsKey(vis)) {
                             cnt = counts.get(vis);
@@ -105,7 +105,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                     log.trace("Did not aggregate any counts for [" + term + "][" + field + "][" + type + "][" + date + "]. Returning null.");
                 return null;
             } else {
-                ColumnVisibility columnVisibility = null;
+                ColumnVisibility columnVisibility;
                 try {
                     
                     columnVisibility = markingFunctions.combine(columnVisibilities);

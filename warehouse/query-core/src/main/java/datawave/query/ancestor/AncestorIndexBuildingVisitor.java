@@ -43,7 +43,7 @@ public class AncestorIndexBuildingVisitor extends IteratorBuildingVisitor {
     @Override
     protected SortedKeyValueIterator<Key,Value> getSourceIterator(final ASTEQNode node, boolean negation) {
         
-        SortedKeyValueIterator<Key,Value> kvIter = null;
+        SortedKeyValueIterator<Key,Value> kvIter;
         try {
             if (limitLookup && !negation) {
                 final String identifier = JexlASTHelper.getIdentifier(node);

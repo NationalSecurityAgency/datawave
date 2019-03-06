@@ -118,7 +118,7 @@ public class LiteralRange<T extends Comparable<T>> implements Comparable<Literal
     }
     
     public boolean contains(T value) {
-        boolean matches = true;
+        boolean matches;
         if (isLowerInclusive()) {
             matches = (getLower().compareTo(value) <= 0);
         } else {

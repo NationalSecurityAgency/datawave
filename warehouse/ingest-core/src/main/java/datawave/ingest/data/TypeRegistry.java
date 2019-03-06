@@ -255,7 +255,7 @@ public class TypeRegistry extends HashMap<String,Type> {
                 scrubbedClassnames.add(classname);
             }
         }
-        return scrubbedClassnames.toArray(new String[scrubbedClassnames.size()]);
+        return scrubbedClassnames.toArray(new String[0]);
     }
     
     private Set<String> getAllPossibleNames(Configuration config) {
@@ -360,7 +360,7 @@ public class TypeRegistry extends HashMap<String,Type> {
             }
         }
         if (expandedVariables != null) {
-            return expandedVariables.toArray(new String[expandedVariables.size()]);
+            return expandedVariables.toArray(new String[0]);
         } else {
             return variables;
         }

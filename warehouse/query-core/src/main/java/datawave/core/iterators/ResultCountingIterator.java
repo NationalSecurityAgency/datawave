@@ -62,7 +62,7 @@ public class ResultCountingIterator extends WrappingIterator {
     private Key currentTopKey = null;
     private Kryo kryo = new Kryo();
     
-    private String threadName = null;
+    private String threadName;
     protected Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
     private static MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     
@@ -113,7 +113,7 @@ public class ResultCountingIterator extends WrappingIterator {
     }
     
     public void consume() throws IOException {
-        Stopwatch consumeSW = null, processResultSW = null, ioWaitSW = null;
+        Stopwatch consumeSW, processResultSW, ioWaitSW;
         
         if (log.isTraceEnabled()) {
             consumeSW = new Stopwatch();
@@ -194,7 +194,7 @@ public class ResultCountingIterator extends WrappingIterator {
             return null;
         }
         
-        Stopwatch sw = null;
+        Stopwatch sw;
         
         if (log.isTraceEnabled()) {
             log.trace(threadName + ": getTopValue()");
@@ -205,7 +205,7 @@ public class ResultCountingIterator extends WrappingIterator {
         
         sw.start();
         
-        ColumnVisibility cv = null;
+        ColumnVisibility cv;
         
         try {
             cv = markingFunctions.combine(columnVisibilities);

@@ -101,9 +101,7 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
         int cmp;
         if (geometry == null) {
             if (other == null || other.geometry == null) {
-                cmp = 0;
             }
-            cmp = -1;
         }
         cmp = geometry.compareTo(other.geometry);
         if (0 == cmp) {

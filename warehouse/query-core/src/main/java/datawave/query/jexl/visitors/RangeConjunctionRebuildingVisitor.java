@@ -181,7 +181,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
         for (Map.Entry<LiteralRange<?>,List<JexlNode>> range : ranges.entrySet()) {
             IndexLookup lookup = ShardIndexQueryTableStaticMethods.expandRange(range.getKey());
             
-            IndexLookupMap fieldsToTerms = null;
+            IndexLookupMap fieldsToTerms;
             
             try {
                 fieldsToTerms = lookup.lookup(config, scannerFactory, config.getMaxIndexScanTimeMillis());
@@ -248,7 +248,7 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
                 // recurse up the tree
                 return shouldExpandRangeBasedOnSelectivity(node.jjtGetParent(), range, rangeSelectivity);
             case ParserTreeConstants.JJTANDNODE:
-                boolean foundChildSelectivity = false;
+                boolean foundChildSelectivity;
                 if (rangeSelectivity.equals(IndexStatsClient.DEFAULT_VALUE)) {
                     // only want to fetch the range selectivity once
                     rangeSelectivity = JexlASTHelper.getNodeSelectivity(Sets.newHashSet(range.getFieldName()), config, stats);

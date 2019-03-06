@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set<String>>>> {
     
     private static final Logger log = Logger.getLogger(MetadataCacheLoader.class);
-    protected Connector conn = null;
+    protected Connector conn;
     protected String defaultBasePath;
     
     private static final String HDFS_BASE = "hdfs://";

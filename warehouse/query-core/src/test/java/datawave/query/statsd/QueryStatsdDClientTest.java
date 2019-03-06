@@ -18,7 +18,7 @@ public class QueryStatsdDClientTest {
     
     @Test
     public void testMetrics() {
-        SimpleUDPServer server = null;
+        SimpleUDPServer server;
         server = new SimpleUDPServer(9875);
         server.start();
         
@@ -54,7 +54,7 @@ public class QueryStatsdDClientTest {
     
     @Test
     public void testMultipleQueryMetrics() {
-        SimpleUDPServer server = null;
+        SimpleUDPServer server;
         server = new SimpleUDPServer(9876);
         server.start();
         
@@ -108,7 +108,7 @@ public class QueryStatsdDClientTest {
         private Thread thread = null;
         private boolean running = false;
         private boolean stop = false;
-        private volatile int port = 9875;
+        private volatile int port;
         private IOException exception = null;
         
         SimpleUDPServer(int port) {

@@ -173,7 +173,7 @@ public class QueryMetricsReporter {
         }
         
         // Open up a BatchScanner to the QueryMetrics table
-        BatchScanner bs = null;
+        BatchScanner bs;
         try {
             bs = connector.createBatchScanner(tableName, Authorizations.EMPTY, 8);
         } catch (TableNotFoundException e) {
@@ -183,7 +183,7 @@ public class QueryMetricsReporter {
         }
         
         // Set a range for the entire table
-        Range r = null;
+        Range r;
         if (null == queryUser)
             r = new Range();
         else
@@ -267,7 +267,6 @@ public class QueryMetricsReporter {
         for (Long t : this.sortedMetrics) {
             if (currentTime < t) {
                 this.sortedMetrics.add(i, currentTime);
-                inserted = true;
                 return;
             }
             

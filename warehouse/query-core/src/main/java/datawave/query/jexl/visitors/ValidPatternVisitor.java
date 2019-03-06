@@ -31,7 +31,7 @@ public class ValidPatternVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        Object literalValue = null;
+        Object literalValue;
         
         // Catch the situation where a user might enter FIELD1 =~ FIELD2
         try {
@@ -54,7 +54,7 @@ public class ValidPatternVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        Object literalValue = null;
+        Object literalValue;
         
         // Catch the situation where a user might enter FIELD1 =~ FIELD2
         try {

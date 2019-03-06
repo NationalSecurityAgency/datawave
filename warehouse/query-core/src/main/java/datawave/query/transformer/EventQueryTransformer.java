@@ -51,7 +51,7 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         }
         EventBase event = this.responseObjectFactory.getEvent();
         
-        Map<String,String> markings = null;
+        Map<String,String> markings;
         try {
             markings = this.markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility(key.getColumnVisibility()), this.auths);
         } catch (Exception e) {
@@ -82,8 +82,8 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         
         Set<FieldBase<?>> values = new HashSet<>();
         
-        String origFieldName = null;
-        String fieldName = null;
+        String origFieldName;
+        String fieldName;
         
         // Hold unique Column Visibilities and merge them at the end
         // for the overall event ColumnVisibility.

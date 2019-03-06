@@ -12,8 +12,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 public class TermInfo {
     protected long count = 0;
-    protected String fieldValue = null;
-    protected String fieldName = null;
+    protected String fieldValue;
+    protected String fieldName;
     protected String date = null;
     protected String datatype = null;
     protected ColumnVisibility vis = null;
@@ -49,7 +49,7 @@ public class TermInfo {
             }
             
             // Parse the UID.List object from the value
-            Uid.List uidList = null;
+            Uid.List uidList;
             try {
                 uidList = Uid.List.parseFrom(value.get());
                 if (null != uidList) {

@@ -534,7 +534,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      */
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
                     throws IOException, ConfigException, InstantiationException, IllegalAccessException {
-        NestedIterator<Key> docIter = null;
+        NestedIterator<Key> docIter;
         if (log.isTraceEnabled())
             log.trace("Batched queries is " + batchedQueries);
         if (batchedQueries >= 1) {
@@ -578,8 +578,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
                 
                 // Parse the query
-                ASTJexlScript myScript = null;
-                JexlEvaluation eval = null;
+                ASTJexlScript myScript;
+                JexlEvaluation eval;
                 try {
                     
                     myScript = JexlASTHelper.parseJexlQuery(queries.getValue());
@@ -663,7 +663,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * @return
      */
     public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
-        SortedKeyValueIterator<Key,Value> sourceDeepCopy = null;
+        SortedKeyValueIterator<Key,Value> sourceDeepCopy;
         sourceDeepCopy = sourceForDeepCopies.deepCopy(this.myEnvironment);
         return sourceDeepCopy;
     }
@@ -757,7 +757,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // Take the document Keys and transform it into Entry<Key,Document>,
         // removing Attributes for this Document
         // which do not fall within the expected time range
-        Iterator<Entry<Key,Document>> documents = null;
+        Iterator<Entry<Key,Document>> documents;
         Aggregation a = new Aggregation(this.getTimeFilter(), this.typeMetadataWithNonIndexed, compositeMetadata, this.isIncludeGroupingContext(),
                         this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(), isTrackSizes());
         if (gatherTimingDetails()) {
@@ -889,7 +889,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (!this.disableEvaluation) {
             
             JexlEvaluation jexlEvaluationFunction = getJexlEvaluation(documentSource);
-            Collection<String> variables = null;
+            Collection<String> variables;
             if (null != documentSource && null != documentSource.getQuery()) {
                 
                 variables = VariableNameVisitor.parseQuery(jexlEvaluationFunction.parse(documentSource.getQuery()));
@@ -944,7 +944,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (null == documentSource) {
             return new JexlEvaluation(query, getArithmetic());
         }
-        JexlEvaluation jexlEvaluationFunction = null;
+        JexlEvaluation jexlEvaluationFunction;
         NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
         if (null == nestedQuery) {
             jexlEvaluationFunction = new JexlEvaluation(query, getArithmetic());

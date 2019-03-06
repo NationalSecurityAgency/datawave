@@ -191,7 +191,7 @@ public class FetchDataTypesVisitor extends BaseVisitor {
             final String fieldName = JexlASTHelper.deconstructIdentifier(field);
             try {
                 
-                Set<Type<?>> dataTypesForField = Collections.emptySet();
+                Set<Type<?>> dataTypesForField;
                 
                 if (useCache) {
                     

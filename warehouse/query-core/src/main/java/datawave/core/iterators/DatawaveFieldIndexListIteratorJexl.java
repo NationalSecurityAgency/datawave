@@ -107,8 +107,8 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
     @Override
     protected List<Range> buildBoundingFiRanges(Text rowId, Text fiName, Text fieldValue) {
         if (fst != null || isNegated()) {
-            Key startKey = null;
-            Key endKey = null;
+            Key startKey;
+            Key endKey;
             startKey = new Key(rowId, fiName);
             endKey = new Key(rowId, new Text(fiName + Constants.NULL_BYTE_STRING));
             return new RangeSplitter(new Range(startKey, true, endKey, true), getMaxRangeSplit());
@@ -226,7 +226,7 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
             
             CompressionCodec codec = null;
             if (compressionCodec != null) {
-                Class<? extends CompressionCodec> codecClass = null;
+                Class<? extends CompressionCodec> codecClass;
                 try {
                     codecClass = Class.forName(compressionCodec).asSubclass(CompressionCodec.class);
                 } catch (ClassNotFoundException e) {

@@ -219,7 +219,7 @@ public class IdTranslatorBean {
         
         String query = buildQuery(ids);
         
-        String logicName = null;
+        String logicName;
         if (TLDonly.equalsIgnoreCase("true")) {
             logicName = ID_TRANS_TLD_LOGIC;
         } else {

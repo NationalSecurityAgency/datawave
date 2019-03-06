@@ -189,7 +189,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
     
     public Map<String,String> getColumnMarkings(String columnName) {
         columnName = columnName.replaceAll(" ", "_");
-        Map<String,String> markings = null;
+        Map<String,String> markings;
         if (this.columnMarkingsMap.containsKey(columnName)) {
             markings = this.columnMarkingsMap.get(columnName);
         } else {
@@ -244,7 +244,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
     
     public String getColumnVisibility(String columnName) {
         columnName = columnName.replaceAll(" ", "_");
-        String columnVisibility = null;
+        String columnVisibility;
         if (this.columnColumnVisibilityMap.containsKey(columnName)) {
             columnVisibility = this.columnColumnVisibilityMap.get(columnName);
         } else {
@@ -256,7 +256,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
     public Long getColumnTimestamp(String columnName) {
         
         columnName = columnName.replaceAll(" ", "_");
-        Long timestamp = null;
+        Long timestamp;
         if (this.columnTimestampMap.containsKey(columnName)) {
             timestamp = this.columnTimestampMap.get(columnName);
         } else {

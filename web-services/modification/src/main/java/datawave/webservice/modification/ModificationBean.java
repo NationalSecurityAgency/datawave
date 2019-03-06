@@ -143,13 +143,13 @@ public class ModificationBean {
         Principal p = ctx.getCallerPrincipal();
         String user;
         Set<Authorizations> cbAuths = new HashSet<>();
-        Collection<String> userRoles = Collections.emptySet();
+        Collection<String> userRoles;
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             user = dp.getShortName();
             userRoles = dp.getPrimaryUser().getRoles();
             for (Collection<String> c : dp.getAuthorizations())
-                cbAuths.add(new Authorizations(c.toArray(new String[c.size()])));
+                cbAuths.add(new Authorizations(c.toArray(new String[0])));
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_PRINCIPAL_ERROR, MessageFormat.format("Class: {0}", p.getClass().getName()));
             response.addException(qe);

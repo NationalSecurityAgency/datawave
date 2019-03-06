@@ -134,7 +134,7 @@ public class DateIndexTableConfigHelperTest {
         mock.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
             
-            String results = null;
+            String results;
             String key = (String) EasyMock.getCurrentArguments()[0];
             String defaultValue = (String) EasyMock.getCurrentArguments()[1];
             

@@ -468,7 +468,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                             
                         }
                         if (!processedDirectories.isEmpty()) {
-                            writeStats(processedDirectories.toArray(new Path[processedDirectories.size()]));
+                            writeStats(processedDirectories.toArray(new Path[0]));
                             lastOnlineTime = System.currentTimeMillis();
                         }
                     }
@@ -1063,7 +1063,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     Path dst = new Path(file.replaceFirst("/flagged/", "/loaded/"));
                     boolean mkdirs = sourceFs.mkdirs(dst.getParent());
                     if (mkdirs) {
-                        boolean renamed = false;
+                        boolean renamed;
                         try {
                             renamed = sourceFs.rename(new Path(file), dst);
                         } catch (Exception e) {

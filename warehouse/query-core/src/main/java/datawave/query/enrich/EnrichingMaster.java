@@ -40,7 +40,7 @@ public class EnrichingMaster {
     public static final String QUERY = "query";
     public static final String UNEVALUATED_FIELDS = "enriching.unevaluated.fields";
     
-    private List<DataEnricher> enrichers = null;
+    private List<DataEnricher> enrichers;
     private Value topValue = null;
     
     /**

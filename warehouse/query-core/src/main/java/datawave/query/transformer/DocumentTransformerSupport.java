@@ -183,8 +183,8 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         Set<FieldBase<?>> Fields = new HashSet<>();
         final Map<String,Attribute<? extends Comparable<?>>> documentData = document.getDictionary();
         
-        String fn = null;
-        Attribute<?> attribute = null;
+        String fn;
+        Attribute<?> attribute;
         for (Entry<String,Attribute<? extends Comparable<?>>> data : documentData.entrySet()) {
             
             // skip metadata fields
@@ -311,7 +311,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             }
         }
         
-        Date dataDate = null;
+        Date dataDate;
         long timestamp = document.getTimestamp();
         if (timestamp == Long.MAX_VALUE) {
             String row = documentKey.getRow().toString();

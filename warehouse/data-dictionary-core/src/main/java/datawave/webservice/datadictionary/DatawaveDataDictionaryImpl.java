@@ -102,7 +102,7 @@ public class DatawaveDataDictionaryImpl implements DatawaveDataDictionary {
         // So we can get a QueryModel
         QueryModel queryModel = metadataHelper.getQueryModel(modelTableName, modelName, metadataHelper.getIndexOnlyFields(null));
         
-        Map<String,String> reverseMapping = null;
+        Map<String,String> reverseMapping;
         
         // So we can pull the reverse mapping for this model
         if (null != queryModel) {
@@ -236,7 +236,7 @@ public class DatawaveDataDictionaryImpl implements DatawaveDataDictionary {
     }
     
     private MetadataFieldBase getFieldForDatatype(String fieldName, String dataType, HashMap<String,Map<String,MetadataFieldBase>> fieldMap) {
-        MetadataFieldBase field = null;
+        MetadataFieldBase field;
         Map<String,MetadataFieldBase> allTypesForField = fieldMap.get(fieldName);
         
         if (null == allTypesForField) {

@@ -226,7 +226,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 } else {
                     ASTOrNode unionOfAliases = new ASTOrNode(ParserTreeConstants.JJTORNODE);
                     List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds);
-                    JexlNodes.children(unionOfAliases, var.toArray(new JexlNode[var.size()]));
+                    JexlNodes.children(unionOfAliases, var.toArray(new JexlNode[0]));
                     nodeToAdd = JexlNodes.wrap(unionOfAliases);
                 }
                 
@@ -242,7 +242,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
          * The rebuilding visitor adds whatever {visit()} returns to the parent's child list, so we shouldn't have some weird object graph that means old nodes
          * never get GC'd because {super.visit()} will reset the parent in the call to {copy()}
          */
-        return super.visit(JexlNodes.children(smashed, others.toArray(new JexlNode[others.size()])), data);
+        return super.visit(JexlNodes.children(smashed, others.toArray(new JexlNode[0])), data);
     }
     
     /**
@@ -310,7 +310,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
             return toReturn;
         }
         
-        Object leftSeed = null, rightSeed = null;
+        Object leftSeed, rightSeed;
         Set<Object> left = Sets.newHashSet(), right = Sets.newHashSet();
         boolean isNullEquality = false;
         
@@ -384,10 +384,8 @@ public class QueryModelVisitor extends RebuildingVisitor {
         boolean requiresAnd = isNullEquality || node instanceof ASTNENode;
         
         if (leftSeed == null) {
-            leftSeed = leftNode;
         }
         if (rightSeed == null) {
-            rightSeed = rightNode;
         }
         
         @SuppressWarnings("unchecked")

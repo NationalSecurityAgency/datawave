@@ -101,7 +101,7 @@ public class GeoWaveTableConfigHelper implements TableConfigHelper {
                         MergingCombiner.class.getName(), new BasicOptionProvider(options)));
         
         try {
-            attachIterators(tops, tableName, iterators.toArray(new IteratorConfig[iterators.size()]));
+            attachIterators(tops, tableName, iterators.toArray(new IteratorConfig[0]));
         } catch (final Exception e) {
             log.error("Unable to attach iterators to table [" + tableName + "]", e);
         }

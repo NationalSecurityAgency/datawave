@@ -17,7 +17,7 @@ public class DatawaveSelectorExtractor implements SelectorExtractor {
     public List<String> extractSelectors(Query query) throws IllegalArgumentException {
         List<String> selectorList = new ArrayList<>();
         List<ASTEQNode> eqNodes = null;
-        QueryNode node = null;
+        QueryNode node;
         ASTJexlScript jexlScript = null;
         
         try {

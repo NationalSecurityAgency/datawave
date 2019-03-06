@@ -60,7 +60,7 @@ public class AttributeToCardinality implements Function<Entry<Key,Document>,Entr
                     Attributes newAttrs = new Attributes(attrs.isToKeep());
                     
                     for (Attribute<?> attributeItem : attrs.getAttributes()) {
-                        Cardinality card = null;
+                        Cardinality card;
                         if (attributeItem instanceof Cardinality) {
                             card = (Cardinality) attributeItem;
                         } else {
@@ -76,7 +76,7 @@ public class AttributeToCardinality implements Function<Entry<Key,Document>,Entr
                     
                     newDictionary.put(attr.getKey(), newAttrs);
                 } else {
-                    Cardinality card = null;
+                    Cardinality card;
                     if (attribute instanceof Cardinality) {
                         card = (Cardinality) attribute;
                     } else {

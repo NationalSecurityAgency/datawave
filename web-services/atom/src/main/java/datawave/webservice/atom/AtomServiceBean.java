@@ -121,7 +121,7 @@ public class AtomServiceBean {
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             for (Collection<String> cbAuths : dp.getAuthorizations())
-                auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
+                auths.add(new Authorizations(cbAuths.toArray(new String[0])));
         }
         Categories result;
         Connector connection = null;
@@ -196,7 +196,7 @@ public class AtomServiceBean {
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             for (Collection<String> cbAuths : dp.getAuthorizations())
-                auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
+                auths.add(new Authorizations(cbAuths.toArray(new String[0])));
         }
         
         Feed result;
@@ -284,7 +284,7 @@ public class AtomServiceBean {
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             for (Collection<String> cbAuths : dp.getAuthorizations())
-                auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
+                auths.add(new Authorizations(cbAuths.toArray(new String[0])));
         }
         
         Entry result = null;

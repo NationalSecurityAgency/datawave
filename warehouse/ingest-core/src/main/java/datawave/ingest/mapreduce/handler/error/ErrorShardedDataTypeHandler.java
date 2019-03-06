@@ -185,7 +185,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
             tables.add(table);
         }
         
-        return tables.toArray(new String[tables.size()]);
+        return tables.toArray(new String[0]);
     }
     
     @Override

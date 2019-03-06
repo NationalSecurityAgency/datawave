@@ -37,12 +37,12 @@ import com.google.common.collect.Maps;
  */
 public class EventFieldNormalizerHelper {
     
-    private datawave.ingest.data.Type type = null;
+    private datawave.ingest.data.Type type;
     private TypeRegistry registry = null;
     
     /* Map of field names to types, null key is the default type */
-    private Map<String,Type<?>> typeFieldMap = null;
-    private Map<String,Type<?>> typePatternMap = null;
+    private Map<String,Type<?>> typeFieldMap;
+    private Map<String,Type<?>> typePatternMap;
     private Map<Pattern,Type<?>> typeCompiledPatternMap = null;
     private static final Type<?> NO_OP_TYPE = new NoOpType();
     
@@ -72,7 +72,7 @@ public class EventFieldNormalizerHelper {
             if (!property.getKey().startsWith(this.getType().typeName() + '.'))
                 continue;
             
-            String fieldName = null;
+            String fieldName;
             if (property.getKey().endsWith(FIELD_TYPE)) {
                 if ((fieldName = getFieldName(property.getKey(), FIELD_TYPE)) == null) {
                     continue;

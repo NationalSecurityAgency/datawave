@@ -73,7 +73,7 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
     }
     
     private static class EscapedCollection extends AbstractCollection<String> {
-        private Collection<String> values = null;
+        private Collection<String> values;
         
         public EscapedCollection(Collection<String> values) {
             this.values = values;

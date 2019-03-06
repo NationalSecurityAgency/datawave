@@ -64,7 +64,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     /**
      * Maximum number of UIDs.
      */
-    public int maxUids = MAX;
+    public int maxUids;
     
     /**
      * representative count.

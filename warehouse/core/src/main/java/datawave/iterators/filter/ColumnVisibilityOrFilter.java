@@ -26,7 +26,7 @@ public class ColumnVisibilityOrFilter extends TokenFilterBase {
         
         byte[] cv = k.getColumnVisibilityData().getBackingArray();
         
-        int start = -1;
+        int start;
         int end = -1;
         
         // find the start of the first token to test

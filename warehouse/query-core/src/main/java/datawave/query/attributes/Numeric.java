@@ -66,7 +66,7 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
     }
     
     private Number parseToNumber(String value) {
-        Number number = null;
+        Number number;
         try {
             number = NumberUtils.createNumber(value);
         } catch (Exception ex) {

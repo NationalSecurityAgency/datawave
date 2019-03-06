@@ -134,7 +134,7 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
     }
     
     private static class MultiOffsetMatcher {
-        int distance = 0;
+        int distance;
         
         final String[] terms;
         

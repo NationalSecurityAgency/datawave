@@ -11,7 +11,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
  *
  */
 public class DurationValue {
-    private int duration = -1;
+    private int duration;
     
     private Map<String,String> markings = null;
     

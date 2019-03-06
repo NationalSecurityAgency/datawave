@@ -31,7 +31,7 @@ public class CBMutationOutputFormatter extends AccumuloOutputFormat {
     
     public static class CBRecordWriter extends RecordWriter<Text,Mutation> {
         private RecordWriter<Text,Mutation> delegate;
-        private String eventTable = null;
+        private String eventTable;
         
         public CBRecordWriter(RecordWriter<Text,Mutation> writer, TaskAttemptContext context) throws IOException {
             this.delegate = writer;

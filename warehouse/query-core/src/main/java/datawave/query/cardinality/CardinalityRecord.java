@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 
 public class CardinalityRecord implements Serializable {
     private static final long serialVersionUID = 1L;
-    private Set<String> resultCardinalityValueFields = null;
+    private Set<String> resultCardinalityValueFields;
     private HashMultimap<Integer,DateFieldValueCardinalityRecord> cardinalityMap = HashMultimap.create();
     private static Logger log = Logger.getLogger(CardinalityRecord.class);
     
@@ -33,7 +33,7 @@ public class CardinalityRecord implements Serializable {
         DOCUMENT, CURRENT
     }
     
-    private DateType dateType = DateType.DOCUMENT;
+    private DateType dateType;
     
     public CardinalityRecord(Set<String> recordedFields, DateType dateType) {
         this.resultCardinalityValueFields = recordedFields;
@@ -56,7 +56,7 @@ public class CardinalityRecord implements Serializable {
     public void addEntry(Map<String,List<String>> valueMap, String eventId, String dataType, Date dataDate) {
         
         try {
-            long ts = 0;
+            long ts;
             if (dateType.equals(DateType.DOCUMENT)) {
                 ts = dataDate.getTime();
             } else {
@@ -170,7 +170,7 @@ public class CardinalityRecord implements Serializable {
     protected DateFieldValueCardinalityRecord getDateFieldValueCardinalityRecord(String date, String fieldName, String fieldValue, String dataType) {
         
         int hash = DateFieldValueCardinalityRecord.hash(date, fieldName, fieldValue, dataType);
-        Set<DateFieldValueCardinalityRecord> possibleFvcSet = null;
+        Set<DateFieldValueCardinalityRecord> possibleFvcSet;
         synchronized (cardinalityMap) {
             possibleFvcSet = cardinalityMap.get(hash);
         }

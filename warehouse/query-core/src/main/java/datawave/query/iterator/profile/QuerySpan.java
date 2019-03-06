@@ -22,7 +22,7 @@ public class QuerySpan {
     
     protected QueryStatsDClient client;
     
-    protected long sourceCount = 1;
+    protected long sourceCount;
     
     protected long next = 0;
     

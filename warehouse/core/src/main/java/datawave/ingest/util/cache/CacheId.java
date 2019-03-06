@@ -5,7 +5,7 @@ package datawave.ingest.util.cache;
  */
 public class CacheId {
     
-    protected String cacheId = null;
+    protected String cacheId;
     
     public CacheId(String cacheId) {
         this.cacheId = cacheId;

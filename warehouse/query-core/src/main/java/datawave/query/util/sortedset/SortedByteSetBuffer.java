@@ -20,9 +20,9 @@ public class SortedByteSetBuffer extends AbstractSet<byte[]> implements SortedSe
     public static final int AVERAGE_VALUE_SIZE = 32;
     public static final int DEFAULT_BUFFER_SIZE = 64;
     
-    protected byte[] data = null;
-    protected int[] sortedDataIndicies = null;
-    protected byte[] sortedDataSizes = null;
+    protected byte[] data;
+    protected int[] sortedDataIndicies;
+    protected byte[] sortedDataSizes;
     protected int size = 0;
     protected int bufferSize = 0;
     protected int modCount = 0;
@@ -248,9 +248,9 @@ public class SortedByteSetBuffer extends AbstractSet<byte[]> implements SortedSe
     }
     
     protected class SortedByteSetBufferIterator implements Iterator<byte[]> {
-        protected int index = 0;
-        protected int end = 0;
-        protected int expectedModCount = -1;
+        protected int index;
+        protected int end;
+        protected int expectedModCount;
         protected int last = -1;
         
         public SortedByteSetBufferIterator() {

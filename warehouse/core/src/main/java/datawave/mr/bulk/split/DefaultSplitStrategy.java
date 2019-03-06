@@ -8,7 +8,7 @@ import com.google.common.collect.Iterables;
 
 public class DefaultSplitStrategy extends SplitStrategy {
     
-    private int splitCount = 0;
+    private int splitCount;
     
     public DefaultSplitStrategy(final int splitCount) {
         this.splitCount = splitCount;

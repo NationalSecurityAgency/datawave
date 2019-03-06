@@ -39,11 +39,11 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
     
     protected Kryo kryo = new Kryo();
     
-    protected Query settings = null;
+    protected Query settings;
     
     protected BaseQueryLogic<Entry<Key,Value>> logic = null;
     
-    protected Authorizations auths = null;
+    protected Authorizations auths;
     
     protected EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer = null;
     

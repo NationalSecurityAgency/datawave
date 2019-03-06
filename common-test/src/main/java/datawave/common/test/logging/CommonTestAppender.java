@@ -70,7 +70,7 @@ public class CommonTestAppender extends WriterAppender {
             ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
             BufferedReader br = new BufferedReader(new InputStreamReader(bais));
             
-            String line = null;
+            String line;
             
             while (null != (line = br.readLine())) {
                 

@@ -91,10 +91,10 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                 throw new IllegalStateException("Invalid hdfs cache dir URI: " + ivaratorCacheDirURI, e);
             }
             
-            DocumentIterator docIterator = null;
+            DocumentIterator docIterator;
             try {
                 // create a field index caching ivarator
-                DatawaveFieldIndexListIteratorJexl listIterator = null;
+                DatawaveFieldIndexListIteratorJexl listIterator;
                 if (values != null) {
                     listIterator = DatawaveFieldIndexListIteratorJexl.builder().withFieldName(new Text(field)).withValues(values).withTimeFilter(timeFilter)
                                     .withDatatypeFilter(datatypeFilter).negated(negated).withScanThreshold(ivaratorCacheScanPersistThreshold)

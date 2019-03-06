@@ -113,7 +113,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                     values.add(String.valueOf(JexlASTHelper.getLiteralValue(child)));
                 }
                 
-                ExceededOrThresholdMarkerJexlNode marker = null;
+                ExceededOrThresholdMarkerJexlNode marker;
                 
                 // if we have an hdfs cache directory and if past the fst threshold, then create the fst and replace the list with an assignment
                 if (fstHdfsUri != null && (subsetChildrenCopies.size() >= config.getMaxOrExpansionFstThreshold())) {
@@ -137,7 +137,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             }
         }
         
-        return children(newNode, children.toArray(new JexlNode[children.size()]));
+        return children(newNode, children.toArray(new JexlNode[0]));
     }
     
     protected boolean isIndexed(String field) {

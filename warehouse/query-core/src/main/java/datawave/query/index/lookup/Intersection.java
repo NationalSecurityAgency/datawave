@@ -53,7 +53,7 @@ public class Intersection implements IndexStream {
     private Tuple2<String,IndexInfo> next;
     private JexlNode currNode;
     protected List<JexlNode> delayedNodes;
-    protected boolean isVariable = false;
+    protected boolean isVariable;
     protected UidIntersector uidIntersector;
     
     private static final Logger log = Logger.getLogger(Intersection.class);

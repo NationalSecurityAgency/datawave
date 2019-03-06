@@ -26,20 +26,20 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
     
     private Logger log = Logger.getLogger(FinalDocumentTrackingIterator.class);
     private Iterator<Map.Entry<Key,Value>> itr;
-    private boolean itrIsDone = false;
-    private boolean statsEntryReturned = false;
+    private boolean itrIsDone;
+    private boolean statsEntryReturned;
     private Key lastKey = null;
     
     private static final Text MARKER_TEXT = new Text("\u2735FinalDocument\u2735");
     private static final ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
     
-    private Range seekRange = null;
-    private DocumentSerialization.ReturnType returnType = null;
-    private boolean isReducedResponse = false;
-    private boolean isCompressResults = false;
-    private QuerySpanCollector querySpanCollector = null;
-    private QuerySpan querySpan = null;
-    private YieldCallback yield = null;
+    private Range seekRange;
+    private DocumentSerialization.ReturnType returnType;
+    private boolean isReducedResponse;
+    private boolean isCompressResults;
+    private QuerySpanCollector querySpanCollector;
+    private QuerySpan querySpan;
+    private YieldCallback yield;
     
     public FinalDocumentTrackingIterator(QuerySpanCollector querySpanCollector, QuerySpan querySpan, Range seekRange, Iterator<Map.Entry<Key,Value>> itr,
                     DocumentSerialization.ReturnType returnType, boolean isReducedResponse, boolean isCompressResults, YieldCallback<Key> yield) {
@@ -91,7 +91,7 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
         }
         
         Iterator<Map.Entry<Key,Document>> emptyDocumentIterator = documentMap.entrySet().iterator();
-        Iterator<Map.Entry<Key,Value>> serializedDocuments = null;
+        Iterator<Map.Entry<Key,Value>> serializedDocuments;
         
         if (returnType == DocumentSerialization.ReturnType.kryo) {
             // Serialize the Document using Kryo

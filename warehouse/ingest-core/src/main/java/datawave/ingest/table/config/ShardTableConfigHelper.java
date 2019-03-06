@@ -87,7 +87,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         
         enableBloomFilters = conf.getBoolean(ENABLE_BLOOM_FILTERS, enableBloomFilters);
         
-        String localityGroupsConf = null;
+        String localityGroupsConf;
         if (tableName.equals(shardTableName)) {
             localityGroupsConf = conf.get(shardTableName + LOCALITY_GROUPS, ExtendedDataTypeHandler.FULL_CONTENT_LOCALITY_NAME + ':'
                             + ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY + ',' + ExtendedDataTypeHandler.TERM_FREQUENCY_LOCALITY_NAME + ':'

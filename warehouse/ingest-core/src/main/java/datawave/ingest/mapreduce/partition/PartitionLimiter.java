@@ -5,7 +5,7 @@ import org.apache.hadoop.conf.Configuration;
 public class PartitionLimiter {
     public static final String MAX_PARTITIONS_PROPERTY = "partition.limiter.max";
     private Configuration conf;
-    private int maxPartitions = 0;
+    private int maxPartitions;
     
     public PartitionLimiter(Configuration conf) {
         this.conf = conf;

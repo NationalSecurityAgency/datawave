@@ -23,10 +23,10 @@ public class JsonRecordReaderTest {
     
     protected JsonRecordReader init(boolean parseHeaderOnly, FlattenMode mode) throws Exception {
         
-        Configuration conf = null;
-        TaskAttemptContext ctx = null;
-        InputSplit split = null;
-        File dataFile = null;
+        Configuration conf;
+        TaskAttemptContext ctx;
+        InputSplit split;
+        File dataFile;
         
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource("config/ingest/all-config.xml"));

@@ -11,7 +11,7 @@ public class GeoWaveFunctionsTest {
     public void testLuceneToJexlConversion() throws Exception {
         LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
         
-        QueryNode node = null;
+        QueryNode node;
         
         node = parser.parse("#CONTAINS(FIELD, 'POINT(10 20)')");
         Assert.assertEquals("geowave:contains(FIELD, 'POINT(10 20)')", node.getOriginalQuery());

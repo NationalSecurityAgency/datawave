@@ -32,7 +32,7 @@ public class CondensedIndexInfo implements Writable {
     protected Set<String> ignored;
     
     protected SortedSet<String> allShards;
-    protected long lastCount = 0;
+    protected long lastCount;
     
     public CondensedIndexInfo() {
         indexInfos = Maps.newHashMap();

@@ -16,7 +16,7 @@ public class AccumuloConnectionPoolFactory implements PooledObjectFactory<Connec
     
     private String username;
     private String password;
-    private Instance instance = null;
+    private Instance instance;
     
     public AccumuloConnectionPoolFactory(String username, String password, String zookeepers, String instanceName) {
         this.username = username;

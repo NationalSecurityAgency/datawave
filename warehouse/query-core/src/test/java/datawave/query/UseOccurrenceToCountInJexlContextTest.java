@@ -309,7 +309,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
             BatchWriter bw = null;
             BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-            Mutation mutation = null;
+            Mutation mutation;
             
             String firstUID = UID.builder().newId("First".getBytes(), (Date) null).toString();
             String secondUID = UID.builder().newId("Second".getBytes(), (Date) null).toString();

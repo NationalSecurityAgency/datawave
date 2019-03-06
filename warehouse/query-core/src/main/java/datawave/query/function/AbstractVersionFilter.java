@@ -340,7 +340,7 @@ public abstract class AbstractVersionFilter<A> {
             // Extract and deserialize the specified JSON string. Such configs may be structured
             // within a list or a single map. See the javadoc and unit tests for more details.
             final Gson gson = new Gson();
-            Collection<Object> unmappedConfigs = Collections.emptyList();
+            Collection<Object> unmappedConfigs;
             try {
                 unmappedConfigs = gson.fromJson(jsonFormattedConfigs, Collection.class);
             } catch (final Exception e) {

@@ -38,11 +38,11 @@ public class AccumuloIndexAgeDisplay {
     private static final Logger log = Logger.getLogger(AccumuloIndexAgeDisplay.class);
     private static final long MILLIS_IN_DAY = 86400000;
     
-    private Connector conn = null;
+    private Connector conn;
     
-    private String tableName = null;
+    private String tableName;
     private String columns = null;
-    private String userName = null;
+    private String userName;
     
     private Integer buckets[] = {180, 90, 60, 30, 14, 7, 2};
     

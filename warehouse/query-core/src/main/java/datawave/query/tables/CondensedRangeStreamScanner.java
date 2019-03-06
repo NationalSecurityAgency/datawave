@@ -64,7 +64,7 @@ public class CondensedRangeStreamScanner extends RangeStreamScanner {
                 }
                 initialized = true;
             }
-            boolean hasNext = false;
+            boolean hasNext;
             if (null == currentEntry || nextDay) {
                 nextDay = false;
                 currentEntry = null;
@@ -219,7 +219,7 @@ public class CondensedRangeStreamScanner extends RangeStreamScanner {
         
         writeLock.lock();
         try {
-            Entry<Key,Value> myEntry = null;
+            Entry<Key,Value> myEntry;
             
             while (iter.hasNext()) {
                 myEntry = iter.next();

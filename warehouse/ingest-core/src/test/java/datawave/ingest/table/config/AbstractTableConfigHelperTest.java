@@ -411,7 +411,7 @@ public class AbstractTableConfigHelperTest {
         protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops)
                         throws TableNotFoundException {
             
-            boolean results = false;
+            boolean results;
             
             areAggregatorsConfiguredCalled = true;
             
@@ -430,7 +430,7 @@ public class AbstractTableConfigHelperTest {
         protected boolean areLocalityGroupsConfigured(String tableName, Map<String,Set<Text>> newLocalityGroups, TableOperations tops)
                         throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
             
-            boolean results = false;
+            boolean results;
             
             areLocalityGroupsConfiguredCalled = true;
             

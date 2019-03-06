@@ -36,7 +36,7 @@ import org.apache.lucene.search.Query;
 public class SlopQueryNodeBuilder implements QueryBuilder {
     
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
-        JexlNode returnNode = null;
+        JexlNode returnNode;
         
         SlopQueryNode phraseSlopNode = (SlopQueryNode) queryNode;
         

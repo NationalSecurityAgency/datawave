@@ -21,7 +21,7 @@ public class LuceneToJexlUUIDQueryParser extends LuceneToJexlQueryParser {
         query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147
         query = query.replaceAll("\\u0094", "\""); // replace close smart quote 148
         
-        QueryNode parsedQuery = null;
+        QueryNode parsedQuery;
         
         parsedQuery = luceneParser.parse(query);
         if (!validUUIDQuery(parsedQuery))

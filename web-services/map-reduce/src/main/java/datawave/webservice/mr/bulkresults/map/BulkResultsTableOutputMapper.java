@@ -62,7 +62,7 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
         for (Entry<Key,Value> entry : entries.entrySet()) {
             Object o = t.transform(entry);
             BaseQueryResponse response = t.createResponse(new ResultsPage(Collections.singletonList(o)));
-            Class<? extends BaseQueryResponse> responseClass = null;
+            Class<? extends BaseQueryResponse> responseClass;
             try {
                 responseClass = getResponseClass(response.getClass().getName());
             } catch (ClassNotFoundException e) {

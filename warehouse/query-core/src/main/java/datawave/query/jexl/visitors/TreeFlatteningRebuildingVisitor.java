@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
  */
 public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(TreeFlatteningRebuildingVisitor.class);
-    private boolean removeReferences = false;
+    private boolean removeReferences;
     
     public TreeFlatteningRebuildingVisitor(boolean removeReferences) {
         this.removeReferences = removeReferences;
@@ -135,7 +135,7 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
             return super.visit(node, data);
         } else {
             JexlNode newNode = (JexlNode) super.visit(node, data);
-            JexlNode childNode = null;
+            JexlNode childNode;
             /**
              * Explore the possibility that we have an unnecessary top level ASTReference expression. Could walk up the tree, but this will be less work as
              * we're checking if we're the root, then advance to see if we've within a Reference expression.
@@ -151,7 +151,7 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        ASTReferenceExpression newExpressive = null;
+        ASTReferenceExpression newExpressive;
         if (!removeReferences) {
             return super.visit(node, data);
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)

@@ -134,7 +134,7 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
                             message.query = new ArrayList<Query>();
                         }
                         if (null == schema) {
-                            Class<? extends Query> clazz = null;
+                            Class<? extends Query> clazz;
                             try {
                                 clazz = (Class<? extends Query>) Class.forName(queryClass);
                             } catch (ClassNotFoundException e) {

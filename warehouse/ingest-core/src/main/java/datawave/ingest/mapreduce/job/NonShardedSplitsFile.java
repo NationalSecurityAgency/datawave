@@ -176,7 +176,7 @@ public class NonShardedSplitsFile {
                             cutPoints.add(new Text(Base64.decodeBase64(parts[1].getBytes())));
                     } else {
                         Collections.sort(cutPoints);
-                        splits.put(previousTableName, cutPoints.toArray(new Text[cutPoints.size()]));
+                        splits.put(previousTableName, cutPoints.toArray(new Text[0]));
                         log.info("Adding cut points for table: " + previousTableName);
                         previousTableName = parts[0];
                         cutPoints.clear();
@@ -188,7 +188,7 @@ public class NonShardedSplitsFile {
                 if (null != previousTableName) {
                     // Add the last batch.
                     Collections.sort(cutPoints);
-                    splits.put(previousTableName, cutPoints.toArray(new Text[cutPoints.size()]));
+                    splits.put(previousTableName, cutPoints.toArray(new Text[0]));
                     log.info("Adding cut points for table: " + previousTableName);
                 }
             }

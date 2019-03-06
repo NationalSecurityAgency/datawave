@@ -31,7 +31,6 @@ public abstract class AbstractEvaluationPhaseFunction extends JexlQueryFunction 
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
                 throw new IllegalArgumentException(qe);
             }
-            x = 1;
             this.parameterList.remove(0);
         }
     }

@@ -64,7 +64,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
         tableName = configuration.tableName();
         List<String> auths = configuration.auths();
         if (auths != null && !auths.isEmpty())
-            authorizations = new Authorizations(auths.toArray(new String[auths.size()]));
+            authorizations = new Authorizations(auths.toArray(new String[0]));
     }
     
     @Override

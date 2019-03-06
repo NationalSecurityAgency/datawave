@@ -250,8 +250,8 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             // Get the shard id and datatype from the colq
             String colq = currentKey.getColumnQualifier().toString();
             int separator = colq.indexOf(Constants.NULL_BYTE_STRING);
-            String shardId = null;
-            String datatype = null;
+            String shardId;
+            String datatype;
             if (separator != -1) {
                 shardId = colq.substring(0, separator);
                 datatype = colq.substring(separator + 1);
@@ -390,7 +390,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             TextUtil.textAppend(colq, Long.toString(dayCount));
             this.returnKey = new Key(startingRange.getRow(), startingRange.getColumnFamily(), colq);
             ArrayWritable aw = new ArrayWritable(Range.class);
-            aw.set(this.ranges.toArray(new Range[this.ranges.size()]));
+            aw.set(this.ranges.toArray(new Range[0]));
             returnValue = new Value(WritableUtils.toByteArray(aw));
             this.ranges.clear();
         }

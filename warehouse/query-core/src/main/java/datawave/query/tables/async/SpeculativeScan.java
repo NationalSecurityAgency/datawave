@@ -49,7 +49,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
     
     protected AtomicBoolean finished = new AtomicBoolean(false);
     
-    protected ExecutorService service = null;
+    protected ExecutorService service;
     
     protected LinkedBlockingDeque<Entry<Key,Value>> myResultQueue;
     

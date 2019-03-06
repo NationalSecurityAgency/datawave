@@ -39,7 +39,7 @@ public class ZookeeperQueryLock implements QueryLock {
         this.queryId = queryId;
         this.clientCleanupInterval = clientCleanupInterval;
         
-        URI zookeeperConfigFile = null;
+        URI zookeeperConfigFile;
         try {
             zookeeperConfigFile = new Path(zookeeperConfig).toUri();
             if (new File(zookeeperConfigFile).exists()) {

@@ -14,8 +14,8 @@ import java.util.Map.Entry;
  * Created on 9/6/16.
  */
 public class ResultCountingIterator implements Iterator<Entry<Key,Value>> {
-    private volatile long resultCount = 0;
-    private Iterator<Entry<Key,Value>> serializedDocuments = null;
+    private volatile long resultCount;
+    private Iterator<Entry<Key,Value>> serializedDocuments;
     private YieldCallback<Key> yield;
     
     public ResultCountingIterator(Iterator<Entry<Key,Value>> serializedDocuments, long resultCount, YieldCallback<Key> yieldCallback) {

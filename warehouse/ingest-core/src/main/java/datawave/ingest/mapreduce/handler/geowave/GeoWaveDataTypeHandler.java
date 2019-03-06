@@ -238,7 +238,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
                 tableNames.add(DataStoreUtils.getQualifiedTableName(tableNamespace, index.getId().getString()));
             }
         }
-        return tableNames.toArray(new String[tableNames.size()]);
+        return tableNames.toArray(new String[0]);
     }
     
     @Override
@@ -379,7 +379,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
                     final ArrayList<Geometry> geomList = new ArrayList<>(stringValues.size());
                     for (final String stringValue : stringValues)
                         geomList.add(GeometryNormalizer.parseGeometry(stringValue));
-                    builder.set(attrib.getName(), new GeometryFactory().createGeometryCollection(geomList.toArray(new Geometry[geomList.size()])));
+                    builder.set(attrib.getName(), new GeometryFactory().createGeometryCollection(geomList.toArray(new Geometry[0])));
                 } else {
                     log.warn("Multi-value support for field [" + attrib.getLocalName() + "] with type [" + binding.getName()
                                     + "] is unavailable.  Consider typing as String for multi-value fields.");
@@ -403,7 +403,7 @@ public class GeoWaveDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
             final ArrayList<Geometry> geomList = new ArrayList<>(geomValues.size());
             for (final String geomValue : geomValues)
                 geomList.add(GeometryNormalizer.parseGeometry(geomValue));
-            builder.set(geomAttrib.getName(), new GeometryFactory().createGeometryCollection(geomList.toArray(new Geometry[geomList.size()])));
+            builder.set(geomAttrib.getName(), new GeometryFactory().createGeometryCollection(geomList.toArray(new Geometry[0])));
             features.add(builder.buildFeature(baseFeature.getID()));
         }
         

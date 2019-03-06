@@ -79,7 +79,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     
     protected ExecutorService service = null;
     
-    ExecutorService listenerService = null;
+    ExecutorService listenerService;
     
     protected StringBuilder threadId = new StringBuilder();
     
@@ -111,7 +111,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         private ThreadFactory dtf = Executors.defaultThreadFactory();
         private int threadNum = 1;
         private StringBuilder threadIdentifier;
-        private UncaughtExceptionHandler uncaughtHandler = null;
+        private UncaughtExceptionHandler uncaughtHandler;
         
         public BatchReaderThreadFactory(StringBuilder threadName, UncaughtExceptionHandler handler)
         
@@ -353,7 +353,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             } else
                 numChunks.incrementAndGet();
             
-            Scan scan = null;
+            Scan scan;
             
             if (speculativeScanning && delegatedResourceInitializer == RfileResource.class) {
                 
@@ -416,7 +416,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
             } else
                 numChunks.incrementAndGet();
             
-            Scan scan = null;
+            Scan scan;
             
             if (speculativeScanning && delegatedResourceInitializer == RfileResource.class) {
                 

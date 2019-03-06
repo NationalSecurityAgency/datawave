@@ -13,8 +13,8 @@ import com.google.common.base.Objects;
  */
 public class StringUID extends HashUID {
     
-    protected String innerUid = null;
-    protected String shardedPortion = null;
+    protected String innerUid;
+    protected String shardedPortion;
     
     public StringUID(String uid) {
         innerUid = uid;

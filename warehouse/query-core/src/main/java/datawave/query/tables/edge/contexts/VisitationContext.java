@@ -193,7 +193,7 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      * expressions but allowed with every thing else)
      */
     private String getLeadingLiteral(IdentityContext term, boolean leadingWildCardAllowed) {
-        String leadingLiteral = "";
+        String leadingLiteral;
         if (term.getOperation().equals(EQUALS_REGEX)) {
             try {
                 JavaRegexAnalyzer regexAnalyzer = new JavaRegexAnalyzer(term.getLiteral());

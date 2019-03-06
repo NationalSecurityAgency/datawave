@@ -84,7 +84,7 @@ public class Persister {
                 
                 return (Q) QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue());
             } catch (InvalidProtocolBufferException | ClassNotFoundException ipbEx) {
-                throw new EJBException("Error deserializing the Query", ipbEx);
+                throw new EJBException("Error de-serializing the Query", ipbEx);
             }
         }
     }
@@ -107,17 +107,19 @@ public class Persister {
     
     public Query create(String userDN, List<String> dnList, SecurityMarking marking, String queryLogicName, QueryParameters qp,
                     MultivaluedMap<String,String> optionalQueryParameters) {
-        Query q = responseObjectFactory.getQueryImpl();
-        q.initialize(userDN, dnList, queryLogicName, qp, optionalQueryParameters);
-        q.setColumnVisibility(marking.toColumnVisibilityString());
-        q.setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
-        Thread.currentThread().setUncaughtExceptionHandler(q.getUncaughtExceptionHandler());
+        Query query = responseObjectFactory.getQueryImpl();
+
+        query.initialize(userDN, dnList, queryLogicName, qp, optionalQueryParameters);
+        query.setColumnVisibility(marking.toColumnVisibilityString());
+        query.setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
+
+        Thread.currentThread().setUncaughtExceptionHandler(query.getUncaughtExceptionHandler());
         // Persist the query object if required
         if (qp.getPersistenceMode().equals(QueryPersistence.PERSISTENT)) {
-            log.debug("Persisting query with id: " + q.getId());
-            create(q);
+            log.debug("Persisting query with id: " + query.getId());
+            create(query);
         }
-        return q;
+        return query;
     }
     
     private void tableCheck(Connector c) throws AccumuloException, AccumuloSecurityException, TableExistsException {
@@ -160,7 +162,6 @@ public class Persister {
                     writer.close();
             } catch (Exception e) {
                 log.error("Error creating query", e);
-                c = null;
             }
         }
     }
@@ -192,7 +193,7 @@ public class Persister {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             sid = dp.getShortName();
             for (Collection<String> cbAuths : dp.getAuthorizations())
-                auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
+                auths.add(new Authorizations(cbAuths.toArray(new String[0])));
         }
         log.trace(sid + " has authorizations " + auths);
         
@@ -225,7 +226,6 @@ public class Persister {
                 connectionFactory.returnConnection(c);
             } catch (Exception e) {
                 log.error("Error deleting query", e);
-                c = null;
             }
         }
     }
@@ -248,7 +248,7 @@ public class Persister {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             sid = dp.getShortName();
             for (Collection<String> cbAuths : dp.getAuthorizations())
-                auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
+                auths.add(new Authorizations(cbAuths.toArray(new String[0])));
         }
         log.trace(sid + " has authorizations " + auths);
         
@@ -295,7 +295,7 @@ public class Persister {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             shortName = dp.getShortName();
             for (Collection<String> authCollection : dp.getAuthorizations())
-                auths.add(new Authorizations(authCollection.toArray(new String[authCollection.size()])));
+                auths.add(new Authorizations(authCollection.toArray(new String[0])));
         }
         log.trace(shortName + " has authorizations " + auths);
         
@@ -326,7 +326,6 @@ public class Persister {
                 connectionFactory.returnConnection(c);
             } catch (Exception e) {
                 log.error("Error creating query", e);
-                c = null;
             }
         }
     }
@@ -340,7 +339,7 @@ public class Persister {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             sid = dp.getShortName();
             for (Collection<String> cbAuths : dp.getAuthorizations())
-                auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
+                auths.add(new Authorizations(cbAuths.toArray(new String[0])));
         }
         log.trace(sid + " has authorizations " + auths);
         
@@ -370,7 +369,6 @@ public class Persister {
                 connectionFactory.returnConnection(c);
             } catch (Exception e) {
                 log.error("Error creating query", e);
-                c = null;
             }
         }
     }
@@ -391,25 +389,25 @@ public class Persister {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             sid = dp.getShortName();
             for (Collection<String> cbAuths : dp.getAuthorizations())
-                auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
+                auths.add(new Authorizations(cbAuths.toArray(new String[0])));
         }
         log.trace(sid + " has authorizations " + auths);
         
         Connector c = null;
-        Scanner scanner = null;
+        Scanner scanner;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
             tableCheck(c);
             scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths);
+
             Range range = new Range(user, user);
             scanner.setRange(range);
-            List<Query> results = null;
-            for (Entry<Key,Value> entry : scanner) {
-                if (null == results)
-                    results = new ArrayList<>();
+
+            List<Query> results = new ArrayList<>();
+
+            for (Entry<Key,Value> entry : scanner)
                 results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue()));
-            }
             return results;
         } catch (RuntimeException re) {
             throw re;
@@ -421,7 +419,6 @@ public class Persister {
                 connectionFactory.returnConnection(c);
             } catch (Exception e) {
                 log.error("Error creating query", e);
-                c = null;
             }
         }
     }

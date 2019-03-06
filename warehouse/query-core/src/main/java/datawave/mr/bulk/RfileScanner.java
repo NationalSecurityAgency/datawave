@@ -119,7 +119,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
         // optimization for single tablets
         Iterator<Entry<Key,Value>> kv = Iterators.emptyIterator();
         for (InputSplit split : splits) {
-            RecordIterator recordIter = null;
+            RecordIterator recordIter;
             
             recordIter = new RecordIterator((TabletSplitSplit) split, acuTableConf, conf);
             

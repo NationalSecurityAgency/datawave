@@ -321,9 +321,9 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 Set<String> datatypeFilter = Collections.singleton(datatype);
                 String eventUid = e.getEventUid();
                 
-                String oldFieldValue = null;
-                Map<String,String> oldFieldMarkings = null;
-                String oldColumnVisibility = null;
+                String oldFieldValue;
+                Map<String,String> oldFieldMarkings;
+                String oldColumnVisibility;
                 List<Pair<Key,Value>> currentEntryList = null;
                 int valHistoryCount = 0;
                 

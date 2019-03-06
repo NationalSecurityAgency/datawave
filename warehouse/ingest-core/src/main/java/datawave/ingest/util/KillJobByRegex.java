@@ -35,7 +35,7 @@ public class KillJobByRegex {
         
         @Override
         public void run() {
-            Job job = null;
+            Job job;
             try {
                 job = cluster.getJob(js.getJobID());
             } catch (Exception e) {

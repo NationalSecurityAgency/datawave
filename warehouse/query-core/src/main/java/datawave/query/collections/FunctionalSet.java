@@ -211,7 +211,6 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
             if (field.endsWith("." + group)) {
                 Object val = next.getValue();
                 if (val != null) {
-                    ret = next;
                     if (log.isTraceEnabled()) {
                         log.trace("field:" + field + " in:" + next + " is a match for group:" + group);
                     }

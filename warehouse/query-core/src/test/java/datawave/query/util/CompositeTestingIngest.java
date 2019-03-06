@@ -73,7 +73,7 @@ public class CompositeTestingIngest {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        Mutation mutation = null;
+        Mutation mutation;
         
         String oneUUID = UID.builder().newId("One".getBytes(), (Date) null).toString();
         String twoUUID = UID.builder().newId("Two".toString().getBytes(), (Date) null).toString();

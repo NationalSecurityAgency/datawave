@@ -9,7 +9,7 @@ public class CombinedQueryLock implements QueryLock {
     private QueryLock[] locks;
     
     public CombinedQueryLock(List<QueryLock> locks) {
-        this.locks = locks.toArray(new QueryLock[locks.size()]);
+        this.locks = locks.toArray(new QueryLock[0]);
     }
     
     @Override

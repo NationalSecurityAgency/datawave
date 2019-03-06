@@ -31,7 +31,7 @@ public class SortedUIDsRequiredVisitor extends BaseVisitor {
     private int negatedIndexedFieldCount = 0;
     private int ivarators = 0;
     private boolean negated = false;
-    private boolean acknowledgeDelayedPredicates = false;
+    private boolean acknowledgeDelayedPredicates;
     
     public boolean areSortedUIDsRequired() {
         return (ivarators != 1 || indexedFieldCount > 1 || negatedIndexedFieldCount > 0);
