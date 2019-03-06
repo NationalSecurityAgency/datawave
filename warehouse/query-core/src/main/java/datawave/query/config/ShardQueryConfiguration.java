@@ -102,10 +102,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean debugMultithreadedSources = false;
     /**
-     * Used to enable Event Field Value filtering in the TLD based on Query Expressions
-     */
-    private boolean dataQueryExpressionFilterEnabled = false;
-    /**
      * Used to enable sorting query ranges from most to least granular for queries which contain geowave fields in ThreadedRangeBundler
      */
     private boolean sortGeoWaveQueryRanges = false;
@@ -331,7 +327,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUnsortedUIDsEnabled(other.getUnsortedUIDsEnabled());
         this.setSerializeQueryIterator(other.getSerializeQueryIterator());
         this.setDebugMultithreadedSources(other.isDebugMultithreadedSources());
-        this.setDataQueryExpressionFilterEnabled(other.isDataQueryExpressionFilterEnabled());
         this.setSortGeoWaveQueryRanges(other.isSortGeoWaveQueryRanges());
         this.setNumRangesToBuffer(other.getNumRangesToBuffer());
         this.setRangeBufferTimeoutMillis(other.getRangeBufferTimeoutMillis());
@@ -761,14 +756,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setDebugMultithreadedSources(boolean debugMultithreadedSources) {
         this.debugMultithreadedSources = debugMultithreadedSources;
-    }
-    
-    public boolean isDataQueryExpressionFilterEnabled() {
-        return dataQueryExpressionFilterEnabled;
-    }
-    
-    public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
-        this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
     }
     
     public boolean isSortGeoWaveQueryRanges() {

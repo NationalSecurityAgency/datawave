@@ -162,6 +162,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         Function<Entry<Key,Document>,Entry<DocumentData,Document>> keyToDoc = null;
         
+        // TODO consider using the new EventDataQueryExpressionFilter
         EventDataQueryFieldFilter projection = null;
         
         Iterator<Entry<Key,Document>> documents = null;

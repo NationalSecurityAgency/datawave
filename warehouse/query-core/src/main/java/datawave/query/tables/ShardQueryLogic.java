@@ -2086,14 +2086,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.config.setDebugMultithreadedSources(debugMultithreadedSources);
     }
     
-    public boolean isDataQueryExpressionFilterEnabled() {
-        return this.config.isDataQueryExpressionFilterEnabled();
-    }
-    
-    public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
-        this.config.setDataQueryExpressionFilterEnabled(dataQueryExpressionFilterEnabled);
-    }
-    
     public boolean isSortGeoWaveQueryRanges() {
         return this.config.isSortGeoWaveQueryRanges();
     }
