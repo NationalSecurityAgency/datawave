@@ -167,7 +167,7 @@ public class StandardTokenizer extends Tokenizer {
         if (length < 0) {
             throw new IllegalArgumentException("Length must be zero or greater");
         }
-        typedTokenTruncateLength.put(type, Integer.valueOf(length));
+        typedTokenTruncateLength.put(type, length);
     }
     
     /**

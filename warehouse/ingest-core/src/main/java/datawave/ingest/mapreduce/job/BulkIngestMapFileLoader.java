@@ -1083,13 +1083,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
                                 renamed = true;
                             }
                         }
-                        return Boolean.valueOf(renamed);
+                        return renamed;
                     } else {
                         throw new IOException("Unable to create parent dir " + dst.getParent());
                     }
                     
                 }
-                return Boolean.valueOf(false);
+                return Boolean.FALSE;
             });
         }
         try {

@@ -27,10 +27,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.impl.Tables;
 import org.apache.accumulo.core.client.security.SecurityErrorCode;
-import org.apache.accumulo.core.data.ConstraintViolationSummary;
-import org.apache.accumulo.core.data.KeyExtent;
-import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.data.*;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
@@ -245,13 +242,13 @@ public class UpdateBean {
                 }
             }
             
-            Map<KeyExtent,Set<SecurityErrorCode>> authFailures = null;
+            Map<TabletId, Set<SecurityErrorCode>> authFailures = null;
             List<ConstraintViolationSummary> cvs = null;
             
             try {
                 writer.close();
             } catch (MutationsRejectedException e) {
-                authFailures = e.getAuthorizationFailuresMap();
+                authFailures = e.getSecurityErrorCodes();
                 cvs = e.getConstraintViolationSummaries();
             }
             
@@ -260,21 +257,24 @@ public class UpdateBean {
             
             if (authFailures != null) {
                 List<AuthorizationFailure> authorizationFailures = new ArrayList<>();
-                for (Entry<KeyExtent,Set<SecurityErrorCode>> next : authFailures.entrySet()) {
+
+                Map<String,String> tableIdToNameMap = new HashMap<>();
+
+                connection.tableOperations().tableIdMap().forEach(tableIdToNameMap::put);
+
+                authFailures.keySet().forEach(tabletId -> {
                     AuthorizationFailure failure = new AuthorizationFailure();
-                    
-                    String mappedTableName;
-                    try {
-                        mappedTableName = Tables.getTableName(connection.getInstance(), next.getKey().getTableId().toString());
-                    } catch (TableNotFoundException e) {
-                        mappedTableName = "unknown";
-                    }
+
+                    String mappedTableName = tableIdToNameMap.getOrDefault(tabletId.getTableId().toString(), "unknown");
+
                     failure.setTableName(new OptionallyEncodedString(mappedTableName));
-                    failure.setEndRow(new OptionallyEncodedString(next.getKey().getEndRow().toString()));
-                    failure.setPrevEndRow(new OptionallyEncodedString(next.getKey().getPrevEndRow().toString()));
+
+                    failure.setEndRow(new OptionallyEncodedString(tabletId.getEndRow().toString()));
+                    failure.setPrevEndRow(new OptionallyEncodedString(tabletId.getPrevEndRow().toString()));
                     // TODO: Add SecurityErrorCode to the AuthorizationFailure object
                     authorizationFailures.add(failure);
-                }
+                });
+
                 response.setAuthorizationFailures(authorizationFailures);
             }
             if (cvs != null) {
@@ -282,7 +282,7 @@ public class UpdateBean {
                 for (ConstraintViolationSummary next : cvs) {
                     ConstraintViolation cvsEntry = new ConstraintViolation();
                     cvsEntry.setConstraintClass(next.constrainClass);
-                    cvsEntry.setViolationCode(Integer.valueOf(next.violationCode));
+                    cvsEntry.setViolationCode((int) next.violationCode);
                     cvsEntry.setNumberViolations(Long.toString(next.numberOfViolatingMutations));
                     cvsEntry.setDescription(next.violationDescription);
                     constraintViolations.add(cvsEntry);

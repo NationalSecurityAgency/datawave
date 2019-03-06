@@ -72,9 +72,9 @@ public class EdgeValueHelper {
         try {
             final ExtendedHyperLogLogPlus ehllp = new ExtendedHyperLogLogPlus(value);
             
-            return (Long.valueOf(ehllp.getCardinality()));
+            return (ehllp.getCardinality());
         } catch (IOException e) {
-            return (Long.valueOf(Long.MIN_VALUE));
+            return (Long.MIN_VALUE);
         }
     }
     

@@ -69,7 +69,7 @@ public class TermFrequencyList {
                 comparison = eventId.compareTo(o.getEventId());
             }
             if (comparison == 0) {
-                comparison = Boolean.valueOf(contentExpansionField).compareTo(Boolean.valueOf(o.isContentExpansionField()));
+                comparison = Boolean.valueOf(contentExpansionField).compareTo(o.isContentExpansionField());
             }
             return comparison;
         }

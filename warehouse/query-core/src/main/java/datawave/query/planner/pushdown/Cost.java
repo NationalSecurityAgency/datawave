@@ -94,8 +94,8 @@ public class Cost implements Comparable<Cost> {
      */
     @Override
     public int compareTo(Cost otherCostObj) {
-        Long me = Long.valueOf(getERCost() + getOtherCost());
-        Long other = Long.valueOf(otherCostObj.getERCost() + otherCostObj.getOtherCost());
+        Long me = getERCost() + getOtherCost();
+        Long other = otherCostObj.getERCost() + otherCostObj.getOtherCost();
         return me.compareTo(other);
     }
 }

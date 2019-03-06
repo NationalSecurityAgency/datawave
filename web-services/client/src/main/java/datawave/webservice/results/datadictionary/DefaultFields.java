@@ -41,7 +41,7 @@ public class DefaultFields extends FieldsBase<DefaultFields,DefaultDictionaryFie
     
     public DefaultFields(Multimap<Entry<String,String>,DefaultDescription> descriptions) {
         this.fields = transform(descriptions);
-        this.totalResults = new Long(this.fields.size());
+        this.totalResults = (long) this.fields.size();
         this.setHasResults(this.totalResults > 0);
     }
     

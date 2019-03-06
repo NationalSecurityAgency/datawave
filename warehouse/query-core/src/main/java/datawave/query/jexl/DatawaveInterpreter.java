@@ -346,7 +346,7 @@ public class DatawaveInterpreter extends Interpreter {
         if (data != null) {
             return super.visit(node, data);
         } else {
-            return Integer.valueOf(0);
+            return 0;
         }
     }
     

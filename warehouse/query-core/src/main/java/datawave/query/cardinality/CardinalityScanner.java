@@ -445,7 +445,7 @@ public class CardinalityScanner {
                 long sum = intersectionSum.get(p);
                 long union = intersectionUnion.get(p).cardinality();
                 
-                intersectionMap.put(p, Long.valueOf(sum - union));
+                intersectionMap.put(p, sum - union);
             }
             return intersectionMap;
         }

@@ -104,7 +104,7 @@ public class TermWeightPositionTest {
     
     @Test
     public void testPositionScoreToTermWeightScore() {
-        Float positionScore = new Float(-.0552721);
+        Float positionScore = (float) -.0552721;
         Integer twScore = TermWeightPosition.positionScoreToTermWeightScore(positionScore);
         Float result = TermWeightPosition.termWeightScoreToPositionScore(twScore);
         

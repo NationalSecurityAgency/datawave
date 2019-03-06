@@ -109,8 +109,8 @@ public class DelayedPredicatePushDown extends PushDownRule {
             int compareTo = arg0.second().compareTo(arg1.second());
             
             if (compareTo == 0) {
-                Integer i = Integer.valueOf(arg0.first().hashCode());
-                Integer b = Integer.valueOf(arg1.first().hashCode());
+                Integer i = arg0.first().hashCode();
+                Integer b = arg1.first().hashCode();
                 compareTo = i.compareTo(b);
                 
             }
