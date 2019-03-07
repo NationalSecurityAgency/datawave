@@ -67,7 +67,6 @@ public class LookupUUIDTune implements Profile {
                 }
             }
         }
-        
     }
     
     @Override
@@ -95,7 +94,6 @@ public class LookupUUIDTune implements Profile {
                 dqp.setPreloadOptions(true);
             }
         }
-        
     }
     
     @Override
