@@ -404,7 +404,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setFilterMaskedValues(other.getFilterMaskedValues());
         this.setReducedResponse(other.isReducedResponse());
         this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
-        
         this.setSpeculativeScanning(other.getSpeculativeScanning());
         this.setDisableEvaluation(other.isDisableEvaluation());
         this.setContainsIndexOnlyTerms(other.isContainsIndexOnlyTerms());
