@@ -26,11 +26,6 @@ public class QueryParameters {
     public static final String TRANFORM_CONTENT_TO_UID = "transform.content.to.uid";
     
     /**
-     * Override number of results to return in a query, will not be higher that what is set in the web service configuration.
-     */
-    public static final String MAX_RESULTS_OVERRIDE = "max.results.override";
-    
-    /**
      * Allows user to specify query syntax (i.e. JEXL or LUCENE)
      */
     public static final String QUERY_SYNTAX = "query.syntax";

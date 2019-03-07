@@ -426,7 +426,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 160;
+        int expectedObjectCount = 159;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
@@ -437,6 +437,6 @@ public class ShardQueryConfigurationTest {
             objectCount++;
         }
         
-        Assert.assertEquals("New variable was added to the ShardQueryConfiguration", expectedObjectCount, objectCount);
+        Assert.assertEquals("New variable was added to or removed from the ShardQueryConfiguration", expectedObjectCount, objectCount);
     }
 }

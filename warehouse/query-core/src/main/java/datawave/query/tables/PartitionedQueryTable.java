@@ -62,27 +62,6 @@ public class PartitionedQueryTable extends ShardQueryLogic {
         params.add(new Parameter(QueryParameters.QUERY_SYNTAX, "JEXL"));
         this.settings.setParameters(params);
         
-        long maxConfiguredResults = 0;
-        // General query options
-        if (-1 == this.getMaxResults()) {
-            maxConfiguredResults = Long.MAX_VALUE;
-        } else {
-            maxConfiguredResults = this.getMaxResults();
-        }
-        
-        // Get the MAX_RESULTS_OVERRIDE parameter if given
-        String maxResultsOverrideStr = settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(maxResultsOverrideStr)) {
-            try {
-                long override = Long.parseLong(maxResultsOverrideStr);
-                if (override < maxConfiguredResults) {
-                    this.setMaxResults(override);
-                }
-            } catch (NumberFormatException nfe) {
-                log.error(QueryParameters.MAX_RESULTS_OVERRIDE + " query parameter is not a valid number: " + maxResultsOverrideStr + ", using default value");
-            }
-        }
-        
         if (chunker.preInitializeQueryLogic()) {
             GenericQueryConfiguration config = super.initialize(this.connector, this.settings, this.auths);
             if (!config.getQueries().hasNext()) {
