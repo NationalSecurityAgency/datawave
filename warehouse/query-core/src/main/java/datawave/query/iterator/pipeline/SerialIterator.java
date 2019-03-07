@@ -11,10 +11,13 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
+import org.apache.log4j.Logger;
 
 import java.util.Map.Entry;
 
 public class SerialIterator extends PipelineIterator {
+    
+    private static final Logger log = Logger.getLogger(SerialIterator.class);
     
     protected Pipeline currentPipeline;
     
@@ -28,6 +31,11 @@ public class SerialIterator extends PipelineIterator {
     
     @Override
     public boolean hasNext() {
+        // if we had already yielded, then leave gracefully
+        if (yield != null && yield.hasYielded()) {
+            return false;
+        }
+        
         if (null == result) {
             long start = System.currentTimeMillis();
             while (this.docSource.hasNext()) {
@@ -40,6 +48,9 @@ public class SerialIterator extends PipelineIterator {
                     break;
                 if (yield != null && ((System.currentTimeMillis() - start) > yieldThresholdMs)) {
                     yield.yield(docKey);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Yielding at " + docKey);
+                    }
                     break;
                 }
             }
@@ -49,6 +60,11 @@ public class SerialIterator extends PipelineIterator {
     
     @Override
     public Entry<Key,Document> next() {
+        // if we had already yielded, then leave gracefully
+        if (yield != null && yield.hasYielded()) {
+            return null;
+        }
+        
         Entry<Key,Document> returnResult = result;
         result = null;
         return returnResult;
