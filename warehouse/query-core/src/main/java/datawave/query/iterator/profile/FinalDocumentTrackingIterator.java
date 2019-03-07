@@ -111,11 +111,20 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
     
     @Override
     public boolean hasNext() {
+        // if we yielded, then leave gracefully
         if (yield != null && yield.hasYielded()) {
             return false;
+            
         } else if (!itrIsDone && itr.hasNext()) {
             return true;
+            
         } else {
+            // if we yielded, then leave gracefully
+            // checking again as this is after the itr.hasNext() call above which may cause a yield
+            if (yield != null && yield.hasYielded()) {
+                return false;
+            }
+            
             itrIsDone = true;
             if (!statsEntryReturned) {
                 if (this.querySpan.hasEntries() || querySpanCollector.hasEntries()) {
