@@ -419,7 +419,7 @@ public class CompositeQueryLogicTest {
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
     }
     
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testInitializeWithDifferentResponseTypes() throws Exception {
         
         List<BaseQueryLogic<?>> logics = new ArrayList<>();
@@ -529,7 +529,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     // testQueryLogic with max.results.override is set
-    public void testQueryLogicwithMaxResultsOverride() throws Exception {
+    public void testQueryLogicWithMaxResultsOverride() throws Exception {
         Logger.getLogger(CompositeQueryLogic.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicResults.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicTransformer.class).setLevel(Level.TRACE);
@@ -556,7 +556,7 @@ public class CompositeQueryLogicTest {
         settings.setId(UUID.randomUUID());
         
         CompositeQueryLogic c = new CompositeQueryLogic();
-        // max.results.override is set to -1 when it is not passed in as it is an optional paramter
+        // max.results.override is set to -1 when it is not passed in as it is an optional parameter
         logic1.setMaxResults(0);
         logic2.setMaxResults(4);
         /**

@@ -227,7 +227,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * By default enable shortcut evaluation
      */
     private volatile boolean allowShortcutEvaluation = true;
-    private boolean bypassAccumulo = false;
+    
     /**
      * By default don't use speculative scanning.
      */
@@ -309,6 +309,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     public ShardQueryConfiguration(ShardQueryConfiguration other) {
         
+        // GenericQueryConfiguration copy first
+        super(other);
+        
+        // ShardQueryConfiguration copy
         this.setTldQuery(other.isTldQuery());
         this.putFilterOptions(other.getFilterOptions());
         this.setDisableIndexOnlyDocuments(other.isDisableIndexOnlyDocuments());
@@ -400,7 +404,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setFilterMaskedValues(other.getFilterMaskedValues());
         this.setReducedResponse(other.isReducedResponse());
         this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
-        this.setBypassAccumulo(other.getBypassAccumulo());
         this.setSpeculativeScanning(other.getSpeculativeScanning());
         this.setDisableEvaluation(other.isDisableEvaluation());
         this.setContainsIndexOnlyTerms(other.isContainsIndexOnlyTerms());
@@ -456,12 +459,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     public ShardQueryConfiguration(ShardQueryLogic logic) {
         this(logic.getConfig());
-        
-        // Setters that would have been picked up in a super(logic) call
-        this.setTableName(logic.getTableName());
-        this.setMaxRowsToScan(logic.getMaxRowsToScan());
-        this.setUndisplayedVisibilities(logic.getUndisplayedVisibilities());
-        this.setBaseIteratorPriority(logic.getBaseIteratorPriority());
     }
     
     /**
@@ -1711,14 +1708,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setAllowShortcutEvaluation(boolean allowShortcutEvaluation) {
         this.allowShortcutEvaluation = allowShortcutEvaluation;
-    }
-    
-    public boolean getBypassAccumulo() {
-        return bypassAccumulo;
-    }
-    
-    public void setBypassAccumulo(boolean bypassAccumulo) {
-        this.bypassAccumulo = bypassAccumulo;
     }
     
     public boolean getAccrueStats() {
