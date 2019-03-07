@@ -459,7 +459,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         
         // Setters that would have been picked up in a super(logic) call
         this.setTableName(logic.getTableName());
-        this.setMaxQueryResults(logic.getMaxResults());
         this.setMaxRowsToScan(logic.getMaxRowsToScan());
         this.setUndisplayedVisibilities(logic.getUndisplayedVisibilities());
         this.setBaseIteratorPriority(logic.getBaseIteratorPriority());
@@ -495,10 +494,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public static ShardQueryConfiguration create(ShardQueryLogic shardQueryLogic) {
         
         ShardQueryConfiguration config = create(shardQueryLogic.getConfig());
-        
-        if (shardQueryLogic.getMaxResults() < 0) {
-            config.setMaxQueryResults(Long.MAX_VALUE);
-        }
         
         // Lastly, honor overrides passed in via query parameters
         Set<QueryImpl.Parameter> parameterSet = config.getQuery().getParameters();

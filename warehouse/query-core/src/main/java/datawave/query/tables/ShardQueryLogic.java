@@ -146,9 +146,7 @@ import java.util.concurrent.TimeUnit;
  *     evaluate an Event based on information not already present in the Event or information that doesn't need to be returned with the Event.
  *     Filtering must be enabled by setting {@link ShardQueryConfiguration#useFilters} to true and providing a list of {@link datawave.query.index.lookup.DataTypeFilter} class
  *     names in {@link ShardQueryConfiguration#filterClassNames}.
- *  6. The query limits the results (default: 5000) using the setMaxResults method. In addition, "max.results.override" can be passed to the
- *     query as part of the Parameters object which allows query specific limits (but will not be more than set default)
- *  7. Projection can be accomplished by setting the {@link QueryParameters RETURN_FIELDS} parameter to a '/'-separated list of field names.
+ *  6. Projection can be accomplished by setting the {@link QueryParameters RETURN_FIELDS} parameter to a '/'-separated list of field names.
  * 
  * </pre>
  * 
@@ -682,28 +680,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                     log.debug("Blacklisted fields: " + tBlacklistedFields);
                 }
             }
-        }
-        
-        // Get the MAX_RESULTS_OVERRIDE parameter if given
-        String maxResultsOverrideStr = settings.findParameter(MAX_RESULTS_OVERRIDE).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(maxResultsOverrideStr)) {
-            try {
-                long override = Long.parseLong(maxResultsOverrideStr);
-                
-                if (override < config.getMaxQueryResults()) {
-                    config.setMaxQueryResults(override);
-                    // this.maxresults is initially set to the value in the
-                    // config, we are overriding it here for this instance
-                    // of the query.
-                    this.setMaxResults(override);
-                }
-            } catch (NumberFormatException nfe) {
-                log.error(MAX_RESULTS_OVERRIDE + " query parameter is not a valid number: " + maxResultsOverrideStr + ", using default value");
-            }
-        }
-        
-        if (log.isDebugEnabled()) {
-            log.debug("Max Results: " + config.getMaxQueryResults());
         }
         
         // Get the LIMIT_FIELDS parameter if given
@@ -1838,7 +1814,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         params.add(QueryParameters.DATATYPE_FILTER_SET);
         params.add(QueryParameters.RETURN_FIELDS);
         params.add(QueryParameters.BLACKLISTED_FIELDS);
-        params.add(QueryParameters.MAX_RESULTS_OVERRIDE);
         params.add(QueryParameters.FILTER_MASKED_VALUES);
         params.add(QueryParameters.INCLUDE_DATATYPE_AS_FIELD);
         params.add(QueryParameters.INCLUDE_GROUPING_CONTEXT);

@@ -228,8 +228,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     log.info("Query logic max rows to scan has been reached, aborting query.next call");
                     break;
                 }
-                // if the logic had a max num results (across all pages) and we have reached that, then break out
-                if (this.logic.getMaxResults() > 0 && numResults >= this.logic.getMaxResults()) {
+                // if the logic had a max num results (across all pages) and we have reached that (or the maxResultsOverride if set), then break out
+                if (this.settings.isMaxResultsOverridden()) {
+                    if (this.settings.getMaxResultsOverride() > 0 && numResults >= this.settings.getMaxResultsOverride()) {
+                        log.info("Max results override has been reached, aborting query.next call");
+                        this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
+                        break;
+                    }
+                } else if (this.logic.getMaxResults() > 0 && numResults >= this.logic.getMaxResults()) {
                     log.info("Query logic max results has been reached, aborting query.next call");
                     this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                     break;

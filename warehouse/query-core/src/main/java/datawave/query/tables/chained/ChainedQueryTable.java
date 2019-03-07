@@ -82,26 +82,6 @@ public abstract class ChainedQueryTable<T1,T2> extends BaseQueryLogic<T2> {
         
         ChainedQueryConfiguration config = new ChainedQueryConfiguration();
         
-        long maxConfiguredResults = 0;
-        // General query options
-        if (-1 == this.getMaxResults()) {
-            maxConfiguredResults = Long.MAX_VALUE;
-        } else {
-            maxConfiguredResults = this.getMaxResults();
-        }
-        // Get the MAX_RESULTS_OVERRIDE parameter if given
-        String maxResultsOverrideStr = settings.findParameter(QueryParameters.MAX_RESULTS_OVERRIDE).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(maxResultsOverrideStr)) {
-            try {
-                long override = Long.parseLong(maxResultsOverrideStr);
-                if (override < maxConfiguredResults) {
-                    this.setMaxResults(override);
-                }
-            } catch (NumberFormatException nfe) {
-                log.error(QueryParameters.MAX_RESULTS_OVERRIDE + " query parameter is not a valid number: " + maxResultsOverrideStr + ", using default value");
-            }
-        }
-        
         if (log.isDebugEnabled()) {
             log.debug("Max Results: " + this.getMaxResults());
         }
