@@ -1383,14 +1383,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public String getTableName() {
         if (null == getConfig()) {
-            return this.tableName;
+            return super.getTableName();
         }
         return this.config.getTableName();
     }
     
     @Override
     public void setTableName(String tableName) {
-        this.tableName = tableName;
+        super.setTableName(tableName);
         // Null check required due to a super constructor call that attempts to set
         // the tableName prior to ShardQueryConfig initialization
         if (null != getConfig()) {
