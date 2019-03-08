@@ -33,7 +33,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private String logicName = "No logicName was set";
     private String logicDescription = "Not configured";
     private AuditType auditType = null;
-    protected long maxResults;
+    protected long maxResults = 5000L;
     protected ScannerBase scanner;
     @SuppressWarnings("unchecked")
     protected Iterator<T> iterator = (Iterator<T>) Collections.emptyList().iterator();
