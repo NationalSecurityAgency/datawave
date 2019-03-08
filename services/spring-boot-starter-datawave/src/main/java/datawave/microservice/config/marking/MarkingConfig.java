@@ -23,7 +23,7 @@ public class MarkingConfig {
     @Bean
     @ConditionalOnMissingBean
     public MarkingFunctions markingFunctions() {
-        return new MarkingFunctions.NoOp();
+        return new MarkingFunctions.Default();
     }
     
     @Bean
