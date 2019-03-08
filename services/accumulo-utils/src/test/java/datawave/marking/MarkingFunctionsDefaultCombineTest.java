@@ -42,7 +42,7 @@ public class MarkingFunctionsDefaultCombineTest {
         Map<String,String> mapTwo = ImmutableMap.of(COLUMN_VISIBILITY, "A&C");
         
         Map<String,String> expected = ImmutableMap.of(COLUMN_VISIBILITY, "A&B&C");
-        
+
         Assert.assertEquals(expected, markingFunctions.combine(mapOne, mapTwo));
     }
     
@@ -54,7 +54,7 @@ public class MarkingFunctionsDefaultCombineTest {
         Map<String,String> mapTwo = ImmutableMap.of(COLUMN_VISIBILITY, "A|C");
         
         Map<String,String> expected = ImmutableMap.of(COLUMN_VISIBILITY, "(A|B)&(A|C)");
-        
+
         Assert.assertEquals(expected, markingFunctions.combine(mapOne, mapTwo));
     }
 }

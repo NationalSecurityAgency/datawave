@@ -24,12 +24,12 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  *         "NAME.grandparent_0.parent_0.child_1,FREDO,fredo"    ==  "fredo",
  *         "NAME.grandparent_0.parent_0.child_0,SANTINO,santino" ==  "santino");
  *         (implied 0 for the position arg) means that fredo and santino have the same
- *         field name left-side: 'NAME.grandparent_0.parent_0'  (they have the same parents => they are siblings)
+ *         field name left-side: 'NAME.grandparent_0.parent_0'  (they have the same parents so they are siblings)
  * 
  *         "NAME.grandparent_0.parent_0.child_1,FREDO,fredo" == "fredo",
  *         "NAME.grandparent_0.parent_1.child_0,SANTINO,santino" == "santino", 1);
  *         with '1' for the position ard, function is true fredo and santino have the same
- *         field name left-side: 'NAME.grandparent_0' (they have the same grandparents => they are 1st cousins
+ *         field name left-side: 'NAME.grandparent_0' (they have the same grandparents so they are 1st cousins
  *
  * </pre>
  */
