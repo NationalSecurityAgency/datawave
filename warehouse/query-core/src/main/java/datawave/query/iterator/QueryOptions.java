@@ -219,8 +219,6 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String SORTED_UIDS = "sorted.uids";
     
-    public static final String DATA_QUERY_EXPRESSION_FILTER_ENABLED = "query.data.expression.filter.enabled";
-    
     protected Map<String,String> options;
     
     protected String scanId;
@@ -352,8 +350,6 @@ public class QueryOptions implements OptionDescriber {
     
     protected boolean debugMultithreadedSources = false;
     
-    protected boolean dataQueryExpressionFilterEnabled = false;
-    
     /**
      * should document sizes be tracked
      */
@@ -468,8 +464,6 @@ public class QueryOptions implements OptionDescriber {
         this.dateIndexTimeTravel = other.dateIndexTimeTravel;
         
         this.debugMultithreadedSources = other.debugMultithreadedSources;
-        
-        this.dataQueryExpressionFilterEnabled = other.dataQueryExpressionFilterEnabled;
         
         this.trackSizes = other.trackSizes;
     }
@@ -968,14 +962,6 @@ public class QueryOptions implements OptionDescriber {
         this.debugMultithreadedSources = debugMultithreadedSources;
     }
     
-    public boolean isDataQueryExpressionFilterEnabled() {
-        return dataQueryExpressionFilterEnabled;
-    }
-    
-    public void setDataQueryExpressionFilterEnabled(boolean dataQueryExpressionFilterEnabled) {
-        this.dataQueryExpressionFilterEnabled = dataQueryExpressionFilterEnabled;
-    }
-    
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -1054,7 +1040,6 @@ public class QueryOptions implements OptionDescriber {
                         "Whether the UIDs need to be sorted.  Normally this is true, however in limited circumstances it could be false which allows ivarators to avoid pre-fetching all UIDs and sorting before returning the first one.");
         
         options.put(DEBUG_MULTITHREADED_SOURCES, "If provided, the SourceThreadTrackingIterator will be used");
-        options.put(DATA_QUERY_EXPRESSION_FILTER_ENABLED, "If true, the EventDataQueryExpression filter will be used when performing TLD queries");
         
         options.put(METADATA_TABLE_NAME, this.metadataTableName);
         options.put(LIMIT_FIELDS_PRE_QUERY_EVALUATION, "If true, non-query fields limits will be applied immediately off the iterator");
@@ -1484,10 +1469,6 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(DEBUG_MULTITHREADED_SOURCES)) {
             this.debugMultithreadedSources = Boolean.parseBoolean(options.get(DEBUG_MULTITHREADED_SOURCES));
-        }
-        
-        if (options.containsKey(DATA_QUERY_EXPRESSION_FILTER_ENABLED)) {
-            this.dataQueryExpressionFilterEnabled = Boolean.parseBoolean(options.get(DATA_QUERY_EXPRESSION_FILTER_ENABLED));
         }
         
         return true;
