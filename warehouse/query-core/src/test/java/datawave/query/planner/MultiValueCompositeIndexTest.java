@@ -84,12 +84,6 @@ import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 public class MultiValueCompositeIndexTest {
     
     private static final int NUM_SHARDS = 241;
-    private static final String SHARD_TABLE_NAME = TableName.SHARD;
-    private static final String KNOWLEDGE_SHARD_TABLE_NAME = TableName.KNOWLEDGE;
-    private static final String ERROR_SHARD_TABLE_NAME = TableName.ERROR_SHARD;
-    private static final String SHARD_INDEX_TABLE_NAME = TableName.SHARD_INDEX;
-    private static final String SHARD_REVERSE_INDEX_TABLE_NAME = TableName.SHARD_RINDEX;
-    private static final String METADATA_TABLE_NAME = TableName.METADATA;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
     
@@ -263,22 +257,22 @@ public class MultiValueCompositeIndexTest {
         conf.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE_NAME);
         conf.set(DATA_TYPE_NAME + TypeRegistry.INGEST_HELPER, INGEST_HELPER_CLASS);
         
-        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, METADATA_TABLE_NAME);
+        conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
         conf.set(ShardedDataTypeHandler.NUM_SHARDS, Integer.toString(NUM_SHARDS));
-        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, SHARD_TABLE_NAME + "," + KNOWLEDGE_SHARD_TABLE_NAME + "," + ERROR_SHARD_TABLE_NAME);
-        conf.set(ShardedDataTypeHandler.SHARD_TNAME, SHARD_TABLE_NAME);
+        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TableName.SHARD + "," + TableName.ERROR_SHARD);
+        conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
         conf.set(ShardedDataTypeHandler.SHARD_LPRIORITY, "30");
-        conf.set(SHARD_TABLE_NAME + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
-        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, SHARD_INDEX_TABLE_NAME);
+        conf.set(TableName.SHARD + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
+        conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GIDX_LPRIORITY, "30");
-        conf.set(SHARD_INDEX_TABLE_NAME + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
-        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, SHARD_REVERSE_INDEX_TABLE_NAME);
+        conf.set(TableName.SHARD_INDEX + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
+        conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_LPRIORITY, "30");
-        conf.set(SHARD_REVERSE_INDEX_TABLE_NAME + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
+        conf.set(TableName.SHARD_RINDEX + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
         conf.set(ShardTableConfigHelper.MARKINGS_SETUP_ITERATOR_ENABLED, "false");
         conf.set(ShardTableConfigHelper.MARKINGS_SETUP_ITERATOR_CONFIG, "");
         conf.set("partitioner.category.shardedTables", BalancedShardPartitioner.class.getName());
-        conf.set("partitioner.category.member." + SHARD_TABLE_NAME, "shardedTables");
+        conf.set("partitioner.category.member." + TableName.SHARD, "shardedTables");
     }
     
     private static void writeKeyValues(Connector connector, Multimap<BulkIngestKey,Value> keyValues) throws Exception {

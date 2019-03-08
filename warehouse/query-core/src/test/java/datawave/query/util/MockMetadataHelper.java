@@ -66,12 +66,11 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     private static AllFieldMetadataHelper createAllFieldMetadataHelper(Connector connector) {
-        final String metadataTable = TableName.METADATA;
         final Set<Authorizations> allMetadataAuths = Collections.emptySet();
         final Set<Authorizations> auths = Collections.emptySet();
-        TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, connector, metadataTable, auths, false);
-        CompositeMetadataHelper cmh = new CompositeMetadataHelper(connector, metadataTable, auths);
-        return new AllFieldMetadataHelper(tmh, cmh, connector, metadataTable, auths, allMetadataAuths);
+        TypeMetadataHelper tmh = new TypeMetadataHelper(Maps.newHashMap(), allMetadataAuths, connector, TableName.METADATA, auths, false);
+        CompositeMetadataHelper cmh = new CompositeMetadataHelper(connector, TableName.METADATA, auths);
+        return new AllFieldMetadataHelper(tmh, cmh, connector, TableName.METADATA, auths, allMetadataAuths);
         
     }
     

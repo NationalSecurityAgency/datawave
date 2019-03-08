@@ -61,11 +61,11 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
-public class ProtubufEdgeDeleteModeTest {
+public class ProtobufEdgeDeleteModeTest {
     
     private Configuration conf;
     private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
-    private static Logger log = Logger.getLogger(ProtubufEdgeDeleteModeTest.class);
+    private static Logger log = Logger.getLogger(ProtobufEdgeDeleteModeTest.class);
     private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
     private static Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
@@ -460,7 +460,8 @@ public class ProtubufEdgeDeleteModeTest {
                         log.info(keyString.trim());
                     }
                 }
-                Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(TableName.SHARD), countMap.get(edgeTableName)));
+                final Text shardTableName = new Text(TableName.SHARD);
+                Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
             }
         }
         

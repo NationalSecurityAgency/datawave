@@ -25,14 +25,13 @@ public class TableConfigHelperFactoryTest {
     private Connector connector;
     private TableOperations tops;
     
-    private static final String SHARD_TABLE_NAME = TableName.SHARD;
     private static final String TEST_SHARD_TABLE_NAME = "testShard";
     
     @Before
     public void setup() throws Exception {
         conf = new Configuration();
         
-        conf.set("shard.table.name", SHARD_TABLE_NAME);
+        conf.set("shard.table.name", TableName.SHARD);
         conf.set("shard.table.config.class", ShardTableConfigHelper.class.getName());
         
         conf.set("test.shard.table.name", TEST_SHARD_TABLE_NAME);
@@ -43,7 +42,7 @@ public class TableConfigHelperFactoryTest {
         connector = instance.getConnector("root", new PasswordToken(new byte[0]));
         tops = connector.tableOperations();
         
-        recreateTable(tops, SHARD_TABLE_NAME);
+        recreateTable(tops, TableName.SHARD);
         recreateTable(tops, TEST_SHARD_TABLE_NAME);
     }
     
@@ -60,7 +59,7 @@ public class TableConfigHelperFactoryTest {
         helper.configure(tops);
         
         TablePropertiesMap testShardProperties = new TablePropertiesMap(tops, TEST_SHARD_TABLE_NAME);
-        TablePropertiesMap shardProperties = new TablePropertiesMap(tops, SHARD_TABLE_NAME);
+        TablePropertiesMap shardProperties = new TablePropertiesMap(tops, TableName.SHARD);
         
         assertThat(testShardProperties.get("table.iterator.majc.agg"), is("10,datawave.iterators.PropogatingIterator"));
         assertThat(shardProperties.get("table.iterator.majc.agg"), nullValue());
@@ -68,11 +67,11 @@ public class TableConfigHelperFactoryTest {
     
     @Test
     public void shouldSetupTablesWithoutOverrides() throws Exception {
-        TableConfigHelper helper = TableConfigHelperFactory.create(SHARD_TABLE_NAME, conf, logger);
+        TableConfigHelper helper = TableConfigHelperFactory.create(TableName.SHARD, conf, logger);
         helper.configure(tops);
         
         TablePropertiesMap testShardProperties = new TablePropertiesMap(tops, TEST_SHARD_TABLE_NAME);
-        TablePropertiesMap shardProperties = new TablePropertiesMap(tops, SHARD_TABLE_NAME);
+        TablePropertiesMap shardProperties = new TablePropertiesMap(tops, TableName.SHARD);
         
         assertThat(testShardProperties.get("table.iterator.majc.agg"), nullValue());
         assertThat(shardProperties.get("table.iterator.majc.agg"), is("10,datawave.iterators.PropogatingIterator"));

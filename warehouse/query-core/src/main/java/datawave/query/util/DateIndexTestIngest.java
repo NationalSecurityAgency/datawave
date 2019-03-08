@@ -15,8 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 public class DateIndexTestIngest {
     
-    public static final String DATE_INDEX_TABLE_NAME = TableName.DATE_INDEX;
-    
     protected static final String datatype = "test";
     protected static final ColumnVisibility viz = new ColumnVisibility("HUSH");
     
@@ -35,7 +33,7 @@ public class DateIndexTestIngest {
         
         try {
             // write the date index table :
-            bw = con.createBatchWriter(DATE_INDEX_TABLE_NAME, bwConfig);
+            bw = con.createBatchWriter(TableName.DATE_INDEX, bwConfig);
             
             BitSet zeroOne = new BitSet();
             zeroOne.set(0);

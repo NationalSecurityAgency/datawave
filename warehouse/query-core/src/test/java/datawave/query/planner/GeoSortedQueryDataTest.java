@@ -206,7 +206,6 @@ public class GeoSortedQueryDataTest {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
         System.setProperty("NUM_SHARDS", Integer.toString(NUM_SHARDS));
         System.setProperty("SHARD_TABLE_NAME", TableName.SHARD);
-        System.setProperty("KNOWLEDGE_SHARD_TABLE_NAME", TableName.KNOWLEDGE);
         System.setProperty("ERROR_SHARD_TABLE_NAME", TableName.ERROR_SHARD);
         System.setProperty("SHARD_INDEX_TABLE_NAME", TableName.SHARD_INDEX);
         System.setProperty("SHARD_REVERSE_INDEX_TABLE_NAME", TableName.SHARD_RINDEX);

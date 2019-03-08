@@ -13,8 +13,6 @@ public final class TableName {
     
     public static final String INDEX_STATS = "shardIndexStats";
     
-    public static final String KNOWLEDGE = "knowledgeShard";
-    
     public static final String LOAD_DATES = "LoadDates";
     
     public static final String METADATA = "DatawaveMetadata";

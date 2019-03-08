@@ -28,8 +28,6 @@ public class MetricsServiceTest {
     
     private DateFormat df = new SimpleDateFormat("yyyyMMdd");
     
-    private static final String SHARD_TABLE_NAME = TableName.SHARD;
-    
     private String metricsTable = "ingestMetrics";
     private String metricName = Metric.KV_PER_TABLE.toString();
     private String expectedRow = df.format(new Date()) + "_0";
@@ -51,14 +49,14 @@ public class MetricsServiceTest {
         service = new MetricsService<>(contextWriter, context);
         
         labels = new HashMap<>();
-        labels.put("table", SHARD_TABLE_NAME);
+        labels.put("table", TableName.SHARD);
         labels.put("handler", DummyDataTypeHandler.class.getName());
     }
     
     @Test
     public void shouldGenerateMetricsWhenConfigured() throws Exception {
         // NOTE: user is not a configured field to be saved
-        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", SHARD_TABLE_NAME, "fileExtension", "gz", "user", "tommy");
+        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", TableName.SHARD, "fileExtension", "gz", "user", "tommy");
         
         labels.put("dataType", "flow1");
         service.collect(Metric.KV_PER_TABLE, labels, fields, 1L);
@@ -75,7 +73,7 @@ public class MetricsServiceTest {
     
     @Test
     public void shouldDropMetricsWhenNotConfigured() throws Exception {
-        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", SHARD_TABLE_NAME, "fileExtension", "gz");
+        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", TableName.SHARD, "fileExtension", "gz");
         
         // dataType 'flow2' is not enabled in the conf file
         labels.put("dataType", "flow2");
@@ -89,7 +87,7 @@ public class MetricsServiceTest {
     
     @Test
     public void shouldStillIncludeMetricsWithOnlyASubsetOfEnabledLabels() throws Exception {
-        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", SHARD_TABLE_NAME);
+        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", TableName.SHARD);
         
         // dataType is not set
         service.collect(Metric.KV_PER_TABLE, labels, fields, 1L);
@@ -118,7 +116,7 @@ public class MetricsServiceTest {
         service = new MetricsService(contextWriter, context);
         
         // metric fields
-        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", SHARD_TABLE_NAME, "fileExtension", "gz");
+        Multimap<String,NormalizedContentInterface> fields = MetricsTestData.createFields("table", TableName.SHARD, "fileExtension", "gz");
         
         labels.put("dataType", "flow2");
         service.collect(Metric.KV_PER_TABLE, labels, fields, 1L);
