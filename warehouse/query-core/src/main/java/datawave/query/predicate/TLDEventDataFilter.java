@@ -25,7 +25,7 @@ import datawave.query.jexl.JexlASTHelper;
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields
  * are returned.
  */
-public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
+public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     public static final byte[] FI_CF = new Text("fi").getBytes();
     public static final byte[] TF_CF = Constants.TERM_FREQUENCY_COLUMN_FAMILY.getBytes();
@@ -61,9 +61,9 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
      */
     private int anyFieldLimit;
     
-    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
-                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, attributeFactory, expressionFilterEnabled, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null);
+    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
+                    long maxKeysBeforeSeek) {
+        this(script, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null);
     }
     
     /**
@@ -76,9 +76,9 @@ public class TLDEventDataFilter extends ConfigurableEventDataQueryFilter {
      * 
      * @param script
      */
-    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, boolean expressionFilterEnabled, Set<String> whitelist,
-                    Set<String> blacklist, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField) {
-        super(script, attributeFactory, expressionFilterEnabled);
+    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
+                    long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField) {
+        super(script, attributeFactory);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;

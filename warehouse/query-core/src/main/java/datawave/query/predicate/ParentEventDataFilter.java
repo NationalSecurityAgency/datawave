@@ -7,15 +7,15 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.
  */
-public class ParentEventDataFilter extends ConfigurableEventDataQueryFilter {
+public class ParentEventDataFilter extends EventDataQueryExpressionFilter {
     
     /**
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
      */
-    public ParentEventDataFilter(ASTJexlScript script, TypeMetadata metadata, boolean expressionFilterEnabled) {
-        super(script, metadata, expressionFilterEnabled);
+    public ParentEventDataFilter(ASTJexlScript script, TypeMetadata metadata) {
+        super(script, metadata);
     }
     
     public ParentEventDataFilter(ParentEventDataFilter other) {
