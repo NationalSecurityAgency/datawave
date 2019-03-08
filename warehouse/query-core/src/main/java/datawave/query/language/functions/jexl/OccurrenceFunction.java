@@ -12,7 +12,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * <pre>
  * Function arguments are a field name, an operator, and a number
  * 
- * occurrence(FOO, '>=', 4) will return true (non-empty set of matches) if there
+ * occurrence(FOO, '&gt;=', 4) will return true (non-empty set of matches) if there
  * are at least 4 values for the field FOO in a record.
  * </pre>
  */
